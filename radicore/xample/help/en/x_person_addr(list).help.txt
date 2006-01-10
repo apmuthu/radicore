@@ -1,0 +1,3 @@
+This will list records on the PERSON ADDRESS table for a selected PERSON.
+
+For a description of screens of type LIST 2 <a href="%root%/php-mysql/dialog-types.html#list2">click here</a>.

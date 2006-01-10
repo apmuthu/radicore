@@ -1,0 +1,3 @@
+This will list records on the WF_TOKEN table.
+
+Refer to <a href="%root%/wf_token(list).html">List Workflow Token</a> for full details.

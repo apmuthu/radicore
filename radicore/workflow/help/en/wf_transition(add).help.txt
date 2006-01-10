@@ -1,0 +1,3 @@
+This will allow a record to be added to the WF_TRANSITION table for a selected WORKFLOW.
+
+Refer to <a href="%root%/wf_transition(add).html">Add Workflow Transition</a> for full details.

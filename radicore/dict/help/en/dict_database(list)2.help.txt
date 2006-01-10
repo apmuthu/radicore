@@ -1,0 +1,3 @@
+This will list records on the DICT_DATABASE table for a selected SUBSYSTEM.
+
+Refer to <a href="%root%/dict_database(list)2.html">List Databases by Subsystem</a> for full details.

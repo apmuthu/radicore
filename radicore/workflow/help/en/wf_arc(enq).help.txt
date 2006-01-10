@@ -1,0 +1,3 @@
+This will display the contents of a record from the WF_ARC table.
+
+Refer to <a href="%root%/wf_arc(enq).html">Enquire Workflow Arc</a> for full details.

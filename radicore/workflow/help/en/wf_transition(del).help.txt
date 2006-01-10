@@ -1,0 +1,3 @@
+This will display a record from the WF_TRANSITION table and allow it to be deleted.
+
+Refer to <a href="%root%/wf_transition(del).html">Delete Workflow Transition</a> for full details.

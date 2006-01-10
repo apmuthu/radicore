@@ -1,0 +1,3 @@
+This will list records on the WF_CASE table for a selected WORKFLOW.
+
+Refer to <a href="%root%/wf_case(list)2.html">List Case within Wrkflow</a> for full details.

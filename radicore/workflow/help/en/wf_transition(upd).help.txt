@@ -1,0 +1,3 @@
+This will display the contents of a record from the WF_TRANSITION table and allow it to be updated. 
+
+Refer to <a href="%root%/wf_transition(upd).html">Update Workflow Transition</a> for full details.

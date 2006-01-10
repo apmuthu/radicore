@@ -1,0 +1,5 @@
+This will allow a new record to be added to the DICT_RELATIONSHIP table. 
+
+Enter your data then press the SUBMIT button to add it to the database. 
+
+Refer to <a href="%root%/dict_relationship(add).html">Add Relationship</a> for full details.

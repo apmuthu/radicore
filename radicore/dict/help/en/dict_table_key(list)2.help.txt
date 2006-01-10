@@ -1,0 +1,3 @@
+This will list records on the DICT_TABLE_KEY table for a selected TABLE.
+
+Refer to <a href="%root%/dict_table_key(list)2.html">List Keys by Database Table</a> for full details.

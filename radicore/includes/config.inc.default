@@ -1,0 +1,42 @@
+<?php
+// *****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// *****************************************************************************
+
+// This file contains database access details and the standard connection function
+$dbms   = 'mysql';      // database engine is MySQL
+//$dbms   = 'pgsql';      // database engine is PostgreSQL
+$dbhost = 'localhost';
+
+// NOTE: with MYSQL there are tables withing databases, and within a single connection
+// it is possible to access tables in any database.
+// But with PostgreSQL there are tables within schemas within databases, and within
+// a single connection it is only possible to access a single database, but any number
+// of schemas within that database.
+// When using PostgreSQL you must supply a value for $PGSQL_dbname for the single database
+// connection, and what is known as 'dbname' to MySQL becomes 'schema' to PostgreSQL.
+$PGSQL_dbname = 'radicore';
+
+// NOTE: $dbprefix is for my web host (shared) where my databases are prefixed
+// with my account name to keep them separate from other accounts.
+
+if ($_SERVER['SERVER_NAME'] == 'localhost'
+or  $_SERVER['SERVER_NAME'] == 'desktop'
+or  $_SERVER['SERVER_NAME'] == 'laptop') {
+    // this is for my PC
+    $dbusername = '****';
+    $dbuserpass = '****';
+    $dbprefix   = null;
+} else {
+    // this is for my shared web host
+    $dbusername = '****';
+    $dbuserpass = '****';
+    $dbprefix   = '****';
+} // if
+
+// uncomment this line ONLY if your copy of PHP does not support server-side XSLT
+// in which case it will force all transformations to be done by the client
+//$XSLT_client_side = true;
+
+?>

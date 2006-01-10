@@ -1,0 +1,5 @@
+This will allow search criteria to be entered for the DICT_RELATIONSHIP table. 
+
+Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
+
+Refer to <a href="%root%/dict_relationship(search).html">Search Relationship</a> for full details.

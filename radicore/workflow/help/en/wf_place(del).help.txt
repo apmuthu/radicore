@@ -1,0 +1,3 @@
+This will display a record from the WF_PLACE table and allow it to be deleted.
+
+Refer to <a href="%root%/wf_place(del).html">Delete Workflow Place</a> for full details.

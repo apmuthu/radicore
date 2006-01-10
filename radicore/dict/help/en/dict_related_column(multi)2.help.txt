@@ -1,0 +1,3 @@
+This will list a record from the DICT_RELATIONSHIP table and allow it to be updated.
+
+Refer to <a href="%root%/dict_related_column(multi)2.html">Update Relationship</a> for full details.

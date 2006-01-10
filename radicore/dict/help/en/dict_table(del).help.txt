@@ -1,0 +1,3 @@
+This will display a record from the DICT_TABLE table and allow it to be deleted. 
+
+Refer to <a href="%root%/dict_table(del).html">Delete Table</a> for full details.

@@ -1,0 +1,6 @@
+RADICORE software copyright 2003-2005 A J MARSTON <http://www.tonymarston.net>
+RADICORE software copyright 2006 Radicore Software Limited <http://www.radicore.org>
+
+You are granted a license to use this software on 1 (one) project for evaluation purposes.
+
+Ownership of this software remains with the copyright holder.

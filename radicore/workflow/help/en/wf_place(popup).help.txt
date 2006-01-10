@@ -1,0 +1,5 @@
+This will list records on the WF_PLACE table and allow one or more to be selected.
+
+After selecting records please press the CHOOSE button.
+
+Refer to <a href="%root%/wf_place(popup).html">Choose Workflow Place</a> for full details.

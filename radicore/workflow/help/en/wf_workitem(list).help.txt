@@ -1,0 +1,3 @@
+This will list records on the WF_WORKITEM table.
+
+Refer to <a href="%root%/wf_workitem(list).html">List Workflow Workitem</a> for full details.

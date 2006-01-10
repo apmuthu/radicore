@@ -1,0 +1,5 @@
+This will allow search criteria to be entered for the WF_PLACE table.
+
+Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
+
+Refer to <a href="%root%/wf_place(search).html">Search Workflow Place</a> for full details.

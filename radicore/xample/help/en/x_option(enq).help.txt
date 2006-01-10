@@ -1,0 +1,3 @@
+This will display the contents of a record from the OPTION table.
+
+For a description of screens of type ENQUIRE 1 <a href="%root%/php-mysql/dialog-types.html#enquire1">click here</a>.

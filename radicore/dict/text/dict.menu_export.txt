@@ -1,0 +1,71 @@
+    // file created on January 10, 2006, 6:37 pm
+    
+    // menu details for subsystem DICT
+    $array['Columns']                       = 'Columns';
+    $array['Databases']                     = 'Databases';
+    $array['Keys']                          = 'Keys';
+    $array['Relationships']                 = 'Relationships';
+    $array['Tables']                        = 'Tables';
+    
+    // task details for subsystem DICT
+    $array['dict_column(del)']              = 'Delete Column';
+    $array['dict_column(enq)']              = 'Enquire Column';
+    $array['dict_column(import)']           = 'Import Column Names';
+    $array['dict_column(list)']             = 'List Columns';
+    $array['dict_column(list)2']            = 'List Column by Database Table';
+    $array['dict_column(search)']           = 'Search Column';
+    $array['dict_column(upd)']              = 'Update Column';
+    $array['dict_database(del)']            = 'Delete Database';
+    $array['dict_database(enq)']            = 'Enquire Database';
+    $array['dict_database(erase)']          = 'Erase Database details';
+    $array['dict_database(export)']         = 'Export Database details';
+    $array['dict_database(import)']         = 'Import Database Names';
+    $array['dict_database(list)']           = 'List Database';
+    $array['dict_database(list)2']          = 'List Database by Subsystem';
+    $array['dict_database(search)']         = 'Search Database';
+    $array['dict_database(upd)']            = 'Update Database';
+    $array['dict_related_column(list)2']    = 'Enquire Relationship';
+    $array['dict_related_column(multi)2']   = 'Update Relationship';
+    $array['dict_relationship(add)']        = 'Add Relationship';
+    $array['dict_relationship(del)']        = 'Delete Relationship';
+    $array['dict_relationship(list)']       = 'List Relationships';
+    $array['dict_relationship(list)2']      = 'List Relationship by Table';
+    $array['dict_relationship(list)3']      = 'List Relationship by Database';
+    $array['dict_relationship(search)']     = 'Search Relationship';
+    $array['dict_table(del)']               = 'Delete Table';
+    $array['dict_table(enq)']               = 'Enquire Table';
+    $array['dict_table(export)']            = 'Export Table Script';
+    $array['dict_table(import)']            = 'Import Table Names';
+    $array['dict_table(list)']              = 'List Database Tables';
+    $array['dict_table(list)2']             = 'List Table by Database';
+    $array['dict_table(popup)']             = 'Choose Database Table';
+    $array['dict_table(popup)snr']          = 'Choose Database Table';
+    $array['dict_table(search)']            = 'Search Table';
+    $array['dict_table(upd)']               = 'Update Table';
+    $array['dict_table_key(del)']           = 'Delete Key';
+    $array['dict_table_key(enq)']           = 'Enquire Key';
+    $array['dict_table_key(list)']          = 'List Table Keys';
+    $array['dict_table_key(list)2']         = 'List Keys by Database Table';
+    $array['dict_table_key(search)']        = 'Search Key';
+    
+    // navigation button details for subsystem DICT
+    $array['Columns']                       = 'Columns';
+    $array['Databases']                     = 'Databases';
+    $array['Delete']                        = 'Delete';
+    $array['Erase']                         = 'Erase';
+    $array['Export']                        = 'Export';
+    $array['Export to PHP']                 = 'Export to PHP';
+    $array['Import Columns']                = 'Import Columns';
+    $array['Import Databases']              = 'Import Databases';
+    $array['Import Tables']                 = 'Import Tables';
+    $array['Keys']                          = 'Keys';
+    $array['New']                           = 'New';
+    $array['Read']                          = 'Read';
+    $array['Relationships']                 = 'Relationships';
+    $array['Relationships (DB)']            = 'Relationships (DB)';
+    $array['Relationships (Table)']         = 'Relationships (Table)';
+    $array['Search']                        = 'Search';
+    $array['Tables']                        = 'Tables';
+    $array['Update']                        = 'Update';
+    
+    // finished

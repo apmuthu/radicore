@@ -1,0 +1,5 @@
+This will define search criteria for the TREE_LEVEL table.
+
+Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
+
+For a description of screens of type SEARCH 1 <a href="%root%/php-mysql/dialog-types.html#search1">click here</a>.

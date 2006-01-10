@@ -1,0 +1,3 @@
+This will list records on the DICT_RELATIONSHIP table for a selected DATABASE.
+
+Refer to <a href="%root%/dict_relationship(list)3.html">List Relationship by Database</a> for full details.

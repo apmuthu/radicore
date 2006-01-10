@@ -1,0 +1,3 @@
+This will list records on the PERSON table.
+
+For a description of screens of type LIST 1 <a href="%root%/php-mysql/dialog-types.html#list1">click here</a>.

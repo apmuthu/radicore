@@ -1,0 +1,93 @@
+body {
+	background: #FFFFEE;
+	color: black;
+	margin-left: 5%;
+	margin-right: 5%;
+}
+BODY, P, TABLE, OL, UL {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: small;
+	font-weight: normal;
+}
+caption {
+	font-weight: bold;
+}
+h1 {
+  	font-size: 125%;
+  	font-weight: bold;
+  	margin-top: 5px;
+  	margin-bottom: 20px;
+}
+
+.border0 {
+  border-width: 0px;
+}
+.center {
+	text-align: center;
+}
+.error {
+	color: red;
+  	background: transparent;
+	font-style: italic;
+	font-weight: normal;
+}
+.justify {
+	text-align: justify;
+}
+.left {
+	text-align: left;
+}
+.nowrap {
+	white-space: nowrap;
+}
+.required {
+	color: red;
+  	background: transparent;
+}
+.right {
+	text-align: right;
+}
+
+#content {
+  float:left;
+  border: 2px dotted #000000; 
+  background: transparent;
+  color: black;
+  text-align: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 5px;
+}
+#detail {
+  float:left;
+  border: 1px dotted #000000; 
+  background: transparent;
+  color: black;
+  text-align: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-bottom: 5px;
+}
+#help {
+  float: left;
+  margin-left: 10px;
+  text-align: left;
+  background: transparent;
+}
+#navbar {
+  float: left;
+  width: 150px;
+  background: transparent;
+  color: black;
+  text-align: right;
+  margin: 0px;
+  padding-right: 5px;
+}
+#w3c {
+  position: absolute;
+  right: 10px;
+  top: 15px;
+  width: 90px;
+  border: 1px dotted #000000;
+  text-align: right;
+}

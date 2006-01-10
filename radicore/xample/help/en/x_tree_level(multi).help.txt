@@ -1,0 +1,5 @@
+This will show the existing records on the TREE LEVEL table and allow them to be resequenced.
+
+Note that the sequence numbers must start from 1, with no duplicates and no gaps.
+
+For a description of screens of type MULTI 1 <a href="%root%/php-mysql/dialog-types.html#multi1">click here</a>.

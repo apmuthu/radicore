@@ -1,0 +1,19 @@
+<?php
+//*****************************************************************************
+// This will allow an occurrences of a database table to be updated.
+// The identity of the selected occurrence is passed down from the previous screen.
+//*****************************************************************************
+
+//DebugBreak();
+$table_id = "mnu_nav_button";                   // table id
+$screen   = 'mnu_nav_button.detail.screen.inc'; // file identifying screen structure
+
+// identify extra parameters for a JOIN
+$sql_select = '';
+$sql_from   = '';
+$sql_where  = '';
+
+// activate page controller
+require 'std.update1.inc';
+
+?>
