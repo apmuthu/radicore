@@ -1,5 +1,5 @@
 <?php
-    // file created on October 30, 2005, 12:25 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table workflow.wf_transition
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -92,8 +92,8 @@
     // child relationship details 
     $this->child_relations[]                = array('child' => 'wf_arc',
                                                     'type' => 'RES',
-                                                    'fields' => array('workflow_id' => 'workflow_id',
-                                                                      'transition_id' => 'transition_id'));
+                                                    'fields' => array('transition_id' => 'transition_id',
+                                                                      'workflow_id' => 'workflow_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',
                                                     'type' => 'RES',
@@ -102,11 +102,13 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_role',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'role_desc',
                                                     'fields' => array('role_id' => 'role_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'task_desc',
                                                     'fields' => array('task_id' => 'task_id'));

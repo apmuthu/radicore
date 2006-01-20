@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',
@@ -48,6 +48,7 @@
     
     // child relationship details 
     $this->child_relations[]                = array('child' => 'dict_database',
+                                                    'dbname' => 'dict',
                                                     'subsys_dir' => 'dict',
                                                     'type' => 'RES',
                                                     'fields' => array('subsys_id' => 'subsys_id'));

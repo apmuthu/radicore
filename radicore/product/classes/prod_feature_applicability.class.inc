@@ -39,7 +39,7 @@ class prod_feature_applicability extends Default_Table
 
         $dbobject =& singleton::getInstance('prod_feature_applicability');
         $dbobject->sql_select = 'end_date';
-        $next_seq_data = $dbobject->getData_unformatted($where);
+        $next_seq_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             // 'Could not locate next PROD_FEATURE_APPLICABILITY record'
             $this->errors['end_date'] = getLanguageText('e0015');
@@ -76,7 +76,7 @@ class prod_feature_applicability extends Default_Table
 
         $dbobject =& singleton::getInstance('prod_feature_applicability');
         $dbobject->sql_select = 'start_date';
-        $prev_rec_data = $dbobject->getData_unformatted($where);
+        $prev_rec_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             $this->errors['start_date'] = getlanguageText('e0016'); // 'Could not locate previous PROD_FEATURE_APPLICABILITY record';
             return $fieldarray;
@@ -226,7 +226,7 @@ class prod_feature_applicability extends Default_Table
                 $prev_seq_no = $fieldarray['seq_no'] -1;
                 $where = "product_id='$product_id' AND prod_feature_id='$prod_feature_id' AND seq_no='$prev_seq_no'";
                 $this->sql_select = 'start_date,end_date';
-                $prev_rec_data = $this->getData_unformatted($where);
+                $prev_rec_data = $this->getData_raw($where);
                 if ($this->numrows <> 1) {
                     $this->errors[] = getLanguageText('e0016'); // 'Could not locate previous PROD_FEATURE_APPLICABILITY record';
                     return $fieldarray;

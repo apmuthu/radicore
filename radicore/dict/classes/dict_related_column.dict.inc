@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table dict.dict_related_column
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -98,14 +98,14 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'dict_column',
                                                     'alias' => 'dict_column_snr',
-                                                    'parent_field' => 'column_desc AS column_desc_snr',
+                                                    'parent_field' => 'dict_column_snr.column_desc AS column_desc_snr',
                                                     'fields' => array('database_id_snr' => 'database_id',
                                                                       'table_id_snr' => 'table_id',
                                                                       'column_id_snr' => 'column_id'));
     
     $this->parent_relations[]               = array('parent' => 'dict_column',
                                                     'alias' => 'dict_column_jnr',
-                                                    'parent_field' => 'column_desc AS column_desc_jnr',
+                                                    'parent_field' => 'dict_column_jnr.column_desc AS column_desc_jnr',
                                                     'fields' => array('database_id_jnr' => 'database_id',
                                                                       'table_id_jnr' => 'table_id',
                                                                       'column_id_jnr' => 'column_id'));

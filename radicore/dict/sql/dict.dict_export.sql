@@ -1,4 +1,4 @@
--- file created on January 10, 2006, 6:37 pm
+-- file created on January 15, 2006, 11:34 am
 
 REPLACE INTO `dict_database` (`database_id`, `database_desc`, `comment`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('dict', 'Data Dictionary', NULL, 'DICT', '2005-03-27 15:45:34', 'AJM', '2005-05-09 19:48:23', 'AJM');
@@ -62,7 +62,7 @@ REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`
 ('dict', 'dict_column', 'revised_user', '48', 'revised_user', NULL, 'varchar', NULL, '16', '16', 'Y', 'N', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'Y', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-04-07 14:14:27', 'AJM', '2005-12-14 17:54:53', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('dict', 'dict_column', 'dict', 'dict_related_column', '0', 'dict_column_snr', 'dict_related_column_snr', NULL, NULL, 'RES', NULL, '#calc#', 'column_desc AS column_desc_snr', '2005-05-30 11:43:08', 'AJM', '2005-05-30 11:49:58', 'AJM');
+('dict', 'dict_column', 'dict', 'dict_related_column', '0', 'dict_column_snr', 'dict_related_column_snr', NULL, NULL, 'RES', NULL, '#calc#', 'dict_column_snr.column_desc AS column_desc_snr', '2005-05-30 11:43:08', 'AJM', '2006-01-14 18:36:00', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('dict', 'dict_column', 'column_id', 'dict', 'dict_related_column', '0', 'column_id_snr', '2', '2005-05-30 11:43:08', 'AJM', '2005-12-14 17:55:03', 'AJM'),
@@ -70,7 +70,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('dict', 'dict_column', 'table_id', 'dict', 'dict_related_column', '0', 'table_id_snr', '2', '2005-05-30 11:43:08', 'AJM', '2005-12-14 17:55:03', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('dict', 'dict_column', 'dict', 'dict_related_column', '1', 'dict_column_jnr', 'dict_related_column_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'column_desc AS column_desc_jnr', '2005-05-30 11:44:15', 'AJM', '2005-05-30 11:50:11', 'AJM');
+('dict', 'dict_column', 'dict', 'dict_related_column', '1', 'dict_column_jnr', 'dict_related_column_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'dict_column_jnr.column_desc AS column_desc_jnr', '2005-05-30 11:44:15', 'AJM', '2006-01-14 18:36:17', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('dict', 'dict_column', 'column_id', 'dict', 'dict_related_column', '1', 'column_id_jnr', '2', '2005-05-30 11:44:15', 'AJM', '2005-12-14 17:55:03', 'AJM'),
@@ -190,14 +190,14 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('dict', 'dict_table', 'table_id', 'dict', 'dict_column', '0', 'table_id', '2', '2005-04-07 17:10:48', 'AJM', '2005-12-14 17:54:59', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('dict', 'dict_table', 'dict', 'dict_relationship', '0', NULL, NULL, NULL, NULL, 'DEL', NULL, '#calc#', 'table_desc as table_desc_snr', '2005-04-07 17:11:48', 'AJM', '2005-04-12 07:05:55', 'AJM');
+('dict', 'dict_table', 'dict', 'dict_relationship', '0', 'dict_table_snr', 'dict_relationship_snr', NULL, NULL, 'DEL', NULL, '#calc#', 'dict_table_snr.table_desc as table_desc_snr', '2005-04-07 17:11:48', 'AJM', '2006-01-14 18:39:55', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('dict', 'dict_table', 'database_id', 'dict', 'dict_relationship', '0', 'database_id_snr', '2', '2005-04-07 17:11:48', 'AJM', '2005-12-14 17:54:59', 'AJM'),
 ('dict', 'dict_table', 'table_id', 'dict', 'dict_relationship', '0', 'table_id_snr', '2', '2005-04-07 17:11:48', 'AJM', '2005-12-14 17:54:59', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('dict', 'dict_table', 'dict', 'dict_relationship', '1', NULL, NULL, NULL, NULL, 'DEL', NULL, '#calc#', 'table_desc as table_desc_jnr', '2005-04-07 17:12:12', 'AJM', '2005-04-12 07:06:06', 'AJM');
+('dict', 'dict_table', 'dict', 'dict_relationship', '1', 'dict_table_jnr', 'dict_relationship_jnr', NULL, NULL, 'DEL', NULL, '#calc#', 'dict_table_jnr.table_desc as table_desc_jnr', '2005-04-07 17:12:12', 'AJM', '2006-01-14 18:48:13', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('dict', 'dict_table', 'database_id', 'dict', 'dict_relationship', '1', 'database_id_jnr', '2', '2005-04-07 17:12:12', 'AJM', '2005-12-14 17:54:59', 'AJM'),

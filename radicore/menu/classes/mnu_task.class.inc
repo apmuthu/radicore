@@ -37,7 +37,7 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, dialog_type_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, '
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, dialog_type_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, '
                            .'CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 1 ELSE 0 END AS access_allowed';
         $this->sql_from   = 'mnu_task '
                           . 'LEFT JOIN mnu_subsystem ' . 'ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
@@ -102,6 +102,12 @@ class mnu_task extends Default_Table
             $GLOBALS['order_by_body'] = $fieldarray['order_by'];
 
             $GLOBALS['keep_data'] = $fieldarray['keep_data'];
+
+            if (is_True($fieldarray['log_sql_query'])) {
+            	// use this area for optional settings
+                $GLOBALS['log_sql_query'] = TRUE;
+            } // if
+
         } // if
 
         // set the task_id for this task
@@ -153,6 +159,7 @@ class mnu_task extends Default_Table
                 $this->fieldspec['settings']['nodisplay']         = 'y';
                 $this->fieldspec['order_by']['nodisplay']         = 'y';
                 $this->fieldspec['keep_data']['nodisplay']        = 'y';
+                $this->fieldspec['log_sql_query']['nodisplay']    = 'y';
             } else {
                 // turn these fields back on
                 unset($this->fieldspec['dialog_type_id']['noedit']);
@@ -163,6 +170,7 @@ class mnu_task extends Default_Table
                 unset($this->fieldspec['settings']['nodisplay']);
                 unset($this->fieldspec['order_by']['nodisplay']);
                 unset($this->fieldspec['keep_data']['nodisplay']);
+                unset($this->fieldspec['log_sql_query']['nodisplay']);
             } // if
         } // if
 

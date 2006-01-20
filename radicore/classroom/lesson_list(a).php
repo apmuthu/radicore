@@ -2,7 +2,7 @@
 //*****************************************************************************
 // List the contents of the LESSON table for a particular value of STUDENT_ID
 // (as selected in the previous screen) and allow the user to view/modify
-// the contents by activating other screens via navigation buttons. 
+// the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
 //DebugBreak();
@@ -11,7 +11,7 @@ $inner_table = 'crs_student_lesson';            // name of inner table
 $screen      = 'crs_lesson.list(a).screen.inc'; // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'student_id, first_name, initials, last_name, year, class_id';
+$outer_sql_select = 'student_id, first_name, initials, last_name, class_id, year';
 $outer_sql_from   = '';
 $outer_sql_where  = NULL;
 

@@ -36,8 +36,7 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'mnu_todo') {
 } // if
 
 // get any 'to do' items for the current user
-$db_todo->sql_select  = 'user_id, item_desc, due_date';
-$db_todo->sql_orderby = 'due_date';
+$db_todo->sql_select  = 'mnu_todo.user_id, item_desc, due_date';
 $db_todo->setRowsPerPage(10);
 $todo_data = $db_todo->getData("user_id='{$_SESSION['logon_user_id']}' AND is_complete='N'");
 $errors = array_merge($errors, $db_todo->getErrors());

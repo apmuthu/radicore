@@ -48,8 +48,8 @@ if (isset($script_vars['dbobject'])) {
 if (isset($_POST['clear'])) {
     // clear previous search
     unset($_SESSION['search'][$dbobject->tablename]);
-    // clear all data from current selection
-    $dbobject->setFieldArray($_POST);
+    // clear all editable data from current selection
+    $fieldarray = $dbobject->clearEditableData($fieldarray);
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET'
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $prev_script = getPreviousScript();
             $prev_task   = getPreviousTask($prev_script);
             $_SESSION[$prev_script][$prev_task]['search'] = $where;
-            scriptPrevious(null, null, 'OK');
+            scriptPrevious(null, null, 'search');
         } // if
     } // if
 } // if

@@ -25,6 +25,29 @@ class x_tree_level extends Default_Table
     } // x_tree_level
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        switch ($GLOBALS['mode']) {
+        	case 'search':
+        		unset($this->fieldspec['tree_level_seq']['noedit']);
+        		break;
+
+        	case 'update':
+        		$this->fieldspec['tree_level_seq']['noedit']  = 'y';
+        		break;
+
+        	default:
+        		break;
+        } // switch
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getInitialData ($fieldarray)
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
@@ -54,7 +77,7 @@ class x_tree_level extends Default_Table
 
         if ($item == 'tree_level_id') {
             // get data from the database
-            $this->sql_select    = 'tree_level_id, tree_level_desc';
+            $this->sql_select     = 'tree_level_id, tree_level_desc';
             $this->sql_orderby    = 'tree_level_seq';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
@@ -122,13 +145,6 @@ class x_tree_level extends Default_Table
             } // if
 
             unset($dbobject);
-        } // if
-
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'x_tree_level.*, x_tree_type.tree_type_desc';
-            $this->sql_from   = 'x_tree_level '
-                               .'LEFT JOIN x_tree_type ON (x_tree_type.tree_type_id=x_tree_level.tree_type_id)';
         } // if
 
         return $where;

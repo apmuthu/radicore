@@ -37,7 +37,7 @@ class prod_cat_class extends Default_Table
 
         $dbobject =& singleton::getInstance('prod_cat_class');
         $dbobject->sql_select = 'end_date';
-        $next_seq_data = $dbobject->getData_unformatted($where);
+        $next_seq_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             // 'Could not locate next PROD_CAT_CLASS record'
             $this->errors['end_date'] = getLanguageText('e0011');
@@ -74,7 +74,7 @@ class prod_cat_class extends Default_Table
 
         $dbobject =& singleton::getInstance('prod_cat_class');
         $dbobject->sql_select = 'start_date';
-        $prev_rec_data = $dbobject->getData_unformatted($where);
+        $prev_rec_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             // 'Could not locate previous PROD_CAT_CLASS record'
             $this->errors['start_date'] = getLanguageText('e0012');
@@ -215,7 +215,7 @@ class prod_cat_class extends Default_Table
                 $prev_seq_no = $fieldarray['seq_no'] -1;
                 $where = "product_id='$product_id' AND prod_cat_id='$prod_cat_id' AND seq_no='$prev_seq_no'";
                 $this->sql_select = 'start_date,end_date';
-                $prev_rec_data = $this->getData_unformatted($where);
+                $prev_rec_data = $this->getData_raw($where);
                 if ($this->numrows <> 1) {
                     $this->errors[] = getLanguageText('e0012'); // 'Could not locate previous PROD_CAT_CLASS record';
                     return $fieldarray;

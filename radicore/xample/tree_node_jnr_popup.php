@@ -12,13 +12,13 @@ $inner_table = 'x_tree_node_jnr_s01';           // name of inner table
 $screen   = 'tree_node_jnr.popup.screen.inc';   // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = '';
-$outer_sql_from   = '';
-$outer_sql_where  = '';
+$outer_sql_select = NULL;
+$outer_sql_from   = NULL;
+$outer_sql_where  = NULL;
 
-$inner_sql_select = '';
-$inner_sql_from   = '';
-$inner_sql_where  = '';
+$inner_sql_select = NULL;
+$inner_sql_from   = NULL;
+$inner_sql_where  = NULL;
 
 // set default sort sequence
 $inner_sql_orderby = 'x_tree_node.node_desc';

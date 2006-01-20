@@ -134,6 +134,7 @@ class mnu_role extends Default_Table
     {
 
         if (isset($fieldarray['task_id'])) {
+            // change 'task_id' to 'start_task_id'
             $fieldarray['start_task_id'] = $fieldarray['task_id'];
             unset($fieldarray['task_id']);
         } // if

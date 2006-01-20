@@ -37,7 +37,7 @@ class mnu_user extends Default_Table
 
         // read records for all current users
         $this->sql_select = 'user_id,user_password';
-        $rowdata = $this->getData_unformatted(null);
+        $rowdata = $this->getData_raw(null);
         if ($this->errors) {
             return $this->errors;
         } // if

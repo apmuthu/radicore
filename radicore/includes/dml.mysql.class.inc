@@ -74,6 +74,9 @@ class mysql
         $this->query = 'SET AUTOCOMMIT=1';
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1');
+
         if (class_exists('audit_tbl')) {
         	$auditobj =& singleton::getInstance('audit_tbl');
             $result = $auditobj->close();
@@ -140,6 +143,9 @@ class mysql
         // get count of affected rows as there may be more than one
         $this->numrows = mysql_affected_rows($this->dbconnect);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
             // add record details to audit database
@@ -163,6 +169,9 @@ class mysql
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         $count = mysql_affected_rows($this->dbconnect);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $count);
 
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
@@ -211,10 +220,15 @@ class mysql
 
         // if 'GROUP BY' was used then return the number of rows
         if (eregi("group by ", $this->query)) {
-            return mysql_num_rows($result);
+            $count = mysql_num_rows($result);
         } else {
-            return $query_data[0];
+            $count = $query_data[0];
         } // if
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $count);
+
+        return $count;
 
     } // getCount
 
@@ -346,6 +360,9 @@ class mysql
             $this->numrows = mysql_num_rows($result);
         } // if
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+
         mysql_free_result($result);
 
         return $array;
@@ -414,6 +431,9 @@ class mysql
 
         $this->numrows = mysql_num_rows($result);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+
         return $result;
 
     } // getData_batch
@@ -440,12 +460,15 @@ class mysql
             // 3rd, insert dummy entry so that real entries start at 1
             $enum = ',' .$enum;
             // last, turn list into an indexed array
-            $enum = explode(',', $enum);
+            $enum_array = explode(',', $enum);
         } // if
 
         mysql_free_result($result);
 
-        return $enum;
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $enum);
+
+        return $enum_array;
 
     } // getEnum
 
@@ -634,6 +657,9 @@ class mysql
         $this->query = rtrim($this->query, ', ');
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query);
+
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
 			$fieldarray[$auto_increment] = mysql_insert_id($this->dbconnect);
@@ -674,6 +700,9 @@ class mysql
 
         $this->query = 'UNLOCK TABLES';
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES');
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -775,13 +804,16 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        if (!empty($this->table_locks)) {
-        	$result = $this->_setDatabaseLock($this->table_locks);
-        } // if
-
         $this->query = 'SET AUTOCOMMIT=0';
 
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, null, 'START TRANSACTION (SET AUTOCOMMIT=0)');
+
+        if (!empty($this->table_locks)) {
+        	$result = $this->_setDatabaseLock($this->table_locks);
+        } // if
 
         return $result;
 
@@ -899,6 +931,9 @@ class mysql
         // get count of affected rows as there may be more than one
         $this->numrows = mysql_affected_rows($this->dbconnect);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
             // add record details to audit database
@@ -922,6 +957,9 @@ class mysql
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         $count = mysql_affected_rows($this->dbconnect);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $count);
 
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
@@ -1043,6 +1081,11 @@ class mysql
         // build the query string and run it
         $this->query = "SHOW COLUMNS FROM $tablename FROM $dbname";
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+
+        $count = mysql_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $count);
 
         $colspecs = $this->ddl_getColumnSpecs();
 
@@ -1214,6 +1257,11 @@ class mysql
         $this->query = "SHOW DATABASES";
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
+        $count = mysql_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery (null, null, $this->query, $count);
+
         // convert result set into a simple indexed array for each row
         while ($row = mysql_fetch_row($result)) {
             $array[] = $row[0];
@@ -1239,6 +1287,11 @@ class mysql
         $this->query = "SHOW TABLES FROM $dbname";
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
+        $count = mysql_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, null, $this->query, $count);
+
         // convert result set into a simple indexed array for each row
         while ($row = mysql_fetch_row($result)) {
             $array[] = $row[0];
@@ -1263,6 +1316,11 @@ class mysql
         // build the query string and run it
         $this->query = "SHOW INDEX FROM $tablename";
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+
+        $count = mysql_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, $count);
 
         // convert result set into a simple indexed array for each row
         while ($row = mysql_fetch_assoc($result)) {
@@ -1309,6 +1367,8 @@ class mysql
             $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
             $this->query = "LOCK TABLES $string";
             $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+            // write query to log file, if option is turned on
+            logSqlQuery (null, null, $this->query);
             return $result;
         } // if
 
@@ -1325,7 +1385,7 @@ class mysql
         $object_vars = get_object_vars($this);
 
         // remove unwanted variables
-        //unset($object_vars['data_unformatted']);
+        //unset($object_vars['data_raw']);
 
         // convert to indexed array
         $object_vars = array_keys($object_vars);

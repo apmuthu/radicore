@@ -125,6 +125,14 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
         $errors = $mnu_task->getErrors();
         if ($errors) return($errors);
 
+        if (is_True($mnu_task_array['log_sql_query'])) {
+            $script_vars['log_sql_query'] = TRUE;
+        } else {
+            if (isset($script_vars['log_sql_query'])) {
+            	unset($script_vars['log_sql_query']);
+            } // if
+        } // if
+
         // check to see if a popup/filepicker form has been called
         if (eregi('popup|filepicker', $mnu_task_array['dialog_type_id'], $regs)) {
             if (is_object($dbobject)) {
@@ -266,6 +274,7 @@ function initSession()
     global $keep_data;          // keep data in session after exit?
     global $lock_rows;          // lock database rows during transaction? FALSE/SH/EX
     global $lock_tables;        // lock database tables during transaction? TRUE/FALSE
+    global $log_sql_query;      // Yes/No switch
     global $lookup;             // array of lookup values
     global $menu_buttons;       // array of menu buttons
     global $messages;           // optional array of messages
@@ -304,6 +313,8 @@ function initSession()
         } // if
         session_start();                    // open/reopen session
     } // if
+
+    unset($_SESSION['global_access']); // ensure that data is re-fetched for each page
 
     $PHP_SELF = getSelf();
 
@@ -450,6 +461,13 @@ function initSession()
     } else {
         $script_vars = array();
     } // if
+
+    if (isset($script_vars['log_sql_query'])) {
+        $log_sql_query = $script_vars['log_sql_query'];
+    } // if
+
+    // write start details to query log file, if option is turned on
+    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
 
     if (empty($script_vars)) {
         if (basename($PHP_SELF) == 'help.php') {
@@ -707,12 +725,16 @@ function reducePageStack ($task_id)
         $end = end($page_stack); // get the last value
         while (key($page_stack) != $task_id) {
             $script_id = $end['script_id'];
-            // remove this script's variables from session details
+            // remove this script's variables from session details if required
             if (isset($_SESSION[$script_id])) {
                 if (isset($_SESSION[$script_id]['keep_data'])) {
-                    if ($_SESSION[$script_id]['keep_data'] == 'N') {
+                    if (is_True($_SESSION[$script_id]['keep_data'])) {
+                        // keep script data in memory
+                    } else {
                         unset($_SESSION[$script_id]);
                     } // if
+                } else {
+                    unset($_SESSION[$script_id]);
                 } // if
             } // if
             // remove page from page stack
@@ -742,6 +764,7 @@ function scriptNext($task_id, $where=null, $selection=null)
     global $current_task;
     global $initial_passthru;
     global $keep_data;
+    global $log_sql_query;
     global $menu_buttons;
     global $messages;
     global $order_by;
@@ -841,12 +864,15 @@ function scriptNext($task_id, $where=null, $selection=null)
         $script_id  = $mnu_task_array['script_id'];
         $subsys_dir = $mnu_task_array['subsys_dir'];
         $title      = $mnu_task_array['task_desc'];
-        $settings = mergeSettings($settings, $saved_settings);
+        $settings   = mergeSettings($settings, $saved_settings);
         if ($mnu_task_array['task_type'] == 'MENU') {
             $query_string = "selection={$mnu_task_array['task_id']}";
         } // if
         if (!empty($_SESSION['script_sequence'])) {
             $_SESSION['script_sequence'][0]['script_id'] = $script_id;
+        } // if
+        if (is_true($mnu_task_array['log_sql_query'])) {
+         	$log_sql_query = TRUE;
         } // if
     } // if
 
@@ -949,7 +975,15 @@ function scriptNext($task_id, $where=null, $selection=null)
         } // if
 
         if (!empty($keep_data)) {
-            $_SESSION[$script_id]['keep_data'] = $keep_data;
+            $script_vars['keep_data'] = $keep_data;
+        } // if
+
+        if (!empty($log_sql_query)) {
+            $script_vars['log_sql_query'] = $log_sql_query;
+        } else {
+            if (isset($script_vars['log_sql_query'])) {
+            	unset($script_vars['log_sql_query']);
+            } // if
         } // if
     } // if
 
@@ -998,12 +1032,16 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
     $prev_script = getPreviousScript($task_id);
     $prev_task   = getPreviousTask($prev_script);
 
-    // remove this script's variables from session details
+    // remove this script's variables from session details (if necessay)
     if (isset($_SESSION[$script_id])) {
         if (isset($_SESSION[$script_id]['keep_data'])) {
-            if ($_SESSION[$script_id]['keep_data'] == 'N') {
+            if (is_True($_SESSION[$script_id]['keep_data'])) {
+                // keep script data in memory
+            } else {
                 unset($_SESSION[$script_id]);
             } // if
+        } else {
+            unset($_SESSION[$script_id]);
         } // if
     } // if
 

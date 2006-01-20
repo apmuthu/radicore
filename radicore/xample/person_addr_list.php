@@ -2,7 +2,7 @@
 //*****************************************************************************
 // List the contents of the PERSON_ADDR table for a particular value of PERSON_ID
 // (as selected in the previous screen) and allow the user to view/modify
-// the contents by activating other screens via navigation buttons. 
+// the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
 //DebugBreak();
@@ -12,7 +12,7 @@ $screen   = 'person_addr.list.screen.inc';  // file identifying screen structure
 
 // identify extra parameters for a JOIN
 $outer_sql_select = 'person_id, CONCAT(first_name, \' \', last_name) AS person_name';
-$outer_sql_from   = '';
+$outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 
 $inner_sql_select = NULL;

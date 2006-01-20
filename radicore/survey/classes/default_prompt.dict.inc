@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 7:29 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table survey.default_prompt
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -11,7 +11,7 @@
                                                     'default' => '0');
     
     $fieldspec['prompt_id']                 = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'size' => 2,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'pkey' => 'y',
@@ -31,6 +31,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y');
     

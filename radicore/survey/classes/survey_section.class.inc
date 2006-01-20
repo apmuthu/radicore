@@ -79,7 +79,7 @@ class survey_section extends Default_Table
         $section_seq = $fieldarray['section_seq'];
         $where = "survey_id='$survey_id' and section_seq>$section_seq";
         $this->sql_orderby = 'section_seq';
-        $rowdata = $this->getData_unformatted($where);
+        $rowdata = $this->getData_raw($where);
         if ($this->numrows == 0) {
             return $fieldarray;
         } // if

@@ -37,7 +37,7 @@ class price_component_s01 extends price_component
         $dbobject->rows_per_page   = 1;
         $dbobject->sql_orderby     = 'price_component_id';
         $dbobject->sql_orderby_seq = 'asc';
-        $next_rec_data = $dbobject->getData_unformatted($where);
+        $next_rec_data = $dbobject->getData_eaw($where);
         if ($dbobject->numrows > 0) {
             // use data from first row only
             $next_rec_data = $next_rec_data[0];
@@ -85,7 +85,7 @@ class price_component_s01 extends price_component
         $dbobject->rows_per_page   = 1;
         $dbobject->sql_orderby     = 'price_component_id';
         $dbobject->sql_orderby_seq = 'desc';
-        $prev_rec_data = $dbobject->getData_unformatted($where);
+        $prev_rec_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows > 0) {
             // use data from first row only
             $prev_rec_data = $prev_rec_data[0];

@@ -44,7 +44,7 @@ class survey_question_s02 extends survey_question
         // get id of next row in current sequence
         $where = "survey_id='$survey_id' AND section_id='$section_id' AND question_seq='$next_seq'";
         $this->sql_select = 'question_id';
-        $next_row = $this->getData_unformatted($where);
+        $next_row = $this->getData_raw($where);
         if ($this->numrows <> 1) {
             $this->errors[] = getLanguageText('e0018'); // "Could not locate next record for updating";
             return $fieldarray;

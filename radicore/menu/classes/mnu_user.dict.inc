@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -101,11 +101,13 @@
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->child_relations[]                = array('child' => 'survey_answer_hdr',
+                                                    'dbname' => 'survey',
                                                     'subsys_dir' => 'survey',
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',
+                                                    'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));

@@ -16,12 +16,21 @@ class x_tree_node_snr_s01 extends x_tree_node_snr
         if (!empty($rowdata)) {
 
             // check that the TREE_LEVEL has another level below it
-            $tree_type_id   = $rowdata[0]['tree_type_id'];
-            $tree_level_seq = $rowdata[0]['tree_level_seq'];
-            $tree_level_seq++;
-            $where2 = "tree_type_id='$tree_type_id' AND tree_level_seq='$tree_level_seq'";
             require_once 'x_tree_level.class.inc';
             $dbobject =& singleton::getInstance('x_tree_level');
+
+            $tree_type_id   = $rowdata[0]['tree_type_id'];
+            if (isset($rowdata[0]['tree_level_seq'])) {
+                $tree_level_seq = $rowdata[0]['tree_level_seq'];
+            } else {
+                $tree_level_id = $rowdata[0]['tree_level_id'];
+            	$where2 = "tree_type_id='$tree_type_id' AND tree_level_id='$tree_level_id'";
+            	$tree_level_data = $dbobject->getData($where2);
+            	$tree_level_seq = $tree_level_data[0]['tree_level_seq'];
+            } // if
+
+            $tree_level_seq++;
+            $where2 = "tree_type_id='$tree_type_id' AND tree_level_seq='$tree_level_seq'";
             $tree_level_data = $dbobject->getData($where2);
             if ($dbobject->numrows <> 1) {
                 // 'This is the lowest level - no children allowed'

@@ -14,14 +14,14 @@ $inner_table = 'x_option';                          // name of inner table
 $screen      = 'pers_opt_xref.link(a).screen.inc';  // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'person_id, first_name, last_name';
+$outer_sql_select = 'person_id, CONCAT(first_name, \' \', last_name) AS person_name';
 $outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 
 // modify the sql select for the LINK table
-$link_sql_select = '';
-$link_sql_from   = '';
-$link_sql_where  = '';
+$link_sql_select = NULL;
+$link_sql_from   = NULL;
+$link_sql_where  = NULL;
 
 require 'std.link1.inc';                            // activate page controller
 

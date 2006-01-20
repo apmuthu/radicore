@@ -71,7 +71,7 @@ class logon extends mnu_user
         $this->sql_from   = 'mnu_user '
                           . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
 
-        $fieldarray = $this->getData_unformatted("user_id='$logon_user_id' AND user_password='$logon_password'");
+        $fieldarray = $this->getData_raw("user_id='$logon_user_id' AND user_password='$logon_password'");
         if ($this->numrows <> 1) {
             $this->errors[] = getLanguageText('e0000'); // 'Security violation';
             $this->PasswordRetries($logon_user_id);
@@ -158,7 +158,7 @@ class logon extends mnu_user
             if ($_SESSION['logon_retries']['count'] > $max_retries) {
                 $errors = $this->errors;
                 // limit exceeded, so disable user
-                $fieldarray = $this->getData_unformatted("user_id='$user_id'");
+                $fieldarray = $this->getData_raw("user_id='$user_id'");
                 if ($this->numrows == 1) {
                     $_SESSION['logon_user_id'] = $user_id;
                     $fieldarray[0]['is_disabled'] = true;

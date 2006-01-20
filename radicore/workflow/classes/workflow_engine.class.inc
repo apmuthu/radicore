@@ -19,7 +19,7 @@ class workflow_engine extends wf_workflow
         $today = date('Y-m-d');
         $where = "start_task_id='$task_id' AND is_valid='Y' AND start_date<='$today' AND end_date>='$today'";
         $this->sql_select = 'workflow_id, workflow_name';
-        $data = $this->getData_unformatted($where);
+        $data = $this->getData_raw($where);
         if ($this->numrows < 1) {
             // no process defined for this task, so quit here
             return;

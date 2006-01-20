@@ -262,23 +262,6 @@ class x_person extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'x_person.*, x_tree_node.node_id, x_tree_node.node_desc';
-            $this->sql_from   = 'x_person '
-                               .'LEFT JOIN x_tree_node ON (x_tree_node.node_id=x_person.node_id)';
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
-
-    // ****************************************************************************
     function _cm_validateUpdate ($fieldarray, $orignaldata)
     // perform custom validation before update.
     {
@@ -294,7 +277,7 @@ class x_person extends Default_Table
             // compare start date with first address
             $dbobject->sql_select = 'end_date';
             $where = "person_id='{$fieldarray['person_id']}' AND address_no='1'";
-            $first_addr_data = $dbobject->getdata_unformatted($where);
+            $first_addr_data = $dbobject->getdata_raw($where);
             if ($dbobject->numrows <> 1) {
                 // "Could not locate first ADDRESS record"
                 $this->errors[] = getLanguageText('e0010');
@@ -314,7 +297,7 @@ class x_person extends Default_Table
             // compare end date with last address
             $where = "person_id='{$fieldarray['person_id']}' AND address_no='{$this->last_addr_no}'";
             $dbobject->sql_select = 'start_date';
-            $last_addr_data = $dbobject->getdata_unformatted($where);
+            $last_addr_data = $dbobject->getdata_raw($where);
             if ($dbobject->numrows <> 1) {
                 // "Could not locate last ADDRESS record"
                 $this->errors[] = getLanguageText('e0012');

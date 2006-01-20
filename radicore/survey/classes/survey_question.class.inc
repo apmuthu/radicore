@@ -169,7 +169,7 @@ class survey_question extends Default_Table
         $question_seq = $fieldarray['question_seq'];
         $where = "survey_id='$survey_id' AND section_id='$section_id' AND question_seq>$question_seq";
         $this->sql_orderby = 'question_seq';
-        $rowdata = $this->getData_unformatted($where);
+        $rowdata = $this->getData_raw($where);
         if ($this->numrows == 0) {
             return $fieldarray;
         } // if

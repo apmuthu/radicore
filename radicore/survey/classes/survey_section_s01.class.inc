@@ -44,7 +44,7 @@ class survey_section_s01 extends survey_section
         // get id of previous row in current sequence
         $where = "survey_id='$survey_id' and section_seq='$prev_seq'";
         $this->sql_select = 'section_id';
-        $prev_row = $this->getData_unformatted($where);
+        $prev_row = $this->getData_raw($where);
         if ($this->numrows <> 1) {
             $this->errors[] = getLanguageText('e0016'); // "Could not locate previous record for updating";
             return $fieldarray;

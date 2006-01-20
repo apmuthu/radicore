@@ -1,4 +1,4 @@
--- file created on January 10, 2006, 6:37 pm
+-- file created on January 20, 2006, 8:14 pm
 
 REPLACE INTO `dict_database` (`database_id`, `database_desc`, `comment`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'xample', NULL, 'XAMPLE', '2005-03-27 15:45:42', 'AJM', '2005-03-27 15:47:43', 'AJM');
@@ -146,7 +146,7 @@ REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id
 REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`, `column_desc`, `comment`, `col_type`, `col_values`, `user_size`, `col_maxsize`, `col_null`, `is_required`, `col_key`, `col_default`, `col_auto_increment`, `col_unsigned`, `col_zerofill_bwz`, `col_precision`, `col_scale`, `col_minvalue`, `col_maxvalue`, `user_minvalue`, `user_maxvalue`, `noedit_nodisplay`, `nosearch`, `noaudit`, `upper_lowercase`, `is_password`, `auto_insert`, `auto_update`, `infinityisnull`, `subtype`, `image_width`, `image_height`, `is_boolean`, `boolean_true`, `boolean_false`, `control`, `optionlist`, `task_id`, `foreign_field`, `align_hv`, `multi_cols`, `multi_rows`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'x_tree_level', 'tree_type_id', '1', 'tree_type_id', NULL, 'varchar', NULL, '8', '8', 'N', 'Y', 'PRI', NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'UPPER', 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', '2005-10-30 12:40:34', 'AJM'),
 ('xample', 'x_tree_level', 'tree_level_id', '2', 'tree_level_id', NULL, 'tinyint', NULL, '3', '3', 'N', 'Y', 'PRI', '0', 'N', 'Y', NULL, NULL, NULL, '0', '255', '0', '255', NULL, NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', NULL, NULL),
-('xample', 'x_tree_level', 'tree_level_seq', '3', 'tree_level_seq', NULL, 'tinyint', NULL, '3', '3', 'N', 'Y', NULL, '0', 'N', 'Y', NULL, NULL, NULL, '0', '255', '0', '255', NULL, NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', NULL, NULL),
+('xample', 'x_tree_level', 'tree_level_seq', '3', 'tree_level_seq', NULL, 'tinyint', NULL, '3', '3', 'N', 'Y', NULL, '0', 'N', 'Y', NULL, NULL, NULL, '0', '255', '0', '255', 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', '2006-01-15 14:46:54', 'AJM'),
 ('xample', 'x_tree_level', 'tree_level_desc', '4', 'tree_level_desc', NULL, 'varchar', NULL, '40', '40', 'N', 'Y', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', NULL, NULL),
 ('xample', 'x_tree_level', 'created_date', '5', 'created_date', NULL, 'datetime', NULL, '20', '20', 'N', 'Y', NULL, '2000-01-01 00:00:00', 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'Y', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', '2005-10-30 12:41:07', 'AJM'),
 ('xample', 'x_tree_level', 'created_user', '6', 'created_user', NULL, 'varchar', NULL, '16', '16', 'N', 'Y', NULL, 'UKNOWN', 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'Y', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:22', 'AJM', '2005-10-30 12:41:18', 'AJM'),
@@ -154,7 +154,7 @@ REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`
 ('xample', 'x_tree_level', 'revised_user', '8', 'revised_user', NULL, 'varchar', NULL, '16', '16', 'Y', 'N', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'Y', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-10-01 18:01:23', 'AJM', '2005-10-30 12:41:44', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('xample', 'x_tree_level', 'xample', 'x_tree_node', '0', NULL, NULL, NULL, NULL, 'RES', NULL, 'tree_level_desc', NULL, '2005-10-29 20:06:29', 'AJM', NULL, NULL);
+('xample', 'x_tree_level', 'xample', 'x_tree_node', '0', NULL, NULL, NULL, NULL, 'RES', NULL, '#calc#', 'tree_level_seq, tree_level_desc', '2005-10-29 20:06:29', 'AJM', '2006-01-15 11:33:49', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'x_tree_level', 'tree_level_id', 'xample', 'x_tree_node', '0', 'tree_level_id', '2', '2005-10-29 20:06:29', 'AJM', '2005-12-14 17:55:02', 'AJM'),
@@ -188,7 +188,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('xample', 'x_tree_node', 'node_id', 'xample', 'x_person', '0', 'node_id', '2', '2005-10-29 20:04:34', 'AJM', '2005-12-14 17:55:02', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('xample', 'x_tree_node', 'xample', 'x_tree_node', '0', NULL, NULL, NULL, NULL, 'RES', NULL, '#calc#', 'node_desc as node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2005-10-30 18:55:16', 'AJM');
+('xample', 'x_tree_node', 'xample', 'x_tree_node', '0', 'x_tree_node_snr', 'x_tree_node_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'x_tree_node_snr.node_desc AS node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2006-01-18 20:11:14', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'x_tree_node', 'node_id', 'xample', 'x_tree_node', '0', 'node_id_snr', '2', '2005-10-29 20:08:38', 'AJM', '2005-12-14 17:55:03', 'AJM');

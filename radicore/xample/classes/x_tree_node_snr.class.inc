@@ -16,14 +16,6 @@ class x_tree_node_snr extends x_tree_node
         // convert selection from 'node_id_snr=x' to 'node_id=x'
         $where = str_replace('node_id_snr=', 'node_id=', $where);
 
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'x_tree_node.*, x_tree_type.tree_type_desc, x_tree_level.tree_level_desc, x_tree_level.tree_level_seq';
-            $this->sql_from   = 'x_tree_node '
-                               .'LEFT JOIN x_tree_type ON (x_tree_type.tree_type_id = x_tree_node.tree_type_id) '
-                               .'LEFT JOIN x_tree_level ON (x_tree_level.tree_level_id = x_tree_node.tree_level_id AND x_tree_level.tree_type_id = x_tree_node.tree_type_id)';
-        } // if
-
         return $where;
 
     } // _cm_pre_getData

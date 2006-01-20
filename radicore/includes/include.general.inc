@@ -419,7 +419,7 @@ function extractValue (&$where)
 // extract value from a WHERE string where the value is delimited by either
 // single or double quotes.
 // WARNING: any ending delimiter which is escaped must be ignored.
-// NOTE: $where is passed by reference sp that it can be modified
+// NOTE: $where is passed by reference so that it can be modified
 {
     // the first character is the delimiter (single or double quote)
     $delimiter = substr($where, 0, 1);
@@ -1022,6 +1022,37 @@ function is_True ($value)
 } // is_True
 
 // ****************************************************************************
+function logSqlQuery ($dbname, $tablename, $query, $result=null)
+// write last SQL query out to a log file as a debugging aid
+{
+    if ($dbname == 'audit') {
+        // are we running one of the AUDIT enquiry screens?
+        $dir = ltrim(dirname(getSelf()), '\\/');
+        if (strtolower($dir) == 'audit') {
+            if ($tablename == 'php_session') {
+        	   return;
+            } // if
+        	// continue
+        } else {
+    	    return;
+        } // if
+    } // if
+
+    if (isset($GLOBALS['log_sql_query']) and is_true($GLOBALS['log_sql_query'])) {
+        if (is_null($result)) {
+        	$string = $query;
+        } else {
+            $string = $query .'=>Count=' .$result;
+        } // if
+        $fn = './sql/' . basename($_SERVER['PHP_SELF']) . '.sql';
+    	error_log("$string\r\n", 3, $fn);
+    } // if
+
+    return;
+
+} // logSqlQuery
+
+// ****************************************************************************
 function mergeSettings ($string1, $string2)
 // take 2 $settings strings and merge them into 1.
 {
@@ -1157,6 +1188,26 @@ function qualifyOrderby ($input, $tablename, $fieldspec)
     return $input;
 
 } // qualifyOrderby
+
+// ****************************************************************************
+function qualifySelect ($input, $tablename, $fieldspec)
+// add table names to field names in input string, but only for those fields
+// which exist in $fieldspec.
+{
+    foreach ($fieldspec as $fieldname => $spec) {
+        // check if this fieldname exists in the string
+        if (substr_count($input, "$fieldname") > 0) {
+            // check to see if it is already qualified with the table name
+            if (substr_count($input, ".$fieldname") == 0) {
+                // no, so add tablename as a prefix
+                $input = str_replace("$fieldname", "$tablename.$fieldname", $input);
+            } // if
+        } // if
+    } // foreach
+
+    return $input;
+
+} // qualifySelect
 
 // ****************************************************************************
 function qualifyWhere (&$where, $tablename, $fieldspec=null)
@@ -1396,7 +1447,6 @@ function stripOperators ($fieldarray)
 {
     if (is_array($fieldarray)) {
         foreach ($fieldarray as $fieldname => $fieldvalue) {
-            //if (preg_match('/^(=|LIKE |IS )/i', ltrim($fieldvalue), $operator)) {
             if (preg_match('/^(=|LIKE )/i', ltrim($fieldvalue), $operator)) {
                 $fieldvalue = ltrim($fieldvalue, $operator[0]);
                 $fieldvalue = trim($fieldvalue);

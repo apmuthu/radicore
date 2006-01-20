@@ -163,6 +163,7 @@ class dict_table_s02 extends dict_table
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('child' => '{$rowdata['table_id_jnr']}',";
                 if ($rowdata['database_id_snr'] != $rowdata['database_id_jnr']) {
+                    $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_jnr']}',";
                     $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
                 } // if
                 if (strlen($rowdata['table_alias_jnr']) > 0) {
@@ -180,7 +181,7 @@ class dict_table_s02 extends dict_table
                 $db_id_jnr  = $rowdata['database_id_jnr'];
                 $tbl_id_jnr = $rowdata['table_id_jnr'];
                 $seq_no     = $rowdata['seq_no'];
-                $colobj->sql_orderby = 'key_seq';
+                $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
 
                 foreach ($data as $row => $coldata) {
@@ -387,6 +388,7 @@ class dict_table_s02 extends dict_table
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('parent' => '{$rowdata['table_id_snr']}',";
                 if ($rowdata['database_id_snr'] != $rowdata['database_id_jnr']) {
+                    $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_snr']}',";
                     $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
                 } // if
                 if (strlen($rowdata['table_alias_snr']) > 0) {

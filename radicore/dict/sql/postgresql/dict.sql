@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
--- Started on 2005-12-26 17:16:28 GMT Standard Time
+-- Started on 2006-01-15 18:05:20 GMT Standard Time
 
-SET client_encoding = 'UTF8';
+SET client_encoding = 'utf-8';
 SET check_function_bodies = false;
 SET client_min_messages = warning;
 
@@ -25,8 +25,8 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 1325 (class 1259 OID 16926)
--- Dependencies: 1700 1701 1702 1703 1704 1705 1706 1707 1708 1709 1710 1711 1712 1713 1714 1715 1716 1717 9
+-- TOC entry 1326 (class 1259 OID 16926)
+-- Dependencies: 1706 1707 1708 1709 1710 1711 1712 1713 1714 1715 1716 1717 1718 1719 1720 1721 1722 1723 9
 -- Name: dict_column; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -85,8 +85,8 @@ CREATE TABLE dict_column (
 ALTER TABLE dict.dict_column OWNER TO postgres;
 
 --
--- TOC entry 1326 (class 1259 OID 16949)
--- Dependencies: 1718 1719 1720 1721 9
+-- TOC entry 1327 (class 1259 OID 16949)
+-- Dependencies: 1724 1725 1726 1727 9
 -- Name: dict_database; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -105,8 +105,8 @@ CREATE TABLE dict_database (
 ALTER TABLE dict.dict_database OWNER TO postgres;
 
 --
--- TOC entry 1327 (class 1259 OID 16958)
--- Dependencies: 1722 1723 1724 1725 1726 1727 1728 1729 9
+-- TOC entry 1328 (class 1259 OID 16958)
+-- Dependencies: 1728 1729 1730 1731 1732 1733 1734 1735 9
 -- Name: dict_related_column; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -129,8 +129,8 @@ CREATE TABLE dict_related_column (
 ALTER TABLE dict.dict_related_column OWNER TO postgres;
 
 --
--- TOC entry 1328 (class 1259 OID 16968)
--- Dependencies: 1730 1731 1732 1733 1734 1735 1736 9
+-- TOC entry 1329 (class 1259 OID 16968)
+-- Dependencies: 1736 1737 1738 1739 1740 1741 1742 9
 -- Name: dict_relationship; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -158,8 +158,8 @@ CREATE TABLE dict_relationship (
 ALTER TABLE dict.dict_relationship OWNER TO postgres;
 
 --
--- TOC entry 1329 (class 1259 OID 16980)
--- Dependencies: 1737 1738 1739 1740 1741 9
+-- TOC entry 1330 (class 1259 OID 16980)
+-- Dependencies: 1743 1744 1745 1746 1747 9
 -- Name: dict_table; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -180,8 +180,8 @@ CREATE TABLE dict_table (
 ALTER TABLE dict.dict_table OWNER TO postgres;
 
 --
--- TOC entry 1330 (class 1259 OID 16990)
--- Dependencies: 1742 1743 1744 1745 1746 1747 1748 9
+-- TOC entry 1331 (class 1259 OID 16990)
+-- Dependencies: 1748 1749 1750 1751 1752 1753 1754 9
 -- Name: dict_table_key; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -203,8 +203,8 @@ CREATE TABLE dict_table_key (
 ALTER TABLE dict.dict_table_key OWNER TO postgres;
 
 --
--- TOC entry 1761 (class 0 OID 16926)
--- Dependencies: 1325
+-- TOC entry 1767 (class 0 OID 16926)
+-- Dependencies: 1326
 -- Data for Name: dict_column; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -970,8 +970,8 @@ INSERT INTO dict_column (database_id, table_id, column_id, column_seq, column_de
 
 
 --
--- TOC entry 1762 (class 0 OID 16949)
--- Dependencies: 1326
+-- TOC entry 1768 (class 0 OID 16949)
+-- Dependencies: 1327
 -- Data for Name: dict_database; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -987,8 +987,8 @@ INSERT INTO dict_database (database_id, database_desc, "comment", subsys_id, cre
 
 
 --
--- TOC entry 1763 (class 0 OID 16958)
--- Dependencies: 1327
+-- TOC entry 1769 (class 0 OID 16958)
+-- Dependencies: 1328
 -- Data for Name: dict_related_column; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -1150,8 +1150,8 @@ INSERT INTO dict_related_column (database_id_snr, table_id_snr, column_id_snr, d
 
 
 --
--- TOC entry 1764 (class 0 OID 16968)
--- Dependencies: 1328
+-- TOC entry 1770 (class 0 OID 16968)
+-- Dependencies: 1329
 -- Data for Name: dict_relationship; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -1174,7 +1174,6 @@ INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, t
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_relationship', 'dict', 'dict_related_column', 0, NULL, NULL, NULL, NULL, 'DEL', NULL, NULL, NULL, '2005-04-10 17:49:05', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_table', 'dict', 'dict_column', 0, NULL, NULL, NULL, NULL, 'DEL', NULL, 'table_desc', NULL, '2005-04-07 17:10:47', 'AJM', '2005-04-10 23:20:04', 'AJM');
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_table', 'dict', 'dict_table_key', 0, NULL, NULL, NULL, NULL, 'DEL', NULL, 'table_desc', NULL, '2005-06-25 17:01:22', 'AJM', '2005-06-26 14:44:41', 'AJM');
-INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_table', 'dict', 'dict_relationship', 0, NULL, NULL, NULL, NULL, 'DEL', NULL, '#calc#', 'table_desc as table_desc_snr', '2005-04-07 17:11:48', 'AJM', '2005-04-12 07:05:55', 'AJM');
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_table', 'dict', 'dict_relationship', 1, NULL, NULL, NULL, NULL, 'DEL', NULL, '#calc#', 'table_desc as table_desc_jnr', '2005-04-07 17:12:12', 'AJM', '2005-04-12 07:06:06', 'AJM');
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_dialog_type', 'menu', 'mnu_task', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'dialog_type_desc', NULL, '2005-04-07 11:45:12', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_task', 'menu', 'mnu_menu', 0, 'mnu_task_snr', NULL, NULL, NULL, 'RES', NULL, '#calc#', 'task_desc AS task_desc_snr', '2005-04-07 12:12:45', 'AJM', '2005-06-16 17:24:25', 'AJM');
@@ -1247,7 +1246,6 @@ INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, t
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('xample', 'x_tree_type', 'xample', 'x_tree_level', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'tree_type_desc', NULL, '2005-10-29 20:05:21', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('xample', 'x_tree_type', 'xample', 'x_tree_node', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'tree_type_desc', NULL, '2005-10-29 20:05:57', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('xample', 'x_tree_level', 'xample', 'x_tree_node', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'tree_level_desc', NULL, '2005-10-29 20:06:29', 'AJM', NULL, NULL);
-INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('xample', 'x_tree_node', 'xample', 'x_tree_node', 0, NULL, NULL, NULL, NULL, 'RES', NULL, '#calc#', 'node_desc as node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2005-10-30 18:55:16', 'AJM');
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_task', 'workflow', 'wf_workflow', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'task_desc', NULL, '2005-04-22 19:54:19', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_task', 'workflow', 'wf_workitem', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'task_desc', NULL, '2005-04-22 19:54:48', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_task', 'workflow', 'wf_transition', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'task_desc', NULL, '2005-04-22 19:55:13', 'AJM', NULL, NULL);
@@ -1271,15 +1269,17 @@ INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, t
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('survey', 'survey_hdr', 'survey', 'survey_answer_dtl', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'survey_name', NULL, '2005-04-24 19:21:17', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('survey', 'survey_section', 'survey', 'survey_answer_dtl', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'section_name', NULL, '2005-04-24 19:23:30', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('survey', 'survey_hdr', 'survey', 'survey_question', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'survey_name', NULL, '2005-04-24 19:28:09', 'AJM', NULL, NULL);
-INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_column', 'dict', 'dict_related_column', 0, 'dict_column_snr', 'dict_related_column_snr', NULL, NULL, 'RES', NULL, '#calc#', 'column_desc AS column_desc_snr', '2005-05-30 11:43:08', 'AJM', '2005-05-30 11:49:58', 'AJM');
-INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_column', 'dict', 'dict_related_column', 1, 'dict_column_jnr', 'dict_related_column_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'column_desc AS column_desc_jnr', '2005-05-30 11:44:15', 'AJM', '2005-05-30 11:50:11', 'AJM');
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('classroom', 'crs_subject', 'classroom', 'crs_lesson', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'subject_name', NULL, '2005-07-28 14:09:00', 'AJM', NULL, NULL);
 INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('menu', 'mnu_user', 'menu', 'mnu_todo', 0, NULL, NULL, NULL, NULL, 'RES', NULL, 'user_name', NULL, '2005-07-30 15:24:56', 'AJM', NULL, NULL);
+INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('xample', 'x_tree_node', 'xample', 'x_tree_node', 0, 'x_tree_node_snr', 'x_tree_node_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'x_tree_node_snr.node_desc as node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2006-01-15 17:49:35', 'AJM');
+INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_column', 'dict', 'dict_related_column', 0, 'dict_column_snr', 'dict_related_column_snr', NULL, NULL, 'RES', NULL, '#calc#', 'dict_column_snr.column_desc AS column_desc_snr', '2005-05-30 11:43:08', 'AJM', '2006-01-15 17:55:18', 'AJM');
+INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_column', 'dict', 'dict_related_column', 1, 'dict_column_jnr', 'dict_related_column_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'dict_column_jnr.column_desc AS column_desc_jnr', '2005-05-30 11:44:15', 'AJM', '2006-01-15 17:55:56', 'AJM');
+INSERT INTO dict_relationship (database_id_snr, table_id_snr, database_id_jnr, table_id_jnr, seq_no, table_alias_snr, table_alias_jnr, relation_desc, "comment", rel_type, orderby, parent_field, calc_field, created_date, created_user, revised_date, revised_user) VALUES ('dict', 'dict_table', 'dict', 'dict_relationship', 0, 'dict_table_snr', 'dict_relationship_snr', NULL, NULL, 'DEL', NULL, '#calc#', 'dict_table_snr.table_desc as table_desc_snr', '2005-04-07 17:11:48', 'AJM', '2006-01-15 17:59:26', 'AJM');
 
 
 --
--- TOC entry 1765 (class 0 OID 16980)
--- Dependencies: 1329
+-- TOC entry 1771 (class 0 OID 16980)
+-- Dependencies: 1330
 -- Data for Name: dict_table; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -1366,8 +1366,8 @@ INSERT INTO dict_table (database_id, table_id, table_desc, "comment", audit_logg
 
 
 --
--- TOC entry 1766 (class 0 OID 16990)
--- Dependencies: 1330
+-- TOC entry 1772 (class 0 OID 16990)
+-- Dependencies: 1331
 -- Data for Name: dict_table_key; Type: TABLE DATA; Schema: dict; Owner: postgres
 --
 
@@ -1545,8 +1545,8 @@ INSERT INTO dict_table_key (database_id, table_id, key_name, column_id, seq_in_i
 
 
 --
--- TOC entry 1750 (class 2606 OID 17000)
--- Dependencies: 1325 1325 1325 1325
+-- TOC entry 1756 (class 2606 OID 17000)
+-- Dependencies: 1326 1326 1326 1326
 -- Name: dict_column_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1555,8 +1555,8 @@ ALTER TABLE ONLY dict_column
 
 
 --
--- TOC entry 1752 (class 2606 OID 17002)
--- Dependencies: 1326 1326
+-- TOC entry 1758 (class 2606 OID 17002)
+-- Dependencies: 1327 1327
 -- Name: dict_database_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1565,8 +1565,8 @@ ALTER TABLE ONLY dict_database
 
 
 --
--- TOC entry 1754 (class 2606 OID 17004)
--- Dependencies: 1327 1327 1327 1327 1327 1327 1327
+-- TOC entry 1760 (class 2606 OID 17004)
+-- Dependencies: 1328 1328 1328 1328 1328 1328 1328
 -- Name: dict_related_column_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1575,8 +1575,8 @@ ALTER TABLE ONLY dict_related_column
 
 
 --
--- TOC entry 1756 (class 2606 OID 17006)
--- Dependencies: 1328 1328 1328 1328 1328 1328
+-- TOC entry 1762 (class 2606 OID 17006)
+-- Dependencies: 1329 1329 1329 1329 1329 1329
 -- Name: dict_relationship_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1585,8 +1585,8 @@ ALTER TABLE ONLY dict_relationship
 
 
 --
--- TOC entry 1760 (class 2606 OID 17008)
--- Dependencies: 1330 1330 1330 1330 1330
+-- TOC entry 1766 (class 2606 OID 17008)
+-- Dependencies: 1331 1331 1331 1331 1331
 -- Name: dict_table_key_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1595,8 +1595,8 @@ ALTER TABLE ONLY dict_table_key
 
 
 --
--- TOC entry 1758 (class 2606 OID 17010)
--- Dependencies: 1329 1329 1329
+-- TOC entry 1764 (class 2606 OID 17010)
+-- Dependencies: 1330 1330 1330
 -- Name: dict_table_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -1604,7 +1604,7 @@ ALTER TABLE ONLY dict_table
     ADD CONSTRAINT dict_table_pkey PRIMARY KEY (database_id, table_id);
 
 
--- Completed on 2005-12-26 17:16:29 GMT Standard Time
+-- Completed on 2006-01-15 18:05:24 GMT Standard Time
 
 --
 -- PostgreSQL database dump complete

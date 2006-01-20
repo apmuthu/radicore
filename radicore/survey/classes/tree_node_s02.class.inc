@@ -26,7 +26,7 @@ class tree_node_s02 extends tree_node
             // get details of parent node
             $node_id_snr = $fieldarray['node_id'];
             $this->sql_select = 'node_type, node_depth, node_desc';
-            $parent_data = $this->getData_unformatted("node_id='$node_id_snr'");
+            $parent_data = $this->getData_raw("node_id='$node_id_snr'");
 
             // check that parent is valid
             if ($parent_data[0]['node_type'] == 'A') {

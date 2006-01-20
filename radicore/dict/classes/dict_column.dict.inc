@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -317,6 +317,7 @@
                                                                       'table_id' => 'table_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'task_desc',
                                                     'fields' => array('task_id' => 'task_id'));

@@ -1,5 +1,5 @@
 <?php
-    // file created on October 30, 2005, 12:25 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table workflow.wf_arc
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -98,8 +98,8 @@
     
     $this->parent_relations[]               = array('parent' => 'wf_transition',
                                                     'parent_field' => 'transition_name',
-                                                    'fields' => array('workflow_id' => 'workflow_id',
-                                                                      'transition_id' => 'transition_id'));
+                                                    'fields' => array('transition_id' => 'transition_id',
+                                                                      'workflow_id' => 'workflow_id'));
     
     $this->parent_relations[]               = array('parent' => 'wf_workflow',
                                                     'parent_field' => 'workflow_name',

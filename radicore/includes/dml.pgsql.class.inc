@@ -14,7 +14,7 @@ class pgsql
     var $server_version;        // version number for server
 
     var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
+    var $schema;                // database name
     var $errors;                // array of errors
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
@@ -67,8 +67,11 @@ class pgsql
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        $this->query = 'commit';
+        $this->query = 'COMMIT';
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, null, 'COMMIT');
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -101,11 +104,12 @@ class pgsql
 
                 // use UTF8 for this connection
                 if (function_exists('pg_set_client_encoding')) {
-                	// set error reporting to verbose
-                    $result = pg_set_client_encoding($dbconn, 'UNICODE');
+                	$result = pg_set_client_encoding($dbconn, 'UNICODE');
                 } else {
                     $this->query = "SET client_encoding TO 'UNICODE'";
                     $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                    // write query to log file, if option is turned on
+                    logSqlQuery ($schema, null, $this->query);
                 } // if
 
                 // retrieve current server settings
@@ -131,6 +135,8 @@ class pgsql
             } // if
             $this->query = "SET search_path TO $schema";
             $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+            // write query to log file, if option is turned on
+            logSqlQuery ($schema, null, $this->query);
             return TRUE;
         } // if
 
@@ -159,6 +165,9 @@ class pgsql
         // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
             // add record details to audit database
@@ -183,6 +192,9 @@ class pgsql
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = pg_affected_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
@@ -232,10 +244,15 @@ class pgsql
 
         // if 'GROUP BY' was used then return the number of rows
         if (eregi("group by ", $this->query)) {
-            return pg_num_rows($result);
+            $count = pg_num_rows($result);
         } else {
-            return $query_data[0];
+            $count = $query_data[0];
         } // if
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $count);
+
+        return $count;
 
     } // getCount
 
@@ -369,6 +386,9 @@ class pgsql
             $this->numrows = pg_num_rows($result);
         } // if
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+
         pg_free_result($result);
 
         return $array;
@@ -436,6 +456,9 @@ class pgsql
         } // if
 
         $this->numrows = pg_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
         return $result;
 
@@ -627,12 +650,17 @@ class pgsql
 
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query);
+
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
 			$this->query = "SELECT currval('" .$tablename .'_' .$auto_increment .'_seq' ."')";
             $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $fieldarray[$auto_increment] = pg_fetch_result($result, 0, 0);
             $primary_key = $auto_increment .'=' .$fieldarray[$auto_increment];
+            // write query to log file, if option is turned on
+            logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
 		} // if
 
         if ($this->audit_logging) {
@@ -659,6 +687,9 @@ class pgsql
 
         $this->query = 'ROLLBACK';
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, null, 'ROLLBACK');
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -762,6 +793,9 @@ class pgsql
 
         $this->query = 'BEGIN TRANSACTION';
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, null, $this->query);
 
         if (!empty($this->table_locks)) {
         	$result = $this->_setDatabaseLock($this->table_locks);
@@ -885,6 +919,9 @@ class pgsql
         // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+
         if ($this->audit_logging) {
             $auditobj =& singleton::getInstance('audit_tbl');
             // add record details to audit database
@@ -909,6 +946,9 @@ class pgsql
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = pg_affected_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($count > 0) {
             if ($this->audit_logging) {
@@ -1046,6 +1086,11 @@ class pgsql
         // build the query string and run it
         $this->query = "SELECT * FROM information_schema.columns WHERE table_schema='$schema' AND table_name='$tablename' ORDER BY ordinal_position";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $count = pg_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $count);
 
         $colspecs = $this->ddl_getColumnSpecs();
 
@@ -1244,8 +1289,13 @@ class pgsql
         $array = array();
 
         // build the query string and run it
-        $this->query = "SELECT nspname from pg_namespace WHERE nspname NOT LIKE 'pg\_%' AND nspname != 'information_schema' ORDER BY nspname";
+        $this->query = "SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg\_%' AND nspname != 'information_schema' ORDER BY nspname";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $count = pg_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery (nul, null, $this->query, $count);
 
         // convert result set into a simple indexed array for each row
         while ($row = pg_fetch_assoc($result)) {
@@ -1271,6 +1321,11 @@ class pgsql
         // build the query string and run it
         $this->query = "SELECT tablename FROM pg_tables WHERE schemaname='$schema' ORDER BY tablename";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $count = pg_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, null, $this->query, $count);
 
         // convert result set into an associative array for each row
         while ($row = pg_fetch_assoc($result)) {
@@ -1300,6 +1355,11 @@ class pgsql
 			WHERE ns.nspname = '{$schema}' AND c.relname = '{$tablename}' AND ns.oid = c.relnamespace AND c.oid = i.indrelid AND i.indexrelid = c2.oid
 			ORDER BY i.indisprimary desc, i.indisunique desc, c2.relname";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $count = pg_num_rows($result);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $count);
 
         // convert result set into a simple indexed array for each row
         while ($row = pg_fetch_assoc($result)) {
@@ -1361,6 +1421,8 @@ class pgsql
         if (!empty($string)) {
             $this->query = "LOCK TABLE $string";
             $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            // write query to log file, if option is turned on
+            logSqlQuery (null, null, $this->query);
             return true;
         } // if
 
@@ -1377,7 +1439,7 @@ class pgsql
         $object_vars = get_object_vars($this);
 
         // remove unwanted variables
-        //unset($object_vars['data_unformatted']);
+        //unset($object_vars['data_raw']);
 
         // convert to indexed array
         $object_vars = array_keys($object_vars);

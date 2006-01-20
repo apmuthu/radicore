@@ -1,5 +1,5 @@
 <?php
-    // file created on October 30, 2005, 12:25 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table workflow.wf_workitem
     $fieldspec['case_id']                   = array('type' => 'integer',
@@ -103,16 +103,19 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_role',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'role_desc',
                                                     'fields' => array('role_id' => 'role_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'task_desc',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));

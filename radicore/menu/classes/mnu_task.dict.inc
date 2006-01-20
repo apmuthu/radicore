@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -66,7 +66,13 @@
     
     $fieldspec['keep_data']                 = array('type' => 'boolean',
                                                     'true' => 'Y',
-                                                    'false' => 'N');
+                                                    'false' => 'N',
+                                                    'control' => 'dropdown');
+    
+    $fieldspec['log_sql_query']             = array('type' => 'boolean',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'dropdown');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -100,6 +106,7 @@
     
     // child relationship details 
     $this->child_relations[]                = array('child' => 'dict_column',
+                                                    'dbname' => 'dict',
                                                     'subsys_dir' => 'dict',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
@@ -145,16 +152,19 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'wf_transition',
+                                                    'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workflow',
+                                                    'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'start_task_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',
+                                                    'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));

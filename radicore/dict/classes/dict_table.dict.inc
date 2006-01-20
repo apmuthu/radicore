@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table dict.dict_table
     $fieldspec['database_id']               = array('type' => 'string',
@@ -76,11 +76,13 @@
                                                                       'table_id' => 'table_id'));
     
     $this->child_relations[]                = array('child' => 'dict_relationship',
+                                                    'alias' => 'dict_relationship_snr',
                                                     'type' => 'DEL',
                                                     'fields' => array('database_id' => 'database_id_snr',
                                                                       'table_id' => 'table_id_snr'));
     
     $this->child_relations[]                = array('child' => 'dict_relationship',
+                                                    'alias' => 'dict_relationship_jnr',
                                                     'type' => 'DEL',
                                                     'fields' => array('database_id' => 'database_id_jnr',
                                                                       'table_id' => 'table_id_jnr'));

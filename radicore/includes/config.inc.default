@@ -39,4 +39,7 @@ or  $_SERVER['SERVER_NAME'] == 'laptop') {
 // in which case it will force all transformations to be done by the client
 //$XSLT_client_side = true;
 
+// set this to TRUE to write all sql queries to file 'sql/<script_id>.sql' (for debugging)
+$log_sql_query = false;
+
 ?>

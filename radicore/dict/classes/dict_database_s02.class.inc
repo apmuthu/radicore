@@ -34,7 +34,7 @@ class dict_dataBase_s02 extends dict_dataBase
         	$tableobj->sql_select = '*';
         	$tableobj->sql_from   = 'dict_table';
         	$tableobj->sql_orderby = 'table_id';
-            $table_data = $tableobj->getData_unformatted("database_id='$database_id'");
+            $table_data = $tableobj->getData_raw("database_id='$database_id'");
 
             // process each table one at a time
             foreach ($table_data as $row => $data) {
@@ -45,21 +45,21 @@ class dict_dataBase_s02 extends dict_dataBase
             	$tableobj->sql_select = '*';
             	$tableobj->sql_from   = 'dict_table_key';
             	$tableobj->sql_orderby = 'table_id,key_name,seq_in_index';
-                $data = $tableobj->getData_unformatted("database_id='$database_id' AND table_id='$table_id'");
+                $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
                 $output = $this->_exportSqlData('dict_table_key', $data, $output);
 
                 // export contents of DICT_COLUMN for this database
             	$tableobj->sql_select = '*';
             	$tableobj->sql_from   = 'dict_column';
             	$tableobj->sql_orderby = 'table_id,column_seq';
-                $data = $tableobj->getData_unformatted("database_id='$database_id' AND table_id='$table_id'");
+                $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
                 $output = $this->_exportSqlData('dict_column', $data, $output);
 
                 // export contents of DICT_RELATIONSHIP for this database
             	$tableobj->sql_select = '*';
             	$tableobj->sql_from   = 'dict_relationship';
             	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
-                $data = $tableobj->getData_unformatted("database_id_snr='$database_id' AND table_id_snr='$table_id'");
+                $data = $tableobj->getData_raw("database_id_snr='$database_id' AND table_id_snr='$table_id'");
                 foreach ($data as $reldata) {
                 	$output = $this->_exportSqlData('dict_relationship', $reldata, $output);
                 	// export contents of DICT_RELATED_COLUMN for this table
@@ -69,7 +69,7 @@ class dict_dataBase_s02 extends dict_dataBase
                     $tableobj->sql_select = '*';
                 	$tableobj->sql_from   = 'dict_related_column';
                 	$tableobj->sql_orderby = 'column_id_snr,database_id_jnr,table_id_jnr,seq_no';
-                    $data = $tableobj->getData_unformatted("database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
+                    $data = $tableobj->getData_raw("database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
                     $output = $this->_exportSqlData('dict_related_column', $data, $output);
                 } // foreach
             } // foreach

@@ -32,8 +32,8 @@ class x_tree_type extends Default_table
 
         if ($item == 'tree_type_id') {
             // get data from the database
-            $this->sql_select = 'tree_type_id, tree_type_desc';
-            $this->sql_orderby = 'tree_type_id';
+            $this->sql_select     = 'tree_type_id, tree_type_desc';
+            $this->sql_orderby    = 'tree_type_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 

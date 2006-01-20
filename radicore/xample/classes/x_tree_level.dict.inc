@@ -1,5 +1,5 @@
 <?php
-    // file created on January 6, 2006, 10:46 pm
+    // file created on January 15, 2006, 2:47 pm
     
     // field specifications for table xample.x_tree_level
     $fieldspec['tree_type_id']              = array('type' => 'string',
@@ -21,7 +21,8 @@
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'required' => 'y',
-                                                    'default' => '0');
+                                                    'default' => '0',
+                                                    'noedit' => 'y');
     
     $fieldspec['tree_level_desc']           = array('type' => 'string',
                                                     'size' => 40,

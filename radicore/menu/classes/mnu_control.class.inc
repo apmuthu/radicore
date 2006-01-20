@@ -36,7 +36,7 @@ class mnu_control extends Default_Table
         switch (strtoupper($field_id)) {
             case 'PSWD_ENCRYPT':
         	    $where = "record_id='SYSTEM' and field_id='PSWD_ENCRYPT'";
-                $data = $this->getData_unformatted($where);
+                $data = $this->getData_raw($where);
 
                 if (is_True($data[0]['field_value'])) {
                     return true;
@@ -47,7 +47,7 @@ class mnu_control extends Default_Table
 
         	case 'PSWD_FORMAT';
         	    $where = "record_id='SYSTEM' and field_id LIKE 'PSWD_FORMAT%'";
-                $rowdata = $this->getData_unformatted($where);
+                $rowdata = $this->getData_raw($where);
 
                 // turn multiple rows into a single associative array
                 $fieldarray = array();
@@ -60,14 +60,14 @@ class mnu_control extends Default_Table
 
         	case 'PSWD_RETRIES';
         	    $where = "record_id='SYSTEM' and field_id='PSWD_RETRIES'";
-                $data = $this->getData_unformatted($where);
+                $data = $this->getData_raw($where);
 
                 return $data[0]['field_value'];
         	    break;
 
         	case 'PSWD_CHANGE';
         	    $where = "record_id='SYSTEM' and field_id='PSWD_CHANGE'";
-                $data = $this->getData_unformatted($where);
+                $data = $this->getData_raw($where);
 
                 switch ($data[0]['field_value']) {
                     case 'AR':
@@ -77,7 +77,7 @@ class mnu_control extends Default_Table
                     case 'AD';
                         // check the number of days since password was last changed
                         $where = "record_id='SYSTEM' and field_id='PSWD_DAYS'";
-                        $data = $this->getData_unformatted($where);
+                        $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
                         if ($due_date < strtotime('now')) {
@@ -88,7 +88,7 @@ class mnu_control extends Default_Table
                     case 'AL':
                         // check the number of times this user has logged in
                         $where = "record_id='SYSTEM' and field_id='PSWD_COUNT'";
-                        $data = $this->getData_unformatted($where);
+                        $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         if ($user_data['pswd_count'] > $count) {
                             return true; // password must be changed
@@ -104,7 +104,7 @@ class mnu_control extends Default_Table
 
         	case 'DEFAULT_LANGUAGE':
                 $where = "record_id='SYSTEM' and field_id='DEFAULT_LANGUAGE'";
-                $data = $this->getData_unformatted($where);
+                $data = $this->getData_raw($where);
 
                 return $data[0]['field_value'];
                 break;

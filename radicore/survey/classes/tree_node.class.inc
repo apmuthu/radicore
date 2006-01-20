@@ -189,9 +189,9 @@ class tree_node extends Default_Table
             $where = "node_depth='1'";
         } // if
 
-        $data_unformatted = $this->getData($where);
+        $data_raw = $this->getData($where);
 
-        foreach ($data_unformatted as $row => $rowdata) {
+        foreach ($data_raw as $row => $rowdata) {
             // append data for current node to output array
             $fieldarray[] = $this->formatData($rowdata);
             $node_id = $rowdata['node_id'];
@@ -212,7 +212,7 @@ class tree_node extends Default_Table
             } // if
         } // foreach
 
-        unset($data_unformatted);
+        unset($data_raw);
 
         return $fieldarray;
 

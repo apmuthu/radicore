@@ -9,9 +9,9 @@ $table_id = "x_person_addr";				 	// table id
 $screen   = 'person_addr.detail.screen.inc';    // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$sql_select = '';
-$sql_from   = '';
-$sql_where  = '';
+$sql_select = NULL;
+$sql_from   = NULL;
+$sql_where  = NULL;
 
 require 'std.enquire1.inc';                     // activate page controller
 

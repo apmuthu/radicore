@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 7:29 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table survey.risk_status
     $fieldspec['risk_status_id']            = array('type' => 'integer',
@@ -23,6 +23,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y');
     

@@ -20,6 +20,7 @@ $structure['main']['fields'][] = array('settings' => 'Settings');
 $structure['main']['fields'][] = array('order_by' => 'Order By');
 $structure['main']['fields'][] = array('keep_data' => 'Keep Data on exit?');
 $structure['main']['fields'][] = array('is_disabled' => 'Task Disabled?');
+$structure['main']['fields'][] = array('log_sql_query' => 'Log SQL query?');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date');

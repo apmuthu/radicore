@@ -46,9 +46,9 @@ class x_tree_node_jnr extends x_tree_node
             $where = array2where($wherearray);
         } // if
 
-        $data_unformatted = $this->getData($where);
+        $data_raw = $this->getData($where);
 
-        foreach ($data_unformatted as $row => $rowdata) {
+        foreach ($data_raw as $row => $rowdata) {
             // append data for current node to output array
             $fieldarray[] = $this->formatData($rowdata);
             $node_id = $rowdata['node_id'];
@@ -69,7 +69,7 @@ class x_tree_node_jnr extends x_tree_node
             } // if
         } // foreach
 
-        unset($data_unformatted);
+        unset($data_raw);
 
         return $fieldarray;
 

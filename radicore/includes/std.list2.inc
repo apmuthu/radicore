@@ -55,6 +55,7 @@ if (isset($script_vars['dbouter'])) {
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } elseif (!empty($order_by)) {
+        $order_by = unqualifyOrderBy($order_by);
         $dbouter->setOrderby($order_by);
         if (!empty($order_by_seq)) {
             $dbouter->setOrderBySeq($order_by_seq);
@@ -219,7 +220,7 @@ if ($dbinner->getErrors()) {
 } // if
 if ($dbinner->getNumRows() == 0) {
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'no entries found on $inner_table'
-    if (strtolower($return_action) == 'ok') {
+    if (strtolower($return_action) == 'search') {
         if (isset($return_from)) {
             $messages = $errors;
             // go back to script which generated this profile
@@ -240,7 +241,7 @@ if (isset($_GET['action'])) {
 } // if
 
 // $where may have been changed in database object
-$where = $dbinner->getWhere();
+//$where = $dbinner->getWhere();
 
 // check for only one row being found in POPUP mode
 if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {

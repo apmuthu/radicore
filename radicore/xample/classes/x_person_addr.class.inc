@@ -38,7 +38,7 @@ class x_person_addr extends Default_Table
         $dbobject =& singleton::getInstance('x_person_addr');
         $dbobject->sql_select = 'end_date';
         $dbobject->row_locks = 'SH'; // set row-level locks to shared
-        $next_addr_data = $dbobject->getData_unformatted($where);
+        $next_addr_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             // 'Could not locate next PERSON_ADDR record'
             $this->errors['end_date'] = getLanguageText('e0014');
@@ -75,7 +75,7 @@ class x_person_addr extends Default_Table
         $dbobject =& singleton::getInstance('x_person_addr');
         $dbobject->sql_select = 'start_date';
         $dbobject->row_locks = 'SH'; // set row-level locks to shared
-        $prev_addr_data = $dbobject->getData_unformatted($where);
+        $prev_addr_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
             // 'Could not locate previous PERSON_ADDR record'
             $this->errors['start_date'] = getLanguageText('e0016');
@@ -281,7 +281,7 @@ class x_person_addr extends Default_Table
                 $address_no = $address_no -1;
                 $where = "(person_id='{$person_data['person_id']}' AND address_no='$address_no')" ;
                 $this->sql_select = 'start_date,end_date';
-                $prev_addr_data = $this->getData_unformatted($where);
+                $prev_addr_data = $this->getData_raw($where);
                 if ($this->numrows <> 1) {
                     // 'Could not locate previous PERS_ADDR record'
                     $this->errors[] = getLanguageText('e0016');
@@ -310,7 +310,7 @@ class x_person_addr extends Default_Table
             require_once 'x_person.class.inc';
             $dbobject =& singleton::getInstance('x_person');
             $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
-            $person_data = $dbobject->getData_unformatted("person_id='{$fieldarray['person_id']}'");
+            $person_data = $dbobject->getData_raw("person_id='{$fieldarray['person_id']}'");
 
             $update_array['person_id']    = $fieldarray['person_id'];
             $update_array['last_addr_no'] = $fieldarray['address_no'] -1;
@@ -393,23 +393,6 @@ class x_person_addr extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        // custom code goes here
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'x_person_addr.*, x_person.first_name, x_person.last_name';
-            $this->sql_from   = 'x_person_addr '
-                               .'LEFT JOIN x_person ON (x_person.person_id=x_person_addr.person_id)';
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
-
-    // ****************************************************************************
     function _cm_validateDelete ($fieldarray)
     // verify that the selected record can be deleted.
     // (put any errors in $this->errors)
@@ -418,7 +401,7 @@ class x_person_addr extends Default_Table
         $dbobject =& singleton::getInstance('x_person');
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
-        $person_data = $dbobject->getData_unformatted("person_id='{$fieldarray['person_id']}'");
+        $person_data = $dbobject->getData_raw("person_id='{$fieldarray['person_id']}'");
         if ($dbobject->numrows <> 1) {
             // "Could not locate PERSON record"
             $this->errors[] = getLanguageText('e0023');
@@ -456,7 +439,7 @@ class x_person_addr extends Default_Table
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
         $dbobject->row_locks  = 'SH'; // set row-level locks to shared
-        $person_data = $dbobject->getData_unformatted("person_id='{$fieldarray['person_id']}'");
+        $person_data = $dbobject->getData_ra("person_id='{$fieldarray['person_id']}'");
         if ($dbobject->numrows <> 1) {
             // "Could not locate PERSON record"
             $this->errors[] = getLanguageText('e0023');
@@ -505,7 +488,7 @@ class x_person_addr extends Default_Table
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
         $dbobject->row_locks  = 'SH'; // set row-level locks to shared
-        $person_data = $dbobject->getData_unformatted("person_id='{$fieldarray['person_id']}'");
+        $person_data = $dbobject->getData_raw("person_id='{$fieldarray['person_id']}'");
         if ($dbobject->numrows <> 1) {
             // "Could not locate PERSON record"
             $this->errors[] = getLanguageText('e0023');

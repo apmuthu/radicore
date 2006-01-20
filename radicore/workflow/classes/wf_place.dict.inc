@@ -1,5 +1,5 @@
 <?php
-    // file created on October 30, 2005, 12:25 pm
+    // file created on January 18, 2006, 6:34 pm
     
     // field specifications for table workflow.wf_place
     $fieldspec['workflow_id']               = array('type' => 'integer',

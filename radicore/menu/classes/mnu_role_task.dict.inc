@@ -1,5 +1,5 @@
 <?php
-    // file created on December 26, 2005, 9:10 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table menu.mnu_role_task
     $fieldspec['role_id']                   = array('type' => 'string',

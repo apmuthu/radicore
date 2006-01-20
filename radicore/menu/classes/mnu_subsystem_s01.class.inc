@@ -202,21 +202,21 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_control';
         	$taskobj->sql_orderby = 'record_id, field_id';
-            $data = $taskobj->getData_unformatted(null);
+            $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_control', $data, $output);
 
             // export contents of MNU_DIALOG_TYPE
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_dialog_type';
         	$taskobj->sql_orderby = 'dialog_type_id';
-            $data = $taskobj->getData_unformatted(null);
+            $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_dialog_type', $data, $output);
 
             // export contents of MNU_ROLE
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_role';
         	$taskobj->sql_orderby = 'role_id';
-            $data = $taskobj->getData_unformatted(null);
+            $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_role', $data, $output);
 		} // if
 
@@ -224,14 +224,14 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	$taskobj->sql_select = '*';
     	$taskobj->sql_from   = 'mnu_subsystem';
     	$taskobj->sql_orderby = 'subsys_id';
-        $data = $taskobj->getData_unformatted("subsys_id='$subsys_id'");
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_subsystem', $data, $output);
 
         // export contents of MNU_TASK for this subsystem (where type = 'PROC')
     	$taskobj->sql_select = '*';
     	$taskobj->sql_from   = '';
     	$taskobj->sql_orderby = 'task_id';
-        $data = $taskobj->getData_unformatted("subsys_id='$subsys_id' AND task_type='PROC'");
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id' AND task_type='PROC'");
         foreach ($data as $task_data) {
         	$output = $this->_exportSqlData('mnu_task', $task_data, $output);
         	$task_id = $task_data['task_id'];
@@ -240,28 +240,28 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_select = 'mnu_nav_button.*';
         	$taskobj->sql_from   = 'mnu_nav_button';
         	$taskobj->sql_orderby = 'sort_seq';
-            $data2 = $taskobj->getData_unformatted("task_id_snr='$task_id'");
+            $data2 = $taskobj->getData_raw("task_id_snr='$task_id'");
             $output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
 
             // export the contents of MNU_TASK_FIELD for this task
         	$taskobj->sql_select = 'mnu_task_field.*';
         	$taskobj->sql_from   = 'mnu_task_field';
         	$taskobj->sql_orderby = 'field_id';
-            $data2 = $taskobj->getData_unformatted("task_id='$task_id'");
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_task_field', $data2, $output);
 
             // export the contents of MNU_ROLE_TASK for this task
         	$taskobj->sql_select = 'mnu_role_task.*';
         	$taskobj->sql_from   = 'mnu_role_task';
         	$taskobj->sql_orderby = 'role_id';
-            $data2 = $taskobj->getData_unformatted("task_id='$task_id'");
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_role_task', $data2, $output);
 
             // export the contents of MNU_ROLE_TASKFIELD for this task
         	$taskobj->sql_select = 'mnu_role_taskfield.*';
         	$taskobj->sql_from   = 'mnu_role_taskfield';
         	$taskobj->sql_orderby = 'field_id,role_id';
-            $data2 = $taskobj->getData_unformatted("task_id='$task_id'");
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_role_taskfield', $data2, $output);
 
         } // foreach
@@ -270,7 +270,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	$taskobj->sql_select = '*';
     	$taskobj->sql_from   = '';
     	$taskobj->sql_orderby = 'task_id';
-        $data = $taskobj->getData_unformatted("subsys_id='$subsys_id' AND task_type='MENU'");
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id' AND task_type='MENU'");
         $output = $this->_exportSqlData('mnu_task', $data, $output);
 
         // export the contents of MNU_MENU for this subsystem (1st pass)
@@ -280,7 +280,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	                      .'LEFT JOIN mnu_task AS SNR on (menu_id=SNR.task_id) '
     	                      .'LEFT JOIN mnu_task AS JNR on (task_id_jnr=JNR.task_id) ';
     	$taskobj->sql_orderby = 'menu_id, sort_seq';
-        $data = $taskobj->getData_unformatted("SNR.subsys_id='$subsys_id' AND JNR.subsys_id='$subsys_id'");
+        $data = $taskobj->getData_raw("SNR.subsys_id='$subsys_id' AND JNR.subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
 
         // export the contents of MNU_MENU for this subsystem (2nd pass)
@@ -290,14 +290,14 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	                      .'LEFT JOIN mnu_task AS SNR on (menu_id=SNR.task_id) '
     	                      .'LEFT JOIN mnu_task AS JNR on (task_id_jnr=JNR.task_id) ';
     	$taskobj->sql_orderby = 'menu_id, sort_seq';
-        $data = $taskobj->getData_unformatted("SNR.subsys_id != '$subsys_id' AND JNR.subsys_id='$subsys_id'");
+        $data = $taskobj->getData_raw("SNR.subsys_id != '$subsys_id' AND JNR.subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
 
         // export the contents of HELP_TEXT for this subsystem
     	$taskobj->sql_select = 'help_text.*';
     	$taskobj->sql_from   = 'help_text LEFT JOIN mnu_task using (task_id)';
     	$taskobj->sql_orderby = 'help_text.task_id';
-        $data = $taskobj->getData_unformatted("subsys_id='$subsys_id'");
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('help_text', $data, $output);
 
         $output .= "-- finished\r\n";

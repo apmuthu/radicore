@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 7:28 pm
+    // file created on January 18, 2006, 6:35 pm
     
     // field specifications for table survey.answer_option
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -27,7 +27,7 @@
                                                     'default' => '0');
     
     $fieldspec['answer_id']                 = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'size' => 2,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'pkey' => 'y',
@@ -36,7 +36,7 @@
                                                     'noedit' => 'y');
     
     $fieldspec['answer_seq']                = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'size' => 2,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
@@ -45,7 +45,8 @@
     
     $fieldspec['answer_text']               = array('type' => 'string',
                                                     'size' => 255,
-                                                    'required' => 'y');
+                                                    'required' => 'y',
+                                                    'default' => '0');
     
     $fieldspec['jumpto_section_seq']        = array('type' => 'integer',
                                                     'size' => 5,
@@ -61,6 +62,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y');
     

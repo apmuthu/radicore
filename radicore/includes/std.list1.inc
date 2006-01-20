@@ -122,7 +122,7 @@ $fieldarray = $dbobject->getData($where);
 
 if ($dbobject->getNumRows() == 0) {
     $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
-    if (strtolower($return_action) == 'ok') {
+    if (strtolower($return_action) == 'search') {
         if (isset($return_from)) {
             // go back to script which generated this profile
             scriptNext($return_from);
