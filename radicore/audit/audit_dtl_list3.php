@@ -3,7 +3,6 @@
 // This will allow occurrences of the AUDIT_DTL table to be displayed.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table  = 'audit_tbl_key';                // name of outer table
 $middle_table = 'audit_tbl_s01';                // name of inner table
 $inner_table  = 'audit_fld';                    // name of inner table
@@ -23,6 +22,6 @@ $inner_sql_where  = '';
 // set default sort sequence
 $middle_sql_orderby = 'date, time, tran_seq_no, table_seq_no';
 
-require 'std.list3.inc';    // activate page controller
+require 'std.list3.inc';                        // activate page controller
 
 ?>

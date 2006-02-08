@@ -4,11 +4,9 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'mnu_menu';       	// table name
 
-// activate page controller
-require 'std.delete2.inc';
+require 'std.delete2.inc';      // activate page controller
 
 ?>
 

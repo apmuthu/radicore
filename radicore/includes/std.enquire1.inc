@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -31,17 +31,35 @@ $act_buttons['quit'] = 'close';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
-$dbobject = new $table_id;
-
-$dbobject->sql_select  = &$sql_select;
-$dbobject->sql_from    = &$sql_from;
-$dbobject->sql_where   = &$sql_where;
-$dbobject->sql_groupby = &$sql_groupby;
-$dbobject->sql_having  = &$sql_having;
-// check that primary key is complete
-$dbobject->checkPrimaryKey = true;
-// scroll through one item at a time
-$dbobject->setRowsPerPage(1);
+if (isset($script_vars['dbobject'])) {
+    // use data from previous instance for this script
+    $dbobject = unserialize($script_vars['dbobject']);
+    // get previous data
+    $fieldarray = $dbobject->getFieldArray();
+    if (!is_string(key($fieldarray))) {
+        // indexed by row, so use first row only
+        $fieldarray = $fieldarray[key($fieldarray)];
+    } // if
+} else {
+    $dbobject = new $table_id;
+    $dbobject->sql_select  = &$sql_select;
+    $dbobject->sql_from    = &$sql_from;
+    $dbobject->sql_where   = &$sql_where;
+    $dbobject->sql_groupby = &$sql_groupby;
+    $dbobject->sql_having  = &$sql_having;
+    // scroll through one item at a time
+    $dbobject->setRowsPerPage(1);
+    // check that primary key is complete
+    $dbobject->checkPrimaryKey = true;
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+        $dbobject->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbobject->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
+} // if
 
 if (!empty($selection)) {
     // retrieve profile has been passed down from previous screen
@@ -62,14 +80,6 @@ if (empty($where)) {
 if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
     // set index number of item to be read from current $where list
     $dbobject->setPageNo($_GET['item']);
-} // if
-
-if (!empty($order_by)) {
-    // records need to be sorted
-    $dbobject->setOrderby($order_by);
-    if (!empty($order_by_seq)) {
-        $dbobject->setOrderBySeq($order_by_seq);
-    } // if
 } // if
 
 // get data from the database

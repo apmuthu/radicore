@@ -1,5 +1,5 @@
 <?php
-    // file created on January 18, 2006, 6:35 pm
+    // file created on February 3, 2006, 2:56 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -73,6 +73,11 @@
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown');
+    
+    $fieldspec['screen_refresh']            = array('type' => 'integer',
+                                                    'size' => 5,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 3600);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,

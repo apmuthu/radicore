@@ -1,6 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2004 by A J Marston <http://www.tonymarston.net>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // *****************************************************************************
@@ -101,8 +102,8 @@ if (!empty($_POST)) {
         // logon is OK - go to next screen
         $fieldarray = $dbobject->getFieldArray();
         $_SESSION['start_task_id'] = $fieldarray[0]['start_task_id'];
-        $query_string = "selection={$fieldarray[0]['start_task_id']}";
-        scriptNext('menu');
+        $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
+        scriptNext('menu', null, null, $task_array);
     } // if
 } else {
     // get initial data for a new record

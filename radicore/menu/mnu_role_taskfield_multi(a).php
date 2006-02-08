@@ -8,7 +8,6 @@
 // The INNER entity is identified using the id from the OUTER and MIDDLE entities.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table  = 'mnu_task';				            // name of outer table
 $middle_table = 'mnu_role_s01';                     // name of middle table
 $inner_table  = 'mnu_role_taskfield_s01';           // name of table to be amended
@@ -27,7 +26,6 @@ $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = '';
 
-// activate page controller
-require 'std.multi3.inc';
+require 'std.multi3.inc';                           // activate page controller
 
 ?>

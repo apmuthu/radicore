@@ -16,10 +16,10 @@ $outer_sql_select = '';
 $outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 
-$inner_sql_select = 'uom_conversion.*, uom_desc';
-$inner_sql_from   = 'uom_conversion '.
-                    'LEFT JOIN unit_of_measure '.
-                    'ON (unit_of_measure.uom_id=uom_conversion.uom_id_to)';
+//$inner_sql_select = 'uom_conversion.*, uom_desc';
+//$inner_sql_from   = 'uom_conversion '.
+//                    'LEFT JOIN unit_of_measure '.
+//                    'ON (unit_of_measure.uom_id=uom_conversion.uom_id_to)';
 $inner_sql_where  = '';
 
 // set default sort sequence

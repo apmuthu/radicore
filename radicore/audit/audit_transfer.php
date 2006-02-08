@@ -8,41 +8,10 @@ Extract details from 'audit_hdr' and 'audit_dtl' and transfer them to:
 - audit_fld (field data)
 */
 
-echo '<p>** started at ' .date('F j, Y, g:i a') .'</p>';
+ini_set('include_path', '.');
+require 'std.batch.inc';
 
-$curr_file = __FILE__;              // get fully-qualified name of current file
-$curr_file = str_replace("\\", "/", $curr_file);
-$curr_dir  = dirname($curr_file);   // extract directory
-chdir($curr_dir);                   // set current working directory to this
-
-$PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
-$_SERVER['PHP_SELF'] = $PHP_SELF;
-
-$ini_array = parse_ini_file('batch.ini');
-ini_set('include_path', $ini_array['include_path']);
-
-$_SERVER['SERVER_NAME'] = $ini_array['server_name'];
-
-require 'include.general.inc';
-
-// ****************************************************************************
-function check_errors ($object)
-// check object for errors
-{
-    $errors = $object->getErrors();
-
-	if ($errors) {
-	    foreach ($errors as $ix => $error) {
-	        if (is_string($ix)) {
-	        	$error = $ix .': ' .$error;
-	        } // if
-	    	trigger_error($error, E_USER_ERROR);
-	    } // foreach
-	} // if
-
-} // check_errors
-
-// ****************************************************************************
+batchInit(__FILE__);
 
 // create objects for each database table
 require 'classes/audit_hdr.class.inc';
@@ -106,6 +75,6 @@ while ($row = $audit_hdr->fetchRow($audit_hdr_result)) {
     } // while
 } // while
 
-echo '<p>** finished at ' .date('F j, Y, g:i a') .'</p>';
+batchEnd();
 
 ?>

@@ -6,8 +6,6 @@
 require_once 'std.table.class.inc';
 class mnu_nav_button extends Default_Table
 {
-    var $CLmnu_task;            // for mnu_task object
-    var $CLmnu_dialog_type;     // for mnu_dialog_type object
 
     // ****************************************************************************
     // class constructor
@@ -103,7 +101,7 @@ class mnu_nav_button extends Default_Table
     {
         if (!empty($fieldarray['task_id_snr'])) {
             // get next available value for SORT_SEQ
-            $query = "SELECT max(sort_seq) FROM $this->tablename " . "WHERE task_id_snr='{$fieldarray['task_id_snr']}'";
+            $query = "SELECT max(sort_seq) FROM $this->tablename WHERE task_id_snr='{$fieldarray['task_id_snr']}'";
             $count = $this->getCount($query);
             $fieldarray['sort_seq'] = $count + 1;
         } // if
@@ -136,15 +134,15 @@ class mnu_nav_button extends Default_Table
                 ;
         } // switch
 
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'mnu_nav_button.*, mnu_task_snr.task_desc AS task_desc_snr, mnu_task_jnr.task_desc AS task_desc_jnr';
-            $this->sql_from   = 'mnu_nav_button '
-                               .'LEFT JOIN mnu_task AS mnu_task_snr '
-                               .'ON (mnu_task_snr.task_id=mnu_nav_button.task_id_snr) '
-                               .'LEFT JOIN mnu_task AS mnu_task_jnr '
-                               .'ON (mnu_task_jnr.task_id=mnu_nav_button.task_id_jnr) ';
-        } // if
+//        if (empty($this->sql_select)) {
+//            // include columns from foreign table
+//            $this->sql_select = 'mnu_nav_button.*, mnu_task_snr.task_desc AS task_desc_snr, mnu_task_jnr.task_desc AS task_desc_jnr';
+//            $this->sql_from   = 'mnu_nav_button '
+//                               .'LEFT JOIN mnu_task AS mnu_task_snr '
+//                               .'ON (mnu_task_snr.task_id=mnu_nav_button.task_id_snr) '
+//                               .'LEFT JOIN mnu_task AS mnu_task_jnr '
+//                               .'ON (mnu_task_jnr.task_id=mnu_nav_button.task_id_jnr) ';
+//        } // if
 
         return $where;
 
@@ -166,7 +164,7 @@ class mnu_nav_button extends Default_Table
                     // get default button text from mnu_task table
                     require_once 'mnu_task.class.inc';
                     $dbobject =& singleton::getInstance('mnu_task');
-                    $dbobject->sql_select = 'button_text,task_type,dialog_type_id';
+                    $dbobject->setSqlSelect('button_text,task_type,dialog_type_id');
                     $data = $dbobject->getData("task_id='$task_id'");
                     $fieldarray = array_merge($fieldarray, $data[0]);
 
@@ -174,7 +172,7 @@ class mnu_nav_button extends Default_Table
                     $dialog_type_id = $fieldarray['dialog_type_id'];
                     require_once 'mnu_dialog_type.class.inc';
                     $dbobject =& singleton::getInstance('mnu_dialog_type');
-                    $dbobject->sql_select = 'context_preselect';
+                    $dbobject->setSqlSelect('context_preselect');
                     $data = $dbobject->getData("dialog_type_id='$dialog_type_id'");
                     $fieldarray = array_merge($fieldarray, $data[0]);
                 } // if

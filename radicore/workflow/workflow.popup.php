@@ -5,17 +5,8 @@
 // previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'wf_workflow';                  // table name
 $screen   = 'workflow.list.screen.inc';     // file identifying screen structure
-
-// identify extra parameters for a JOIN
-$sql_select = NULL;
-$sql_from   = NULL;
-$sql_where  = NULL;
-
-// set default sort sequence
-$sql_orderby = NULL;
 
 require 'std.list1.popup.inc';              // activate page controller
 

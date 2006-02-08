@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -260,9 +260,10 @@ class validation_class
         if (preg_match($pattern, $spec['type'], $match)) {
             // test that input contains a valid value for an integer field
             $number = (double)$value;
+            $number = floor($number); // remove any decimal places
             if ((string)$value <> (string)$number) {
-                // 'Value is not a number'
-                $this->errors[$field] = getLanguageText('sys0022');
+                // 'Value is not a whole number'
+                $this->errors[$field] = getLanguageText('sys0029');
                 return $value;
             } // if
 

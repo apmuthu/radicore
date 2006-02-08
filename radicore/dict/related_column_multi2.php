@@ -9,7 +9,6 @@
 // relevant buttons on the navigation bar.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'dict_relationship';				    // name of outer table
 $inner_table = 'dict_related_column_s01';           // name of inner table
 $screen = 'dict_related_column.multi.screen.inc';   // file identifying screen structure
@@ -18,6 +17,7 @@ $screen = 'dict_related_column.multi.screen.inc';   // file identifying screen s
 $outer_sql_select = '';
 $outer_sql_from   = '';
 $outer_sql_where  = '';
+$outer_sort_table= 'dict_table_snr';
 
 $inner_sql_select = '';
 $inner_sql_from   = '';
@@ -26,7 +26,6 @@ $inner_sql_where  = '';
 // set default sort sequence
 $inner_sql_orderby = '';
 
-// activate page controller
-require 'std.multi4.inc';
+require 'std.multi4.inc';                           // activate page controller
 
 ?>

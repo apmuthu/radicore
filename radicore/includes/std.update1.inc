@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update1.inc
@@ -51,8 +51,18 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_where   = &$sql_where;
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
+    // scroll through one item at a time
+    $dbobject->setRowsPerPage(1);
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+        $dbobject->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbobject->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
@@ -81,19 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
         } // if
 
-        $dbobject->setRowsPerPage(1); // scroll through one item at a time
-
         if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
             // set index number of item to be read from current $where list
             $dbobject->setPageNo($_GET['item']);
-        } // if
-
-        if (!empty($order_by)) {
-            // records need to be sorted
-            $dbobject->setOrderby($order_by);
-            if (!empty($order_by_seq)) {
-                $dbobject->setOrderBySeq($order_by_seq);
-            } // if
         } // if
 
         // get data from the database

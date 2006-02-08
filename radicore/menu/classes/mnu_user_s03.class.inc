@@ -83,6 +83,7 @@ class mnu_user_s03 extends mnu_user
 
         // redirect to the logon screen
         $location = 'http://' . $_SERVER['HTTP_HOST']
+                              . getParentDIR()
                               . '/menu/logon.php';
         header('Location: ' . $location);
         exit;

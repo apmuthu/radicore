@@ -36,7 +36,8 @@ class x_pers_opt_xref extends Default_Table
             $this->fieldspec['star_sign']   = array('type' => 'string',
                                                     'noedit' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'star_sign');
+                                                    'optionlist' => 'star_sign',
+                                                    'nondb' => 'y');
         } // if
 
         return $fieldarray;

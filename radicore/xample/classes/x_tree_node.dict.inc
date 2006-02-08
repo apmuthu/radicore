@@ -1,5 +1,5 @@
 <?php
-    // file created on January 15, 2006, 11:34 am
+    // file created on January 23, 2006, 6:27 pm
     
     // field specifications for table xample.x_tree_node
     $fieldspec['node_id']                   = array('type' => 'integer',
@@ -83,7 +83,7 @@
     
     $this->parent_relations[]               = array('parent' => 'x_tree_node',
                                                     'alias' => 'x_tree_node_snr',
-                                                    'parent_field' => 'x_tree_node_snr.node_desc as node_desc_snr',
+                                                    'parent_field' => 'node_desc AS node_desc_snr',
                                                     'fields' => array('node_id_snr' => 'node_id'));
     
     $this->parent_relations[]               = array('parent' => 'x_tree_type',

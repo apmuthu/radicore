@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions related to session management
@@ -25,7 +25,6 @@ session_set_save_handler(array(&$session_class, 'open'),
 function checkSelection ($task_id, $where=null)
 // a new selection has been made, so verify and process it.
 {
-    //DebugBreak();
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
     require_once 'classes/mnu_task.class.inc';
@@ -59,19 +58,18 @@ function checkSelection ($task_id, $where=null)
             $GLOBALS['script_vars']['current_menu'] = $task_id;
             $GLOBALS['script_vars']['page_stack']   = $page_stack;
             // switch task_id to the generic home page
-            $task_id = 'menu';
             $GLOBALS['task_id'] = 'menu';
             // ensure script variables are available throughout this session
-            $_SESSION[$PHP_SELF][$task_id] = $GLOBALS['script_vars'];
+            $_SESSION[$PHP_SELF]['menu'] = $GLOBALS['script_vars'];
         } else {
             // we are not in the menu page, so jump to it
-            $GLOBALS['query_string'] = "selection=$task_id";
-            scriptNext('menu');
+            $task_array['query_string'] = "selection=$task_id";
+            scriptNext('menu', null, null, $task_array);
         } // if
 
     } else {
         // not a menu, so process designated script instead
-        scriptNext($task_id, $where);
+        scriptNext($task_id, $where, null, $dbtask_data);
     } // if
 
     return $errors;
@@ -83,7 +81,6 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
 // look for an action which is another script.
 // (this may be from a navigation button or a popup button)
 {
-    //DebugBreak();
     if (isset($post['task#previous_search'])) {
         // use previous search criteria (from one of two tables)
         if (isset($_SESSION['search'][$dbobject->tablename])) {
@@ -112,40 +109,28 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
     } // foreach
 
     global $script_vars;
-    global $popup_where;
-	global $settings;
-    global $sql_orderby;
-    global $sql_orderby_seq;
 
     if (isset($next_task)) {
         // check to see if this selection is valid
         require_once 'classes/mnu_task.class.inc';
-        $mnu_task =& singleton::getInstance('mnu_task');
-        $mnu_task_array = $mnu_task->checkSelection($next_task);
-        $errors = $mnu_task->getErrors();
+        $taskobj =& singleton::getInstance('mnu_task');
+        $task_array = $taskobj->checkSelection($next_task);
+        $errors = $taskobj->getErrors();
         if ($errors) return($errors);
 
-        if (is_True($mnu_task_array['log_sql_query'])) {
-            $script_vars['log_sql_query'] = TRUE;
-        } else {
-            if (isset($script_vars['log_sql_query'])) {
-            	unset($script_vars['log_sql_query']);
-            } // if
-        } // if
-
         // check to see if a popup/filepicker form has been called
-        if (eregi('popup|filepicker', $mnu_task_array['dialog_type_id'], $regs)) {
+        if (eregi('popup|filepicker', $task_array['dialog_type_id'], $regs)) {
             if (is_object($dbobject)) {
                 // allow $where and $settings to be modified
             	$settings = '';
                 $where = $dbobject->popupcall($next_task, $where, $script_vars, $fieldarray, $settings);
-                $settings = mergeSettings($mnu_task_array['settings'], $settings);
+                $task_array['settings'] = mergeSettings($task_array['settings'], $settings);
                 // save current fieldarray inside database object
                 $dbobject->setFieldArray($fieldarray);
                 $script_vars[$objectname] = serialize($dbobject);
             } // if
             // call popup script
-            scriptNext($next_task, $where, null);
+            scriptNext($next_task, $where, null, $task_array);
         } // if
 
         // this must be from a navigation button
@@ -157,21 +142,14 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
         } else {
             $selection = null;
         } // if
-        if (isset($popup_where)) {
-            // include $popup_where for a subsequent popup form
-            if (!empty($where)) {
-                $where = mergeWhere($where, $popup_where);
-            } else {
-                $where = $popup_where;
-            } // if
-        } // if
 		if (is_object($dbobject)) {
         	// extract any sort parameters from the current object
-        	$sql_orderby     = $dbobject->getOrderBy();
-        	$sql_orderby_seq = $dbobject->getOrderBySeq();
+        	// so that they can be passed to the next task
+        	$task_array['sql_orderby']     = $dbobject->getOrderBy();
+        	$task_array['sql_orderby_seq'] = $dbobject->getOrderBySeq();
 		} // if
         // pass control to selected script
-        scriptNext($next_task, $where, $selection);
+        scriptNext($next_task, $where, $selection, $task_array);
     } // if
 
     // nothing found, so return to calling script
@@ -184,7 +162,6 @@ function chooseButton ($postarray, $dbobject)
 // 'choose' button has been pressed, so ...
 // look to see if there is a selection to send back to the previous screen.
 {
-    //DebugBreak();
     if (isset($postarray['select'])) {
         // convert selection into SQL where format
         $selection = selection2where($dbobject->getPkeyArray(), $postarray['select']);
@@ -204,7 +181,6 @@ function chooseButton ($postarray, $dbobject)
 function copyForm ($post, $dbobject, $fieldarray)
 // copy $_POST array into a memory area so that it can be used in a PASTE.
 {
-    //DebugBreak();
     if (!is_string(key($fieldarray))) {
         // index by row, so use row zero only
         $fieldarray = $fieldarray[0];
@@ -279,33 +255,39 @@ function initSession()
     global $menu_buttons;       // array of menu buttons
     global $messages;           // optional array of messages
     global $order_by;           // field names for ORDER BY clause of SELECT
-    global $order_by_body;      // ORDER BY for the CHILD in a PARENT-CHILD screen
     global $order_by_seq;       // sequence ('asc' or 'desc')
     global $page_stack;         // hierarchy of pages used in this session
     global $pagination;         // pagination values
-    global $popup_where;        // where clause for popup form
     global $protocol;           // HTTP or HTTPS
     global $remove_buttons;     // tasks to be removed from navigation bar
     global $return_action;      // set when returning to previous screen
     global $return_from;        // set when returning to previous screen
-    global $scrolling;          // scrolling values
-    global $search;             // extra selection criteria from search screen
-    global $selection;          // a selection of rows made in one screen that is passed back to another
-    global $settings;           // optional string of settings
+    global $screen;             // file containing screen structure
+    global $screen_structure;   // stucture of screen for XSL stylesheet
+    global $screen_refresh;     // force screen to refresh every 'n' seconds
     global $script_count;       // number of times this script has been called in this cycle
     global $script_start;       // start time
     global $script_vars;        // variables belonging to current script
+    global $scrolling;          // scrolling values
+    global $search;             // extra selection criteria from search screen
+    global $selection;          // a selection of rows made in one screen that is passed back to another
     global $session_name;       // session name, to allow multiple sessions from the same PC
+    global $settings;           // optional string of settings
     global $sql_orderby;        // used in ORDER BY in an sql SELECT statement
     global $sql_orderby_seq;    // sequence ('asc' or 'desc')
     global $subsys_dir;         // directory in which subsystem is located
     global $task_id;            // current task identity on menu database
+    global $task_order_by;      // ORDER BY defined in task parameters
     global $transaction_has_started;    // Yes/No switch
     global $title;              // script title
     global $where;              // selection criteria, used in SQL query
     global $XSLT_client_side;   // on/off switch for client-side XSL transformations
 
-    //DebugBreak();
+    if ($_SERVER['PHP_SELF'] != $_SERVER['SCRIPT_NAME']) {
+        // somebody has added '/something-else' to the URL, so remove it
+    	$_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
+    } // if
+
     // continue with existing session, or start a new one
     if (!isset($_SESSION)) {
         if (isset($session_name)) {
@@ -464,6 +446,8 @@ function initSession()
 
     if (isset($script_vars['log_sql_query'])) {
         $log_sql_query = $script_vars['log_sql_query'];
+    } else {
+        $log_sql_query = false;
     } // if
 
     // write start details to query log file, if option is turned on
@@ -563,8 +547,8 @@ function initSession()
             $order_by_seq = $script_vars['order_by_seq'];
         } // if
     } // if
-    if (isset($script_vars['order_by_body'])) {
-        $order_by_body = $script_vars['order_by_body'];
+    if (isset($script_vars['task_order_by'])) {
+        $task_order_by = $script_vars['task_order_by'];
     } // if
 
     if (isset($_GET['selection'])) {
@@ -638,12 +622,6 @@ function initSession()
         $where = $script_vars['where'];
     } // if
 
-    // check for SQL 'where' string to be passed down to a subsequent popup form
-    if (isset($script_vars['popup_where'])) {
-        $popup_where = $script_vars['popup_where'];
-        unset($script_vars['popup_where']);
-    } // if
-
     // check for string returned by SEARCH script
     if (isset($script_vars['search'])) {
         $search = $script_vars['search'];
@@ -702,6 +680,25 @@ function initSession()
         $_SESSION['rowsperpage'] = 10;
     } // if
 
+    // get current pagination information
+    if (isset($script_vars['screen_refresh'])) {
+        $screen_refresh = $script_vars['screen_refresh'];
+    } // if
+
+    if (isset($screen)) {
+    	// get subdirectory which matches user's language code
+        $subdir = getLanguageSubDir ('./screens');
+
+        $screen = "$subdir/$screen";  // look in subirectory for this screen name
+        if (!file_exists($screen)) {
+            // 'File $screen cannot be found'
+            trigger_error(getLanguageText('sys0056', $screen), E_USER_ERROR);
+        } // if
+
+        require $screen;                // import contents of disk file
+        $screen_structure = $structure; // move to global space
+    } // if
+
     return;
 
 } // initSession
@@ -711,7 +708,6 @@ function reducePageStack ($task_id)
 // remove this page (and any following pages) from the page stack.
 // (this causes page stack to contain only those pages which are current).
 {
-    //DebugBreak();
     if (isset($GLOBALS['page_stack'])) {
         // retrieve current page stack
         $page_stack = $GLOBALS['page_stack'];
@@ -723,15 +719,20 @@ function reducePageStack ($task_id)
     if (array_key_exists($task_id, $page_stack)) {
         // task is within current stack, so remove anything which follows
         $end = end($page_stack); // get the last value
-        while (key($page_stack) != $task_id) {
+        while (!empty($page_stack) AND key($page_stack) != $task_id) {
             $script_id = $end['script_id'];
             // remove this script's variables from session details if required
             if (isset($_SESSION[$script_id])) {
-                if (isset($_SESSION[$script_id]['keep_data'])) {
-                    if (is_True($_SESSION[$script_id]['keep_data'])) {
-                        // keep script data in memory
+                if (isset($_SESSION[$script_id]['task_id'])) {
+                    $task_id = $_SESSION[$script_id]['task_id'];
+                    if (isset($_SESSION[$script_id][$task_id]['keep_data'])) {
+                        if (is_True($_SESSION[$script_id][$task_id]['keep_data'])) {
+                            // keep script data in memory
+                        } else {
+                            unset($_SESSION[$script_id][$task_id]);
+                        } // if
                     } else {
-                        unset($_SESSION[$script_id]);
+                        unset($_SESSION[$script_id][$task_id]);
                     } // if
                 } else {
                     unset($_SESSION[$script_id]);
@@ -751,36 +752,21 @@ function reducePageStack ($task_id)
 } // reducePageStack
 
 // ****************************************************************************
-function scriptNext($task_id, $where=null, $selection=null)
+function scriptNext ($task_id, $where=null, $selection=null, $task_array=array())
 // proceed to a new script identified in $task_id.
 {
-    //DebugBreak();
     if (empty($task_id)) {
         trigger_error(getLanguageText('sys0052'), E_USER_ERROR); // 'task id is not defined'
     } // if
 
-    global $button_text;
     global $current_menu;
     global $current_task;
-    global $initial_passthru;
-    global $keep_data;
-    global $log_sql_query;
     global $menu_buttons;
     global $messages;
     global $order_by;
-    global $order_by_body;
     global $page_stack;
     global $protocol;       // HTTP or HTTPS
-    global $query_string;
-    global $script_id;
     global $script_vars;
-    global $selection_fixed;
-    global $selection_temp;
-    global $settings;
-    global $sql_orderby;
-    global $sql_orderby_seq;
-    global $subsys_dir;
-    global $title;
 
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
@@ -794,6 +780,12 @@ function scriptNext($task_id, $where=null, $selection=null)
     // ensure all keywords are in UPPER case
     $selection = eregi_replace("\) or \(", ") OR (", $selection);
     $where     = eregi_replace("\) or \(", ") OR (", $where);
+
+    if (isset($task_array['query_string'])) {
+    	$query_string = $task_array['query_string'];
+    } else {
+        $query_string = null;
+    } // if
 
     // 'script_sequence' identifies script(s) to be done before latest selection
     if (!empty($_SESSION['script_sequence'])) {
@@ -849,37 +841,36 @@ function scriptNext($task_id, $where=null, $selection=null)
         } // if
     } // if
 
-    if (empty($script_id)) {
-        $saved_settings = $settings;
-        $settings = '';
+    if (!isset($task_array['script_id'])) {
         // $script_id not supplied yet - so translate $task_id into $script_id
         require_once 'classes/mnu_task.class.inc';
-        $mnu_task =& singleton::getInstance('mnu_task');
-        $mnu_task_array = $mnu_task->checkSelection($task_id);
-        $errors = $mnu_task->getErrors();
+        $taskobj =& singleton::getInstance('mnu_task');
+        $task_array = $taskobj->checkSelection($task_id);
+        $errors = $taskobj->getErrors();
         if ($errors) {
             // cannot continue, so abort
             trigger_error("$task_id - $errors[0]", E_USER_ERROR);
         } // if
-        $script_id  = $mnu_task_array['script_id'];
-        $subsys_dir = $mnu_task_array['subsys_dir'];
-        $title      = $mnu_task_array['task_desc'];
-        $settings   = mergeSettings($settings, $saved_settings);
-        if ($mnu_task_array['task_type'] == 'MENU') {
-            $query_string = "selection={$mnu_task_array['task_id']}";
+        if ($task_array['task_type'] == 'MENU') {
+            $query_string = "selection={$task_array['task_id']}";
         } // if
         if (!empty($_SESSION['script_sequence'])) {
             $_SESSION['script_sequence'][0]['script_id'] = $script_id;
         } // if
-        if (is_true($mnu_task_array['log_sql_query'])) {
-         	$log_sql_query = TRUE;
-        } // if
+    } // if
+
+    $script_id = $task_array['script_id'];
+
+    if (isset($task_array['settings'])) {
+    	$settings = $task_array['settings'];
+    } else {
+        $settings = null;
     } // if
 
     if ($script_id == basename($script_id)) {
         // script name is not qualified, so insert directory name
-        if (!empty($subsys_dir)) {
-            $script_id = '/' .$subsys_dir .'/' .$script_id;
+        if (!empty($task_array['subsys_dir'])) {
+            $script_id = '/' .$task_array['subsys_dir'] .'/' .$script_id;
         } else {
             $script_id = dirname($PHP_SELF) .'/' .$script_id;
         } // if
@@ -905,19 +896,19 @@ function scriptNext($task_id, $where=null, $selection=null)
         if (isset($script_vars['script_count'])) {
             // script has already been executed, so do not load these variables
         } else {
-            if (!empty($initial_passthru)) {
-                $script_vars['initial_passthru'] = $initial_passthru;
+            if (!empty($task_array['initial_passthru'])) {
+                $script_vars['initial_passthru'] = $task_array['initial_passthru'];
             } // if
         } // if
 
-        if (!empty($title)) {
-            $script_vars['title'] = $title;
+        if (!empty($task_array['task_desc'])) {
+            $script_vars['title'] = $task_array['task_desc'];
         } // if
 
-        if (!empty($selection_fixed)) {
-            $script_vars['where'] = $selection_fixed;
+        if (!empty($task_array['selection_fixed'])) {
+            $script_vars['where'] = $task_array['selection_fixed'];
             // also append to $settings (after stripping any single quotes
-            $selection_fixed = str_replace("'", '', $selection_fixed);
+            $selection_fixed = str_replace("'", '', $task_array['selection_fixed']);
             if (empty($settings)) {
             	$settings = $selection_fixed;
             } else {
@@ -927,8 +918,8 @@ function scriptNext($task_id, $where=null, $selection=null)
             $script_vars['where'] = $where;
         } // if
 
-        if (!empty($selection_temp)) {
-            $script_vars['search'] = $selection_temp;
+        if (!empty($task_array['selection_temp'])) {
+            $script_vars['search'] = $task_array['selection_temp'];
         } // if
 
         if (!empty($selection)) {
@@ -939,8 +930,8 @@ function scriptNext($task_id, $where=null, $selection=null)
             $script_vars['settings'] = $settings;
         } // if
 
-        if (!empty($button_text)) {
-            $script_vars['button_text'] = $button_text;
+        if (!empty($task_array['button_text'])) {
+            $script_vars['button_text'] = $task_array['button_text'];
         } // if
 
         if (!empty($menu_buttons)) {
@@ -964,26 +955,32 @@ function scriptNext($task_id, $where=null, $selection=null)
         } // if
 
         // look for sorting parameters to be passed to the next script
-        if (isset($sql_orderby)) {
-            $script_vars['order_by']     = $sql_orderby;
-            $script_vars['order_by_seq'] = $sql_orderby_seq;
+        if (isset($task_array['sql_orderby'])) {
+            $script_vars['order_by']     = $task_array['sql_orderby'];
+            $script_vars['order_by_seq'] = $task_array['sql_orderby_seq'];
         } elseif (!empty($order_by)) {
             $script_vars['order_by']     = $order_by;
         } // if
-        if (!empty($order_by_body)) {
-            $script_vars['order_by_body'] = $order_by_body;
+
+        if (!empty($task_array['order_by'])) {
+            // defines sort order for CHILD in a PARENT-CHILD screen
+            $script_vars['task_order_by'] = $task_array['order_by'];
         } // if
 
-        if (!empty($keep_data)) {
-            $script_vars['keep_data'] = $keep_data;
+        if (!empty($task_array['keep_data'])) {
+            $script_vars['keep_data'] = $task_array['keep_data'];
         } // if
 
-        if (!empty($log_sql_query)) {
-            $script_vars['log_sql_query'] = $log_sql_query;
+        if (!empty($task_array['log_sql_query'])) {
+            $script_vars['log_sql_query'] = $task_array['log_sql_query'];
         } else {
-            if (isset($script_vars['log_sql_query'])) {
-            	unset($script_vars['log_sql_query']);
-            } // if
+            unset($script_vars['log_sql_query']);
+        } // if
+
+        if (!empty($task_array['screen_refresh'])) {
+            $script_vars['screen_refresh'] = $task_array['screen_refresh'];
+        } else {
+            unset($script_vars['screen_refresh']);
         } // if
     } // if
 
@@ -1007,7 +1004,6 @@ function scriptNext($task_id, $where=null, $selection=null)
 function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction=NULL)
 // go back to the previous script in the current hierarchy.
 {
-    //DebugBreak();
     global $protocol;       // HTTP or HTTPS
 
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
@@ -1032,13 +1028,17 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
     $prev_script = getPreviousScript($task_id);
     $prev_task   = getPreviousTask($prev_script);
 
-    // remove this script's variables from session details (if necessay)
+    // remove this script's variables from session details (if necessary)
     if (isset($_SESSION[$script_id])) {
-        if (isset($_SESSION[$script_id]['keep_data'])) {
-            if (is_True($_SESSION[$script_id]['keep_data'])) {
-                // keep script data in memory
+        if (isset($_SESSION[$script_id][$task_id])) {
+            if (isset($_SESSION[$script_id][$task_id]['keep_data'])) {
+                if (is_True($_SESSION[$script_id][$task_id]['keep_data'])) {
+                    // keep script data in memory
+                } else {
+                    unset($_SESSION[$script_id][$task_id]);
+                } // if
             } else {
-                unset($_SESSION[$script_id]);
+                unset($_SESSION[$script_id][$task_id]);
             } // if
         } else {
             unset($_SESSION[$script_id]);
@@ -1136,15 +1136,15 @@ function scriptRestart (&$object, $query_string=null)
     if ($errors) return;
 
     if (isset($query_string)) {
-    	$GLOBALS['query_string'] = $query_string;
+    	$task_array['query_string'] = $query_string;
     } // if
 
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
-    $GLOBALS['script_id'] = $PHP_SELF;
+    $task_array['script_id'] = $PHP_SELF;
 
     // restart the current task
-    scriptnext($GLOBALS['task_id']);
+    scriptNext($GLOBALS['task_id'], null, null, $task_array);
 
 } // scriptRestart
 
@@ -1152,7 +1152,6 @@ function scriptRestart (&$object, $query_string=null)
 function updatePageStack ($task_id, $task_desc, $script_id)
 // update page stack with current selection.
 {
-    //DebugBreak();
     // remove redundant entries from page stack
     $page_stack = reducePageStack($task_id);
 

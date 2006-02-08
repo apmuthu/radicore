@@ -1,5 +1,5 @@
 <?php
-    // file created on January 18, 2006, 6:34 pm
+    // file created on February 6, 2006, 3:46 pm
     
     // field specifications for table workflow.wf_arc
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -109,7 +109,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'wf_arc.created_date';
+    $this->default_orderby                  = 'workflow_id, transition_id, place_id';
     
     // finished
 ?>

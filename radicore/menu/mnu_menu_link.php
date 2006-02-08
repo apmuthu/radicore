@@ -7,7 +7,6 @@
 // which can be toggled ON to create a record or OFF to delete a record.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'mnu_task_snr';      		    // name of outer table
 $link_table  = 'mnu_menu';      	            // name of link table
 $inner_table = 'mnu_task_jnr';                  // name of inner table
@@ -24,7 +23,6 @@ $link_sql_from   = '';
 $link_sql_where  = '';
 $link_search_table = 'mnu_task';
 
-// activate page controller
-require 'std.link1.inc';
+require 'std.link1.inc';                        // activate page controller
 
 ?>

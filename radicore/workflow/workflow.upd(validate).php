@@ -4,10 +4,8 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = "wf_workflow_s01";                  // table id
+$table_id = "wf_workflow_s01";  // table id
 
-// activate page controller
-require 'std.update4.inc';
+require 'std.update4.inc';      // activate page controller
 
 ?>

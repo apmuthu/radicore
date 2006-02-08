@@ -5,16 +5,9 @@
 // This version allows the user to change his/her password
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'mnu_user_s01';                        // table id
-$screen   = 'mnu_user.detail(pswd).screen.inc';    // file identifying screen structure
+$table_id = 'mnu_user_s01';                         // table id
+$screen   = 'mnu_user.detail(pswd).screen.inc';     // file identifying screen structure
 
-// identify extra parameters for a JOIN
-$sql_select = NULL;
-$sql_from   = NULL;
-$sql_where  = NULL;
-
-// activate page controller
-require 'std.update1.inc';
+require 'std.update1.inc';                          // activate page controller
 
 ?>

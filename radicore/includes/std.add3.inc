@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add3.inc
@@ -66,6 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = array_merge($array1, $array3);
         // strip operators from field values
         $fieldarray = stripOperators($fieldarray);
+        // get any extra data that may be needed
+        $fieldarray = $dbobject->getExtraData($fieldarray);
         // now add combined values to the database
         $fieldarray = $dbobject->insertRecord($fieldarray);
         if ($dbobject->errors) {

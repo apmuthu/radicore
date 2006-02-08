@@ -7,7 +7,6 @@
 // each CHILD entry to set its PARENT ID to NULL.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';          // table name
 
 require 'std.delete3.inc';          // activate page controller

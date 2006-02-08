@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 5:07 pm
+    // file created on January 23, 2006, 6:40 pm
     
     // field specifications for table product.uom_conversion
     $fieldspec['uom_id_from']               = array('type' => 'string',
@@ -19,7 +19,6 @@
                                                     'foreign_field' => 'uom_desc');
     
     $fieldspec['conversion_factor']         = array('type' => 'float',
-                                                    'unsigned' => 'y',
                                                     'required' => 'y',
                                                     'default' => '0');
     
@@ -32,6 +31,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y');
     
@@ -57,10 +57,12 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'unit_of_measure',
+                                                    'alias' => 'unit_of_measure_from',
                                                     'parent_field' => 'uom_desc as uom_desc_from',
                                                     'fields' => array('uom_id_from' => 'uom_id'));
     
     $this->parent_relations[]               = array('parent' => 'unit_of_measure',
+                                                    'alias' => 'unit_of_measure_to',
                                                     'parent_field' => 'uom_desc as uom_desc_to',
                                                     'fields' => array('uom_id_to' => 'uom_id'));
     

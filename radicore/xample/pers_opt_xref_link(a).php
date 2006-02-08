@@ -22,6 +22,7 @@ $outer_sql_where  = NULL;
 $link_sql_select = NULL;
 $link_sql_from   = NULL;
 $link_sql_where  = NULL;
+$link_sql_orderby = 'option_id';
 
 require 'std.link1.inc';                            // activate page controller
 

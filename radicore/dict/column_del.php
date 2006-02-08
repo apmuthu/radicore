@@ -4,11 +4,9 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'dict_column';             	        // table id
 $screen   = 'dict_column.detail.screen.inc';    // file identifying screen structure
 
-// activate page controller
-require 'std.delete1.inc';
+require 'std.delete1.inc';                      // activate page controller
 
 ?>

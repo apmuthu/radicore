@@ -57,7 +57,7 @@ class mnu_role extends Default_Table
         if (isset($fieldarray['start_task_id'])) {
             require_once 'mnu_task.class.inc';
             $dbobject =& singleton::getInstance('mnu_task');
-            $dbobject->sql_select = 'task_type';
+            $dbobject->setSqlSelect('task_type');
             $foreign_data = $dbobject->getData("task_id='{$fieldarray['start_task_id']}'");
             if ($foreign_data[0]['task_type'] != 'MENU') {
                 $this->errors['start_task_id'] = getLanguageText('e0014'); // "start_task_id must be of type MENU";

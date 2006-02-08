@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 5:07 pm
+    // file created on January 23, 2006, 6:40 pm
     
     // field specifications for table product.unit_of_measure
     $fieldspec['uom_id']                    = array('type' => 'string',
@@ -32,6 +32,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y');
     

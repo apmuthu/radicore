@@ -249,7 +249,7 @@ class x_person_addr extends Default_Table
 
         $dbobject->row_locks  = 'SH'; // set row-level locks to shared
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
-        $person_data = $dbobject->getData("person_id='{$fieldarray['person_id']}'");
+        $person_data = $dbobject->getData_raw("person_id='{$fieldarray['person_id']}'");
         if ($dbobject->numrows <> 1) {
             // 'Could not locate PERSON record'
             $this->errors[] = getLanguageText('e0023');
@@ -439,7 +439,7 @@ class x_person_addr extends Default_Table
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
         $dbobject->row_locks  = 'SH'; // set row-level locks to shared
-        $person_data = $dbobject->getData_ra("person_id='{$fieldarray['person_id']}'");
+        $person_data = $dbobject->getData_raw("person_id='{$fieldarray['person_id']}'");
         if ($dbobject->numrows <> 1) {
             // "Could not locate PERSON record"
             $this->errors[] = getLanguageText('e0023');

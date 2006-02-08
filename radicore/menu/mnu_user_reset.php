@@ -4,18 +4,14 @@
 // It should only be used as a last resort.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'mnu_user_s03';                        // table id
-$screen   = 'mnu_user.detail(pswd).screen.inc';    // file identifying screen structure
+$table_id = 'mnu_user_s03';                         // table id
+$screen   = 'mnu_user.detail(pswd).screen.inc';     // file identifying screen structure
 
-// identify extra parameters for a JOIN
-$sql_select = NULL;
-$sql_from   = NULL;
-$sql_where  = NULL;
+require_once 'include.general.inc';
 
-//DebugBreak();
+// custom code...
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-   // cancel any curent session
+   // cancel any current session
    session_start();
    session_unset();
    $_SESSION['role_id'] = 'GLOBAL';
@@ -29,11 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
    $PHP_SELF = getSelf();
    $_SESSION[$PHP_SELF]['task_id'] = $task_id;
    $_SESSION[$PHP_SELF][$task_id]['where'] = "user_id='$user_id'";
-   $_SESSION['loon_user_id'] = $user_id;
+   $_SESSION['logon_user_id'] = $user_id;
 } // endif
 
-// activate page controller
-require 'std.update1.inc';
+require 'std.update1.inc';                          // activate page controller
 
 ?>
 ;

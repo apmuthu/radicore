@@ -24,6 +24,9 @@ class dict_dataBase_s02 extends dict_dataBase
 
             $database_id = $database_data['database_id'];
             $subsys_dir  = $database_data['subsys_dir'];
+            if (empty($subsys_dir)) {
+                $subsys_dir = '*undefined*';
+            } // if
             unset($database_data['subsys_dir']);
 
 			$output = '-- file created on ' .date('F j, Y, g:i a') ."\r\n\r\n";

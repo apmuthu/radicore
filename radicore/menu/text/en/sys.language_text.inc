@@ -33,7 +33,7 @@ $array['sys0025'] = "Value is above maximum value (%1\$s)";
 $array['sys0026'] = "Specification missing for PRECISION";
 $array['sys0027'] = "Value has too many digits";
 $array['sys0028'] = "Value cannot be negative";
-$array['sys0029'] = "";
+$array['sys0029'] = "Value is not a whole number";
 
 $array['sys0030'] = "Task '%1\$s' does not exist.";
 $array['sys0031'] = "Task '%1\$s' has been disabled.";
@@ -105,7 +105,7 @@ $array['sys0090'] = "Nothing retrieved from database table %1\$s";
 $array['sys0091'] = "Update successful.";
 $array['sys0092'] = "Record updated OK.";
 $array['sys0093'] = "Data exported to %1\$s";
-$array['sys0094'] = "";
+$array['sys0094'] = "Item has been erased";
 $array['sys0095'] = "";
 $array['sys0096'] = "";
 $array['sys0097'] = "";

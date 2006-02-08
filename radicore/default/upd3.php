@@ -6,9 +6,15 @@
 // field values.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = "#tablename#";                   // table id
 $screen   = '#tablename#.detail.screen.inc'; // file identifying screen structure
+
+// customise the SQL SELECT statement
+$sql_select  = null;
+$sql_from    = null;
+$sql_where   = null;
+$sql_groupby = null;
+$sql_having  = null;
 
 require 'std.update3.inc';          // activate page controller
 

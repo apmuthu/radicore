@@ -4,16 +4,9 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'mnu_role';             	      // table id
-$screen   = 'mnu_role.detail.screen.inc';    // file identifying screen structure
+$table_id = 'mnu_role';             	    // table id
+$screen   = 'mnu_role.detail.screen.inc';   // file identifying screen structure
 
-// identify extra parameters for a JOIN
-$sql_select = NULL;
-$sql_from   = NULL;
-$sql_where  = NULL;
-
-// activate page controller
-require 'std.delete1.inc';
+require 'std.delete1.inc';                  // activate page controller
 
 ?>

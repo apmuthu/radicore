@@ -47,6 +47,19 @@ class x_tree_level_s01 extends x_tree_level
     } // checkChildNodes
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        // remove 'noedit' switch
+        unset($this->fieldspec['tree_level_seq']['noedit']);
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getDatabaseLock ()
     // return array of database tables to be locked in current transaction.
     {

@@ -1,4 +1,4 @@
--- file created on January 20, 2006, 8:14 pm
+-- file created on February 3, 2006, 7:34 pm
 
 REPLACE INTO `dict_database` (`database_id`, `database_desc`, `comment`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'xample', NULL, 'XAMPLE', '2005-03-27 15:45:42', 'AJM', '2005-03-27 15:47:43', 'AJM');
@@ -188,7 +188,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('xample', 'x_tree_node', 'node_id', 'xample', 'x_person', '0', 'node_id', '2', '2005-10-29 20:04:34', 'AJM', '2005-12-14 17:55:02', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('xample', 'x_tree_node', 'xample', 'x_tree_node', '0', 'x_tree_node_snr', 'x_tree_node_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'x_tree_node_snr.node_desc AS node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2006-01-18 20:11:14', 'AJM');
+('xample', 'x_tree_node', 'xample', 'x_tree_node', '0', 'x_tree_node_snr', 'x_tree_node_jnr', NULL, NULL, 'RES', NULL, '#calc#', 'node_desc AS node_desc_snr', '2005-10-29 20:08:38', 'AJM', '2006-01-23 18:17:43', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'x_tree_node', 'node_id', 'xample', 'x_tree_node', '0', 'node_id_snr', '2', '2005-10-29 20:08:38', 'AJM', '2005-12-14 17:55:03', 'AJM');

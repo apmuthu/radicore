@@ -6,9 +6,15 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';             	        // table id
 $screen   = '#tablename#.detail.screen.inc';    // file identifying screen structure
+
+// customise the SQL SELECT statement
+$sql_select  = null;
+$sql_from    = null;
+$sql_where   = null;
+$sql_groupby = null;
+$sql_having  = null;
 
 require 'std.erase1.inc';          // activate page controller
 

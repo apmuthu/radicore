@@ -6,7 +6,6 @@
 // The OUTER identity is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'mnu_task_snr';				    // name of outer table
 $inner_table = 'mnu_nav_button';                // name of inner table
 $screen = 'mnu_nav_button.multi.screen.inc';    // file identifying screen structure
@@ -23,7 +22,6 @@ $inner_sql_where  = '';
 // set default sort sequence
 $inner_sql_orderby = 'sort_seq,task_id_jnr';
 
-// activate page controller
-require 'std.multi2.inc';
+require 'std.multi2.inc';                       // activate page controller
 
 ?>

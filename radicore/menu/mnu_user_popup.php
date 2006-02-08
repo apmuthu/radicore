@@ -4,7 +4,6 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'mnu_user';    	            // table name
 $screen   = 'mnu_user.list.screen.inc'; // file identifying screen structure
 

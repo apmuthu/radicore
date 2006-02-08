@@ -4,11 +4,9 @@
 // value of PERSON_ID, as selected in the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'dict_relationship';                      // table name
-$screen   = 'dict_relationship.detail.screen.inc';    // file identifying screen structure
+$table_id = 'dict_relationship';                    // table name
+$screen   = 'dict_relationship.detail.screen.inc';  // file identifying screen structure
 
-// activate page controller
-require 'std.add2.inc';
+require 'std.add2.inc';                             // activate page controller
 
 ?>

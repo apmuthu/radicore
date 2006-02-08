@@ -4,7 +4,6 @@
 // chose one of the files.
 //*****************************************************************************
 
-//DebugBreak();
 $screen   = '#tablename#filepicker.screen.inc'; // file identifying screen structure
 $subdir   = 'icons';                            // subdirectory
 $filetype = 'image';                            // file types to process

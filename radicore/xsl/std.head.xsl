@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -17,6 +17,16 @@
   <!-- output standard <HEAD> element into HTML document -->
   <head>
     <title><xsl:value-of select="$title"/></title>
+
+    <xsl:if test="/root/params/screen_refresh">
+      <meta http-equiv="refresh">
+        <xsl:attribute name="content">
+          <xsl:value-of select="/root/params/screen_refresh" />
+          <xsl:text>;</xsl:text>
+          <xsl:value-of select="$script"/>
+        </xsl:attribute>
+      </meta>
+    </xsl:if>
 
     <xsl:choose>
         <xsl:when test="//params/application='sample'">

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 4
@@ -155,6 +155,9 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                                     $child->set_attribute('imageheight', $spec['imageheight']);
                                 } // if
                             } // if
+                            if (isset($spec['notext'])) {
+                                $child->set_attribute('notext', "{$spec['notext']}");
+                            } // if
                         } // if
                         // options for multiline fields
                         if ($spec['control'] == 'multiline') {
@@ -290,6 +293,7 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     global $orderby;
     global $orderby_seq;
     global $protocol;       // HTTP or HTTPS
+    global $screen_refresh;
     global $settings;
     global $title;
     global $task_id;
@@ -334,11 +338,7 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
 
     $dir = getParentDIR();
 
-    if (isset($GLOBALS['subsys_dir'])) {
-        $xsl_params['help_root'] = $protocol .$_SERVER['HTTP_HOST'] .$dir .'/' .$GLOBALS['subsys_dir'];
-    } else {
-        $xsl_params['help_root'] = $protocol .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
-    } // if
+    $xsl_params['help_root'] = $protocol .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
 
     $xsl_params['menu_root'] = $protocol .$_SERVER['HTTP_HOST'] .$dir .'/menu';
 
@@ -355,7 +355,13 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     } // if
     if (isset($orderby)) {
         $xsl_params['orderby'] = $orderby;
-        $xsl_params['order']   = $orderby_seq;
+        $xsl_params['order']   = trim(strtolower($orderby_seq));
+    } // if
+
+    if (isset($screen_refresh)) {
+        if ((int)$screen_refresh > 0) {
+        	$xsl_params['screen_refresh'] = (int)$screen_refresh;
+        } // if
     } // if
 
     if ($settings) {
@@ -420,7 +426,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     global $nav_buttons;
     global $pagination;
     global $remove_buttons;
-    global $screen;
+    global $screen_structure;
     global $scrolling;
     global $task_id;
     global $xsl_file;
@@ -431,8 +437,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     $xml_doc = domxml_new_doc('1.0');
 
     // get name of XSL file
-    $structure = '';
-    $xsl_file = getXSLfile($xml_doc, $xsl_file, $screen, $structure);
+    $xsl_file = getXSLfile($xml_doc, $xsl_file, $screen_structure);
 
     // add root node
     $node_array['root'] = $xml_doc->create_element('root');
@@ -569,9 +574,9 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
         } // foreach
     } // if
 
-    if (isset($screen)) {
-        // process file containing screen structure
-        setScreenStructure($xml_doc, $root, $structure);
+    if (isset($screen_structure)) {
+        // put screen structure into XML document
+        setScreenStructure($xml_doc, $root, $screen_structure);
     } // if
 
     // look for optional HEADER.TXT
@@ -634,24 +639,11 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 } // buildXML
 
 // ****************************************************************************
-function getXSLfile ($xml_doc, $xsl_file, $screen=null, &$structure)
+function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
 // extract name of XSL file from screen structure.
-// $structure is passed BY REFERENCE so that it can be updated
 {
-    if (isset($screen)) {
-    	// get subdirectory which matches user's language code
-        $subdir = getLanguageSubDir ('./screens');
-
-        $screen = "$subdir/$screen";  // look in subirectory for this screen name
-        if (!file_exists($screen)) {
-            // 'File $screen cannot be found'
-            trigger_error(getLanguageText('sys0056', $screen), E_USER_ERROR);
-        } // if
-
-        require $screen;              // import contents of disk file
-        if (isset($structure['xsl_file'])) {
-            $xsl_file = $structure['xsl_file'];
-        } // if
+    if (array_key_exists('xsl_file', $screen_structure)) {
+    	$xsl_file = $screen_structure['xsl_file'];
     } // if
 
     global $protocol;       // HTTP or HTTPS

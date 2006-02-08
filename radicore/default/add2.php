@@ -5,10 +5,9 @@
 // previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';                      // table name
 $screen   = '#tablename#.detail.screen.inc';    // file identifying screen structure
 
-require 'std.add2.inc';         // activate page controller
+require 'std.add2.inc';     // activate page controller
 
 ?>

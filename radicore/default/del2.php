@@ -5,7 +5,6 @@
 // There is no dialog with the user.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';       	// table name
 
 require 'std.delete2.inc';          // activate page controller

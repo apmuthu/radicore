@@ -3,7 +3,6 @@
 // This will allow occurrences of the AUDIT_DTL table to be displayed.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'audit_tbl';                     // name of outer table
 $inner_table = 'audit_fld';                     // name of inner table
 $screen      = 'audit_fld.list2.screen.inc';    // file identifying screen structure
@@ -23,8 +22,6 @@ $inner_search_table = 'audit_tbl'; // this enable the 'previous search' button
 // set default sort sequence
 $outer_sql_orderby = 'date, time, tran_seq_no, table_seq_no';
 
-// activate page controller
-//require 'audit.list2.inc';
-require 'std.list2.inc';
+require 'std.list2.inc';                        // activate page controller
 
 ?>

@@ -4,11 +4,9 @@
 // have HISTORIC dates, then reurn to the previous script.
 //*****************************************************************************
 
-//DebugBreak();
 require_once 'include.general.inc';
 
-// initialise session
-initSession();
+initSession();      // initialise session
 
 // send search criteria back to the previous script
 $prev_script = getPreviousScript();

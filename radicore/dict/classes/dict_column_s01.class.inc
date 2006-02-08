@@ -94,7 +94,7 @@ class dict_column_s01 extends dict_column
         // construct a smaller array of column names
         $db_data_cols = array();
         foreach ($db_data as $row => $rowdata) {
-        	$db_data_cols[$rowdata['column_id']] = $row;
+        	$db_data_cols[strtolower($rowdata['column_id'])] = $row;
         } // foreach
 
         // construct array of static (common) data

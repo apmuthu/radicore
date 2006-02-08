@@ -2,22 +2,34 @@
 
 // this checks that person.last_addr_no = count(person_addr.person_id)
 
-$link = mysqli_connect("localhost", "tony", "tony") or die("Could not connect to MySQL");
+ini_set('include_path', '.');
+require 'std.batch.inc';
 
-$result = mysqli_select_db($link, 'xample');
-$result = mysqli_query($link, 'SELECT person_id,last_addr_no FROM x_person ORDER BY person_id');
+batchInit(__FILE__);
 
-while ($person_data = mysqli_fetch_assoc($result)) {
-    $person_id = $person_data['person_id'];
-    $result2 = mysqli_query($link, "SELECT count(*) FROM x_person_addr WHERE person_id='$person_id'");
-    $count   = mysqli_fetch_row($result2);
-    if ($count[0] != $person_data['last_addr_no']) {
-        $query = "UPDATE x_person SET last_addr_no='$count[0]' WHERE person_id='$person_id'";
-        echo $query ."<br>\n";
-        $x = mysqli_query($link, $query);
+// create objects for each database table
+require 'classes/x_person.class.inc';
+$dbobject = new x_person;
+
+$dbobject->sql_select = 'x_person.person_id, x_person.last_addr_no, count(address_no) as count';
+$dbobject->sql_from   = 'x_person LEFT JOIN x_person_addr USING (person_id)';
+$dbobject->sql_groupby = 'x_person.person_id, x_person.last_addr_no';
+$dbresult = $dbobject->getData_batch();
+$dbobject->startTransaction();
+while ($row = $dbobject->fetchRow($dbresult)) {
+    if ($row['last_addr_no'] <> $row['count']) {
+    	$row['last_addr_no'] = $row['count'];
+    	echo '<p>Updated person_id ' .$row['person_id'] .', last_addr_no=' .$row['count'] .'</p>';
+    	//$dbobject->startTransaction();
+    	$dbobject->skip_validation = true;
+    	$row = $dbobject->updateRecord($row);
+    	check_errors($dbobject);
+    	//$dbobject->commit();
     } // if
 } // while
 
-mysqli_close($link);
+$dbobject->commit();
+
+batchEnd();
 
 ?>

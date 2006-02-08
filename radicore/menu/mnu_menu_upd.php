@@ -4,16 +4,14 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = "mnu_menu";                      // table id
-$screen   = 'mnu_menu.detail.screen.inc';    // file identifying screen structure
+$table_id = "mnu_menu";                     // table id
+$screen   = 'mnu_menu.detail.screen.inc';   // file identifying screen structure
 
 // identify extra parameters for a JOIN
 $sql_select = '';
 $sql_from   = '';
 $sql_where  = '';
 
-// activate page controller
-require 'std.update1.inc';
+require 'std.update1.inc';                  // activate page controller
 
 ?>

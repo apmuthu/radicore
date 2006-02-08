@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -44,22 +44,28 @@ if (isset($script_vars['dbobject'])) {
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
-    $dbobject->sql_select  = &$sql_select;
-    $dbobject->sql_from    = &$sql_from;
-    $dbobject->sql_where   = &$sql_where;
-    $dbobject->sql_groupby = &$sql_groupby;
-    $dbobject->sql_having  = &$sql_having;
-    $dbobject->setRowsPerPage(1);
+    $dbobject->sql_select     = &$sql_select;
+    $dbobject->sql_from       = &$sql_from;
+    $dbobject->sql_where      = &$sql_where;
+    $dbobject->sql_groupby    = &$sql_groupby;
+    $dbobject->sql_having     = &$sql_having;
+    $dbobject->sql_sort_table = &$sql_sort_table;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
-    } elseif (!empty($order_by_body)) {
-        $dbobject->setOrderby($order_by_body);
-        if (!empty($order_by_seq)) {
-            $dbobject->setOrderBySeq($order_by_seq);
-        } // if
+    } elseif (!empty($task_order_by)) {
+        $dbobject->setDefaultOrderby($task_order_by);
     } // if
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
+    // scroll through one item at a time
+    $dbobject->setRowsPerPage(1);
+    if (isset($sql_where) and strlen($sql_where) > 0) {
+        // merge two strings into one
+    	$where = mergeWhere($where, $sql_where);
+    	$dbobject->sql_where = null;
+    } // if
+    // perform any initialisation
+    $where = $dbobject->initialise($where, $selection);
 } // if
 
 if (isset($_POST['clear'])) {

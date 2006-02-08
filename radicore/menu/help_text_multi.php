@@ -5,10 +5,9 @@
 // The identity of the selected record is passed down in $where.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'help_text';                     // table id
-$title    = 'Maintain Help Text';            // form title
-$screen   = 'help_text.detail.screen.inc';   // file identifying screen structure
+$table_id = 'help_text';                    // table id
+$title    = 'Maintain Help Text';           // form title
+$screen   = 'help_text.detail.screen.inc';  // file identifying screen structure
 
 // identify extra parameters for a JOIN
 $sql_select = NULL;
@@ -18,7 +17,6 @@ $sql_where  = NULL;
 // add CLEAR to action buttons (this will also enable DELETE)
 $act_buttons['clear'] = 'CLEAR';
 
-// activate page controller
-require 'std.multi1.inc';
+require 'std.multi1.inc';                   // activate page controller
 
 ?>

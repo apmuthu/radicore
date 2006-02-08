@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi4.inc
@@ -38,30 +38,39 @@ $act_buttons['quit']       = 'cancel';
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
-    // use data from previous instance of this script
+    // use previous instance from session data
     $dbouter = unserialize($script_vars['dbouter']);
-    // get previously retrieved data
+    // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
-    $dbouter->sql_select  = &$outer_sql_select;
-    $dbouter->sql_from    = &$outer_sql_from;
-    $dbouter->sql_where   = &$outer_sql_where;
-    $dbouter->sql_groupby = &$outer_sql_groupby;
-    $dbouter->sql_having  = &$outer_sql_having;
+    $dbouter->sql_select     = &$outer_sql_select;
+    $dbouter->sql_from       = &$outer_sql_from;
+    $dbouter->sql_where      = &$outer_sql_where;
+    $dbouter->sql_groupby    = &$outer_sql_groupby;
+    $dbouter->sql_having     = &$outer_sql_having;
+    $dbouter->sql_sort_table = &$outer_sql_sort_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
-    } elseif (!empty($order_by)) {
-        $dbouter->setOrderby($order_by);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
-        } // if
     } // if
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+        $dbouter->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbouter->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
+    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
+        // merge two strings into one
+    	$where = mergeWhere($where, $outer_sql_where);
+    	$dbouter->sql_where = null;
+    } // if
     // perform any initialisation
     $where = $dbouter->initialise($where, $selection);
 } // if
@@ -79,8 +88,10 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
-    if (!empty($order_by_body)) {
-        $dbinner->setDefaultOrderby($order_by_body);
+    if (!empty($inner_sql_orderby)) {
+        $dbinner->setDefaultOrderby($inner_sql_orderby);
+    } elseif (!empty($task_order_by)) {
+        $dbinner->setDefaultOrderby($task_order_by);
     } // if
     // perform any initialisation
     $where = $dbinner->initialise($where, $selection);
@@ -144,8 +155,8 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from)) {
-        if ($return_action == 'choose' AND !empty($selection)) {
+    if (!empty($return_from) and $return_action == 'choose') {
+        if (!empty($selection)) {
             // merge previous saved variables with selection from popup form
             $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection);
             $errors     = array_merge($errors, $dbouter->getErrors());
@@ -206,6 +217,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
         $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
         $scrolling[$dbouter->getClassName()]['where']    = $where;
+
+        // ensure script variables are available throughout this session
+        $script_vars['where']     = unqualifyWhere($where);
+        $script_vars['dbouter']   = serialize($dbouter);
+        $script_vars['scrolling'] = $scrolling;
     } // if
 } // if
 
@@ -220,13 +236,8 @@ if (isset($_GET['pagesize'])) {
 
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
-    if (isset($screen)) {
-    	if (validateSortItem('inner', $_GET['orderby'], $screen)) {
-        	$dbinner->setOrderBy($_GET['orderby']);
-        } // if
-    } else {
-        $dbinner->setOrderBy($_GET['orderby']);
-    } // if
+    $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
+    $dbinner->setOrderBy($string);
 } // if
 
 // load optional criteria from search screen
@@ -236,10 +247,7 @@ if (isset($search)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbinner->setPageNo(null);
-    $dbinner->setOrderBy(null);
-    $dbinner->setOrderBySeq(null);
-    $dbinner->setSqlSearch(null);
+    $dbinner->reset();
 } // if
 
 // get primary key of row retrieved from OUTER entity

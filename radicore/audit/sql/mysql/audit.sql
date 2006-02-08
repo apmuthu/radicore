@@ -72,3 +72,19 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
   `task_id` varchar(32) NOT NULL default '',
   PRIMARY KEY  (`session_id`,`tran_seq_no`)
 ) TYPE=MyISAM COMMENT='Audit Trail Transaction data';
+
+-- --------------------------------------------------------
+
+-- 
+-- Table structure for table `php_session`
+-- 
+
+CREATE TABLE `php_session` (
+  `session_id` varchar(32) NOT NULL default '',
+  `user_id` varchar(16) NOT NULL default 'UNKNOWN',
+  `date_created` datetime NOT NULL default '0000-00-00 00:00:00',
+  `last_updated` datetime NOT NULL default '0000-00-00 00:00:00',
+  `session_data` longtext,
+  PRIMARY KEY  (`session_id`),
+  KEY `last_updated` (`last_updated`)
+) ENGINE=MyISAM;

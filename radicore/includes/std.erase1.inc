@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.erase1.inc
@@ -53,6 +53,14 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->setRowsPerPage(1);
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+        $dbobject->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbobject->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
 } // if
 
 // look for SUBMIT button
@@ -71,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (empty($errors)) {
                 $errors = $dbobject->commit();
             } // if
-            $messages[] = 'Item has been erased';
+            $messages[] = getLanguageText('sys0094'); // 'Item has been erased'
             if (empty($errors)) {
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] == 1) {
                     // last item has been deleted, so return to previous screen
@@ -102,14 +110,6 @@ if (empty($where)) {
 if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
     // set index number of item to be read from current $where list
     $dbobject->setPageNo($_GET['item']);
-} // if
-
-if (!empty($order_by)) {
-    // records need to be sorted
-    $dbobject->setOrderby($order_by);
-    if (!empty($order_by_seq)) {
-        $dbobject->setOrderBySeq($order_by_seq);
-    } // if
 } // if
 
 // get data from the database

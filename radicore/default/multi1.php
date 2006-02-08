@@ -5,14 +5,17 @@
 // The identity of the selected record is passed down in $where.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';                     // table id
 $screen   = '#tablename#.detail.screen.inc';   // file identifying screen structure
 
-// identify extra parameters for a JOIN
-$sql_select = '';
-$sql_from   = '';
-$sql_where  = '';
+// customise the SQL SELECT statement
+$sql_select  = null;
+$sql_from    = null;
+$sql_where   = null;
+$sql_groupby = null;
+$sql_having  = null;
+$sql_orderby = null;
+$sql_sort_table = null;
 
 // define action buttons
 $act_buttons['clear'] = 'CLEAR';

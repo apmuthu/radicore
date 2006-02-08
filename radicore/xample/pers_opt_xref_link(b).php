@@ -20,8 +20,9 @@ $outer_sql_where  = NULL;
 
 // modify the sql select for the LINK table
 $link_sql_select = 'x_person.first_name, x_person.last_name, x_person.star_sign';
-$link_sql_from   = '';
-$link_sql_where  = '';
+$link_sql_from   = NULL;
+$link_sql_where  = NULL;
+$link_sql_orderby = 'person_id';
 
 require 'std.link1.inc';                        // activate page controller
 

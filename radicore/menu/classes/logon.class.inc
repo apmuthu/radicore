@@ -37,7 +37,7 @@ class logon extends mnu_user
         $GLOBALS['task_id'] = 'logon';
 
         // perform primary validation on the input
-        $updatearray = $this->validateUpdate($logonarray);
+        $updatearray = $this->_validateUpdate($logonarray);
 
         // if there are errors do not display unencrypted password
         $logonarray['user_password'] = '';

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -51,8 +51,8 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_having  = &$sql_having;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
-    } elseif (isset($order_by_body)) {
-        $dbobject->setDefaultOrderby($order_by_body);
+    } elseif (isset($task_order_by)) {
+        $dbobject->setDefaultOrderby($task_order_by);
     } // if
     // get any data for lookup lists
     $null = $dbobject->getExtraData(null);
@@ -84,13 +84,8 @@ if (isset($_GET['page'])) {
 
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
-    if (isset($screen)) {
-    	if (validateSortItem('main', $_GET['orderby'], $screen)) {
-        	$dbobject->setOrderBy($_GET['orderby']);
-        } // if
-    } else {
-        $dbobject->setOrderBy($_GET['orderby']);
-    } // if
+    $string = validateSortItem('main', $_GET['orderby'], $dbobject, $screen_structure);
+    $dbobject->setOrderBy($string);
 } // if
 
 // load optional criteria from search screen
@@ -100,10 +95,7 @@ if (isset($search)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbobject->setPageNo(null);
-    $dbobject->setOrderBy(null);
-    $dbobject->setOrderBySeq(null);
-    $dbobject->setSqlSearch(null);
+    $dbobject->reset();
 } // if
 
 if (isset($instruction)) {

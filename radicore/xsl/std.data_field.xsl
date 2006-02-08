@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -462,10 +462,12 @@
         </xsl:call-template>
       </div>
 
-      <!-- display the file name -->
-      <div class="picker-text">
-        <xsl:value-of select="$item"/>
-      </div>
+      <xsl:if test="not($item/@notext)">
+        <!-- display the file name -->
+        <div class="picker-text">
+          <xsl:value-of select="$item"/>
+        </div>
+      </xsl:if>
 
     </xsl:when>
 
@@ -562,6 +564,7 @@
       <!-- display file as image -->
       <img>
         <xsl:attribute name="src"><xsl:value-of select="$item"/></xsl:attribute>
+        <xsl:attribute name="alt"><xsl:value-of select="$item"/></xsl:attribute>
         <!-- height and width are optional -->
         <xsl:if test="$item/@imageheight">
           <xsl:attribute name="height"><xsl:value-of select="$item/@imageheight"/></xsl:attribute>
@@ -622,11 +625,6 @@
       <input class="text" type="text" name="{name($item)}" value="{$item}" size="{$item/@cols}"/>
     </xsl:when>
 
-    <xsl:when test="$mode='list' or $noedit">
-      <!-- display as plain text -->
-      <xsl:value-of select="$item"/>
-    </xsl:when>
-
     <xsl:otherwise>
 
       <!-- create multiline field to allow data to be input or amended -->
@@ -635,7 +633,7 @@
         <xsl:attribute name="rows"><xsl:value-of select="$item/@rows"/></xsl:attribute>
         <xsl:attribute name="cols"><xsl:value-of select="$item/@cols"/></xsl:attribute>
         <!-- under certain conditions set this field to read only -->
-        <xsl:if test="$mode='read' or $mode='delete' or $item/@noedit or $noedit">
+        <xsl:if test="$mode='list' or $mode='read' or $mode='delete' or $item/@noedit or $noedit">
           <xsl:attribute name="readonly">readonly</xsl:attribute>
         </xsl:if>
         <!-- now insert the item value -->

@@ -4,7 +4,6 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = "mnu_nav_button";                   // table id
 $screen   = 'mnu_nav_button.detail.screen.inc'; // file identifying screen structure
 
@@ -13,7 +12,6 @@ $sql_select = '';
 $sql_from   = '';
 $sql_where  = '';
 
-// activate page controller
-require 'std.update1.inc';
+require 'std.update1.inc';                      // activate page controller
 
 ?>

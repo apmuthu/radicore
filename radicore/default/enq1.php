@@ -4,14 +4,15 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = '#tablename#';                      // table id
 $screen   = '#tablename#.detail.screen.inc';    // file identifying screen structure
 
-// identify extra parameters for a JOIN
-$sql_select = NULL;
-$sql_from   = NULL;
-$sql_where  = NULL;
+// customise the SQL SELECT statement
+$sql_select  = null;
+$sql_from    = null;
+$sql_where   = null;
+$sql_groupby = null;
+$sql_having  = null;
 
 require 'std.enquire1.inc';         // activate page controller
 

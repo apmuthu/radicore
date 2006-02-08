@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This is my universal error handler.
@@ -52,10 +52,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
             break;
     } // switch
 
-    if (!isset($_SESSION)) {
-        session_start();
-    } // if
-
     if (isset($_SESSION['logon_user_id'])) {
         $logon_user_id = $_SESSION['logon_user_id'];
     } // if
@@ -79,6 +75,12 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         } // if
     } else {
         $query = null;
+    } // if
+
+    if (!isset($GLOBALS['batch']) or !is_True($GLOBALS['batch'])) {
+    	if (!isset($_SESSION)) {
+            session_start();
+        } // if
     } // if
 
     $errorstring = "<h2>" . date('Y-m-d H:i:s') . "</h2>\n";
@@ -178,8 +180,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     	$XSLT_client_side = $_SESSION['XSLT_client_side'];
     } // if
 
-    session_unset();    // clear current session data
-    session_destroy();  // destroy current session
+    if (!isset($GLOBALS['batch']) or !is_True($GLOBALS['batch'])) {
+        session_unset();    // clear current session data
+        session_destroy();  // destroy current session
+    } // if
 
     if (isset($XSLT_client_side)) {
         // put back the XSLT flag

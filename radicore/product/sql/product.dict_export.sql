@@ -1,4 +1,4 @@
--- file created on January 10, 2006, 6:37 pm
+-- file created on January 23, 2006, 6:41 pm
 
 REPLACE INTO `dict_database` (`database_id`, `database_desc`, `comment`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('product', 'product', NULL, 'PRODUCT', '2005-03-27 15:45:39', 'AJM', '2005-03-27 15:47:29', 'AJM');
@@ -330,13 +330,13 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('product', 'unit_of_measure', 'uom_id', 'product', 'product_feature', '0', 'uom_id', '2', '2005-04-10 23:31:57', 'AJM', '2005-12-14 17:55:00', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('product', 'unit_of_measure', 'product', 'uom_conversion', '0', NULL, NULL, NULL, NULL, 'RES', NULL, '#calc#', 'uom_desc as uom_desc_from', '2005-04-10 23:30:43', 'AJM', '2005-04-11 17:29:55', 'AJM');
+('product', 'unit_of_measure', 'product', 'uom_conversion', '0', 'unit_of_measure_from', NULL, NULL, NULL, 'RES', NULL, '#calc#', 'uom_desc as uom_desc_from', '2005-04-10 23:30:43', 'AJM', '2006-01-23 18:39:39', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('product', 'unit_of_measure', 'uom_id', 'product', 'uom_conversion', '0', 'uom_id_from', '2', '2005-04-10 23:30:43', 'AJM', '2005-12-14 17:55:00', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('product', 'unit_of_measure', 'product', 'uom_conversion', '1', NULL, NULL, NULL, NULL, 'RES', NULL, '#calc#', 'uom_desc as uom_desc_to', '2005-04-10 23:31:07', 'AJM', '2005-04-11 17:30:06', 'AJM');
+('product', 'unit_of_measure', 'product', 'uom_conversion', '1', 'unit_of_measure_to', NULL, NULL, NULL, 'RES', NULL, '#calc#', 'uom_desc as uom_desc_to', '2005-04-10 23:31:07', 'AJM', '2006-01-23 18:39:51', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('product', 'unit_of_measure', 'uom_id', 'product', 'uom_conversion', '1', 'uom_id_to', '2', '2005-04-10 23:31:07', 'AJM', '2005-12-14 17:55:00', 'AJM');

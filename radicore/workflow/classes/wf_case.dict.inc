@@ -1,5 +1,5 @@
 <?php
-    // file created on January 18, 2006, 6:34 pm
+    // file created on February 6, 2006, 3:46 pm
     
     // field specifications for table workflow.wf_case
     $fieldspec['case_id']                   = array('type' => 'integer',
@@ -91,7 +91,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'workflow_id, case_id';
     
     // finished
 ?>

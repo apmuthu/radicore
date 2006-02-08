@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if ($return_action == 'choose' AND !empty($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            $errors     = array_merge($errors, $dbobject->getErrors());
+            $errors[$dbobject->getClassName()] = array_merge($errors[$dbobject->getClassName()], $dbobject->getErrors());
         } // if
     } else {
         // do nothing

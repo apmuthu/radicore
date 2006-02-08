@@ -6,12 +6,11 @@
 // The updateSelection() method is used to perform the database update.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = '#tablename#';			// CHILD table name
+$table_id = '#tablename#';              // CHILD table name
 
-$popup_screen = '#tablename#(popup)';
+$popup_screen = '#tablename#(popup)';   // name of popup
 //$popup_repeat = TRUE;
 
-require 'std.update2.inc';          // activate page controller
+require 'std.update2.inc';              // activate page controller
 
 ?>

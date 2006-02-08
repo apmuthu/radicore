@@ -37,12 +37,15 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, dialog_type_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, '
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, dialog_type_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, '
                            .'CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 1 ELSE 0 END AS access_allowed';
         $this->sql_from   = 'mnu_task '
-                          . 'LEFT JOIN mnu_subsystem ' . 'ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
-                          . 'LEFT JOIN mnu_role_task ' . "ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
-                          . 'LEFT JOIN mnu_role ' . "ON (mnu_role.role_id='$role_id')";
+                          . 'LEFT JOIN mnu_subsystem '
+                          . 'ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
+                          . 'LEFT JOIN mnu_role_task '
+                          . "ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
+                          . 'LEFT JOIN mnu_role '
+                          . "ON (mnu_role.role_id='$role_id')";
         $this->sql_where  = '';
 
         $this->errors = array();
@@ -76,45 +79,7 @@ class mnu_task extends Default_Table
                 return;
             } // if
             fclose($fp);
-
-            // set the script name for this task
-            $GLOBALS['script_id'] = $fieldarray['script_id'];
-
-            // set the title for this script
-            $GLOBALS['title'] = $fieldarray['task_desc'];
-
-            // set the button text for this script
-            $GLOBALS['button_text'] = $fieldarray['button_text'];
-
-            // on initial entry pass straight thru to this task
-            $GLOBALS['initial_passthru'] = $fieldarray['initial_passthru'];
-
-            // on initial entry use this search criteria
-            $GLOBALS['selection_fixed'] = $fieldarray['selection_fixed'];
-            $GLOBALS['selection_temp'] = $fieldarray['selection_temp'];
-
-            if (strlen($fieldarray['settings'] > 0)) {
-            	// use this area for optional settings
-                $GLOBALS['settings'] = $fieldarray['settings'];
-            } // if
-
-            // use this to sort database records
-            $GLOBALS['order_by_body'] = $fieldarray['order_by'];
-
-            $GLOBALS['keep_data'] = $fieldarray['keep_data'];
-
-            if (is_True($fieldarray['log_sql_query'])) {
-            	// use this area for optional settings
-                $GLOBALS['log_sql_query'] = TRUE;
-            } // if
-
         } // if
-
-        // set the task_id for this task
-        $GLOBALS['task_id'] = $task_id;
-
-        // set the directory name for this subsystem
-        $GLOBALS['subsys_dir'] = $fieldarray['subsys_dir'];
 
         return $fieldarray;
 
@@ -160,6 +125,7 @@ class mnu_task extends Default_Table
                 $this->fieldspec['order_by']['nodisplay']         = 'y';
                 $this->fieldspec['keep_data']['nodisplay']        = 'y';
                 $this->fieldspec['log_sql_query']['nodisplay']    = 'y';
+                $this->fieldspec['screen_refresh']['nodisplay']   = 'y';
             } else {
                 // turn these fields back on
                 unset($this->fieldspec['dialog_type_id']['noedit']);
@@ -171,6 +137,7 @@ class mnu_task extends Default_Table
                 unset($this->fieldspec['order_by']['nodisplay']);
                 unset($this->fieldspec['keep_data']['nodisplay']);
                 unset($this->fieldspec['log_sql_query']['nodisplay']);
+                unset($this->fieldspec['screen_refresh']['nodisplay']);
             } // if
         } // if
 
@@ -198,22 +165,26 @@ class mnu_task extends Default_Table
                 $fieldarray['script_id'] = basename($fieldarray['script_id']);
                 break;
             default:
-                $this->errors[] = getLanguageText('e0017', $fieldarray['task_type']); // "Unknown value in TASK_TYPE";
+                // "Unknown value in TASK_TYPE"
+                $this->errors[] = getLanguageText('e0017', $fieldarray['task_type']);
         } // switch
 
         if (!empty($fieldarray['initial_passthru'])) {
             if ($fieldarray['initial_passthru'] == $fieldarray['task_id']) {
-                $this->errors['initial_passthru'] = getLanguageText('e0018'); // "Cannot passthru to self";
+                // "Cannot passthru to self"
+                $this->errors['initial_passthru'] = getLanguageText('e0018');
                 return $fieldarray;
             } // if
             $dbobject =& singleton::getInstance('mnu_task');
             $data = $dbobject->getData("task_id='{$fieldarray['initial_passthru']}'");
             if ($dbobject->numrows < 1) {
-                $this->errors['initial_passthru'] = getLanguageText('e0019', $fieldarray['initial_passthru']); // "This task does not exist";
+                // "This task does not exist"
+                $this->errors['initial_passthru'] = getLanguageText('e0019', $fieldarray['initial_passthru']);
                 return $fieldarray;
             } // if
             if ($data[0]['task_type'] != 'PROC') {
-                $this->errors['initial_passthru'] = getLanguageText('e0020'); // "This task must be of type PROC";
+                // "This task must be of type PROC"
+                $this->errors['initial_passthru'] = getLanguageText('e0020');
                 return $fieldarray;
             } // if
         } // if
@@ -298,7 +269,8 @@ class mnu_task extends Default_Table
             case 'mnu_task_field_list.php':
             case 'mnu_role_taskfield_multi(a).php':
                 if ($rowdata[0]['task_type'] != 'PROC') {
-                    $this->errors = getLanguageText('e0021'); // "This function is only valid if TASK_TYPE='PROC'";
+                    // "This function is only valid if TASK_TYPE='PROC'"
+                    $this->errors = getLanguageText('e0021');
                 } // if
                 break;
             default:

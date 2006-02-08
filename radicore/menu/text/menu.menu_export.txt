@@ -1,4 +1,4 @@
-    // file created on January 10, 2006, 6:37 pm
+    // file created on February 3, 2006, 2:57 pm
     
     // menu details for subsystem MENU
     $array['Audit']                         = 'Audit';
@@ -6,6 +6,7 @@
     $array['Dialog Type']                   = 'Dialog Type';
     $array['Dictionary']                    = 'Dictionary';
     $array['Example System']                = 'Example System';
+    $array['Logistics']                     = 'Logistics';
     $array['Menu Controls']                 = 'Menu Controls';
     $array['Menu System']                   = 'Menu System';
     $array['Product']                       = 'Product';

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -69,13 +69,34 @@ if (isset($script_vars['dbouter'])) {
     $outer_data = $dbouter->getFieldArray();
 } else {
     $dbouter = new $outer_table;
-    $dbouter->sql_select  = &$outer_sql_select;
-    $dbouter->sql_from    = &$outer_sql_from;
-    $dbouter->sql_where   = &$outer_sql_where;
-    $dbouter->sql_groupby = &$outer_sql_groupby;
-    $dbouter->sql_having  = &$outer_sql_having;
+    $dbouter->sql_select     = &$outer_sql_select;
+    $dbouter->sql_from       = &$outer_sql_from;
+    $dbouter->sql_where      = &$outer_sql_where;
+    $dbouter->sql_groupby    = &$outer_sql_groupby;
+    $dbouter->sql_having     = &$outer_sql_having;
+    $dbouter->sql_sort_table = &$outer_sql_sort_table;
+    if (!empty($outer_sql_orderby)) {
+        $dbouter->setDefaultOrderby($outer_sql_orderby);
+    } // if
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
+    // scroll through one item at a time
+    $dbouter->setRowsPerPage(1);
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+        $dbouter->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbouter->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
+    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
+        // merge two strings into one
+    	$where = mergeWhere($where, $outer_sql_where);
+    	$dbouter->sql_where = null;
+    } // if
+    // perform any initialisation
+    $where = $dbouter->initialise($where, $selection);
 } // if
 
 if (!empty($selection)) {
@@ -93,7 +114,6 @@ if (empty($where)) {
     scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
 } // if
 
-$dbouter->setRowsPerPage(1); // scroll through one item at a time
 if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
     // set index number of item to be read from current $where list
     $dbouter->setPageNo($_GET['item']);

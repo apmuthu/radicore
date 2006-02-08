@@ -6,16 +6,14 @@
 // field values.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = "mnu_control";                   // table id
-$screen   = 'mnu_control.detail.screen.inc'; // file identifying screen structure
+$table_id = "mnu_control";                      // table id
+$screen   = 'mnu_control.detail.screen.inc';    // file identifying screen structure
 
 // identify extra parameters for a JOIN
 $sql_select = '';
 $sql_from   = '';
 $sql_where  = '';
 
-// activate page controller
-require 'std.update3.inc';
+require 'std.update3.inc';                      // activate page controller
 
 ?>

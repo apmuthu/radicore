@@ -1,5 +1,5 @@
 <?php
-    // file created on January 18, 2006, 6:35 pm
+    // file created on January 23, 2006, 6:23 pm
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',

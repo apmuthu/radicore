@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -48,21 +48,34 @@ if (isset($script_vars['dbouter'])) {
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
-    $dbouter->sql_select  = &$outer_sql_select;
-    $dbouter->sql_from    = &$outer_sql_from;
-    $dbouter->sql_where   = &$outer_sql_where;
-    $dbouter->sql_groupby = &$outer_sql_groupby;
-    $dbouter->sql_having  = &$outer_sql_having;
-    if (!empty($order_by)) {
-        $dbouter->setOrderby($order_by);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
-        } // if
-    } // if
+    $dbouter->sql_select     = &$outer_sql_select;
+    $dbouter->sql_from       = &$outer_sql_from;
+    $dbouter->sql_where      = &$outer_sql_where;
+    $dbouter->sql_groupby    = &$outer_sql_groupby;
+    $dbouter->sql_having     = &$outer_sql_having;
+    $dbouter->sql_sort_table = &$outer_sql_sort_table;
+    if (!empty($outer_sql_orderby)) {
+        $dbouter->setDefaultOrderby($outer_sql_orderby);
+    } //if
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
+    // set sort order (if defined)
+    if (!empty($order_by)) {
+        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+        $dbouter->setOrderBy($string);
+        if (!empty($order_by_seq)) {
+            $dbouter->setOrderBySeq($order_by_seq);
+        } // if
+    } // if
+    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
+        // merge two strings into one
+    	$where = mergeWhere($where, $outer_sql_where);
+    	$dbouter->sql_where = null;
+    } // if
+    // perform any initialisation
+    $where = $dbouter->initialise($where, $selection);
 } // if
 
 // create a class instance for the LINK database table
@@ -78,10 +91,12 @@ if (isset($script_vars['dblink'])) {
     $dblink->sql_where        = &$link_sql_where;
     $dblink->sql_groupby      = &$link_sql_groupby;
     $dblink->sql_having       = &$link_sql_having;
-    if (!empty($order_by_body)) {
-        $dblink->setDefaultOrderby($order_by_body);
-    } // if
     $dblink->sql_search_table = &$link_search_table;
+    if (!empty($link_sql_orderby)) {
+        $dblink->setDefaultOrderby($link_sql_orderby);
+    } elseif (!empty($task_order_by)) {
+        $dblink->setDefaultOrderby($task_order_by);
+    } // if
 
     // these are used to signify an outer-link-inner relationship
     $dblink->outer_table    = $outer_table;
@@ -172,13 +187,8 @@ if (isset($_GET['page'])) {
 
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
-    if (isset($screen)) {
-    	if (validateSortItem('link', $_GET['orderby'], $screen)) {
-        	$dblink->setOrderBy($_GET['orderby']);
-        } // if
-    } else {
-        $dblink->setOrderBy($_GET['orderby']);
-    } // if
+    $string = validateSortItem('link', $_GET['orderby'], $dblink, $screen_structure);
+    $dblink->setOrderBy($string);
 } // if
 
 // load optional criteria from search screen
@@ -188,10 +198,7 @@ if (isset($search)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dblink->setPageNo(null);
-    $dblink->setOrderBy(null);
-    $dblink->setOrderBySeq(null);
-    $dblink->setSqlSearch(null);
+    $dblink->reset();
 } // if
 
 // get primary key of row retrieved from OUTER entity

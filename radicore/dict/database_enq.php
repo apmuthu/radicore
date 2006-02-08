@@ -4,11 +4,9 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'dict_database';             	    // table id
 $screen   = 'dict_database.detail.screen.inc';  // file identifying screen structure
 
-// activate page controller
-require 'std.enquire1.inc';
+require 'std.enquire1.inc';                     // activate page controller
 
 ?>

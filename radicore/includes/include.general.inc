@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -34,6 +34,8 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
     require 'include.xml.php5.inc';
 } // if
 
+$transaction_has_started = false;
+
 // ****************************************************************************
 class singleton
 // ensure that only a single instance exists for each class.
@@ -62,7 +64,6 @@ class singleton
 function addPreviousSearchButton ($buttons_in)
 // add 'previous search' button to current array of buttons
 {
-    //DebugBreak();
     foreach ($buttons_in as $button_data) {
         // copy from input to output area
         $buttons_out[] = $button_data;
@@ -82,8 +83,7 @@ function addPreviousSearchButton ($buttons_in)
 function adjustTime ($time, $adjustment)
 // adjust a time value by a specified amount.
 {
-	//DebugBreak();
-    // remove any internal colons
+	// remove any internal colons
     $time = str_replace(':', '', $time);
     // convert time into a unix timestamp
 	$time1 = mktime(substr($time,0,2), substr($time,2,2), 0, 2, 2, 2005);
@@ -101,7 +101,6 @@ function array2range ($input)
 // take an array of rows and put the values into an SQL range clause
 // fieldname IN ('value1','value2',...)
 {
-    // DebugBreak();
     $range = '';
     foreach ($input as $row) {
         foreach ($row as $value) {
@@ -217,7 +216,6 @@ function array_merge_nonkey ($fieldspec, $array1, $array2)
 // Note: this is different from a merge which will add new fields into $array1
 // if they did not previously exist, which is not what I want.
 {
-    // DebugBreak();
     // // This version will not create any items in $array1 which did not previously exist.
     // foreach ($array1 as $fieldname => $fieldvalue) {
     //  if (array_key_exists($fieldname, $array2)) {
@@ -282,7 +280,6 @@ function buildPkeyArray ($rowdata, $pkeynames)
 // $rowdata = array of data (multiple rows) obtained from the database
 // $pkeynames = array of fieldnames which form the primary key
 {
-    //DebugBreak();
     $pkeyarray = array();
 
     if (!is_array($rowdata[key($rowdata)])) {
@@ -348,7 +345,6 @@ function convertEncoding ($string, $from_encoding, $to_encoding)
 function currentOrHistoric ($string)
 // convert the string 'current/historic/future' into a date range.
 {
-    //DebugBreak();
     // convert search string into an indexed array
     $search = where2indexedArray($string);
     // convert into an associative array
@@ -781,7 +777,6 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
 function getMenuButtons ($task_id)
 // return current menu buttons as an array.
 {
-    // DebugBreak();
     $role_id = $_SESSION['role_id'];
 
     // identify extra parameters for a JOIN, as follows:-
@@ -820,11 +815,24 @@ function getMenuButtons ($task_id)
 } // getMenuBttons
 
 // ****************************************************************************
+function getParentDIR ()
+// get name of parent directory.
+{
+
+    $dir = dirname(dirname($_SERVER['PHP_SELF']));
+
+    // if result is '\' or '/' (due to PHP bug) then replace with null
+    if ($dir == '\\' or $dir == '/') $dir = null;
+
+    return $dir;
+
+} // getSelf
+
+// ****************************************************************************
 function getPreviousScript ($curr_task=null)
 // return the name of the previous script in the current page stack
 // (the one that called the current script).
 {
-    //DebugBreak();
     $page_stack = $GLOBALS['page_stack'];
 
     if (empty($curr_task)) {
@@ -868,7 +876,6 @@ function getPreviousScript ($curr_task=null)
 function getPreviousTask ($script_id=null)
 // get the task identity associated with the previous script.
 {
-    //DebugBreak();
     if (empty($script_id)) {
         $script_id = getPreviousScript();
     } // if
@@ -892,18 +899,22 @@ function getSelf ()
 } // getSelf
 
 // ****************************************************************************
-function getParentDIR ()
-// get name of parent directory.
+function getTableAlias ($aliasname, $string)
+// look for 'original AS alias' in $string and return 'original'
 {
+    // split into substrings separated by comma or space or left/right parentheseis, or ' AS '
+    $array = preg_split('/(,)|( as )|( )|(\()|(\))/i', $string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
-    $dir = dirname(dirname($_SERVER['PHP_SELF']));
+    if ($index = array_search($aliasname, $array)) {
+        if (strtoupper($array[$index-1] == ' AS ')) {
+        	$original = $array[$index-2];
+        	return $original;
+        } // if
+    } // if
 
-    // if result is '\' or '/' (due to PHP bug) then replace with null
-    if ($dir == '\\' or $dir == '/') $dir = null;
+    return false;
 
-    return $dir;
-
-} // getSelf
+} // getTableAlias
 
 // ****************************************************************************
 function getTimeStamp ($type=null)
@@ -928,7 +939,6 @@ function getTimeStamp ($type=null)
 function indexed2assoc ($array_in)
 // turn an indexed array (created by where2indexedArray) into an associative array.
 {
-    //DebugBreak();
     $array_out = array();
 
     $separators = '/^('     // beginning with
@@ -961,7 +971,6 @@ function indexed2assoc ($array_in)
 function isPkeyComplete ($where, $pkey)
 // check that $where contains all fields for the primary key.
 {
-    //DebugBreak();
     if (is_string($where)) {
         // convert string into array
         $fieldarray = where2indexedArray($where);
@@ -1083,7 +1092,6 @@ function mergeSettings ($string1, $string2)
 function mergeWhere ($where1, $where2)
 // merge 2 sql where clauses into a single clause, removing duplicate references
 {
-    //DebugBreak();
     if (strlen($where1) == 0) {
         return $where2;
     } elseif (strlen($where2) == 0) {
@@ -1143,7 +1151,6 @@ function orderbyFilter ($orderby, $fieldlist, $tablename)
     // if input string is empty there is nothing to do
     if (empty($orderby)) return;
 
-    //DebugBreak();
     // split string into an array of fieldnames
     $array1 = explode(',', $orderby);
 
@@ -1174,18 +1181,20 @@ function qualifyOrderby ($input, $tablename, $fieldspec)
 // add table names to field names in input string, but only for those fields
 // which exist in $fieldspec.
 {
-    foreach ($fieldspec as $fieldname => $spec) {
-        // check if this fieldname exists in the string
-        if (substr_count($input, "$fieldname") > 0) {
-            // check to see if it is already qualified with the table name
-            if (substr_count($input, ".$fieldname") == 0) {
-                // no, so add tablename as a prefix
-                $input = str_replace("$fieldname", "$tablename.$fieldname", $input);
-            } // if
+    if (empty($input)) return;
+
+    // split into substrings separated by comma or space
+    $array = preg_split('(( )|(,))', $input, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+    $output = null;
+    foreach ($array as $key => $value) {
+        if (array_key_exists($value, $fieldspec)) {
+        	$value = $tablename .'.' .$value;
         } // if
+        $output .= $value;
     } // foreach
 
-    return $input;
+    return $output;
 
 } // qualifyOrderby
 
@@ -1194,18 +1203,30 @@ function qualifySelect ($input, $tablename, $fieldspec)
 // add table names to field names in input string, but only for those fields
 // which exist in $fieldspec.
 {
-    foreach ($fieldspec as $fieldname => $spec) {
-        // check if this fieldname exists in the string
-        if (substr_count($input, "$fieldname") > 0) {
-            // check to see if it is already qualified with the table name
-            if (substr_count($input, ".$fieldname") == 0) {
-                // no, so add tablename as a prefix
-                $input = str_replace("$fieldname", "$tablename.$fieldname", $input);
+
+    if (empty($input)) return;
+
+    // split into substrings separated by comma or space or left/right parentheseis, or ' AS '
+    $array = preg_split('/(,)|( as )|( )|(\()|(\))/i', $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    $output   = null;
+    $previous = null;
+    foreach ($array as $key => $value) {
+        if (array_key_exists($value, $fieldspec)) {
+            if (strtoupper($previous) == ' AS ') {
+                // previous word is ' as ', so do not prefix this name
+            } else {
+            	// substring exists in $fieldspec array, so prefix with supplied tablename
+            	$value = $tablename .'.' .$value;
             } // if
         } // if
+        if ($value != ' ') {
+        	$previous = $value; // store previous value (except space)
+        } // if
+        $output .= $value;
     } // foreach
 
-    return $input;
+    return $output;
 
 } // qualifySelect
 
@@ -1303,7 +1324,6 @@ function selection2where ($pkeyarray, $select)
 // $pkeyarray is an array of primary key name/value pairs for each row.
 // $select identifies which row(s) have been selected.
 {
-    //DebugBreak();
     if (is_array($select)) {
         // for each row that has been selected...
         foreach ($select as $rownum => $on) {
@@ -1345,7 +1365,6 @@ function splitNameOperatorValue (&$where)
 // split a 'name|operator|value' string into its component parts.
 // ($where is passed by reference so that it can be amended)
 {
-    //DebugBreak();
     // construct list of possible operators between fieldname and fieldvalue
     $operators = "/(<>|<=|<|>=|>|!=|=| LIKE | IS NOT | IS | IN | BETWEEN )/i";
 
@@ -1409,7 +1428,6 @@ function splitNameOperatorValue (&$where)
 function splitWhereByRow ($where)
 // convert $where into an array with ' OR ' being used to create a new row.
 {
-    //DebugBreak();
     // convert string into an array
     $array1 = where2indexedArray($where);
 
@@ -1541,35 +1559,65 @@ function unqualifyWhere ($where)
 } // unqualifyWhere
 
 // ****************************************************************************
-function validateSortItem ($zone, $sortfield, $screen)
-// check that the sort field actually exists in the current screen.
+function validateSortItem ($zone, $sortfield, $dbobject, $screen_structure)
+// check that the sort field actually exists in the current screen or dbobject.
 // this stops a naughty user from manually altering the URL to point to
 // a field name that does not exist, thus causing an error.
 {
-    $sortfield = strtolower($sortfield);
+    $sortfield = strtolower(unqualifyOrderBy($sortfield));
 
     if ($sortfield == 'selectbox') {
     	return FALSE; // cannot sort on this field
     } // if
 
-    // get subdirectory which matches user's language code
-    $subdir = getLanguageSubDir ('./screens');
+    $fieldspec  = $dbobject->getFieldspec();    // get fieldspecs for current dbobject
+    $sort_table = $dbobject->sql_sort_table;     // get name of alternate sort table
 
-    $screen = "$subdir/$screen";  // look in subirectory for this screen name
-    if (!file_exists($screen)) {
-        // 'File $screen cannot be found'
-        trigger_error(getLanguageText('sys0056', $screen), E_USER_ERROR);
-    } // if
-
-    require $screen;              // import contents of disk file
-
-    foreach ($structure[$zone]['fields'] as $array) {
-    	if (array_key_exists($sortfield, $array)) {
-    		return TRUE;
-    	} // if
+    $array1 = explode(",", $sortfield);     // convert input string to array of field names
+    $array2 = array();                      // array of valid field names
+    $array3 = array();                      // carry forward to next step
+    foreach ($array1 as $field) {
+        // ignore field if 'nondb' option (not in database) is set
+        if (array_key_exists($field, $fieldspec) and !isset($fieldspec[$field]['nondb'])) {
+            // field exists in this table, so qualify the name
+            $array2[] = $dbobject->getTableName() .'.' .$field;
+        } else {
+            // carry forward to next step
+            $array3[] = $field;
+        } // if
     } // foreach
 
-    return FALSE;
+    foreach ($array3 as $sortfield) {
+        foreach ($screen_structure[$zone]['fields'] as $array) {
+            if (is_string(key($array))) {
+                // array is associative
+            	if (array_key_exists($sortfield, $array)) {
+            	    if (isset($sort_table)) {
+            	    	$array2[] = $sort_table .'.' .$sortfield;
+            	    } else {
+        		        $array2[] = $sortfield;
+            	    } // if
+        	    } // if
+            } else {
+                // this is an array within an array, so step through each sub-array
+                foreach ($array as $array4) {
+                	if (array_key_exists('field', $array4)) {
+                		if ($array4['field'] == $sortfield) {
+                			if (isset($sort_table)) {
+                    	    	$array2[] = $sort_table .'.' .$sortfield;
+                    	    } else {
+                		        $array2[] = $sortfield;
+                    	    } // if
+                		} // if
+                	} // if
+                } // foreach
+            } // if
+        } // foreach
+    } // foreach
+
+    $output = implode(",", $array2);    // convert from array to string
+
+    return $output;
 
 } // validateSortItem
 
@@ -1614,7 +1662,6 @@ function where2indexedArray ($where)
 // or possibly: (name BETWEEN 'value1' AND 'value2' AND name='value') ...
 // or possibly: (name='something=\'this\'' AND somethingelse=\'that\'')
 {
-    //DebugBreak();
     // if input string is empty therealue is nothing to do
     if (empty($where)) return array();
 

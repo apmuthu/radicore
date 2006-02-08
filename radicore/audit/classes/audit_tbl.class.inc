@@ -208,7 +208,7 @@ class audit_tbl extends Default_Table
         	$fieldarray[$ix]['table_seq_no'] = $table_seq_no;
         	$fieldarray[$ix]['field_id']     = $field_id;
         	$fieldarray[$ix]['old_value']    = $old_value;
-        	if (isset($newarray[$field_id])) {
+        	if (array_key_exists($field_id, $newarray)) {
         		$fieldarray[$ix]['new_value'] = $newarray[$field_id];
         		// remove matched entry from $newarray
         		unset($newarray[$field_id]);

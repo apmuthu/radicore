@@ -80,15 +80,15 @@ class mnu_menu extends Default_Table
         		$where = str_replace('task_id=', 'menu_id=', $where);
         } // switch
 
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'mnu_menu.*, mnu_task_snr.task_desc AS menu_desc, mnu_task_jnr.task_desc AS task_desc_jnr';
-            $this->sql_from   = 'mnu_menu '
-                              . 'LEFT JOIN mnu_task AS mnu_task_snr '
-                              . 'ON (mnu_task_snr.task_id=mnu_menu.menu_id) '
-                              . 'LEFT JOIN mnu_task AS mnu_task_jnr '
-                              . 'ON (mnu_task_jnr.task_id=mnu_menu.task_id_jnr) ';
-        } // if
+//        if (empty($this->sql_select)) {
+//            // include columns from foreign table
+//            $this->sql_select = 'mnu_menu.*, mnu_task_snr.task_desc AS menu_desc, mnu_task_jnr.task_desc AS task_desc_jnr';
+//            $this->sql_from   = 'mnu_menu '
+//                              . 'LEFT JOIN mnu_task AS mnu_task_snr '
+//                              . 'ON (mnu_task_snr.task_id=mnu_menu.menu_id) '
+//                              . 'LEFT JOIN mnu_task AS mnu_task_jnr '
+//                              . 'ON (mnu_task_jnr.task_id=mnu_menu.task_id_jnr) ';
+//        } // if
 
         return $where;
 
@@ -113,7 +113,7 @@ class mnu_menu extends Default_Table
                     // get default button text from mnu_task table
                     require_once 'mnu_task.class.inc';
                     $dbobject =& singleton::getInstance('mnu_task');
-                    $dbobject->sql_select = 'button_text';
+                    $dbobject->setSqlSelect('button_text');
                     $data = $dbobject->getData("task_id='$task_id_jnr'");
                     $fieldarray = array_merge($fieldarray, $data[0]);
                 } // if

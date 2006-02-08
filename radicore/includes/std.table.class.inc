@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class Default_Table
@@ -21,7 +21,7 @@ class Default_Table
     var $ignore_empty_fields = false;   // YES/NO switch (see getInitialData() method)
     var $inner_table;                   // used in an outer-link-inner relationship
     var $instruction;                   // instruction to be passed to previous script
-    var $is_link_table = FALSE;         // used in method sqlAssembleWhere (many-link-many relationship)
+    var $is_link_table = FALSE;         // used in method _sqlAssembleWhere (many-link-many relationship)
     var $lastpage;                      // last available page number in current query
     var $lookup_data = array();         // array of lookup data (for dropdowns, radio groups)
     var $messages = array();            // array of messages
@@ -43,7 +43,7 @@ class Default_Table
     var $updatearray;                   // array that will be passed to the database for updating
     var $wf_case_id;                    // workflow case id
     var $wf_workitem_id;                // workflow workitem id
-    var $xref_item;                     // used in sqlAssembleWhere() in many-to-many relationships
+    var $xref_item;                     // used in _sqlAssembleWhere() in many-to-many relationships
     var $xsl_params = array();          // optional parameters to be pased to XSL transformation
 
     // this defines the default database engine (may be changed in sub-classes)
@@ -85,7 +85,6 @@ class Default_Table
     function cascadeDelete ($where)
     // Parent record is being deleted, so remove associated records from this table.
     {
-        //DebugBreak();
         $errors = array();
 
         // retrieve all records which match criteria in $where
@@ -113,7 +112,6 @@ class Default_Table
     function cascadeNullify ($update_array, $where)
     // Parent record is being deleted, so nullify foreign keys in associated records in this table.
     {
-        //DebugBreak();
         $errors = array();
 
         // retrieve all records which match criteria in $where
@@ -160,14 +158,14 @@ class Default_Table
         $fieldspec = $this->fieldspec;
 
         foreach ($fieldarray as $field => $value) {
-        	if (array_key_exists($field, $fieldspec)) {
-        		if (array_key_exists('noedit', $fieldspec[$field])) {
-        		    // field is not editable, so leave it alone
-        	    } else {
-        	        // field is editable, so remove current value
-        	        $fieldarray[$field] = NULL;
-        	    } // if
-        	} // if
+            if (array_key_exists($field, $fieldspec)) {
+                if (array_key_exists('noedit', $fieldspec[$field])) {
+                    // field is not editable, so leave it alone
+                } else {
+                    // field is editable, so remove current value
+                    $fieldarray[$field] = NULL;
+                } // if
+            } // if
         } // foreach
 
         return $fieldarray;
@@ -194,7 +192,7 @@ class Default_Table
     // commit this transaction
     {
         // if this task is a pending workitem then update it
-        $errors = $this->updateWorkflow($this->fieldarray);
+        $errors = $this->_updateWorkflow($this->fieldarray);
 
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
         if ($errors) {
@@ -243,7 +241,6 @@ class Default_Table
     function deleteRecord ($fieldarray)
     // delete the record specified in $fieldarray.
     {
-        //DebugBreak();
         $this->errors = array();   // initialise
 
         if (is_string($fieldarray)) {
@@ -300,7 +297,6 @@ class Default_Table
     function deleteRelations ($fieldarray)
     // delete any child records whch are linked to the current record.
     {
-        //DebugBreak();
         $this->errors = array();
 
         if (empty($this->child_relations)) {
@@ -318,8 +314,8 @@ class Default_Table
                     $update_array = array();
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
                         $where  .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                         $update_array[$fldchild] = NULL;
@@ -349,8 +345,8 @@ class Default_Table
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
                         $where .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                     } // foreach
@@ -392,7 +388,6 @@ class Default_Table
     // delete the specified item from $scrollarray, then return the details of the
     // next available item.
     {
-        //DebugBreak();
         if ($index > count($this->scrollarray)) {
             // index is too high, so do not delete
             $index = count($this->scrollarray);
@@ -405,7 +400,7 @@ class Default_Table
             // resequence the array after removing this item
             $array[0] = 'dummy';
             foreach ($this->scrollarray as $entry) {
-            	$array[] = $entry;
+                $array[] = $entry;
             } // foreach
             unset($array[0]);
             $this->scrollarray = $array;
@@ -435,7 +430,6 @@ class Default_Table
     function deleteSelection ($selection)
     // delete/update a selection of records in one operation.
     {
-        //DebugBreak();
         $this->errors = array();
 
         // call custom method for specific processig
@@ -449,7 +443,6 @@ class Default_Table
     function eraseRecord ($fieldarray)
     // delete the record, and ALL its children, specified in $fieldarray.
     {
-        //DebugBreak();
         $this->errors = array();   // initialise
 
         if (is_string($fieldarray)) {
@@ -509,7 +502,6 @@ class Default_Table
     // erase any child records whch are linked to the current record.
     // this is done by treating every relationship type as CASCADE DELETE
     {
-        //DebugBreak();
         $this->errors = array();
 
         if (empty($this->child_relations)) {
@@ -530,8 +522,8 @@ class Default_Table
                     $update_array = array();
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
                         $where  .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                         $update_array[$fldchild] = NULL;
@@ -554,13 +546,13 @@ class Default_Table
                     break;
 
                 default:
-                	// erase all related rows
+                    // erase all related rows
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
                             // 'Name of child field missing in relationship with $tblchild'
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild));
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild));
+                            break;
                         } // if
                         $where .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                     } // foreach
@@ -573,7 +565,7 @@ class Default_Table
                         $dir = NULL;
                     } // if
                     if (!class_exists($tblchild)) {
-                    	require_once $dir ."classes/$tblchild.class.inc";
+                        require_once $dir ."classes/$tblchild.class.inc";
                     } // if
                     $childobject = new $tblchild;
                     // check for 'order by' clause
@@ -584,7 +576,7 @@ class Default_Table
                     $childobject->audit_logging = $this->audit_logging;
                     $childdata = $childobject->getData_raw($where);
                     foreach ($childdata as $childrow) {
-                    	// now use this object to delete each child record one at a time
+                        // now use this object to delete each child record one at a time
                         $childobject->eraseRecord($childrow);
                         if ($childobject->getErrors()) {
                             $this->errors = array_merge($childobject->getErrors(), $this->errors);
@@ -620,7 +612,6 @@ class Default_Table
     // format values retrieved from the database before they are shown to the user.
     // (such as changing dates from 'CCYY-MM-DD' to 'dd Mmm CCYY'
     {
-        //DebugBreak();
         static $dateobj;
 
         if (!isset($dateobj)) {
@@ -638,36 +629,36 @@ class Default_Table
                 } // if
 
                 switch (strtolower($fieldspec['type'])) {
-                	case 'string':
+                    case 'string':
                         // escape any suspect characters in string fields
                         $fieldarray[$fieldname] = stripslashes($fieldvalue);
-            		    break;
-                	case 'boolean':
-                		// set boolean fields to either TRUE or FALSE
+                        break;
+                    case 'boolean':
+                        // set boolean fields to either TRUE or FALSE
                         if (is_True($fieldvalue)) {
                             $fieldarray[$fieldname] = $fieldspec['true'];
                         } else {
                             $fieldarray[$fieldname] = $fieldspec['false'];
                         } // if
-                		break;
-                	case 'date':
-                		if (isset($fieldspec['infinityisnull']) and $fieldvalue == '9999-12-31') {
+                        break;
+                    case 'date':
+                        if (isset($fieldspec['infinityisnull']) and $fieldvalue == '9999-12-31') {
                             // this date is shown to the user as empty
                             $fieldarray[$fieldname] = '';
                         } else {
                             if ($GLOBALS['mode'] == 'search' and strpos($fieldvalue, '%')) {
-                            	// this is already in LIKE format for a seach screen. so leave it alone
-                            	// (apart from removing trailing '%' which will be replaced later)
-                            	$fieldarray[$fieldname] = rtrim($fieldvalue, '%');
+                                // this is already in LIKE format for a seach screen. so leave it alone
+                                // (apart from removing trailing '%' which will be replaced later)
+                                $fieldarray[$fieldname] = rtrim($fieldvalue, '%');
                             } else {
                                 // convert date from internal to external format
                                 $fieldarray[$fieldname] = $dateobj->getExternalDate($fieldvalue);
                             } // if
                         } // if
-                		break;
-                	case 'datetime':
-                	case 'timestamp':
-                		if (isset($fieldspec['infinityisnull']) and substr($fieldvalue, 0, 10) == '9999-12-31') {
+                        break;
+                    case 'datetime':
+                    case 'timestamp':
+                        if (isset($fieldspec['infinityisnull']) and substr($fieldvalue, 0, 10) == '9999-12-31') {
                             // this date is shown to the user as empty
                             $fieldarray[$fieldname] = '';
                         } else {
@@ -686,17 +677,17 @@ class Default_Table
                                 } // if
                             } // if
                         } // if
-                		break;
-                	case 'time':
-                		if (isset($fieldspec['size']) and $fieldspec['size'] == 5) {
+                        break;
+                    case 'time':
+                        if (isset($fieldspec['size']) and $fieldspec['size'] == 5) {
                             // exclude the seconds portion of the time
                             $fieldarray[$fieldname] = substr($fieldarray[$fieldname], 0, 5);
                         } // if
-                		break;
-                	case 'float':
+                        break;
+                    case 'float':
                     case 'double':
                     case 'real':
-                		if (!empty($fieldvalue)) {
+                        if (!empty($fieldvalue)) {
                             if (is_numeric($fieldvalue)) {
                                 $float   = sprintf('%f', $fieldvalue);
                                 $integer = sprintf('%d', $fieldvalue);
@@ -712,31 +703,31 @@ class Default_Table
                                 } // if
                             } // if
                         } // if
-                		break;
-                	case 'decimal':
-                	case 'numeric':
-                	    if (isset($fieldspec['scale'])) {
-                	       $decimal_places = $fieldspec['scale'];
-                	   } else {
-                	       $decimal_places = 0;
-                	   } // if
-                	   if ($fieldvalue == 0 AND isset($fieldspec['blank_when_zero'])) {
-                	       $fieldvalue = ''; // value is zero, so display blank
-                	   } else {
-                    	   $locale = localeconv();
-                    	   $decimal_point  = $locale['decimal_point'];
-                    	   $thousands_sep  = $locale['thousands_sep'];
-                    	   if ($thousands_sep == chr(160)) {
-                    	       // change non-breaking space into ordinary space
+                        break;
+                    case 'decimal':
+                    case 'numeric':
+                        if (isset($fieldspec['scale'])) {
+                           $decimal_places = $fieldspec['scale'];
+                       } else {
+                           $decimal_places = 0;
+                       } // if
+                       if ($fieldvalue == 0 AND isset($fieldspec['blank_when_zero'])) {
+                           $fieldvalue = ''; // value is zero, so display blank
+                       } else {
+                           $locale = localeconv();
+                           $decimal_point  = $locale['decimal_point'];
+                           $thousands_sep  = $locale['thousands_sep'];
+                           if ($thousands_sep == chr(160)) {
+                               // change non-breaking space into ordinary space
                                $thousands_sep = chr(32);
                            } // if
-                    	   $fieldvalue = number_format($fieldvalue, $decimal_places, $decimal_point, $thousands_sep);
-                	   } // if
-                	   // put back into array
+                           $fieldvalue = number_format($fieldvalue, $decimal_places, $decimal_point, $thousands_sep);
+                       } // if
+                       // put back into array
                        $fieldarray[$fieldname] = $fieldvalue;
-                	   break;
-                	default:
-                		;
+                       break;
+                    default:
+                        ;
                 } // switch
 
                 if (isset($fieldspec['password'])) {
@@ -788,17 +779,17 @@ class Default_Table
     function getCount ($where)
     // get count of records that satisfy selection criteria in $where.
     {
-		if (strlen(trim($where)) > 0) {
-		    $count = $this->_dml_getCount($where);
-			return $count;
-		} else {
-			return 0;
-		} // if
+        if (strlen(trim($where)) > 0) {
+            $count = $this->_dml_getCount($where);
+            return $count;
+        } else {
+            return 0;
+        } // if
 
     } // getCount
 
     // ****************************************************************************
-    function getData ($where)
+    function getData ($where=null)
     // get data from this table using optional 'where' criteria.
     // this is formatted before being displayed to the user.
     {
@@ -807,7 +798,7 @@ class Default_Table
         $this->where = $where;      // save
 
         if (is_null($this->pageno)) {
-        	$this->pageno = 1;      //default
+            $this->pageno = 1;      //default
         } // if
 
         // convert $where from string to an associative array
@@ -819,8 +810,8 @@ class Default_Table
 
         if ($this->where != $where) {
             // $where has bee modified
-        	$this->where = $where;
-        	// convert $where from string to an associative array
+            $this->where = $where;
+            // convert $where from string to an associative array
             $where_array = where2array($where, $this->pageno);
         } // if
 
@@ -830,31 +821,31 @@ class Default_Table
         } // if
 
         // assemble the $where string from its component parts
-        $where_str = $this->sqlAssembleWhere($where, $where_array);
+        $where_str = $this->_sqlAssembleWhere($where, $where_array);
         $this->checkPrimaryKey = false;
 
         if ($this->skip_getdata) {
             // use data already loaded in
-        	$data_raw = $this->fieldarray;
-        	$this->numrows = count($data_raw);
-        	if (empty($this->scrollarray)) {
+            $data_raw = $this->fieldarray;
+            $this->numrows = count($data_raw);
+            if (empty($this->scrollarray)) {
                 // set record/page counts from contents of $this->fieldarray
                 if ($this->numrows == 0) {
                     $this->lastpage = 0;
                     $this->pageno   = 0;
                 } else {
                     if ($this->rows_per_page > 0) {
-                    	$this->lastpage = ceil($this->numrows/$this->rows_per_page);
+                        $this->lastpage = ceil($this->numrows/$this->rows_per_page);
                     } else {
                         $this->lastpage = $this->numrows;
                     } // if
                     if ($this->pageno < 1) {
-                    	$this->pageno = 1;
+                        $this->pageno = 1;
                     } elseif ($this->pageno > $this->lastpage) {
-                    	$this->pageno = $this->lastpage;
+                        $this->pageno = $this->lastpage;
                     } // if
                 } // if
-        	} // if
+            } // if
 
         } else {
             $this->fieldarray = array();
@@ -864,9 +855,9 @@ class Default_Table
 
         // clear 'nodisplay' option which may have been by previous iteration
         foreach ($this->fieldspec as $field => $spec) {
-        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
-        	    unset($this->fieldspec[$field]['nodisplay']);
-        	} // if
+            if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+                unset($this->fieldspec[$field]['nodisplay']);
+            } // if
         } // foreach
 
         $entry = getEntryPoint($this);
@@ -894,7 +885,7 @@ class Default_Table
     } // getData
 
     // ****************************************************************************
-    function getData_batch ($where)
+    function getData_batch ($where=null)
     // Issue an SQL query and return result, not an array of data.
     // Individual rows will be returned using the fetchRow() method.
     {
@@ -919,7 +910,7 @@ class Default_Table
     } // getData_batch
 
     // ****************************************************************************
-    function getData_raw ($where)
+    function getData_raw ($where=null)
     // get data from this table using optional 'where' criteria.
     // this is returned raw (as read from the database with any formatting).
     {
@@ -991,7 +982,7 @@ class Default_Table
             if (!empty($input) and !is_string(key($input))) {
                 // indexed by row, so use it as-is
                 $fieldarray = $input;
-                $key = key($input);
+                $key        = key($input);
             } else {
                 if (empty($input)) {
                     $fieldarray = array();
@@ -1015,7 +1006,7 @@ class Default_Table
             } // if
         } // if
 
-    	// extract first row for processing
+        // extract first row for processing
         if (!empty($fieldarray) and !is_string(key($fieldarray))) {
             $firstrow = $fieldarray[key($fieldarray)];
         } else {
@@ -1040,13 +1031,13 @@ class Default_Table
 
             foreach ($this->fieldspec as $fieldname => $fieldspec) {
                 // do not display any fields marked with 'nosearch'
-            	if (isset($fieldspec['nosearch'])) {
-            	    $this->fieldspec[$fieldname]['nodisplay'] = 'y';
-            	} // if
+                if (isset($fieldspec['nosearch'])) {
+                    $this->fieldspec[$fieldname]['nodisplay'] = 'y';
+                } // if
                 // do not display autoinsert/autoupdate fields on search screens
                 if (array_key_exists('autoinsert', $fieldspec) or array_key_exists('autoupdate', $fieldspec)) {
-            	    unset($this->fieldspec[$fieldname]);
-            	} // if
+                    unset($this->fieldspec[$fieldname]);
+                } // if
             } // foreach
 
             // look for start_date and end_date in $fieldspec
@@ -1119,7 +1110,6 @@ class Default_Table
     function getFieldSpec ()
     // return array of field specifications.
     {
-        //DebugBreak();
         if (!empty($this->field_access)) {
             // include specified access_type in $fieldspec array
             foreach ($this->field_access as $field_id => $access_type) {
@@ -1137,14 +1127,13 @@ class Default_Table
     function getFieldSpec_original ()
     // set the specifications for this database table.
     {
-        //DebugBreak();
-		$fieldspec              = array();
+        $fieldspec              = array();
         $this->primary_key      = array();
         $this->unique_keys      = array();
         $this->child_relations  = array();
         $this->parent_relations = array();
-		$this->audit_logging    = FALSE;
-		$this->default_orderby  = '';
+        $this->audit_logging    = FALSE;
+        $this->default_orderby  = '';
 
         if ($this->getTableName() != 'default') {
             // include table specifications generated by Data Dictionary
@@ -1164,7 +1153,7 @@ class Default_Table
             return $fieldarray;
         } // if
 
-		//perform custom processing before standard processing
+        //perform custom processing before standard processing
         $fieldarray = $this->_cm_getForeignData($fieldarray);
 
         foreach ($this->parent_relations as $reldata) {
@@ -1179,47 +1168,47 @@ class Default_Table
                 if (isset($fieldarray[$parent_field])) {
                     // field is already there, so do nothing
                 } else {
-    	            // construct WHERE clause to read from parent table
-    	            $where = '';
-    	            foreach ($reldata['fields'] as $fldchild => $fldparent) {
-    	                if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                    // construct WHERE clause to read from parent table
+                    $where = '';
+                    foreach ($reldata['fields'] as $fldchild => $fldparent) {
+                        if (strlen($fldchild) < 1) {
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
-    	                // if any input fields are missing then stop
-    	                if (!isset($fieldarray[$fldchild]) or strlen($fieldarray[$fldchild]) == 0) {
+                        // if any input fields are missing then stop
+                        if (!isset($fieldarray[$fldchild]) or strlen($fieldarray[$fldchild]) == 0) {
                             $where = '';
-    	                    break; // skip this $reldata entry
-    	                } // if
-    	                if (empty($where)) {
-    	                    $where = "$fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
-    	                } else {
-    	                    $where .= " AND $fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
-    	                } // if
-    	            } // foreach
+                            break; // skip this $reldata entry
+                        } // if
+                        if (empty($where)) {
+                            $where = "$fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
+                        } else {
+                            $where .= " AND $fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
+                        } // if
+                    } // foreach
                     if (empty($where)) {
                         // where is empty, so do nothing
                     } else {
                         $tblparent = $reldata['parent'];
-        	            // instantiate an object for this table
-        	            if (array_key_exists('subsys_dir', $reldata)) {
-        	                $dir = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$reldata['subsys_dir'] .'/';
-        	            } else {
-        	                $dir = NULL;
-        	            } // if
-						if (!class_exists($tblparent)) {
-						    require_once $dir ."classes/$tblparent.class.inc";
-						} // end
-        	            $parentobj = new $tblparent;
-        	            // retrieve specified field
-        	            $parentobj->sql_select = $reldata['parent_field'];
-        	            $parent_data = $parentobj->getData($where);
-        	            if (count($parent_data) > 0) {
-            	            // merge with existing data
-            	            $fieldarray = array_merge($fieldarray, $parent_data[0]);
-        	            } // if
+                        // instantiate an object for this table
+                        if (array_key_exists('subsys_dir', $reldata)) {
+                            $dir = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$reldata['subsys_dir'] .'/';
+                        } else {
+                            $dir = NULL;
+                        } // if
+                        if (!class_exists($tblparent)) {
+                            require_once $dir ."classes/$tblparent.class.inc";
+                        } // end
+                        $parentobj = new $tblparent;
+                        // retrieve specified field
+                        $parentobj->sql_select = $reldata['parent_field'];
+                        $parent_data = $parentobj->getData($where);
+                        if (count($parent_data) > 0) {
+                            // merge with existing data
+                            $fieldarray = array_merge($fieldarray, $parent_data[0]);
+                        } // if
                     } // if
-    			} // if
+                } // if
             } // if
         } // foreach
 
@@ -1231,7 +1220,6 @@ class Default_Table
     function getInitialData ($where)
     // get initial data for new records in this table.
     {
-        //DebugBreak();
         $this->errors = array();
         $this->numrows = 0;
 
@@ -1256,9 +1244,9 @@ class Default_Table
 
         // do not display autoinsert/autoupdate fields on input screens
         foreach ($this->fieldspec as $field => $spec) {
-        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
-        	    $this->fieldspec[$field]['nodisplay'] = 'y';
-        	} // if
+            if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+                $this->fieldspec[$field]['nodisplay'] = 'y';
+            } // if
         } // foreach
 
         // perform any custom processing (optional)
@@ -1277,6 +1265,7 @@ class Default_Table
                 $fieldarray[$key] = $value;             // fix for version 4.4.1
             } // foreach                                // fix for version 4.4.1
         } // if
+        reset($fieldarray);
         if (!empty($fieldarray) and !is_string(key($fieldarray))) {
             // this has multiple rows, so ignore
         } else {
@@ -1363,10 +1352,9 @@ class Default_Table
     function getNavButtons ($task_id)
     // retrieve any navigation buttons for the current script.
     {
-        //DebugBreak();
         $this->errors = array();
 
-        // MNU_NAV_BUTTON contains a list of tran_id's which can be loaded into
+        // MNU_NAV_BUTTON contains a list of task_id's which can be loaded into
         // the current screen's navigation bar.
 
         // first we must obtain the user's current security setting
@@ -1380,7 +1368,7 @@ class Default_Table
 
         if ($global_access) {
             // if global_access is ON then all buttons can be accessed without restriction
-            // (unless a transaction has been disabled)
+            // (unless a task has been disabled)
             $dbobject->sql_select = 'x.task_id, x.script_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $dbobject->sql_from   = 'mnu_nav_button '
                                    .'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
@@ -1431,7 +1419,6 @@ class Default_Table
     // 'ALL' to sigify that all possible nodes should be expanded.
     // $where identifies the start point of a tree structure
     {
-        //DebugBreak();
         if (empty($where)) {
             $wherearray = null;
         } else {
@@ -1483,7 +1470,7 @@ class Default_Table
         } // if
 
         // strip off any trailing 'asc' or 'desc'
-        $pattern = '/( asc| desc)$/';
+        $pattern = '/( asc| desc)$/i';
         if (preg_match($pattern, $orderby, $regs)) {
             $this->sql_orderby_seq = $regs[0];
             $orderby = preg_replace($pattern, '', $orderby, 1);
@@ -1522,7 +1509,6 @@ class Default_Table
     // return the list of primary key values for the last selection of data
     // which was retrieved from this table (or the passed array).
     {
-        //DebugBreak();
         if (!empty($fieldarray)) {
             $array = buildPkeyArray($fieldarray, $this->getPkeyNames());
         } else {
@@ -1530,7 +1516,7 @@ class Default_Table
         } // if
 
         foreach ($array as $rownum => $rowdata) {
-        	// remove any formatting from each row
+            // remove any formatting from each row
             $array[$rownum] = $this->unFormatData($rowdata);
         } // foreach
 
@@ -1542,7 +1528,6 @@ class Default_Table
     function getPkeyNames ()
     // return the list of primary key fields in this table.
     {
-        //DebugBreak();
         if (!empty($this->primary_key)) {
             $array = $this->primary_key;
         } else {
@@ -1564,7 +1549,6 @@ class Default_Table
     function getRole ()
     // return the role details for the current user.
     {
-        //DebugBreak();
         $this->errors = array();
 
         if (!isset($_SESSION['role_id'])) {
@@ -1620,7 +1604,6 @@ class Default_Table
     // it in $where so that the script can use it in the next getData() method.
     // NOTE: $index is passed BY REFERENCE as it may be updated.
     {
-        //DebugBreak();
         if ($index > count($this->scrollarray)) {
             // index is too high, so reduce it
             $index = count($this->scrollarray);
@@ -1742,11 +1725,10 @@ class Default_Table
     function insertRecord ($fieldarray)
     // insert a record using contents of $fieldarray.
     {
-        //DebugBreak();
         $this->errors = array();   // initialise
 
         if (!empty($fieldarray)) {
-        	if (!is_string(key($fieldarray))) {
+            if (!is_string(key($fieldarray))) {
                 // input is indexed by row, so extract data for 1st row only
                 $array = $fieldarray[key($fieldarray)];
                 $fieldarray = $array;
@@ -1755,16 +1737,16 @@ class Default_Table
 
         // do not allow auto-insert/autoupdate fields to be pasted into an insert screen
         foreach ($this->fieldspec as $field => $spec) {
-        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
-        	    unset($fieldarray[$field]);
-        	} // if
+            if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+                unset($fieldarray[$field]);
+            } // if
         } // foreach
 
-        $entry = getEntryPoint($this);
-        if (strtolower($entry) != 'insertmultiple') {
+//        $entry = getEntryPoint($this);
+//        if (strtolower($entry) != 'insertmultiple') {
             // redo any custom initialisation
             $fieldarray = $this->_cm_getInitialData($fieldarray);
-        } // if
+//        } // if
 
         // perform any custom pre-insert processing
         $fieldarray = $this->_cm_pre_insertRecord($fieldarray);
@@ -1772,7 +1754,7 @@ class Default_Table
         if (empty($this->errors)) {
             // perform standard declarative checks on input array
             // NOTE: this produces another array with data formatted for the database
-            $insertarray = $this->validateInsert($fieldarray);
+            $insertarray = $this->_validateInsert($fieldarray);
         } else {
             $insertarray = $fieldarray;
         } // if
@@ -1841,6 +1823,9 @@ class Default_Table
     // processing before a popup form is called.
     // NOTE: $script_vars is passed BY REFERENCE as it may be altered.
     {
+        // the default is to select only one entry
+        //$settings = 'select_one=true';
+
         // allow $where to be altered if necessary
         $where = $this->_cm_popupCall(strtolower($popupname), $where, $fieldarray, $settings);
 
@@ -1858,7 +1843,6 @@ class Default_Table
     // $return_from identifies which popup screen was called.
     // $selection contains an array of item(s) selected in that popup screen.
     {
-        //DebugBreak();
         $this->errors = array();
 
         $return_from = strtolower($return_from);
@@ -1937,6 +1921,17 @@ class Default_Table
     } // reInitialise
 
     // ****************************************************************************
+    function reset ()
+    // reset all screen settings before starting afresh.
+    {
+        $this->setSqlSearch(null);
+        $this->setPageNo(null);
+        $this->setOrderBy(null);
+        $this->setOrderBySeq(null);
+
+    } // reset
+
+    // ****************************************************************************
     function rollback ()
     // rollback this transaction due to some sort of error.
     {
@@ -1966,7 +1961,6 @@ class Default_Table
     function setAction ($action)
     // process the designated action within the current object.
     {
-        //DebugBreak();
         $this->errors = array();
 
         switch (strtolower($action)){
@@ -2026,7 +2020,6 @@ class Default_Table
     // get contents of ROLE_TASKFIELD for this role/task.
     // this identifies if access to certain fields should be turned off.
     {
-        //DebugBreak();
         $this->errors = array();
         $array = array();
 
@@ -2043,7 +2036,6 @@ class Default_Table
         // If the security class has GLOBAL_ACCESS = 'y' there are no restrictions.
         if ($global_access) return $array;
 
-        //DebugBreak();
         require_once 'classes/mnu_role_taskfield.class.inc';
         $dbobject =& singleton::getInstance('mnu_role_taskfield');
 
@@ -2068,14 +2060,14 @@ class Default_Table
             $fieldvalue = strtolower($rowdata['access_type']);
             // set access type for the field
             switch ($fieldvalue) {
-            	case 'ned':
-            		$array[$fieldname] = 'noedit';
-            		break;
-            	case 'ndi':
-            		$array[$fieldname] = 'nodisplay';
-            		break;
-            	default:
-            		// ignore if access_type='full' (no restrictions)
+                case 'ned':
+                    $array[$fieldname] = 'noedit';
+                    break;
+                case 'ndi':
+                    $array[$fieldname] = 'nodisplay';
+                    break;
+                default:
+                    // ignore if access_type='full' (no restrictions)
             } // switch
         } // foreach
 
@@ -2120,7 +2112,6 @@ class Default_Table
     function setLookupData ($input=null)
     // fetch any lookup data and load into member variable.
     {
-        //DebugBreak();
         // $input may be an array or a string
         if (is_array($input)) {
             if (!empty($input) and !is_string(key($input))) {
@@ -2157,28 +2148,41 @@ class Default_Table
     function setOrderBy ($sql_orderby, $sql_orderby_seq=null)
     // this allows a sort order to be specified (see getData)
     {
-        //DebugBreak();
-        $sql_orderby = trim(strtolower($sql_orderby));
+        if (empty($sql_orderby)) {
+            // nothing specifed, so use the default instead
+            $sql_orderby = $this->default_orderby;
+        } else {
+            $sql_orderby = trim(strtolower($sql_orderby));
+        } // if
 
-        $array1 = explode(",", $sql_orderby);
-        $array2 = array();
-        foreach ($array1 as $field) {
-        	if (array_key_exists($field, $this->fieldspec)) {
-            	$array2[] = qualifyOrderby($field, $this->tablename, $this->getFieldSpec_original());
-            } elseif (!empty($this->sql_sort_table)) {
-                $array2[] = $this->sql_sort_table .'.' .$field;
-            } else {
-                // does not belong, so filter it out
-            } // if
-        } // foreach
+//        if (!empty($sql_orderby)) {
+//            $array1 = explode(",", $sql_orderby);
+//            $array2 = array();
+//            foreach ($array1 as $field) {
+//                if (array_key_exists($field, $this->fieldspec)) {
+//                    $array2[] = qualifyOrderby($field, $this->tablename, $this->fieldspec);
+//                } elseif (!empty($this->sql_sort_table)) {
+//                    if ($substring = strrchr($field, '.')) {
+//                        // remove current qualifier
+//                        $field = ltrim($substring, '.');
+//                    } // if
+//                    // use $sql_sort_table as the qualifier
+//                    $array2[] = $this->sql_sort_table .'.' .$field;
+//                } else {
+//                    // cannot be qualified, so ignore it
+//                } // if
+//            } // foreach
+//
+//            $this->sql_orderby = implode(",", $array2);
+//        } // if
 
-        $this->sql_orderby = implode(",", $array2);
+        $this->sql_orderby = $sql_orderby;
 
         if (empty($this->sql_orderby)) {
             $this->sql_orderby_seq = NULL;
         } else {
             if (!empty($sql_orderby_seq)) {
-            	$this->sql_orderby_seq == $sql_orderby_seq;
+                $this->sql_orderby_seq == $sql_orderby_seq;
             } else {
                 // toggle 'orderby_seq' between 'asc' and 'desc'
                 if ($this->sql_orderby_seq == 'asc') {
@@ -2219,7 +2223,6 @@ class Default_Table
     function setScrollArray ($where)
     // construct an array of prmary keys using the contents of $where
     {
-        //DebugBreak();
         // convert $where (string) into an array of 'name=value' pairs
         $wherearray = where2array($where);
 
@@ -2272,6 +2275,18 @@ class Default_Table
     } // setSqlSearch
 
     // ****************************************************************************
+    function setSqlSelect ($sql_select)
+    // set initial field list to be used in sql select
+    {
+        $this->sql_select = $sql_select;
+
+        // this area must be initialised in case it holds values created by the
+        // sqlForeignJoin() method which are now out of step.
+        $this->sql_from   = null;
+
+    } // setSqlSelect
+
+    // ****************************************************************************
     function setSelectArray ($selection)
     // set optional selection criteria to be used in sql select
     {
@@ -2286,288 +2301,9 @@ class Default_Table
     } // setSelectArray
 
     // ****************************************************************************
-    function sqlAssembleWhere ($where, $where_array)
-    // assemble the $where clause from its component parts.
-    // ($where = string, $where_array = array)
-    {
-        //DebugBreak();
-        if (is_True($this->is_link_table)) {
-            // this is for an outer-link-inner relationship
-            $where = $this->sqlAssembleWhereLink($where, $where_array);
-        } // if
-
-        if ($this->checkPrimaryKey or empty($this->sql_from) or $this->sql_from == $this->tablename) {
-            // check that 'where' clause does not contain any fields that
-            // are not in this table, otherwise it will cause an error
-            $where = WhereFilter($where, $this->fieldspec, $this->tablename);
-        } // if
-
-        if (empty($this->sql_from)) {
-        	// obtain fields from foreign tables via a JOIN, if necessary
-        	$this->sql_from = $this->sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
-        } // if
-
-        if (!empty($this->sql_search)) {
-            // turn 'current/historic/future' into a range of dates
-            $this->sql_search = currentOrHistoric($this->sql_search);
-        } // if
-
-        if (empty($this->sql_from) or $this->sql_from == $this->tablename) {
-            // check that 'search' clause does not contain any fields that
-            // are not in this table, otherwise it will cause an error
-            $this->sql_search  = whereFilter($this->sql_search, $this->fieldspec, $this->tablename);
-            //$this->sql_orderby = orderbyFilter($this->sql_orderby, $this->fieldspec, $this->tablename);
-        } // if
-
-        if (!empty($this->sql_search)) {
-            if (!empty($this->xref_item)) {
-                // replace 'selected' with correct column name, testing for T/Y and F/N
-                $replace = array("selected LIKE 'Y'", "selected LIKE 'T'");
-                $replace_with = "$this->xref_item IS NOT NULL";
-                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
-                $replace = array("selected LIKE 'N'", "selected LIKE 'F'");
-                $replace_with = "$this->xref_item IS NULL";
-                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
-            } else {
-                // ensure that 'selected' column is not specified in search criteria
-                $replace = array("selected LIKE 'Y'", "selected LIKE 'T'", "selected LIKE 'N'", "selected LIKE 'F'");
-                $replace_with = null;
-                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
-            } // if
-
-            if (!empty($this->sql_search) AND !empty($this->sql_search_table)) {
-                // qualify each column name to avoid conflict with other tables
-                $this->sql_search = qualifyWhere($this->sql_search, $this->sql_search_table);
-            } // if
-
-            if (!empty($this->sql_search)) {
-                // merge $where with optional search criteria
-                if (empty($where)) {
-                    $where = $this->sql_search;
-                } else {
-                    $where = mergeWhere($this->sql_search, $where);
-                } // if
-                $where_array = where2indexedArray($where);
-            } // if
-        } // if
-
-        if (!empty($this->sql_from)) {
-            // qualify column names with the table name in case
-            // there is a conflicting column name on the joined table
-            $where = qualifyWhere($where, $this->tablename, $this->fieldspec);
-            $this->default_orderby = qualifyOrderby($this->default_orderby, $this->tablename, $this->fieldspec);
-        } // if
-
-        // the 'where' sring may come in two parts
-        if (empty($this->sql_where)) {
-            $where_str = $where;
-        } else {
-            // incorporate optional 'sql_where' criteria
-            if (!empty($where)) {
-                $where_str = "$where AND $this->sql_where";
-            } else {
-                $where_str = "$this->sql_where";
-            } // if
-        } // if
-
-        return $where_str;
-
-    } // sqlAssembleWhere
-
-    // ****************************************************************************
-    function sqlAssembleWhereLink ($where, $where_array)
-    // in a many-link-many relationship this will assemble the SQL commands for
-    // the middle (link) table.
-    {
-        //DebugBreak();
-        if (isset($this->xref_item)) {
-            // this has already been processed, so don't do it again
-            return $where;
-        } // if
-
-        if (!is_string(key($where_array))) {
-        	$where_array = indexed2assoc($where_array);
-        } // if
-
-        // step through $parent_relations until the OUTER entity is found
-        foreach ($this->parent_relations as $reldata) {
-        	if ($reldata['parent'] == $this->outer_table) {
-        	    $outer_table     = $reldata['parent'];
-                $outer_alias     = '';
-                break;
-            } else if (isset($reldata['alias']) and $reldata['alias'] == $this->outer_table) {
-                $outer_table     = $reldata['parent'];
-                $outer_alias     = $reldata['alias'];
-                break;
-        	} // if
-        } // foreach
-
-        // identify felds which join the OUTER table to the LINK table
-        foreach ($reldata['fields'] as $fldchild => $fldparent) {
-        	$outer_key[]        = $outer_table .'.' .$fldparent;
-            $ix = count($outer_key) -1;
-            if ($fldchild == $fldparent) {
-                $outer_key_as[] = $outer_key[$ix];
-            } else {
-                $outer_key_as[] = $outer_key[$ix] .' AS ' .$fldchild;
-            } // if
-            $outer_link[]       = $outer_key[$ix] .'=' .$this->tablename .'.' .$fldchild;
-        } // foreach
-
-        if (!isset($this->inner_table)) {
-            // if OUTER table is defined, then INNER must be as well
-            trigger_error(getLanguageText('sys0011'), E_USER_ERROR); // 'Definition of INNER_TABLE is missing'
-        } // if
-
-        if (empty($this->sql_search_table)) {
-        	$this->sql_search_table = $this->inner_table;
-        } // if
-        $this->sql_sort_table   = $this->inner_table;
-
-        // step through $parent_relations until the INNER entity is found
-        foreach ($this->parent_relations as $reldata) {
-        	if ($reldata['parent'] == $this->inner_table) {
-                $inner_table     = $reldata['parent'];
-                $inner_alias     = '';
-                break;
-            } elseif (isset($reldata['alias']) and $reldata['alias'] == $this->inner_table) {
-                $inner_table     = $reldata['parent'];
-                $inner_alias     = $reldata['alias'];
-                break;
-            } // if
-        } // foreach
-
-        // identify felds which join the INNER table to the LINK table
-        foreach ($reldata['fields'] as $fldchild => $fldparent) {
-            if (empty($inner_alias)) {
-                $inner_key[]    = $inner_table .'.' .$fldparent;
-            } else {
-                $inner_key[]    = $inner_alias .'.' .$fldparent;
-            } // if
-            $ix = count($inner_key) -1;
-            if ($fldchild == $fldparent) {
-                $inner_key_as[] = $inner_key[$ix];
-            } else {
-                $inner_key_as[] = $inner_key[$ix] .' AS ' .$fldchild;
-            } // if
-            $inner_link[]       = $inner_key[$ix] .'=' .$this->tablename .'.' .$fldchild;
-        } // foreach
-
-        $this->xref_item = $this->tablename .'.' .$fldchild;
-
-        // assemble the sql SELECT clause
-        $sql_select = '';
-        foreach ($outer_key_as as $field) {
-            $sql_select .= $field .', ';
-        } // foreach
-        foreach ($inner_key_as as $field) {
-            $sql_select .= $field .', ';
-        } // foreach
-
-        if (strlen($this->sql_select) > 0) {
-            // use supplied value
-            $sql_select .= $this->sql_select;
-        } else {
-            // use default value
-            $sql_select .= $reldata['parent_field'];
-        } // if
-
-        $this->sql_select = $sql_select .", CASE WHEN $this->xref_item IS NULL THEN 'F' ELSE 'T' END AS selected";
-
-        // assemble the sql FROM clause
-        $sql_from   = $outer_table .' CROSS JOIN ';
-
-        if (empty($inner_alias)) {
-            $sql_from .= $inner_table;
-        } else {
-            $sql_from .= $inner_table .' AS ' .$inner_alias;
-        } // if
-
-        $sql_from  .= ' LEFT JOIN ' .$this->tablename .' ON (';
-        foreach ($outer_link as $link) {
-            $sql_from .= $link .' AND ';
-        } // foreach
-        foreach ($inner_link as $link) {
-            $sql_from .= $link .' AND ';
-        } // foreach
-        $sql_from = rtrim($sql_from, ' AND');
-        $sql_from .= ')';
-
-        $this->sql_from = $sql_from .' ' .$this->sql_from;
-
-        return $where;
-
-    } // sqlAssembleWhereLink
-
-    // ****************************************************************************
-    function sqlForeignJoin (&$select, $from, $parent_relations)
-    // if there are parent relations then construct a JOIN
-    // Note that $select is passed by reference as it may be amended
-    {
-        if (empty($parent_relations)) {
-        	return $from;
-        } // if
-
-        if (empty($select)) {
-        	$select = $this->tablename .'.*';
-        } else {
-            $select = qualifySelect($select, $this->tablename, $this->fieldspec);
-        } // if
-
-        if (empty($from)) {
-        	$from = $this->tablename;
-        } // if
-
-        foreach ($this->parent_relations as $reldata) {
-            if (!isset($reldata['parent_field'])) {
-            	// parent_field is not defined, so ignore this entry
-            } else {
-                $parent_fueld = $reldata['parent_field'];
-                // does this belong to another database/schema?
-                if (isset($reldata['dbname'])) {
-                	$dbname = $reldata['dbname'] .'.';
-                } else {
-                    $dbname = '';
-                } // if
-                if (isset($reldata['alias'])) {
-                	$alias = $reldata['alias'];
-                } else {
-                    $alias = '';
-                } // if
-                // put field from foreign table into SELECT area
-                if (substr_count($reldata['parent_field'],' ') == 0) {
-                    // parent_field is a single word (no spaces)
-                	$select .= ', ' .$reldata['parent'] .'.' .$reldata['parent_field'];
-                } else {
-                    $select .= ', ' .$reldata['parent_field'];
-                } // if
-                // build JOIN using supplied field names
-                if (!empty($alias)) {
-                	$from .= ' LEFT JOIN ' .$dbname .$reldata['parent']  .' AS ' .$alias .' ON (';
-                } else {
-                    $from .= ' LEFT JOIN ' .$dbname .$reldata['parent']  .' ON (';
-                } // if
-                foreach ($reldata['fields'] as $fldchild => $fldparent) {
-                    if (!empty($alias)) {
-                        $from .= $alias .'.' .$fldparent .'=' .$this->tablename .'.' .$fldchild .' AND ';
-                    } else {
-                        $from .= $reldata['parent'] .'.' .$fldparent .'=' .$this->tablename .'.' .$fldchild .' AND ';
-                    } // if
-                } // foreach
-                // replace trailing 'AND' with ')'
-                $from = rtrim($from, ' AND') .') ';
-            } // if
-        } // foreach
-
-        return $from;
-
-    } // sqlForeignJoin
-
-    // ****************************************************************************
     function startTransaction ()
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $GLOBALS['lock_tables'] = FALSE;    // set default, may be changed
@@ -2585,9 +2321,9 @@ class Default_Table
 
             foreach ($lock_array as $row => $data) {
                 // if no READ/WRITE lock is specified, default to WRITE
-            	if (!preg_match('/^(READ|WRITE)$/i', $row, $regs)) {
+                if (!preg_match('/^(READ|WRITE)$/i', $row, $regs)) {
                     $lock_array['WRITE'][] = $data;  // insert new entry
-            	    unset($lock_array[$row]);        // delete old entry
+                    unset($lock_array[$row]);        // delete old entry
                 } // if
             } // foreach
 
@@ -2609,26 +2345,26 @@ class Default_Table
             // compare $lock_array with $std_locks looking for duplicates
             // NOTE: a WRITE lock will replace a READ lock
             foreach ($lock_array as $mode => $mode_array) {
-            	foreach ($mode_array as $row => $tablename) {
-                	if (strpos($tablename, '.')) {
+                foreach ($mode_array as $row => $tablename) {
+                    if (strpos($tablename, '.')) {
                         // split into $tablename and $fieldname
                         list($dbname, $tablename) = explode('.', $tablename);
                     } else {
                         $dbname = $this->dbname;
                     } // if
                     if (array_key_exists($dbname, $std_lock['READ'])) {
-                    	if (in_array($tablename, $std_lock['READ'][$dbname])) {
-                    	    if ($mode == 'WRITE') {
-                    	        $stdrow = array_search($tablename, $std_lock['READ'][$dbname]);
-                    	    	unset($std_lock['READ'][$stdrow]);
-                    	    } else {
-                        	    unset($lock_array[$mode][$row]);
-                    	    } // if
+                        if (in_array($tablename, $std_lock['READ'][$dbname])) {
+                            if ($mode == 'WRITE') {
+                                $stdrow = array_search($tablename, $std_lock['READ'][$dbname]);
+                                unset($std_lock['READ'][$stdrow]);
+                            } else {
+                                unset($lock_array[$mode][$row]);
+                            } // if
                         } // if
                     } // if
                     if (array_key_exists($dbname, $std_lock['WRITE'])) {
                         if (in_array($tablename, $std_lock['WRITE'][$dbname])) {
-                        	unset($lock_array[$mode][$row]);
+                            unset($lock_array[$mode][$row]);
                         } // if
                     } // if
                 } // foreach
@@ -2639,7 +2375,7 @@ class Default_Table
             // transfer $lock_array to $new_array
             foreach ($lock_array as $mode => $mode_array) {
                 foreach ($mode_array as $row => $tablename) {
-                	if (strpos($tablename, '.')) {
+                    if (strpos($tablename, '.')) {
                         $new_array[$mode][] = $dbprefix .$tablename;
                     } else {
                         $new_array[$mode][] = $tablename;
@@ -2652,7 +2388,7 @@ class Default_Table
                 foreach ($mode_array as $std_dbname => $std_table_array) {
                     foreach ($std_table_array as $std_tablename) {
                         if ($std_dbname == $this->dbname) {
-                        	$new_array[$mode][] = $std_tablename;
+                            $new_array[$mode][] = $std_tablename;
                         } else {
                             $new_array[$mode][] = $dbprefix .$std_dbname .'.' .$std_tablename;
                         } // if
@@ -2677,7 +2413,6 @@ class Default_Table
     // remove any formatting before data is given to the database.
     // (such as changing dates from 'dd Mmm CCYY' to 'CCYY-MM-DD')
     {
-        //DebugBreak();
         static $dateobj;
 
         if (!isset($dateobj)) {
@@ -2695,31 +2430,31 @@ class Default_Table
                 } // if
 
                 switch (strtolower($fieldspec['type'])) {
-                	case 'string':
+                    case 'string':
                         break;
-                	case 'boolean':
-                		break;
-                	case 'date':
-                		if (isset($fieldspec['infinityisnull']) and $fieldvalue == '') {
+                    case 'boolean':
+                        break;
+                    case 'date':
+                        if (isset($fieldspec['infinityisnull']) and $fieldvalue == '') {
                             // empty date is shown in the database as infinity
                             $fieldarray[$fieldname] = '9999-12-31';
                         } else {
                             // convert date from external to internal format
                             $fieldarray[$fieldname] = $dateobj->getInternalDate($fieldvalue);
                         } // if
-                		break;
-                	case 'datetime':
-                		// convert date from external to internal format
+                        break;
+                    case 'datetime':
+                        // convert date from external to internal format
                         $fieldarray[$fieldname] = $dateobj->getInternalDateTime($fieldvalue);
                         break;
-                	case 'time':
-                		break;
-                	case 'float':
+                    case 'time':
+                        break;
+                    case 'float':
                     case 'double':
                     case 'real':
-                		break;
-                	default:
-                		;
+                        break;
+                    default:
+                        ;
                 } // switch
 
             } // if
@@ -2739,7 +2474,6 @@ class Default_Table
     // For each entry where SELECTED=TRUE make sure a database entry exists.
     // For each entry where SELECTED=FALSE make sure a database entry does not exist.
     {
-        //DebugBreak();
         $this->errors = array();
 
         // perform any custom pre-update processing
@@ -2823,7 +2557,6 @@ class Default_Table
     // update multiple records using original data in $fieldarray
     // and changed data in $postarray.
     {
-        //DebugBreak();
         $this->errors = array();
         $count = 0;
 
@@ -2879,7 +2612,6 @@ class Default_Table
     function updateRecord ($fieldarray)
     // update a record using the contents of $fieldarray.
     {
-        //DebugBreak();
         if (empty($fieldarray)) return $fieldarray;
 
         if (!is_string(key($fieldarray))) {
@@ -2894,7 +2626,7 @@ class Default_Table
 
         if (empty($this->errors)) {
             // perform standard declarative checks on input data
-            $updatearray = $this->validateUpdate($fieldarray);
+            $updatearray = $this->_validateUpdate($fieldarray);
         } // if
 
         if (empty($this->errors)) {
@@ -2992,32 +2724,15 @@ class Default_Table
     } // updateSelection
 
     // ****************************************************************************
-    function updateWorkflow ($fieldarray)
-    // if this task is a pending workitem then update it.
-    {
-        $this->errors = array();
-
-        if ($this->dbname != 'workflow') {
-            // find out if this task/context has any workflow connections,
-            // and if it does then update them
-            $this->_examineWorkflow($fieldarray);
-        } // if
-
-        return $this->errors;
-
-    } // updateWorkflow
-
-    // ****************************************************************************
     function validateDelete ($fieldarray)
     // verify that the specified record can be deleted.
     {
-        //DebugBreak();
-		$this->errors = array();
+        $this->errors = array();
 
-		if ($this->skip_validation) {
-		    // skip any validation
-		    return $fieldarray;
-		} // if
+        if ($this->skip_validation) {
+            // skip any validation
+            return $fieldarray;
+        } // if
 
         if (is_string($fieldarray)) {
             $fieldarray = where2array($fieldarray);
@@ -3041,8 +2756,8 @@ class Default_Table
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
                         $where .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                     } // foreach
@@ -3069,8 +2784,8 @@ class Default_Table
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                        	$this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        	break;
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            break;
                         } // if
                         $where .= "$fldchild='" .addslashes($fieldarray[$fldparent]) ."' AND ";
                     } // foreach
@@ -3084,12 +2799,12 @@ class Default_Table
                     require_once $dir ."classes/$tblchild.class.inc";
                     $childobject = new $tblchild;
                     if (array_key_exists('orderby', $reldata)) {
-                    	$childobject->setOrderBy($reldata['orderby']);
+                        $childobject->setOrderBy($reldata['orderby']);
                     } // if
                     $childarray  = $childobject->getdata($where);
                     foreach ($childarray as $child) {
                         $pkey   = $childobject->getPkeyArray($child);
-                    	$result = $childobject->validateDelete($pkey);
+                        $result = $childobject->validateDelete($pkey);
                         $errors = $childobject->getErrors();
                         if (!empty($errors)) {
                             $this->errors = array_merge($this->errors, $errors);
@@ -3105,52 +2820,12 @@ class Default_Table
             } // switch
         } // foreach
 
-		// remove any duplicate error messages
-		$this->errors = array_unique($this->errors);
+        // remove any duplicate error messages
+        $this->errors = array_unique($this->errors);
 
         return $fieldarray;
 
     } // validateDelete
-
-    // ****************************************************************************
-    function validateInsert ($fieldarray)
-    // validate contents of $fieldarray prior to an INSERT
-    {
-        //DebugBreak();
-        static $validationobj;
-
-        if (!isset($validationobj)) {
-            require_once 'std.validation.class.inc';
-            $validationobj =& singleton::getInstance('validation_class');
-        } // if
-
-        $array = $validationobj->validateInsert($fieldarray, $this->fieldspec, $this);
-
-        $this->errors = $validationobj->getErrors();
-
-        return $array;
-
-    } // validateInsert
-
-    // ****************************************************************************
-    function validateUpdate ($fieldarray)
-    // validate contents of $fieldarray prior to an UPDATE
-    {
-        //DebugBreak();
-        static $validationobj;
-
-        if (!isset($validationobj)) {
-            require_once 'std.validation.class.inc';
-            $validationobj =& singleton::getInstance('validation_class');
-        } // if
-
-        $array = $validationobj->validateUpdate($fieldarray, $this->fieldspec, $this);
-
-        $this->errors = $validationobj->getErrors();
-
-        return $array;
-
-    } // validateUpdate
 
     // ****************************************************************************
     // methods beginning with '_cm_' are designed to be customised as required
@@ -3268,7 +2943,6 @@ class Default_Table
     // $where may contain specific selection criteria as a string.
     // $wherearray is $where but converted into an array.
     {
-        //DebugBreak();
         $this->sql_select  = '';
         $this->sql_from    = '';
         $this->sql_where   = '';
@@ -3597,7 +3271,6 @@ class Default_Table
     function _ddl_getColumnSpecs ()
     // obtain column specifications.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_getColumnSpecs();
@@ -3610,7 +3283,6 @@ class Default_Table
     function _ddl_showColumns($dbname, $tablename)
     // obtain a list of column names for the selected database table.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_showColumns($dbname, $tablename);
@@ -3623,7 +3295,6 @@ class Default_Table
     function _ddl_showCreateTable ($dbname, $tablename)
     // obtain a list of column names for the selected database table.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_showCreateTable($dbname, $tablename);
@@ -3636,7 +3307,6 @@ class Default_Table
     function _ddl_showDatabases ()
     // obtain a list of existing database names.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_showDatabases();
@@ -3649,7 +3319,6 @@ class Default_Table
     function _ddl_showTables ($dbname)
     // obtain a list of table names for the selected database.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_showTables($dbname);
@@ -3662,7 +3331,6 @@ class Default_Table
     function _ddl_showTableKeys ($dbname, $tablename)
     // obtain a list of existing database names.
     {
-        //DebugBreak();
         $DDL =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DDL->ddl_showTableKeys($dbname, $tablename);
@@ -3678,7 +3346,6 @@ class Default_Table
     function _dml_deleteRecord ($fieldarray)
     // delete the record whose primary key is contained within $fieldarray.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $DML->fieldspec     = $this->fieldspec;
@@ -3699,7 +3366,6 @@ class Default_Table
     function _dml_deleteSelection ($selection)
     // delete a selection of records in a single operation.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $DML->fieldspec     = $this->fieldspec;
@@ -3717,7 +3383,6 @@ class Default_Table
     function _dml_getCount ($where)
     // Get count of recors which match criteria in $where.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $count = $DML->getCount($this->dbname, $this->tablename, $where);
@@ -3733,7 +3398,6 @@ class Default_Table
     // Get data from the specified database table.
     // Results may be affected by $where and $pageno.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $DML->fieldspec        = $this->fieldspec;
@@ -3763,7 +3427,6 @@ class Default_Table
     function _dml_getEnum ($item)
     // Get the details of an ENUM item from the database.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $array = $DML->getEnum($this->dbname, $this->tablename, $item);
@@ -3778,7 +3441,6 @@ class Default_Table
     function _dml_getFunctionID ()
     // Get the function identifier for this DML class.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $result = $DML->getFunctionID();
@@ -3791,7 +3453,6 @@ class Default_Table
     function _dml_insertRecord ($fieldarray)
     // insert a record using the contents of $fieldarray.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         // use ORIGINAL, not CURRENT specifications for this database table
@@ -3814,7 +3475,6 @@ class Default_Table
     // The primary key should be supplied in $where.
 
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $DML->fieldspec        = $this->fieldspec;
@@ -3863,7 +3523,6 @@ class Default_Table
     function _dml_updateSelection ($selection, $replace)
     // update a selection of records in a single operation.
     {
-        //DebugBreak();
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         $DML->fieldspec     = $this->fieldspec;
@@ -3883,7 +3542,6 @@ class Default_Table
     // find out if this task/context starts a new workflow instance (case),
     // or is a workitem within an existing workflow instance.
     {
-        //DebugBreak();
         if (is_array($input)) {
             // context is the primary key of the current record
             $context    = array2where($input, $this->getPkeyNames());
@@ -3898,7 +3556,7 @@ class Default_Table
 
         // interface with the workflow engine
         if (!class_exists('workflow_engine')) {
-        	require_once 'classes/workflow_engine.class.inc';
+            require_once 'classes/workflow_engine.class.inc';
         } // if
         $workflow =& singleton::getInstance('workflow_engine');
 
@@ -3930,7 +3588,6 @@ class Default_Table
     // look to see if this task/context is a workitem within a workflow instance,
     // and if it is then set the appropriate variables (for use in finishWorkitem())
     {
-        //DebugBreak();
         if (empty($where)) {
             // no context yet, so ignore
             return;
@@ -3993,7 +3650,7 @@ class Default_Table
     // get/create the object that deals with this database engine.
     {
         if (!class_exists($engine)) {
-        	// load class definition for this database engine
+            // load class definition for this database engine
             if ($engine == 'mysql') {
                 if (function_exists('mysqli_connect')) {
                     // use 'improved' mysql functions
@@ -4018,7 +3675,6 @@ class Default_Table
     // process instructions contained within $this->instruction
     // (as returned by a child script)
     {
-        //DebugBreak();
         // look for a 'select' instruction
         if (array_key_exists('select', $this->instruction)) {
             // extract the key/value pair which has been selected
@@ -4043,6 +3699,371 @@ class Default_Table
         return $fieldarray;
 
     } // _processInstruction
+
+    // ****************************************************************************
+    function _sqlAssembleWhere ($where, $where_array)
+    // assemble the $where clause from its component parts.
+    // ($where = string, $where_array = array)
+    {
+        if (is_True($this->is_link_table)) {
+            // this is for an outer-link-inner relationship
+            $where = $this->_sqlAssembleWhereLink($where, $where_array);
+        } // if
+
+        if ($this->checkPrimaryKey or empty($this->sql_from) or $this->sql_from == $this->tablename) {
+            // check that 'where' clause does not contain any fields that
+            // are not in this table, otherwise it will cause an error
+            $where = WhereFilter($where, $this->fieldspec, $this->tablename);
+        } // if
+
+        if (empty($this->sql_from)) {
+            // obtain fields from foreign tables via a JOIN, if necessary
+            $this->sql_from = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+        } // if
+
+        if (!empty($this->sql_search)) {
+            // turn 'current/historic/future' into a range of dates
+            $this->sql_search = currentOrHistoric($this->sql_search);
+        } // if
+
+        if (empty($this->sql_from) or $this->sql_from == $this->tablename) {
+            // check that 'search' clause does not contain any fields that
+            // are not in this table, otherwise it will cause an error
+            $this->sql_search  = whereFilter($this->sql_search, $this->fieldspec, $this->tablename);
+            //$this->sql_orderby = orderbyFilter($this->sql_orderby, $this->fieldspec, $this->tablename);
+        } // if
+
+        if (!empty($this->sql_search)) {
+            if (!empty($this->xref_item)) {
+                // replace 'selected' with correct column name, testing for T/Y and F/N
+                $replace = array("selected LIKE 'Y'", "selected LIKE 'T'");
+                $replace_with = "$this->xref_item IS NOT NULL";
+                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
+                $replace = array("selected LIKE 'N'", "selected LIKE 'F'");
+                $replace_with = "$this->xref_item IS NULL";
+                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
+            } else {
+                // ensure that 'selected' column is not specified in search criteria
+                $replace = array("selected LIKE 'Y'", "selected LIKE 'T'", "selected LIKE 'N'", "selected LIKE 'F'");
+                $replace_with = null;
+                $this->sql_search = str_replace($replace, $replace_with, $this->sql_search);
+            } // if
+
+            if (!empty($this->sql_search) AND !empty($this->sql_search_table)) {
+                // qualify each column name to avoid conflict with other tables
+                $this->sql_search = qualifyWhere($this->sql_search, $this->sql_search_table);
+            } // if
+
+            if (!empty($this->sql_search)) {
+                // merge $where with optional search criteria
+                if (empty($where)) {
+                    $where = $this->sql_search;
+                } else {
+                    $where = mergeWhere($this->sql_search, $where);
+                } // if
+                $where_array = where2indexedArray($where);
+            } // if
+        } // if
+
+        if (!empty($this->sql_from)) {
+            // qualify column names with the table name in case
+            // there is a conflicting column name on the joined table
+            $where = qualifyWhere($where, $this->tablename, $this->fieldspec);
+            // qualify $default_orderby using one of two possible table names
+            if (isset($this->sql_sort_table)) {
+                $sort_tablename = $this->sql_sort_table;
+            } else {
+                $sort_tablename = $this->tablename;
+            } // if
+            if ($sort_tablename != $this->tablename) {
+                if (file_exists('classes/$sort_tablename.class.inc')) {
+                	require_once "classes/$sort_tablename.class.inc";
+                    $dbobject = new $sort_tablename;
+                    $fieldspec      = $dbobject->fieldspec;
+                } else {
+                    // look for 'original AS alias' in sql_from string
+                    $alias_tablename = getTableAlias($sort_tablename, $this->sql_from);
+                    if ($alias_tablename) {
+                    	require_once "classes/$alias_tablename.class.inc";
+                        $dbobject = new $alias_tablename;
+                        $fieldspec      = $dbobject->fieldspec;
+                    } else {
+                        $fieldspec = array();
+                    } // if
+                } // if
+            } else {
+                $fieldspec      = $this->fieldspec;
+            } // if
+            $this->default_orderby = qualifyOrderby($this->default_orderby, $sort_tablename, $fieldspec);
+        } // if
+
+        // the 'where' sring may come in two parts
+        if (empty($this->sql_where)) {
+            $where_str = $where;
+        } else {
+            // incorporate optional 'sql_where' criteria
+            if (!empty($where)) {
+                $where_str = "$where AND $this->sql_where";
+            } else {
+                $where_str = "$this->sql_where";
+            } // if
+        } // if
+
+        return $where_str;
+
+    } // _sqlAssembleWhere
+
+    // ****************************************************************************
+    function _sqlAssembleWhereLink ($where, $where_array)
+    // in a many-link-many relationship this will assemble the SQL commands for
+    // the middle (link) table.
+    {
+        if (isset($this->xref_item)) {
+            // this has already been processed, so don't do it again
+            return $where;
+        } // if
+
+        if (!is_string(key($where_array))) {
+            $where_array = indexed2assoc($where_array);
+        } // if
+
+        // step through $parent_relations until the OUTER entity is found
+        foreach ($this->parent_relations as $reldata) {
+            if ($reldata['parent'] == $this->outer_table) {
+                $outer_table     = $reldata['parent'];
+                $outer_alias     = '';
+                break;
+            } else if (isset($reldata['alias']) and $reldata['alias'] == $this->outer_table) {
+                $outer_table     = $reldata['parent'];
+                $outer_alias     = $reldata['alias'];
+                break;
+            } // if
+        } // foreach
+
+        // identify felds which join the OUTER table to the LINK table
+        foreach ($reldata['fields'] as $fldchild => $fldparent) {
+            $outer_key[]        = $outer_table .'.' .$fldparent;
+            $ix = count($outer_key) -1;
+            if ($fldchild == $fldparent) {
+                $outer_key_as[] = $outer_key[$ix];
+            } else {
+                $outer_key_as[] = $outer_key[$ix] .' AS ' .$fldchild;
+            } // if
+            $outer_link[]       = $outer_key[$ix] .'=' .$this->tablename .'.' .$fldchild;
+        } // foreach
+
+        if (!isset($this->inner_table)) {
+            // if OUTER table is defined, then INNER must be as well
+            trigger_error(getLanguageText('sys0011'), E_USER_ERROR); // 'Definition of INNER_TABLE is missing'
+        } // if
+
+        if (empty($this->sql_search_table)) {
+            $this->sql_search_table = $this->inner_table;
+        } // if
+        $this->sql_sort_table   = $this->inner_table;
+
+        // step through $parent_relations until the INNER entity is found
+        foreach ($this->parent_relations as $reldata) {
+            if ($reldata['parent'] == $this->inner_table) {
+                $inner_table     = $reldata['parent'];
+                $inner_alias     = '';
+                break;
+            } elseif (isset($reldata['alias']) and $reldata['alias'] == $this->inner_table) {
+                $inner_table     = $reldata['parent'];
+                $inner_alias     = $reldata['alias'];
+                break;
+            } // if
+        } // foreach
+
+        // identify felds which join the INNER table to the LINK table
+        foreach ($reldata['fields'] as $fldchild => $fldparent) {
+            if (empty($inner_alias)) {
+                $inner_key[]    = $inner_table .'.' .$fldparent;
+            } else {
+                $inner_key[]    = $inner_alias .'.' .$fldparent;
+            } // if
+            $ix = count($inner_key) -1;
+            if ($fldchild == $fldparent) {
+                $inner_key_as[] = $inner_key[$ix];
+            } else {
+                $inner_key_as[] = $inner_key[$ix] .' AS ' .$fldchild;
+            } // if
+            $inner_link[]       = $inner_key[$ix] .'=' .$this->tablename .'.' .$fldchild;
+        } // foreach
+
+        $this->xref_item = $this->tablename .'.' .$fldchild;
+
+        // assemble the sql SELECT clause
+        $sql_select = '';
+        foreach ($outer_key_as as $field) {
+            $sql_select .= $field .', ';
+        } // foreach
+        foreach ($inner_key_as as $field) {
+            $sql_select .= $field .', ';
+        } // foreach
+
+        if (strlen($this->sql_select) > 0) {
+            // use supplied value
+            $sql_select .= $this->sql_select;
+        } else {
+            // use default value
+            $sql_select .= $reldata['parent_field'];
+        } // if
+
+        $this->sql_select = $sql_select .", CASE WHEN $this->xref_item IS NULL THEN 'F' ELSE 'T' END AS selected";
+
+        // assemble the sql FROM clause
+        $sql_from   = $outer_table .' CROSS JOIN ';
+
+        if (empty($inner_alias)) {
+            $sql_from .= $inner_table;
+        } else {
+            $sql_from .= $inner_table .' AS ' .$inner_alias;
+        } // if
+
+        $sql_from  .= ' LEFT JOIN ' .$this->tablename .' ON (';
+        foreach ($outer_link as $link) {
+            $sql_from .= $link .' AND ';
+        } // foreach
+        foreach ($inner_link as $link) {
+            $sql_from .= $link .' AND ';
+        } // foreach
+        $sql_from = rtrim($sql_from, ' AND');
+        $sql_from .= ')';
+
+        $this->sql_from = $sql_from .' ' .$this->sql_from;
+
+        return $where;
+
+    } // _sqlAssembleWhereLink
+
+    // ****************************************************************************
+    function _sqlForeignJoin (&$select, $from, $parent_relations)
+    // if there are parent relations then construct a JOIN
+    // Note that $select is passed by reference as it may be amended
+    {
+        if (empty($parent_relations)) {
+            return $from;
+        } // if
+
+        if (empty($select)) {
+            $select = $this->tablename .'.*';
+        } else {
+            $select = qualifySelect($select, $this->tablename, $this->fieldspec);
+        } // if
+
+        if (empty($from)) {
+            $from = $this->tablename;
+        } // if
+
+        foreach ($this->parent_relations as $reldata) {
+            if (!isset($reldata['parent_field'])) {
+                // parent_field is not defined, so ignore this entry
+            } else {
+                $parent_table = $reldata['parent'];
+                $parent_field = $reldata['parent_field'];
+                // does this belong to another database/schema?
+                if (isset($reldata['dbname'])) {
+                    $dbname = $GLOBALS['dbprefix'] .$reldata['dbname'] .'.';
+                } else {
+                    $dbname = '';
+                } // if
+                // does this table have an alias?
+                if (isset($reldata['alias'])) {
+                    $alias = $reldata['alias'];
+                } else {
+                    $alias = '';
+                } // if
+                // obtain $fieldspec array for relevant table ($this or another)
+                if ($parent_table != $this->tablename) {
+                    require_once "classes/$parent_table.class.inc";
+                    $dbobject = new $parent_table;
+                    $fieldspec      = $dbobject->fieldspec;
+                } else {
+                    $fieldspec      = $this->fieldspec;
+                } // if
+                // put parent field(s) from foreign table into SELECT area
+                if (isset($reldata['alias'])) {
+                    $parent_field = qualifySelect($parent_field, $reldata['alias'], $fieldspec);
+                } else {
+                    $parent_field = qualifySelect($parent_field, $reldata['parent'], $fieldspec);
+                } // if
+                $select .= ', ' .$parent_field;
+                // build JOIN using supplied field names
+                if (!empty($alias)) {
+                    $from .= ' LEFT JOIN ' .$dbname .$reldata['parent']  .' AS ' .$alias .' ON (';
+                } else {
+                    $from .= ' LEFT JOIN ' .$dbname .$reldata['parent']  .' ON (';
+                } // if
+                foreach ($reldata['fields'] as $fldchild => $fldparent) {
+                    if (!empty($alias)) {
+                        $from .= $alias .'.' .$fldparent .'=' .$this->tablename .'.' .$fldchild .' AND ';
+                    } else {
+                        $from .= $reldata['parent'] .'.' .$fldparent .'=' .$this->tablename .'.' .$fldchild .' AND ';
+                    } // if
+                } // foreach
+                // replace trailing 'AND' with ')'
+                $from = rtrim($from, ' AND') .') ';
+            } // if
+        } // foreach
+
+        return $from;
+
+    } // _sqlForeignJoin
+
+    // ****************************************************************************
+    function _updateWorkflow ($fieldarray)
+    // if this task is a pending workitem then update it.
+    {
+        $this->errors = array();
+
+        if ($this->dbname != 'workflow') {
+            // find out if this task/context has any workflow connections,
+            // and if it does then update them
+            $this->_examineWorkflow($fieldarray);
+        } // if
+
+        return $this->errors;
+
+    } // _updateWorkflow
+
+    // ****************************************************************************
+    function _validateInsert ($fieldarray)
+    // validate contents of $fieldarray prior to an INSERT
+    {
+        static $validationobj = null;
+
+        if (!isset($validationobj)) {
+            require_once 'std.validation.class.inc';
+            $validationobj =& singleton::getInstance('validation_class');
+        } // if
+
+        $array = $validationobj->validateInsert($fieldarray, $this->fieldspec, $this);
+
+        $this->errors = $validationobj->getErrors();
+
+        return $array;
+
+    } // _validateInsert
+
+    // ****************************************************************************
+    function _validateUpdate ($fieldarray)
+    // validate contents of $fieldarray prior to an UPDATE
+    {
+        static $validationobj = null;
+
+        if (!isset($validationobj)) {
+            require_once 'std.validation.class.inc';
+            $validationobj =& singleton::getInstance('validation_class');
+        } // if
+
+        $array = $validationobj->validateUpdate($fieldarray, $this->fieldspec, $this);
+
+        $this->errors = $validationobj->getErrors();
+
+        return $array;
+
+    } // _validateUpdate
 
     // ****************************************************************************
     function __sleep ()
