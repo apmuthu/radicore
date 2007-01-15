@@ -1,5 +1,5 @@
 <?php
-    // file created on July 28, 2005, 12:41 pm
+    // file created on January 4, 2007, 1:41 pm
     
     // field specifications for table classroom.crs_schedule_hdr
     $fieldspec['schedule_id']               = array('type' => 'integer',
@@ -22,48 +22,55 @@
     
     $fieldspec['is_active']                 = array('type' => 'boolean',
                                                     'true' => 'Y',
-                                                    'false' => 'N');
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['start_time']                = array('type' => 'time',
-                                                    'size' => 8,
+                                                    'size' => 10,
                                                     'required' => 'y',
                                                     'default' => '00:00:00');
     
     $fieldspec['end_time']                  = array('type' => 'time',
-                                                    'size' => 8,
+                                                    'size' => 10,
                                                     'required' => 'y',
                                                     'default' => '00:00:00');
     
-    $fieldspec['last_day_no']               = array('type' => 'integer',
-                                                    'size' => 1,
-                                                    'minvalue' => 1,
-                                                    'maxvalue' => 7,
+    $fieldspec['last_day_no']               = array('type' => 'numeric',
+                                                    'size' => 2,
+                                                    'precision' => 1,
+                                                    'scale' => 0,
+                                                    'unsigned' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'day_no');
+                                                    'default' => '0');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('schedule_id');

@@ -26,11 +26,12 @@ class survey_section_s03 extends survey_section
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         // remove everything but survey_id from $where
         $survey_id = $where_array['survey_id'];
         if (strlen($survey_id) == 0) {
@@ -52,8 +53,7 @@ class survey_section_s03 extends survey_section
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        //DebugBreak();
-        // check if sequence no needs updating
+        // check if sequence number needs updating
         if ($fieldarray['section_seq'] <> $this->section_seq) {
             $fieldarray['section_seq'] = $this->section_seq;
         } // if

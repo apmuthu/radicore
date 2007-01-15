@@ -14,15 +14,15 @@ class wf_workflow_s01 extends wf_workflow
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update.
     {
-        //DebugBreak();
         $workflow_id = $fieldarray['workflow_id'];
         $fieldarray['workflow_errors'] = null;
 
+        // ********************************************************************
         require_once 'classes/wf_place.class.inc';
         $dbplace =& singleton::getInstance('wf_place');
 
         // check that workflow contains a single START place
-        $place_data = $dbplace->getData("workflow_id='$workflow_id' AND place_type='1'");
+        $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND place_type='1'");
         if ($dbplace->numrows < 1) {
             // "There is no START place."
             $errors[] = getLanguageText('e0017');
@@ -34,8 +34,9 @@ class wf_workflow_s01 extends wf_workflow
 
         $start_place = $place_data[0]['place_id'];
 
+        // ********************************************************************
         // check that workflow contains a single END place
-        $place_data = $dbplace->getData("workflow_id='$workflow_id' AND place_type='9'");
+        $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND place_type='9'");
         if ($dbplace->numrows < 1) {
             // "There is no END place."
             $errors[] = getLanguageText('e0019');
@@ -47,23 +48,15 @@ class wf_workflow_s01 extends wf_workflow
 
         $end_place = $place_data[0]['place_id'];
 
+        // ********************************************************************
         // check that workflow contains at least one USER place
-        $place_data = $dbplace->getData("workflow_id='$workflow_id' AND place_type='5'");
+        $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND place_type='5'");
         if ($dbplace->numrows < 1) {
             // "There are no intermediate places."
             $errors[] = getLanguageText('e0021');
         } // if
 
-        require_once 'classes/wf_transition.class.inc';
-        $dbtransition =& singleton::getInstance('wf_transition');
-
-        // check that workflow contains at least one transition
-        $transition_data = $dbtransition->getData("workflow_id='$workflow_id'");
-        if ($dbtransition->numrows < 1) {
-            // "There are no TRANSITIONS."
-            $errors[] = getLanguageText('e0022');
-        } // if
-
+        // ********************************************************************
         require_once 'classes/wf_arc.class.inc';
         $dbarc =& singleton::getInstance('wf_arc');
 
@@ -81,6 +74,15 @@ class wf_workflow_s01 extends wf_workflow
             $errors[] = getLanguageText('e0024');
         } // if
 
+        // check that there are no arcs going into the START place - WRONG!
+        // Explicit OR Split is allowed to go to START place
+//        $count = $dbarc->getCount("workflow_id='$workflow_id' and place_id='$start_place' and direction='OUT'");
+//        if ($count > 0) {
+//            // "There is an ARC going into the START place."
+//            $errors[] = getLanguageText('e0027');
+//        } // if
+
+        // ********************************************************************
         // check that there is at least one arc going into the END place
         $count = $dbarc->getCount("workflow_id='$workflow_id' and place_id='$end_place' and direction='OUT'");
         if ($count < 1) {
@@ -95,22 +97,37 @@ class wf_workflow_s01 extends wf_workflow
             $errors[] = getLanguageText('e0026');
         } // if
 
-        // check that there are no arcs going into the START place
-        $count = $dbarc->getCount("workflow_id='$workflow_id' and place_id='$start_place' and direction='OUT'");
-        if ($count > 0) {
-            // "There is an ARC going into the START place."
-            $errors[] = getLanguageText('e0027');
+        // ********************************************************************
+        // check that there are as many SPLITS as there are JOINS - WRONG!
+        // it is possible to have an Explicit OR Split without an OR Join
+//        $split_count = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type IN ('OR-SPLIT-E', 'OR-SPLIT-I')");
+//        $join_count  = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type='OR-JOIN'");
+//        if ($split_count != $join_count) {
+//            // The count of OR-JOINS does not match the count of OR-SPLITS
+//        	$errors[] = getLanguageText('e0066');
+//        } // if
+
+        $split_count = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type='AND-SPLIT'");
+        $join_count  = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type='AND-JOIN'");
+        if ($split_count != $join_count) {
+            // The count of AND-JOINS does not match the count of AND-SPLITS
+        	$errors[] = getLanguageText('e0068');
         } // if
 
-        // check that each USER place has an INPUT arc and an OUTPUT arc
+        // ********************************************************************
+        // read all places - start, user, end
+        $place_data = $dbplace->getData_raw("workflow_id='$workflow_id'");
+
+        // check that each place has right number of INPUT and OUTPUT arcs
         foreach ($place_data as $place) {
             $place_id      = $place['place_id'];
             $place_name    = $place['place_name'];
+            $place_type    = $place['place_type'];
             $inward_count  = 0;
             $outward_count = 0;
             $dbarc->sql_select  = "wf_place.workflow_id, wf_place.place_id, wf_arc.direction, wf_arc.arc_type, count(arc_type) as arc_count";
             $dbarc->sql_from    = "wf_place "
-                                . "LEFT JOIN wf_arc USING (workflow_id, place_id) ";
+                                . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
             $dbarc->sql_groupby = "wf_place.workflow_id, wf_place.place_id, direction, arc_type";
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND place_id='$place_id'");
             foreach ($arc_data as $arc) {
@@ -138,6 +155,10 @@ class wf_workflow_s01 extends wf_workflow
                             // "Not enough arcs of type 'OR-split (Implicit)' at place '$place_name'"
                             $errors[] = getLanguageText('e0031', $place_name);
                         } // if
+                        if ($arc['arc_count'] > 2) {
+                            // "Too many arcs of type 'OR-split (Implicit)' at place '$place_name'"
+                            $errors[] = getLanguageText('e0065', $place_name);
+                        } // if
                         break;
                     case 'OR-JOIN':
                         if ($arc['direction'] != 'OUT') {
@@ -147,6 +168,10 @@ class wf_workflow_s01 extends wf_workflow
                         if ($arc['arc_count'] < 2) {
                             // "Not enough arcs of type 'OR-join' at place '$place_name'"
                             $errors[] = getLanguageText('e0033', $place_name);
+                        } // if
+                        if ($arc['arc_count'] > 2) {
+                            // "Too many arcs of type 'OR-join' at place '$place_name'"
+                            $errors[] = getLanguageText('e0067', $place_name);
                         } // if
                         break;
                     case 'AND-SPLIT':
@@ -167,17 +192,32 @@ class wf_workflow_s01 extends wf_workflow
                 } // switch
             } // foreach
 
-            if ($inward_count < 1) {
-                // "There are no INWARD ARCS for place '$place_name'"
-                $errors[] = getLanguageText('e0037', $place_name);
+            if ($place_type != 9) {
+                if ($inward_count < 1) {
+                    // "There are no INWARD ARCS for place '$place_name'"
+                    $errors[] = getLanguageText('e0037', $place_name);
+                } // if
             } // if
-            if ($outward_count < 1) {
-                // "There are no OUTWARD ARCS for place '$place_name'"
-                $errors[] = getLanguageText('e0038', $place_name);
+            if ($place_type != 1) {
+            	if ($outward_count < 1) {
+                    // "There are no OUTWARD ARCS for place '$place_name'"
+                    $errors[] = getLanguageText('e0038', $place_name);
+                } // if
             } // if
+
         } // foreach
 
-        //DebugBreak();
+        // ********************************************************************
+        require_once 'classes/wf_transition.class.inc';
+        $dbtransition =& singleton::getInstance('wf_transition');
+
+        // check that workflow contains at least one transition
+        $transition_data = $dbtransition->getData_raw("workflow_id='$workflow_id'");
+        if ($dbtransition->numrows < 1) {
+            // "There are no TRANSITIONS."
+            $errors[] = getLanguageText('e0022');
+        } // if
+
         // check that each transition has an INPUT arc and an OUTPUT arc
         foreach ($transition_data as $transition) {
             $transition_id   = $transition['transition_id'];
@@ -188,7 +228,7 @@ class wf_workflow_s01 extends wf_workflow
             $outward_count_by_type = array();
             $dbarc->sql_select  = "wf_transition.workflow_id, wf_transition.transition_id, wf_arc.direction, wf_arc.arc_type, count(wf_arc.pre_condition) as guard_count, count(arc_type) as arc_count";
             $dbarc->sql_from    = "wf_transition "
-                                . "LEFT JOIN wf_arc USING (workflow_id, transition_id) ";
+                                . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_transition.workflow_id AND wf_arc.transition_id=wf_transition.transition_id) ";
             $dbarc->sql_groupby = "wf_transition.workflow_id, wf_transition.transition_id, direction, arc_type";
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND transition_id='$transition_id'");
             foreach ($arc_data as $arc) {
@@ -289,13 +329,13 @@ class wf_workflow_s01 extends wf_workflow
             } // if
         } // foreach
 
+        // ********************************************************************
         if (!empty($errors)) {
             // transfer error messages into database field
             $fieldarray['is_valid'] = 'N';
             foreach ($errors as $error) {
                 $fieldarray['workflow_errors'] .= "$error\n";
             } // foreach
-            $fieldarray['workflow_errors'] = addslashes($fieldarray['workflow_errors']);
             // "Workflow $workflow_id contains errors."
             $this->messages[] = getLanguageText('e0057', $workflow_id);
         } else {

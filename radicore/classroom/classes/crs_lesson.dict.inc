@@ -1,5 +1,5 @@
 <?php
-    // file created on July 28, 2005, 2:09 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_lesson
     $fieldspec['lesson_id']                 = array('type' => 'integer',
@@ -22,6 +22,7 @@
                                                     'size' => 2,
                                                     'precision' => 1,
                                                     'scale' => 0,
+                                                    'blank_when_zero' => 'y',
                                                     'minvalue' => 1,
                                                     'maxvalue' => 9);
     
@@ -50,22 +51,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('lesson_id');
@@ -79,10 +86,12 @@
                                                     'fields' => array('lesson_id' => 'lesson_id'));
     
     $this->child_relations[]                = array('child' => 'crs_conflict',
+                                                    'alias' => 'crs_conflict1',
                                                     'type' => 'DEL',
                                                     'fields' => array('lesson_id' => 'lesson_id1'));
     
     $this->child_relations[]                = array('child' => 'crs_conflict',
+                                                    'alias' => 'crs_conflict2',
                                                     'type' => 'DEL',
                                                     'fields' => array('lesson_id' => 'lesson_id2'));
     
@@ -100,6 +109,7 @@
                                                     'fields' => array('subject_id' => 'subject_id'));
     
     $this->parent_relations[]               = array('parent' => 'crs_teacher',
+                                                    'parent_field' => 'CONCAT(title, \' \', first_name, \' \', last_name) AS teacher_name',
                                                     'fields' => array('teacher_id' => 'teacher_id'));
     
     // determines if database updates are recorded in an audit log 

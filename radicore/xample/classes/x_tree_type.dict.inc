@@ -1,5 +1,5 @@
 <?php
-    // file created on January 6, 2006, 10:46 pm
+    // file created on October 24, 2006, 11:18 am
     
     // field specifications for table xample.x_tree_type
     $fieldspec['tree_type_id']              = array('type' => 'string',
@@ -17,24 +17,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('tree_type_id');

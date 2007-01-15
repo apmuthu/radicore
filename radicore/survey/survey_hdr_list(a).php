@@ -6,7 +6,6 @@
 // The identity of the OUTER table is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'survey_type';                // name of outer table
 $inner_table = 'survey_hdr';                 // name of inner table
 $screen   = 'survey_hdr.list(a).screen.inc'; // file identifying screen structure
@@ -20,11 +19,8 @@ $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = NULL;
 $inner_sql_groupby = '';
-
-// set default sort sequence
 $inner_sql_orderby = NULL;
 
-// activate page controller
-require 'std.list2.inc';
+require 'std.list2.inc';        // activate page controller
 
 ?>

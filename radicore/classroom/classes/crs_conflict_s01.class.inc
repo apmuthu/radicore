@@ -43,8 +43,8 @@ class crs_conflict_s01 extends crs_conflict
     } // getLessonArray
 
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
         // delete existing records
@@ -57,12 +57,12 @@ class crs_conflict_s01 extends crs_conflict
 
         //******************************************************************************
         // get list of teachers
-        require_once 'crs_teacher.class.inc';
+        require_once 'classes/crs_teacher.class.inc';
         $teacherOBJ =& singleton::getInstance('crs_teacher');
         $teacher_data = $teacherOBJ->getData(null);
 
         // for each teacher get list of classes
-        require_once 'crs_lesson.class.inc';
+        require_once 'classes/crs_lesson.class.inc';
         $lessonOBJ =& singleton::getInstance('crs_lesson');
 
         foreach ($teacher_data as $teacher) {
@@ -86,12 +86,12 @@ class crs_conflict_s01 extends crs_conflict
 
         // *****************************************************************************
         // get list of classes
-        require_once 'crs_class.class.inc';
+        require_once 'classes/crs_class.class.inc';
         $classOBJ =& singleton::getInstance('crs_class');
         $class_data = $classOBJ->getData(null);
 
         // for each class get list of lessons
-        require_once 'crs_class_lesson.class.inc';
+        require_once 'classes/crs_class_lesson.class.inc';
         $lessonOBJ =& singleton::getInstance('crs_class_lesson');
 
         foreach ($class_data as $class) {
@@ -115,12 +115,12 @@ class crs_conflict_s01 extends crs_conflict
 
         // *****************************************************************************
         // get list of students
-        require_once 'crs_student.class.inc';
+        require_once 'classes/crs_student.class.inc';
         $studentOBJ =& singleton::getInstance('crs_student');
         $student_data = $studentOBJ->getData(null);
 
         // for each student get list of lessons
-        require_once 'crs_student_lesson.class.inc';
+        require_once 'classes/crs_student_lesson.class.inc';
         $lessonOBJ =& singleton::getInstance('crs_student_lesson');
 
         foreach ($student_data as $student) {
@@ -146,7 +146,7 @@ class crs_conflict_s01 extends crs_conflict
 
         return $fieldarray;
 
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMutiple
 
 // ****************************************************************************
 } // end class

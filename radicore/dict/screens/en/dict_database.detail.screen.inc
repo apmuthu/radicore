@@ -8,7 +8,7 @@ $structure['main']['columns'][] = array('width' => '75%');
 
 $structure['main']['fields'][] = array('database_id' => 'Database Id');
 $structure['main']['fields'][] = array('database_desc' => 'Description');
-$structure['main']['fields'][] = array('comment' => 'Comments');
+$structure['main']['fields'][] = array('db_comment' => 'Comments');
 $structure['main']['fields'][] = array('subsys_id' => 'Subsystem');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');

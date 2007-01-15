@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -53,7 +53,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->sql_where      = &$outer_sql_where;
     $dbouter->sql_groupby    = &$outer_sql_groupby;
     $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_sort_table = &$outer_sql_sort_table;
+    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } //if
@@ -69,13 +69,12 @@ if (isset($script_vars['dbouter'])) {
             $dbouter->setOrderBySeq($order_by_seq);
         } // if
     } // if
-    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
-        // merge two strings into one
-    	$where = mergeWhere($where, $outer_sql_where);
-    	$dbouter->sql_where = null;
-    } // if
     // perform any initialisation
-    $where = $dbouter->initialise($where, $selection);
+    if (!empty($selection)) {
+        $selection = $dbouter->initialise($selection, $where);
+    } else {
+        $where = $dbouter->initialise($where);
+    } // if
 } // if
 
 // create a class instance for the LINK database table
@@ -83,6 +82,8 @@ require_once "classes/$link_table.class.inc";
 if (isset($script_vars['dblink'])) {
     // use data from previous instance of this script
     $dblink = unserialize($script_vars['dblink']);
+    // get previously retrieved data
+    $link_data = $dblink->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dblink = new $link_table;
@@ -102,74 +103,89 @@ if (isset($script_vars['dblink'])) {
     $dblink->outer_table    = $outer_table;
     $dblink->inner_table    = $inner_table;
     $dblink->is_link_table  = TRUE;
-
-    // get any extra data (such as lookup lists)
-    $null = $dblink->getExtraData(null);
 } // if
 
 if (!empty($_POST)) {
+    // merge original data with user's input (so that fields which were displayed
+    // but not POSTed are sent back if any errors are displayed).
+    $link_data = array_update_indexed($link_data, $_POST);
+    // ensure that changes are stored inside relevant object
+    $dblink->setFieldArray($link_data);
     // look for an action which is another script
-    $errors = childForm($_POST, $dblink, 'dblink', $where);
-} // if
-
-// look for entered data
-if (isset($_POST['submit'])) {
-    // get original data from session details
-    $link_data = $dblink->getFieldArray();
-    // update this data in the database
-    $dblink->startTransaction();
-    $link_data = $dblink->updateLinkData($link_data, $_POST);
-    if ($dblink->errors) {
-        $dblink->rollback();
-		// errors are keyed by object name
-        $errors[$dblink->getClassName()] = $dblink->getErrors();
-    } else {
-        // update was OK
-        $errors = $dblink->commit();
-        if (empty($errors)) {
-            $messages[] = getLanguageText('sys0091'); // 'Update successful'
+    $errors = childForm($_POST, array('dblink' => $dblink), $where);
+    if (empty($errors)) {
+    	// update this data in the database
+        $dblink->startTransaction();
+        $link_data = $dblink->updateLinkData($link_data, $_POST);
+        if ($dblink->errors) {
+            $dblink->rollback();
+    		// errors are keyed by object name
+            $errors[$dblink->getClassName()] = $dblink->getErrors();
+        } else {
+            // update was OK
+            $dblink->wf_case_id     = $dbouter->wf_case_id;
+            $dblink->wf_workitem_id = $dbouter->wf_workitem_id;
+            $dblink->wf_context     = $dbouter->wf_context;
+            $errors = $dblink->commit();
+            if (empty($errors)) {
+                $messages[] = getLanguageText('sys0091'); // 'Update successful'
+            } // if
         } // if
     } // if
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where     = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+// check if we are returning from a child form
+if (!empty($return_from) AND $return_action == 'choose') {
+    if ($popup_object == 'dbouter' AND isset($selection)) {
+        // merge previous saved variables with selection from popup form
+        $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection);
+        if ($dbouter->errors) {
+        	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
+        } // if
     } // if
-} // if
+} else {
+    if (!empty($selection)) {
+        // retrieve profile has been passed down from previous screen
+        $where     = $selection;
+        $selection = null;
+    } else {
+        if (isset($scrolling)) {
+            // retrieve values from scrolling array
+            $where = $scrolling[$dbouter->getClassName()]['where'];
+            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        } // if
+    } // if
 
-if (empty($where)) {
-    scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
-} // if
+    if (empty($where)) {
+        scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
+    } // if
 
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbouter->setPageNo($_GET['item']);
-} // if
+    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+        // set index number of item to be read from current $where list
+        $dbouter->setPageNo($_GET['item']);
+    } // if
 
-// get data from the outer table
-$outer_data = $dbouter->getData($where);
-if ($dbouter->errors) {
-    // some sort of error - return to previous script
-    scriptprevious($dbouter->getErrors(), $messages);
-} // if
-if ($dbouter->getNumRows() < 1) {
-    scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
-} // if
+    // get data from the outer table
+    $outer_data = $dbouter->getData($where);
+    if ($dbouter->errors) {
+        // some sort of error - return to previous script
+        scriptprevious($dbouter->getErrors(), $messages);
+    } // if
+    if ($dbouter->getNumRows() < 1) {
+        scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    } // if
 
-// set variables to be included in XML output
-$scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
-$scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
-$scrolling[$dbouter->getClassName()]['where']    = $where;
+    // get any extra data and merge with $outer_data
+    $outer_data = $dbouter->getExtraData($outer_data);
 
-// get any extra data and merge with $outer_data
-$outer_data = $dbouter->getExtraData($outer_data);
+    // $where may have been changed in database object
+    $where = $dbouter->getWhere();
+
+    // set variables to be included in XML output
+    $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
+    $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+    $scrolling[$dbouter->getClassName()]['where']    = $where;
+} // if
 
 if (isset($_SESSION['rowsperpage'])) {
     $dblink->setRowsPerPage($_SESSION['rowsperpage']);
@@ -196,34 +212,43 @@ if (isset($search)) {
     $dblink->setSqlSearch($search);
 } // if
 
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $dblink->reset();
-} // if
-
 // get primary key of row retrieved from OUTER entity
 $where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
 
 // ensure that column names are qualified in the 'where' clause
 $link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec());
 
-//if ($_SERVER['REQUEST_METHOD'] == 'GET' OR isset($_POST['reset'])) {
-if (empty($errors)) {
-    // get data from the database
-    $link_data = $dblink->getData($link_where);
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $dblink->reset($link_where);
+} // if
 
-    if ($dblink->getErrors()) {
-        $errors = array_merge($errors, $dblink->getErrors());
+if (count($outer_data) > 0) {
+    // check if we are returning from a child form
+    if (!empty($return_from) AND $return_action != 'search') {
+        if ($return_action == 'choose' AND $popup_object == 'dblink' AND isset($selection)) {
+            // merge previous saved variables with selection from popup form
+            $link_data = $dblink->popupReturn($ink_data, basename($return_from), $selection);
+            if ($dblink->errors) {
+            	$errors[$dblink->getClassName()] = $dblink->getErrors();
+            } // if
+        } // if
+    } else {
+        // get data from the database
+        $link_data = $dblink->getData($link_where);
+
+        if ($dblink->errors) {
+            $errors[$dblink->getClassName()] = $dblink->getErrors();
+        } // if
+
+        if ($dblink->getNumRows() == 0) {
+            $errors[] = getLanguageText('sys0088', $link_table); // "No entries found on $link_table"
+            unset($act_buttons['submit']);
+        } // if
+
+        // get any extra data (such as lookup lists)
+        $link_data = $dblink->getExtraData($link_data);
     } // if
-
-    if ($dblink->getNumRows() == 0) {
-        $errors[] = getLanguageText('sys0088', $link_table); // "No entries found on $link_table"
-        unset($act_buttons['submit']);
-    } // if
-
-} else {
-    // use saved array as data for link entity
-    $link_data = $dblink->getFieldArray();
 } // if
 
 if (isset($_GET['action'])) {
@@ -235,14 +260,12 @@ $pagination['link']['numrows']  = $dblink->getNumRows();
 $pagination['link']['curpage']  = $dblink->getPageNo();
 $pagination['link']['lastpage'] = $dblink->getLastPage();
 
-// ensure script variables are available throughout this session
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dblink']    = serialize($dblink);
 $script_vars['scrolling'] = $scrolling;
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars = updateScriptVars ($script_vars);
 
 // get sort details
 $orderby     = $dblink->getOrderBy();

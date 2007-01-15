@@ -31,7 +31,6 @@ class logon extends mnu_user
     function user_logon ($logonarray)
     // validate the user_id and password from the logon screen
     {
-        //DebugBreak();
         $this->errors = array();
 
         $GLOBALS['task_id'] = 'logon';
@@ -49,13 +48,11 @@ class logon extends mnu_user
         $logon_user_id  = $updatearray['user_id'];
 
         // find out if user passwords are encrypted or not
-        require_once 'mnu_control.class.inc';
         $mnu_control =& singleton::getInstance('mnu_control');
         $encrypt_flag = $mnu_control->getControlData('pswd_encrypt');
 
-        if ($encrypt_flag) {
+        if ($encrypt_flag == true) {
             // encrypt the password to inlude in database lookup
-            require_once 'std.encryption.class.inc';
             $crypt_obj =& singleton::getInstance('encryption_class');
             $spec = $this->fieldspec['user_password'];
             $logon_password = $crypt_obj->encrypt($logon_user_id, $logon_password, $spec['size']);
@@ -67,14 +64,14 @@ class logon extends mnu_user
         } // if
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'user_id, is_disabled, pswd_count, pswd_chg_date, language_code, mnu_user.role_id, mnu_role.start_task_id ';
+        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id ';
         $this->sql_from   = 'mnu_user '
                           . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
 
         $fieldarray = $this->getData_raw("user_id='$logon_user_id' AND user_password='$logon_password'");
         if ($this->numrows <> 1) {
             $this->errors[] = getLanguageText('e0000'); // 'Security violation';
-            $this->PasswordRetries($logon_user_id);
+            $this->PasswordRetries($logon_user_id, $updatearray['user_password']);
             $this->fieldarray = $logonarray;
             return $this->errors;
         } // if
@@ -90,9 +87,26 @@ class logon extends mnu_user
             return $this->errors;
         } // if
 
+        $today = getTimeStamp('date');
+        if ($fieldarray['end_date'] < $today) {
+            // 'This user has an end date which is in the past'
+        	$this->errors[] = getLanguageText('e0038');
+            $this->fieldarray = $logonarray;
+            return $this->errors;
+        } // if
+
+        if ($fieldarray['start_date'] > $today) {
+            // 'This user has a start date which is in the future'
+        	$this->errors[] = getLanguageText('e0039');
+            $this->fieldarray = $logonarray;
+            return $this->errors;
+        } // if
+
         // make logon data available throughout the session
-        $_SESSION['logon_user_id'] = $logon_user_id;
-        $_SESSION['role_id']       = $fieldarray['role_id'];
+        $_SESSION['logon_user_id']    = $logon_user_id;
+        $_SESSION['logon_user_name']  = $fieldarray['user_name'];
+        $_SESSION['role_id']          = $fieldarray['role_id'];
+        $_SESSION['logon_email_addr'] = $fieldarray['email_addr'];
         if (strlen($fieldarray['language_code']) > 0) {
         	$_SESSION['user_language'] = $fieldarray['language_code'];
         } // if
@@ -103,17 +117,23 @@ class logon extends mnu_user
         $updatearray['logon_date']    = getTimeStamp('date');
         $updatearray['logon_time']    = getTimeStamp('time');
         $updatearray['in_use']        = true;
+        $updatearray['ip_address']    = $_SERVER['REMOTE_ADDR'];
 
         $updatearray = $this->updateRecord($updatearray);
 
         // find out if user needs to change his password
         if ($mnu_control->getControlData('pswd_change', $updatearray)) {
-            $next['task_id'] = 'mnu_user(upd)b';
-            $next['where']   = "user_id='$logon_user_id'";
-            $next['action']  = 'OK';
-            $next['message'] = getLanguageText('e0002'); // 'You must change your password';
+            $next['task_id']  = 'mnu_user(upd)b';
+            $next['where']    = "user_id='$logon_user_id'";
+            $next['action']   = 'OK';
+            $next['messages'] = getLanguageText('e0002'); // 'You must change your password';
             // this is processed by scriptnext() and scriptprevious()
             $_SESSION['script_sequence'][] = $next;
+        } else {
+            // find out is the user's password is due to expire in the near future
+            if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {
+            	$this->messages[] = $expiry_msg;
+            } // if
         } // if
 
         // save this data inside this object
@@ -124,14 +144,27 @@ class logon extends mnu_user
     } // user_logon
 
     // ****************************************************************************
-    function PasswordRetries ($user_id)
+    function PasswordRetries ($user_id, $user_password)
     // password has been rejected, so increment count for this user, and if it
     // exceeds the value in $limit then disable this user (this prevents a
     // hacker from trying multiple guesses)
+    // ALSO: write record to audit_logon_errors
     {
         //DebugBreak();
+        // log this failed attempt in 'audit_logon_errors' table
+        require_once 'classes/audit_logon_errors.class.inc';
+        $auditobj =& singleton::getInstance('audit_logon_errors');
+
+        $audit_data['user_id']       = $user_id;
+        $audit_data['user_password'] = $user_password;
+        $audit_data['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        $audit_data = $auditobj->insertRecord($audit_data);
+        if ($auditobj->errors) {
+        	$this->errors = array_merge($this->errors, $auditobj->errors);
+        } // if
+
         // get count of password attempts
-        require_once 'mnu_control.class.inc';
+        require_once 'classes/mnu_control.class.inc';
         $mnu_control =& singleton::getInstance('mnu_control');
 
         $max_retries = $mnu_control->getControlData('pswd_retries');
@@ -182,7 +215,6 @@ class logon extends mnu_user
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // remove everything from $fieldspec except USER_ID and PASSWORD
         foreach ($this->fieldspec as $fieldname => $spec) {
             if ($fieldname == 'user_id' OR $fieldname == 'user_password') {
@@ -201,8 +233,6 @@ class logon extends mnu_user
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        //DebugBreak();
-
         // this replaces the function in the parent class
 
         return $fieldarray;

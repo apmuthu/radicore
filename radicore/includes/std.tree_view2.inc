@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -35,6 +35,11 @@ if (isset($_POST['quit'])) {
 $act_buttons['expand']   = 'expand';
 $act_buttons['collapse'] = 'collapse';
 $act_buttons['quit']     = 'close';
+if (array_key_exists('select_one', $settings)) {
+	if (!is_True($settings['select_one'])) {
+    	unset($act_buttons['choosenull']);
+    } // if
+} // if
 
 // create a class instance for the inner database table
 require_once "classes/$inner_table.class.inc";
@@ -51,13 +56,13 @@ if (isset($script_vars['dbinner'])) {
 } // if
 
 // the 'choose' button should only be available in popup screens
-if (isset($_POST['choose'])) {
+if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
     $messages = chooseButton($_POST, $dbinner);
 } // if
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, $dbinner, 'dbinner', null);
+    $errors = childForm($_POST, array('dbinner' => $dbinner), null);
 } // if
 
 // create a class instance for the outer database table
@@ -74,7 +79,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->sql_where      = &$outer_sql_where;
     $dbouter->sql_groupby    = &$outer_sql_groupby;
     $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_sort_table = &$outer_sql_sort_table;
+    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } // if
@@ -90,13 +95,12 @@ if (isset($script_vars['dbouter'])) {
             $dbouter->setOrderBySeq($order_by_seq);
         } // if
     } // if
-    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
-        // merge two strings into one
-    	$where = mergeWhere($where, $outer_sql_where);
-    	$dbouter->sql_where = null;
-    } // if
     // perform any initialisation
-    $where = $dbouter->initialise($where, $selection);
+    if (!empty($selection)) {
+        $selection = $dbouter->initialise($selection, $where);
+    } else {
+        $where = $dbouter->initialise($where);
+    } // if
 } // if
 
 if (!empty($selection)) {
@@ -122,7 +126,7 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 // get data for the outer table
 $outer_data = $dbouter->getData($where);
 
-if ($dbouter->getErrors()) {
+if ($dbouter->errors) {
     // some sort of error - return to previous script
     scriptprevious($dbouter->getErrors(), $messages);
 } // if
@@ -138,18 +142,13 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 // get primary key of row retrieved from OUTER entity
 $where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
 
-// get list of expanded nodes from session data
-$expanded = $dbinner->getExpanded();
-
-// look for optional instruction from previous script
+// look for optional instructions from previous script
 if (!empty($instruction)) {
-    if (array_key_exists('expand', $instruction)) {
-        $expanded[$instruction['expand']] = true;
-        unset($instruction['expand']);
-    } // if
-    // load remaining instructions into the database object
     $dbobject->setInstruction($instruction);
 } // if
+
+// get list of expanded nodes from session data
+$expanded = $dbinner->getExpanded();
 
 // look for instruction to expand a single node, or ALL nodes
 if (isset($_GET['expand'])) {
@@ -177,8 +176,9 @@ if (isset($_POST['collapse'])) {
 // we start with the root node(s) for the selected tree_type
 $inner_data = $dbinner->getNodeData($expanded, $where);
 
-// retrieve any errors
-$errors = array_merge($errors, $dbinner->getErrors());
+if ($dbinner->errors) {
+	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
+} // if
 
 if (count($inner_data) < 1) {
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
@@ -187,14 +187,12 @@ if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
 } // if
 
-// ensure script variables are available throughout this session
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

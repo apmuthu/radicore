@@ -1,5 +1,5 @@
 <?php
-    // file created on July 28, 2005, 5:02 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_subject
     $fieldspec['subject_id']                = array('type' => 'string',
@@ -17,22 +17,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('subject_id');

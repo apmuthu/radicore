@@ -1,20 +1,16 @@
 <?php
-$structure['xsl_file'] = 'std.list2.xsl';
+$structure['xsl_file'] = 'std.list1.xsl';
 
-$structure['tables']['outer'] = 'unit_of_measure';
+$structure['tables']['main'] = 'uom_conversion';
 
-$structure['outer']['columns'][] = array('width' => '25%');
+$structure['main']['columns'][] = array('width' => 5);
+$structure['main']['columns'][] = array('width' => "33%");
+$structure['main']['columns'][] = array('width' => '*');
+$structure['main']['columns'][] = array('width' => "33%");
 
-$structure['outer']['fields'][] = array('uom_desc' => 'FROM Unit');
-
-$structure['tables']['inner'] = 'uom_conversion';
-
-$structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => 75);
-$structure['inner']['columns'][] = array('width' => '*');
-
-$structure['inner']['fields'][] = array('selectbox' => 'Select');
-$structure['inner']['fields'][] = array('conversion_factor' => 'Factor');
-$structure['inner']['fields'][] = array('uom_id_to' => 'TO Unit');
+$structure['main']['fields'][] = array('selectbox' => 'Select');
+$structure['main']['fields'][] = array('uom_id_from' => 'FROM Unit');
+$structure['main']['fields'][] = array('conversion_factor' => 'Factor');
+$structure['main']['fields'][] = array('uom_id_to' => 'TO Unit');
 
 ?>

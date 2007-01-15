@@ -35,6 +35,14 @@ div.actionbar p {
 div.body {
 }
 
+/* footer */
+div.footer {
+}
+
+/* header */
+div.header {
+}
+
 /* help */
 div.help {
 }
@@ -67,6 +75,9 @@ div.link td.label {
 
 /* logon */
 div.logon {
+}
+
+div.loggedinas {
 }
 
 /* main */
@@ -202,6 +213,10 @@ div.popupbutton {
 div.popuptext {
 }
 
+/* recover password */
+div.recover {
+}
+
 /* scrolling */
 div.scrolling {
 }
@@ -249,6 +264,8 @@ div.workitem_user p {
 }
 
 /* HTML controls */
+.dropdown {
+}
 input.submit {
 }
 input.radio {
@@ -266,7 +283,7 @@ select option {
 textarea {
 }
 
-/* genric classes */
+/* generic classes */
 .border0 {
 }
 .center {

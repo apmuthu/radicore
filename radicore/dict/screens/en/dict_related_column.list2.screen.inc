@@ -22,7 +22,7 @@ $structure['outer']['fields'][] = array('table_alias_jnr' => 'Alias (jnr)', 'siz
 
 $structure['outer']['fields'][] = array('seq_no' => 'Seq Number', 'colspan' => 3);
 $structure['outer']['fields'][] = array('relation_desc' => 'Description', 'colspan' => 3);
-$structure['outer']['fields'][] = array('comment' => 'Comments', 'colspan' => 3);
+$structure['outer']['fields'][] = array('rel_comment' => 'Comments', 'colspan' => 3);
 $structure['outer']['fields'][] = array('rel_type' => 'Relationship Type', 'colspan' => 3);
 $structure['outer']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['outer']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);

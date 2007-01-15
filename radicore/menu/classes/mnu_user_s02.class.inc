@@ -44,7 +44,6 @@ class mnu_user_s02 extends mnu_user
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         // input password must not be same as original password
         if ($fieldarray['new_password1'] == $fieldarray['user_password']) {
             $this->errors['new_password1'] = getLanguageText('e0030'); // 'New password must not match current password';

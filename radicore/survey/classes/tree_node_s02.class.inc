@@ -54,10 +54,16 @@ class tree_node_s02 extends tree_node
             // return an instruction to expand the parent node
             $this->instruction['expand'] = $node_id_snr;
 
-            // get list of fields from address table and merge with current list
-            require_once 'location_address.class.inc';
+            // get list of field specs from address table and merge with current specs
+            require_once 'classes/location_address.class.inc';
             $address =& singleton::getInstance('location_address');
-            $this->fieldspec = array_merge($this->fieldspec, $address->getFieldspec());
+            $address_spec = $address->getFieldspec();
+            foreach ($address_spec as $field => $spec) {
+                // if field does not already exist then insert the specs
+            	if (!array_key_exists($field, $this->fieldspec)) {
+            		$this->fieldspec[$field] = $spec;
+            	} // if
+            } // foreach
         } // if
 
         // perform standard processing in parent class

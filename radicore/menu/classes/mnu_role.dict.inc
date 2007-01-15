@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:23 pm
+    // file created on January 4, 2007, 1:47 pm
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -18,35 +18,43 @@
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup)b',
-                                                    'foreign_field' => 'task_desc');
+                                                    'foreign_field' => 'start_task_desc');
     
     $fieldspec['global_access']             = array('type' => 'boolean',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
-                                                    'false' => 'N');
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('role_id');
@@ -81,7 +89,7 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_desc AS start_task_desc',
                                                     'fields' => array('start_task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

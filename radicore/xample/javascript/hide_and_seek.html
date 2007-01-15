@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xml:lang="en" lang="en">
+  <head>
+    <title>Hide and Seek example</title>
+    <STYLE type="text/css">
+    <!--
+      table { width: 100%; }
+      tr { background: #eeeeee; }
+      td.label { text-align: right;
+                 font-style: italic;
+                 font-weight: bold;
+                 color: white;
+                 background: gray; }
+    -->
+    </STYLE>
+    
+<script language="JavaScript">
+<!--
+
+function SymError()
+{
+  return true;
+}
+
+window.onerror = SymError;
+
+var SymRealWinOpen = window.open;
+
+function SymWinOpen(url, name, attributes)
+{
+  return (new Object());
+}
+
+window.open = SymWinOpen;
+
+//-->
+</script>
+
+<script language="JavaScript" src="usableforms.js"/>
+<script language="JavaScript">document.write();</script>
+    
+  </head>
+  <body onload="prepareForm()">
+    <form method="post" action="script.php">
+      <div style="width: 350px; margin-left: auto;  margin-right: auto;" >
+        
+          <h1>Hide and Seek example</h1>
+          <table>
+            <tbody id="waitingRoom" style="display:none">
+          </table>
+          
+          <div class="main">
+            <table>
+              <colgroup>
+                <col width="75"/>
+                <col width="*"/>
+              </colgroup>
+              <tr>
+                <td class="label">Type</td>
+                <td>
+                  <select name="report_type">
+                    <option value="1" show="relationONE">One</option>
+                    <option value="2" show="relationTWO">Two</option>
+                    <option value="3" show="relationTHREE">Three</option>
+                  </select>
+                </td>
+              </tr>
+              
+              <tr relation="relationONE">
+                <td class="label">One</td>
+                <td>
+                  <input name="field_1" type="text" value="ONE" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTWO">
+                <td class="label">Two</td>
+                <td>
+                  <input name="field_2" type="text" value="TWO" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTHREE">
+                <td class="label">Three</td>
+                <td>
+                  <input name="field_3" type="text" value="THREE" />
+                </td>
+              </tr>
+              
+              <tr>
+                <td class="label">Four</td>
+                <td>
+                  <input name="field_4" type="text" value="FOUR" />
+                </td>
+              </tr>
+              
+              <tr relation="relationONE">
+                <td class="label">Five</td>
+                <td>
+                  <input name="field_5" type="text" value="FIVE" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTWO">
+                <td class="label">Six</td>
+                <td>
+                  <input name="field_6" type="text" value="SIX" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTWO">
+                <td class="label">Seven</td>
+                <td>
+                  <input name="field_7" type="text" value="SEVEN" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTHREE">
+                <td class="label">Eight</td>
+                <td>
+                  <input name="field_8" type="text" value="EIGHT" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTHREE">
+                <td class="label">Nine</td>
+                <td>
+                  <input name="field_9" type="text" value="NINE" />
+                </td>
+              </tr>
+              
+              <tr relation="relationTHREE">
+                <td class="label">Ten</td>
+                <td>
+                  <input name="field_10" type="text" value="TEN" />
+                </td>
+              </tr>
+
+            </table>
+          </div>
+      </div>
+    </form>
+  </body>
+</html>
+
+<script language="JavaScript">
+<!--
+var SymRealOnLoad;
+var SymRealOnUnload;
+
+function SymOnUnload()
+{
+  window.open = SymWinOpen;
+  if(SymRealOnUnload != null)
+     SymRealOnUnload();
+}
+
+function SymOnLoad()
+{
+  if(SymRealOnLoad != null)
+     SymRealOnLoad();
+  window.open = SymRealWinOpen;
+  SymRealOnUnload = window.onunload;
+  window.onunload = SymOnUnload;
+}
+
+SymRealOnLoad = window.onload;
+window.onload = SymOnLoad;
+
+//-->
+</script>
+

@@ -1,0 +1,1 @@
+ALTER TABLE `wf_arc` CHANGE `arc_type` `arc_type` VARCHAR( 10 ) NOT NULL DEFAULT 'SEQ';

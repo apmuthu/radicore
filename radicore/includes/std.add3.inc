@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add3.inc
@@ -27,22 +27,31 @@ $dbobject = new $table_id;
 // check to see if this task is a pending workitem
 $errors = $dbobject->checkWorkflow($where);
 if ($errors) {
-    scriptprevious($errors);
+    $batch_errors = scriptprevious($errors);
+    return $batch_errors;
+} // if
+
+if (!isset($popup_task)) {
+	$popup_task =& $popup_screen;
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    if (basename($return_from) <> $popup_screen) {
+    if (basename($return_from) <> $popup_task) {
         // have not been to popup screen yet, so go there now
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
         $script_vars = $_SESSION[$PHP_SELF][$task_id];
         $fieldarray  = array();
-        $settings    = '';
-        // may need to adjust contents of $where
-        $where       = $dbobject->popupCall($popup_screen, $where, $script_vars, $fieldarray, $settings);
-        scriptNext($popup_screen, $where);
+        $settings    = null;
+        // may need to adjust contents of $where and $settings
+        $where       = $dbobject->popupCall($popup_task, $where, $script_vars, $fieldarray, $settings);
+        $task_array['settings'] = $settings;
+        $batch_errors = scriptNext($popup_task, $where, null, $task_array);
+        return $batch_errors;
     } else {
         if (empty($selection)) {
-            scriptprevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+            // 'Nothing selected from popup screen.'
+            $batch_errors = scriptprevious(getLanguageText('sys0083'));
+            return $batch_errors;
         } // if
     } // if
 
@@ -50,18 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // and some in $selection (from the popup screen).
     // First, convert from SQL 'where' format to arrays
     $where  = unqualifyWhere($where);
-    $array1 = where2indexedArray($where);
-    $array1 = indexed2assoc($array1);
+    $array1 = where2array($where, false, false);
 
-    // split $selection into one or more rows using ' OR ' separator
+    // split $selection into one or more rows using ') OR (' separator
     $array2 = splitWhereByRow($selection);
 
     $dbobject->startTransaction();
 
     foreach ($array2 as $row) {
         // convert row data into an array
-        $array3 = where2indexedArray($row);
-        $array3 = indexed2assoc($array3);
+        $array3 = where2array($row, false, false);
         // merge into a single array
         $fieldarray = array_merge($array1, $array3);
         // strip operators from field values
@@ -70,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getExtraData($fieldarray);
         // now add combined values to the database
         $fieldarray = $dbobject->insertRecord($fieldarray);
+        $messages   = array_merge($messages, $dbobject->getMessages());
         if ($dbobject->errors) {
             // reduce array to primary key for error message
             $where2 = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
@@ -84,7 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $messages[] = getLanguageText('sys0005', $dbobject->getNumRows(), strtoupper($dbobject->getTableName())); // 'N records were inserted'
 
     // last, return to previous screen
-    scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages);
+    return $batch_errors;
 } // if
 
 ?>

@@ -38,9 +38,11 @@ class product extends Default_Table
             $this->fieldspec['identity_type_id']    = array('type' => 'string',
                                                             'size' => 6,
                                                             'uppercase' => 'y',
-                                                            'control' => 'popup',
-                                                            'foreign_field' => 'identity_type_desc',
-                                                            'task_id' => 'pro_good_id_type(popup)');
+                                                            'control' => 'dropdown',
+                                                            'optionlist' => 'identity_type_id');
+                                                            //'control' => 'popup',
+                                                            //'foreign_field' => 'identity_type_desc',
+                                                            //'task_id' => 'pro_good_id_type(popup)');
             $this->fieldspec['id_value']            = array('type' => 'string',
                                                             'size' => 32,
                                                             'uppercase' => 'y');
@@ -66,10 +68,14 @@ class product extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get array for product_subtype and put into LOOKUP_DATA
         $array = $this->getValRep('product_subtype');
         $this->lookup_data['product_subtype'] = $array;
+
+        // get array for good_identity_type and put into LOOKUP_DATA
+        $object =& singleton::getInstance('good_identity_type');
+        $array  = $object->getValRep('identity_type_id');
+        $this->lookup_data['identity_type_id'] = $array;
 
         return $fieldarray;
 
@@ -84,7 +90,7 @@ class product extends Default_Table
 
         if (!empty($fieldarray['identity_type_id']) and empty($fieldarray['identity_type_desc'])) {
             // get description for selected entry
-            require_once 'good_identity_type.class.inc';
+            require_once 'classes/good_identity_type.class.inc';
             $dbobject =& singleton::getInstance('good_identity_type');
             $dbobject->sql_select = 'identity_type_id, identity_type_desc';
             $foreign_data = $dbobject->getData("identity_type_id='{$fieldarray['identity_type_id']}'");
@@ -94,7 +100,7 @@ class product extends Default_Table
 
         if (!empty($fieldarray['prod_cat_id']) and empty($fieldarray['prod_cat_desc'])) {
             // get description for selected entry
-            require_once 'product_category.class.inc';
+            require_once 'classes/product_category.class.inc';
             $dbobject =& singleton::getInstance('product_category');
             $dbobject->sql_select = 'prod_cat_id, prod_cat_desc';
             $foreign_data = $dbobject->getData("prod_cat_id='{$fieldarray['prod_cat_id']}'");
@@ -104,7 +110,7 @@ class product extends Default_Table
 
         if (!empty($fieldarray['prod_feature_id']) and empty($fieldarray['prod_feature_desc'])) {
             // get description for selected entry
-            require_once 'product_feature.class.inc';
+            require_once 'classes/product_feature.class.inc';
             $dbobject =& singleton::getInstance('product_feature');
             $dbobject->sql_select = 'prod_feature_id, prod_feature_desc';
             $foreign_data = $dbobject->getData("prod_feature_id='{$fieldarray['prod_feature_id']}'");
@@ -117,7 +123,7 @@ class product extends Default_Table
     } // _cm_getForeignData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -134,9 +140,11 @@ class product extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         if (empty($this->sql_search)) {
@@ -146,6 +154,7 @@ class product extends Default_Table
 
         $search = $this->sql_search;
 
+        $this->sql_select  = "$this->tablename.*";
         $this->sql_from    = $this->tablename;
         $this->sql_groupby = '';
 
@@ -169,8 +178,8 @@ class product extends Default_Table
                 // this value may have a hierarchy on PROD_CAT_ROLLUP, so extract complete
                 // hierarchy structure and build into a range of values
                 // convert search string to an array
-                $array = where2indexedArray($search);
-                $array = indexed2assoc($array);
+                $array = where2array($search, false, false);
+
                 // extract value for prod_cat_id
                 $prod_cat_id = $array['prod_cat_id'];
                 // remove 'LIKE ' operator
@@ -178,17 +187,17 @@ class product extends Default_Table
                 // remove prod_cat_id from array
                 unset($array['prod_cat_id']);
 
-                require_once 'prod_cat_rollup.class.inc';
+                require_once 'classes/prod_cat_rollup.class.inc';
                 $dbobject =& singleton::getInstance('prod_cat_rollup');
                 $dbobject->sql_select = 'prod_cat_id_jnr';
 
                 // initialise range with starting value
-                $range = "$prod_cat_id";
+                $range  = $prod_cat_id;
                 $range2 = $range;
                 // repeat until end of hierarchy is reached
                 do {
                     // look for children of current range
-                    $array2 = $dbobject->getData("prod_cat_id_snr IN ($range2)");
+                    $array2 = $dbobject->getData_raw("prod_cat_id_snr IN ($range2)");
                     if (!empty($array2)) {
                         // convert array of rows into a range string
                         $range2 = array2range($array2);
@@ -221,13 +230,15 @@ class product extends Default_Table
     {
         //DebugBreak();
         if ($fieldarray['product_subtype'] != $originaldata['product_subtype']) {
+            // value has changed, so ...
             if ($originaldata['product_subtype'] == 'G') {
                 $where = "product_id='{$fieldarray['product_id']}'";
                 $query = "SELECT count(*) FROM good_identification WHERE $where";
                 $count = $this->getCount($query);
                 if ($count > 0) {
                     $fieldarray['product_subtype'] = 'G';
-                    $this->errors['product_subtype'] = getLanguageText('e0018'); // "Cannot change when identification values exist";
+                    // "Cannot change when identification values exist"
+                    $this->errors['product_subtype'] = getLanguageText('e0018');
                     return $fieldarray;
                 } // if
             } // if

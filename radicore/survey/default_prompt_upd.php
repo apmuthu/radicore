@@ -4,7 +4,6 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'default_prompt';                       // table id
 $screen   = 'default_prompt.detail.screen.inc';     // file identifying screen structure
 
@@ -13,7 +12,6 @@ $sql_select = NULL;
 $sql_from   = NULL;
 $sql_where  = NULL;
 
-// activate page controller
-require 'std.update1.inc';
+require 'std.update1.inc';      // activate page controller
 
 ?>

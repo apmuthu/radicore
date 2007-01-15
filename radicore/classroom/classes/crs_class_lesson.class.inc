@@ -22,6 +22,28 @@ class crs_class_lesson extends Default_Table
 
     } // crs_class_lesson
 
+    // ****************************************************************************
+    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
+    // be altered before the popup screen is called.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    {
+        // convert 'class=X' into 'year=Y'
+        $object =& singleton::getInstance('crs_class');
+        $object->sql_select = 'year';
+        $data = $object->getData_raw($where);
+        if (isset($data[0]['year']) and $data[0]['year'] > 0) {
+            $where = "year=" .$data[0]['year'];
+        } else {
+            $where = '';
+        } // if
+
+        $settings['select_one'] = false;
+
+        return $where;
+
+    } // _cm_popupCall
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

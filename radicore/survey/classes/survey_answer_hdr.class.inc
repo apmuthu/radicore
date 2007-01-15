@@ -70,7 +70,7 @@ class survey_answer_hdr extends Default_Table
         //DebugBreak();
         if (!empty($fieldarray['node_id']) and empty($fieldarray['node_desc'])) {
             // not supplied yet, so get it manually
-            require_once 'tree_node.class.inc';
+            require_once 'classes/tree_node.class.inc';
             $dbobject =& singleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $foreign_data = $dbobject->getData("node_id='{$fieldarray['node_id']}'");
@@ -141,8 +141,11 @@ class survey_answer_hdr extends Default_Table
             } // if
         } // if
 
-        // ensure that only one entry can be selected
-        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
@@ -157,7 +160,7 @@ class survey_answer_hdr extends Default_Table
     {
         if ($return_from == 'srv_tree_node(popup)') {
             // get description for selected item
-            require_once 'tree_node.class.inc';
+            require_once 'classes/tree_node.class.inc';
             $dbobject =& singleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $foreign_data = $dbobject->getData($selection);

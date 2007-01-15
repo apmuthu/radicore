@@ -1,5 +1,5 @@
 <?php
-    // file created on January 18, 2006, 6:35 pm
+    // file created on November 3, 2006, 11:31 am
     
     // field specifications for table survey.answer_option
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -58,23 +58,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('survey_id',
@@ -89,20 +94,10 @@
     $this->child_relations                  = array();
     
     // parent relationship details 
-    $this->parent_relations[]               = array('parent' => 'survey_hdr',
-                                                    'parent_field' => 'survey_name',
-                                                    'fields' => array('survey_id' => 'survey_id'));
-    
     $this->parent_relations[]               = array('parent' => 'survey_question',
-                                                    'parent_field' => 'question_text',
                                                     'fields' => array('survey_id' => 'survey_id',
                                                                       'section_id' => 'section_id',
                                                                       'question_id' => 'question_id'));
-    
-    $this->parent_relations[]               = array('parent' => 'survey_section',
-                                                    'parent_field' => 'section_name',
-                                                    'fields' => array('survey_id' => 'survey_id',
-                                                                      'section_id' => 'section_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;

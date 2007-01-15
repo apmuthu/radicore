@@ -45,22 +45,20 @@ class mnu_user_s01 extends mnu_user
     // perform validation that is common to INSERT and UPDATE.
     {
         // find out if user passwords are encrypted or not
-        require_once 'mnu_control.class.inc';
         $dbobject =& singleton::getInstance('mnu_control');
         $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
         unset($dbobject);
 
         if ($encrypt_flag) {
-            if (!isset($this->CLcrypt) or !is_object($this->CLcrypt)) {
-                require_once 'std.encryption.class.inc';
-                $crypt_obj =& singleton::getInstance('encryption_class');
-            } // if
+            $crypt_obj =& singleton::getInstance('encryption_class');
             // encrypt input password and compare with original
             $key    = $fieldarray['user_id'];
             $string = $fieldarray['user_password'];
             $spec   = $this->fieldspec['user_password'];
             $string = $crypt_obj->encrypt($key, $string, $spec['size']);
-            $this->errors = array_merge($this->errors, $crypt_obj->errors);
+            if ($crypt_obj->errors) {
+            	$this->errors['user_password'] = $crypt_obj->errors[0];
+            } // if
         } else {
             $string = $fieldarray['user_password'];
         } // if
@@ -89,6 +87,19 @@ class mnu_user_s01 extends mnu_user
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        // this may be called fromthe home page, so insert user's id
+        if (empty($where)) {
+        	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
 
 // ****************************************************************************
 } // end class

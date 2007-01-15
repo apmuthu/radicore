@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:23 pm
+    // file created on November 3, 2006, 11:23 am
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',
@@ -14,31 +14,40 @@
     
     $fieldspec['subsys_dir']                = array('type' => 'string',
                                                     'size' => 255,
-                                                    'required' => 'y');
+                                                    'required' => 'y',
+                                                    'lowercase' => 'y');
+    
+    $fieldspec['task_prefix']               = array('type' => 'string',
+                                                    'size' => 8,
+                                                    'lowercase' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('subsys_id');

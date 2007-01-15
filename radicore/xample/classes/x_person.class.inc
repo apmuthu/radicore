@@ -25,35 +25,28 @@ class x_person extends Default_Table
     } // x_person
 
     // ****************************************************************************
-    function getLastAddressNo ($where)
-    // get number of last address for this person
-    {
-        // look for the current value for address_no on person_addr table
-        $query = "SELECT max(address_no) FROM x_person_addr WHERE $where";
-        $count = $this->getCount($query);
-
-        return $count;
-
-    } // getLastAddressNo
-
-    // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        global $mode;
-
-        if ($mode == 'search') {
+        if ($GLOBALS['mode'] == 'search') {
             $prev_script = getPreviousScript();
-            if (basename($prev_script) == 'pers_opt_xref_link(b).php') {
+            $pattern_id  = getPatternId($prev_script);
+            //if (basename($prev_script) == 'pers_opt_xref_link(b).php') {
+            if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
-                $this->fieldspec['selected'] = array('type' => 'boolean',
-                                                     'true' => 'Y',
-                                                     'false' => 'N');
+                $this->fieldspec['selected'] = array('type' => 'boolean');
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['last_addr_no']['noedit']);
+        } // if
+
+        // if using the Oracle database then exclude field 'favourite_food'
+        // as the OCI8 driver cannot deal with VARRAY types.
+        //if ($this->dbms_engine == 'oracle' AND version_compare(phpversion(), '5.0.0', '<')) {
+        if ($this->dbms_engine == 'oracle') {
+        	unset($this->fieldspec['favourite_food']);
         } // if
 
         return $fieldarray;
@@ -64,10 +57,7 @@ class x_person extends Default_Table
     function _cm_commonValidation ($fieldarray, $orignaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        $start_date = $fieldarray['start_date'];
-        $end_date   = $fieldarray['end_date'];
-
-        if ($start_date > $end_date) {
+        if ($fieldarray['start_date'] > $fieldarray['end_date']) {
             // 'Start Date cannot be later than End Date';
             $this->errors['start_date'] = getLanguageText('e0001');
             // 'End Date cannot be earlier than Start Date';
@@ -132,13 +122,15 @@ class x_person extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get enum list for star_sign and insert into lookup array
+        // get values for star_sign and insert into lookup array
         $array = $this->getValRep('star_sign');
         $this->lookup_data['star_sign'] = $array;
 
+        // get values for favourite_food and insert into lookup array
+        $array = $this->getValRep('favourite_food');
+        $this->lookup_data['favourite_food'] = $array;
+
         // get contents of foreign table PERS_TYPE and add to lookup array
-        require_once 'x_pers_type.class.inc';
         $pers_type =& singleton::getInstance('x_pers_type');
         $pers_type_array = $pers_type->getValRep('pers_type_id');
         $this->lookup_data['pers_type_id'] = $pers_type_array;
@@ -154,6 +146,7 @@ class x_person extends Default_Table
     {
         // this field is irrelevant for insert
         $this->fieldspec['last_addr_no']['nodisplay'] = 'y';
+        $fieldarray['last_addr_no'] = 0;
 
         return $fieldarray;
 
@@ -167,7 +160,6 @@ class x_person extends Default_Table
 
         if ($item == 'star_sign') {
             // $array = $this->getEnum($item);
-//            $array['']    = ' ';   // start with blank entry
 //            $array['ARI'] = 'Aries';
 //            $array['AQU'] = 'Aquarius';
 //            $array['CAN'] = 'Cancer';
@@ -184,9 +176,138 @@ class x_person extends Default_Table
             return $array;
         } // if
 
+        if ($item == 'favourite_food') {
+            $array = getLanguageArray('favourite_food');
+            return $array;
+        } // if
+
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialiseFilePicker ()
+    // perform any initialisation before displaying the File Picker screen.
+    {
+        // identify the subdirectory which contains the files
+        $this->picker_subdir      = 'pictures';
+
+        // identify the file types that may be picked
+        $this->picker_filetypes   = array('bmp', 'jpg', 'png', 'gif');
+
+        return;
+
+    } // _cm_initialiseFilePicker
+
+    // ****************************************************************************
+    function _cm_initialiseFileUpload ($fieldarray)
+    // perform any initialisation before displaying the File Upload screen.
+    {
+        $this->upload_subdir      = 'pictures';
+        $this->upload_filetypes   = array('image/x-png', 'image/gif');
+        $this->upload_maxfilesize = 100;
+
+        return $fieldarray;
+
+    } // _cm_initialiseFileUpload
+
+    // ****************************************************************************
+    function _cm_output_multi ($name, $fieldarray)
+    // get extra data to pass to PDF class.
+    {
+        $outarray = array();
+
+        switch ($name) {
+        	case 'multi1':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi2':
+                // retrieve associated data from PERSON_ADDR table
+                $object =& singleton::getInstance('x_person_addr');
+                $person_id  = $fieldarray['person_id'];
+                $object->sql_orderby = 'address_no asc';
+                $outarray = $object->getData("person_id='$person_id'");
+                if (empty($outarray)) {
+                    // print an empty line
+                    $outarray[] = array('dummy' => '');
+                } else {
+                    // format each record
+                    foreach ($outarray as $rownum => $rowdata) {
+                        // format all dates
+                    	$rowdata = $object->formatData($rowdata);
+                    	// construct address line
+                    	$address_long = $rowdata['addr_line_1'];
+                    	if (!empty($rowdata['addr_line_2'])) {
+                    		$address_long .= "\n" .$rowdata['addr_line_2'];
+                    	} // if
+                    	if (!empty($rowdata['addr_line_3'])) {
+                    		$address_long .= "\n" .$rowdata['addr_line_3'];
+                    	} // if
+                    	if (!empty($rowdata['town'])) {
+                    		$address_long .= "\n" .$rowdata['town'];
+                    	} // if
+                    	if (!empty($rowdata['county'])) {
+                    		$address_long .= "\n" .$rowdata['county'];
+                    	} // if
+                    	if (!empty($rowdata['postcode'])) {
+                    		$address_long .= "\n" .$rowdata['postcode'];
+                    	} // if
+
+                        $rowdata['address_long'] = $address_long;
+                        $outarray[$rownum] = $rowdata;  // required for PHP4
+                    } // foreach
+                } // if
+
+        		break;
+
+        	case 'multi3':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi4':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi5':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi6':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi7':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi8':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi9':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	default:
+        		break;
+        } // switch
+
+        if ($outarray) {
+        	return $outarray;
+        } else {
+            return false;
+        } // if
+
+    } // _cm_output_multi
 
     // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
@@ -199,8 +320,11 @@ class x_person extends Default_Table
             $where = "tree_type_id='ORG'";
         } // if
 
-		// ensure that only one entry can be selected
-        $settings = 'select_one=true';
+		// allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
@@ -215,27 +339,26 @@ class x_person extends Default_Table
             return $fieldarray;
         } // if
 
-        require_once 'x_person_addr.class.inc';
         $dbobject =& singleton::getInstance('x_person_addr');
 
         if ($fieldarray['start_date'] <> $old_data['start_date']) {
             // update start date on first address
-            $first_array['person_id'] = $fieldarray['person_id'];
+            $first_array['person_id']  = $fieldarray['person_id'];
             $first_array['address_no'] = '1';
             $first_array['start_date'] = $fieldarray['start_date'];
         } // if
 
         if ($fieldarray['end_date'] <> $old_data['end_date']) {
-            if ($this->last_addr_no == 1) {
+            if ($fieldarray['last_addr_no'] == 1) {
                 // update end date on first (only) address
-                $first_array['person_id'] = $fieldarray['person_id'];
+                $first_array['person_id']  = $fieldarray['person_id'];
                 $first_array['address_no'] = '1';
-                $first_array['end_date'] = $fieldarray['end_date'];
+                $first_array['end_date']   = $fieldarray['end_date'];
             } else {
                 // update end date on last address
-                $last_array['person_id'] = $fieldarray['person_id'];
-                $last_array['address_no'] = $this->last_addr_no;
-                $last_array['end_date'] = $fieldarray['end_date'];
+                $last_array['person_id']  = $fieldarray['person_id'];
+                $last_array['address_no'] = $fieldarray['last_addr_no'];
+                $last_array['end_date']   = $fieldarray['end_date'];
             } // if
         } // if
 
@@ -266,17 +389,18 @@ class x_person extends Default_Table
     // perform custom validation before update.
     {
         // get current value for 'last_addr_no'
-        $this->last_addr_no = $fieldarray['last_addr_no'];
+        $last_addr_no = $fieldarray['last_addr_no'];
 
         // no validation required if $last_addr_no = 0 or 1
-        if ($this->last_addr_no > 1) {
+        if ($last_addr_no > 1) {
             // there is more than one address, so...
-            require_once 'x_person_addr.class.inc';
             $dbobject =& singleton::getInstance('x_person_addr');
 
-            // compare start date with first address
+            // compare start date with end date of first address
             $dbobject->sql_select = 'end_date';
-            $where = "person_id='{$fieldarray['person_id']}' AND address_no='1'";
+            $where_array['person_id']  = $fieldarray['person_id'];
+            $where_array['address_no'] = 1;
+            $where = array2where($where_array);
             $first_addr_data = $dbobject->getdata_raw($where);
             if ($dbobject->numrows <> 1) {
                 // "Could not locate first ADDRESS record"
@@ -284,8 +408,7 @@ class x_person extends Default_Table
                 return $fieldarray;
             } // if
 
-            // extract array for first occurrence only
-            $first_addr_data = $first_addr_data[0];
+            $first_addr_data = $first_addr_data[0];  // extract array for first occurrence only
 
             if ($fieldarray['start_date'] > $first_addr_data['end_date']) {
                 $fieldarray['start_date'] = $first_addr_data['end_date'];
@@ -294,9 +417,11 @@ class x_person extends Default_Table
                 return $fieldarray;
             } // if
 
-            // compare end date with last address
-            $where = "person_id='{$fieldarray['person_id']}' AND address_no='{$this->last_addr_no}'";
+            // compare end date with start date of last address
             $dbobject->sql_select = 'start_date';
+            $where_array['person_id']  = $fieldarray['person_id'];
+            $where_array['address_no'] = $last_addr_no;
+            $where = array2where($where_array);
             $last_addr_data = $dbobject->getdata_raw($where);
             if ($dbobject->numrows <> 1) {
                 // "Could not locate last ADDRESS record"
@@ -304,8 +429,7 @@ class x_person extends Default_Table
                 return $fieldarray;
             } // if
 
-            // extract array for first occurrence only
-            $last_addr_data = $last_addr_data[0];
+            $last_addr_data = $last_addr_data[0];  // extract array for first occurrence only
 
             if ($fieldarray['end_date'] < $last_addr_data['start_date']) {
                 $fieldarray['end_date'] = $last_addr_data['start_date'];

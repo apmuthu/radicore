@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -31,11 +31,19 @@
 <xsl:template match="/">
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
-    <xsl:call-template name="head" />
-  <body>
 
-  <xsl:if test="//header">
-    <xsl:value-of select="//header" disable-output-escaping="yes"/>
+  <xsl:call-template name="head" />
+
+  <body>
+    <xsl:for-each select="/root/javascript/body[@*]">
+      <!-- add javascript events to the <body> tag -->
+      <xsl:copy-of select="@*" />
+    </xsl:for-each>
+
+  <xsl:if test="/root/header">
+    <div class="header">
+      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   <form method="post" action="{$script}">
@@ -44,6 +52,7 @@
       <xsl:attribute name="class">
         <xsl:choose>
           <xsl:when test="$mode='logon'">logon</xsl:when>
+          <xsl:when test="$mode='recover'">recover</xsl:when>
           <xsl:otherwise>universe</xsl:otherwise>
         </xsl:choose>
       </xsl:attribute>
@@ -51,7 +60,7 @@
       <!-- create help button -->
       <xsl:call-template name="help" />
 
-      <xsl:if test="not($mode='logon')">
+      <xsl:if test="not($mode='logon') and not($mode='recover')">
         <!-- create menu buttons -->
         <xsl:call-template name="menubar" />
       </xsl:if>
@@ -64,6 +73,19 @@
         <xsl:call-template name="navbar_detail" />
 
         <div class="main">
+
+          <!-- insert dummy table for use by optional javascript functions -->
+          <xsl:if test="/root/javascript/tbody">
+            <table>
+              <tbody>
+                <xsl:for-each select="/root/javascript/tbody[@*]">
+                  <!-- add javascript events to the <tbody> tag -->
+                  <xsl:copy-of select="@*" />
+                </xsl:for-each>
+              </tbody>
+            </table>
+          </xsl:if>
+
           <!-- table contains a row for each database field -->
           <table>
 
@@ -97,12 +119,25 @@
 
   </form>
 
-  <xsl:if test="//footer">
-    <xsl:value-of select="//footer" disable-output-escaping="yes"/>
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes" />
+    </div>
   </xsl:if>
 
   </body>
   </html>
+
+  <xsl:if test="/root/javascript/footer">
+    <!-- insert the javascript footer manually because it can't be done automatically -->
+    <xsl:call-template name="javascript_footer" />
+  </xsl:if>
 
 </xsl:template>
 

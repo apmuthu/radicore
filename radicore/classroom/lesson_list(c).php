@@ -2,7 +2,7 @@
 //*****************************************************************************
 // List the contents of the LESSON table for a particular value of TEACHER_ID
 // (as selected in the previous screen) and allow the user to view/modify
-// the contents by activating other screens via navigation buttons. 
+// the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
 //DebugBreak();
@@ -19,8 +19,8 @@ $inner_sql_select = 'crs_lesson.lesson_id, crs_lesson.lesson_name, crs_lesson.ye
 //                 .'CASE count(crs_student_lesson.student_id) WHEN 0 THEN null ELSE count(crs_student_lesson.student_id) END AS student_count,'
                    .'CASE count(crs_class_lesson.class_id) WHEN 0 THEN null ELSE count(crs_class_lesson.class_id) END AS class_count';
 $inner_sql_from   = 'crs_lesson '
-//                 .'LEFT JOIN crs_student_lesson USING (lesson_id) '
-                  .'LEFT JOIN crs_class_lesson USING (lesson_id)';
+//                 .'LEFT JOIN crs_student_lesson ON (crs_student_lesson.lesson_id=crs_lesson.lesson_id) '
+                  .'LEFT JOIN crs_class_lesson ON (crs_class_lesson.lesson_id=crs_lesson.lesson_id)';
 $inner_sql_where  = '';
 $inner_sql_groupby = 'crs_lesson.lesson_id, crs_lesson.lesson_name, crs_lesson.year';
 $inner_search_table = '';

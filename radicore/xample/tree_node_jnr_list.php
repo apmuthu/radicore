@@ -20,7 +20,7 @@ $inner_sql_from   = NULL;
 $inner_sql_where  = NULL;
 
 // set default sort sequence
-$inner_sql_orderby = 'tree_node.node_desc';
+$inner_sql_orderby = 'x_tree_node.node_desc';
 
 require 'std.list2.inc';                        // activate page controller
 

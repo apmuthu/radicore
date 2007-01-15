@@ -18,9 +18,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
-		// create object for retrieving task details
-        require_once 'mnu_task.class.inc';
+        // create object for retrieving task details
+        require_once 'classes/mnu_task.class.inc';
         $taskobj =& singleton::getInstance('mnu_task');
 
         // process each subsystem separately
@@ -29,7 +28,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 			$subsys_id   = $tabledata['subsys_id'];
             $subsys_dir  = $tabledata['subsys_dir'];
 
-			$this->text_out = '    // file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
+			$this->text_out = '// file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
 
             // process menu descriptions
         	$taskobj->sql_select = 'menu_id, task_id_jnr, mnu_menu.button_text';
@@ -52,7 +51,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data = $taskobj->getData("subsys_id='$subsys_id'");
 			$this->_createNavDesc($data, $subsys_id);
 
-			$this->text_out .= '    // finished' ."\r\n";
+			$this->text_out .= '// finished' ."\r\n";
 
             // write completed text file to disk
             $this->_writeTextFile ($this->text_out, $subsys_id, "$subsys_dir/text", 'txt');
@@ -76,14 +75,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-		global $dbprefix;
-
-		$this->checkPrimaryKey = true;  // check for primary key in selection
+        $this->checkPrimaryKey = true;  // check for primary key in selection
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR
@@ -99,7 +97,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createHelpText ($help_array, $subsys_dir)
     // put each task's help text into a separate file.
     {
-        //DebugBreak();
         require_once 'classes/mnu_control.class.inc';
         $mnu_control =& singleton::getInstance('mnu_control');
         $language_dir = $mnu_control->getControlData('default_language');
@@ -125,8 +122,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createMenuDesc ($menu_array, $subsys_id)
     // put menu details into the output file.
     {
-        //DebugBreak();
-        $indent  = str_pad('', 4);
+        //$indent  = str_pad('', 4);
+        $indent  = '';
         $indent2 = str_pad('', 52);
         $this->text_out .= $indent .'// menu details for subsystem ' .$subsys_id ."\r\n";
 
@@ -146,13 +143,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createNavDesc ($nav_array, $subsys_id)
     // put navigation button details into the output file.
     {
-        //DebugBreak();
         // transfer details to an array to remove duplicate entries
         foreach ($nav_array as $nav) {
         	$array[$nav['button_text']] = $nav['button_text'];
         } // foreach
 
-        $indent  = str_pad('', 4);
+        //$indent  = str_pad('', 4);
+        $indent  = '';
         $indent2 = str_pad('', 52);
         $this->text_out .= $indent .'// navigation button details for subsystem ' .$subsys_id ."\r\n";
 
@@ -172,8 +169,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createTaskDesc ($task_array, $subsys_id)
     // put task details into the output file.
     {
-        //DebugBreak();
-        $indent  = str_pad('', 4);
+        //$indent  = str_pad('', 4);
+        $indent  = '';
         $indent2 = str_pad('', 52);
         $this->text_out .= $indent .'// task details for subsystem ' .$subsys_id ."\r\n";
 
@@ -205,12 +202,12 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_control', $data, $output);
 
-            // export contents of MNU_DIALOG_TYPE
+            // export contents of MNU_pattern
         	$taskobj->sql_select = '*';
-        	$taskobj->sql_from   = 'mnu_dialog_type';
-        	$taskobj->sql_orderby = 'dialog_type_id';
+        	$taskobj->sql_from   = 'mnu_pattern';
+        	$taskobj->sql_orderby = 'pattern_id';
             $data = $taskobj->getData_raw(null);
-            $output = $this->_exportSqlData('mnu_dialog_type', $data, $output);
+            $output = $this->_exportSqlData('mnu_pattern', $data, $output);
 
             // export contents of MNU_ROLE
         	$taskobj->sql_select = '*';
@@ -226,6 +223,32 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	$taskobj->sql_orderby = 'subsys_id';
         $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_subsystem', $data, $output);
+
+        if ($subsys_id != 'MENU') {
+            // export contents of MNU_ROLE for entries used by this subsystem
+        	$taskobj->sql_select = 'DISTINCT role_id';
+        	$taskobj->sql_from   = 'mnu_role_task '
+        	                     . 'left join mnu_task ON (mnu_role_task.task_id=mnu_task.task_id)';
+        	$taskobj->sql_orderby = 'role_id';
+            $data = $taskobj->getData_raw("mnu_task.subsys_id='$subsys_id'");
+
+            if (count($data) > 0) {
+                // extract details of all roles which are actually used
+                $range = null;
+                foreach ($data as $row) {
+                	if (empty($range)) {
+                		$range = "'" .$row['role_id'] ."'";
+                	} else {
+                	    $range .= ",'" .$row['role_id'] ."'";
+                	} // if
+                } // foreach
+            	$taskobj->sql_select = '*';
+            	$taskobj->sql_from   = 'mnu_role';
+            	$taskobj->sql_orderby = 'role_id';
+                $data = $taskobj->getData_raw("role_id IN ($range)");
+                $output = $this->_exportSqlData('mnu_role', $data, $output);
+            } // if
+        } // if
 
         // export contents of MNU_TASK for this subsystem (where type = 'PROC')
     	$taskobj->sql_select = '*';
@@ -277,8 +300,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
         // (where subsys_id of menu_id and task_id_jnr is the same as current subsys_id)
     	$taskobj->sql_select = 'mnu_menu.*';
     	$taskobj->sql_from   = 'mnu_menu '
-    	                      .'LEFT JOIN mnu_task AS SNR on (menu_id=SNR.task_id) '
-    	                      .'LEFT JOIN mnu_task AS JNR on (task_id_jnr=JNR.task_id) ';
+    	                      .'LEFT JOIN mnu_task AS SNR ON (menu_id=SNR.task_id) '
+    	                      .'LEFT JOIN mnu_task AS JNR ON (task_id_jnr=JNR.task_id) ';
     	$taskobj->sql_orderby = 'menu_id, sort_seq';
         $data = $taskobj->getData_raw("SNR.subsys_id='$subsys_id' AND JNR.subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
@@ -287,15 +310,15 @@ class mnu_subsystem_s01 extends mnu_subsystem
         // (where subsys_id of menu_id is not the same as current subsys_id)
     	$taskobj->sql_select = 'mnu_menu.*';
     	$taskobj->sql_from   = 'mnu_menu '
-    	                      .'LEFT JOIN mnu_task AS SNR on (menu_id=SNR.task_id) '
-    	                      .'LEFT JOIN mnu_task AS JNR on (task_id_jnr=JNR.task_id) ';
+    	                      .'LEFT JOIN mnu_task AS SNR ON (menu_id=SNR.task_id) '
+    	                      .'LEFT JOIN mnu_task AS JNR ON (task_id_jnr=JNR.task_id) ';
     	$taskobj->sql_orderby = 'menu_id, sort_seq';
         $data = $taskobj->getData_raw("SNR.subsys_id != '$subsys_id' AND JNR.subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
 
         // export the contents of HELP_TEXT for this subsystem
     	$taskobj->sql_select = 'help_text.*';
-    	$taskobj->sql_from   = 'help_text LEFT JOIN mnu_task using (task_id)';
+    	$taskobj->sql_from   = 'help_text LEFT JOIN mnu_task ON (mnu_task.task_id=help_text.task_id)';
     	$taskobj->sql_orderby = 'help_text.task_id';
         $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('help_text', $data, $output);
@@ -355,7 +378,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _writeTextFile ($text, $subsys_id, $subsys_dir, $type)
     // write the contents of $text to a disk file.
     {
-        //DebugBreak();
         $sname = $subsys_dir .'/' .strtolower($subsys_id) .'.menu_export.' .$type;
         $fname = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$sname;
         if (!$fp = fopen($fname, 'w')) {

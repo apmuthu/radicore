@@ -20,10 +20,6 @@ $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = '';
 
-// set default sort sequence
-$inner_sql_orderby = '';
-
-// activate page controller
-require 'std.list2.inc';
+require 'std.list2.inc';            // activate page controller
 
 ?>

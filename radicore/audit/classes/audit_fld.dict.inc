@@ -1,11 +1,11 @@
 <?php
-    // file created on January 18, 2006, 6:03 pm
+    // file created on October 9, 2006, 10:30 am
     
     // field specifications for table audit.audit_fld
     $fieldspec['session_id']                = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 9223372036854802000,
+                                                    'maxvalue' => 9.2233720368548e+018,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'default' => '0',
@@ -65,7 +65,7 @@
     $this->audit_logging                    = FALSE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'session_id,tran_seq_no,table_seq_no,field_id';
+    $this->default_orderby                  = 'session_id, tran_seq_no, table_seq_no, field_id';
     
     // finished
 ?>

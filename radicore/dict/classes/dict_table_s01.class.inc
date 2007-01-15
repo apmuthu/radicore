@@ -9,11 +9,10 @@ class dict_table_s01 extends dict_table
     // ****************************************************************************
     // this class is used to import existing table names for a selected database
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // get list of existing table names
         $dbname = $fieldarray['database_id'];
         $fieldarray = array();
@@ -22,6 +21,7 @@ class dict_table_s01 extends dict_table
         // filter out those that already exist in DICT database
         $i = 0;
         foreach ($array as $tablename) {
+            $tablename = strtolower($tablename);
         	$count = $this->getCount("database_id='$dbname' AND table_id='$tablename'");
             if ($count == 0) {
                 // insert details of new database
@@ -32,20 +32,27 @@ class dict_table_s01 extends dict_table
             } // if
         } // foreach
 
-        if (empty($fieldarray)) {
-            // do not fill empty array with null values
-        	$this->ignore_empty_fields = TRUE;
-        } // if
-
         return $fieldarray;
 
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMultiple
+
+    // ****************************************************************************
+    function _cm_pre_insertMultiple ($rows)
+    // perform custom processing before multiple database records are inserted.
+    // if anything is placed in $this->errors the insert will be terminated.
+    {
+        if (empty($rows)) {
+            $this->errors[] = getLanguageText('e0023'); // "There is no data to insert";
+        } // if
+
+        return $rows;
+
+    } // _cm_pre_insertMultiple
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-        //DebugBreak();
         // remove any empty fields from the input array
         foreach ($fieldarray as $fieldname => $fieldvalue) {
         	if (strlen($fieldvalue) == 0) {

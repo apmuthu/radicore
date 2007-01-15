@@ -25,6 +25,44 @@ class mnu_role extends Default_Table
     } // mnu_role
 
     // ****************************************************************************
+    function getRole ()
+    // return the role details for the current user.
+    {
+        $this->errors = array();
+
+        if (!isset($_SESSION['role_id'])) {
+            // not found, so assume user has global access
+            $array = array('role_id' => 'GLOBAL', 'global_access' => true);
+        } elseif (isset($_SESSION['global_access'])) {
+            $array['role_id']       = $_SESSION['role_id'];
+            $array['global_access'] = $_SESSION['global_access'];
+        } else {
+            // look for security class from logon screen
+            $role_id = $_SESSION['role_id'];
+            $this->sql_select = 'role_id,global_access';
+            $role_data = $this->getData_raw("role_id='$role_id'");
+            if ($this->errors) {
+                return FALSE;
+            } // if
+            if ($this->numrows <> 1) {
+                // 'Role does not exist';
+                $this->errors[] = getLanguageText('sys0013');
+                return FALSE;
+            } // if
+            $array = $role_data[0];
+            if (is_true($array['global_access'])) {
+                $array['global_access'] = TRUE;
+            } else {
+                $array['global_access'] = FALSE;
+            } // if
+            $_SESSION['global_access'] = $array['global_access'];
+        } // if
+
+       return $array;
+
+    } // getRole
+
+    // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
@@ -34,11 +72,11 @@ class mnu_role extends Default_Table
 
         if ($mode == 'search') {
             $prev_script = getPreviousScript();
-            if (basename($prev_script) == 'mnu_role_task_link(a).php') {
+            $pattern_id  = getPatternId($prev_script);
+            //if (basename($prev_script) == 'mnu_role_task_link(a).php') {
+            if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
-                $this->fieldspec['selected'] = array('type' => 'boolean',
-                                                     'true' => 'Y',
-                                                     'false' => 'N');
+                $this->fieldspec['selected'] = array('type' => 'boolean');
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['role_id']['noedit']);
@@ -55,12 +93,13 @@ class mnu_role extends Default_Table
     {
         //DebugBreak();
         if (isset($fieldarray['start_task_id'])) {
-            require_once 'mnu_task.class.inc';
+            require_once 'classes/mnu_task.class.inc';
             $dbobject =& singleton::getInstance('mnu_task');
-            $dbobject->setSqlSelect('task_type');
+            $dbobject->sql_select = 'task_type';
             $foreign_data = $dbobject->getData("task_id='{$fieldarray['start_task_id']}'");
             if ($foreign_data[0]['task_type'] != 'MENU') {
-                $this->errors['start_task_id'] = getLanguageText('e0014'); // "start_task_id must be of type MENU";
+                // "start_task_id must be of type MENU"
+                $this->errors['start_task_id'] = getLanguageText('e0014');
             } // if
         } // if
 
@@ -69,7 +108,7 @@ class mnu_role extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -80,8 +119,6 @@ class mnu_role extends Default_Table
             $this->sql_orderby    = 'role_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -115,11 +152,14 @@ class mnu_role extends Default_Table
                 } // if
                 break;
             default:
-                ;
+                $where = '';
         } // switch
 
-        // ensure that only one entry can be selected
-        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
@@ -144,17 +184,19 @@ class mnu_role extends Default_Table
     } // _cm_popupReturn
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // only do this if sql_select is empty
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'mnu_role.*, mnu_task.task_id AS start_task_id, mnu_task.task_desc';
-            $this->sql_from   = 'mnu_role '
-                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role.start_task_id)';
-        } // if
+//        if (empty($this->sql_select)) {
+//            // include columns from foreign table
+//            $this->sql_select = 'mnu_role.*, mnu_task.task_id AS start_task_id, mnu_task.task_desc as start_task_desc';
+//            $this->sql_from   = 'mnu_role '
+//                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role.start_task_id)';
+//        } // if
 
         return $where;
 

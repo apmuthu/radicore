@@ -4,7 +4,7 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-$table_id = '#tablename#';             	        // table id
+$table_id = '#tablename#';                      // table id
 $screen   = '#tablename#.detail.screen.inc';    // file identifying screen structure
 
 // customise the SQL SELECT statement

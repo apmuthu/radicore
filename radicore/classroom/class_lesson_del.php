@@ -4,11 +4,9 @@
 // The identity of the selected occurrence is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'crs_class_lesson';       // table name
+$table_id = 'crs_class_lesson';     // table name
 
-// activate page controller
-require 'std.delete2.inc';
+require_once 'std.delete2.inc';     // activate page controller
 
 ?>
 

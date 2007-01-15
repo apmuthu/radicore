@@ -3,12 +3,15 @@
 -- http://www.phpmyadmin.net
 -- 
 -- Host: localhost
--- Generation Time: Feb 03, 2006 at 03:07 PM
+-- Generation Time: Apr 24, 2006 at 11:35 AM
 -- Server version: 4.0.25
 -- PHP Version: 4.4.2
 -- 
 -- Database: `menu`
 -- 
+
+CREATE DATABASE menu ;
+USE menu ;
 
 -- --------------------------------------------------------
 
@@ -41,26 +44,6 @@ CREATE TABLE IF NOT EXISTS `mnu_control` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`record_id`,`field_id`)
-) TYPE=MyISAM;
-
--- --------------------------------------------------------
-
--- 
--- Table structure for table `mnu_dialog_type`
--- 
-
-CREATE TABLE IF NOT EXISTS `mnu_dialog_type` (
-  `dialog_type_id` varchar(16) NOT NULL default '',
-  `dialog_type_desc` varchar(60) NOT NULL default '',
-  `dialog_type_long_desc` text,
-  `visible_screen` char(1) default NULL,
-  `context_preselect` char(1) default NULL,
-  `keep_data` char(1) default NULL,
-  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
-  `revised_date` datetime default NULL,
-  `revised_user` varchar(16) default NULL,
-  PRIMARY KEY  (`dialog_type_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
@@ -103,14 +86,34 @@ CREATE TABLE IF NOT EXISTS `mnu_nav_button` (
 -- --------------------------------------------------------
 
 -- 
+-- Table structure for table `mnu_pattern`
+-- 
+
+CREATE TABLE IF NOT EXISTS `mnu_pattern` (
+  `pattern_id` varchar(16) NOT NULL default '',
+  `pattern_desc` varchar(60) NOT NULL default '',
+  `pattern_long_desc` text,
+  `visible_screen` char(1) default NULL,
+  `context_preselect` char(1) default NULL,
+  `keep_data` char(1) default NULL,
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`pattern_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+-- 
 -- Table structure for table `mnu_role`
 -- 
 
 CREATE TABLE IF NOT EXISTS `mnu_role` (
   `role_id` varchar(16) NOT NULL default '',
   `role_desc` varchar(30) NOT NULL default '',
-  `start_task_id` varchar(40) default NULL,
-  `global_access` char(1) default NULL,
+  `start_task_id` varchar(40) NOT NULL default '',
+  `global_access` char(1) NOT NULL default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -162,6 +165,7 @@ CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
   `subsys_id` varchar(8) NOT NULL default '',
   `subsys_desc` varchar(255) NOT NULL default '',
   `subsys_dir` varchar(255) default NULL,
+  `task_prefix` varchar(8) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -182,7 +186,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
   `task_type` varchar(4) default NULL,
   `script_id` varchar(40) default NULL,
   `is_disabled` char(1) default NULL,
-  `dialog_type_id` varchar(16) default NULL,
+  `pattern_id` varchar(16) default NULL,
   `subsys_id` varchar(8) default NULL,
   `initial_passthru` varchar(40) default NULL,
   `selection_fixed` varchar(255) default NULL,
@@ -192,13 +196,14 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
   `keep_data` char(1) default NULL,
   `log_sql_query` char(1) default NULL,
   `screen_refresh` smallint(5) unsigned default NULL,
+  `use_https` char(1) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`task_id`),
-  KEY `dialog_type_id` (`dialog_type_id`),
-  KEY `subsys_id` (`subsys_id`)
+  KEY `subsys_id` (`subsys_id`),
+  KEY `pattern_id` (`pattern_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
@@ -256,10 +261,15 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `logon_date` date default NULL,
   `logon_time` time default NULL,
   `language_code` varchar(6) default NULL,
+  `start_date` date NOT NULL default '2000-01-01',
+  `end_date` date default '9999-12-31',
+  `ip_address` varchar(16) default NULL,
+  `email_addr` varchar(50) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`user_id`),
+  UNIQUE KEY `email_addr` (`email_addr`),
   KEY `role_id` (`role_id`)
 ) TYPE=MyISAM;

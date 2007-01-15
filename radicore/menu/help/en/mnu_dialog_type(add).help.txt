@@ -1,5 +1,0 @@
-This will allow a new record to be added to the DIALOG TYPE table.
-
-Enter your data then press the SUBMIT button to add it to the database.
-
-Refer to <a href="%root%/mnu_dialog_type(add).html">Add Dialog Type</a> for full details.

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -19,13 +19,17 @@ if (isset($_GET['taskid'])) {
     $help_id = 'unknown';
 } // if
 
-initSession(); // load session variables
+// identify mode for XSL file
+$mode = 'read';
+
+// load session variables
+initSession();
 
 $title = getLanguageText('sys0099', $help_id); // "Help text for '$help_id'"
 
 if (!isset($root)) {
     // not set, so use default value
-    $root = $protocol . $_SERVER['HTTP_HOST'];
+    $root = 'HTTP://' . $_SERVER['HTTP_HOST'];
 } // if
 
 if (isset($GLOBALS['language'])) {

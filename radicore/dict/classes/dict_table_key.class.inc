@@ -80,7 +80,7 @@ class dict_table_key extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table DATABASE and add as a LOOKUP list
-        require_once 'dict_database.class.inc';
+        require_once 'classes/dict_database.class.inc';
         $dbobject =& singleton::getInstance('dict_database');
         $array    = $dbobject->getValRep('database_id');
         $this->lookup_data['database_id'] = $array;
@@ -90,11 +90,10 @@ class dict_table_key extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         if (isset($fieldarray['database_id']) and isset($fieldarray['table_id'])) {
             // continue
         } else {
@@ -109,7 +108,7 @@ class dict_table_key extends Default_Table
         $this->sql_orderby = 'key_name, seq_in_index';
         $old_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
 
-        // construct a smaller array of column names
+        // construct a smaller array of key and column names
         $old_data_cols = array();
         foreach ($old_data as $row => $rowdata) {
             $old_data_cols[$rowdata['key_name']][$rowdata['column_id']] = $row;
@@ -166,11 +165,9 @@ class dict_table_key extends Default_Table
             $fieldarray[$seq] = array_merge($fieldarray[$seq], $static, $columndata);
         } // foreach
 
-        $this->ignore_empty_fields = true;
-
         return $fieldarray;
 
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMultiple
 
     // ****************************************************************************
     function _cm_post_deleteRecord ($fieldarray)
@@ -183,7 +180,7 @@ class dict_table_key extends Default_Table
 
         static $relobj;
         if (!is_object($relobj)) {
-            require_once 'dict_related_column.class.inc';
+            require_once 'classes/dict_related_column.class.inc';
             $relobj =& singleton::getInstance('dict_related_column');
         } // if
 
@@ -261,10 +258,10 @@ class dict_table_key extends Default_Table
             return $fieldarray;
         } // if
 
-        require_once 'dict_relationship.class.inc';
+        require_once 'classes/dict_relationship.class.inc';
         $relobj =& singleton::getInstance('dict_relationship');
 
-        require_once 'dict_related_column.class.inc';
+        require_once 'classes/dict_related_column.class.inc';
         $relcolobj =& singleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this table then this new column must be added.
@@ -307,7 +304,7 @@ class dict_table_key extends Default_Table
             return $fieldarray;
         } // if
 
-        require_once 'dict_related_column.class.inc';
+        require_once 'classes/dict_related_column.class.inc';
         $relobj =& singleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this updated column then they must also be updated.

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.fileupload1.inc
@@ -12,6 +12,10 @@
 
 require_once 'include.general.inc';
 
+// identify mode for XSL file
+$mode = 'read';
+
+// load session variables
 initSession();
 
 // load session variables
@@ -25,25 +29,28 @@ if (isset($_POST['quit'])) {
 $act_buttons['submit']  = 'submit';
 $act_buttons['quit'] 	= 'cancel';
 
-switch ($filetype) {
-    case 'image':
-        $filetypes[] = "image/x-png";
-        $filetypes[] = "image/gif";
-        break;
-    default:
-        $errors[] = getLanguageText('sys0059', $filetype); // "Unknown filetype ($filetype)"
-} // switch
-
-//  Check to see if the directory specified in the store_dir input field is a valid directory
-if (!is_dir($subdir) ) {
-    $errors[] = getLanguageText('sys0123', $subdir); // 'destination directory does not exist';
-    unset($act_buttons['submit']);
+// create a class instance for the main database table
+require_once "classes/$table_id.class.inc";
+if (isset($script_vars['fileobject'])) {
+    // use data from previous instance for this script
+    $fileobject = unserialize($script_vars['fileobject']);
+} else {
+    $fileobject = new $table_id;
+    // perform any initialisation
+    if (!empty($selection)) {
+        $selection = $fileobject->initialiseFileUpload($selection);
+    } else {
+        $where = $fileobject->initialiseFileUpload($where);
+    } // if
+    if ($fileobject->errors) {
+    	scriptPrevious($fileobject->errors);
+    } // if
 } // if
 
-$filename = '';
-if (!isset($maxfilesize)) {
-	$maxfilesize = 100;
-} // if
+$filename    = '';
+$subdir      = $fileobject->upload_subdir;
+$filetypes   = $fileobject->upload_filetypes;
+$maxfilesize = $fileobject->upload_maxfilesize;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_FILES['userfile']['error'])) {
@@ -108,7 +115,10 @@ if (!empty($_FILES) and empty($errors)) {
        $errors[] = getLanguageText('sys0123', $subdir); // 'destination directory does not exist';
     } // if
     if (empty($errors)) {
-        $uploadfile = $subdir .'/' . basename($_FILES['userfile']['name']);
+        $uploadfile = $fileobject->fileUpload(basename($_FILES['userfile']['name']), $_FILES['userfile']['tmp_name']);
+        $errors = $fileobject->errors;
+    } // if
+    if (empty($errors)) {
         if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
             $messages[] = getLanguageText('sys0126', $uploadfile); // "File uploaded into $uploadfile";
         	// send selection back to the previous script
@@ -123,18 +133,20 @@ if (!empty($_FILES) and empty($errors)) {
 } // if
 
 // copy data into a dummy object
-require_once 'std.table.class.inc';
-class File extends Default_Table {} ;
-$fileobj = new File;
 $fieldarray['filename']    = $filename;
 $fieldarray['maxfilesize'] = $maxfilesize;
 $fieldarray['msg1']        = getLanguageText('sys0120');
 $fieldarray['msg2']        = getLanguageText('sys0121', $maxfilesize);
 $fieldarray['msg3']        = getLanguageText('sys0122', $filetype);
-$fileobj->setFieldArray($fieldarray);
+$fileobject->setFieldArray($fieldarray);
+
+// save these variables for later in the same session
+$script_vars['where']      = $where;
+$script_vars['fileobject'] = serialize($fileobject);
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
-$xml_objects[]['root'] = &$fileobj;
+$xml_objects[]['root'] = &$fileobject;
 
 // build XML document and perform XSL transformation
 buildXML($xml_objects, $errors, $messages);

@@ -6,6 +6,6 @@
 
 $table_id = 'mnu_subsystem_s01';    // table name
 
-require 'std.update4.inc';          // activate page controller
+require_once 'std.update4.inc';     // activate page controller
 
 ?>

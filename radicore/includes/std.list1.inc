@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -33,6 +33,11 @@ $act_buttons['reset'] = 'reset';
 if (isset($act_buttons['choose'])) {
     $act_buttons['quit'] = 'cancel';
 } // if
+if (array_key_exists('select_one', $settings)) {
+	if (!is_True($settings['select_one'])) {
+    	unset($act_buttons['choosenull']);
+    } // if
+} // if
 
 // create a class instance of the main database table
 require_once "classes/$table_id.class.inc";
@@ -54,18 +59,24 @@ if (isset($script_vars['dbobject'])) {
     } elseif (isset($task_order_by)) {
         $dbobject->setDefaultOrderby($task_order_by);
     } // if
+    // perform any initialisation
+    if (!empty($selection)) {
+        $selection = $dbobject->initialise($selection, $where);
+    } else {
+        $where = $dbobject->initialise($where);
+    } // if
     // get any data for lookup lists
     $null = $dbobject->getExtraData(null);
 } // if
 
 // the 'choose' button should only be used in popup screens
-if (isset($_POST['choose'])) {
+if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
     $messages = chooseButton($_POST, $dbobject);
 } // if
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, $dbobject, 'dbobject', $where);
+    $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
 } // if
 
 if (isset($_SESSION['rowsperpage'])) {
@@ -93,11 +104,6 @@ if (isset($search)) {
     $dbobject->setSqlSearch($search);
 } // if
 
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $dbobject->reset();
-} // if
-
 if (isset($instruction)) {
     // load instruction returned by a child script
     $dbobject->setInstruction($instruction);
@@ -107,6 +113,11 @@ if (!empty($selection)) {
     // retrieve profile has been set by previous screen
     $where     = $selection;
     $selection = null;
+} // if
+
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $dbobject->reset($where);
 } // if
 
 // get data from the database
@@ -144,17 +155,15 @@ if (isset($_GET['action'])) {
 // $where may have been changed in database object
 $where = $dbobject->getWhere();
 
-// ensure script variables are available throughout this session
-unset($script_vars['selection']);
-$script_vars['where']    = $where;
-$script_vars['dbobject'] = serialize($dbobject);
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
-
 // get pagination details
 $pagination['main']['numrows']  = $dbobject->getNumRows();
 $pagination['main']['curpage']  = $dbobject->getPageNo();
 $pagination['main']['lastpage'] = $dbobject->getLastPage();
+
+// save these variables for later in the same session
+$script_vars['where']    = $where;
+$script_vars['dbobject'] = serialize($dbobject);
+$script_vars = updateScriptVars ($script_vars);
 
 // get sort details
 $orderby     = $dbobject->getOrderBy();

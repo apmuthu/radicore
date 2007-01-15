@@ -39,6 +39,10 @@ class x_tree_level extends Default_Table
         		$this->fieldspec['tree_level_seq']['noedit']  = 'y';
         		break;
 
+        	case 'list':
+
+        	    break;
+
         	default:
         		break;
         } // switch
@@ -70,7 +74,7 @@ class x_tree_level extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -81,8 +85,6 @@ class x_tree_level extends Default_Table
             $this->sql_orderby    = 'tree_level_seq';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -97,59 +99,6 @@ class x_tree_level extends Default_Table
         return $array;
 
     } // _cm_getValRep
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        // remove any tablename which qualifies a fieldname
-        $where = unqualifyWhere($where);
-
-        // convert 'node_id_snr=' to 'node_id=;
-        $where = str_replace('node_id_snr=', 'node_id=', $where);
-
-        // find out if $selection is for TREE_NODE table
-        if (ereg('(node_id=)', $where)) {
-            // yes - convert to TREE_LEVEL table
-            require_once 'x_tree_node.class.inc';
-            $dbobject =& singleton::getInstance('x_tree_node');
-
-            // read data from TREE_NODE table
-            $tree_node_data = $dbobject->getData($where);
-            if ($dbobject->errors) {
-                $this->errors = $dbobject->errors;
-                return $where;
-            } // if
-
-            // get data from foreign table TREE_LEVEL
-            $tree_type_id  = $tree_node_data[0]['tree_type_id'];
-            $tree_level_id = $tree_node_data[0]['tree_level_id'];
-            $where2        = "tree_type_id='$tree_type_id' AND tree_level_id='$tree_level_id'";
-            $tree_level_data = $this->getData($where2);
-
-            // get data for TREE_LEVEL which is one level lower
-            $tree_level_seq = $tree_level_data[0]['tree_level_seq'] + 1;
-            $where2         = "tree_type_id='$tree_type_id' AND tree_level_seq='$tree_level_seq'";
-            $this->checkPrimaryKey = false;
-            $tree_level_data = $this->getData($where2);
-
-            // if ($this->errors) return($this->errors);
-            if ($this->numrows <> 1) {
-                // 'This is the lowest level - no children allowed'
-                $this->errors[] = getLanguageText('e0003');
-                return $where;
-            } else {
-                $where = array2where($tree_level_data[0], $this->getPkeyNames());
-            } // if
-
-            unset($dbobject);
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

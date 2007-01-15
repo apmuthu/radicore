@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update1.inc
@@ -63,15 +63,23 @@ if (isset($script_vars['dbobject'])) {
             $dbobject->setOrderBySeq($order_by_seq);
         } // if
     } // if
+    // perform any initialisation
+    if (!empty($selection)) {
+        $selection = $dbobject->initialise($selection, $where);
+    } else {
+        $where = $dbobject->initialise($where);
+    } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from)) {
-        if ($return_action == 'choose' AND !empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose') {
+        if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            $errors     = array_merge($errors, $dbobject->getErrors());
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            } // if
         } // if
         // some data may have been changed in the child form, so refresh it
         $fieldarray = $dbobject->getExtraData($fieldarray);
@@ -121,24 +129,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     $messages = array_merge($messages, $dbobject->getMessages());
 
-    unset($script_vars['selection']);
-    $script_vars['where']     = $where;
-    $script_vars['dbobject']  = serialize($dbobject);
-    $script_vars['scrolling'] = $scrolling;
-    $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-    $_SESSION[$PHP_SELF][$task_id] = $script_vars;
 } // if
 
 // look for entered data
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['copy'])) {
-        $messages = copyForm($_POST, $dbobject, $fieldarray);
+    if (isset($_POST['paste'])) {
+        // merge initial data with previously saved data
+        $fieldarray = array_merge_nonkey($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
+        $fieldarray = $dbobject->getExtraData($fieldarray);
+    } elseif (isset($_POST['copy'])) {
+        $messages = copyForm($_POST, $dbobject);
     } else {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update($fieldarray, $_POST);
+        $fieldarray = array_update_associative($fieldarray, $_POST);
+        // ensure that changes are stored inside relevant object
+        $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
         if (empty($errors)) {
             $dbobject->startTransaction();
             // update this data in the database
@@ -155,7 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $dbobject->rollback();
             } else {
                 if (empty($messages)) {
-                    $messages[] = getLanguageText('sys0092'); // 'Record updated OK'
+                    if ($dbobject->numrows > 0) {
+                    	$messages[] = getLanguageText('sys0092'); // 'Record updated OK'
+                    } // if
                 } // if
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
                     // update was OK, no more items, so return to previous screen
@@ -172,7 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             $where = $scrolling[$dbobject->getClassName()]['where'];
                             $fieldarray = $dbobject->getData($where);
                             $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-                            $script_vars['scrolling'] = $scrolling;
                         } else {
                             // update was OK - return to previous screen
                             scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
@@ -193,16 +202,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $fieldarray = $dbobject->getExtraData($fieldarray);
                     // rebuild selection criteria using primary key of 1st occurrence
                     $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
-                    // save current data in session array
-                    $script_vars['where']    = $where;
-                    $script_vars['dbobject'] = serialize($dbobject);
-                    $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-                    $_SESSION[$PHP_SELF][$task_id] = $script_vars;
                 } // if
             } // if
         } // if
     } // if
 } // if
+
+if (isset($_SESSION['data'][$dbobject->tablename])) {
+    // saved data exists, so allow a PASTE button
+    $prepend = array('paste' => 'paste');
+    $act_buttons = array_merge($prepend, $act_buttons);
+} // if
+
+// save these variables for later in the same session
+$script_vars['where']     = $where;
+$script_vars['dbobject']  = serialize($dbobject);
+$script_vars['scrolling'] = $scrolling;
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

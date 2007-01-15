@@ -56,17 +56,17 @@ class dict_related_column extends Default_Table
     } // _cm_getDatabaseLock
 
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
+        $database_id = $fieldarray['database_id_snr'];
+        $table_id    = $fieldarray['table_id_snr'];
+
         // obtain names of primary key columns from parent table
-        require_once 'dict_table_key.class.inc';
+        require_once 'classes/dict_table_key.class.inc';
         $keyobj =& singleton::getInstance('dict_table_key');
-        $where = "database_id='{$fieldarray['database_id_snr']}'";
-        $where .= " AND table_id='{$fieldarray['table_id_snr']}'";
-        $where .= " AND key_name='PRIMARY'";
+        $where = "database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'";
         $keyobj->setOrderBy('seq_in_index');
         $inarray = $keyobj->getData($where);
 
@@ -84,7 +84,7 @@ class dict_related_column extends Default_Table
 
         return $fieldarray;
 
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMultiple
 
     // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
@@ -94,7 +94,7 @@ class dict_related_column extends Default_Table
         //DebugBreak();
         if (!empty($rowdata)) {
             // get column names for junior (child) table
-            require_once 'dict_column.class.inc';
+            require_once 'classes/dict_column.class.inc';
             $columnobj =& singleton::getInstance('dict_column');
             $where2 = "database_id='{$rowdata[0]['database_id_jnr']}'";
             $where2 .= " AND table_id='{$rowdata[0]['table_id_jnr']}'";
@@ -112,19 +112,6 @@ class dict_related_column extends Default_Table
         return $rowdata;
 
     } // _cm_post_getData
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        // remove any database names in front of table names
-        $where = unqualifyWhere($where);
-
-        return $where;
-
-    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

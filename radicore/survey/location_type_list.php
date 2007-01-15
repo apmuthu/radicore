@@ -1,10 +1,9 @@
 <?php
 //*****************************************************************************
 // List the contents of a database table and allow the user to view/modify
-// the contents by activating other screens via navigation buttons. 
+// the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'location_type';    	            // table name
 $screen   = 'location_type.list.screen.inc';    // file identifying screen structure
 
@@ -12,11 +11,8 @@ $screen   = 'location_type.list.screen.inc';    // file identifying screen struc
 $sql_select = NULL;
 $sql_from   = NULL;
 $sql_where  = NULL;
-
-// set default sort sequence
 $sql_orderby = NULL;
 
-// activate page controller
-require 'std.list1.inc';
+require 'std.list1.inc';        // activate page controller
 
 ?>

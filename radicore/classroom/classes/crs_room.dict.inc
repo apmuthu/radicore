@@ -1,5 +1,5 @@
 <?php
-    // file created on July 28, 2005, 12:41 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_room
     $fieldspec['room_id']                   = array('type' => 'string',
@@ -16,6 +16,7 @@
                                                     'size' => 3,
                                                     'precision' => 2,
                                                     'scale' => 0,
+                                                    'blank_when_zero' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 99,
                                                     'required' => 'y',
@@ -32,22 +33,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('room_id');

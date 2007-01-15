@@ -30,8 +30,9 @@ class number_option extends Default_Table
     {
         if (isset($fieldarray['min_value']) AND isset($fieldarray['max_value'])) {
             // maximum must not be less than minimum
-            if ($fieldarray['max_value'] < $fieldarray['min_value']) {
-                $this->errors['max_value'] = getLanguageText('e0008'); // 'Maximum cannot be less than minimum';
+            if ($fieldarray['max_value'] <= $fieldarray['min_value']) {
+                // 'Maximum cannot be less than or equal to minimum'
+                $this->errors['max_value'] = getLanguageText('e0008');
             } // if
         } // if
 
@@ -40,25 +41,51 @@ class number_option extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_post_getData ($rowdata, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
+        $dbobject =& singleton::getInstance('survey_question');
+    	$data  = $dbobject->getData_raw($where);
 
-        if ($fieldarray['answer_type'] != 'N') {
-            $this->errors[] = getLanguageText('e0009'); // 'Function invalid unless ANSWER TYPE = NUMBER';
+        if ($data[0]['answer_type'] != 'N') {
+            // 'Function invalid unless ANSWER TYPE = NUMBER'
+            $this->errors[] = getLanguageText('e0009');
         } // if
 
-        return $rowdata;
+        // force the controller to move to the next record
+        global $act_buttons;
+        if (isset($act_buttons['submitstay'])) {
+            // remove the 'Submit Say' button
+        	unset($act_buttons['submitstay']);
+        } elseif (isset($act_buttons['submitnext'])) {
+            // leave the 'Submit Next' button
+            unset($act_buttons['submit']);
+        } // if
 
-    } // _cm_post_getData
+        return $where;
+
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
+        if (!isset($fieldarray['answer_type'])) {
+        	$dbobject =& singleton::getInstance('survey_question');
+        	$survey_id   = $fieldarray['survey_id'];
+        	$section_id  = $fieldarray['section_id'];
+        	$question_id = $fieldarray['question_id'];
+        	$where = "survey_id='$survey_id' AND section_id='$section_id' AND question_id='$question_id'";
+        	$data  = $dbobject->getData_raw($where);
+        	$fieldarray['answer_type'] = $data[0]['answer_type'];
+        } // if
+
         if ($fieldarray['answer_type'] != 'N') {
-            $this->errors[] = getLanguageText('e0009'); // 'Function invalid unless ANSWER TYPE = NUMBER';
+            // 'Function invalid unless ANSWER TYPE = NUMBER'
+            $this->errors[] = getLanguageText('e0009');
         } // if
 
         return $fieldarray;

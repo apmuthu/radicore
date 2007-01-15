@@ -25,7 +25,7 @@ class x_pers_type extends Default_Table
     } // x_pers_type
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -36,8 +36,6 @@ class x_pers_type extends Default_Table
             $this->sql_orderby    = 'pers_type_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {

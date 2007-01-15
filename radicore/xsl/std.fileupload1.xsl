@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -32,11 +32,19 @@
 <xsl:template match="/">
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
-    <xsl:call-template name="head" />
-  <body>
 
-  <xsl:if test="//header">
-    <xsl:value-of select="//header" disable-output-escaping="yes"/>
+  <xsl:call-template name="head" />
+
+  <body>
+    <xsl:for-each select="/root/javascript/body[@*]">
+      <!-- add javascript events to the <body> tag -->
+      <xsl:copy-of select="@*" />
+    </xsl:for-each>
+
+  <xsl:if test="/root/header">
+    <div class="header">
+      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   <form enctype="multipart/form-data" method="post" action="{$script}">
@@ -58,17 +66,16 @@
 
         <div class="main">
           <div class="uploadbg">
-    		<div class="upload">
+            <div class="upload">
               <!-- create standard action buttons -->
+              <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
 
-                <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
+              <p><xsl:value-of select="//file/msg1" /> <input name="userfile" type="file" /></p>
+              <p><xsl:value-of select="//file/msg2" /></p>
+              <p><xsl:value-of select="//file/msg3" /></p>
 
-                <p><xsl:value-of select="//file/msg1" /> <input name="userfile" type="file" /></p>
-                <p><xsl:value-of select="//file/msg2" /></p>
-                <p><xsl:value-of select="//file/msg3" /></p>
-
-		    </div>
-		  </div>
+            </div>
+          </div>
         </div>
 
         <!-- look for optional messages -->
@@ -83,12 +90,25 @@
 
   </form>
 
-  <xsl:if test="//footer">
-    <xsl:value-of select="//footer" disable-output-escaping="yes"/>
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   </body>
   </html>
+
+  <xsl:if test="/root/javascript/footer">
+    <!-- insert the javascript footer manually because it can't be done automatically -->
+    <xsl:call-template name="javascript_footer"/>
+  </xsl:if>
 
 </xsl:template>
 

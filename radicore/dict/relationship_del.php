@@ -1,12 +1,14 @@
 <?php
 //*****************************************************************************
-// This will allow occurrences of a database table to be deleted.
-// The identity of the selected occurrence(s) is passed from the previous screen.
+// This will allow occurrences of the OUTER database table to be deleted, as well
+// as all related occurrences on the INNER table.
+// The identity of the selected OUTER occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-$table_id = 'dict_relationship';             	    // table id
-$screen   = 'dict_relationship.detail.screen.inc';  // file identifying screen structure
+$outer_table = 'dict_relationship';                 // name of outer table
+$inner_table = 'dict_related_column';               // name of inner table
+$screen   = 'dict_related_column.list2.screen.inc'; // file identifying screen structure
 
-require 'std.delete1.inc';                          // activate page controller
+require 'std.delete4.inc';                          // activate page controller
 
 ?>

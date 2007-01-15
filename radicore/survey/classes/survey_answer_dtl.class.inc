@@ -46,17 +46,19 @@ class survey_answer_dtl extends Default_Table
 
         $question_where = "survey_id='$survey_id' AND section_id='$section_id' AND question_id='$question_id'";
 
-        if (empty($fieldarray['question_text']) and !empty($question_id)) {
-            include_once 'survey_question.class.inc';
-            $dbobject =& singleton::getInstance('survey_question');
+        if (!empty($question_id)) {
+            if (empty($fieldarray['question_text']) or empty($fieldarray['answer_type']) or empty($fieldarray['question_seq']) or empty($fieldarray['advice_text'])) {
+            	include_once 'classes/survey_question.class.inc';
+                $dbobject =& singleton::getInstance('survey_question');
 
-            $dbobject->sql_select = 'question_text, question_seq, advice_text, answer_type';
-            $data = $dbobject->getData($question_where);
+                $dbobject->sql_select = 'question_text, question_seq, advice_text, answer_type';
+                $data = $dbobject->getData($question_where);
 
-            // use data from 1st row only
-            $fieldarray = array_merge($fieldarray, $data[0]);
+                // use data from 1st row only
+                $fieldarray = array_merge($fieldarray, $data[0]);
 
-            unset($dbobject);
+                unset($dbobject);
+            } // if
         } // if
 
         if ($fieldarray['answer_type'] == 'M') {
@@ -73,7 +75,7 @@ class survey_answer_dtl extends Default_Table
 
             if (isset($fieldarray['answer_text'])) {
                 // answer is multiple choice, so see if a JUMP TO has been set for the current answer
-                require_once 'answer_option.class.inc';
+                require_once 'classes/answer_option.class.inc';
                 $dbobject =& singleton::getInstance('answer_option');
 
                 $dbobject->sql_select = 'jumpto_section_seq';
@@ -141,24 +143,19 @@ class survey_answer_dtl extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        if (empty($fieldarray['survey_answer_id']) and !empty($fieldarray['survey_id'])) {
+        if (!empty($fieldarray['survey_answer_id']) and empty($fieldarray['answer_date'])) {
             // not supplied yet, so get it manually
-            require_once 'survey_answer_hdr.class.inc';
+            require_once 'classes/survey_answer_hdr.class.inc';
             $dbobject =& singleton::getInstance('survey_answer_hdr');
-
             $dbobject->sql_select = 'survey_id, survey_answer_id, user_id, answer_date, node_id, is_complete';
             $data = $dbobject->getData("survey_answer_id='$this->survey_answer_id'");
-
-            // get data from foreign tables
-            $data = $dbobject->getExtradata($data);
-
             // merge with internal array
             $fieldarray = array_merge($fieldarray, $data[0]);
-
             unset($dbobject);
-
         } // if
+
+        // define formatting for this field
+        $this->fieldspec['answer_date'] = array('type' => 'date', 'noedit' => 'y');
 
         $survey_id   = $fieldarray['survey_id'];
         $section_id  = $fieldarray['section_id'];
@@ -170,7 +167,7 @@ class survey_answer_dtl extends Default_Table
 
         if ($fieldarray['answer_type'] == 'M') {
             // get contents of ANSWER_OPTION and add as a LOOKUP list
-            require_once 'answer_option.class.inc';
+            require_once 'classes/answer_option.class.inc';
             $dbobject =& singleton::getInstance('answer_option');
 
             $data_array = $dbobject->getValRep('answer_id', $question_where);
@@ -187,7 +184,7 @@ class survey_answer_dtl extends Default_Table
 
         } elseif ($fieldarray['answer_type'] == 'N') {
             // get contents of NUMBER_OPTION for possible min/max values
-            require_once 'number_option.class.inc';
+            require_once 'classes/number_option.class.inc';
             $dbobject =& singleton::getInstance('number_option');
 
             $dbobject->sql_select = 'min_value,max_value';
@@ -226,18 +223,18 @@ class survey_answer_dtl extends Default_Table
         } // if
 
         // get contents of foreign table RISK_WEIGHTING and add as a LOOKUP list
-        require_once 'risk_weighting.class.inc';
+        require_once 'classes/risk_weighting.class.inc';
         $dbobject =& singleton::getInstance('risk_weighting');
         $data_array = $dbobject->getValRep('weighting_id');
         $this->lookup_data['weighting_id'] = $data_array;
         unset($dbobject);
 
         // get contents of QUESTION_PROMPT and concatenate into a single list
-        require_once 'question_prompt.class.inc';
+        require_once 'classes/question_prompt.class.inc';
         $dbobject =& singleton::getInstance('question_prompt');
         $dbobject->sql_select = "prompt_desc";
         $dbobject->sql_from   = "question_prompt "
-                              . "LEFT JOIN default_prompt USING (survey_id,prompt_id)";
+                              . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
         $data_array = $dbobject->getData($question_where);
         unset($dbobject);
 
@@ -291,14 +288,13 @@ class survey_answer_dtl extends Default_Table
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database record is updated.
     {
-        //DebugBreak();
         if ($fieldarray['answer_type'] == 'M') {
             // this answer may have a 'jumpto' option, so ...
             // first we must clear any previous 'jumpto' for the current question
             clearJump($this->scrollindex);
 
             // now look for a new 'jumpto' option
-            require_once 'answer_option.class.inc';
+            require_once 'classes/answer_option.class.inc';
             $dbobject =& singleton::getInstance('answer_option');
 
             $dbobject->sql_select = 'jumpto_section_seq';
@@ -326,11 +322,11 @@ class survey_answer_dtl extends Default_Table
             addJump($this->scrollindex, $jump_to);
 
         } else {
-            // default is to jump to next queston
+            // default is to jump to next question
             $jump_to = $this->scrollindex + 1;
         } // if
 
-        // set query string to jump to next answer, gthen restart curren script
+        // set query string to jump to next answer, then restart current script
         scriptRestart($this, "scrolling=$this->tablename&item=$jump_to");
 
         return $fieldarray;
@@ -341,7 +337,6 @@ class survey_answer_dtl extends Default_Table
     function _cm_setScrollArray ($where, $wherearray)
     // construct an array of primary keys to scroll through
     {
-        //DebugBreak();
         $array = array();
 
         $this->survey_answer_id = $wherearray['survey_answer_id'];
@@ -350,7 +345,7 @@ class survey_answer_dtl extends Default_Table
         $this->checkPrimaryKey = false;
 
         // 1 - read survey_answer_hdr to get survey_id
-        require_once 'survey_answer_hdr.class.inc';
+        require_once 'classes/survey_answer_hdr.class.inc';
         $dbobject =& singleton::getInstance('survey_answer_hdr');
 
         $dbobject->sql_select = 'survey_id, user_id, is_complete';
@@ -363,13 +358,14 @@ class survey_answer_dtl extends Default_Table
         } // if
 
         if (is_true($hdrdata[0]['is_complete'])) {
-            $this->errors[] = getLanguageText('e0010'); // "Cannot update a survey which is marked as COMPLETE";
+            // "Cannot update a survey which is marked as COMPLETE"
+            $this->errors[] = getLanguageText('e0010');
             return;
         } // if
 
         // 2 - read all the sections for the selected survey_id
         $survey_id = $hdrdata[0]['survey_id'];
-        require_once 'survey_section.class.inc';
+        require_once 'classes/survey_section.class.inc';
         $dbobject =& singleton::getInstance('survey_section');
 
         $dbobject->sql_select = 'survey_id, section_seq, section_id';
@@ -384,7 +380,7 @@ class survey_answer_dtl extends Default_Table
         } // if
 
         // 3 - loop through all sections and read the questions
-        require_once 'survey_question.class.inc';
+        require_once 'classes/survey_question.class.inc';
         $dbobject =& singleton::getInstance('survey_question');
 
         $dbobject->sql_select = 'survey_id, section_id, question_id';

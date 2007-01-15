@@ -1,11 +1,11 @@
 <?php
-    // file created on January 18, 2006, 6:03 pm
+    // file created on December 12, 2006, 6:01 pm
     
     // field specifications for table audit.audit_trn
     $fieldspec['session_id']                = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 9223372036854802000,
+                                                    'maxvalue' => 9.2233720368548e+018,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'default' => '0',
@@ -20,21 +20,22 @@
                                                     'default' => '0',
                                                     'noedit' => 'y');
     
-    $fieldspec['date']                      = array('type' => 'date',
+    $fieldspec['trn_date']                  = array('type' => 'date',
                                                     'size' => 12,
                                                     'required' => 'y',
                                                     'default' => '2000-01-01',
                                                     'noedit' => 'y');
     
-    $fieldspec['time']                      = array('type' => 'time',
+    $fieldspec['trn_time']                  = array('type' => 'time',
                                                     'size' => 8,
                                                     'required' => 'y',
                                                     'default' => '00:00:00',
                                                     'noedit' => 'y');
     
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 32,
+                                                    'size' => 40,
                                                     'required' => 'y',
+                                                    'lowercase' => 'y',
                                                     'noedit' => 'y');
     
     // primary key details 
@@ -46,7 +47,7 @@
     
     // child relationship details 
     $this->child_relations[]                = array('child' => 'audit_tbl',
-                                                    'type' => 'RES',
+                                                    'type' => 'DEL',
                                                     'fields' => array('session_id' => 'session_id',
                                                                       'tran_seq_no' => 'tran_seq_no'));
     

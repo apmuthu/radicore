@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions related to session management
@@ -12,14 +12,14 @@ if (isset($_REQUEST['session_name'])) {
     $session_name = $_REQUEST['session_name'];
 } // if
 
-require_once 'classes/php_session.class.inc';
-$session_class = new php_session;
-session_set_save_handler(array(&$session_class, 'open'),
-                         array(&$session_class, 'close'),
-                         array(&$session_class, 'read'),
-                         array(&$session_class, 'write'),
-                         array(&$session_class, 'destroy'),
-                         array(&$session_class, 'gc'));
+// custom session handler uses a database table, not disk files
+$session_obj =& singleton::getInstance('php_session');
+session_set_save_handler(array(&$session_obj, 'open'),
+                         array(&$session_obj, 'close'),
+                         array(&$session_obj, 'read'),
+                         array(&$session_obj, 'write'),
+                         array(&$session_obj, 'destroy'),
+                         array(&$session_obj, 'gc'));
 
 // ****************************************************************************
 function checkSelection ($task_id, $where=null)
@@ -27,15 +27,15 @@ function checkSelection ($task_id, $where=null)
 {
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
-    require_once 'classes/mnu_task.class.inc';
+    //require_once 'classes/mnu_task.class.inc';
     $dbtask =& singleton::getInstance('mnu_task');
 
-    $dbtask_data = $dbtask->checkSelection($task_id);
+    $task_array = $dbtask->checkSelection($task_id);
     $errors = $dbtask->getErrors();
 
     if ($errors) return $errors;
 
-    if ($dbtask_data['task_type'] == 'MENU') {
+    if ($task_array['task_type'] == 'MENU') {
 
         unset($GLOBALS['current_task']);
 
@@ -45,12 +45,13 @@ function checkSelection ($task_id, $where=null)
             $page_stack = updatePageStack($task_id, $GLOBALS['button_text'], $PHP_SELF);
         } else {
             // update page stack with latest selection
-            $page_stack = updatePageStack($task_id, $dbtask_data['button_text'], $PHP_SELF);
+            $page_stack = updatePageStack($task_id, $task_array['button_text'], $PHP_SELF);
         } // if
 
-        if (basename($PHP_SELF) == 'menu.php') {
+        if ($PHP_SELF == '/menu/menu.php') {
             // get menu details for the chosen menu
-            $menu_buttons = getMenuButtons($task_id);
+            $dbmenu =& singleton::getInstance('mnu_menu');
+            $menu_buttons = $dbmenu->getMenuButtons($task_id);
             // we are in menu page, so update script_vars now
             $GLOBALS['menu_buttons'] = $menu_buttons;
             $GLOBALS['current_menu'] = $task_id;
@@ -63,13 +64,13 @@ function checkSelection ($task_id, $where=null)
             $_SESSION[$PHP_SELF]['menu'] = $GLOBALS['script_vars'];
         } else {
             // we are not in the menu page, so jump to it
-            $task_array['query_string'] = "selection=$task_id";
-            scriptNext('menu', null, null, $task_array);
+            $menu_array['query_string'] = "selection=$task_id";
+            scriptNext('menu', null, null, $menu_array);
         } // if
 
     } else {
         // not a menu, so process designated script instead
-        scriptNext($task_id, $where, null, $dbtask_data);
+        scriptNext($task_id, $where, null, $task_array);
     } // if
 
     return $errors;
@@ -77,16 +78,32 @@ function checkSelection ($task_id, $where=null)
 } // checkSelection
 
 // ****************************************************************************
-function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null)
+function childForm ($post, $object_array, $where=null)
 // look for an action which is another script.
 // (this may be from a navigation button or a popup button)
 {
+    if (is_array($object_array)) {
+        $objectname = key($object_array);
+    	$dbobject   = $object_array[$objectname];
+    } else {
+        $objectname = null;
+        $dbobject   = null;
+    } // if
+
     if (isset($post['task#previous_search'])) {
         // use previous search criteria (from one of two tables)
-        if (isset($_SESSION['search'][$dbobject->tablename])) {
-            $GLOBALS['search'] = $_SESSION['search'][$dbobject->tablename];
-        } elseif (isset($_SESSION['search'][$dbobject->sql_search_table])) {
-            $GLOBALS['search'] = $_SESSION['search'][$dbobject->sql_search_table];
+        if (!empty($dbobject->sql_search_table)) {
+        	$search_table = $dbobject->sql_search_table;
+        } else {
+            $search_table = $dbobject->tablename;
+        } // if
+        if ($count = preg_match("/\w+ as \w+/i", $search_table, $regs)) {
+            // entry contains 'table AS alias', so use original table table
+        	list($original, $alias) = preg_split('/ as /i', $regs[0]);
+        	$search_table = $original;
+        } // if
+        if (isset($_SESSION['search'][$search_table])) {
+            $GLOBALS['search'] = $_SESSION['search'][$search_table];
         } // if
         // this is a dummy button, so clear it
         unset($_POST);
@@ -104,6 +121,13 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
                 // '_x' found, so strip it off.
                 $next_task = substr_replace($next_task, '', -2);
             } // if
+            // obtain row number in which this button was pressed
+            if (is_array($value)) {
+            	$offset = key($value);
+            } else {
+                $offset = 1;
+            } // if
+
             break;
         } // if
     } // foreach
@@ -112,22 +136,39 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
 
     if (isset($next_task)) {
         // check to see if this selection is valid
-        require_once 'classes/mnu_task.class.inc';
         $taskobj =& singleton::getInstance('mnu_task');
         $task_array = $taskobj->checkSelection($next_task);
         $errors = $taskobj->getErrors();
         if ($errors) return($errors);
 
+        foreach ($object_array as $objectname => $object) {
+            // save current values in session array
+        	$script_vars[$objectname] = serialize($object);
+        } // foreach
+
         // check to see if a popup/filepicker form has been called
-        if (eregi('popup|filepicker', $task_array['dialog_type_id'], $regs)) {
+        if (eregi('popup|filepicker', $task_array['pattern_id'], $regs)) {
+
+            if (is_array($post[$key])) {
+                // advance to last entry in array
+            	$last       = end($object_array);
+            	$objectname = key($object_array);
+    	        $dbobject   = $object_array[$objectname];
+            } // if
+
             if (is_object($dbobject)) {
+                // save these details for processing after returning from the popup
+                $script_vars['popup_object'] = $objectname;
+        	    $script_vars['popup_offset'] = $offset;
+
+                // get current data from this object
+                $fieldarray = $dbobject->getFieldarray();
+                // extract current row from array of rows
+                $current_row = $fieldarray[$offset-1];
                 // allow $where and $settings to be modified
-            	$settings = '';
-                $where = $dbobject->popupcall($next_task, $where, $script_vars, $fieldarray, $settings);
+            	$settings = null;
+                $where = $dbobject->popupcall($next_task, $where, $script_vars, $current_row, $settings);
                 $task_array['settings'] = mergeSettings($task_array['settings'], $settings);
-                // save current fieldarray inside database object
-                $dbobject->setFieldArray($fieldarray);
-                $script_vars[$objectname] = serialize($dbobject);
             } // if
             // call popup script
             scriptNext($next_task, $where, null, $task_array);
@@ -135,18 +176,40 @@ function childForm ($post, $dbobject, $objectname, $where=null, $fieldarray=null
 
         // this must be from a navigation button
         if (isset($post['select'])) {
+            if (count($object_array) > 1) {
+                // advance to last entry in array
+            	$last       = end($object_array);
+            	$objectname = key($object_array);
+    	        $dbobject   = $object_array[$objectname];
+            } // if
             // convert selection into SQL where format
             $selection = selection2where($dbobject->getPkeyArray(), $post['select']);
-            //$where     = unqualifyWhere($where);
-            //$selection = mergeWhere($selection, $where);
         } else {
             $selection = null;
         } // if
 		if (is_object($dbobject)) {
-        	// extract any sort parameters from the current object
-        	// so that they can be passed to the next task
-        	$task_array['sql_orderby']     = $dbobject->getOrderBy();
-        	$task_array['sql_orderby_seq'] = $dbobject->getOrderBySeq();
+		    if ($next_task == 'audit_dtl(list)3') {
+		    	$database_id = $dbobject->dbname;
+		    	// restrict selection to current database
+		    	$script_vars['search'] = "base_name='$database_id'";
+		    } elseif ($next_task == 'audit_dtl(list)3exact') {
+		    	$database_id = $dbobject->dbname;
+		    	$table_id    = $dbobject->tablename;
+		    	// restrict selection to current database and table
+		    	$script_vars['search'] = "base_name='$database_id' AND table_name='$table_id'";
+		    } else {
+            	// extract any sort parameters from the current object
+            	// so that they can be passed to the next task
+            	$task_array['sql_orderby']     = $dbobject->getOrderBy();
+            	$task_array['sql_orderby_seq'] = $dbobject->getOrderBySeq();
+            	$search                        = $dbobject->getSearch();
+            	if (!empty($search)) {
+            	    if (eregi('^(list|output|srch)', $task_array['pattern_id'])) {
+            	    	// merge the SEARCH and WHERE strings
+                        $where = mergeWhere($where, $search);
+            	    } // if
+            	} // if
+		    } // if
 		} // if
         // pass control to selected script
         scriptNext($next_task, $where, $selection, $task_array);
@@ -162,7 +225,15 @@ function chooseButton ($postarray, $dbobject)
 // 'choose' button has been pressed, so ...
 // look to see if there is a selection to send back to the previous screen.
 {
-    if (isset($postarray['select'])) {
+    if (isset($postarray['choosenull'])) {
+        // return a NULL selection
+        $selection = selection2null($dbobject->getPkeyNames());
+        // send selection back to the previous script
+        $prev_script = getPreviousScript();
+        $prev_task   = $_SESSION[$prev_script]['task_id'];
+        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        scriptPrevious(null, null, 'choose');
+    } elseif (isset($postarray['select'])) {
         // convert selection into SQL where format
         $selection = selection2where($dbobject->getPkeyArray(), $postarray['select']);
         // send selection back to the previous script
@@ -178,25 +249,33 @@ function chooseButton ($postarray, $dbobject)
 } // choose button
 
 // ****************************************************************************
-function copyForm ($post, $dbobject, $fieldarray)
+function copyForm ($post, &$dbobject)
 // copy $_POST array into a memory area so that it can be used in a PASTE.
+// NOTE: $dbobject is passed by reference so that it can be updated.
 {
+    // get current object data
+    $fieldarray = $dbobject->getFieldArray();
+
     if (!is_string(key($fieldarray))) {
         // index by row, so use row zero only
         $fieldarray = $fieldarray[0];
     } // if
 
     // merge posted data with current object data
-    $fieldarray = array_update($fieldarray, $post);
+    $fieldarray = array_update_associative($fieldarray, $post);
 
     // save contents inside object
     $dbobject->setFieldArray($fieldarray);
 
-    // unset system fields
-    unset($fieldarray['created_date']);
-    unset($fieldarray['created_user']);
-    unset($fieldarray['revised_date']);
-    unset($fieldarray['revised_user']);
+    // get field specifications for this object
+    $fieldspec = $dbobject->getFieldSpec();
+
+    // do not allow auto-insert/autoupdate fields to be copies
+    foreach ($fieldspec as $field => $spec) {
+        if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+            unset($fieldarray[$field]);
+        } // if
+    } // foreach
 
     // remove empty fields
     foreach ($fieldarray as $field => $value) {
@@ -206,13 +285,13 @@ function copyForm ($post, $dbobject, $fieldarray)
     } // foreach
 
     if (count($fieldarray) == 0) {
-        //$messages[] = 'No data available to be copied';
+        // 'No data available to be copied'
         $messages[] = getLanguageText('sys0050');
         unset($_SESSION['data'][$dbobject->tablename]);
     } else {
         // save current data for re-use via 'paste' button
         $_SESSION['data'][$dbobject->tablename] = $fieldarray;
-        //$messages[] = 'Data has been copied';
+        // 'Data has been copied'
         $messages[] = getLanguageText('sys0051');
     } // if
 
@@ -237,11 +316,85 @@ function getNewSession ($prefix='menu')
 } // getNewSession
 
 // ****************************************************************************
+function getPatternId ($script_id=null)
+// get the pattern_id of the specified script.
+{
+    if (empty($script_id)) {
+        $script_id = getSelf();
+    } // if
+
+    $pattern_id = $_SESSION[$script_id]['pattern_id'];
+
+    return $pattern_id;
+
+} // getPatternId
+
+// ****************************************************************************
+function getPreviousScript ($curr_task=null)
+// return the name of the previous script in the current page stack
+// (the one that called the current script).
+{
+    $page_stack = $GLOBALS['page_stack'];
+
+    if (empty($curr_task)) {
+        $PHP_SELF = getSelf();
+        if (isset($_SESSION[$PHP_SELF]['task_id'])) {
+            // default to task_id of current script
+            $curr_task = $_SESSION[$PHP_SELF]['task_id'];
+        } else {
+            return; // nothing to return
+        } // if
+    } // if
+
+    if (array_key_exists($curr_task, $page_stack)) {
+        // look for the current task in the page stack
+        // (starting at the end and work backwards)
+        $end           = end($page_stack);
+        $end_script_id = $end['script_id'];
+        $end_task_id   = key($page_stack);
+        while ($end_task_id != $curr_task) {
+            // not found, so go back one entry
+            $previous     = prev($page_stack);
+            $end_task_id  = key($page_stack);
+        } // while
+        // pointer is now at current, so go back one more
+        $previous = prev($page_stack);
+    } //if
+
+    // get script_id of this entry
+    if (isset($previous)) {
+        $script_id = $previous['script_id'];
+        if ($script_id == '/menu/menu.php') {
+            global $query_string;
+            $query_string = 'selection=' .key($page_stack);
+        } // if
+    } else {
+        $script_id = null;
+    } // if
+
+    return $script_id;
+
+} // getPreviousScript
+
+// ****************************************************************************
+function getPreviousTask ($script_id=null)
+// get the task identity associated with the previous script.
+{
+    if (empty($script_id)) {
+        $script_id = getPreviousScript();
+    } // if
+
+    $task_id = $_SESSION[$script_id]['task_id'];
+
+    return $task_id;
+
+} // getPreviousTask
+
+// ****************************************************************************
 function initSession()
 // initialise session data
 {
     global $button_text;        // button text for current task
-    global $css_files;          // array of CSS file names
     global $current_menu;       // currently active menu on menu bar
     global $current_task;       // currently active task on menu bar
     global $errors;             // array of error messages
@@ -258,8 +411,11 @@ function initSession()
     global $order_by_seq;       // sequence ('asc' or 'desc')
     global $page_stack;         // hierarchy of pages used in this session
     global $pagination;         // pagination values
-    global $protocol;           // HTTP or HTTPS
+    global $popup_object;       //
+    global $popup_offset;       //
     global $remove_buttons;     // tasks to be removed from navigation bar
+    global $report;             // file containing report structure
+    global $report_structure;   // stucture of screen for PDF document
     global $return_action;      // set when returning to previous screen
     global $return_from;        // set when returning to previous screen
     global $screen;             // file containing screen structure
@@ -283,24 +439,155 @@ function initSession()
     global $where;              // selection criteria, used in SQL query
     global $XSLT_client_side;   // on/off switch for client-side XSL transformations
 
+    $errors   = array();
+    $messages = array();
+
     if ($_SERVER['PHP_SELF'] != $_SERVER['SCRIPT_NAME']) {
         // somebody has added '/something-else' to the URL, so remove it
     	$_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
     } // if
 
     // continue with existing session, or start a new one
+    $session_obj =& singleton::getInstance('php_session');
     if (!isset($_SESSION)) {
         if (isset($session_name)) {
             session_name($session_name);    // set the session name
         } // if
+        if (isset($_GET['session_id'])) {
+            session_id($_GET['session_id']);    // set the session id
+        } // if
         session_start();                    // open/reopen session
+    } // if
+
+    //logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
+
+    $PHP_SELF = getSelf();
+
+	// look for session variables associated with the current script
+    if (isset($_SESSION[$PHP_SELF])) {
+        if (isset($_SESSION[$PHP_SELF]['task_id'])) {
+            $task_id     = $_SESSION[$PHP_SELF]['task_id'];
+            $script_vars = $_SESSION[$PHP_SELF][$task_id];
+        } else {
+            $script_vars = array();
+        } // if
+    } else {
+        $script_vars = array();
+    } // if
+
+    if (!isset($GLOBALS['log_sql_query'])) {
+        // default settng is OFF
+        $GLOBALS['log_sql_query'] = false;
+    } // if
+    if (isset($_SESSION['log_sql_query'])) {
+        // override global setting with that from session data screen
+        $GLOBALS['log_sql_query'] = $_SESSION['log_sql_query'];
+    } else {
+        // save global setting in session array
+        $_SESSION['log_sql_query'] = $GLOBALS['log_sql_query'];
+    } // if
+    if (isset($script_vars['log_sql_query'])) {
+        if (is_True($script_vars['log_sql_query'])) {
+            // turn this ON for current script
+            $GLOBALS['log_sql_query'] = true;
+        } // if
+    } // if
+
+    // write start details to query log file, if option is turned on
+    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
+
+    list($shutdown_errors, $shutdown_messages) = getShutDownStatus();
+
+    if (!empty($shutdown_errors)) {
+    	if (isset($GLOBALS['mode']) and $GLOBALS['mode'] == 'logon') {
+    	    // on LOGON screen, so convert error to a warning message
+    	    $shutdown_messages = $shutdown_errors;
+    		$shutdown_errors   = array();
+    	} elseif (strtoupper($_SESSION['role_id']) == 'GLOBAL') {
+    	    // user is administrator, so convert error to a warning message
+    		$shutdown_messages = $shutdown_errors;
+    		$shutdown_errors   = array();
+    	} else {
+            // not adminstrator, so cancel current screen and go back to logon screen
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                                  .getParentDIR()
+                                  .'/menu/logon.php'
+                                  .'?session_name=' .session_name();
+            if (is_true($XSLT_client_side)) {
+    	        $location .= '&csxslt=on';
+            } // if
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
+            header('Location: ' .$location);
+            exit;
+    	} // if
     } // if
 
     unset($_SESSION['global_access']); // ensure that data is re-fetched for each page
 
-    $PHP_SELF = getSelf();
+    if (!array_key_exists('XSLT_client_side', $_SESSION)) {
+        // default is FALSE or OFF
+    	$_SESSION['XSLT_client_side'] = FALSE;
+    } // if
+    if (isset($_GET['csxslt'])) {
+        if (eregi('on|true', $_GET['csxslt'], $regs)) {
+        	$_SESSION['XSLT_client_side'] = TRUE;
+        } // if
+    } // if
+    if (is_True($XSLT_client_side)) {
+	   $_SESSION['XSLT_client_side'] = TRUE;
+    } // if
+    $XSLT_client_side = $_SESSION['XSLT_client_side'];
 
-	if (isset($_GET['action'])) {
+    if (is_True($_SESSION['XSLT_client_side'])) {
+    	if (eregi('(MSIE)', $_SERVER['HTTP_USER_AGENT'])) {
+    	    //if ($_SERVER['REMOTE_ADDR'] != '80.177.120.119') {
+        	    // this combination does not work with a secure server
+        	    $GLOBALS['http_server']  = '';
+                $GLOBALS['https_server'] = '';
+                $GLOBALS['https_server_suffix'] = '';
+    	    //} // if
+    	} // if
+    } // if
+
+    if (isset($_COOKIE['theme'])) {
+        $_SESSION['css_file'] = $_COOKIE['theme'];
+    } // if
+
+    if (!array_key_exists('css_file', $_SESSION)) {
+        // not yet defined, so set to default
+    	$_SESSION['css_file'] = 'default';
+    } // if
+
+    if (isset($_GET['action'])) {
+	    if ($_GET['action'] == 'logout_all') {
+	        // remove all cookies which refer to application sessions
+	        foreach($_COOKIE as $cookie_name => $cookie_id) {
+	            if (preg_match('/^(menu|phpsessid)/', $cookie_name, $regs)) {
+                    setcookie($cookie_name, '', time()-42000, '/');
+                    $session_obj->destroy($cookie_id);
+	            } // if
+	        } // if
+	    } // if
+	    if ($_GET['action'] == 'logout' or $_GET['action'] == 'logout_all') {
+	        // clear current session data
+	        $_SESSION = array();
+	        $session_obj->destroy(session_id());
+            // go back to logon screen
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                                  .getParentDIR()
+                                  .'/menu/logon.php'
+                                  .'?session_name=' .session_name();
+            if (is_true($XSLT_client_side)) {
+    	       $location .= '&csxslt=on';
+            } // if
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
+            header('Location: ' .$location);
+            exit;
+	    } // if
 	    if ($_GET['action'] == 'newsession') {
             // get and register a new session name
 	        $session_name = getNewSession('menu');
@@ -313,39 +600,36 @@ function initSession()
             $task_id = $_SESSION[$PHP_SELF]['task_id'];
             scriptNext($task_id);
 	    } // if
+	    if ($_GET['action'] == 'recoverpswd') {
+            // switch to specified task
+            $_SESSION['role_id'] = 'GLOBAL';
+            scriptNext('mnu_user(pswd)', 'true=false');
+	    } // if
 	} // if
 
 	// look for security class from logon screen
     if (!isset($_SESSION['role_id'])) {
-        $basename = basename($PHP_SELF);
-        if (basename($PHP_SELF) != 'logon.php'
+        if ($PHP_SELF != '/menu/logon.php'
         and (basename($PHP_SELF) != 'help.php')) {
             // not supplied yet, so jump to logon screen
             if (isset($_SESSION['XSLT_client_side'])) {
     	       $XSLT_client_side = $_SESSION['XSLT_client_side'];
             } // if
             session_unset();
-            $_SESSION['message'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
-            $location = $protocol .$_SERVER['HTTP_HOST']
+            if (is_true($XSLT_client_side)) {
+    	       $_SESSION['XSLT_client_side'] = true;
+            } // if
+            $_SESSION['messages'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
                                   .getParentDIR()
                                   .'/menu/logon.php'
                                   .'?session_name=' .session_name();
-            //if (is_true($XSLT_client_side)) {
-    	    //   $location .= '&csxslt=on';
-            //}// // if
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
             header('Location: ' .$location);
             exit;
         } // if
-    } // if
-
-    if (!array_key_exists('XSLT_client_side', $_SESSION)) {
-    	$_SESSION['XSLT_client_side'] = FALSE;
-    } // if
-    if (isset($_GET['csxslt'])) {
-    	$_SESSION['XSLT_client_side'] = $_GET['csxslt'];
-    } // if
-    if (is_True($XSLT_client_side)) {
-	   $_SESSION['XSLT_client_side'] = TRUE;
     } // if
 
     // record the time at which this script started
@@ -401,8 +685,6 @@ function initSession()
         unset($_POST['submitstay_x']);
     } // if
 
-    $errors = array();
-
     if (!isset($_SESSION['user_language_array'])) {
     	// get language codes from HTTP header
         require_once 'language_detection.inc';
@@ -418,7 +700,7 @@ function initSession()
     // extract locale which is enclosed in '[' and ']'
     if (!preg_match('?\[[^\[]+\]?', $country, $regs)) {
         // 'Locale is not defined in string'
-    	$errors[] = getLanguageText('sys0078', $country);
+    	//$errors[] = getLanguageText('sys0078', $country);
     } else {
         $locale = trim($regs[0], '[]');
         // find out if this is a valid locale
@@ -432,39 +714,94 @@ function initSession()
         } // if
     } // if
 
-    // look for session variables associated with this script
-    if (isset($_SESSION[$PHP_SELF])) {
-        if (isset($_SESSION[$PHP_SELF]['task_id'])) {
-            $task_id     = $_SESSION[$PHP_SELF]['task_id'];
-            $script_vars = $_SESSION[$PHP_SELF][$task_id];
-        } else {
-            $script_vars = array();
+    if ($PHP_SELF == '/menu/logon.php') {
+        // always true for logon screen
+        $use_https = true;
+    } elseif (isset($script_vars['use_https'])) {
+        // optional for other scripts
+        $use_https = $script_vars['use_https'];
+    } else {
+        $use_https = false;
+    } // if
+
+    if (is_True($use_https)) {
+        // check that a secure server has been defined
+        if (strlen($GLOBALS['https_server']) > 0) {
+            // check that this script is using secure HTTPS protocol
+        	if (empty($_SERVER['HTTPS'])) {
+        	    // it is not, so redirect
+        	    session_write_close();
+        	    $location = 'HTTPS://' .$GLOBALS['https_server']
+        	                           .$GLOBALS['https_server_suffix']
+        	                           .getParentDIR()
+        	                           .$PHP_SELF;
+        	    $location .= '?session_id=' .session_id();
+        	    if (is_true($XSLT_client_side)) {
+        	       $location .= '&csxslt=on';
+                } // if
+        	    if (!empty($_SERVER['QUERY_STRING'])) {
+        	    	$location .= '&' .$_SERVER['QUERY_STRING'];
+        	    } // if
+
+                //logstuff("location: $location", __FUNCTION__, __LINE__);
+
+                header('Location: ' .$location);
+                exit;
+        	} // if
         } // if
     } else {
-        $script_vars = array();
+        // check that this script is NOT using secure HTTPS protocol
+        if (!empty($_SERVER['HTTPS'])) {
+            // it is, so redirect to standard HTTP server
+            $location = 'HTTP://' .$GLOBALS['http_server']
+                                 .getParentDIR()
+                                 .$PHP_SELF;
+            $location .= '?session_id=' .session_id();
+            if (is_true($XSLT_client_side)) {
+               $location .= '&csxslt=on';
+            } // if
+            if (!empty($_SERVER['QUERY_STRING'])) {
+               $location .= '&' .$_SERVER['QUERY_STRING'];
+            } // if
+
+            //$location .= '&redirect=true';
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
+            header('Location: ' .$location);
+            exit;
+        } // if
     } // if
 
-    if (isset($script_vars['log_sql_query'])) {
-        $log_sql_query = $script_vars['log_sql_query'];
-    } else {
-        $log_sql_query = false;
+    if (!isset($_SESSION['log_xml_document'])) {
+        // ensure there is a value in the $_SESSION array
+    	$_SESSION['log_xml_document'] =& $GLOBALS['log_xml_document'];
     } // if
-
-    // write start details to query log file, if option is turned on
-    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
 
     if (empty($script_vars)) {
         if (basename($PHP_SELF) == 'help.php') {
             // do nothing
-        } elseif (basename($PHP_SELF) != 'logon.php') {
+        } elseif ($PHP_SELF != '/menu/logon.php') {
             // not allowed to be empty, so go back to last valid script
-            $page_stack = $_SESSION['page_stack'];
-            $end = end($page_stack); // get the last value
-            $script_id = $end['script_id'];
-            $location = $protocol .$_SERVER['HTTP_HOST']
-                                  .getParentDIR()
-                                  .$script_id
-                                  .'?session_name=' .session_name();
+            if (!empty($page_stack)) {
+            	$page_stack = $_SESSION['page_stack'];
+                $end = end($page_stack); // get the last value
+                $script_id = $end['script_id'];
+            } else {
+                // not found, so default to logon screen
+                $script_id = '/menu/logon.php';
+            } // if
+            if (!empty($_SERVER['HTTPS'])) {
+                $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+            } else {
+                $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
+            } // if
+            $location .= getParentDIR()
+                        .$script_id
+                        .'?session_name=' .session_name();
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
             header('Location: ' .$location);
             exit;
         } // if
@@ -556,7 +893,10 @@ function initSession()
 
         if (!array_key_exists($_GET['selection'], $page_stack)) {
             // new selection does not exist in current stack, so ...
-            if (isset($current_task)) {
+            if (!isset($current_task)) {
+                // remove anything which follows current menu from $page_stack
+                $page_stack = reducePageStack($current_menu, true);
+            } else {
                 if ($current_task != $current_menu) {
                     // remove $current_task (and any following entries) from $page_stack
                     $page_stack = reducePageStack($current_task);
@@ -568,7 +908,7 @@ function initSession()
         // clear script sequence as it has been interrupted and cannot be processed
         unset($_SESSION['script_sequence']);
         // verify and process selection
-        $errors = checkSelection($_GET['selection']);
+        $errors = array_merge($errors, checkSelection($_GET['selection']));
     } else {
         if (!empty($task_id)) {
             if ($task_id == 'logon' or $task_id == 'menu') {
@@ -582,17 +922,8 @@ function initSession()
 
     // check for message(s) returned by previous script
     if (isset($script_vars['messages'])) {
-        if (is_array($script_vars['messages'])) {
-            $messages = $script_vars['messages'];
-        } else {
-            // convert simple string into an array
-            $messages[] = $script_vars['messages'];
-        } // if
+        $messages = array_merge($messages, (array)$script_vars['messages']);
         unset($script_vars['messages']);
-    } else {
-        if (!isset($messages)) {
-        	$messages = array();
-        } // if
     } // if
 
     // check for error(s) returned by previous script
@@ -622,6 +953,16 @@ function initSession()
         $where = $script_vars['where'];
     } // if
 
+    // check for details concerned with a popup form.
+    if (isset($script_vars['popup_object'])) {
+        $popup_object = $script_vars['popup_object'];
+        unset ($script_vars['popup_object']);
+    } // if
+    if (isset($script_vars['popup_offset'])) {
+        $popup_offset = $script_vars['popup_offset'];
+        unset ($script_vars['popup_offset']);
+    } // if
+
     // check for string returned by SEARCH script
     if (isset($script_vars['search'])) {
         $search = $script_vars['search'];
@@ -637,6 +978,11 @@ function initSession()
     if (isset($script_vars['return_from'])) {
         $return_from = $script_vars['return_from'];
         unset($script_vars['return_from']);
+        if ($return_from == 'pdf') {
+            // PDF document was displayed in browser window, so return is via BACK button.
+            // HTTP requests that have already been processed must be removed.
+        	unset($_GET['orderby']);
+        } // if
     } // if
 
     // check action taken within previous script
@@ -699,14 +1045,36 @@ function initSession()
         $screen_structure = $structure; // move to global space
     } // if
 
+    if (isset($report)) {
+    	// get subdirectory which matches user's language code
+        $subdir = getLanguageSubDir ('./reports');
+
+        $report = "$subdir/$report";  // look in subirectory for this screen name
+        if (!file_exists($report)) {
+            // 'File $report cannot be found'
+            trigger_error(getLanguageText('sys0056', $report), E_USER_ERROR);
+        } // if
+
+        require $report;                // import contents of disk file
+        $report_structure = $structure; // move to global space
+    } // if
+
+    if (isset($shutdown_errors)) {
+    	$errors = array_merge($errors, $shutdown_errors);
+    } // if
+    if (isset($shutdown_messages)) {
+    	$messages = array_merge($messages, $shutdown_messages);
+    } // if
+
     return;
 
 } // initSession
 
 // ****************************************************************************
-function reducePageStack ($task_id)
-// remove this page (and any following pages) from the page stack.
+function reducePageStack ($task_id, $keep_entry=false)
+// remove entries which follow $task_id from the page stack.
 // (this causes page stack to contain only those pages which are current).
+// if $keep_entry=FALSE then $task_id is removed as well.
 {
     if (isset($GLOBALS['page_stack'])) {
         // retrieve current page stack
@@ -718,33 +1086,46 @@ function reducePageStack ($task_id)
 
     if (array_key_exists($task_id, $page_stack)) {
         // task is within current stack, so remove anything which follows
-        $end = end($page_stack); // get the last value
-        while (!empty($page_stack) AND key($page_stack) != $task_id) {
-            $script_id = $end['script_id'];
-            // remove this script's variables from session details if required
-            if (isset($_SESSION[$script_id])) {
-                if (isset($_SESSION[$script_id]['task_id'])) {
-                    $task_id = $_SESSION[$script_id]['task_id'];
-                    if (isset($_SESSION[$script_id][$task_id]['keep_data'])) {
-                        if (is_True($_SESSION[$script_id][$task_id]['keep_data'])) {
-                            // keep script data in memory
+        while (array_key_exists($task_id, $page_stack)) {
+            // pick out the last entry on he stack
+            $end           = end($page_stack);
+        	$end_script_id = $end['script_id'];
+        	$end_task_id   = key($page_stack);
+        	if ($end_task_id == $task_id) {
+        	    break;
+        	} else {
+        	    if ($end_script_id == '/menu/menu.php') {
+        	        // leave menus alone!
+        	    } else {
+        	    	// remove this script's variables from session details if required
+                    if (isset($_SESSION[$end_script_id])) {
+                        if (isset($_SESSION[$end_script_id][$end_task_id]['keep_data'])) {
+                            if (is_True($_SESSION[$end_script_id][$end_task_id]['keep_data'])) {
+                                // keep script data in memory
+                            } else {
+                                unset($_SESSION[$end_script_id][$end_task_id]);
+                            } // if
                         } else {
-                            unset($_SESSION[$script_id][$task_id]);
+                            unset($_SESSION[$end_script_id][$end_task_id]);
                         } // if
-                    } else {
-                        unset($_SESSION[$script_id][$task_id]);
+                    	if (count($_SESSION[$end_script_id]) == 1) {
+                            // no more tasks left for this script, so remove it from session array
+                        	unset($_SESSION[$end_script_id]);
+                        } // if
                     } // if
-                } else {
-                    unset($_SESSION[$script_id]);
-                } // if
-            } // if
-            // remove page from page stack
-            unset($page_stack[key($page_stack)]);
-            $end = end($page_stack); // get the (new) last value
-        } // while
+        	    } // if
 
-        // remove specified task from the stack
-        unset($page_stack[$task_id]);
+                // remove page from page stack
+                unset($page_stack[$end_task_id]);
+
+        	} // if
+        } // while
+        if ($keep_entry) {
+        	// do not delete this entry
+        } else {
+            // remove page from page stack (it may be added back later)
+            unset($page_stack[$task_id]);
+        } // if
     } // if
 
     return $page_stack;
@@ -752,9 +1133,35 @@ function reducePageStack ($task_id)
 } // reducePageStack
 
 // ****************************************************************************
+function updateScriptVars ($script_vars=null)
+// update $script_vars with certain global variables so that they are available
+// later in the same session.
+{
+    if (!isset($script_vars)) {
+    	$script_vars = $GLOBALS['script_vars'];
+    } // if
+
+    unset($script_vars['selection']);   // this has already been used once, so remove it
+
+    $PHP_SELF = getSelf();              // reduce PHP_SELF to '/dir/file.php'
+    $task_id  = $GLOBALS['task_id'];    // name of current task
+
+    // save details in session array, keyed by script_id and task_id
+    $_SESSION[$PHP_SELF][$task_id] = $script_vars;
+
+    return $script_vars;
+
+} // saveScriptVars
+
+// ****************************************************************************
 function scriptNext ($task_id, $where=null, $selection=null, $task_array=array())
 // proceed to a new script identified in $task_id.
 {
+    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+        $errors[] = getLanguageText('sys0038'); // 'Not allowed in batch mode'
+    	return $errors;
+    } // if
+
     if (empty($task_id)) {
         trigger_error(getLanguageText('sys0052'), E_USER_ERROR); // 'task id is not defined'
     } // if
@@ -765,7 +1172,6 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     global $messages;
     global $order_by;
     global $page_stack;
-    global $protocol;       // HTTP or HTTPS
     global $script_vars;
 
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
@@ -775,6 +1181,8 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     if (isset($_SESSION[$PHP_SELF]['task_id'])) {
         $curr_task = $_SESSION[$PHP_SELF]['task_id'];
         $_SESSION[$PHP_SELF][$curr_task] = $script_vars;
+        // do not save anything set in childform() method
+        unset($_SESSION[$PHP_SELF][$curr_task]['search']);
     } // if
 
     // ensure all keywords are in UPPER case
@@ -785,6 +1193,12 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     	$query_string = $task_array['query_string'];
     } else {
         $query_string = null;
+    } // if
+
+    if (isset($task_array['settings'])) {
+    	$settings_bf = $task_array['settings'];
+    } else {
+        $settings_bf = null;
     } // if
 
     // 'script_sequence' identifies script(s) to be done before latest selection
@@ -810,7 +1224,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
                     $append['where'] = $where;
                     unset($where);
                 } // if
-                if (isset($messages)) {
+                if (!empty($messages)) {
                     $append['messages'] = $messages;
                     unset($messages);
                 } // if
@@ -843,7 +1257,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     if (!isset($task_array['script_id'])) {
         // $script_id not supplied yet - so translate $task_id into $script_id
-        require_once 'classes/mnu_task.class.inc';
+        //require_once 'classes/mnu_task.class.inc';
         $taskobj =& singleton::getInstance('mnu_task');
         $task_array = $taskobj->checkSelection($task_id);
         $errors = $taskobj->getErrors();
@@ -861,11 +1275,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     $script_id = $task_array['script_id'];
 
-    if (isset($task_array['settings'])) {
-    	$settings = $task_array['settings'];
-    } else {
-        $settings = null;
-    } // if
+    $settings = mergeSettings($task_array['settings'], $settings_bf);
 
     if ($script_id == basename($script_id)) {
         // script name is not qualified, so insert directory name
@@ -883,15 +1293,26 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         if (isset($_SESSION[$script_id])) {
             if (isset($_SESSION[$script_id][$task_id])) {
                 $script_vars = $_SESSION[$script_id][$task_id];
+                unset($script_vars['where']);
+                unset($script_vars['selection']);
+                unset($script_vars['order_by']);
+                unset($script_vars['messages']);
             } else {
                 $script_vars = array();
             } // if
         } else {
+            if (isset($script_vars['search'])) {
+            	$search = $script_vars['search'];
+            } // if
             $script_vars = array();
+            if (isset($search)) {
+            	$script_vars['search'] = $search;
+            } // if
         } // if
         // script may be accessed by more than one task_id, so ...
         // identify current task_id for this script
-        $_SESSION[$script_id]['task_id'] = $task_id;
+        $_SESSION[$script_id]['task_id']    = $task_id;
+        $_SESSION[$script_id]['pattern_id'] = $task_array['pattern_id'];
 
         if (isset($script_vars['script_count'])) {
             // script has already been executed, so do not load these variables
@@ -914,15 +1335,17 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             } else {
             	$settings .= '&' .$selection_fixed;
             } // if
-        } elseif (!empty($where)) {
-            $script_vars['where'] = $where;
+        } else {
+            if (!empty($where)) {
+                $script_vars['where'] = $where;
+            } // if
         } // if
 
         if (!empty($task_array['selection_temp'])) {
             $script_vars['search'] = $task_array['selection_temp'];
         } // if
 
-        if (!empty($selection)) {
+        if (isset($selection)) {
             $script_vars['selection'] = $selection;
         } // if
 
@@ -971,7 +1394,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             $script_vars['keep_data'] = $task_array['keep_data'];
         } // if
 
-        if (!empty($task_array['log_sql_query'])) {
+        if (!empty($task_array['log_sql_query']) AND is_True($task_array['log_sql_query'])) {
             $script_vars['log_sql_query'] = $task_array['log_sql_query'];
         } else {
             unset($script_vars['log_sql_query']);
@@ -982,19 +1405,32 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         } else {
             unset($script_vars['screen_refresh']);
         } // if
+
+        if (is_True($task_array['use_https'])) {
+            $script_vars['use_https'] = 'Y';
+        } else {
+            unset($script_vars['use_https']);
+        } // if
     } // if
 
     // ensure that latest set of script variables is stored in $_SESSION array
     // (indexed under [script_id][task_id])
     $_SESSION[$script_id][$task_id] = $script_vars;
 
-    $location = $protocol .$_SERVER['HTTP_HOST']
-                          .getParentDIR()
-                          .$script_id
-                          .'?session_name=' .session_name();
+    if (!empty($_SERVER['HTTPS'])) {
+        $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+    } else {
+        $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
+    } // if
+    $location .= getParentDIR()
+                .$script_id
+                .'?session_name=' .session_name();
     if (isset($query_string)) {
         $location .= "&$query_string";
     } // if
+
+    //logstuff("location: $location", __FUNCTION__, __LINE__);
+
     header('Location: ' .$location);
     exit;
 
@@ -1004,7 +1440,9 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction=NULL)
 // go back to the previous script in the current hierarchy.
 {
-    global $protocol;       // HTTP or HTTPS
+    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+    	return $errors;
+    } // if
 
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
@@ -1021,6 +1459,8 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
     // retrieve task_id for current script
     if (isset($_SESSION[$script_id]['task_id'])) {
         $task_id = $_SESSION[$script_id]['task_id'];
+    } else {
+        $task_id = '*unknown*';
     } // if
 
     // get id of the previous script (and optional query string)
@@ -1039,6 +1479,17 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                 } // if
             } else {
                 unset($_SESSION[$script_id][$task_id]);
+            } // if
+            $remove = true;
+            foreach ($_SESSION[$script_id] as $key => $value) {
+            	if (is_array($value)) {
+            		$remove = false;
+            		break;
+            	} // if
+            } // foreach
+            if ($remove === true) {
+                // no arrays of task details left, so remove this entry
+            	unset($_SESSION[$script_id]);
             } // if
         } else {
             unset($_SESSION[$script_id]);
@@ -1064,6 +1515,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         if (empty($_SESSION['script_sequence'])) {
             // no more entries left, so clear this array
             unset($_SESSION['script_sequence']);
+            // continue with last entry in $page_stack
             global $page_stack;
             end($page_stack);
             $prev_script  = key($page_stack);
@@ -1105,20 +1557,43 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         // identify where we are coming from
         $_SESSION[$prev_script][$prev_task]['return_from'] = $task_id;
 
-        $location = $protocol .$_SERVER['HTTP_HOST']
-                              .getParentDIR()
-                              .$prev_script
-                              .'?session_name=' .session_name();
+        if (!empty($_SERVER['HTTPS'])) {
+            $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+        } else {
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
+        } // if
+        $location .= getParentDIR()
+                    .$prev_script
+                    .'?session_name=' .session_name();
         if (isset($query_string)) {
             $location .= "&$query_string";
         } // if
+
+        //logstuff("location: $location", __FUNCTION__, __LINE__);
+
         header('Location: ' .$location);
         exit;
     } else {
-        // no previous script, so go back to index page
-        $location = $protocol .$_SERVER['HTTP_HOST']
-                              .getParentDIR()
-                              .'/';
+        if (!empty($messages)) {
+            $_SESSION['messages'] = $messages;
+            session_write_close();
+        } // if
+        // no previous script, so go back to logon page
+        if (!empty($_SERVER['HTTPS'])) {
+            $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+        } else {
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
+        } // if
+        $location .= getParentDIR()
+                   .'/menu/logon.php'
+                   .'?session_id=' .session_id();
+
+        if (is_true($XSLT_client_side)) {
+	        $location .= '&csxslt=on';
+        } // if
+
+        //logstuff("location: $location", __FUNCTION__, __LINE__);
+
         header('Location: ' .$location);
         exit;
     } // if
@@ -1156,8 +1631,8 @@ function updatePageStack ($task_id, $task_desc, $script_id)
     $page_stack = reducePageStack($task_id);
 
     // add current selection to stack
-    $page_stack[$task_id]['task_desc'] = $task_desc;
-    $page_stack[$task_id]['script_id'] = $script_id;
+    $page_stack[$task_id]['button_text'] = $task_desc;
+    $page_stack[$task_id]['script_id']   = $script_id;
 
     // save data in global area
     $GLOBALS['page_stack'] = $page_stack;

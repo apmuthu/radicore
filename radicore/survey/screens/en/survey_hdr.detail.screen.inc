@@ -7,7 +7,7 @@ $structure['main']['columns'][] = array('width' => '25%');
 
 $structure['main']['fields'][] = array('survey_id' => 'Id');
 $structure['main']['fields'][] = array('survey_name' => 'Name');
-$structure['main']['fields'][] = array('survey_desc' => 'Description');
+$structure['main']['fields'][] = array('survey_long_name' => 'Long Name');
 $structure['main']['fields'][] = array('survey_type_id' => 'Survey Type');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');

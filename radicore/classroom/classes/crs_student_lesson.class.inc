@@ -28,10 +28,9 @@ class crs_student_lesson extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if (basename($_SERVER['PHP_SELF']) == 'lesson_list(a).php') {
             // get contents of foreign table TEACHER and add to lookup array
-            require_once 'crs_teacher.class.inc';
+            require_once 'classes/crs_teacher.class.inc';
             $object =& singleton::getInstance('crs_teacher');
             $data = $object->getValRep('teacher_id');
             $this->lookup_data['teacher_id'] = $data;
@@ -44,6 +43,28 @@ class crs_student_lesson extends Default_Table
         return $fieldarray;
 
     } // _cm_getExtraData
+
+    // ****************************************************************************
+    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
+    // be altered before the popup screen is called.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    {
+        // convert 'student=X' into 'year=Y'
+        $object =& singleton::getInstance('crs_student');
+        $object->sql_select = 'year';
+        $data = $object->getData_raw($where);
+        if (isset($data[0]['year']) and $data[0]['year'] > 0) {
+            $where = "year=" .$data[0]['year'];
+        } else {
+            $where = '';
+        } // if
+
+        $settings['select_one'] = false;
+
+        return $where;
+
+    } // _cm_popupCall
 
 // ****************************************************************************
 } // end class

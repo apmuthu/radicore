@@ -1,5 +1,5 @@
 <?php
-$structure['xsl_file'] = 'std.multi2.xsl';
+$structure['xsl_file'] = 'std.list2.xsl';
 
 $structure['tables']['outer'] = 'dict_relationship';
 
@@ -24,7 +24,7 @@ $structure['outer']['fields'][4][] = array('field' => 'table_alias_jnr', 'size' 
 
 $structure['outer']['fields'][] = array('seq_no' => 'Seq Number', 'colspan' => 3);
 $structure['outer']['fields'][] = array('relation_desc' => 'Description', 'colspan' => 3);
-$structure['outer']['fields'][] = array('comment' => 'Comments', 'colspan' => 3);
+$structure['outer']['fields'][] = array('rel_comment' => 'Comments', 'colspan' => 3);
 $structure['outer']['fields'][] = array('rel_type' => 'Relationship Type', 'colspan' => 3);
 $structure['outer']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['outer']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);

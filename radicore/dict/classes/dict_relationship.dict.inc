@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:20 pm
+    // file created on January 4, 2007, 1:45 pm
     
     // field specifications for table dict.dict_relationship
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -56,10 +56,10 @@
     $fieldspec['relation_desc']             = array('type' => 'string',
                                                     'size' => 255);
     
-    $fieldspec['comment']                   = array('type' => 'string',
+    $fieldspec['rel_comment']               = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
-                                                    'cols' => 65,
+                                                    'cols' => 70,
                                                     'rows' => 5,
                                                     'nosearch' => 'y');
     
@@ -87,24 +87,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('database_id_snr',
@@ -119,10 +123,10 @@
     // child relationship details 
     $this->child_relations[]                = array('child' => 'dict_related_column',
                                                     'type' => 'DEL',
-                                                    'fields' => array('table_id_jnr' => 'table_id_jnr',
-                                                                      'database_id_snr' => 'database_id_snr',
+                                                    'fields' => array('database_id_snr' => 'database_id_snr',
                                                                       'table_id_snr' => 'table_id_snr',
                                                                       'database_id_jnr' => 'database_id_jnr',
+                                                                      'table_id_jnr' => 'table_id_jnr',
                                                                       'seq_no' => 'seq_no'));
     
     // parent relationship details 

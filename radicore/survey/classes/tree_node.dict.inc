@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 7:29 pm
+    // file created on November 3, 2006, 11:31 am
     
     // field specifications for table survey.tree_node
     $fieldspec['node_id']                   = array('type' => 'integer',
@@ -62,22 +62,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('node_id');
@@ -95,6 +101,7 @@
                                                     'fields' => array('node_id' => 'node_id'));
     
     $this->child_relations[]                = array('child' => 'tree_node',
+                                                    'alias' => 'tree_node_jnr',
                                                     'type' => 'RES',
                                                     'fields' => array('node_id' => 'node_id_snr'));
     
@@ -112,7 +119,8 @@
                                                     'fields' => array('org_type_id' => 'org_type_id'));
     
     $this->parent_relations[]               = array('parent' => 'tree_node',
-                                                    'parent_field' => 'node_desc',
+                                                    'alias' => 'tree_node_snr',
+                                                    'parent_field' => 'node_desc AS node_desc_snr',
                                                     'fields' => array('node_id_snr' => 'node_id'));
     
     // determines if database updates are recorded in an audit log 

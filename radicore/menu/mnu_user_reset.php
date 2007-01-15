@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
    $_SESSION['logon_user_id'] = $user_id;
 } // endif
 
-require 'std.update1.inc';                          // activate page controller
+require 'std.update1.inc';  // activate page controller
 
 ?>
 ;

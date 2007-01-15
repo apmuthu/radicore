@@ -61,9 +61,11 @@ class survey_question_s02 extends survey_question
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // check that full primary key has been passed down from parent form
         $this->checkPrimaryKey = true;

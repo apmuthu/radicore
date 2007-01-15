@@ -7,7 +7,6 @@
 // which can be toggled ON to create a record or OFF to delete a record.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'survey_question';			    // name of outer table
 $link_table  = 'question_prompt';           	// name of link table
 $inner_table = 'default_prompt';                // name of inner table
@@ -28,7 +27,6 @@ $link_sql_select = 'survey_question.question_seq, prompt_desc';
 $link_sql_from   = '';
 $link_sql_where  = 'default_prompt.survey_id=survey_question.survey_id';
 
-// activate page controller
-require 'std.link1.inc';
+require 'std.link1.inc';        // activate page controller
 
 ?>

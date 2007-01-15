@@ -1,0 +1,2 @@
+<hr>
+<p>A description of this application is available at <a href="http://www.tonymarston.net/php-mysql/survey-prototype.html">Prototype Survey/Questionnaire Application</a>.</p>

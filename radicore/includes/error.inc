@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This is my universal error handler.
@@ -19,16 +19,22 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 // If the error condition is E_USER_ERROR or above then abort
 {
     if ($errno != E_STRICT) {
-        if (function_exists('debugbreak')) {
-            DebugBreak();
+        if (function_exists('debugger_start_debug')) {
+            //debugger_connect();
+            //debugger_start_debug();
         } // if
         $breakpoint = 'breakpoint';
     } // if
+
+    //logstuff("error: " .$errstr, $errfile, $errline);
+
+    static $save_errstr;
 
     switch ($errno) {
         case E_USER_WARNING:
         case E_USER_NOTICE:
         case E_WARNING:
+            $save_errstr = $errstr;
             if (isset($errcontext['this'])) {
                 if (is_object($errcontext['this'])) {
                     // context is an object
@@ -42,6 +48,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_CORE_WARNING:
         case E_COMPILE_WARNING:
         case E_STRICT;
+        case E_RECOVERABLE_ERROR;
             return;
         case E_USER_ERROR:
         case E_ERROR:
@@ -56,25 +63,31 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         $logon_user_id = $_SESSION['logon_user_id'];
     } // if
 
-    //if (eregi('^(sql)$', $errstr)) {
-    if (eregi('^(object)$', $errstr)) {
-        if (isset($errcontext['this'])) {
-            // retrieve error details from DML object
-            if (method_exists($errcontext['this'], 'getQuery')) {
-                $query  = $errcontext['this']->getQuery();
-            } else {
-                $query  = '';
-            } // if
-            if (method_exists($errcontext['this'], 'getErrorString')) {
-                $errstr = $errcontext['this']->getErrorString();
-            } else {
-                $errstr = '';
-            } // if
+
+    $errstr = $save_errstr;
+    if (isset($errcontext['this'])) {
+        // retrieve error details from DML object
+        if (method_exists($errcontext['this'], 'getQuery')) {
+            $query  = $errcontext['this']->getQuery();
         } else {
-            $query  = null;
+            $query  = '';
+        } // if
+        if (method_exists($errcontext['this'], 'getErrorNo')) {
+            $errno  = $errcontext['this']->getErrorNo();
+        } // if
+        if (method_exists($errcontext['this'], 'getErrorString')) {
+            $errstr = $errcontext['this']->getErrorString();
+        } else {
+            $errstr = '';
+        } // if
+        if (method_exists($errcontext['this'], 'getErrorString2')) {
+            $errstr2 = $errcontext['this']->getErrorString2();
+        } else {
+            $errstr2 = '';
         } // if
     } else {
-        $query = null;
+        $query   = null;
+        $errstr2 = null;
     } // if
 
     if (!isset($GLOBALS['batch']) or !is_True($GLOBALS['batch'])) {
@@ -90,6 +103,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     if ($query) $errorstring .= "<p>" .getLanguageText('sys0064', $query) ."</p>\n";
     //$errorstring .= "<p>Error in line $errline of file '$errfile'.</p>\n";
     $errorstring .= "<p>" .getLanguageText('sys0065', $errline, $errfile) ."</p>\n";
+    if (!empty($errstr2)) {
+    	$errorstring .= "<p>" .$errstr2 ."</p>\n";
+    } // if
     //$errorstring .= "<p>Script: '{$_SERVER['PHP_SELF']}'.</p>\n";
     $errorstring .= "<p>" .getLanguageText('sys0066', $_SERVER['PHP_SELF']) ."</p>\n";
 
@@ -131,9 +147,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     $result = "<pre>\n" .$result ."\n</pre>\n";
 
-    if ($_SERVER['SERVER_NAME'] == 'localhost'
-    or  $_SERVER['SERVER_NAME'] == 'desktop'
-    or  $_SERVER['SERVER_NAME'] == 'laptop') {
+    if (eregi('^(localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
         // my development PC does not have 'sendmail', so do nothing
     } else {
         // remove all html tags
@@ -161,11 +175,17 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     if (isset($errcontext['this'])) {
         if (is_object($errcontext['this'])) {
             if (method_exists($errcontext['this'], 'rollback')) {
-                $dbname = $errcontext['this']->dbname;
+                if (isset($errcontext['this']->schema)) {
+                	$dbname = $errcontext['this']->schema;
+                } else {
+                    $dbname = $errcontext['this']->dbname;
+                } // if
                 $errcontext['this']->rollback($dbname);
             } // if
         } // if
     } // if
+
+    $GLOBALS['transaction_has_started'] = FALSE;
 
     if (isset($logon_user_id)) {
         // log the current user off
@@ -182,12 +202,11 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     if (!isset($GLOBALS['batch']) or !is_True($GLOBALS['batch'])) {
         session_unset();    // clear current session data
-        session_destroy();  // destroy current session
     } // if
 
     if (isset($XSLT_client_side)) {
         // put back the XSLT flag
-        //$_SESSION['XSLT_client_side'] = $XSLT_client_side;
+        $_SESSION['XSLT_client_side'] = $XSLT_client_side;
     } // if
 
     die();

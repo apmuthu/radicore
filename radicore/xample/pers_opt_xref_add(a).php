@@ -6,12 +6,11 @@
 // the list of one or more OPTION_IDs is provided by a separate popup screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'x_pers_opt_xref';          // table name
 
-$popup_screen = 'x_option(popup)';
+$popup_task = 'x_option(popup)';
 
-require 'std.add3.inc';                 // activate page controller
+require_once 'std.add3.inc';            // activate page controller
 
 ?>
 

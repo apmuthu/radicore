@@ -30,13 +30,13 @@ class crs_lesson extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table TEACHER and add to lookup array
-        require_once 'crs_teacher.class.inc';
+        require_once 'classes/crs_teacher.class.inc';
         $object =& singleton::getInstance('crs_teacher');
         $data = $object->getValRep('teacher_id');
         $this->lookup_data['teacher_id'] = $data;
 
         // get contents of foreign table SUBJECT and add to lookup array
-        require_once 'crs_subject.class.inc';
+        require_once 'classes/crs_subject.class.inc';
         $object =& singleton::getInstance('crs_subject');
         $data = $object->getValRep('subject_id');
         $this->lookup_data['subject_id'] = $data;
@@ -61,7 +61,7 @@ class crs_lesson extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         //DebugBreak();
@@ -73,8 +73,6 @@ class crs_lesson extends Default_Table
             $this->sql_orderby    = 'lesson_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -106,7 +104,7 @@ class crs_lesson extends Default_Table
         //                        .'LEFT JOIN crs_student ON (crs_student.class_id=crs_class_lesson.class_id)';
         //$objectCL->sql_groupby = 'crs_class_lesson.lesson_id';
 
-        require_once 'crs_student_lesson.class.inc';
+        require_once 'classes/crs_student_lesson.class.inc';
         $objectSL =& singleton::getInstance('crs_student_lesson');
 
         foreach ($rowdata as $rownum => $row) {
@@ -124,12 +122,12 @@ class crs_lesson extends Default_Table
                 if ($count3 == 0) $count3 = null;
                 $rowdata[$rownum]['student_count'] = $count3;
 
-                if (isset($row['teacher_id'])) {
+                if (isset($row['teacher_id']) and !isset($row['teacher_name'])) {
                     $teacher_id = $row['teacher_id'];
                     if (isset($this->lookup_data['teacher_id'])) {
                         $rowdata[$rownum]['teacher_name'] = $this->lookup_data['teacher_id'][$teacher_id];
                     } else {
-                        require_once 'crs_teacher.class.inc';
+                        require_once 'classes/crs_teacher.class.inc';
                         $objectT =& singleton::getInstance('crs_teacher');
                         $data = $objectT->getData("teacher_id='$teacher_id'");
                         $rowdata[$rownum]['teacher_name'] = $data[0]['teacher_name'];

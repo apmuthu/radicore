@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete1.inc
@@ -67,10 +67,10 @@ if (isset($script_vars['dbobject'])) {
 // look for SUBMIT button
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['copy'])) {
-        $messages = copyForm($_POST, $dbobject, $fieldarray);
+        $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
         if (empty($errors)) {
             $dbobject->startTransaction();
             // delete this record from the database
@@ -114,7 +114,7 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName(
 
 // get data from the database
 $fieldarray = $dbobject->getData($where);
-if ($dbobject->getErrors()) {
+if ($dbobject->errors) {
     // some sort of error - return to previous script
     scriptprevious($dbobject->getErrors(), $messages);
 } // if
@@ -131,7 +131,9 @@ $scrolling[$dbobject->getClassName()]['where']    = $where;
 if (empty($errors)) {
     // check that this record can be deleted
 	$fieldarray = $dbobject->validateDelete($fieldarray);
-    $errors = array_merge($errors, $dbobject->getErrors());
+    if ($dbobject->errors) {
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    } // if
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
 } // if
@@ -143,12 +145,11 @@ if ($errors) {
     $messages[] = getLanguageText('sys0086'); // 'Press SUBMIT to confirm deletion.'
 } // if
 
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['scrolling'] = $scrolling;
 $script_vars['dbobject']  = serialize($dbobject);
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

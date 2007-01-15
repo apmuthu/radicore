@@ -4,18 +4,17 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'x_person';            	   // table name
 $screen   = 'person.list.screen.inc';  // file identifying screen structure
 
-// identify extra parameters for a JOIN
-//$sql_select = '*';
-//$sql_from   = 'x_person ' .'LEFT JOIN x_pers_type ON (x_person.pers_type_id = x_pers_type.pers_type_id)';
-$sql_where  = NULL;
+// customise the SQL SELECT statement
+$sql_select  = 'person_id, first_name, last_name, star_sign';
+$sql_from    = null;
+$sql_where   = null;
+$sql_groupby = null;
+$sql_having  = null;
+$sql_orderby = null;
 
-// set default sort sequence
-$sql_orderby = NULL;
-
-require 'std.list1.inc';                // activate page controller
+require 'std.list1.inc';               // activate page controller
 
 ?>

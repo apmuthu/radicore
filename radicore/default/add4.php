@@ -12,6 +12,6 @@ $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
 
-require 'std.add4.inc';         // activate page controller
+require_once 'std.add4.inc';    // activate page controller
 
 ?>

@@ -10,10 +10,13 @@ $array['feature_type']          = array('S' => 'Standard',
                                         'R' => 'Required',
                                         'X' => 'Selectable');
 
+$array['inv_type']              = array('S' => 'Serialised',
+                                        'N' => 'Non-serialised');
+
 $array['price_frequency']       = array('1' => 'One Time charge',
                                         'R' => 'Recurring charge',
                                         'U' => 'Utilisation charge');
-        
+
 $array['price_type']            = array('B' => 'Base Price',
                                         'D' => 'Discount',
                                         'S' => 'Surcharge',

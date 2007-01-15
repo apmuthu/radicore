@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -44,6 +44,8 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
+    // refetch data for lookup lists in case they have changed
+    $null = $dbouter->setLookupData(null);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -52,7 +54,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->sql_where      = &$outer_sql_where;
     $dbouter->sql_groupby    = &$outer_sql_groupby;
     $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_sort_table = &$outer_sql_sort_table;
+    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } //if
@@ -68,13 +70,12 @@ if (isset($script_vars['dbouter'])) {
             $dbouter->setOrderBySeq($order_by_seq);
         } // if
     } // if
-    if (isset($outer_sql_where) and strlen($outer_sql_where) > 0) {
-        // merge two strings into one
-    	$where = mergeWhere($where, $outer_sql_where);
-    	$dbouter->sql_where = null;
-    } // if
     // perform any initialisation
-    $where = $dbouter->initialise($where, $selection);
+    if (!empty($selection)) {
+        $selection = $dbouter->initialise($selection, $where);
+    } else {
+        $where = $dbouter->initialise($where);
+    } // if
 } // if
 
 // create a class instance for the MIDDLE database table
@@ -84,6 +85,8 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle = unserialize($script_vars['dbmiddle']);
     // get data from previous instance
     $middle_data = $dbmiddle->getFieldArray();
+    // refetch data for lookup lists in case they have changed
+    $null = $dbmiddle->setLookupData(null);
 } else {
     // create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
@@ -97,8 +100,11 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
-    // perform any initialisation
-    $where = $dbmiddle->initialise($where, $selection);
+    if (!empty($selection)) {
+        $null = $dbmiddle->initialise($selection, $where);
+    } else {
+        $null = $dbmiddle->initialise($where);
+    } // if
 } // if
 
 // create a class instance for the INNER database table
@@ -124,8 +130,11 @@ if (isset($script_vars['dbinner'])) {
     } elseif (!empty($task_order_by)) {
         $dbinner->setDefaultOrderby($task_order_by);
     } // if
-    // perform any initialisation
-    $where = $dbinner->initialise($where, $selection);
+    if (!empty($selection)) {
+        $null = $dbinner->initialise($selection, $where);
+    } else {
+        $null = $dbinner->initialise($where);
+    } // if
 } // if
 
 // the 'choose' button should only be available in popup screens
@@ -135,7 +144,7 @@ if (isset($_POST['choose'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, $dbinner, 'dbinner', $where);
+    $errors = childForm($_POST, array('dbinner' => $dbinner), $where);
 } // if
 
 if (!empty($selection)) {
@@ -168,9 +177,7 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbouter->setSqlSearch(null);
-    $dbouter->setPageNo(1);
-    $dbmiddle->setPageNo(1);
+    $dbouter->reset($where);
 } // if
 
 // get data from the outer table
@@ -213,9 +220,14 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName(
     $dbmiddle->setPageNo($_GET['item']);
 } // if
 
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $dbmiddle->reset($where);
+} // if
+
 // get data from the middle table
 $middle_data = $dbmiddle->getData($where);
-if ($dbmiddle->getErrors()) {
+if ($dbmiddle->errors) {
     // errors are keyed by object name
     $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
 } // if
@@ -258,22 +270,22 @@ if (isset($search)) {
     $dbinner->setSqlSearch($search);
 } // if
 
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $dbinner->reset();
-} // if
-
 if (isset($instruction)) {
     // load instruction returned by a child script
     $dbinner->setInstruction($instruction);
 } // if
 
-// merge OUTER and MIDDLE where to get selection criteria for INNER
-$inner_where = mergeWhere($where, $middle_where);
-
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
     $dbinner->setPageNo($_GET['page']);
+} // if
+
+// merge OUTER and MIDDLE where to get selection criteria for INNER
+$inner_where = mergeWhere($where, $middle_where);
+
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $dbinner->reset($inner_where);
 } // if
 
 if ($dbmiddle->numrows == 0) {
@@ -284,23 +296,24 @@ if ($dbmiddle->numrows == 0) {
     $dbinner->setFieldArray($middle_data);
 	// get data from the database
     $inner_data = $dbinner->getData($inner_where);
-    if ($dbinner->getErrors()) {
+    if ($dbinner->errors) {
         // errors are keyed by object name
         $errors[$dbinner->getClassName()] = $dbinner->getErrors();
     } // if
-} // if
-if ($dbinner->getNumRows() == 0) {
-    $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
-    if (strtolower($return_action) == 'search') {
-        if (isset($return_from)) {
-            $messages = $errors;
-            // go back to script which generated this profile
-            scriptNext($return_from);
+
+    if ($dbinner->getNumRows() == 0) {
+        $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+        if (strtolower($return_action) == 'search') {
+            if (isset($return_from)) {
+                $messages = $errors;
+                // go back to script which generated this profile
+                scriptNext($return_from, $where);
+            } // if
         } // if
-    } // if
-    if (array_key_exists('choose', $act_buttons)) {
-        // this is unusable, so remove it
-        unset($act_buttons['choose']);
+        if (array_key_exists('choose', $act_buttons)) {
+            // this is unusable, so remove it
+            unset($act_buttons['choose']);
+        } // if
     } // if
 } // if
 
@@ -332,15 +345,13 @@ $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
-// ensure script variables are available throughout this session
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbmiddle']  = serialize($dbmiddle);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars = updateScriptVars ($script_vars);
 
 // get sort details
 $orderby     = $dbinner->getOrderBy();

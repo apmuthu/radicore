@@ -54,7 +54,7 @@ class prod_feature_applicability extends Default_Table
         if ($end_date >= $next_end_date) {
             $this->errors['end_date'] = getLanguageText('e0008'); // 'End Date must be earlier than End Date of next entry';
             // use next end_date minus 1 day
-            $fieldarray['end_date'] = $dateobj->addDays($next_end_date, -1);
+            $fieldarray['end_date'] = adjustDate($next_end_date, -1);
         } // if
 
         return $fieldarray;
@@ -89,7 +89,7 @@ class prod_feature_applicability extends Default_Table
         if ($start_date <= $prev_start_date) {
             $this->errors['start_date'] = getlanguageText('e0009'); // 'Start Date must be later than Start Date of previous entry';
             // use previous start_date plus 1 day
-            $fieldarray['start_date'] = $dateobj->addDays($prev_start_date, 1);
+            $fieldarray['start_date'] = adjustDate($prev_start_date, 1);
         } // if
 
         return $fieldarray;
@@ -101,11 +101,8 @@ class prod_feature_applicability extends Default_Table
     // update the start_date of the next record so that it is
     // 1 day later than the end_date of the current record
     {
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
-
         $end_date   = $fieldarray['end_date'];
-        $start_date = $dateobj->addDays($end_date, 1);
+        $start_date = adjustDate($end_date, 1);
 
         $update_array['product_id']      = $fieldarray['product_id'];
         $update_array['prod_feature_id'] = $fieldarray['prod_feature_id'];
@@ -123,11 +120,8 @@ class prod_feature_applicability extends Default_Table
     // update the end_date of the previous record so that it is
     // 1 day earlier than the start_date of the current record
     {
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
-
         $start_date = $fieldarray['start_date'];
-        $end_date   = $dateobj->addDays($start_date, -1);
+        $end_date   = adjustDate($start_date, -1);
 
         $update_array['product_id']      = $fieldarray['product_id'];
         $update_array['prod_feature_id'] = $fieldarray['prod_feature_id'];
@@ -182,14 +176,14 @@ class prod_feature_applicability extends Default_Table
         //DebugBreak();
         if (!empty($fieldarray['prod_feature_id']) and empty($fieldarray['prod_feature_desc'])) {
             // get description for selected node
-            require_once 'product_feature.class.inc';
+            require_once 'classes/product_feature.class.inc';
             $dbobject =& singleton::getInstance('product_feature');
             $dbobject->sql_select = 'prod_feature_id, prod_feature_desc, prod_feature_cat_id';
             $foreign_data = $dbobject->getData("prod_feature_id='{$fieldarray['prod_feature_id']}'");
             // merge with existing data
             $fieldarray = array_merge($fieldarray, $foreign_data[0]);
 
-            require_once 'product_feature_category.class.inc';
+            require_once 'classes/product_feature_category.class.inc';
             $dbobject =& singleton::getInstance('product_feature_category');
             $dbobject->sql_select = 'prod_feature_cat_desc';
             $foreign_data = $dbobject->getData("prod_feature_cat_id='{$fieldarray['prod_feature_cat_id']}'");
@@ -235,7 +229,7 @@ class prod_feature_applicability extends Default_Table
 
                 // use previous start_date plus 1 day
                 $start_date = $prev_rec_data['start_date'];
-                $start_date = $dateobj->addDays($start_date, 1);
+                $start_date = adjustDate($start_date, 1);
                 $fieldarray['start_date'] = $dateobj->getExternalDate($start_date);
             } // if
         } // if
@@ -245,7 +239,7 @@ class prod_feature_applicability extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -307,11 +301,12 @@ class prod_feature_applicability extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         if (empty($this->sql_select)) {
             // include columns from foreign table
             $this->sql_select = 'prod_feature_applicability.*, product.product_name, prod_feature_desc, prod_feature_cat_desc';
@@ -334,14 +329,14 @@ class prod_feature_applicability extends Default_Table
     // verify that the selected record can be deleted.
     // (put any errors in $this->errors)
     {
-        //DebugBreak();
         // check that this is the latest record
         $where = "product_id='{$fieldarray['product_id']}' AND " . "prod_feature_id='{$fieldarray['prod_feature_id']}'";
         $query = "SELECT max(seq_no) FROM $this->tablename WHERE $where";
         $max = $this->getCount($query);
 
         if ($fieldarray['seq_no'] != $max) {
-            $this->errors[] = getLanguageText('e0007'); // "This is not the last record so it cannot be deleted.";
+            // "This is not the last record so it cannot be deleted."
+            $this->errors[] = getLanguageText('e0007');
         } // if
 
         return;

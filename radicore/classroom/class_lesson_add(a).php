@@ -6,13 +6,11 @@
 // the list of one or more LESSON_IDs is provided by a separate popup screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'crs_class_lesson';   // table name
+$table_id = 'crs_class_lesson';     // table name
 
-$popup_screen = 'crs_lesson(popup)';
+$popup_task = 'crs_lesson(popup)';
 
-// activate page controller
-require 'std.add3.inc';
+require_once 'std.add3.inc';        // activate page controller
 
 ?>
 

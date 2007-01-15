@@ -14,7 +14,7 @@ $structure['main']['fields'][1][] = array('label' => 'Table Id');
 $structure['main']['fields'][1][] = array('field' => 'table_id', 'size' => 35);
 
 $structure['main']['fields'][] = array('table_desc' => 'description', 'colspan' => 3);
-$structure['main']['fields'][] = array('comment' => 'Comments', 'colspan' => 3);
+$structure['main']['fields'][] = array('tbl_comment' => 'Comments', 'colspan' => 3);
 $structure['main']['fields'][] = array('audit_logging' => 'Audit Logging?', 'colspan' => 3);
 $structure['main']['fields'][] = array('default_orderby' => 'Default Sort Seq', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);

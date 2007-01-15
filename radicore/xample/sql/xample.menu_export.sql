@@ -1,27 +1,35 @@
--- file created on January 10, 2006, 6:37 pm
+-- file created on October 31, 2006, 10:02 am
     
-REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('XAMPLE', 'Example application', 'xample', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_prefix`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('XAMPLE', 'Example application', 'xample', 'x_', '2003-01-01 12:00:00', 'AJM', '2006-04-22 09:40:39', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('test_autoinsert(add)', 'Auto Insert', 'Insert', 'PROC', 'test_autoincrement_add.php', 'Y', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2005-05-25 21:06:56', 'AJM', '2005-06-01 18:35:35', 'AJM');
+REPLACE INTO `mnu_role` (`role_id`, `role_desc`, `start_task_id`, `global_access`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'Demonstration Class', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
+('READONLY', 'Read Only', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
+('SURVEY', 'SURVEY (supervisor)', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
+('USER1', 'User Class 1', 'proto', 'N', '2003-01-01 12:00:00', 'AJM', '2005-07-31 14:59:56', 'AJM'),
+('USER2', 'User Class 2', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
+('USER3', 'User Class 3', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(add)', 'Add Option', 'Insert', 'PROC', 'option_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('test_autoinsert(add)', 'Auto Insert', 'Insert', 'PROC', 'test_autoincrement_add.php', 'Y', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-05-25 21:06:56', 'AJM', '2005-06-01 18:35:35', 'AJM');
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(add)', 'Add Option', 'Insert', 'PROC', 'option_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_option(add)', '2005-04-19 18:10:29', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(del)', 'Delete Option', 'Delete', 'PROC', 'option_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(del)', 'Delete Option', 'Delete', 'PROC', 'option_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_option(del)', '2005-04-19 18:10:29', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(enq)', 'Enquire Option', 'Enquire', 'PROC', 'option_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(enq)', 'Enquire Option', 'Enquire', 'PROC', 'option_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task_field` (`task_id`, `field_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_option(enq)', 'DUMMY1', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -36,8 +44,8 @@ REPLACE INTO `mnu_role_taskfield` (`role_id`, `task_id`, `field_id`, `access_typ
 ('SURVEY', 'x_option(enq)', 'DUMMY1', 'FULL', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(enq)', 'DUMMY2', 'NED', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(list)', 'List Option', 'List Option', 'PROC', 'option_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'option_id', 'Y', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:14:44', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(list)', 'List Option', 'List Option', 'PROC', 'option_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'option_id', 'Y', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:14:44', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_option(list)', 'x_option(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -57,8 +65,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('USER2', 'x_option(list)', '2005-07-31 15:12:00', 'AJM', NULL, NULL),
 ('USER3', 'x_option(list)', '2005-07-31 15:15:55', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(list)a', 'List Option for a selected Person', 'List Option', 'PROC', 'option_list(a).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, 'option_id', 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:15:36', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(list)a', 'List Option for a selected Person', 'List Option', 'PROC', 'option_list(a).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, 'option_id', 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:15:36', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_option(list)a', 'x_pers_opt_xref(add)a', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -71,8 +79,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_option(list)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(list)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(popup)', 'Choose Options', 'Choose', 'PROC', 'option_popup.php', 'N', 'POPUP', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(popup)', 'Choose Options', 'Choose', 'PROC', 'option_popup.php', 'N', 'POPUP1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-10-06 13:51:30', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_option(popup)', 'x_option(search)', '001', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
@@ -82,48 +90,67 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_option(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(search)', 'Search Option', 'Search', 'PROC', 'option_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(search)', 'Search Option', 'Search', 'PROC', 'option_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_option(search)', '2005-04-19 18:10:29', 'AJM', NULL, NULL),
 ('READONLY', 'x_option(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_option(upd)', 'Update Option', 'Update', 'PROC', 'option_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_option(upd)', 'Update Option', 'Update', 'PROC', 'option_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_option(upd)', '2005-04-19 18:10:29', 'AJM', NULL, NULL),
 ('SURVEY', 'x_option(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(add)', 'Add Person', 'Insert', 'PROC', 'person_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(add)', 'Add Person', 'Insert', 'PROC', 'person_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(add)', '2005-04-19 18:10:29', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(del)', 'Delete Person', 'Delete', 'PROC', 'person_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(csv)', 'Output person records to CSV file', 'Output to CSV', 'PROC', 'person_output(csv).php', 'N', 'OUTPUT1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-08-11 16:53:17', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(csv)', '2006-08-13 10:01:26', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(del)', 'Delete Person', 'Delete', 'PROC', 'person_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(del)', '2005-04-19 18:10:35', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(enq)', 'Enquire Person', 'Enquire', 'PROC', 'person_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(del)2', 'Delete Person (without user dialog)', 'Delete', 'PROC', 'person_del(2).php', 'N', 'DEL2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-02-16 21:35:41', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(del)2', '2006-04-07 14:25:31', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(enq)', 'Enquire Person', 'Enquire', 'PROC', 'person_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(enq)', 'x_person_addr(list)', '001', 'List Addresses', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
+('x_person(enq)', 'x_person_addr(list)', '001', 'List Addresses', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
+('x_person(enq)', 'x_person(filedownload)', '002', 'Download Picture', 'N', '2006-07-26 11:20:30', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_person(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(filepicker)', 'Choose Person Picture', 'Choose Picture', 'PROC', 'person_filepicker.php', 'N', 'FILEPICKER', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2005-03-10 21:48:44', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(filedownload)', 'Download Person Picture', 'Download Picture', 'PROC', 'person_filedownload.php', 'N', 'FILEDOWNLOAD', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-07-26 10:53:55', 'AJM', '2006-07-26 17:02:18', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(filedownload)', '2006-08-13 10:01:26', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(filepicker)', 'Choose Person Picture', 'Choose Picture', 'PROC', 'person_filepicker.php', 'N', 'FILEPICKER', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-03-10 21:48:44', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person(filepicker)', 'x_person(fileupload)', '001', 'Upload Picture', 'N', '2005-12-15 20:53:05', 'AJM', NULL, NULL);
@@ -131,30 +158,38 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(filepicker)', '2005-04-19 18:11:05', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(fileupload)', 'Upload Person Picture', 'Upload Picture', 'PROC', 'person_fileupload.php', 'N', 'FILEUPLOAD', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2005-12-15 17:48:42', 'AJM', '2005-12-18 14:51:08', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(fileupload)', 'Upload Person Picture', 'Upload Picture', 'PROC', 'person_fileupload.php', 'N', 'FILEUPLOAD', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-12-15 17:48:42', 'AJM', '2005-12-18 14:51:08', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(list)', 'List Person', 'List Person', 'PROC', 'person_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'last_name', 'Y', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:19:16', 'AJM');
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(fileupload)', '2006-04-07 14:25:31', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(list)', 'List Person', 'List Person', 'PROC', 'person_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'last_name', 'Y', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:19:16', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person(list)', 'x_person(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('x_person(list)', 'x_person(enq)', '002', 'Read', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('x_person(list)', 'x_person(upd)', '003', 'Update', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'x_person(del)', '004', 'Delete', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'x_person_addr(list)', '005', 'List Addresses', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'x_option(list)a', '006', 'List Options', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'x_pers_opt_xref(link)a', '007', 'Maintain Options', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'x_person(search)', '008', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
-('x_person(list)', 'audit_dtl(list)3', '009', 'Audit Trail', 'Y', '2004-04-09 11:39:55', 'AJM', NULL, NULL);
+('x_person(list)', 'x_person(upd)js', '004', 'Update (js)', 'Y', '2006-07-30 10:13:08', 'AJM', '2006-07-30 10:13:44', 'AJM'),
+('x_person(list)', 'x_person(del)', '005', 'Delete', 'Y', '2003-01-01 12:00:00', 'AJM', '2006-07-30 10:13:44', 'AJM'),
+('x_person(list)', 'x_person_addr(list)', '006', 'List Addresses', 'Y', '2003-01-01 12:00:00', 'AJM', '2006-07-30 10:13:44', 'AJM'),
+('x_person(list)', 'x_option(list)a', '007', 'List Options', 'Y', '2003-01-01 12:00:00', 'AJM', '2006-07-30 10:13:44', 'AJM'),
+('x_person(list)', 'x_pers_opt_xref(link)a', '008', 'Maintain Options', 'Y', '2003-01-01 12:00:00', 'AJM', '2006-07-30 10:13:44', 'AJM'),
+('x_person(list)', 'x_person(search)', '009', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', '2006-08-11 17:01:19', 'AJM'),
+('x_person(list)', 'x_person(csv)', '010', 'Output to CSV', 'N', '2006-08-11 16:58:31', 'AJM', '2006-08-11 17:01:19', 'AJM'),
+('x_person(list)', 'audit_dtl(list)3', '011', 'Audit Trail', 'Y', '2004-04-09 11:39:55', 'AJM', '2006-08-11 16:58:55', 'AJM'),
+('x_person(list)', 'x_person(pdf)', '012', 'Output to PDF(L)', 'N', '2006-08-13 16:17:40', 'AJM', '2006-08-14 16:12:06', 'AJM'),
+('x_person(list)', 'x_person(pdf)2', '013', 'Output to PDF(D)', 'N', '2006-08-14 16:12:22', 'AJM', NULL, NULL),
+('x_person(list)', 'x_person(pdf)3', '014', 'Invoice (PDF)', 'Y', '2006-08-28 10:30:19', 'AJM', '2006-08-28 10:30:34', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_person(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(list)a', 'List Person for a selected Person Type', 'List Person', 'PROC', 'person_list(a).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(list)a', 'List Person for a selected Person Type', 'List Person', 'PROC', 'person_list(a).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person(list)a', 'x_person(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -168,8 +203,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_person(list)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(list)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(list)b', 'List Person for a selected Option', 'List Person', 'PROC', 'person_list(b).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(list)b', 'List Person for a selected Option', 'List Person', 'PROC', 'person_list(b).php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person(list)b', 'x_pers_opt_xref(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -183,8 +218,26 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_person(list)b', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(list)b', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(popup)', 'Choose Person', 'Choose', 'PROC', 'person_popup.php', 'N', 'POPUP', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(pdf)', 'Output person records to PDF file (List view)', 'Output to PDF(L)', 'PROC', 'person_output(pdf).php', 'N', 'OUTPUT2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-08-13 16:16:55', 'AJM', '2006-08-14 16:11:34', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(pdf)', '2006-08-14 14:46:58', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(pdf)2', 'Output person records to PDF file (Detail view)', 'Output to PDF(D)', 'PROC', 'person_output(pdf)2.php', 'N', 'OUTPUT3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-08-14 16:10:50', 'AJM', '2006-08-14 16:11:41', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(pdf)2', '2006-08-18 13:24:52', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(pdf)3', 'Sample Invoice print', 'Invoice (PDF)', 'PROC', 'person_output(pdf)3.php', 'N', 'OUTPUT3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-08-28 10:29:44', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(pdf)3', '2006-08-28 17:20:09', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(popup)', 'Choose Person', 'Choose', 'PROC', 'person_popup.php', 'N', 'POPUP1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-10-06 13:51:57', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person(popup)', 'x_person(search)', '001', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
@@ -194,44 +247,59 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_person(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(search)', 'Search Person', 'Search', 'PROC', 'person_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(search)', 'Search Person', 'Search', 'PROC', 'person_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_person(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person(upd)', 'Update Person', 'Update', 'PROC', 'person_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(upd)', 'Update Person', 'Update', 'PROC', 'person_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person(upd)', '2005-04-19 18:10:35', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person_addr(add)', 'Add Person Address', 'Insert', 'PROC', 'person_addr_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-09-02 18:50:16', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(upd)js', 'Update Person (with javascript)', 'Update (js)', 'PROC', 'person_upd(js).php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-07-30 10:12:35', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(upd)js', 'x_person(upd)js2', '001', 'Update (js2)', 'Y', '2006-08-04 18:40:17', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(upd)js', '2006-08-13 10:01:26', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person(upd)js2', 'Update Person (with javascript)', 'Update (js2)', 'PROC', 'person_upd(fckeditor).php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-08-04 18:39:51', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'x_person(upd)js2', '2006-08-13 10:01:26', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person_addr(add)', 'Add Person Address', 'Insert', 'PROC', 'person_addr_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-09-02 18:50:16', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person_addr(add)', '2005-04-19 18:10:35', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person_addr(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person_addr(del)', 'Delete Person Address', 'Delete', 'PROC', 'person_addr_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person_addr(del)', 'Delete Person Address', 'Delete', 'PROC', 'person_addr_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person_addr(del)', '2005-04-19 18:10:35', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person_addr(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person_addr(enq)', 'Enquire Person Address', 'Enquire', 'PROC', 'person_addr_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person_addr(enq)', 'Enquire Person Address', 'Enquire', 'PROC', 'person_addr_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person_addr(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person_addr(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person_addr(list)', 'List Person Address', 'List Addresses', 'PROC', 'person_addr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person_addr(list)', 'List Person Address', 'List Addresses', 'PROC', 'person_addr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_person_addr(list)', 'x_person_addr(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', '2004-04-03 12:35:23', 'AJM'),
@@ -245,36 +313,36 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_person_addr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person_addr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_person_addr(upd)', 'Update Person Address', 'Update', 'PROC', 'person_addr_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_person_addr(upd)', 'Update Person Address', 'Update', 'PROC', 'person_addr_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_person_addr(upd)', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_person_addr(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_opt_xref(add)', 'Add Person(s) to selected Option', 'Insert', 'PROC', 'pers_opt_xref_add.php', 'N', 'ADD3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_opt_xref(add)', 'Add Person(s) to selected Option', 'Insert', 'PROC', 'pers_opt_xref_add.php', 'N', 'ADD3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_opt_xref(add)', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_opt_xref(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_opt_xref(add)a', 'Add Option(s) to selected Person', 'Insert', 'PROC', 'pers_opt_xref_add(a).php', 'N', 'ADD3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_opt_xref(add)a', 'Add Option(s) to selected Person', 'Insert', 'PROC', 'pers_opt_xref_add(a).php', 'N', 'ADD3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_opt_xref(add)a', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_opt_xref(add)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_opt_xref(del)', 'Delete from Person/Option cross-reference', 'Delete', 'PROC', 'pers_opt_xref_del.php', 'N', 'DEL2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_opt_xref(del)', 'Delete from Person/Option cross-reference', 'Delete', 'PROC', 'pers_opt_xref_del.php', 'N', 'DEL2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_opt_xref(del)', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_opt_xref(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_opt_xref(link)a', 'Link Option(s) to selected Person', 'Maintain Option', 'PROC', 'pers_opt_xref_link(a).php', 'N', 'LINK1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_opt_xref(link)a', 'Link Option(s) to selected Person', 'Maintain Option', 'PROC', 'pers_opt_xref_link(a).php', 'N', 'LINK1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-03-19 18:06:42', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_pers_opt_xref(link)a', 'x_option(search)', '001', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
@@ -283,8 +351,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('DEMO', 'x_pers_opt_xref(link)a', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_opt_xref(link)a', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_opt_xref(link)b', 'Link Person(s) to selected Option', 'Maintain Person', 'PROC', 'pers_opt_xref_link(b).php', 'N', 'LINK1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_opt_xref(link)b', 'Link Person(s) to selected Option', 'Maintain Person', 'PROC', 'pers_opt_xref_link(b).php', 'N', 'LINK1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-01-20 23:19:01', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_pers_opt_xref(link)b', 'x_person(search)', '001', 'Search', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
@@ -293,30 +361,30 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('DEMO', 'x_pers_opt_xref(link)b', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_opt_xref(link)b', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(add)', 'Add Person Type', 'Insert', 'PROC', 'pers_type_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(add)', 'Add Person Type', 'Insert', 'PROC', 'pers_type_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_type(add)', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(del)', 'Delete Person Type', 'Delete', 'PROC', 'pers_type_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(del)', 'Delete Person Type', 'Delete', 'PROC', 'pers_type_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_type(del)', '2005-04-19 18:10:40', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(enq)', 'Enquire Person Type', 'Enquire', 'PROC', 'pers_type_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(enq)', 'Enquire Person Type', 'Enquire', 'PROC', 'pers_type_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_type(enq)', '2005-04-19 18:10:47', 'AJM', NULL, NULL),
 ('READONLY', 'x_pers_type(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(list)', 'List Person Type', 'List Person Type', 'PROC', 'pers_type_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'pers_type_id', 'Y', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:17:34', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(list)', 'List Person Type', 'List Person Type', 'PROC', 'pers_type_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'pers_type_id', 'Y', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:17:34', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_pers_type(list)', 'x_pers_type(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -332,45 +400,45 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_pers_type(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(search)', 'Search Person Type', 'Search', 'PROC', 'pers_type_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(search)', 'Search Person Type', 'Search', 'PROC', 'pers_type_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_type(search)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('READONLY', 'x_pers_type(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_pers_type(upd)', 'Update Person Type', 'Update', 'PROC', 'pers_type_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_pers_type(upd)', 'Update Person Type', 'Update', 'PROC', 'pers_type_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_pers_type(upd)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('SURVEY', 'x_pers_type(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(add)', 'Add Tree Level', 'Insert', 'PROC', 'tree_level_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(add)', 'Add Tree Level', 'Insert', 'PROC', 'tree_level_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(add)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(del)', 'Delete Tree Level', 'Delete', 'PROC', 'tree_level_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(del)', 'Delete Tree Level', 'Delete', 'PROC', 'tree_level_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(del)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(enq)', 'Enquire Tree Level', 'Enquire', 'PROC', 'tree_level_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(enq)', 'Enquire Tree Level', 'Enquire', 'PROC', 'tree_level_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-01-17 18:49:13', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(enq)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_level(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(list)', 'List Tree Level', 'Tree Level', 'PROC', 'tree_level_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:37:26', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(list)', 'List Tree Level', 'Tree Level', 'PROC', 'tree_level_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:37:26', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_level(list)', 'x_tree_level(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -387,52 +455,52 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_level(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(multi)', 'Update Level Sequence Number', 'Update Seq Number', 'PROC', 'tree_level_multi.php', 'N', 'MULTI2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-06-24 17:30:43', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(multi)', 'Update Level Sequence Number', 'Update Seq Number', 'PROC', 'tree_level_multi.php', 'N', 'MULTI2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-06-24 17:30:43', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(multi)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(multi)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(search)', 'Search Tree Level', 'Search', 'PROC', 'tree_level_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(search)', 'Search Tree Level', 'Search', 'PROC', 'tree_level_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(search)', '2005-04-19 18:10:48', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_level(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_level(upd)', 'Update Tree Level', 'Update', 'PROC', 'tree_level_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_level(upd)', 'Update Tree Level', 'Update', 'PROC', 'tree_level_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_level(upd)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_level(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(add)', 'Add Tree Node', 'New', 'PROC', 'tree_node_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:40:42', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(add)', 'Add Tree Node', 'New', 'PROC', 'tree_node_add.php', 'N', 'ADD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:40:42', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node(add)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(del)', 'Delete Tree Node', 'Delete', 'PROC', 'tree_node_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(del)', 'Delete Tree Node', 'Delete', 'PROC', 'tree_node_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node(del)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(enq)', 'Enquire Tree Node', 'Enquire', 'PROC', 'tree_node_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(enq)', 'Enquire Tree Node', 'Enquire', 'PROC', 'tree_node_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-01-17 18:49:19', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_node(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(list)', 'List Tree Node', 'Tree Node', 'PROC', 'tree_node_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, 'node_desc', 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:22:18', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(list)', 'List Tree Node', 'Tree Node', 'PROC', 'tree_node_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, 'node_desc', 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:22:18', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_node(list)', 'x_tree_node(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -449,37 +517,37 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_node(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(search)', 'Search Tree Node', 'Search', 'PROC', 'tree_node_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(search)', 'Search Tree Node', 'Search', 'PROC', 'tree_node_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_node(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node(upd)', 'Update Tree Node', 'Update', 'PROC', 'tree_node_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node(upd)', 'Update Tree Node', 'Update', 'PROC', 'tree_node_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node(upd)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node_jnr(add)', 'Link Child Nodes to a Parent Node', 'Link Children', 'PROC', 'tree_node_jnr_add.php', 'N', 'UPD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node_jnr(add)', 'Link Child Nodes to a Parent Node', 'Link Children', 'PROC', 'tree_node_jnr_add.php', 'N', 'UPD2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node_jnr(add)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node_jnr(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node_jnr(del)', 'Unlink Child Nodes from Parent Node', 'Unlink Children', 'PROC', 'tree_node_jnr_del.php', 'N', 'DEL3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node_jnr(del)', 'Unlink Child Nodes from Parent Node', 'Unlink Children', 'PROC', 'tree_node_jnr_del.php', 'N', 'DEL3', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_node_jnr(del)', '2005-04-19 18:10:54', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node_jnr(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node_jnr(list)', 'List Child Nodes for a selected Parent', 'Child Nodes', 'PROC', 'tree_node_jnr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:39:11', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node_jnr(list)', 'List Child Nodes for a selected Parent', 'Child Nodes', 'PROC', 'tree_node_jnr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:39:11', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_node_jnr(list)', 'x_tree_node_jnr(add)', '001', 'Link Children', 'N', '2003-01-01 12:00:00', 'AJM', '2004-05-04 18:04:15', 'AJM'),
@@ -492,8 +560,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_node_jnr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node_jnr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node_jnr(popup)', 'Choose Orphan Nodes', 'Choose', 'PROC', 'tree_node_jnr_popup.php', 'N', 'POPUP', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node_jnr(popup)', 'Choose Orphan Nodes', 'Choose', 'PROC', 'tree_node_jnr_popup.php', 'N', 'POPUP2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-10-06 13:52:25', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_node_jnr(popup)', 'x_tree_node(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', '2004-05-06 12:30:17', 'AJM'),
@@ -504,8 +572,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_node_jnr(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node_jnr(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_node_snr(list)', 'List Parentage for a selected Node', 'Parent Nodes', 'PROC', 'tree_node_snr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:39:02', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_node_snr(list)', 'List Parentage for a selected Node', 'Parent Nodes', 'PROC', 'tree_node_snr_list.php', 'N', 'LIST2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-24 17:39:02', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_node_snr(list)', 'audit_dtl(list)3', '001', 'Audit Trail', 'Y', '2004-04-09 12:02:39', 'AJM', NULL, NULL);
@@ -515,8 +583,8 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_node_snr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_node_snr(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_structure(list)', 'List Structure for a selected Tree Type', 'Structure', 'PROC', 'tree_structure_list.php', 'N', 'TREE2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-27 15:37:19', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_structure(list)', 'List Structure for a selected Tree Type', 'Structure', 'PROC', 'tree_structure_list.php', 'N', 'TREE2', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2004-08-27 15:37:19', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_structure(list)', 'x_tree_node(enq)', '002', 'Read', 'Y', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
@@ -526,38 +594,38 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_structure(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_structure(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_structure(popup)', 'Choose Node from a Tree Structure', 'Choose', 'PROC', 'tree_structure_popup.php', 'N', 'TREE2POPUP', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-12-26 12:32:02', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_structure(popup)', 'Choose Node from a Tree Structure', 'Choose', 'PROC', 'tree_structure_popup.php', 'N', 'POPUP4', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2006-10-06 13:18:27', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_structure(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_structure(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_structure(popup)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(add)', 'Add Tree Type', 'Insert', 'PROC', 'tree_type_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(add)', 'Add Tree Type', 'Insert', 'PROC', 'tree_type_add.php', 'N', 'ADD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_type(add)', '2005-04-19 18:11:01', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(add)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(del)', 'Delete Tree Type', 'Delete', 'PROC', 'tree_type_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(del)', 'Delete Tree Type', 'Delete', 'PROC', 'tree_type_del.php', 'N', 'DEL1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_type(del)', '2005-04-19 18:11:01', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(del)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(enq)', 'Enquire Tree Type', 'Enquire', 'PROC', 'tree_type_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(enq)', 'Enquire Tree Type', 'Enquire', 'PROC', 'tree_type_enq.php', 'N', 'ENQ1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_type(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_type(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(enq)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(list)', 'List Tree Type', 'Tree Type', 'PROC', 'tree_type_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'tree_type_id', 'Y', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:18:21', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(list)', 'List Tree Type', 'Tree Type', 'PROC', 'tree_type_list.php', 'N', 'LIST1', 'XAMPLE', NULL, NULL, NULL, NULL, 'tree_type_id', 'Y', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', '2005-01-31 18:18:21', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_tree_type(list)', 'x_tree_type(add)', '001', 'New', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
@@ -574,23 +642,23 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('READONLY', 'x_tree_type(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(list)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(search)', 'Search Tree Type', 'Search', 'PROC', 'tree_type_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(search)', 'Search Tree Type', 'Search', 'PROC', 'tree_type_search.php', 'N', 'SRCH', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_type(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'x_tree_type(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(search)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('x_tree_type(upd)', 'Update Tree Type', 'Update', 'PROC', 'tree_type_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('x_tree_type(upd)', 'Update Tree Type', 'Update', 'PROC', 'tree_type_upd.php', 'N', 'UPD1', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'x_tree_type(upd)', '2005-04-19 18:11:01', 'AJM', NULL, NULL),
 ('SURVEY', 'x_tree_type(upd)', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('xample', 'Example System', 'Example System', 'MENU', 'menu.php', 'N', 'MENU', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('xample', 'Example System', 'Example System', 'MENU', 'menu.php', 'N', 'MENU', 'XAMPLE', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-01-01 00:00:00', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('xample', 'x_person(list)', '001', 'Person', '2003-01-01 12:00:00', 'AJM', '2005-04-24 10:21:31', 'AJM'),

@@ -5,11 +5,8 @@
 // Details from the previous screen are passed down in $where.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'answer_option_s01';   	      // table name
-$title    = 'Answer Option Quick Setup';  // form title
+$table_id = 'answer_option_s01';            // table name
 
-// activate page controller
-require 'std.add4.inc';
+require_once 'std.add4.inc';                // activate page controller
 
 ?>

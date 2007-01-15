@@ -6,9 +6,8 @@
 // For the selected nodes the value of NODE_ID_SNR will be set to NULL.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'x_tree_node_jnr';          // table name
+$table_id = 'x_tree_node_jnr';      // table name
 
-require 'std.delete3.inc';              // activate page controller
+require_once 'std.delete3.inc';     // activate page controller
 
 ?>

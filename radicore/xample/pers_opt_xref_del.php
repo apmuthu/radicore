@@ -4,10 +4,9 @@
 // The identity of the selected occurrence is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'pers_opt_xref';       	// table name
+$table_id = 'x_pers_opt_xref';      // table name
 
-require 'std.delete2.inc';          // activate page controller
+require_once 'std.delete2.inc';     // activate page controller
 
 ?>
 

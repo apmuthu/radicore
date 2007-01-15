@@ -76,6 +76,30 @@ class x_tree_node_jnr extends x_tree_node
     } // _cm_getNodeData
 
     // ****************************************************************************
+    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
+    // be altered before the popup screen is called.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    {
+        // do NOT clear out the contents of $where
+        //$where = '';
+
+        // allow only one entry to be selected (the default)
+        //$settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        $settings['select_one'] = false;
+
+        //if ($popupname == '???_popup') {
+        //   // replace $where for this popup
+        //   $where = "???_id='ORG'";
+        //} // if
+
+        return $where;
+
+    } // _cm_popupCall
+
+    // ****************************************************************************
     function _cm_updateSelection ($selection, $replace)
     // update multiple records in a single operation
     {

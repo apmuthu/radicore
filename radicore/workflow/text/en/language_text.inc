@@ -12,7 +12,7 @@ $array['e0007'] = "Cannot delete END place";
 $array['e0008'] = "Start Date cannot be later than End Date";
 $array['e0009'] = "End Date cannot be earlier than Start Date";
 
-$array['e0010'] = "There are no outbound arcs from this transition";
+$array['e0010'] = "There are no outbound arcs from transition %1\$s";
 $array['e0011'] = "Outward arcs do not have the same ARC_TYPE";
 $array['e0012'] = "Cannot have more than one outward arc with ARC_TYPE='Sequential'";
 $array['e0013'] = "Must have more than one outward arc with ARC_TYPE='AND-split'";
@@ -64,8 +64,30 @@ $array['e0054'] = "There is more than 1 type of INWARD ARC for transition '%1\$s
 $array['e0055'] = "There are no OUTWARD ARCS for transition '%1\$s'";
 $array['e0056'] = "There is more than 1 type of OUTWARD ARC for transition '%1\$s'";
 $array['e0057'] = "Workflow %1\$s contains errors.";
-$array['e0058'] = "";
-$array['e0059'] = "";
+$array['e0058'] = "Time Limit cannot be blank if Trigger = 'TIME'";
+$array['e0059'] = "Time Limit must be blank if Trigger not = 'TIME'";
+
+$array['e0060'] = "Arcs leaving Place '%1\$s' do not have the same ARC_TYPE";
+$array['e0061'] = "Arcs entering Place '%1\$s' do not have the same ARC_TYPE";
+$array['e0062'] = "Not enough inward Arcs for transition '%1\$s'";
+$array['e0063'] = "Too many inward Arcs for transition '%1\$s'";
+$array['e0064'] = "Timed Transition '%1\$s' must have an inward Arc of type 'OR-split (Implicit)'";
+$array['e0065'] = "Too many arcs of type 'OR-split (Implicit)' at place '%1\$s'";
+$array['e0066'] = "The count of OR-JOINS does not match the count of OR-SPLITS";
+$array['e0067'] = "Too many arcs of type 'OR-join' at place '%1\$s'";
+$array['e0068'] = "The count of AND-JOINS does not match the count of AND-SPLITS";
+$array['e0069'] = "";
+
+$array['e0070'] = "";
+$array['e0071'] = "";
+$array['e0072'] = "";
+$array['e0073'] = "";
+$array['e0074'] = "";
+$array['e0075'] = "";
+$array['e0076'] = "";
+$array['e0077'] = "";
+$array['e0078'] = "";
+$array['e0079'] = "";
 
 // menu details for subsystem WORKFLOW
 $array['Case']                          = 'Case';
@@ -114,6 +136,7 @@ $array['wf_workitem(enq)']              = 'Enquire Workflow Workitem';
 $array['wf_workitem(list)']             = 'List Workflow Workitem';
 $array['wf_workitem(list)2']            = 'List Workitem within Case';
 $array['wf_workitem(search)']           = 'Search Workflow Workitem';
+$array['wf_workitem(upd)']              = 'Update Workflow Workitem';
 
 // navigation button details for subsystem WORKFLOW
 $array['Arcs']                          = 'Arcs';

@@ -29,11 +29,8 @@ class price_component extends Default_Table
     // update the start_date of the next record so that it is
     // 1 day later than the end_date of the current record.
     {
-        //DebugBreak();
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
         $end_date = $fieldarray['end_date'];
-        $start_date = $dateobj->addDays($end_date, 1);
+        $start_date = adjustDate($end_date, 1);
 
         $update_array['price_component_id'] = $fieldarray['next_price_component_id'];
         $update_array['start_date'] = $start_date;
@@ -49,11 +46,8 @@ class price_component extends Default_Table
     // update the end_date of the previous record so that it is
     // 1 day earlier than the start_date of the current record.
     {
-        //DebugBreak();
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
         $start_date = $fieldarray['start_date'];
-        $end_date = $dateobj->addDays($start_date, -1);
+        $end_date = adjustDate($start_date, -1);
 
         $update_array['price_component_id'] = $fieldarray['prev_price_component_id'];
         $update_array['end_date'] = $end_date;
@@ -68,7 +62,6 @@ class price_component extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         require_once 'std.datevalidation.class.inc';
         $dateobj =& singleton::getInstance('date_class');
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);
@@ -116,7 +109,6 @@ class price_component extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get array for price_type and put into LOOKUP_DATA
         $array = $this->getValRep('price_type');
         $this->lookup_data['price_type'] = $array;
@@ -126,13 +118,13 @@ class price_component extends Default_Table
         $this->lookup_data['price_frequency'] = $array;
 
         // get contents of foreign table and add to lookup array
-        require_once 'unit_of_measure.class.inc';
+        require_once 'classes/unit_of_measure.class.inc';
         $dbobject =& singleton::getInstance('unit_of_measure');
         $data_array = $dbobject->getValRep('uom_id');
         $this->lookup_data['uom_id'] = $data_array;
 
         // get contents of foreign table and add to lookup array
-        require_once 'product_category.class.inc';
+        require_once 'classes/product_category.class.inc';
         $dbobject =& singleton::getInstance('product_category');
         $data_array = $dbobject->getValRep('prod_cat_id');
         $this->lookup_data['prod_cat_id'] = $data_array;
@@ -142,11 +134,29 @@ class price_component extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
+    function _cm_getForeignData ($fieldarray)
+    // Retrieve data from foreign (parent) tables.
+    {
+        // this is here to avoid a conflict with the uom_id which is available on the
+        // PRODUCT record, to ensure that the right uom_desc is loaded. (this can be
+        // wrong when the PRODUCT table is accessed via the getForeignData() method).
+        if (isset($fieldarray['uom_id'])) {
+        	require_once 'classes/unit_of_measure.class.inc';
+            $dbobject =& singleton::getInstance('unit_of_measure');
+            $dbobject->sql_select = 'uom_desc';
+            $data = $dbobject->getData("uom_id='{$fieldarray['uom_id']}'");
+            $fieldarray = array_merge($data[0], $fieldarray);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getForeignData
+
+    // ****************************************************************************
     function _cm_getInitialData ($fieldarray)
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set price_component_id to next available number
         $query = "SELECT max(price_component_id) FROM $this->tablename";
         $count = $this->getCount($query);
@@ -157,7 +167,7 @@ class price_component extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -187,7 +197,6 @@ class price_component extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         if (isset($fieldarray['prev_price_component_id'])) {
             // update end_date on previous record
             $fieldarray = $this->_updatePrevRecord($fieldarray);
@@ -202,7 +211,6 @@ class price_component extends Default_Table
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database is updated.
     {
-        //DebugBreak();
         if (isset($fieldarray['prev_price_component_id'])) {
             // update end_date on previous record
             $fieldarray = $this->_updatePrevRecord($fieldarray);
@@ -220,35 +228,10 @@ class price_component extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        if (empty($this->sql_select)) {
-            // include columns from foreign tables
-            $this->sql_select = 'price_component.*, product_name, prod_feature_desc, prod_cat_desc, uom_desc';
-            $this->sql_from   = 'price_component '
-                               .'LEFT JOIN product '
-                               .'ON (product.product_id=price_component.product_id) '
-                               .'LEFT JOIN product_category '
-                               .'ON (product_category.prod_cat_id=price_component.prod_cat_id) '
-                               .'LEFT JOIN product_feature '
-                               .'ON (product_feature.prod_feature_id=price_component.prod_feature_id) '
-                               .'LEFT JOIN unit_of_measure '
-                               .'ON (unit_of_measure.uom_id=price_component.uom_id) ';
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
-
-    // ****************************************************************************
     function _cm_validateDelete ($fieldarray)
     // verify that the selected record can be deleted.
     // (put any errors in $this->errors)
     {
-        //DebugBreak();
         // check against next record (if it exists)
         $fieldarray = $this->_checkNextRecord($fieldarray);
         if ($this->errors) return $fieldarray;
@@ -266,7 +249,6 @@ class price_component extends Default_Table
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
-        //DebugBreak();
         // check against previous record (if it exists)
         $fieldarray = $this->_checkPrevRecord($fieldarray);
         if ($this->errors) return $fieldarray;
@@ -279,7 +261,6 @@ class price_component extends Default_Table
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update and allow for changes being made.
     {
-        //DebugBreak();
         // check against previous record (if it exists)
         $fieldarray = $this->_checkPrevRecord($fieldarray);
 

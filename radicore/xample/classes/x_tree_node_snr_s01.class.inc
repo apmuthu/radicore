@@ -16,7 +16,7 @@ class x_tree_node_snr_s01 extends x_tree_node_snr
         if (!empty($rowdata)) {
 
             // check that the TREE_LEVEL has another level below it
-            require_once 'x_tree_level.class.inc';
+            require_once 'classes/x_tree_level.class.inc';
             $dbobject =& singleton::getInstance('x_tree_level');
 
             $tree_type_id   = $rowdata[0]['tree_type_id'];

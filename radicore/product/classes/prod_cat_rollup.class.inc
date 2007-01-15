@@ -38,9 +38,11 @@ class prod_cat_rollup extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         switch ($GLOBALS['task_id']) {
@@ -51,16 +53,6 @@ class prod_cat_rollup extends Default_Table
             default:
                 ;
         } // switch
-
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'prod_cat_rollup.*, product_category_jnr.prod_cat_desc';
-            $this->sql_from   = 'prod_cat_rollup '
-                              . 'LEFT JOIN product_category AS product_category_snr '
-                              . 'ON (product_category_snr.prod_cat_id=prod_cat_rollup.prod_cat_id_snr) '
-                              . 'LEFT JOIN product_category AS product_category_jnr '
-                              . 'ON (product_category_jnr.prod_cat_id=prod_cat_rollup.prod_cat_id_jnr) ';
-        } // if
 
         return $where;
 

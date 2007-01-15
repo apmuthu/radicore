@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete3.inc
@@ -28,7 +28,9 @@ $dbobject = new $table_id;
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // retrieve profile must have been set by previous screen
     if (empty($selection)) {
-        scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
+        // 'Nothing has been selected yet.'
+        $batch_errors = scriptPrevious(getLanguageText('sys0081'));
+        return $batch_errors;
     } // if
 
     $dbobject->startTransaction();
@@ -45,7 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } // if
 
     // return to previous screen
-    scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages);
+    return $batch_errors;
 } // if
 
 ?>

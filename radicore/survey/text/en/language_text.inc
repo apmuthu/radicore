@@ -9,7 +9,7 @@ $array['e0004'] = "Cannot run this function if answers already exist";
 $array['e0005'] = "Invalid format for a postcode.";
 $array['e0006'] = "Invalid format for a telephone number.";
 $array['e0007'] = "Invalid format for a fax number.";
-$array['e0008'] = "Maximum cannot be less than minimum";
+$array['e0008'] = "Maximum value cannot be less than or equal to minimum value";
 $array['e0009'] = "Function invalid unless ANSWER TYPE = NUMBER";
 
 $array['e0010'] = "Cannot update a survey which is marked as COMPLETE";

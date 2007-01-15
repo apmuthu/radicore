@@ -1,5 +1,5 @@
 <?php
-    // file created on July 30, 2005, 3:00 pm
+    // file created on January 4, 2007, 1:50 pm
     
     // field specifications for table survey.survey_answer_hdr
     $fieldspec['survey_answer_id']          = array('type' => 'integer',
@@ -12,7 +12,6 @@
     
     $fieldspec['user_id']                   = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_user(popup)',
@@ -48,6 +47,8 @@
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean',
                                                     'noedit' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
@@ -55,22 +56,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('survey_answer_id');
@@ -85,6 +92,7 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_user',
+                                                    'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));

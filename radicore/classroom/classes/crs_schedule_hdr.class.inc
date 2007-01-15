@@ -71,7 +71,7 @@ class crs_schedule_hdr extends Default_Table
     {
         //DebugBreak();
         // get day number and add to lookup array
-        require_once 'crs_schedule.class.inc';
+        require_once 'classes/crs_schedule.class.inc';
         $object =& singleton::getInstance('crs_schedule');
         $data = $object->getValRep('day_no');
         $this->lookup_data['day_no'] = $data;

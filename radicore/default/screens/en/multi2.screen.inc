@@ -1,5 +1,5 @@
 <?php
-$structure['xsl_file'] = 'std.multi2.xsl';
+$structure['xsl_file'] = 'std.list2.xsl';
 
 $structure['tables']['outer'] = '#outer_table#';
 

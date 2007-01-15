@@ -1,5 +1,5 @@
 <?php
-    // file created on February 6, 2006, 3:46 pm
+    // file created on November 3, 2006, 11:34 am
     
     // field specifications for table workflow.wf_transition
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -39,9 +39,9 @@
                                                     'optionlist' => 'transition_trigger');
     
     $fieldspec['time_limit']                = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 4294967295);
+                                                    'maxvalue' => 999);
     
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 40,
@@ -53,7 +53,6 @@
     
     $fieldspec['role_id']                   = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'role_id');
@@ -63,24 +62,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('workflow_id',
@@ -92,8 +95,8 @@
     // child relationship details 
     $this->child_relations[]                = array('child' => 'wf_arc',
                                                     'type' => 'RES',
-                                                    'fields' => array('transition_id' => 'transition_id',
-                                                                      'workflow_id' => 'workflow_id'));
+                                                    'fields' => array('workflow_id' => 'workflow_id',
+                                                                      'transition_id' => 'transition_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',
                                                     'type' => 'RES',

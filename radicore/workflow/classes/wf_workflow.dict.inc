@@ -1,5 +1,5 @@
 <?php
-    // file created on February 6, 2006, 3:46 pm
+    // file created on November 3, 2006, 11:34 am
     
     // field specifications for table workflow.wf_workflow
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -27,7 +27,7 @@
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup)a',
-                                                    'foreign_field' => 'task_desc');
+                                                    'foreign_field' => 'start_task_desc');
     
     $fieldspec['is_valid']                  = array('type' => 'string',
                                                     'required' => 'y',
@@ -54,24 +54,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('workflow_id');
@@ -108,7 +112,7 @@
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_desc AS start_task_desc',
                                                     'fields' => array('start_task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

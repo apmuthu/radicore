@@ -21,7 +21,7 @@ $outer_sql_where  = NULL;
 $link_sql_select = 'mnu_menu.sort_seq, mnu_menu.button_text, mnu_task_jnr.task_desc AS task_desc_jnr';
 $link_sql_from   = '';
 $link_sql_where  = '';
-$link_search_table = 'mnu_task';
+$link_search_table = 'mnu_task AS mnu_task_jnr';
 
 require 'std.link1.inc';                        // activate page controller
 

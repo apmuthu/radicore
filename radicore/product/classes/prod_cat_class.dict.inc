@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 5:06 pm
+    // file created on January 4, 2007, 1:48 pm
     
     // field specifications for table product.prod_cat_class
     $fieldspec['product_id']                = array('type' => 'string',
@@ -27,10 +27,13 @@
                                                     'noedit' => 'y');
     
     $fieldspec['primary_flag']              = array('type' => 'boolean',
+                                                    'required' => 'y',
                                                     'true' => 'Y',
-                                                    'false' => 'N');
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
     
-    $fieldspec['comment']                   = array('type' => 'string',
+    $fieldspec['pcc_comment']               = array('type' => 'string',
                                                     'size' => 255,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
@@ -39,7 +42,7 @@
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00');
+                                                    'default' => '2001-01-01');
     
     $fieldspec['end_date']                  = array('type' => 'date',
                                                     'size' => 12,
@@ -48,24 +51,30 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2001-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('product_id',

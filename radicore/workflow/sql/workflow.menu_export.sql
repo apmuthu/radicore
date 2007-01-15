@@ -1,22 +1,25 @@
--- file created on January 10, 2006, 6:37 pm
+-- file created on October 31, 2006, 10:02 am
     
-REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('WORKFLOW', 'Workflow', 'workflow', '2004-04-03 23:42:43', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_prefix`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('WORKFLOW', 'Workflow', 'workflow', 'wf_', '2004-04-03 23:42:43', 'AJM', '2006-04-22 09:39:56', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(add)', 'Insert Workflow Arc', 'New', 'PROC', 'arc.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 19:22:22', 'AJM', '2004-04-17 18:37:17', 'AJM');
+REPLACE INTO `mnu_role` (`role_id`, `role_desc`, `start_task_id`, `global_access`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'Demonstration Class', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(del)', 'Delete Workflow Arc', 'Delete', 'PROC', 'arc.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 19:24:59', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(add)', 'Insert Workflow Arc', 'New', 'PROC', 'arc.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 19:22:22', 'AJM', '2004-04-17 18:37:17', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(enq)', 'Enquire Workflow Arc', 'Read', 'PROC', 'arc.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 19:24:21', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(del)', 'Delete Workflow Arc', 'Delete', 'PROC', 'arc.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 19:24:59', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(enq)', 'Enquire Workflow Arc', 'Read', 'PROC', 'arc.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 19:24:21', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_arc(enq)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(list)', 'List Workflow Arc', 'Arc', 'PROC', 'arc.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'place_type,place_id', 'Y', '2004-04-12 19:21:28', 'AJM', '2004-05-18 14:41:13', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(list)', 'List Workflow Arc', 'Arc', 'PROC', 'arc.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'place_type,place_id', 'Y', NULL, NULL, 'N', '2004-04-12 19:21:28', 'AJM', '2004-05-18 14:41:13', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_arc(list)', 'wf_arc(add)', '001', 'New', 'N', '2004-04-12 19:25:58', 'AJM', '2004-04-12 19:26:19', 'AJM'),
@@ -29,23 +32,23 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_arc(list)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(search)', 'Search Workflow Arc', 'Search', 'PROC', 'arc.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 19:25:33', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(search)', 'Search Workflow Arc', 'Search', 'PROC', 'arc.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 19:25:33', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_arc(search)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_arc(upd)', 'Update Workflow Arc', 'Update', 'PROC', 'arc.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 19:22:55', 'AJM', '2004-04-16 17:33:59', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_arc(upd)', 'Update Workflow Arc', 'Update', 'PROC', 'arc.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 19:22:55', 'AJM', '2004-04-16 17:33:59', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_case(enq)', 'Enquire Workflow Case', 'Read', 'PROC', 'case.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 11:00:14', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_case(enq)', 'Enquire Workflow Case', 'Read', 'PROC', 'case.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 11:00:14', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_case(enq)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_case(list)', 'List Workflow Case', 'Case', 'PROC', 'case.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', '2004-04-25 10:48:24', 'AJM', '2004-05-18 15:03:20', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_case(list)', 'List Workflow Case', 'Case', 'PROC', 'case.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', NULL, NULL, 'N', '2004-04-25 10:48:24', 'AJM', '2004-05-18 15:03:20', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_case(list)', 'wf_case(search)', '001', 'Search', 'N', '2004-04-25 11:10:50', 'AJM', '2004-04-25 11:10:57', 'AJM'),
@@ -53,13 +56,14 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 ('wf_case(list)', 'date(historic)', '003', 'Historic', 'N', '2004-04-25 11:44:54', 'AJM', '2004-04-25 11:45:10', 'AJM'),
 ('wf_case(list)', 'wf_case(enq)', '004', 'Read', 'Y', '2004-04-25 11:00:38', 'AJM', '2004-04-25 11:45:10', 'AJM'),
 ('wf_case(list)', 'wf_token(list)2', '005', 'Tokens', 'Y', '2004-04-26 15:03:43', 'AJM', NULL, NULL),
-('wf_case(list)', 'wf_workitem(list)2', '006', 'WorkItems', 'Y', '2004-04-26 15:04:01', 'AJM', NULL, NULL);
+('wf_case(list)', 'wf_workitem(list)2', '006', 'WorkItems', 'Y', '2004-04-26 15:04:01', 'AJM', NULL, NULL),
+('wf_case(list)', 'audit_dtl(list)3', '007', 'Audit Trail', 'Y', '2006-02-18 18:37:09', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_case(list)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_case(list)2', 'List Case within Workflow', 'Cases', 'PROC', 'case.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', '2004-04-26 14:03:18', 'AJM', '2004-05-18 14:53:15', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_case(list)2', 'List Case within Workflow', 'Cases', 'PROC', 'case.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', NULL, NULL, 'N', '2004-04-26 14:03:18', 'AJM', '2004-05-18 14:53:15', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_case(list)2', 'wf_case(enq)', '001', 'Read', 'Y', '2004-04-26 14:47:11', 'AJM', NULL, NULL),
@@ -67,31 +71,32 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 ('wf_case(list)2', 'date(current)', '003', 'Current', 'N', '2004-04-26 14:50:45', 'AJM', NULL, NULL),
 ('wf_case(list)2', 'date(historic)', '004', 'Historic', 'N', '2004-04-26 14:50:45', 'AJM', NULL, NULL),
 ('wf_case(list)2', 'wf_token(list)2', '005', 'Tokens', 'Y', '2004-04-26 15:02:36', 'AJM', NULL, NULL),
-('wf_case(list)2', 'wf_workitem(list)2', '006', 'WorkItems', 'Y', '2004-04-26 15:03:00', 'AJM', NULL, NULL);
+('wf_case(list)2', 'wf_workitem(list)2', '006', 'WorkItems', 'Y', '2004-04-26 15:03:00', 'AJM', NULL, NULL),
+('wf_case(list)2', 'audit_dtl(list)3', '007', 'Audit Trail', 'Y', '2006-02-18 18:37:27', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_case(list)2', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_case(search)', 'Search Workflow Case', 'Search', 'PROC', 'case.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 11:10:30', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_case(search)', 'Search Workflow Case', 'Search', 'PROC', 'case.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 11:10:30', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_case(search)', '2005-04-19 18:13:39', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(add)', 'Insert Workflow Place', 'Insert', 'PROC', 'place.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:53:01', 'AJM', '2004-04-17 18:37:23', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(add)', 'Insert Workflow Place', 'Insert', 'PROC', 'place.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 18:53:01', 'AJM', '2004-04-17 18:37:23', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(del)', 'Delete Workflow Place', 'Delete', 'PROC', 'place.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:56:06', 'AJM', '2004-04-12 18:57:24', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(del)', 'Delete Workflow Place', 'Delete', 'PROC', 'place.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 18:56:06', 'AJM', '2004-04-12 18:57:24', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(enq)', 'Enquire Workflow Place', 'Read', 'PROC', 'place.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:55:34', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(enq)', 'Enquire Workflow Place', 'Read', 'PROC', 'place.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 18:55:34', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_place(enq)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(list)', 'List Workflow Place', 'Place', 'PROC', 'place.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'place_type,place_id', 'Y', '2004-04-12 18:51:05', 'AJM', '2004-05-18 14:45:48', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(list)', 'List Workflow Place', 'Place', 'PROC', 'place.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'place_type,place_id', 'Y', NULL, NULL, 'N', '2004-04-12 18:51:05', 'AJM', '2004-05-18 14:45:48', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_place(list)', 'wf_place(add)', '001', 'New', 'N', '2004-04-12 18:57:46', 'AJM', '2004-04-12 19:06:49', 'AJM'),
@@ -104,29 +109,29 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_place(list)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(popup)', 'Choose Workflow Place', 'Choose', 'PROC', 'place.popup.php', 'N', 'POPUP', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:57:08', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(popup)', 'Choose Workflow Place', 'Choose', 'PROC', 'place.popup.php', 'N', 'POPUP1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-04-12 18:57:08', 'AJM', '2006-10-06 13:50:20', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_place(popup)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(search)', 'Search Workflow Place', 'Search', 'PROC', 'place.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:56:35', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(search)', 'Search Workflow Place', 'Search', 'PROC', 'place.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 18:56:35', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_place(search)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_place(upd)', 'Update Workflow Place', 'Update', 'PROC', 'place.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-12 18:54:45', 'AJM', '2004-04-16 17:34:03', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_place(upd)', 'Update Workflow Place', 'Update', 'PROC', 'place.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-12 18:54:45', 'AJM', '2004-04-16 17:34:03', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_token(enq)', 'Enquire Workflow Token', 'Read', 'PROC', 'token.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 12:44:38', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_token(enq)', 'Enquire Workflow Token', 'Read', 'PROC', 'token.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 12:44:38', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_token(enq)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_token(list)', 'List Workflow Token', 'Token', 'PROC', 'token.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'token_id', 'Y', '2004-04-25 12:11:01', 'AJM', '2004-05-18 15:04:07', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_token(list)', 'List Workflow Token', 'Token', 'PROC', 'token.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'token_id', 'Y', NULL, NULL, 'N', '2004-04-25 12:11:01', 'AJM', '2004-05-18 15:04:07', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_token(list)', 'wf_token(search)', '001', 'Search', 'N', '2004-04-25 12:45:41', 'AJM', '2004-04-25 12:45:48', 'AJM'),
@@ -135,8 +140,8 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_token(list)', '2005-04-19 18:13:52', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_token(list)2', 'List Token within Case', 'Tokens', 'PROC', 'token.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', '2004-04-26 15:01:10', 'AJM', '2004-05-18 14:49:00', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_token(list)2', 'List Token within Case', 'Tokens', 'PROC', 'token.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id', 'Y', NULL, NULL, 'N', '2004-04-26 15:01:10', 'AJM', '2004-05-18 14:49:00', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_token(list)2', 'wf_token(enq)', '001', 'Read', 'Y', '2004-04-26 15:11:37', 'AJM', NULL, NULL),
@@ -145,26 +150,26 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_token(list)2', '2005-04-19 18:13:53', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_token(search)', 'Search Workflow Token', 'Search', 'PROC', 'token.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 12:45:16', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_token(search)', 'Search Workflow Token', 'Search', 'PROC', 'token.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 12:45:16', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_token(search)', '2005-04-19 18:14:06', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(add)', 'Insert Workflow Transition', 'New', 'PROC', 'transition.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:50:38', 'AJM', '2004-04-17 18:37:27', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(add)', 'Insert Workflow Transition', 'New', 'PROC', 'transition.add.php', 'N', 'ADD2', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-11 19:50:38', 'AJM', '2004-04-17 18:37:27', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(del)', 'Delete Workflow Transition', 'Delete', 'PROC', 'transition.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:51:13', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(del)', 'Delete Workflow Transition', 'Delete', 'PROC', 'transition.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-11 19:51:13', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(enq)', 'Enquire Workflow Transition', 'Read', 'PROC', 'transition.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:51:55', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(enq)', 'Enquire Workflow Transition', 'Read', 'PROC', 'transition.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-11 19:51:55', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_transition(enq)', '2005-04-19 18:14:07', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(list)', 'List Workflow Transition', 'Transition', 'PROC', 'transition.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'transition_id', 'Y', '2004-04-11 19:15:08', 'AJM', '2004-05-18 14:44:31', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(list)', 'List Workflow Transition', 'Transition', 'PROC', 'transition.list.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'transition_id', 'Y', NULL, NULL, 'N', '2004-04-11 19:15:08', 'AJM', '2004-05-18 14:44:31', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_transition(list)', 'wf_transition(add)', '001', 'New', 'N', '2004-04-11 19:52:12', 'AJM', '2004-04-11 20:18:44', 'AJM'),
@@ -177,35 +182,35 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_transition(list)', '2005-04-19 18:14:07', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(popup)', 'Choose Workflow Transition', 'Choose', 'PROC', 'transition.popup.php', 'N', 'POPUP', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:20:53', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(popup)', 'Choose Workflow Transition', 'Choose', 'PROC', 'transition.popup.php', 'N', 'POPUP1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-04-11 19:20:53', 'AJM', '2006-10-06 13:50:39', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_transition(popup)', '2005-04-19 18:14:07', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(search)', 'Search Workflow Transition', 'Search', 'PROC', 'transition.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:20:12', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(search)', 'Search Workflow Transition', 'Search', 'PROC', 'transition.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-11 19:20:12', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_transition(search)', '2005-04-19 18:14:07', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_transition(upd)', 'Update Workflow Transition', 'Update', 'PROC', 'transition.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-11 19:19:31', 'AJM', '2004-04-16 17:34:08', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_transition(upd)', 'Update Workflow Transition', 'Update', 'PROC', 'transition.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-11 19:19:31', 'AJM', '2004-04-16 17:34:08', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(add)', 'Insert Workflow Process', 'New', 'PROC', 'workflow.add.php', 'N', 'ADD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:56:59', 'AJM', '2004-04-17 18:36:57', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(add)', 'Insert Workflow Process', 'New', 'PROC', 'workflow.add.php', 'N', 'ADD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:56:59', 'AJM', '2004-04-17 18:36:57', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(del)', 'Delete Workflow Process', 'Delete', 'PROC', 'workflow.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:58:01', 'AJM', '2004-04-11 15:53:50', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(del)', 'Delete Workflow Process', 'Delete', 'PROC', 'workflow.del.php', 'N', 'DEL1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:58:01', 'AJM', '2004-04-11 15:53:50', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(enq)', 'Enquire Workflow Process', 'Read', 'PROC', 'workflow.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:58:34', 'AJM', '2004-04-11 15:54:00', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(enq)', 'Enquire Workflow Process', 'Read', 'PROC', 'workflow.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:58:34', 'AJM', '2004-04-11 15:54:00', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workflow(enq)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(list)', 'List Workflow Process', 'Workflow', 'PROC', 'workflow.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'workflow_id', 'Y', '2004-04-03 23:56:07', 'AJM', '2004-05-18 15:05:43', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(list)', 'List Workflow Process', 'Workflow', 'PROC', 'workflow.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'workflow_id', 'Y', NULL, NULL, 'N', '2004-04-03 23:56:07', 'AJM', '2004-05-18 15:05:43', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_workflow(list)', 'wf_workflow(add)', '001', 'New', 'N', '2004-04-04 00:00:30', 'AJM', NULL, NULL),
@@ -226,61 +231,66 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workflow(list)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(popup)', 'Choose Workflow Process', 'Choose', 'PROC', 'workflow.popup.php', 'N', 'POPUP', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-04 00:00:09', 'AJM', '2004-04-11 15:54:24', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(popup)', 'Choose Workflow Process', 'Choose', 'PROC', 'workflow.popup.php', 'N', 'POPUP1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2004-04-04 00:00:09', 'AJM', '2006-10-06 13:50:58', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workflow(popup)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(search)', 'Search Workflow Process', 'Search', 'PROC', 'workflow.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:59:39', 'AJM', '2004-04-11 15:54:34', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(search)', 'Search Workflow Process', 'Search', 'PROC', 'workflow.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:59:39', 'AJM', '2004-04-11 15:54:34', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workflow(search)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(upd)', 'Update Workflow Process', 'Update', 'PROC', 'workflow.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:59:07', 'AJM', '2004-04-16 17:34:12', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(upd)', 'Update Workflow Process', 'Update', 'PROC', 'workflow.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:59:07', 'AJM', '2004-04-16 17:34:12', 'AJM');
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workflow(validate)', 'Validate Workflow Process', 'Validate', 'PROC', 'workflow.upd(validate).php', 'N', 'UPD4', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-16 20:18:20', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workflow(validate)', 'Validate Workflow Process', 'Validate', 'PROC', 'workflow.upd(validate).php', 'N', 'UPD4', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-16 20:18:20', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workflow(validate)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workitem(enq)', 'Enquire Workflow Workitem', 'Read', 'PROC', 'workitem.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 13:01:11', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workitem(enq)', 'Enquire Workflow Workitem', 'Read', 'PROC', 'workitem.enq.php', 'N', 'ENQ1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 13:01:11', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workitem(enq)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workitem(list)', 'List Workflow Workitem', 'Workitem', 'PROC', 'workitem.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id,workitem_id', 'Y', '2004-04-25 13:00:42', 'AJM', '2004-05-18 15:11:37', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workitem(list)', 'List Workflow Workitem', 'Workitem', 'PROC', 'workitem.list.php', 'N', 'LIST1', 'WORKFLOW', NULL, NULL, NULL, NULL, 'case_id,workitem_id', 'Y', NULL, NULL, 'N', '2004-04-25 13:00:42', 'AJM', '2004-05-18 15:11:37', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_workitem(list)', 'wf_workitem(search)', '001', 'Search', 'N', '2004-04-25 13:02:13', 'AJM', '2004-04-25 13:02:21', 'AJM'),
-('wf_workitem(list)', 'wf_workitem(enq)', '002', 'Read', 'Y', '2004-04-25 13:02:13', 'AJM', '2004-04-25 13:02:21', 'AJM');
+('wf_workitem(list)', 'wf_workitem(enq)', '002', 'Read', 'Y', '2004-04-25 13:02:13', 'AJM', '2004-04-25 13:02:21', 'AJM'),
+('wf_workitem(list)', 'wf_workitem(upd)', '003', 'Update', 'Y', '2006-04-06 18:22:48', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workitem(list)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workitem(list)2', 'List Workitem within Case', 'WorkItems', 'PROC', 'workitem.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'workitem_id', 'Y', '2004-04-26 15:01:56', 'AJM', '2004-05-18 14:54:02', 'AJM');
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workitem(list)2', 'List Workitem within Case', 'WorkItems', 'PROC', 'workitem.list2.php', 'N', 'LIST2', 'WORKFLOW', NULL, NULL, NULL, NULL, 'workitem_id', 'Y', NULL, NULL, 'N', '2004-04-26 15:01:56', 'AJM', '2004-05-18 14:54:02', 'AJM');
 
 REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('wf_workitem(list)2', 'wf_workitem(enq)', '001', 'Read', 'Y', '2004-04-26 15:20:09', 'AJM', NULL, NULL),
-('wf_workitem(list)2', 'wf_workitem(search)', '002', 'Search', 'N', '2004-04-26 15:20:09', 'AJM', NULL, NULL);
+('wf_workitem(list)2', 'wf_workitem(search)', '002', 'Search', 'N', '2004-04-26 15:20:09', 'AJM', NULL, NULL),
+('wf_workitem(list)2', 'wf_workitem(upd)', '003', 'Update', 'Y', '2006-04-06 18:23:15', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workitem(list)2', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('wf_workitem(search)', 'Search Workflow Workitem', 'Search', 'PROC', 'workitem.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-25 13:01:38', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workitem(search)', 'Search Workflow Workitem', 'Search', 'PROC', 'workitem.search.php', 'N', 'SRCH', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-25 13:01:38', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'wf_workitem(search)', '2005-04-19 18:14:28', 'AJM', NULL, NULL);
 
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `dialog_type_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('workflow', 'Workflow', 'Workflow', 'MENU', 'menu.php', 'N', 'MENU', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', '2004-04-03 23:43:28', 'AJM', NULL, NULL);
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('wf_workitem(upd)', 'Update Workflow Workitem', 'Update', 'PROC', 'workitem.upd.php', 'N', 'UPD1', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-04-06 18:22:06', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('workflow', 'Workflow', 'Workflow', 'MENU', 'menu.php', 'N', 'MENU', 'WORKFLOW', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-04-03 23:43:28', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('workflow', 'wf_workflow(list)', '001', 'Workflow', '2004-04-04 00:01:23', 'AJM', '2004-04-25 10:40:41', 'AJM'),
@@ -430,6 +440,9 @@ Refer to <a href=\"%root%/wf_workitem(list)2.html\">List Workitem within Case</a
 
 Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
 
-Refer to <a href=\"%root%/wf_workitem(search).html\">Search Workflow Workitem</a> for full details.', '2005-07-02 17:03:48', 'AJM', NULL, NULL);
+Refer to <a href=\"%root%/wf_workitem(search).html\">Search Workflow Workitem</a> for full details.', '2005-07-02 17:03:48', 'AJM', NULL, NULL),
+('wf_workitem(upd)', 'This will display the contents of a record from the WF_WORKITEM table and allow certain values to be changed.
+
+Refer to <a href=\"%root%/wf_workitem(upd).html\">Update Workflow Workitem</a> for full details.', '2006-04-07 11:49:24', 'AJM', NULL, NULL);
 
 -- finished

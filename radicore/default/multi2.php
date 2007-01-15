@@ -17,7 +17,7 @@ $outer_sql_where   = null;
 $outer_sql_groupby = null;
 $outer_sql_having  = null;
 $outer_sql_orderby = null;
-$outer_sql_sort_table = null;
+$outer_sql_orderby_table = null;
 
 $inner_sql_select   = null;
 $inner_sql_from     = null;

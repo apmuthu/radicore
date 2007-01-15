@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions which jump between one key and another in an
@@ -78,7 +78,7 @@ function findJump ($index, $prev_index)
 
     if (isset($script_vars['jumparray'])) {
         $jumparray = $script_vars['jumparray'];
-        // note: $jumparray may contain more than one 'from/to' pairs
+        // note: $jumparray may contain more than one 'from/to' pair
         if (count($jumparray) > 0) {
             // see if there is an entry which covers the current $index
             foreach ($jumparray as $jump) {

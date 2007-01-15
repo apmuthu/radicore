@@ -31,9 +31,7 @@ class dict_column extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        global $mode;
-        if ($mode != 'search') {
+        if ($GLOBALS['mode'] != 'search') {
             // these fields are 'noedit' when not in search mode
             $this->fieldspec['col_values']['noedit']            = 'y';
             $this->fieldspec['col_precision']['noedit']         = 'y';
@@ -42,13 +40,10 @@ class dict_column extends Default_Table
             $this->fieldspec['col_key']['noedit']               = 'y';
             $this->fieldspec['col_unsigned']['noedit']          = 'y';
             $this->fieldspec['col_auto_increment']['noedit']    = 'y';
-            $this->fieldspec['col_default']['noedit']           = 'y';
-        } // if
-
-        if ($GLOBALS['mode'] != 'search') {
-			// do not replace database id with textual description
+            $this->fieldspec['col_array_type']['noedit']        = 'y';
+            // do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
-		} // if
+        } // if
 
         return $fieldarray;
 
@@ -59,24 +54,27 @@ class dict_column extends Default_Table
     // Make field visible if it is valid for this column type, and
     // initialise the value if it is not.
     {
-        //DebugBreak();
         $type     = $fieldarray['col_type'];
         $colspecs = $this->_cm_getColSpecs($type, $fieldarray);
 
-        if (eregi('(enum|set)', $type)) {
+        if (eregi('^(enum|set)$', $type)) {
             unset($this->fieldspec['col_values']['nodisplay']);
         } else {
             $this->fieldspec['col_values']['nodisplay'] = 'y';
         } // if
 
+        if (eregi('^(timestamp)$', $type)) {
+            $fieldarray['col_auto_increment'] = 'Y';
+        } // if
+
+        if (eregi('^(array|varray)$', $type)) {
+            unset($this->fieldspec['col_array_type']['nodisplay']);
+        } else {
+            $this->fieldspec['col_array_type']['nodisplay'] = 'y';
+        } // if
+
         if (isset($colspecs['user_size'])) {
             unset($this->fieldspec['user_size']['nodisplay']);
-        } else {
-            if ($type == 'boolean') {
-                // leave user_size alone
-            } else {
-                $fieldarray['user_size'] = null;
-            } // if
         } // if
 
         if (isset($colspecs['col_auto_increment'])) {
@@ -99,6 +97,8 @@ class dict_column extends Default_Table
             unset($this->fieldspec['is_required']['nodisplay']);
             if (isset($fieldarray['col_null']) and $fieldarray['col_null'] == 'N') {
             	$this->fieldspec['is_required']['noedit'] = 'Y';
+            } else {
+                unset($this->fieldspec['is_required']['noedit']);
             } // if
         } else {
             $fieldarray['is_required'] = $this->fieldspec['is_required']['false'];
@@ -108,10 +108,10 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['noedit_nodisplay'] = null;
         } // if
-        if (isset($colspecs['nosearch'])) {
-            unset($this->fieldspec['nosearch']['nodisplay']);
+        if (isset($colspecs['no_search'])) {
+            unset($this->fieldspec['no_search']['nodisplay']);
         } else {
-            $fieldarray['nosearch'] = null;
+            $fieldarray['no_search'] = null;
         } // if
         if (isset($colspecs['upper_lowercase'])) {
             unset($this->fieldspec['upper_lowercase']['nodisplay']);
@@ -123,16 +123,23 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['is_password'] = $this->fieldspec['is_password']['false'];
         } // if
-        if (isset($colspecs['auto_insert'])) {
-            unset($this->fieldspec['auto_insert']['nodisplay']);
+
+        if ($fieldarray['col_key'] == 'PRI' OR $fieldarray['col_key'] == 'UNI') {
+        	$fieldarray['auto_insert'] = $this->fieldspec['auto_insert']['false'];
+        	$fieldarray['auto_update'] = $this->fieldspec['auto_update']['false'];
         } else {
-            $fieldarray['auto_insert'] = $this->fieldspec['auto_insert']['false'];
+            if (isset($colspecs['auto_insert'])) {
+                unset($this->fieldspec['auto_insert']['nodisplay']);
+            } else {
+                $fieldarray['auto_insert'] = $this->fieldspec['auto_insert']['false'];
+            } // if
+            if (isset($colspecs['auto_update'])) {
+                unset($this->fieldspec['auto_update']['nodisplay']);
+            } else {
+                $fieldarray['auto_update'] = $this->fieldspec['auto_update']['false'];
+            } // if
         } // if
-        if (isset($colspecs['auto_update'])) {
-            unset($this->fieldspec['auto_update']['nodisplay']);
-        } else {
-            $fieldarray['auto_update'] = $this->fieldspec['auto_update']['false'];
-        } // if
+
         if (isset($colspecs['minvalue'])) {
             unset($this->fieldspec['user_minvalue']['nodisplay']);
         } else {
@@ -158,8 +165,9 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['infinityisnull'] = $this->fieldspec['infinityisnull']['false'];
         } // if
-        if (isset($colspecs['subtype'])) {
-            unset($this->fieldspec['subtype']['nodisplay']);
+
+        if (isset($colspecs['col_subtype'])) {
+            unset($this->fieldspec['col_subtype']['nodisplay']);
             if (isset($colspecs['image_width'])) {
                 unset($this->fieldspec['image_width']['nodisplay']);
             } else {
@@ -171,7 +179,7 @@ class dict_column extends Default_Table
                 $fieldarray['image_height'] = null;
             } // if
         } else {
-            $fieldarray['subtype'] = null;
+            $fieldarray['col_subtype'] = null;
             $fieldarray['image_width'] = null;
             $fieldarray['image_height'] = null;
         } // if
@@ -197,6 +205,11 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['optionlist'] = null;
         } // if
+        if (isset($colspecs['checkbox_label'])) {
+            unset($this->fieldspec['checkbox_label']['nodisplay']);
+        } else {
+            $fieldarray['checkbox_label'] = null;
+        } // if
         if (isset($colspecs['task_id'])) {
             unset($this->fieldspec['task_id']['nodisplay']);
         } else {
@@ -212,6 +225,11 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['align_hv'] = null;
         } // if
+        if (isset($colspecs['align_lr'])) {
+            unset($this->fieldspec['align_lr']['nodisplay']);
+        } else {
+            $fieldarray['align_lr'] = null;
+        } // if
         if (isset($colspecs['multi_cols'])) {
             unset($this->fieldspec['multi_cols']['nodisplay']);
         } else {
@@ -223,31 +241,24 @@ class dict_column extends Default_Table
             $fieldarray['multi_rows'] = null;
         } // if
 
-        //DebugBreak();
-        // column type may be changed in rare circumstances
-        $this->fieldspec['col_type']['noedit'] = 'y';
-        if (eregi('(char|tinyint|boolean)', $fieldarray['col_type'])) {
-            if ($fieldarray['col_type'] == 'boolean') {
-                // set this flag for future reference
-                $fieldarray['is_boolean'] = $this->fieldspec['is_boolean']['true'];
-            } elseif ($fieldarray['user_size'] == 1) {
-                // provide the option to convert this field to BOOLEAN
-                unset($this->fieldspec['col_type']['noedit']);
-                $array = $this->lookup_data['col_type'];
-                foreach ($array as $id => $value) {
-                	if ($id == $fieldarray['col_type'] or $id == 'boolean') {
-                	    // leave it in
-                    } else {
-                        // remove it
-                        unset($array[$id]);
-                	} // if
-                } // foreach
-                $this->lookup_data['col_type'] = $array;
-            } else {
-                $fieldarray['is_boolean']    = $this->fieldspec['is_boolean']['false'];
-                $fieldarray['boolean_true']  = null;
-                $fieldarray['boolean_false'] = null;
-            } // if
+        // some columns may offer a choice of types
+        $col_types = $this->getValRep('col_type');
+        if (strpos($fieldarray['col_type_native'], ',')) {
+        	$type_array = explode(',', $fieldarray['col_type_native']);
+        	// remove entries from $col_types which are not in $type_array
+        	foreach ($col_types as $key => $value) {
+        		if (!in_array($key, $type_array)) {
+            	    unset($col_types[$key]);
+            	} // if
+        	} // foreach
+        	unset($this->fieldspec['col_type']['noedit']);
+        } else {
+            $this->fieldspec['col_type']['noedit'] = 'y';
+        } // if
+        $this->lookup_data['col_type'] = $col_types;
+
+        if ($fieldarray['col_type'] == 'boolean') {
+            $fieldarray['is_boolean'] = $this->fieldspec['is_boolean']['true'];
         } else {
             $fieldarray['is_boolean']    = $this->fieldspec['is_boolean']['false'];
             $fieldarray['boolean_true']  = null;
@@ -262,7 +273,8 @@ class dict_column extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
+        $colspecs = $this->_ddl_getColumnSpecs();
+
         if (!is_True($fieldarray['col_null'])) {
             if (!is_True($fieldarray['is_required'])) {
                 // "If field is NOT NULL then 'is required' must be set"
@@ -276,52 +288,64 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['multi_rows'])) {
-            if ($fieldarray['control'] != 'multiline') {
-                // "Invalid unless CONTROL = 'multi-line'"
-                $this->errors['multi_rows'] = getLanguageText('e0002');
+            if (!eregi('(multiline|dropdown|multidrop)', $fieldarray['control'])) {
+                // "Invalid unless CONTROL = 'multi-line', 'dropdown' or 'dropdown-multi'"
+                $this->errors['multi_rows'] = getLanguageText('e0035');
             } // if
         } // if
 
         if (isset($fieldarray['col_type'])) {
             if ($fieldarray['col_type'] == 'boolean') {
             	if (isset($fieldarray['control'])) {
-            	    if ($fieldarray['control'] == 'dropdown' or $fieldarray['control'] == 'radiogroup') {
+            	    if (eregi('(dropdown|radio|checkbox)', $fieldarray['control'])) {
             	    	// this is valid
             	    } else {
-            	        // "Can only be 'dropdown' or 'radiogroup' if TYPE = 'boolean'"
+            	        // "If TYPE = 'boolean' CONTROL can only be 'dropdown' or 'radiogroup' or 'checkbox'"
             	        $this->errors['control'] = getLanguageText('e0003');
             	    } // if
+            	} else {
+            	    // default to 'radio group'
+            	    $fieldarray['control'] = 'radio';
             	} // if
             } // if
         } // if
 
-        if (isset($fieldarray['subtype'])) {
-            switch ($fieldarray['subtype']) {
+        if (isset($fieldarray['col_subtype'])) {
+            switch ($fieldarray['col_subtype']) {
             	case 'filename':
                     ;
                     break;
                 case 'image':
             		if ($fieldarray['control'] != 'filepicker') {
             		    // "Invalid unless CONTROL = 'filepicker'"
-                        $this->errors['subtype'] = getLanguageText('e0004');
+                        $this->errors['col_subtype'] = getLanguageText('e0004');
                     } // if
             		break;
             	case 'email':
             		;
             		break;
             	default:
-            	    // "Unknown value for 'subtype'"
-            		$this->errors['subtype'] = getLanguageText('e0005', $fieldarray['subtype']);
+            	    // "Unknown value for 'col_subtype'"
+            		$this->errors['col_subtype'] = getLanguageText('e0005', $fieldarray['col_subtype']);
             } // switch
         } // if
+
+        if (isset($fieldarray['custom_validation'])) {
+            $array = explode('/', $fieldarray['custom_validation']);
+            if (count($array) <> 3) {
+                // "Invalid format for CUSTOM_VALIDATION - must be 'file/class/method'"
+                $this->errors['custom_validation'] = getLanguageText('e0038');
+            } // if
+        } // if
+
         if (isset($fieldarray['image_width'])) {
-            if ($fieldarray['subtype'] != 'image') {
+            if ($fieldarray['col_subtype'] != 'image') {
                 // "Invalid unless SUBTYPE = 'image'"
                 $this->errors['image_width'] = getLanguageText('e0006');
             } // if
         } // if
         if (isset($fieldarray['image_height'])) {
-            if ($fieldarray['subtype'] != 'image') {
+            if ($fieldarray['col_subtype'] != 'image') {
                 // "Invalid unless SUBTYPE = 'image'"
                 $this->errors['image_height'] = getLanguageText('e0006');
             } // if
@@ -331,6 +355,20 @@ class dict_column extends Default_Table
             if ($fieldarray['control'] != 'radio') {
                 // "Invalid unless CONTROL = 'radio group'"
                 $this->errors['align_hv'] = getLanguageText('e0007');
+            } // if
+        } // if
+        if (isset($fieldarray['align_lr'])) {
+            if (eregi('(radio|checkbox)', $fieldarray['control'])) {
+                // this is valid
+            } else {
+                // "Invalid unless CONTROL = 'radio group' or 'checkbox'"
+                $this->errors['align_lr'] = getLanguageText('e0030');
+            } // if
+            if ($fieldarray['control'] == 'checkbox') {
+                if (empty($fieldarray['checkbox_label'])) {
+                	// "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
+                    $this->errors['align_lr'] = getLanguageText('e0033');
+                } // if
             } // if
         } // if
         if (isset($fieldarray['foreign_field'])) {
@@ -348,11 +386,17 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['optionlist'])) {
-            if (eregi('(dropdown|radio)', $fieldarray['control'])) {
+            if (eregi('(dropdown|multidrop|radio)', $fieldarray['control'])) {
                 // this is valid
             } else {
-                // "Invalid unless CONTROL = 'dropdown' or 'radio group'"
+                // "Invalid unless CONTROL = 'dropdown', 'multidropdown' or 'radio group'"
                 $this->errors['optionlist'] = getLanguageText('e0010');
+            } // if
+        } // if
+        if (isset($fieldarray['checkbox_label'])) {
+            if ($fieldarray['control'] != 'checkbox') {
+                // "Invalid unless CONTROL = 'checkbox'"
+                $this->errors['checkbox_label'] = getLanguageText('e0032');
             } // if
         } // if
 
@@ -362,21 +406,35 @@ class dict_column extends Default_Table
             		if (!isset($fieldarray['optionlist'])) {
             		    if ($fieldarray['col_type'] == 'boolean') {
             		        // allowed to be empty, will default to 'boolean'
+            		        $fieldarray['optionlist'] = 'boolean';
             		    } else {
             		        // "Required if CONTROL = 'dropdown'"
                             $this->errors['optionlist'] = getLanguageText('e0011');
             		    } // if
-                    } // if
+            		} // if
+            		break;
+            	case 'multidrop':
+            		if (!isset($fieldarray['optionlist'])) {
+            		    // "Required if CONTROL = 'dropdown' or 'multidrop'"
+                        $this->errors['optionlist'] = getLanguageText('e0011');
+            		} // if
             		break;
             	case 'radio':
             		if (!isset($fieldarray['optionlist'])) {
             		    if ($fieldarray['col_type'] == 'boolean') {
             		        // allowed to be empty, will default to 'boolean'
+            		        $fieldarray['optionlist'] = 'boolean';
             		    } else {
             		        // "Required if CONTROL = 'radio group'"
             		        $this->errors['optionlist'] = getLanguageText('e0012');
             		    } // if
                     } // if
+            		break;
+            	case 'checkbox':
+            		if ($fieldarray['col_type'] != 'boolean') {
+        		        // "CONTROL cannot be 'checkbox' unless TYPE is 'boolean'"
+        		        $this->errors['control'] = getLanguageText('e0031');
+        		    } // if
             		break;
             	case 'multiline':
             		if (!isset($fieldarray['multi_cols'])) {
@@ -404,6 +462,13 @@ class dict_column extends Default_Table
                         $this->errors['task_id'] = getLanguageText('e0015');
                     } // if
             		break;
+            	case 'hyperlink':
+            	    $type = $fieldarray['col_type'];
+            	    if ($colspecs[$type]['type'] != 'string') {
+            		    // "CONTROL cannot be 'hyperlink' unless TYPE is 'string'"
+                        $this->errors['control'] = getLanguageText('e0034');
+                    } // if
+            	    break;
             	default:
             	    // "Unknown value for 'control'"
             		$this->errors['control'] = getLanguageText('e0016', $fieldarray['control']);
@@ -421,27 +486,36 @@ class dict_column extends Default_Table
     function _cm_getColSpecs ($type, $fieldarray)
     // get column specifications.
     {
-        //DebugBreak();
         // start with standard column specs for this type from the DBMS
+        if (strpos($type, ',')) {
+            // contains comma-separated list, so extract first entry
+        	list($type) = explode(',', $type);
+        } // if
         $colspecs = $this->colspecs[$type];
 
         // insert additional specifications based on column type
 
         // these are universal
-        $colspecs['noedit_nodisplay'] = 'y';
-        $colspecs['nosearch']         = 'y';
-        $colspecs['noaudit']          = 'y';
-        $colspecs['is_required']      = 'y';
+        $colspecs['noedit_nodisplay']  = 'y';
+        $colspecs['no_search']         = 'y';
+        $colspecs['no_audit']          = 'y';
+        $colspecs['is_required']       = 'y';
+        $colspecs['custom_validation'] = 'y';
 
         // these are dependant on the column type
         switch ($colspecs['type']) {
         	case 'boolean':
-        		$colspecs['boolean_true']  = '?';
-                $colspecs['boolean_false'] = '?';
-                $colspecs['is_required']   = 'y';
-                $colspecs['control']       = '?';
-                $colspecs['optionlist']    = '?';
+        		$colspecs['boolean_true']   = '?';
+                $colspecs['boolean_false']  = '?';
+                $colspecs['is_required']    = 'y';
+                $colspecs['control']        = '?';
+                $colspecs['optionlist']     = '?';
+                $colspecs['align_lr']       = '?';
+                $colspecs['checkbox_label'] = '?';
         		break;
+        	case 'binary':
+        	    $colspecs['user_size']           = 'y';
+        	    break;
             case 'string':
                 $colspecs['user_size']           = 'y';
                 if ($fieldarray['user_size'] <= 255) {
@@ -449,7 +523,7 @@ class dict_column extends Default_Table
                     $colspecs['is_password']     = 'y';
                     $colspecs['auto_insert']     = 'y';
                     $colspecs['auto_update']     = 'y';
-                    $colspecs['subtype']         = 'y';
+                    $colspecs['col_subtype']     = 'y';
                     $colspecs['image_width']     = '?';
                     $colspecs['image_height']    = '?';
                     $colspecs['control']         = '?';
@@ -457,6 +531,7 @@ class dict_column extends Default_Table
                     $colspecs['task_id']         = '?';
                     $colspecs['foreign_field']   = '?';
                     $colspecs['align_hv']        = '?';
+                    $colspecs['align_lr']        = '?';
                     $colspecs['multi_cols']      = '?';
                     $colspecs['multi_rows']      = '?';
                 } else {
@@ -464,6 +539,13 @@ class dict_column extends Default_Table
                     $colspecs['multi_cols']      = '?';
                     $colspecs['multi_rows']      = '?';
                 } // if
+                break;
+            case 'array':
+            case 'set':
+            case 'varray':
+                $colspecs['control']        = '?';
+                $colspecs['optionlist']     = '?';
+                $colspecs['multi_rows']     = '?';
                 break;
         	case 'date':
                 $colspecs['user_size']      = 'y';
@@ -482,7 +564,22 @@ class dict_column extends Default_Table
                 $colspecs['auto_insert']    = 'y';
                 $colspecs['auto_update']    = 'y';
                 break;
-        	case 'numeric':
+        	case 'timestamp':
+                $colspecs['auto_insert']    = 'y';
+                $colspecs['auto_update']    = 'y';
+                break;
+        	case 'interval':
+        	    $colspecs['user_size']      = 'y';
+        	    break;
+            case 'numeric':
+            case 'number':
+        	    $colspecs['user_size']        = 'y';
+                $colspecs['col_unsigned']     = 'y';
+                $colspecs['col_zerofill_bwz'] = 'y';
+                $colspecs['col_precision']    = '?';
+                $colspecs['col_scale']        = '?';
+                $colspecs['minvalue']         = '?';
+                $colspecs['maxvalue']         = '?';
         	case 'float':
                 $colspecs['user_size']        = 'y';
                 $colspecs['col_unsigned']     = 'y';
@@ -500,19 +597,31 @@ class dict_column extends Default_Table
                 $colspecs['control']            = '?';
                 $colspecs['optionlist']         = '?';
                 $colspecs['align_hv']           = '?';
+                $colspecs['align_lr']           = '?';
                 $colspecs['task_id']            = '?';
                 $colspecs['foreign_field']      = '?';
                 $colspecs['minvalue']           = '?';
                 $colspecs['maxvalue']           = '?';
                 break;
         	case 'enum':
-            case 'set':
-                $colspecs['control']          = '?';
+        	    $colspecs['control']          = '?';
                 $colspecs['optionlist']       = '?';
                 break;
-        	default:
+            default:
         		break;
         } // switch
+
+        if (isset($fieldarray['control'])) {
+        	// these are dependant on the control type
+            switch ($fieldarray['control']) {
+            	case 'dropdown':
+            	case 'multidrop':
+                    $colspecs['multi_rows']       = 'y';
+            	    break;
+            	default:
+            	    break;
+            } // switch
+        } // if
 
         return $colspecs;
 
@@ -529,6 +638,9 @@ class dict_column extends Default_Table
             // get arrays to put into LOOKUP_DATA
             $array = $this->getValRep('align_hv');
             $this->lookup_data['align_hv'] = $array;
+
+            $array = $this->getValRep('align_lr');
+            $this->lookup_data['align_lr'] = $array;
 
             $array = $this->getValRep('auto_insert');
             $this->lookup_data['auto_insert'] = $array;
@@ -569,20 +681,20 @@ class dict_column extends Default_Table
             $array = $this->getValRep('noedit_nodisplay');
             $this->lookup_data['noedit_nodisplay'] = $array;
 
-            $array = $this->getValRep('noaudit');
-            $this->lookup_data['noaudit'] = $array;
+            $array = $this->getValRep('no_audit');
+            $this->lookup_data['no_audit'] = $array;
 
-            $array = $this->getValRep('nosearch');
-            $this->lookup_data['nosearch'] = $array;
+            $array = $this->getValRep('no_search');
+            $this->lookup_data['no_search'] = $array;
 
-            $array = $this->getValRep('subtype');
-            $this->lookup_data['subtype'] = $array;
+            $array = $this->getValRep('col_subtype');
+            $this->lookup_data['col_subtype'] = $array;
 
             $array = $this->getValRep('upper_lowercase');
             $this->lookup_data['upper_lowercase'] = $array;
 
             // get contents of foreign table DATABASE and add as a LOOKUP list
-            require_once 'dict_database.class.inc';
+            //require_once 'classes/dict_database.class.inc';
             $dbobject =& singleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
@@ -593,11 +705,15 @@ class dict_column extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where=null)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         if ($item == 'align_hv') {
             return getLanguageArray('align_hv');
+        } // if
+
+        if ($item == 'align_lr') {
+            return getLanguageArray('align_lr');
         } // if
 
         if ($item == 'auto_insert') {
@@ -673,16 +789,16 @@ class dict_column extends Default_Table
             return getLanguageArray('noedit_nodisplay');
         } // if
 
-        if ($item == 'noaudit') {
-            return getLanguageArray('noaudit');
+        if ($item == 'no_audit') {
+            return getLanguageArray('no_audit');
         } // if
 
-        if ($item == 'nosearch') {
-            return getLanguageArray('nosearch');
+        if ($item == 'no_search') {
+            return getLanguageArray('no_search');
         } // if
 
-        if ($item == 'subtype') {
-            return getLanguageArray('subtype');
+        if ($item == 'col_subtype') {
+            return getLanguageArray('col_subtype');
         } // if
 
         if ($item == 'upper_lowercase') {
@@ -692,6 +808,22 @@ class dict_column extends Default_Table
         return array();
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        // customisable code goes here
+        if ($GLOBALS['mode'] == 'search') {
+        	$this->colspecs = $this->_ddl_getColumnSpecs();
+        	if (!array_key_exists('array', $this->colspecs)) {
+        		$this->fieldspec['col_array_type']['nodisplay'] = 'y';
+        	} // if
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
 
     // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
@@ -706,11 +838,14 @@ class dict_column extends Default_Table
         		$where = "database_id='{$fieldarray['database_id']}'";
         		break;
         	default:
-        		;
+        		$where = '';
         } // switch
 
-        // ensure that only one entry can be selected
-        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
@@ -721,15 +856,18 @@ class dict_column extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
-        // make all optional columns invisible
+        if (eregi('^(csv|pdf|batch)', strtolower($GLOBALS['mode']))) {
+            return $rowdata;  // do nothing
+        } // if
+
+        // make all optional columns invisible (this may be reversed later)
         $this->fieldspec['user_size']['nodisplay']          = 'y';
         $this->fieldspec['col_auto_increment']['nodisplay'] = 'y';
         $this->fieldspec['col_unsigned']['nodisplay']       = 'y';
         $this->fieldspec['col_zerofill_bwz']['nodisplay']   = 'y';
         $this->fieldspec['is_required']['nodisplay']        = 'y';
         $this->fieldspec['noedit_nodisplay']['nodisplay']   = 'y';
-        $this->fieldspec['nosearch']['nodisplay']           = 'y';
+        $this->fieldspec['no_search']['nodisplay']          = 'y';
         $this->fieldspec['upper_lowercase']['nodisplay']    = 'y';
         $this->fieldspec['is_password']['nodisplay']        = 'y';
         $this->fieldspec['auto_insert']['nodisplay']        = 'y';
@@ -739,19 +877,22 @@ class dict_column extends Default_Table
         $this->fieldspec['col_precision']['nodisplay']      = 'y';
         $this->fieldspec['col_scale']['nodisplay']          = 'y';
         $this->fieldspec['infinityisnull']['nodisplay']     = 'y';
-        $this->fieldspec['subtype']['nodisplay']            = 'y';
+        $this->fieldspec['col_subtype']['nodisplay']        = 'y';
         $this->fieldspec['image_width']['nodisplay']        = 'y';
         $this->fieldspec['image_height']['nodisplay']       = 'y';
         $this->fieldspec['boolean_true']['nodisplay']       = 'y';
         $this->fieldspec['boolean_false']['nodisplay']      = 'y';
         $this->fieldspec['control']['nodisplay']            = 'y';
         $this->fieldspec['optionlist']['nodisplay']         = 'y';
+        $this->fieldspec['checkbox_label']['nodisplay']     = 'y';
         $this->fieldspec['task_id']['nodisplay']            = 'y';
         $this->fieldspec['foreign_field']['nodisplay']      = 'y';
         $this->fieldspec['align_hv']['nodisplay']           = 'y';
+        $this->fieldspec['align_lr']['nodisplay']           = 'y';
         $this->fieldspec['value_false']['nodisplay']        = 'y';
         $this->fieldspec['multi_cols']['nodisplay']         = 'y';
         $this->fieldspec['multi_rows']['nodisplay']         = 'y';
+        $this->fieldspec['col_array_type']['nodisplay']     = 'y';
 
         if (count($rowdata) == 1) {
             $rowdata[0] = $this->_cm_checkColumnType($rowdata[0]);
@@ -762,13 +903,16 @@ class dict_column extends Default_Table
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-        // start with standard column specs for this DBMS
-        $this->colspecs = $this->_ddl_getColumnSpecs();
+        if (empty($this->colspecs)) {
+        	// start with standard column specs for this DBMS
+            $this->colspecs = $this->_ddl_getColumnSpecs();
+        } // if
 
         // obtain any lookup data
         $array = $this->_cm_getExtraData($where, $where_array);
@@ -781,7 +925,27 @@ class dict_column extends Default_Table
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update.
     {
-        //DebugBreak();
+        $type = $fieldarray['col_type'];
+
+        if ($fieldarray['col_type'] != $originaldata['col_type']) {
+        	// column type has changed, so update maximum size
+        	if (array_key_exists($type, $this->colspecs)) {
+        	    if (array_key_exists('size', $this->colspecs[$type])) {
+        	        if ($fieldarray['col_maxsize'] > $this->colspecs[$type]['size']) {
+        	        	$fieldarray['col_maxsize'] = $this->colspecs[$type]['size'];
+                    	$fieldarray['user_size']   = $this->colspecs[$type]['size'];
+        	        } // if
+        	    } // if
+        	} // if
+        } // if
+
+        if ($fieldarray['col_maxsize'] == 0) {
+        	$fieldarray['col_maxsize'] = $this->colspecs[$type]['size'];
+        } // if
+        if ($fieldarray['user_size'] == 0) {
+        	$fieldarray['user_size'] = $fieldarray['col_maxsize'];
+        } // if
+
         if (strlen($fieldarray['user_size']) > 0) {
             $user_value = (float)$fieldarray['user_size'];
             $col_value  = (float)$fieldarray['col_maxsize'];

@@ -1,0 +1,3 @@
+This will display the contents of a record from the WF_WORKITEM table and allow certain values to be changed.
+
+Refer to <a href="%root%/wf_workitem(upd).html">Update Workflow Workitem</a> for full details.

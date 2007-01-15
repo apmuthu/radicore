@@ -5,9 +5,10 @@ $structure['tables']['main'] = 'survey_answer_hdr';
 
 $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 90);
 $structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 150);
+$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => '*');
+$structure['main']['columns'][] = array('width' => 50);
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('user_name' => 'User Name');

@@ -10,7 +10,7 @@
 $outer_table = '#outer_table#';      		    // name of outer table
 $link_table  = '#link_table#';      	        // name of link table
 $inner_table = '#inner_table#';                 // name of inner table
-$screen      = '#link_table#.link.screen.inc';  // file identifying screen structure
+$screen      = '#link_table#.link1.screen.inc';  // file identifying screen structure
 
 // customise the SQL SELECT statement
 $outer_sql_select  = null;
@@ -19,7 +19,7 @@ $outer_sql_where   = null;
 $outer_sql_groupby = null;
 $outer_sql_having  = null;
 $outer_sql_orderby = null;
-$outer_sql_sort_table = null;
+$outer_sql_orderby_table = null;
 
 $link_sql_select  = null;
 $link_sql_from    = null;

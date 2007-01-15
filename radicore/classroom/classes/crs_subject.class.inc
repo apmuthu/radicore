@@ -25,7 +25,7 @@ class crs_subject extends Default_Table
     } // crs_subject
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         //DebugBreak();
@@ -37,12 +37,10 @@ class crs_subject extends Default_Table
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 
-            $array[''] = ' ';   // start with blank entry
-
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
                 $rowvalues = array_values($rowdata);
-                $array[$rowvalues[0]] = "$rowvalues[1]";
+                $array[$rowvalues[0]] = $rowvalues[1];
             } // foreach
 
             return $array;

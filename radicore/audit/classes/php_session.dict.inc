@@ -1,5 +1,5 @@
 <?php
-    // file created on October 30, 2005, 11:54 am
+    // file created on October 9, 2006, 10:30 am
     
     // field specifications for table audit.php_session
     $fieldspec['session_id']                = array('type' => 'string',

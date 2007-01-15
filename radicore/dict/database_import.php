@@ -1,10 +1,11 @@
 <?php
 //*****************************************************************************
-// Allow new occurrences to be added to a database table (without user dialog).
+// Allow a new occurrences to be added to a database table.
 //*****************************************************************************
 
-$table_id = 'dict_database_s01';    // table name
+$table_id = 'dict_database_s01';                // table name
+$screen   = 'dict_database.detail.screen.inc';  // file identifying screen structure
 
-require 'std.add4.inc';             // activate page controller
+require_once 'std.add1.inc';        // activate page controller
 
 ?>

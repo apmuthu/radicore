@@ -18,8 +18,8 @@ $array['e0012'] = "Event %1\$s contains errors.";
 $array['e0013'] = "Cannot set both YEAR and CLASS";
 $array['e0014'] = "Student is assigned to a class - cannot assign individual lessons";
 $array['e0015'] = "Cannot assign to a Class while individual Lessons exist";
-$array['e0016'] = "";
-$array['e0017'] = "";
+$array['e0016'] = "Start Time cannot be earlier than Start Time on Schedule Header";
+$array['e0017'] = "End Time cannot be later than End Time on Schedule Header";
 $array['e0018'] = "";
 $array['e0019'] = "";
 
@@ -101,9 +101,11 @@ $array['crs_schedule(multi)']           = 'Maintain Schedule Events';
 $array['crs_schedule(search)']          = 'Search Schedule Event';
 $array['crs_schedule(upd)']             = 'Update Schedule Event';
 $array['crs_schedule_hdr(add)']         = 'Add Schedule Header';
+$array['crs_schedule_hdr(choose)']      = 'Choose Schedule Id';
 $array['crs_schedule_hdr(del)']         = 'Delete Schedule Header';
 $array['crs_schedule_hdr(enq)']         = 'Enquire Schedule Header';
 $array['crs_schedule_hdr(list)']        = 'List Schedule Header';
+$array['crs_schedule_hdr(popup)']       = 'Choose Schedule Id';
 $array['crs_schedule_hdr(search)']      = 'Search Schedule Header';
 $array['crs_schedule_hdr(upd)']         = 'Update Schedule Header';
 $array['crs_student(add)']              = 'Add Student';
@@ -132,6 +134,7 @@ $array['crs_teacher(search)']           = 'Search Teacher';
 $array['crs_teacher(upd)']              = 'Update Teacher';
 
 // navigation button details for subsystem CRSS
+$array['Choose Schedule']               = 'Choose Schedule';
 $array['Classes']                       = 'Classes';
 $array['Delete Class']                  = 'Delete Class';
 $array['Events']                        = 'Events';

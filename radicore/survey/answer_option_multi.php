@@ -7,7 +7,6 @@
 // The primary key of  the ONE table is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'survey_question';				// name of outer table
 $inner_table = 'answer_option';                 // name of inner table
 $screen   = 'answer_option.multi.screen.inc';   // file identifying screen structure
@@ -20,11 +19,8 @@ $outer_sql_where  = NULL;
 $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = '';
-
-// set default sort sequence
 $inner_sql_orderby = 'answer_seq';
 
-// activate page controller
-require 'std.multi2.inc';
+require 'std.multi2.inc';       // activate page controller
 
 ?>

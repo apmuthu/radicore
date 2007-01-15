@@ -30,7 +30,6 @@ class dict_dataBase extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] != 'search') {
 			// do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
@@ -80,26 +79,26 @@ class dict_dataBase extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-		// get contents of this table and put into lookup data
-		// (use another object so as to not change the values in this one)
-		require_once 'classes/dict_table.class.inc';
-        $dbobject =& singleton::getInstance('dict_table');
-		$array = $dbobject->_cm_getValRep('database_id');
-		$this->lookup_data['database_id'] = $array;
+        if (!array_key_exists('database_id', $this->lookup_data)) {
+            // get contents of this table and put into lookup data
+    		$dbobject =& singleton::getInstance('dict_database');
+    		$array = $dbobject->_cm_getValRep('database_id');
+    		$this->lookup_data['database_id'] = $array;
+        } // if
 
-        // get contents of foreign table MNU_SUBSYSTEM and put into lookup_data
-        require_once 'classes/mnu_subsystem.class.inc';
-        $dbobject =& singleton::getInstance('mnu_subsystem');
-        $array = $dbobject->getValRep('subsys_id');
-        $this->lookup_data['subsys_id'] = $array;
+        if (!array_key_exists('subsys_id', $this->lookup_data)) {
+            // get contents of foreign table MNU_SUBSYSTEM and put into lookup_data
+            $dbobject =& singleton::getInstance('mnu_subsystem');
+            $array = $dbobject->getValRep('subsys_id');
+            $this->lookup_data['subsys_id'] = $array;
+        } // if
 
         return $fieldarray;
 
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where=null)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -110,9 +109,6 @@ class dict_dataBase extends Default_Table
             $this->sql_orderby    = 'database_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-			$this->sql_select     = '';
-        	$this->sql_orderby    = '';
 
 			// convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -138,6 +134,39 @@ class dict_dataBase extends Default_Table
         return $fieldarray;
 
     } // _cm_pre_eraseRecord
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        if (array_key_exists('database_id', $where_array)) {
+        	if (strlen($where_array['database_id']) == 0) {
+        	    // no value was supplied, so allow all existing entries to be read
+        		$where = null;
+        		// do not cause the lack of a primary key to cause an error
+        		$this->checkPrimaryKey = false;
+        	} // if
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_output ($string)
+    // perform any processing required before the output operation
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+        	// do not display long text from option lists for these fields
+            unset($this->fieldspec['subsys_id']['optionlist']);
+        } // if
+
+        return $string;
+
+    } // _cm_pre_output
 
 // ****************************************************************************
 } // end class

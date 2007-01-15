@@ -1,16 +1,17 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
 
     // private variables
-    var $monthalpha;        // array of 3-character month names
-    var $internaldate;      // date as held in the database (yyyymmdd)
-    var $externaldate;      // date as shown to the user (dd Mmm yyyy)
-    var $errors;            // error messages
+    var $monthalpha;            // array of 3-character month names
+    var $internaldate;          // date as held in the database (yyyymmdd)
+    var $externaldate;          // date as shown to the user (dd Mmm yyyy)
+    var $errors;                // error messages
+    var $date_format = 'dmy';   // date format - 'dmy', 'mdy' or 'ymd'
 
     // ****************************************************************************
     // class constructor
@@ -19,6 +20,14 @@ class date_class {
     {
         //$this->monthalpha = array(1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
         $this->monthalpha = getLanguageArray('month_names_short');
+
+        if (isset($GLOBALS['date_format'])) {
+        	$this->date_format = $GLOBALS['date_format'];
+        } // if
+
+        if (!eregi('^(dmy|mdy|ymd)$', $this->date_format)) {
+            $this->date_format = 'dmy';
+        } // if
 
     } // date_class
 
@@ -29,43 +38,47 @@ class date_class {
     // convert date from external format (as input by user)
     // to internal format (as used in the database)
     {
-        // look for d(d)?m(m)?y(yyy) format
+        // look for d(d)?m(m)?(yyyy) format (may also be m(m)?d(d)?y(yyy) format)
         $pattern = '(^[0-9]{1,2})'      // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([0-9]{1,2})'       // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,4}$)';     // 1 to 4 digits
+                 . '([0-9]{0,4}$)';     // 0 to 4 digits
+        if (ereg($pattern, $input, $regs)) {
+            if (eregi('^(dmy)$', $this->date_format)) {
+                $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
+            } else { // assume 'mdy'
+                $result = $this->verifyDate($regs[3], $regs[1], $regs[5]);
+            } // if
+            return $result;
+        } // if
+
+        // look for d(d)?MMM?(yyyy) format
+        $pattern = '(^[0-9]{1,2})'      // 1 or 2 digits
+                 . '([^0-9a-zA-Z])'     // not alpha or numeric
+                 . '([a-zA-Z]{1,})'     // 1 or more alpha
+                 . '([^0-9a-zA-Z])'     // not alpha or numeric
+                 . '([0-9]{0,4}$)';     // 0 to 4 digits
         if (ereg($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
             return $result;
         } // if
 
-        // look for d(d)?MMM?y(yyy) format
-        $pattern = '(^[0-9]{1,2})'      // 1 or 2 digits
-                 . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([a-zA-Z]{1,})'     // 1 or more alpha
-                 . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,4}$)';     // 1 to 4 digits
-        if (ereg($pattern, $input, $regs)) {
-            $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
-            return $result;
-        } // if
-
-        // look for d(d)MMMy(yyy) format
+        // look for d(d)MMM(yyyy) format
         $pattern = '(^[0-9]{1,2})'      // 1 or 2 digits
                  . '([a-zA-Z]{1,})'     // 1 or more alpha
-                 . '([0-9]{1,4}$)';     // 1 to 4 digits
+                 . '([0-9]{0,4}$)';     // 0 to 4 digits
         if (ereg($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[1], $regs[2], $regs[3]);
             return $result;
         } // if
 
-        // look for MMM?d(d)?y(yyy) format
+        // look for MMM?d(d)?(yyyy) format
         $pattern = '(^[a-zA-Z]{1,})'    // 1 or more alpha
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([0-9]{1,2})'       // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,4}$)';     // 1 to 4 digits
+                 . '([0-9]{1,4}$)';     // 0 to 4 digits
         if (ereg($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[3], $regs[1], $regs[5]);
             return $result;
@@ -91,13 +104,30 @@ class date_class {
             return $result;
         } // if
 
-        // look for ddmmyyyy format
-        $pattern = '(^[0-9]{2})'        // 2 digits
-                 . '([0-9]{2})'         // 2 digits
-                 . '([0-9]{4}$)';       // 4 digits
-        if (ereg($pattern, $input, $regs)) {
-            $result = $this->verifyDate($regs[1], $regs[2], $regs[3]);
-            return $result;
+        if (eregi('^(dmy|mdy)$', $this->date_format)) {
+            // look for ddmmyyyy format (may also be mmddyyyy format)
+            $pattern = '(^[0-9]{2})'        // 2 digits
+                     . '([0-9]{2})'         // 2 digits
+                     . '([0-9]{4}$)';       // 4 digits
+            if (ereg($pattern, $input, $regs)) {
+                if (eregi('^(dmy)$', $this->date_format)) {
+                    $result = $this->verifyDate($regs[1], $regs[2], $regs[3]);
+                } else { // assume 'mdy'
+                    $result = $this->verifyDate($regs[2], $regs[1], $regs[3]);
+                } // if
+                return $result;
+            } // if
+        } // if
+
+        if (eregi('^(ymd)$', $this->date_format)) {
+            // look for yyyymmdd format
+            $pattern = '(^[0-9]{4})'        // 4 digits
+                     . '([0-9]{2})'         // 2 digits
+                     . '([0-9]{2}$)';       // 2 digits
+            if (ereg($pattern, $input, $regs)) {
+                $result = $this->verifyDate($regs[3], $regs[2], $regs[1]);
+                return $result;
+            } // if
         } // if
 
         // look for yyyy?MMM?d(d) format
@@ -109,6 +139,13 @@ class date_class {
         if (ereg($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[5], $regs[3], $regs[1]);
             return $result;
+        } // if
+
+        if (strlen($input) > 10) {
+            // input is too long, so split into two pieces and process first piece
+            list($date, $time) = explode(' ', $input);
+            $this->internaldate = $this->getInternalDate($date);
+            return $this->internaldate;
         } // if
 
         $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
@@ -197,37 +234,48 @@ class date_class {
     // ****************************************************************************
     function verifyDate ($day, $month, $year)
     {
-        // convert alpha month to digits
         if (eregi('([a-z]{3})', $month)) {
-            $month = ucfirst(strtolower($month));
-            if (!$month = array_search($month, $this->monthalpha)) {
+        	// convert array from 'N=month' to 'month=N'
+            $month_array = array_flip($this->monthalpha);
+            // convert all month names to upper case
+            $month_array = array_change_key_case($month_array, CASE_UPPER);
+
+            $month = strtoupper($month);
+
+            if (array_key_exists($month, $month_array)) {
+            	$month_n = $month_array[$month];
+            } else {
                 $this->errors = getLanguageText('sys0042'); // 'Month name is invalid'
                 return false;
             } // if
+        } else {
+            $month_n = $month;
         } // if
 
         // ensure that year has 4 digits
-        if (strlen($year) == 1) {
+        if (strlen($year) == 4) {
+            // do nothing
+        } elseif (strlen($year) == 0) {
+            $year = date('Y');
+        } elseif (strlen($year) == 1) {
             $year = '200' . $year;
-        } // if
-        if (strlen($year) == 2) {
+        } elseif (strlen($year) == 2) {
             $year = '20' . $year;
-        } // if
-        if (strlen($year) == 3) {
+        } elseif (strlen($year) == 3) {
             $year = '2' . $year;
         } // if
 
-        if (!checkdate($month, $day, $year)) {
+        if (!checkdate($month_n, $day, $year)) {
             $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
             return false;
         } else {
             if (strlen($day) < 2) {
                 $day = '0' . $day; // add leading zero
             } // if
-            if (strlen($month) < 2) {
-                $month = '0' . $month; // add leading zero
+            if (strlen($month_n) < 2) {
+                $month_n = '0' . $month_n; // add leading zero
             } // if
-            $this->internaldate = $year . '-' . $month . '-' . $day;
+            $this->internaldate = $year . '-' . $month_n . '-' . $day;
             return $this->internaldate;
         } // if
 
@@ -264,9 +312,8 @@ class date_class {
     {
         $monthalpha = $this->monthalpha;
 
-        // input may be 'yyyy-mm-dd' or 'yyyymmdd', so
+        // input may be 'yyyy-mm-dd' or 'yyyymmdd'  or 'dd-Mmm-yy', so
         // check the length and process accordingly
-        $len = strlen($input);
 
         if (strlen($input) == 8) {
             // test for 'yyyymmdd'
@@ -281,12 +328,36 @@ class date_class {
                     return false;
                 } else {
                     $monthnum = (int)$regs[2];
-                    $this->externaldate = "$regs[3] $monthalpha[$monthnum] $regs[1]";
+                    if (eregi('^(dmy)$', $this->date_format)) {
+                        $this->externaldate = "$regs[3] $monthalpha[$monthnum] $regs[1]";
+                    } elseif (eregi('^(mdy)$', $this->date_format)) {
+                        $this->externaldate = "$monthalpha[$monthnum] $regs[3] $regs[1]";
+                    } else { // assume 'ymd'
+                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[3]";
+                    } // if
                     return $this->externaldate;
                 } // if
             } // if
 
             $this->errors = getLanguageText('sys0046'); // Invalid date format: expected 'yyyymmdd
+            return false;
+        } // if
+
+        if (strlen($input) == 9) {
+            // test for 'dd-Mmm-yy'
+            $pattern = '(^[0-9]{2})'    // 2 digits (dd)
+                     . '([^0-9])'       // not a digit
+                     . '([a-zA-Z]{3})'  // 3 alpha (Mmm)
+                     . '([^0-9])'       // not a digit
+                     . '([0-9]{2}$)';   // 2 digits (yy)
+            if (ereg($pattern, $input, $regs)) {
+                if ($result = $this->verifyDate($regs[1], $regs[3], $regs[5])) {
+                	$this->externaldate = $this->getExternalDate($result);
+                    return $this->externaldate;
+                } // if
+            } // if
+
+            $this->errors = getLanguageText('sys0049'); // Invalid date format: expected 'dd-Mmm-yy'
             return false;
         } // if
 
@@ -305,13 +376,26 @@ class date_class {
                     return false;
                 } else {
                     $monthnum = (int)$regs[3];
-                    $this->externaldate = "$regs[5] $monthalpha[$monthnum] $regs[1]";
+                    if (eregi('^(dmy)$', $this->date_format)) {
+                        $this->externaldate = "$regs[5] $monthalpha[$monthnum] $regs[1]";
+                    } elseif (eregi('^(mdy)$', $this->date_format)) {
+                        $this->externaldate = "$monthalpha[$monthnum] $regs[5] $regs[1]";
+                    } else { // assume 'ymd'
+                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[5]";
+                    } // if
                     return $this->externaldate;
                 } // if
             } // if
 
             $this->errors = getLanguageText('sys0047'); // Invalid date format: expected 'dd-mm-yyyy'
             return false;
+        } // if
+
+        if (strlen($input) > 10) {
+            // input is too long, so split into two pieces and process first piece
+            list($date, $time) = explode(' ', $input);
+            $this->externaldate = $this->getExternalDate($date);
+            return $this->externaldate;
         } // if
 
         $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'

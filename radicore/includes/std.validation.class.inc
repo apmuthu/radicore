@@ -1,13 +1,14 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
 {
     // member variables
     var $caller;            // details of calling object
+    var $dateobj;           // date object
     var $errors;            // array of error messages
 
     // ****************************************************************************
@@ -25,6 +26,51 @@ class validation_class
         return $this->errors;
 
     } // getErrors
+
+    // ****************************************************************************
+    function validateCustom ($fieldname, $fieldvalue, $fieldspec)
+    // standard function for invoking custom validation.
+    {
+        $errors = array();
+
+        $custom_validation = $fieldspec['custom_validation'];
+
+        // split $custom_validation into its component parts
+        list($file, $class, $method) = explode('/', $custom_validation);
+
+        if (!$fp = fopen($file, 'r', true)) {
+        	// 'custom validation - File X does not exist'
+            $errors[$fieldname] = getLanguageText('sys0157', $file);
+        } // if
+        fclose($fp);
+        require_once($file);
+
+        if (!class_exists($class)) {
+        	// 'custom validation - Class X does not exist'
+            $errors[$fieldname] = getLanguageText('sys0158', $class);
+        } // if
+        $object =& singleton::getInstance($class);
+
+        if (!method_exists($object, $method)) {
+        	// 'custom validation - Method X does not exist'
+            $errors[$fieldname] = getLanguageText('sys0159', $method);
+        } // if
+
+        if (empty($errors)) {
+            // call specified method in custom validation object
+        	$failure = $object->$method($fieldvalue, $fieldspec);
+            if ($failure) {
+            	$errors[$fieldname] = $failure;
+            } // if
+        } // if
+
+        if ($errors) {
+        	$this->errors = array_merge($this->errors, $errors);
+        } // if
+
+        return $fieldvalue;
+
+    } // validateCustom
 
     // ****************************************************************************
     function validateEmail ($fieldname, $fieldvalue)
@@ -53,13 +99,7 @@ class validation_class
     function validateField ($fieldname, $fieldvalue, $fieldspec)
     // standard function for validating database fields.
     {
-        //DebugBreak();
-        static $dateobj;
-
-        if (!isset($dateobj)) {
-            require_once 'std.datevalidation.class.inc';
-            $dateobj =& singleton::getInstance('date_class');
-        } // if
+        $this->dateobj =& singleton::getInstance('date_class');
 
         if ($fieldspec['type'] == 'enum') {
             // get enum array for this field
@@ -71,8 +111,42 @@ class validation_class
             } // if
         } // if
 
+        if (eregi('(set|array|varray)',$fieldspec['type'])) {
+            // convert $fieldvalue array into a string with comma separator
+            if (is_array($fieldvalue)) {
+            	$fieldvalue = implode($fieldvalue, ',');
+            } // if
+        } // if
+
         // trim any leading or trailing spaces
         $fieldvalue = trim($fieldvalue);
+
+        if (strlen($fieldvalue) == 0) {
+            if (isset($fieldspec['default'])) {
+                if (isset($fieldspec['autoinsert'])
+                 or isset($fieldspec['auto_increment'])) {
+                    // value will be filled in later
+                } elseif (isset($fieldspec['optionlist'])) {
+                    // get list of options for this field
+                    $optionlist = $this->caller->lookup_data[$fieldspec['optionlist']];
+                    if (empty($optionlist)) {
+                        // no options found, so use default value
+                    	$fieldvalue = $fieldspec['default'];
+                    } elseif (array_key_exists($fieldspec['default'], $optionlist)) {
+                        // default value found in list, so use it
+                    	$fieldvalue = $fieldspec['default'];
+                    } // if
+                } elseif (isset($fieldspec['control']) and $fieldspec['control'] == 'popup') {
+                    // only use default value if it is non-zero
+                    if ((int)$fieldspec['default'] != 0) {
+                    	$fieldvalue = $fieldspec['default'];
+                    } // if
+                } else {
+                    // load default value
+                    $fieldvalue = $fieldspec['default'];
+                } // if
+            } // if
+        } // if
 
         if (strlen($fieldvalue) == 0) {
             // field is empty - is it allowed to be?
@@ -80,10 +154,8 @@ class validation_class
                 if (isset($fieldspec['autoinsert'])
                  or isset($fieldspec['auto_increment'])) {
                     // value will be filled in later, so continue
-                } elseif (isset($fieldspec['default'])) {
-                    $fieldvalue = $fieldspec['default'];
                 } else {
-                    // '"$fieldname cannot be blank'
+                    // '$fieldname cannot be blank'
                     $this->errors[$fieldname] = getLanguageText('sys0020', $fieldname);
                 } // if
             } // if
@@ -94,7 +166,11 @@ class validation_class
                 } // if
             } // if
             if ($fieldspec['type'] == 'boolean') {
-                $fieldvalue = $fieldspec['false'];
+                if (isset($fieldspec['false'])) {
+                	$fieldvalue = $fieldspec['false'];
+                } else {
+                    $fieldvalue = false;
+                } // if
             } // if
             // nothing left to validate, so return now
             return $fieldvalue;
@@ -102,24 +178,48 @@ class validation_class
 
         // field is not empty - check field size
         if (isset($fieldspec['size'])) {
-            $size = (int)$fieldspec['size'];
-            if (strlen($fieldvalue) > $size) {
-                // '$fieldname cannot be > $size characters
-                $this->errors[$fieldname] = getLanguageText('sys0021', $fieldname, $size);
+            if (ereg('set|array|varray', $fieldspec['type'])) {
+                // ignore size on 'array' datatypes
+            } else {
+                $size = (double)$fieldspec['size'];
+                if (ereg('float|real|double', $fieldspec['type'])) {
+                	if (strlen($fieldvalue) > $size) {
+                	    // reduce huge number to scientific notation
+                		$fieldvalue = sprintf('%e', $fieldvalue);
+                	} // if
+                } // if
+                if (strlen($fieldvalue) > $size) {
+                    // '$fieldname cannot be > $size characters
+                    $this->errors[$fieldname] = getLanguageText('sys0021', $fieldname, $size);
+                } // if
             } // if
         } // if
 
+        if (!empty($fieldspec['custom_validation'])) {
+        	$fieldvalue = $this->validateCustom($fieldname, $fieldvalue, $fieldspec);
+        	return $fieldvalue;
+        } // if
+
         switch ($fieldspec['type']) {
+            case 'enum':
+                break;
+
             case 'boolean':
                 // result from boolean fields may be varied, so convert to TRUE or FALSE
                 // (where actual values are defined within $fieldspec)
                 if (is_True($fieldvalue)) {
-                    $fieldvalue = $fieldspec['true'];
+                    if (isset($fieldspec['true'])) {
+                    	$fieldvalue = $fieldspec['true'];
+                    } // if
                 } else {
-                    $fieldvalue = $fieldspec['false'];
+                    if (isset($fieldspec['false'])) {
+                    	$fieldvalue = $fieldspec['false'];
+                    } // if
                 } // if
                 break;
 
+            case 'set':
+            case 'array':
             case 'string':
                 if (isset($fieldspec['uppercase'])) {
                     // value in this field must be uppercase
@@ -171,15 +271,12 @@ class validation_class
                     } // if
                 } // if
 
-                // escape any suspect characters in string fields
-                $fieldvalue = addslashes($fieldvalue);
-
                 break;
 
             case 'date':
                 // value must be a date
-                if (!$internaldate = $dateobj->getInternalDate($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $dateobj->getErrors();
+                if (!$internaldate = $this->dateobj->getInternalDate($fieldvalue)) {
+                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set date to internal format
                     $fieldvalue = $internaldate;
@@ -187,9 +284,10 @@ class validation_class
                 break;
 
             case 'datetime':
+            case 'timestamp':
                 // value must be a combined date and time
-                if (!$internaldatetime = $dateobj->getInternalDateTime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $dateobj->getErrors();
+                if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue)) {
+                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set date to internal format
                     $fieldvalue = $internaldatetime;
@@ -198,8 +296,8 @@ class validation_class
 
             case 'time':
                 // value must be a time
-                if (!$internaltime = $dateobj->getInternaltime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $dateobj->getErrors();
+                if (!$internaltime = $this->dateobj->getInternaltime($fieldvalue)) {
+                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set time to internal format
                     $fieldvalue = $internaltime;

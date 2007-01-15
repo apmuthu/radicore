@@ -1,14 +1,12 @@
-<?php 
+<?php
 // *****************************************************************************
 // Update the contents of a database table without any dialog with the user.
 // *****************************************************************************
 
-//DebugBreak();
-$table_id = 'crs_conflict_s01';             // table name
+$table_id = 'crs_conflict_s01';     // table name
 
-$result = ini_set('max_execution_time', '60');
+$result = ini_set('max_execution_time', '330');
 
-// activate page controller
-require 'std.add4.inc';
+require_once 'std.add4.inc';        // activate page controller
 
 ?>

@@ -5,7 +5,7 @@
 // to view/modify entries by activating other screens via navigation buttons.
 //*****************************************************************************
 
-$outer_table = 'mnu_user';                  // name of outer (parent) table
+$outer_table = 'mnu_user_s04';              // name of outer (parent) table
 $inner_table = 'mnu_todo';                  // name of inner (child) table
 $screen      = 'mnu_todo.list2.screen.inc'; // file identifying screen structure
 

@@ -44,7 +44,6 @@ class mnu_user_s03 extends mnu_user
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         if ($fieldarray['user_password'] != '44magnum357') {
             $this->errors['user_password'] = getLanguageText('e0029'); // 'Password is invalid';
             return $fieldarray;
@@ -79,14 +78,7 @@ class mnu_user_s03 extends mnu_user
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database record is updated.
     {
-        $_SESSION['message'] = getLanguageText('e0032'); // 'Password has been reset';
-
-        // redirect to the logon screen
-        $location = 'http://' . $_SERVER['HTTP_HOST']
-                              . getParentDIR()
-                              . '/menu/logon.php';
-        header('Location: ' . $location);
-        exit;
+        $_SESSION['message'][] = getLanguageText('e0032'); // 'Password has been reset';
 
     } // _cm_post_updateRecord
 

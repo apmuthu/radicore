@@ -26,6 +26,72 @@ class mnu_nav_button extends Default_Table
     } // mnu_nav_button
 
     // ****************************************************************************
+    function getNavButtons ($task_id, $object)
+    // retrieve any navigation buttons for the current script.
+    {
+        $this->errors = array();
+
+        // MNU_NAV_BUTTON contains a list of task_id's which can be loaded into
+        // the current screen's navigation bar.
+
+        // first we must obtain the user's current security setting
+        $dbrole =& singleton::getInstance('mnu_role');
+        $dbrole_data = $dbrole->getRole();
+        if ($dbrole->errors) {
+        	$this->errors = $dbrole->errors;
+        	return FALSE;
+        } // if
+
+        $role_id       = $dbrole_data['role_id'];
+        $global_access = $dbrole_data['global_access'];
+
+        if ($global_access) {
+            // if global_access is ON then all buttons can be accessed without restriction
+            // (unless a task has been disabled)
+            $this->sql_select = 'x.task_id, x.script_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_from   = 'mnu_nav_button '
+                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
+                              . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
+            $this->sql_where  = "(x.is_disabled='N') ";
+        } else {
+            // if global_access is OFF then a button cannot be loaded unless it has an
+            // entry on MNU_ROLE_TASK for the current role
+            // (or if it has been disabled)
+            $this->sql_select = 'x.task_id, x.script_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_from   = 'mnu_nav_button '
+                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
+                              . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) '
+                              . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_nav_button.task_id_jnr AND mnu_role_task.role_id='$role_id')";
+            $this->sql_where  = "(x.is_disabled='N') "
+                              . 'AND (mnu_role_task.role_id IS NOT NULL)';
+        } // if
+
+        $this->sql_orderby = 'mnu_nav_button.sort_seq';
+
+        $buttons = $this->getData_raw("mnu_task.task_id='$task_id'");
+
+        if (count($buttons) > 0) {
+            if (!empty($object->sql_search_table)) {
+            	$search_table = $object->sql_search_table;
+            } else {
+                $search_table = $object->tablename;
+            } // if
+            if ($count = preg_match("/\w+ as \w+/i", $search_table, $regs)) {
+                // entry contains 'table AS alias', so use original table table
+            	list($original, $alias) = preg_split('/ as /i', $regs[0]);
+            	$search_table = $original;
+            } // if
+            if (isset($_SESSION['search'][$search_table])) {
+                // previous search data is available, so create extra button
+                $buttons = addPreviousSearchButton($buttons);
+            } // if
+        } // if
+
+        return $buttons;
+
+    } // getNavButtons
+
+    // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
@@ -78,7 +144,7 @@ class mnu_nav_button extends Default_Table
         switch ($GLOBALS['mode']){
             case 'insert':
                 $lock_array[] = $this->tablename;
-                $lock_array['READ'][] = 'mnu_dialog_type';
+                $lock_array['READ'][] = 'mnu_pattern';
                 break;
             case 'update':
                 $lock_array[] = $this->tablename;
@@ -101,7 +167,8 @@ class mnu_nav_button extends Default_Table
     {
         if (!empty($fieldarray['task_id_snr'])) {
             // get next available value for SORT_SEQ
-            $query = "SELECT max(sort_seq) FROM $this->tablename WHERE task_id_snr='{$fieldarray['task_id_snr']}'";
+            $query = "SELECT max(sort_seq) FROM $this->tablename "
+                   . "WHERE task_id_snr='{$fieldarray['task_id_snr']}'";
             $count = $this->getCount($query);
             $fieldarray['sort_seq'] = $count + 1;
         } // if
@@ -111,38 +178,23 @@ class mnu_nav_button extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         switch (basename($_SERVER['PHP_SELF'])) {
             // may need to change the contents of $where
             case 'mnu_nav_button_link.php':
-                // do nothing
-                break;
-            case 'mnu_nav_button_multi.php':
-                $where = str_replace('mnu_task.task_id=', 'mnu_nav_button.task_id_snr=', $where);
-                break;
-            case 'mnu_nav_button_list.php':
-                // if not aready qualified with a table name ...
-                if (!strpos($where, '.task_id=')) {
-                    $where = str_replace('task_id=', 'task_id_snr=', $where);
-                } // if
-                break;
-            default:
-                ;
-        } // switch
+                // alter sort criteria
+        		$this->sql_orderby = str_replace('mnu_nav_button.task_id_jnr', 'task_id_jnr', $this->sql_orderby);
+        		break;
 
-//        if (empty($this->sql_select)) {
-//            // include columns from foreign table
-//            $this->sql_select = 'mnu_nav_button.*, mnu_task_snr.task_desc AS task_desc_snr, mnu_task_jnr.task_desc AS task_desc_jnr';
-//            $this->sql_from   = 'mnu_nav_button '
-//                               .'LEFT JOIN mnu_task AS mnu_task_snr '
-//                               .'ON (mnu_task_snr.task_id=mnu_nav_button.task_id_snr) '
-//                               .'LEFT JOIN mnu_task AS mnu_task_jnr '
-//                               .'ON (mnu_task_jnr.task_id=mnu_nav_button.task_id_jnr) ';
-//        } // if
+            default:
+                $where = str_replace('task_id=', 'task_id_snr=', $where);
+        } // switch
 
         return $where;
 
@@ -152,34 +204,30 @@ class mnu_nav_button extends Default_Table
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted
     {
-        //DebugBreak();
-        switch (basename($_SERVER['PHP_SELF'])) {
-            case 'mnu_nav_button_add.php':
-                if (array_key_exists('task_id', $fieldarray)) {
-                    // change fieldname in $fieldarray from 'task_id' to 'task_id_jnr'
-                    $task_id = $fieldarray['task_id'];
-                    $fieldarray['task_id_jnr'] = $fieldarray['task_id'];
-                    unset($fieldarray['task_id']);
 
-                    // get default button text from mnu_task table
-                    require_once 'mnu_task.class.inc';
-                    $dbobject =& singleton::getInstance('mnu_task');
-                    $dbobject->setSqlSelect('button_text,task_type,dialog_type_id');
-                    $data = $dbobject->getData("task_id='$task_id'");
-                    $fieldarray = array_merge($fieldarray, $data[0]);
+        if (array_key_exists('task_id', $fieldarray)) {
+            // change fieldname in $fieldarray from 'task_id' to 'task_id_jnr'
+            $fieldarray['task_id_jnr'] = $fieldarray['task_id'];
+            unset($fieldarray['task_id']);
+        } // if
 
-                    // get default context_preselect from mnu_dialog table
-                    $dialog_type_id = $fieldarray['dialog_type_id'];
-                    require_once 'mnu_dialog_type.class.inc';
-                    $dbobject =& singleton::getInstance('mnu_dialog_type');
-                    $dbobject->setSqlSelect('context_preselect');
-                    $data = $dbobject->getData("dialog_type_id='$dialog_type_id'");
-                    $fieldarray = array_merge($fieldarray, $data[0]);
-                } // if
-                break;
-            default:
-                ;
-        } // switch
+        if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
+            $task_id_jnr = $fieldarray['task_id_jnr'];
+            // get default button text from mnu_task table
+            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject->sql_select = 'button_text,task_type,pattern_id';
+            $data = $dbobject->getData("task_id='$task_id_jnr'");
+            $fieldarray = array_merge($fieldarray, $data[0]);
+
+            if (!array_key_exists('context_preselect', $fieldarray)) {
+                // get default context_preselect from mnu_pattern table
+                $pattern_id = $fieldarray['pattern_id'];
+                $dbobject =& singleton::getInstance('mnu_pattern');
+                $dbobject->sql_select = 'context_preselect';
+                $data = $dbobject->getData("pattern_id='$pattern_id'");
+                $fieldarray = array_merge($fieldarray, $data[0]);
+            } // if
+        } // if
 
         return $fieldarray;
 
@@ -209,17 +257,19 @@ class mnu_nav_button extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     {
-        // the default is to clear out the contents of $where
+        // clear out the contents of $where
         $where = '';
+
+        // allow only one entry to be selected (the default)
+        //$settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        $settings['select_one'] = false;
 
         //if ($popupname == '???_popup') {
         //   // replace $where for this popup
         //   $where = "???_id='ORG'";
         //} // if
-
-        // ensure that only one entry can be selected
-        // (multiple entries may be defined by separating them with '&')
-        //$settings = 'select_one=true';
 
         return $where;
 

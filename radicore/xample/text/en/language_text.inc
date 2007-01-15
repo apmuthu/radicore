@@ -45,6 +45,11 @@ $array['e0037'] = "";
 $array['e0038'] = "";
 $array['e0039'] = "";
 
+// these entries are used by 'sample.validation.class.inc'
+$array['sample001'] = "Invalid format for a postcode.";
+$array['sample002'] = "Invalid format for a telephone number.";
+$array['sample003'] = "Invalid format for a fax number.";
+
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                = 'Auto-Increment';
 $array['Option']                        = 'Option';
@@ -73,6 +78,8 @@ $array['x_person(list)b']               = 'List Person for a selected Option';
 $array['x_person(popup)']               = 'Choose Person';
 $array['x_person(search)']              = 'Search Person';
 $array['x_person(upd)']                 = 'Update Person';
+$array['x_person(upd)js']               = 'Update Person (with javascript)';
+$array['x_person(upd)js2']              = 'Update Person (with FCKeditor)';
 $array['x_person_addr(add)']            = 'Add Person Address';
 $array['x_person_addr(del)']            = 'Delete Person Address';
 $array['x_person_addr(enq)']            = 'Enquire Person Address';

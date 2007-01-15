@@ -1,0 +1,5 @@
+Enter your e-mail address and your password will be sent to you.
+
+Note: this will only work if your e-mail address is recorded on your user details.
+
+Refer to <a href="%root%/mnu_user(pswd).html">Retrieve Password</a> for full details.

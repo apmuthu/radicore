@@ -1,10 +1,9 @@
 <?php
 //*****************************************************************************
 // List the contents of a database table and allow the user to view/modify
-// the contents by activating other screens via navigation buttons. 
+// the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'product_category';                    // table name
 $screen   = 'product_category.list.screen.inc';    // file identifying screen structure
 
@@ -15,10 +14,6 @@ $sql_from   = 'product_category '.
 $sql_where  = NULL;
 $sql_groupby = 'product_category.prod_cat_id, product_category.prod_cat_desc, prod_cat_rollup.prod_cat_id_snr';
 
-// set default sort sequence
-$sql_orderby = NULL;
-
-// activate page controller
-require 'std.list1.inc';
+require 'std.list1.inc';            // activate page controller
 
 ?>

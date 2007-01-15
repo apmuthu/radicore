@@ -8,7 +8,7 @@
 
 $table_id = '#tablename#';              // CHILD table name
 
-$popup_screen = '#tablename#(popup)';   // name of popup
+$popup_task = '#popup_table#';  // name of popup
 //$popup_repeat = TRUE;
 
 require 'std.update2.inc';              // activate page controller

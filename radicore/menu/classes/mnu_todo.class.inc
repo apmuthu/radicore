@@ -32,7 +32,7 @@ class mnu_todo extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table MNU_ROLE and put into lookup_data
-        require_once 'mnu_user.class.inc';
+        require_once 'classes/mnu_user.class.inc';
         $dbobject =& singleton::getInstance('mnu_user');
         $array = $dbobject->getValRep('user_id');
         $this->lookup_data['user_id'] = $array;

@@ -9,18 +9,13 @@ $structure['outer']['fields'][] = array('teacher_name' => 'Teacher');
 
 $structure['tables']['inner'] = 'crs_schedule';
 
-$structure['inner']['columns'][] = array('width' => 25);
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '20%');
+// no column values are required, will be generated automatically
 
 $structure['inner']['fields'][] = array('start_time' => 'Time');
-$structure['inner']['fields'][] = array('day_no1' => 'Mon');
-$structure['inner']['fields'][] = array('day_no2' => 'Tue');
-$structure['inner']['fields'][] = array('day_no3' => 'Wed');
-$structure['inner']['fields'][] = array('day_no4' => 'Thu');
-$structure['inner']['fields'][] = array('day_no5' => 'Fri');
+$structure['inner']['fields'][] = array('day_no1' => 'Monday');
+$structure['inner']['fields'][] = array('day_no2' => 'Tuesday');
+$structure['inner']['fields'][] = array('day_no3' => 'Wednesday');
+$structure['inner']['fields'][] = array('day_no4' => 'Thursday');
+$structure['inner']['fields'][] = array('day_no5' => 'Friday');
 
 ?>

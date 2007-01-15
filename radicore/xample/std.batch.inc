@@ -1,4 +1,8 @@
 <?php
+// ****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
 
@@ -19,10 +23,12 @@ function batchInit ($batchfile)
     ini_set('include_path', $ini_array['include_path']);
     $_SERVER['SERVER_NAME'] = $ini_array['server_name'];
     $_SERVER['DOCUMENT_ROOT'] = str_replace("\\", "/", $ini_array['doc_root']);
+    $_SERVER["HTTP_ACCEPT_LANGUAGE"] = $ini_array['language'];
 
     echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
+    echo '<p>language     : ' .$_SERVER["HTTP_ACCEPT_LANGUAGE"] ."</p>\n";
 
     $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
     $_SERVER['PHP_SELF'] = $PHP_SELF;
@@ -30,6 +36,7 @@ function batchInit ($batchfile)
     $_SESSION['logon_user_id'] = 'batch';
     $GLOBALS['task_id']        = basename($PHP_SELF);
     $GLOBALS['batch']          = true;
+    $GLOBALS['mode']           = 'batch';
 
     require 'include.general.inc';
 

@@ -6,12 +6,12 @@
 // more primary keys from ONE(b) are selected in a separate popup screen.
 //*****************************************************************************
 
-$table_id = '#tablename#';      // table name
+$table_id = '#tablename#';     // table name
 
 // this screen is used to select occurrences from ONE(b)
-$popup_screen = '#tablename#(popup)';
+$popup_task = '#popup_task#';
 
-require 'std.add3.inc';     // activate page controller
+require_once 'std.add3.inc';    // activate page controller
 
 ?>
 

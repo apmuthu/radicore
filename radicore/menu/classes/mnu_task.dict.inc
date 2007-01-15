@@ -1,5 +1,5 @@
 <?php
-    // file created on February 3, 2006, 2:56 pm
+    // file created on January 4, 2007, 1:47 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -29,16 +29,19 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['is_disabled']               = array('type' => 'boolean',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
-                                                    'control' => 'dropdown');
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'boolean');
     
-    $fieldspec['dialog_type_id']            = array('type' => 'string',
+    $fieldspec['pattern_id']                = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'dialog_type_id');
+                                                    'optionlist' => 'pattern_id');
     
     $fieldspec['subsys_id']                 = array('type' => 'string',
                                                     'size' => 8,
@@ -67,41 +70,53 @@
     $fieldspec['keep_data']                 = array('type' => 'boolean',
                                                     'true' => 'Y',
                                                     'false' => 'N',
-                                                    'control' => 'dropdown');
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['log_sql_query']             = array('type' => 'boolean',
                                                     'true' => 'Y',
                                                     'false' => 'N',
-                                                    'control' => 'dropdown');
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['screen_refresh']            = array('type' => 'integer',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 3600);
     
+    $fieldspec['use_https']                 = array('type' => 'boolean',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'boolean');
+    
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('task_id');
@@ -175,9 +190,9 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     // parent relationship details 
-    $this->parent_relations[]               = array('parent' => 'mnu_dialog_type',
-                                                    'parent_field' => 'dialog_type_desc',
-                                                    'fields' => array('dialog_type_id' => 'dialog_type_id'));
+    $this->parent_relations[]               = array('parent' => 'mnu_pattern',
+                                                    'parent_field' => 'pattern_desc',
+                                                    'fields' => array('pattern_id' => 'pattern_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_subsystem',
                                                     'parent_field' => 'subsys_desc',

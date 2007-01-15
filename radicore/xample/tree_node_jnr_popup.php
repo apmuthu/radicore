@@ -7,7 +7,7 @@
 //*****************************************************************************
 
 //DebugBreak();
-$outer_table = 'x_tree_level';                  // name of outer table
+$outer_table = 'x_tree_level_s02';              // name of outer table
 $inner_table = 'x_tree_node_jnr_s01';           // name of inner table
 $screen   = 'tree_node_jnr.popup.screen.inc';   // file identifying screen structure
 

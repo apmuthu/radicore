@@ -1,5 +1,5 @@
 <?php
-    // file created on February 6, 2006, 3:46 pm
+    // file created on November 3, 2006, 11:34 am
     
     // field specifications for table workflow.wf_workitem
     $fieldspec['case_id']                   = array('type' => 'integer',
@@ -25,7 +25,8 @@
                                                     'required' => 'y',
                                                     'default' => '0',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'workflow_id');
+                                                    'optionlist' => 'workflow_id',
+                                                    'noedit' => 'y');
     
     $fieldspec['transition_id']             = array('type' => 'integer',
                                                     'size' => 5,
@@ -34,7 +35,8 @@
                                                     'required' => 'y',
                                                     'default' => '0',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'transition_id');
+                                                    'optionlist' => 'transition_id',
+                                                    'noedit' => 'y');
     
     $fieldspec['transition_trigger']        = array('type' => 'string',
                                                     'size' => 4,
@@ -42,7 +44,8 @@
                                                     'default' => 'USER',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'transition_trigger');
+                                                    'optionlist' => 'transition_trigger',
+                                                    'noedit' => 'y');
     
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 40,
@@ -50,14 +53,16 @@
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup)a',
-                                                    'foreign_field' => 'task_desc');
+                                                    'foreign_field' => 'task_desc',
+                                                    'noedit' => 'y');
     
     $fieldspec['context']                   = array('type' => 'string',
                                                     'size' => 255,
                                                     'required' => 'y',
                                                     'control' => 'multiline',
                                                     'cols' => 70,
-                                                    'rows' => 5);
+                                                    'rows' => 5,
+                                                    'noedit' => 'y');
     
     $fieldspec['workitem_status']           = array('type' => 'string',
                                                     'size' => 2,
@@ -65,19 +70,24 @@
                                                     'default' => 'EN',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'workitem_status');
+                                                    'optionlist' => 'workitem_status',
+                                                    'noedit' => 'y');
     
     $fieldspec['enabled_date']              = array('type' => 'datetime',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'noedit' => 'y');
     
     $fieldspec['cancelled_date']            = array('type' => 'datetime',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'noedit' => 'y');
     
     $fieldspec['finished_date']             = array('type' => 'datetime',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'noedit' => 'y');
     
     $fieldspec['deadline']                  = array('type' => 'datetime',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'noedit' => 'y');
     
     $fieldspec['role_id']                   = array('type' => 'string',
                                                     'size' => 16,

@@ -52,6 +52,12 @@ class dict_relationship extends Default_Table
     // perform validation that is common to INSERT and UPDATE.
     {
         //DebugBreak();
+        if (empty($fieldarray['relation_desc'])) {
+        	if (!empty($fieldarray['table_id_snr']) and !empty($fieldarray['table_id_jnr'])) {
+        		$fieldarray['relation_desc'] = 'Links ' .strtoupper($fieldarray['table_id_snr']) .' to ' .strtoupper($fieldarray['table_id_jnr']);
+        	} // if
+        } // if
+
         if (!empty($fieldarray['orderby'])) {
             if ($fieldarray['rel_type'] != 'DEL') {
                 $this->errors['orderby'] = getLanguageText('e0020'); // "Invalid unless relation type = 'DELETE'";
@@ -115,7 +121,7 @@ class dict_relationship extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table DICT_DATABASE and add as a LOOKUP list
-        require_once 'dict_database.class.inc';
+        //require_once 'classes/dict_database.class.inc';
         $dbobject =& singleton::getInstance('dict_database');
         $array = $dbobject->getValRep('database_id');
         $this->lookup_data['database_id'] = $array;
@@ -130,7 +136,7 @@ class dict_relationship extends Default_Table
 
         if (isset($fieldarray['database_id_snr']) and isset($fieldarray['table_id_snr'])) {
             // get column details for snr table and add as a LOOKUP list
-            require_once 'dict_column.class.inc';
+            //require_once 'classes/dict_column.class.inc';
             $dbobject =& singleton::getInstance('dict_column');
             $array = $dbobject->getValRep('column_id', "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'");
             $array = array_merge(array('' => ' ', '#calc#' => 'CALCULATED'), $array);
@@ -173,14 +179,13 @@ class dict_relationship extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where=null)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
 
         if ($item == 'rel_type') {
-            // provide values for dropdown list
-//            $array['']    = ' ';
+//            // provide values for dropdown list
 //            $array['RES'] = 'RESTRICTED';
 //            $array['DEL'] = 'CASCADE';
 //            $array['NUL'] = 'NULLIFY';
@@ -188,9 +193,81 @@ class dict_relationship extends Default_Table
             return $array;
         } // if
 
+        if ($item == 'table_alias_snr') {
+            // get data from the database
+            $this->sql_select     = 'table_id_snr, table_alias_snr';
+            $this->sql_orderby    = 'table_alias_snr';
+            $this->sql_ordery_seq = 'asc';
+            $data = $this->getData($where .' AND table_alias_snr IS NOT NULL');
+
+            // convert each row into 'alias=alias' in the output array
+            foreach ($data as $row => $rowdata) {
+                $text = $rowdata['table_id_snr'] .' AS ' .$rowdata['table_alias_snr'];
+                $array[$text] = $text;
+            } // foreach
+            $array = array_unique($array);  // remove duplicate entries
+            return $array;
+        } // if
+
+        if ($item == 'table_alias_jnr') {
+            // get data from the database
+            $this->sql_select     = 'table_id_jnr, table_alias_jnr';
+            $this->sql_orderby    = 'table_alias_jnr';
+            $this->sql_ordery_seq = 'asc';
+            $data = $this->getData($where .' AND table_alias_jnr IS NOT NULL');
+
+            // convert each row into 'alias=alias' in the output array
+            foreach ($data as $row => $rowdata) {
+                $text = $rowdata['table_id_jnr'] .' AS ' .$rowdata['table_alias_jnr'];
+                $array[$text] = $text;
+            } // foreach
+            $array = array_unique($array);  // remove duplicate entries
+            return $array;
+        } // if
+
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_output_multi ($name, $fieldarray)
+    // get extra data to pass to PDF class.
+    {
+        $outarray = array();
+
+        switch ($name) {
+        	case 'multi1':
+                // return a non-empty dummy array - this is labels only
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi2':
+                // retrieve associated data from RELATED_COLUMN table
+                $object =& singleton::getInstance('dict_related_column');
+                $db_id_snr  = $fieldarray['database_id_snr'];
+                $tbl_id_snr = $fieldarray['table_id_snr'];
+                $db_id_jnr  = $fieldarray['database_id_jnr'];
+                $tbl_id_jnr = $fieldarray['table_id_jnr'];
+                $seq_no     = $fieldarray['seq_no'];
+                $object->sql_orderby = 'seq_in_index asc';
+                $outarray = $object->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no=$seq_no");
+                if (empty($outarray)) {
+                    // print an empty line
+                	$outarray[] = array('dummy' => '');
+                } // if
+        		break;
+
+        	default:
+        		break;
+        } // switch
+
+        if ($outarray) {
+        	return $outarray;
+        } else {
+            return false;
+        } // if
+
+    } // _cm_output_multi
 
     // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
@@ -211,11 +288,14 @@ class dict_relationship extends Default_Table
         		$where = "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'";
         		break;
         	default:
-        		;
+        		$where = '';
         } // switch
 
-        // ensure that only one entry can be selected
-        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
@@ -231,32 +311,55 @@ class dict_relationship extends Default_Table
         //DebugBreak();
         switch ($return_from) {
             // move returned value to the correct field
-        	case 'dict_table(popup)':
-        		$fieldarray['table_id_jnr'] = $fieldarray['table_id'];
+            case 'dict_table(popup)':
+                $fieldarray['database_id_jnr'] = $fieldarray['database_id'];
+                $fieldarray['table_id_jnr']    = $fieldarray['table_id'];
                 // remove redundant data
                 unset($fieldarray['database_id']);
                 unset($fieldarray['table_id']);
-        		break;
-        	case 'dict_table(popup)snr':
-        		$fieldarray['table_id_snr'] = $fieldarray['table_id'];
+                break;
+            case 'dict_table(popup)snr':
+                $fieldarray['database_id_snr'] = $fieldarray['database_id'];
+                $fieldarray['table_id_snr']    = $fieldarray['table_id'];
                 // remove redundant data
                 unset($fieldarray['database_id']);
                 unset($fieldarray['table_id']);
-        		break;
-        	case 'dict_column(popup)':
-        		$fieldarray['parent_field'] = $fieldarray['column_id'];
+                break;
+            case 'dict_column(popup)':
+                $fieldarray['parent_field'] = $fieldarray['column_id'];
                 // remove redundant data
                 unset($fieldarray['database_id']);
                 unset($fieldarray['table_id']);
                 unset($fieldarray['column_id']);
-        		break;
-        	default:
-        		;
+                break;
+            default:
+                ;
         } // switch
 
         return $fieldarray;
 
     } // _cm_popupReturn
+
+    // ****************************************************************************
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    {
+        // customisable code goes here
+        if (is_string(key($rows))) {
+        	if (isset($rows['database_id_snr']) and isset($rows['table_id_snr'])) {
+                // get column details for snr table and add as a LOOKUP list
+                //require_once 'classes/dict_column.class.inc';
+                $dbobject =& singleton::getInstance('dict_column');
+                $array = $dbobject->getValRep('column_id', "database_id='{$rows['database_id_snr']}' AND table_id='{$rows['table_id_snr']}'");
+                $array = array_merge(array('#calc#' => 'CALCULATED'), $array);
+                $this->lookup_data['parent_field'] = $array;
+            } // if
+        } // if
+
+        return $rows;
+
+    } // _cm_post_getData
 
     // ****************************************************************************
     function _cm_post_insertRecord ($fieldarray)
@@ -266,10 +369,10 @@ class dict_relationship extends Default_Table
         $where = array2where($fieldarray, $this->getPkeyNames());
 
         // create initial records on DICT_RELATED_COLUMN table
-        require_once 'dict_related_column.class.inc';
+        require_once 'classes/dict_related_column.class.inc';
         $relobj =& singleton::getInstance('dict_related_column');
 
-        $outarray = $relobj->getInitialData($fieldarray);
+        $outarray = $relobj->getInitialDataMultiple($fieldarray);
         $outarray = $relobj->insertMultiple($outarray);
         if ($relobj->getErrors()) {
             $this->errors = array_merge($this->errors, $relobj->getErrors());
@@ -288,9 +391,11 @@ class dict_relationship extends Default_Table
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         $where = str_replace('database_id=', 'database_id_snr=', $where );
@@ -312,6 +417,16 @@ class dict_relationship extends Default_Table
         return $fieldarray;
 
     } // _cm_pre_insertRecord
+
+    // ****************************************************************************
+    function _cm_pre_output ($string)
+    // perform any processing required before the output operation
+    {
+        // custom code goes here
+
+        return $string;
+
+    } // _cm_pre_output
 
     // ****************************************************************************
     function _cm_validateInsert ($fieldarray)

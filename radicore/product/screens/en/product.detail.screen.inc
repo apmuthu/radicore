@@ -16,7 +16,7 @@ $structure['main']['fields'][] = array('uom_id' => 'Measured in');
 $structure['main']['fields'][] = array('date_intro' => 'Date Introduced');
 $structure['main']['fields'][] = array('end_date_sales' => 'Sales End Date');
 $structure['main']['fields'][] = array('end_date_support' => 'Support End Date');
-$structure['main']['fields'][] = array('comment' => 'Comment');
+$structure['main']['fields'][] = array('prod_comment' => 'Comment');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date');

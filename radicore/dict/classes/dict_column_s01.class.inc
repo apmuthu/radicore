@@ -7,7 +7,7 @@ require_once 'dict_column.class.inc';
 class dict_column_s01 extends dict_column
 {
     // ****************************************************************************
-    // this subclass is used by dict_related_column.multi2
+    // this subclass is used by dict_column(import)
     // ****************************************************************************
     var $delete_array = array();    // items to be deleted
     var $update_array = array();    // items to be updated
@@ -57,11 +57,10 @@ class dict_column_s01 extends dict_column
     } // _cm_getDatabaseLock
 
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         if (isset($fieldarray['database_id']) and isset($fieldarray['table_id'])) {
             // continue
         } else {
@@ -77,8 +76,7 @@ class dict_column_s01 extends dict_column
         // save these for _cm_getDatabaseLock () method
         $this->target_dbname    = $dbname;
         $this->target_tablename = $tablename;
-
-        $this->sql_orderby = 'column_seq';
+        $this->sql_orderby      = 'column_seq';
         $old_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
 
         // construct a smaller array of column names
@@ -87,8 +85,11 @@ class dict_column_s01 extends dict_column
         	$old_data_cols[$rowdata['column_id']] = $row;
         } // foreach
 
+        $insert_array       = array();
+        $this->delete_array = array();
+        $this->update_array = array();
+
         // obtain a list of current column definitions from the database engine
-        $fieldarray = array();
         $db_data = $this->_ddl_showColumns($dbname, $tablename);
 
         // construct a smaller array of column names
@@ -102,38 +103,52 @@ class dict_column_s01 extends dict_column
         $static['table_id']    = $tablename;
 
         // compare contents of dictionary and the physical database
-        $this->delete_array = array();
-        $this->update_array = array();
         foreach ($old_data_cols as $columnid => $ix) {
             if (array_key_exists($columnid, $db_data_cols)) {
-                $seq = $db_data_cols[$columnid]+1;
                 // entry to be updated
+                $col_type_old  = $old_data[$ix]['col_type'];
+                $user_size_old = $old_data[$ix]['user_size'];
                 $update = array_merge($old_data[$ix], $db_data[$db_data_cols[$columnid]]);
-                $update['column_seq'] = $seq;
-                // check for updates to boolean field
-                if (eregi('(char|tinyint)', $update['col_type'])) {
-                    if ($update['user_size'] == 1) {
-                        if (is_True($update['is_boolean'])) {
-                            // this was boolean before, so reset it
-                            $update['col_type'] = 'boolean';
-                        } // if
+                $seq = $db_data_cols[$columnid]+1;
+                $update['column_seq']  = $seq;
+
+                // check for fields which may have a choice of types in a comma-delimited list
+                if (strpos($update['col_type_native'], ',')) {
+                	$type_array = explode(',', $update['col_type_native']);
+                	if (in_array($col_type_old, $type_array)) {
+                	    // existing col_type is in this list, so keep it
+                		$update['col_type'] = $col_type_old;
+                	} // if
+                } // if
+
+                // check for a change in size
+                if (isset($update['col_maxsize'])) {
+                	if ($user_size_old < 1 OR $update['col_maxsize'] < $user_size_old) {
+                    	$update['user_size'] = $update['col_maxsize'];
+                    } else {
+                        $update['user_size'] = $user_size_old;
                     } // if
+                } else {
+                    $update['user_size'] = '';
                 } // if
+
                 // check for updates to column min/max values
-                if ($update['user_size'] > $update['col_maxsize']) {
-                    $update['user_size'] = $update['col_maxsize'];
-                } elseif (strlen($update['user_size']) == 0) {
-                    $update['user_size'] = $update['col_maxsize'];
-                } // if
-                if ($update['user_minvalue'] < $update['col_minvalue']) {
-                    $update['user_minvalue'] = $update['col_minvalue'];
-                } elseif (strlen($update['user_minvalue']) == 0) {
+                if (is_null($update['user_minvalue']) OR $update['user_minvalue'] < $update['col_minvalue']) {
                     $update['user_minvalue'] = $update['col_minvalue'];
                 } // if
-                if ($update['user_maxvalue'] > $update['col_maxvalue']) {
+                if (is_null($update['user_maxvalue']) OR $update['user_maxvalue'] > $update['col_maxvalue']) {
                     $update['user_maxvalue'] = $update['col_maxvalue'];
-                } elseif (strlen($update['user_maxvalue']) == 0) {
+                } // if
+                // if size has changed then update min/max values
+                if ($old_data[$ix]['col_maxsize'] != $db_data[$db_data_cols[$columnid]]['col_maxsize']) {
+                	$update['user_minvalue'] = $update['col_minvalue'];
                     $update['user_maxvalue'] = $update['col_maxvalue'];
+                } // if
+
+                if (is_True($update['col_null'])) {
+                	// do not change existing value
+                } else {
+                    $update['is_required'] = 'Y';
                 } // if
 
                 // transfer to member variable for processing in a later method
@@ -152,19 +167,23 @@ class dict_column_s01 extends dict_column
         foreach ($db_data as $row => $columndata) {
         	// insert details of new database
             $seq = $row+1;
-            $fieldarray[$seq]['column_seq']    = $seq;
-            $fieldarray[$seq]['column_desc']   = $columndata['column_id'];
-            $fieldarray[$seq]['user_size']     = $columndata['col_maxsize'];
-            $fieldarray[$seq]['user_minvalue'] = $columndata['col_minvalue'];
-            $fieldarray[$seq]['user_maxvalue'] = $columndata['col_maxvalue'];
-            $fieldarray[$seq] = array_merge($fieldarray[$seq], $static, $columndata);
+            $insert_array[$seq]['column_seq']    = $seq;
+            $insert_array[$seq]['column_desc']   = ucwords(str_replace('_', ' ', $columndata['column_id']));
+            $insert_array[$seq]['user_size']     = $columndata['col_maxsize'];
+            $insert_array[$seq]['user_minvalue'] = $columndata['col_minvalue'];
+            $insert_array[$seq]['user_maxvalue'] = $columndata['col_maxvalue'];
+            $insert_array[$seq]['is_required']   = $columndata['col_null'];
+            if (is_True($columndata['col_null'])) {
+            	$insert_array[$seq]['is_required'] = 'N';
+            } else {
+                $insert_array[$seq]['is_required'] = 'Y';
+            } // if
+            $insert_array[$seq] = array_merge($insert_array[$seq], $static, $columndata);
         } // foreach
 
-        $this->ignore_empty_fields = true;
+        return $insert_array;
 
-        return $fieldarray;
-
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMultiple
 
     // ****************************************************************************
     function _cm_post_insertMultiple ($fieldarray)
@@ -202,11 +221,11 @@ class dict_column_s01 extends dict_column
         // now import the keys for the current table
         static $keyobj;
         if (!is_object($keyobj)) {
-            require_once 'dict_table_key.class.inc';
+            require_once 'classes/dict_table_key.class.inc';
             $keyobj =& singleton::getInstance('dict_table_key');
         } // if
 
-        $array = $keyobj->getInitialData($this->where);
+        $array = $keyobj->getInitialDataMultiple($this->where);
         $array = $keyobj->insertMultiple($array);
         if ($keyobj->getErrors()) {
             $errors = $keyobj->getErrors();
@@ -226,8 +245,8 @@ class dict_column_s01 extends dict_column
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         // this is here to replace the method defined in the parent class
+
         return $fieldarray;
 
     } // _cm_post_insertRecord
@@ -237,6 +256,7 @@ class dict_column_s01 extends dict_column
     // perform custom processing before database record is inserted.
     {
         // this is here to replace the method defined in the parent class
+
         return $fieldarray;
 
     } // _cm_pre_insertRecord

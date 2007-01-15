@@ -38,7 +38,7 @@ class survey_answer_hdr_s01 extends survey_answer_hdr
         if (!is_true($rowdata[0]['is_complete'])) {
             // check that all answers have been given
             // 1st - build an array of answers
-            require_once 'survey_answer_dtl.class.inc';
+            require_once 'classes/survey_answer_dtl.class.inc';
             $dbobject =& singleton::getInstance('survey_answer_dtl');
             $null = $dbobject->setScrollArray($where);
 

@@ -45,6 +45,28 @@ class wf_transition extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
+    function _cm_commonValidation ($fieldarray, $originaldata)
+    // perform validation that is common to INSERT and UPDATE.
+    {
+        if ($fieldarray['transition_trigger'] == 'TIME') {
+        	if ($fieldarray['time_limit'] < 1) {
+        	    // "Cannot be blank if Trigger = 'TIME'"
+        		$this->errors['time_limit'] = getLanguageText('e0058');
+        	} // if
+        } // if
+
+        if ($fieldarray['time_limit'] > 0) {
+            if ($fieldarray['transition_trigger'] != 'TIME') {
+                // Must be blank if Trigger not = 'TIME'
+                $this->errors['time_limit'] = getLanguageText('e0059');
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_commonValidation
+
+    // ****************************************************************************
     function _cm_getInitialData ($fieldarray)
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
@@ -63,7 +85,7 @@ class wf_transition extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item, $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -73,9 +95,7 @@ class wf_transition extends Default_Table
             $this->sql_select     = 'transition_id, transition_name';
             $this->sql_orderby    = 'transition_id';
             $this->sql_ordery_seq = 'asc';
-            $data = $this->getData($where);
-
-            $array[''] = ' ';   // start with blank entry
+            $data = $this->getData_raw($where);
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -129,17 +149,22 @@ class wf_transition extends Default_Table
                 ;
         } // switch
 
-        // ensure that only one entry can be selected
-        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
 
         return $where;
 
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         global $dbprefix;
 
@@ -149,7 +174,7 @@ class wf_transition extends Default_Table
             $this->sql_select = 'wf_transition.*, task_desc, role_desc';
             $this->sql_from   = 'wf_transition '
                               . 'LEFT JOIN ' .$dbprefix .'menu.mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
-                              . 'LEFT JOIN ' .$dbprefix .'menu.mnu_role ON (mnu_role.role_id=wf_transition.role_id) ';
+                              . 'LEFT JOIN ' .$dbprefix .'menu.mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
         } // if
 
         return $where;

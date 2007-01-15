@@ -1,0 +1,1 @@
+Try user_id= 'mgr', password='password'

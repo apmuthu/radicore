@@ -1,4 +1,4 @@
-<?php 
+<?php
 // *****************************************************************************
 // List the contents of a database table and allow the user to view/modify
 // the contents by activating other screens via navigation buttons.
@@ -10,8 +10,8 @@ $screen   = 'crs_conflict.list.screen.inc';  // file identifying screen structur
 
 // identify extra parameters for a JOIN
 $sql_select = 'crs_conflict.*, L1.lesson_name AS lesson_name1, L2.lesson_name AS lesson_name2, '
-             .'CONCAT(T.title, " ", T.first_name, " ", T.last_name) AS teacher_name, '
-             .'CONCAT(S.last_name, ", ", S.first_name) AS student_name ';
+             ."CONCAT(T.title, ' ', T.first_name, ' ', T.last_name) AS teacher_name, "
+             ."CONCAT(S.last_name, ' ', S.first_name) AS student_name ";
 $sql_from   = 'crs_conflict '
              .'LEFT JOIN crs_lesson AS L1 ON (L1.lesson_id=crs_conflict.lesson_id1) '
              .'LEFT JOIN crs_lesson AS L2 ON (L2.lesson_id=crs_conflict.lesson_id2) '

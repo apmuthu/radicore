@@ -56,9 +56,11 @@ class help_text extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         if (isset($_POST['retrieve'])) {

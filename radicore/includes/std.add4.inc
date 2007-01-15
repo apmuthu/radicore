@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add4.inc
@@ -30,10 +30,11 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 
 // get initial data for new record(s)
-$fieldarray = $dbobject->getInitialData($where);
+$fieldarray = $dbobject->getInitialDataMultiple($where);
 if ($dbobject->getErrors()) {
     // error detected, so quit now
-    scriptPrevious($dbobject->getErrors(), $messages);
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
+    return $batch_errors;
 } // if
 
 // add record(s) to the database
@@ -47,7 +48,7 @@ if ($errors) {
     $errors = $dbobject->commit();
 } // if
 
-scriptPrevious($errors, $messages);
-exit;
+$batch_errors = scriptPrevious($errors, $messages);
+return $batch_errors;
 
 ?>

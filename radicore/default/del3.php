@@ -9,6 +9,6 @@
 
 $table_id = '#tablename#';          // table name
 
-require 'std.delete3.inc';          // activate page controller
+require_once 'std.delete3.inc';     // activate page controller
 
 ?>

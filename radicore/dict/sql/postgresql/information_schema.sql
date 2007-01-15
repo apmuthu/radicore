@@ -1,3 +1,5 @@
+-- this bugfix is required for versions of PostgreSQL which are less than 8.2
+
 CREATE OR REPLACE VIEW information_schema.columns AS 
  SELECT current_database()::information_schema.sql_identifier AS table_catalog, nc.nspname::information_schema.sql_identifier AS table_schema, c.relname::information_schema.sql_identifier AS table_name, a.attname::information_schema.sql_identifier AS column_name, a.attnum::information_schema.cardinal_number AS ordinal_position, 
         ad.adsrc::information_schema.character_data AS column_default, 

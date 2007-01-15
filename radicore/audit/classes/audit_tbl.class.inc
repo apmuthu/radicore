@@ -120,7 +120,7 @@ class audit_tbl extends Default_Table
 
         if (!isset($_SESSION['session_number'])) {
             // first time only, get details from audit_ssn
-            require_once 'audit_ssn.class.inc';
+            require_once 'classes/audit_ssn.class.inc';
             $ssn_obj =& singleton::getInstance('audit_ssn');
             $ssn_data = $ssn_obj->insertRecord(array());
             if ($ssn_obj->errors) {
@@ -134,7 +134,7 @@ class audit_tbl extends Default_Table
 
         if (empty($this->trn_array)) {
             // first time only, get details from audit_trn
-            require_once 'audit_trn.class.inc';
+            require_once 'classes/audit_trn.class.inc';
             $trn_obj =& singleton::getInstance('audit_trn');
             $this->trn_array = $trn_obj->insertRecord($ssn_data);
             if ($trn_obj->errors) {
@@ -156,7 +156,7 @@ class audit_tbl extends Default_Table
         $fieldarray['table_name'] = $tablename;
 
         $pkey_string = trim($where, '( )');
-        $fieldarray['pkey'] = addslashes($pkey_string);
+        $fieldarray['pkey'] = $pkey_string;
 
         // add this record to the database
         $fieldarray = $this->_dml_insertRecord ($fieldarray);
@@ -184,9 +184,6 @@ class audit_tbl extends Default_Table
                         // value does not exist in $oldarray, so remove from $newarray
                         unset ($newarray[$item]);
                     } // if
-                } else {
-                    // remove slashes (escape characters) from $newarray
-                    $newarray[$item] = stripslashes($newarray[$item]);
                 } // if
             } // foreach
             // remove entry from $oldarray which does not exist in $newarray
@@ -229,7 +226,7 @@ class audit_tbl extends Default_Table
         } // foreach
 
         // add all these records to the database
-        require_once 'audit_fld.class.inc';
+        require_once 'classes/audit_fld.class.inc';
         $fld_obj =& singleton::getInstance('audit_fld');
 
         $fieldarray = $fld_obj->insertMultiple($fieldarray);
@@ -283,30 +280,20 @@ class audit_tbl extends Default_Table
     } // _cm_changeConfig
 
     // ***************************************************************************
-    function _cm_getExtraData($where, $fieldarray)
-    // Perform custom processing for the getExtraData method.
-    // $where = a string in SQL 'where' format.
-    // $fieldarray = the contents of $where as an array.
+    function _cm_formatData ($fieldarray)
+    // perform custom formatting before values are shown to the user.
     {
-        //DebugBreak();
-        if ($GLOBALS['mode'] == 'search') {
-            if (isset($_POST['clear'])) {
-                // do nothing
-            } elseif (empty($fieldarray)) {
-                require_once 'std.datevalidation.class.inc';
-                $dateobj =& singleton::getInstance('date_class');
-                // set default values in screen
-                $fieldarray['user_id']   = $_SESSION['logon_user_id'];
-                $fieldarray['date_from'] = $dateobj->getExternalDate(getTimeStamp('date'));
-            } // if
+        if (isset($fieldarray['trn_date'])) {
+            $dateobj =& singleton::getInstance('date_class');
+        	$fieldarray['trn_date'] = $dateobj->getExternalDate($fieldarray['trn_date']);
         } // if
 
         return $fieldarray;
 
-    } // _cm_getExtraData
+    } // _cm_formatData
 
-    // ***************************************************************************
-    function _cm_initialise ($where, $selection)
+    // ****************************************************************************
+    function _cm_initialise ($where)
     // perform any initialisation for the current task.
     {
         if ($GLOBALS['mode'] == 'list') {
@@ -314,14 +301,30 @@ class audit_tbl extends Default_Table
             $this->allow_empty_where = TRUE;
         } // if
 
+        if (!empty($where)) {
+            // do not override previous settings
+        } else {
+            if ($GLOBALS['return_from'] == 'audit_dtl(search)' AND $GLOBALS['return_action'] == 'quit') {
+                // no current selection, and search was cancelled, so quit instead of retrieving all occurrences
+            	scriptPrevious();
+            } // if
+        	if ($GLOBALS['mode'] == 'search') {
+                // set initial values in screen
+                $where = "user_id='" .$_SESSION['logon_user_id'] ."' AND "
+                        ."date_from='" .getTimeStamp('date') ."'";
+            } // if
+        } // if
+
         return $where;
 
     } // _cm_initialise
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         if ($GLOBALS['mode'] == 'list') {
@@ -332,36 +335,55 @@ class audit_tbl extends Default_Table
         if (empty($this->sql_search)) return $where;
 
         // convert from string to an associative array
-        $fieldarray = where2array($this->sql_search);
+        $fieldarray = where2array($this->sql_search, false, false);
+        // do not strip LIKE operator from any fields
+        //$array1 = where2indexedArray($this->sql_search);   // convert string into indexed array
+        //$fieldarray = indexed2assoc($array1);              // convert indexed array to associative
 
         // merge the '_from' and '_to' fields into a single field
         if (isset($fieldarray['date_from'])) {
+            $fieldarray['date_from'] = stripOperators($fieldarray['date_from']);
             if (isset($fieldarray['date_to'])) {
-                $fieldarray['audit_trn.date'] = "BETWEEN '{$fieldarray['date_from']}' AND '{$fieldarray['date_to']}'";
+                $fieldarray['date_to'] = stripOperators($fieldarray['date_to']);
+                if ($fieldarray['date_from'] == $fieldarray['date_to']) {
+                    // values are the same, so use '='
+                	$fieldarray['trn_date'] = $fieldarray['date_from'];
+                } else {
+                    $fieldarray['trn_date'] = "BETWEEN '{$fieldarray['date_from']}' AND '{$fieldarray['date_to']}'";
+                } // if
             } else {
-                $fieldarray['audit_trn.date'] = $fieldarray['date_from'];
+                $fieldarray['trn_date'] = ">= '{$fieldarray['date_from']}'";
             } // if
             unset($fieldarray['date_from']);
             unset($fieldarray['date_to']);
         } // if
 
         if (isset($fieldarray['date_to'])) {
-            $fieldarray['audit_trn.date'] = $fieldarray['date_to'];
+            $fieldarray['date_to'] = stripOperators($fieldarray['date_to']);
+            $fieldarray['trn_date'] = "<= '{$fieldarray['date_to']}'";
             unset($fieldarray['date_to']);
         } // if
 
         if (isset($fieldarray['time_from'])) {
+            $fieldarray['time_from'] = stripOperators($fieldarray['time_from']);
             if (isset($fieldarray['time_to'])) {
-                $fieldarray['audit_trn.time'] = "BETWEEN '{$fieldarray['time_from']}' AND '{$fieldarray['time_to']}'";
+                $fieldarray['time_to'] = stripOperators($fieldarray['time_to']);
+                if ($fieldarray['time_from'] == $fieldarray['time_to']) {
+                    // values are the same, so use '='
+                	$fieldarray['trn_time'] = $fieldarray['time_from'];
+                } else {
+                    $fieldarray['trn_time'] = "BETWEEN '{$fieldarray['time_from']}' AND '{$fieldarray['time_to']}'";
+                } // if
             } else {
-                $fieldarray['audit_trn.time'] = $fieldarray['time_from'];
+                $fieldarray['trn_time'] = ">= '{$fieldarray['time_from']}'";
             } // if
             unset($fieldarray['time_from']);
             unset($fieldarray['time_to']);
         } // if
 
         if (isset($fieldarray['time_to'])) {
-            $fieldarray['audit_trn.time'] = $fieldarray['time_to'];
+            $fieldarray['time_to'] = stripOperators($fieldarray['time_to']);
+            $fieldarray['trn_time'] = "<= '{$fieldarray['time_to']}'";
             unset($fieldarray['time_to']);
         } // if
 

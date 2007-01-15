@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -35,7 +35,7 @@
 
         <xsl:choose>
           <xsl:when test="@curpage&lt;=1">
-            <!-- we are on page 1, so there is no navigation backwards -->
+            <!-- we are on the first page, so there is no navigation backwards -->
             <xsl:text>&#171;</xsl:text><xsl:value-of select="$first"/>
             <xsl:text>&#160;&#160;</xsl:text>
             <xsl:text>&#8249;</xsl:text><xsl:value-of select="$prev"/>

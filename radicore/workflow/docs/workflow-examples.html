@@ -1,0 +1,201 @@
+<html>
+
+<head>
+	<title>Workflow Examples</title>
+	<style>
+    <!--
+			body { margin-left: 2em; margin-right:2em; }
+      code { color: green;}
+		-->
+	</style>
+</head>
+
+<body>
+
+<h1>Example 1 – sequential routing</h1>
+
+<p>Here is a diagram:</p>
+
+<p><img src="workflow-example-01.png"></p>
+
+<p>The trigger which starts a new CASE is 'Add Person'</p>
+
+<p>There is 1 place:</p>
+
+<ul class="compress">
+ 	<li>P1</li>
+</ul>
+
+<p>There are 2 transitions:</p>
+
+<ul class="compress">
+  <li>T1 (Add Person Address), Type=User</li>
+  <li>T2 (Update Person Address), Type=User</li>
+</ul>
+
+<p>There are 4 arcs:</p>
+
+<ul class="compress">
+  <li>Start -&gt; T1, Inward, Sequential,</li>
+  <li>T1 -&gt; P1, Outward, Sequential</li>
+  <li>P1 -&gt; T2, Inward, Sequential</li>
+  <li>T2 -&gt; End, Outward, Sequential</li>
+</ul>
+
+<hr>
+<h1>Example 2 – conditional routing with a timed split</h1>
+
+<p>Here is a diagram:</p>
+
+<p><img src="workflow-example-02.png"></p>
+
+<p>The trigger which starts a new CASE is 'Add Person'</p>
+
+<p>There is 1 place:</p>
+
+<ul class="compress">
+ 	<li>P1</li>
+</ul>
+
+<p>There are 3 transitions: </p>
+
+<ul class="compress">
+  <li>T1 (Add Person Address), Type=User</li>
+  <li>T2 (Update Person Address), Type=User</li>
+  <li>T3 (Delete Person), Type=Timer (1 hour) – must be no user dialog</li>
+</ul>
+
+<p>There are 6 arcs:</p>
+
+<ul class="compress">
+  <li>Start -&gt; T1, Inward, OR-Split (Implicit)</li>
+  <li>Start -&gt; T3, Inward, OR-Split (Implicit)</li>
+  <li>T1 -&gt; P1, Outward, Sequential</li>
+  <li>P1 -&gt; T2, Inward, Sequential</li>
+  <li>T2 -&gt; End, Outward, OR-Join</li>
+  <li>T3 -&gt; End, Outward, OR-Join</li>
+</ul>
+
+<p>If T1 is not fired within the time limit, T3 will be fired instead. Whichever of T1 and T3 is fired first will cause the other to be cancelled.</p>
+
+<p>Expired items can be identified by running script <b>workitem(timeout).php</b> as a cron job at timed intervals.</p>
+
+<hr>
+<h1>Example 3 – parallel routing</h1>
+
+<p>Here is a diagram:</p>
+
+<p><img src="workflow-example-03.png"></p>
+
+<p>The trigger which starts a new CASE is 'Add Person'</p>
+
+<p>There are 4 places:</p>
+
+<ul class="compress">
+ 	<li>P1</li>
+ 	<li>P2</li>
+  <li>P3</li>
+  <li>P4</li>
+</ul>
+
+<p>There are 4 transitions: </p>
+
+<ul class="compress">
+ 	<li>T1 (Add Person Address), Type=User</li>
+ 	<li>T2 (Update Person Address), Type=User</li>
+ 	<li>T3 (Maintain Options), Type=User</li>
+  <li>T2 (Update Person Address), Type=User</li>
+</ul>
+
+<p>There are 10 arcs:</p>
+
+<ul class="compress">
+	<li>Start -&gt; T1, Inward, Sequential</li>
+  <li>T1 -&gt; P1, Outward, AND split</li>
+ 	<li>T1 -&gt; P2, Outward, AND split</li>
+  <li>P1 -&gt; T2, Inward, Sequential</li>
+  <li>P2 -&gt; T3, Inward, Sequential</li>
+ 	<li>T2 -&gt; P3, Outward, Sequential</li>
+ 	<li>T3 -&gt; P4, Outward, Sequential</li>
+  <li>P3 -&gt; T4, Inward, AND join</li>
+  <li>P4 -&gt; T4, Inward, AND join</li>
+  <li>T4 -&gt; End, Outward, Sequential</li>
+</ul>
+
+<hr>
+<h1>Example 4 – conditional routing with a guard</h1>
+
+<p>Here is a diagram:</p>
+
+<p><img src="workflow-example-04.png"></p>
+
+<p>The trigger which starts a new CASE is 'Add Person'</p>
+
+<p>There are 2 places:</p>
+
+<ul class="compress">
+ 	<li>P1</li>
+ 	<li>P2</li>
+</ul>
+
+<p>There are 3 transitions: </p>
+
+<ul class="compress">
+ 	<li>T1 (Add Person Address), Type=User</li>
+ 	<li>T2 (Update Person Address), Type=User</li>
+ 	<li>T3 (Maintain Options), Type=User</li>
+</ul>
+
+<p>There are 7 arcs:</p>
+
+<ul class="compress">
+	<li>Start -&gt; T1, Inward, Sequential</li>
+  <li>T1 -&gt; P1, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray'telephone_no']) &lt; 1) return TRUE;</code></li>
+ 	<li>T1 -&gt; P2, Outward, Explicit OR split</li>
+  <li>P1 -&gt; T2, Inward, Sequential</li>
+  <li>P2 -&gt; T3, Inward, Sequential</li>
+ 	<li>T2 -&gt; END, Outward, OR join</li>
+ 	<li>T3 -&gt; END, Outward, OR join</li>
+</ul>
+
+<p>After transition T1 is executed the workflow engine will examine the 2 arcs for a pre-condition (guard). If this condition evaluates to TRUE then the arc with the condition will be processed and the other arc will be ignored. If the condition is FALSE then the arc without the condition will be processed.</p>
+
+<hr>
+<h1>Example 5 – iterative routing</h1>
+
+<p>Here is a diagram:</p>
+
+<p><img src="workflow-example-05.png"></p>
+
+<p>The trigger which starts a new CASE is 'Add Person'</p>
+
+<p>There is 1 place:</p>
+
+<ul class="compress">
+ 	<li>P1</li>
+</ul>
+
+<p>There are 2 transitions: </p>
+
+<ul class="compress">
+  <li>T1 (Maintain Options), Type=User</li>
+ 	<li>T2 (Add Person Address), Type=User</li>
+</ul>
+
+<p>There are 5 arcs:</p>
+
+<ul class="compress">
+	<li>Start -&gt; T1, Inward, Sequential</li>
+  <li>T1 -&gt; Start, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray'telephone_no']) &lt; 1) return TRUE;</code></li>
+  <li>T1 -&gt; P1, Outward, Explicit OR split</li>
+  <li>P1 -&gt; T2, Inward, Sequential</li>
+  <li>T2 -&gt; END, Outward, Sequential</li>
+</ul>
+
+<p>After transition T1 is executed the workflow engine will examine the 2 arcs for a pre-condition (guard). If this condition evaluates to TRUE then the arc with the condition will be processed and the other arc will be ignored. If the condition is FALSE then the arc without the condition will be processed.</p>
+
+<hr>
+
+</body>
+
+</html>

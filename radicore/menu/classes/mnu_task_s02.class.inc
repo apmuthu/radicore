@@ -21,7 +21,8 @@ class mnu_task_s02 extends mnu_task
         $this->fieldspec['task_desc']['noedit'] = 'y';
         $this->fieldspec['new_task_id']     = array('type' => 'string',
                                                     'size' => 40,
-                                                    'required' => 'y');
+                                                    'required' => 'y',
+                                                    'lowercase' => 'y');
         $fieldarray['new_task_id']          = null;
 
         // this button causes confusion, so remove it
@@ -48,7 +49,7 @@ class mnu_task_s02 extends mnu_task
                 unset($childobj);
                 // instantiate an object for this table
                 if (array_key_exists('subsys_dir', $reldata)) {
-                    $dir = $_SERVER['DOCUMENT_ROOT'] ."/" .$reldata['subsys_dir'] ."/";
+                    $dir = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() ."/" .$reldata['subsys_dir'] ."/";
                 } else {
                     $dir = NULL;
                 } // if
@@ -66,7 +67,7 @@ class mnu_task_s02 extends mnu_task
 
         // now update the parent MNU_TASK record
         unset($childobj);
-        require_once 'mnu_task.class.inc';
+        require_once 'classes/mnu_task.class.inc';
         $childobj =& singleton::getInstance('mnu_task');
         $msg[] = $childobj->updateSelection("task_id='$old_task_id'", "task_id='$new_task_id'");
         unset($childobj);
@@ -88,7 +89,8 @@ class mnu_task_s02 extends mnu_task
         $where = "task_id='{$fieldarray['new_task_id']}'";
         $count = $this->getCount($where);
         if ($count > 0) {
-            $this->errors['new_task_id'] = getLanguageText('e0023'); // "This TASK_ID is already in use";
+            // "This TASK_ID is already in use"
+            $this->errors['new_task_id'] = getLanguageText('e0023');
         } // if
 
         return $fieldarray;

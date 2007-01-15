@@ -5,12 +5,25 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
 <xsl:variable name="title" select="/root/params/title"/>
+
+<xsl:variable name="imagedir">
+  <xsl:choose>
+    <xsl:when test="/root/params/application='sample'">
+      <!-- this is for the sample application -->
+      <xsl:text>images/</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <!-- this is for the full application -->
+      <xsl:text>../images/</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:variable>
 
 <xsl:template name="head">
 
@@ -19,6 +32,7 @@
     <title><xsl:value-of select="$title"/></title>
 
     <xsl:if test="/root/params/screen_refresh">
+      <!-- cause the browser to refresh this screen every N seconds -->
       <meta http-equiv="refresh">
         <xsl:attribute name="content">
           <xsl:value-of select="/root/params/screen_refresh" />
@@ -29,19 +43,60 @@
     </xsl:if>
 
     <xsl:choose>
-        <xsl:when test="//params/application='sample'">
-            <!-- this is for the sample application -->
-            <link rel="stylesheet" type="text/css" href="style_default.css" />
-            <link rel="stylesheet" type="text/css" href="style_custom.css" />
-        </xsl:when>
-        <xsl:otherwise>
-            <xsl:for-each select="/root/cssfiles/filename">
-                <link rel="stylesheet" type="text/css" href="{node()}" />
-            </xsl:for-each>
-        </xsl:otherwise>
+      <xsl:when test="/root/params/application='sample'">
+        <!-- this is for the sample application -->
+        <link rel="stylesheet" type="text/css" href="style_default.css" />
+        <link rel="stylesheet" type="text/css" href="style_custom.css" />
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:for-each select="/root/cssfiles/filename">
+          <link rel="stylesheet" type="text/css" href="{node()}" />
+        </xsl:for-each>
+      </xsl:otherwise>
     </xsl:choose>
 
+    <xsl:for-each select="/root/javascript/head">
+      <xsl:choose>
+        <xsl:when test="@type='file'">
+          <script language="javascript" src="{node()}" />
+        </xsl:when>
+        <xsl:when test="@type='code'">
+          <script language="javascript">
+            <xsl:value-of select="node()" disable-output-escaping="yes"/>
+          </script>
+        </xsl:when>
+      </xsl:choose>
+    </xsl:for-each>
+
   </head>
+
+</xsl:template>
+
+<xsl:template name="javascript_footer">
+
+<script language="JavaScript">
+  var SymRealOnLoad;
+  var SymRealOnUnload;
+
+  function SymOnUnload()
+  {
+    window.open = SymWinOpen;
+    if(SymRealOnUnload != null)
+       SymRealOnUnload();
+  }
+
+  function SymOnLoad()
+  {
+    if(SymRealOnLoad != null)
+       SymRealOnLoad();
+    window.open = SymRealWinOpen;
+    SymRealOnUnload = window.onunload;
+    window.onunload = SymOnUnload;
+  }
+
+  SymRealOnLoad = window.onload;
+  window.onload = SymOnLoad;
+</script>
 
 </xsl:template>
 

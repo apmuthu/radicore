@@ -52,7 +52,7 @@ class good_identification extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table and add to lookup array
-        require_once 'good_identity_type.class.inc';
+        require_once 'classes/good_identity_type.class.inc';
         $dbobject =& singleton::getInstance('good_identity_type');
         $data_array = $dbobject->getValRep('identity_type_id');
         $this->lookup_data['identity_type_id'] = $data_array;
@@ -67,7 +67,7 @@ class good_identification extends Default_Table
     // $fieldarray contains data from the initial $where clause.
     {
         //DebugBreak();
-        require_once 'product.class.inc';
+        require_once 'classes/product.class.inc';
         $dbobject =& singleton::getInstance('product');
         $dbobject->sql_select = 'product_subtype';
         $data = $dbobject->getData("product_id='{$fieldarray['product_id']}'");

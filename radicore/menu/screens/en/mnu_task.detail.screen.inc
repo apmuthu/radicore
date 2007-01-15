@@ -4,28 +4,50 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 $structure['tables']['main'] = 'mnu_task';
 
 $structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => '75%');
+$structure['main']['columns'][] = array('width' => '25%');
+$structure['main']['columns'][] = array('width' => '25%');
+$structure['main']['columns'][] = array('width' => '25%');
 
-$structure['main']['fields'][] = array('task_id' => 'Task');
-$structure['main']['fields'][] = array('task_desc' => 'Description');
-$structure['main']['fields'][] = array('button_text' => 'Button Text');
-$structure['main']['fields'][] = array('task_type' => 'Type');
-$structure['main']['fields'][] = array('dialog_type_id' => 'Dialog Type');
-$structure['main']['fields'][] = array('subsys_id' => 'Subsystem');
-$structure['main']['fields'][] = array('script_id' => 'Script ID');
-$structure['main']['fields'][] = array('initial_passthru' => 'Initial Passthru');
-$structure['main']['fields'][] = array('selection_fixed' => 'Selection (fixed)');
-$structure['main']['fields'][] = array('selection_temp' => 'Selection (temporary)');
-$structure['main']['fields'][] = array('settings' => 'Settings');
-$structure['main']['fields'][] = array('order_by' => 'Order By');
-$structure['main']['fields'][] = array('keep_data' => 'Keep Data on exit?');
-$structure['main']['fields'][] = array('is_disabled' => 'Task Disabled?');
-$structure['main']['fields'][] = array('log_sql_query' => 'Log SQL query?');
-$structure['main']['fields'][] = array('screen_refresh' => 'Screen Refresh');
-$structure['main']['fields'][] = array('created_date' => 'Created Date');
-$structure['main']['fields'][] = array('created_user' => 'Created By');
-$structure['main']['fields'][] = array('revised_date' => 'Revised Date');
-$structure['main']['fields'][] = array('revised_user' => 'Revised By');
-$structure['main']['fields'][] = array('selected' => 'Selected');
+$structure['main']['fields'][] = array('task_id' => 'Task', 'colspan' => 3);
+$structure['main']['fields'][] = array('task_desc' => 'Description', 'colspan' => 3);
+$structure['main']['fields'][] = array('button_text' => 'Button Text', 'colspan' => 3);
+$structure['main']['fields'][] = array('task_type' => 'Type', 'colspan' => 3);
+$structure['main']['fields'][] = array('pattern_id' => 'Pattern', 'colspan' => 3);
+$structure['main']['fields'][] = array('subsys_id' => 'Subsystem', 'colspan' => 3);
+$structure['main']['fields'][] = array('is_disabled' => 'Task Disabled?', 'colspan' => 3);
+$structure['main']['fields'][] = array('script_id' => 'Script ID', 'colspan' => 3);
+$structure['main']['fields'][] = array('initial_passthru' => 'Initial Passthru', 'colspan' => 3);
+$structure['main']['fields'][] = array('selection_fixed' => 'Selection (fixed)', 'colspan' => 3);
+$structure['main']['fields'][] = array('selection_temp' => 'Selection (temporary)', 'colspan' => 3);
+$structure['main']['fields'][] = array('settings' => 'Settings', 'colspan' => 3);
+$structure['main']['fields'][] = array('order_by' => 'Order By', 'colspan' => 3);
+
+$structure['main']['fields'][14][] = array('label' => 'Use HTTPS?');
+$structure['main']['fields'][14][] = array('field' => 'use_https');
+$structure['main']['fields'][14][] = array('label' => 'Keep Data on exit?');
+$structure['main']['fields'][14][] = array('field' => 'keep_data');
+
+$structure['main']['fields'][15][] = array('label' => 'Log SQL query?');
+$structure['main']['fields'][15][] = array('field' => 'log_sql_query');
+$structure['main']['fields'][15][] = array('label' => 'Screen Refresh');
+$structure['main']['fields'][15][] = array('field' => 'screen_refresh');
+
+$structure['main']['fields'][16][] = array('label' => 'Created Date');
+$structure['main']['fields'][16][] = array('field' => 'created_date');
+$structure['main']['fields'][16][] = array('label' => 'Created By');
+$structure['main']['fields'][16][] = array('field' => 'created_user');
+$structure['main']['fields'][17][] = array('label' => 'Revised Date');
+$structure['main']['fields'][17][] = array('field' => 'revised_date');
+$structure['main']['fields'][17][] = array('label' => 'Revised By');
+$structure['main']['fields'][17][] = array('field' => 'revised_user');
+
+$structure['main']['fields'][] = array('selected' => 'Selected', 'colspan' => 3);
+
+// this is here in case no multi-field line is displayed, as a browser bug causes
+// the output to ignore the 'colspan' attibute
+$structure['main']['fields'][19][] = array('label' => '');
+$structure['main']['fields'][19][] = array('field' => 'blank');
+$structure['main']['fields'][19][] = array('label' => '');
+$structure['main']['fields'][19][] = array('field' => 'blank');
 
 ?>

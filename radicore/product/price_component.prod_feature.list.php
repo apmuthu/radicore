@@ -6,7 +6,6 @@
 // The identity of the OUTER table is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $outer_table = 'product_feature';	               // name of outer table
 $inner_table = 'price_component';                  // name of inner table
 $screen = 'price_component.prod_feature.list.screen.inc';  // file identifying screen structure
@@ -20,10 +19,6 @@ $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = '';
 
-// set default sort sequence
-$inner_sql_orderby = '';
-
-// activate page controller
-require 'std.list2.inc';
+require 'std.list2.inc';            // activate page controller
 
 ?>

@@ -22,6 +22,6 @@ $structure['inner']['fields'][] = array('transition_trigger' => 'Transition Trig
 $structure['inner']['fields'][] = array('task_id' => 'Task Id');
 $structure['inner']['fields'][] = array('workitem_status' => 'Workitem Status');
 $structure['inner']['fields'][] = array('enabled_date' => 'Enabled Date');
-$structure['inner']['fields'][] = array('deadine' => 'Deadline');
+$structure['inner']['fields'][] = array('deadline' => 'Deadline');
 
 ?>

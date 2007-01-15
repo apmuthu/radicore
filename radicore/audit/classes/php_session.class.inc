@@ -1,6 +1,10 @@
 <?php
+// *****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// *****************************************************************************
 require_once 'std.table.class.inc';
-class php_Session extends Default_Table
+class php_session extends Default_Table
 {
     // ****************************************************************************
     // This class saves the PHP session data in a database table.
@@ -75,12 +79,14 @@ class php_Session extends Default_Table
             } // if
         } // if
 
-        if (empty($this->fieldarray)) {
+        $count = $this->getCount("session_id='" .addslashes($session_id) ."'");
+
+        if ($count == 0) {
             // create new record
             $array['session_id']   = $session_id;
             $array['date_created'] = getTimeStamp();
             $array['last_updated'] = getTimeStamp();
-            $array['session_data'] = addslashes($session_data);
+            $array['session_data'] = $session_data;
             $this->_dml_insertRecord($array);
         } else {
             // update existing record
@@ -88,8 +94,13 @@ class php_Session extends Default_Table
                 $array['user_id']  = $_SESSION['logon_user_id'];
             } // if
             $array['last_updated'] = getTimeStamp();
-            $array['session_data'] = addslashes($session_data);
-            $this->_dml_updateRecord($array, $this->fieldarray);
+            $array['session_data'] = $session_data;
+            if ($session_id == $this->fieldarray['session_id']) {
+            	$old_data[0] = $this->fieldarray;
+            } else {
+                $old_data = $this->_dml_ReadBeforeUpdate ("session_id='" .addslashes($session_id) ."'");
+            } // if
+            $this->_dml_updateRecord($array, $old_data[0]);
         } // if
 
         return true;
@@ -126,6 +137,7 @@ class php_Session extends Default_Table
     // ensure session data is written out before this class is destroyed
     // (see http://bugs.php.net/bug.php?id=33772 for details)
     {
+
         @session_write_close();
 
     } // __destruct

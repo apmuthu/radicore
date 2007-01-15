@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -14,7 +14,8 @@ class pgsql
     var $server_version;        // version number for server
 
     var $audit_logging;         // yes/no switch
-    var $schema;                // database name
+    var $dbname;                // database name
+    var $schema;                // schema name
     var $errors;                // array of errors
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
@@ -24,7 +25,9 @@ class pgsql
     var $primary_key = array(); // array of primary key names
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
+    var $row_locks_supp;        // supplemental lock type
     var $table_locks;           // array of tables to be locked
+    var $transaction_level;     // transaction level
     var $unique_keys = array(); // array of canidate keys
 
     // the following are used to construct an SQL query
@@ -46,7 +49,7 @@ class pgsql
         global $PGSQL_dbname;
 
         if (!empty($PGSQL_dbname)) {
-            $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+            $result = $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
         } else {
             trigger_error('No value supplied for $PGSQL_dbname', E_USER_ERROR);
         } // if
@@ -61,20 +64,64 @@ class pgsql
     } // pgsql
 
     // ****************************************************************************
+    function array2string ($array)
+    // return an array of values (for an ARRAY datatype) as a string.
+    {
+        // return array as a comma-separated string inside curly braces
+        $string = '{' .implode(',', $array) .'}';
+
+        return $string;
+
+    } // array2string
+
+    // ****************************************************************************
+    function buildKeyString ($fieldarray, $key)
+    // build a string like "name1='value1' AND name2='value2'"
+    // $fieldarray is an associative array of names and values
+    // $key        is an indexed array of key fields
+    {
+        $where = null;
+
+        foreach ($key as $fieldname) {
+            if (array_key_exists($fieldname, $fieldarray)) {
+            	$fieldvalue = pg_escape_string($fieldarray[$fieldname]);
+            } else {
+                $fieldvalue = '';
+            } // if
+            if (empty($where)) {
+                $where  = "$fieldname='$fieldvalue'";
+            } else {
+                $where .= " AND $fieldname='$fieldvalue'";
+            } // if
+        } // foreach
+
+        if (empty($where)) {
+        	// *NO PRIMARY KEY HAS BEEN DEFINED*
+        	$where = getLanguageText('sys0033');
+        } // if
+
+        return $where;
+
+    } // buildKeyString
+
+    // ****************************************************************************
     function commit ($schema)
     // commit this transaction
     {
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'COMMIT';
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, null, 'COMMIT');
+        $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
-        $result = $auditobj->close();
+        if (class_exists('audit_tbl')) {
+            $auditobj =& singleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -88,6 +135,7 @@ class pgsql
         global $dbhost, $dbusername, $dbuserpass, $PGSQL_dbname;
 
         $this->errors = array();
+        $this->query  = '';
         $this->dbname = $PGSQL_dbname;
 
         static $dbconn;
@@ -107,7 +155,7 @@ class pgsql
                 	$result = pg_set_client_encoding($dbconn, 'UNICODE');
                 } else {
                     $this->query = "SET client_encoding TO 'UNICODE'";
-                    $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                    $result = pg_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
                     // write query to log file, if option is turned on
                     logSqlQuery ($schema, null, $this->query);
                 } // if
@@ -117,29 +165,31 @@ class pgsql
                 $this->client_encoding = pg_client_encoding($dbconn);
 
                 $this->query = 'SHOW server_encoding';
-                $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                $result = pg_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
                 $data = pg_fetch_row($result);
                 $this->server_encoding = $data[0];
 
                 $this->query = 'SHOW server_version';
-                $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                $result = pg_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
                 $data = pg_fetch_row($result);
                 $this->server_version  = $data[0];
+                $this->query = '';
             } // if
         } // if
         if (!$dbconn) {
             return FALSE;
         } elseif ($schema) {
             if (strtolower($schema) != 'public') {
-                $schema = "$schema, public";
+                $schema = '"' .$schema .'", public';
             } // if
-            $this->query = "SET search_path TO $schema";
-            $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+            $this->query = 'SET search_path TO ' .$schema;
+            $result = pg_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery ($schema, null, $this->query);
-            return TRUE;
+            $this->query = '';
         } // if
 
+        $this->schema = $schema;
         return TRUE;
 
     } // connect
@@ -151,16 +201,16 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         // build 'where' string using values for primary key
-        $where = array2where($fieldarray, $this->primary_key);
+        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
         if (empty($where)) return;    // nothing to delete, so exit
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
@@ -186,10 +236,10 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = "DELETE FROM $tablename WHERE $selection";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_affected_rows($result);
 
@@ -213,12 +263,15 @@ class pgsql
     {
         //DebugBreak();
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $row   = pg_fetch_assoc($result);
-        $array = array_change_key_case($row, CASE_LOWER);
-
-        return $array;
+        if ($row) {
+        	$array = array_change_key_case($row, CASE_LOWER);
+        	return $array;
+        } else {
+            return false;
+        } // if
 
     } // fetchRow
 
@@ -229,7 +282,7 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         if (eregi('^(select )', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
@@ -239,11 +292,12 @@ class pgsql
             $this->query = "SELECT count(*) FROM $tablename WHERE $where";
         } // if
 
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
         $query_data = pg_fetch_row($result);
 
         // if 'GROUP BY' was used then return the number of rows
-        if (eregi("group by ", $this->query)) {
+        // (ignore GROUP BY if it is in a subselect)
+        if (eregi("group by ", $this->query) == true AND !eregi("\(.+group by.+\)", $this->query)) {
             $count = pg_num_rows($result);
         } else {
             $count = $query_data[0];
@@ -251,6 +305,7 @@ class pgsql
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
+        $this->query = '';
 
         return $count;
 
@@ -264,10 +319,10 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
-        $pageno         = $this->pageno;
-        $rows_per_page  = $this->rows_per_page;
+        $pageno         = (int)$this->pageno;
+        $rows_per_page  = (int)$this->rows_per_page;
         $this->numrows  = 0;
         $this->lastpage = 0;
 
@@ -328,7 +383,7 @@ class pgsql
         } // if
 
         // ensure pageno is within range
-        if ($pageno == '' OR $pageno <= '1') {
+        if ($pageno < 1) {
             $pageno = 1;
         } elseif ($pageno > $this->lastpage) {
             $pageno = $this->lastpage;
@@ -365,7 +420,12 @@ class pgsql
                         $lock_str = 'FOR UPDATE';
                         break;
                     default:
-                        $lock_str = null;
+                        $count = preg_match_all("/\w+/", $from_str, $regs);
+                        if ($count > 1) {
+                            $lock_str = 'FOR UPDATE OF ' .$tablename;
+                        } else {
+                            $lock_str = 'FOR UPDATE';
+                        } // if
                 } // switch
                 $this->row_locks = null;
             } // if
@@ -373,9 +433,7 @@ class pgsql
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-        if (!$result = pg_query($this->dbconnect, $this->query)) {
-            trigger_error($this, E_USER_ERROR);
-        } // if
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // convert result set into a simple associative array for each row
         while ($row = pg_fetch_assoc($result)) {
@@ -402,7 +460,7 @@ class pgsql
     // be retrieved using the fetchRow() method.
     {
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         // look for optional SELECT parameters, or default to all fields
         if (empty($this->sql_select)) {
@@ -450,10 +508,8 @@ class pgsql
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-        if (!$result = pg_query($this->dbconnect, $this->query)) {
-            trigger_error($this, E_USER_ERROR);
-        } // if
+        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str";
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $this->numrows = pg_num_rows($result);
 
@@ -488,6 +544,25 @@ class pgsql
         return $string;
 
     } // getErrorString
+
+    // ****************************************************************************
+    function getErrorString2 ()
+    // return additional information.
+    {
+        if ($this->dbconnect) {
+        	$string  = 'Host Info: ' .$this->host_info ;
+            $string .= ', Server Version: ' .$this->server_version;
+            $string .= '<br>Client Encoding: ' .$this->client_encoding;
+            $string .= ', Server Encoding: ' .$this->server_encoding;
+            $string .= '<br>Database: ' .strtoupper($this->dbname);
+            $string .= ', Schema: ' .strtoupper($this->schema);
+        } else {
+            $string = '';
+        } // if
+
+        return $string;
+
+    } // getErrorString2
 
     // ****************************************************************************
     function getLastPage ()
@@ -532,7 +607,7 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -579,16 +654,7 @@ class pgsql
 
 		if (empty($auto_increment)) {
 	        // build 'where' string using values for primary key
-	        $where = NULL;
-	        foreach ($fieldarray as $item => $value) {
-	            // require this item if it IS part of primary key
-	            if (in_array($item, $this->primary_key)) {
-	                $where .= "$item='$value' AND ";
-	            } // if
-	        } // foreach
-
-	        // remove trailing ' AND '
-	        $where = rtrim($where, ' AND ');
+	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
 	        // find out if a record with this primary key already exists
 	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
@@ -609,14 +675,7 @@ class pgsql
         if (!empty($this->unique_keys)) {
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
-                $where = NULL;
-                foreach ($key as $fieldname) {
-                    if (empty($where)) {
-                        $where  = "$fieldname='{$fieldarray[$fieldname]}'";
-                    } else {
-                        $where .= " AND $fieldname='{$fieldarray[$fieldname]}'";
-                    } // if
-                } // foreach
+                $where = $this->buildKeyString ($fieldarray, $key);
                 $this->query = "SELECT count(*) FROM $tablename WHERE $where";
                 $count = $this->getCount($schema, $tablename, $this->query);
                 if ($count <> 0) {
@@ -633,12 +692,26 @@ class pgsql
         $cols = '';
         $vals = '';
         foreach ($fieldarray as $item => $value) {
-            if (isset($value)) {
-                $cols .= "$item, ";
-                $vals .= "'$value', ";
-            } else {
+            if ($fieldspec[$item]['type'] == 'array') {
+            	// assume a one-dimensional array
+            	$array1  = explode(',', $value);
+            	$string1 = '';
+            	foreach ($array1 as $value1) {
+            		if (empty($string1)) {
+            			$string1 = '"' .$value1 .'"';
+            		} else {
+            		    $string1 .= ', "' .$value1 .'"';
+            		} // if
+            	} // foreach
+            	$value .= "$item='{" .$string1 ."}', ";
+            } // if
+            if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
+                // null entries are set to NULL, not '' (there is a difference!)
                 $cols .= "$item, ";
                 $vals .= "NULL, ";
+            } else {
+                $cols .= "$item, ";
+                $vals .= "'" .pg_escape_string($value) ."', ";
             } // if
         } // foreach
 
@@ -647,8 +720,7 @@ class pgsql
         $vals = rtrim($vals, ', ');
 
         $this->query = 'INSERT INTO ' .$tablename .' (' .$cols .') VALUES (' .$vals .')';
-
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query);
@@ -656,9 +728,9 @@ class pgsql
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
 			$this->query = "SELECT currval('" .$tablename .'_' .$auto_increment .'_seq' ."')";
-            $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
             $fieldarray[$auto_increment] = pg_fetch_result($result, 0, 0);
-            $primary_key = $auto_increment .'=' .$fieldarray[$auto_increment];
+            $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
             // write query to log file, if option is turned on
             logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
 		} // if
@@ -686,10 +758,11 @@ class pgsql
         } // if
 
         $this->query = 'ROLLBACK';
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, null, 'ROLLBACK');
+        $this->query = '';
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -702,7 +775,7 @@ class pgsql
     function selectDB ($schema)
     // select a different schema (database) via the current connection.
     {
-        if ($this->connect($schema) or trigger_error($this, E_USER_ERROR)) {
+        if ($this->connect($schema) or trigger_error('SQL', E_USER_ERROR)) {
             return TRUE;
         } else {
             return FALSE;
@@ -745,7 +818,7 @@ class pgsql
     } // setPageNo
 
     // ****************************************************************************
-    function setRowLocks ($level=null)
+    function setRowLocks ($level=null, $supplemental=null)
     // set row-level locks on next SELECT statement
     {
         // upshift first two characters
@@ -761,6 +834,8 @@ class pgsql
             default:
                 $this->row_locks = null;
         } // switch
+
+        $this->row_locks_supp = $supplemental;
 
         return;
 
@@ -789,13 +864,14 @@ class pgsql
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'BEGIN TRANSACTION';
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, null, $this->query);
+        $this->query = '';
 
         if (!empty($this->table_locks)) {
         	$result = $this->_setDatabaseLock($this->table_locks);
@@ -806,13 +882,11 @@ class pgsql
     } // startTrasaction
 
     // ****************************************************************************
-    function updateRecord ($schema, $tablename, $fieldarray, $oldarray)
+    function updateRecord ($schema, $tablename, $fieldarray, $oldarray, $where=null)
     // update a record using the contents of $fieldarray.
     {
-        $this->errors = array();
-
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -826,24 +900,20 @@ class pgsql
             } // if
         } // foreach
 
-        // build 'where' string using values for primary key
-        $where = array2where($oldarray, $this->primary_key);
+        if (strlen($where) == 0) {
+            // build 'where' string using values for primary key
+            $where = $this->buildKeyString ($oldarray, $this->primary_key);
+        } else {
+        	// use $where as supplied, and remove pkey specs so their values can be changed
+        	$this->primary_key = array();
+        } // if
 
         // validate any optional unique/candidate keys
         if (!empty($this->unique_keys)) {
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
-                $where1 = NULL;   // for original values
-                $where2 = NULL;   // for changed values
-                foreach ($key as $fieldname) {
-                    if (empty($where1)) {
-                        $where1  = "$fieldname='" .addslashes(stripcslashes($oldarray[$fieldname])) ."'";
-                        $where2  = "$fieldname='" .addslashes(stripslashes($fieldarray[$fieldname])) ."'";
-                    } else {
-                        $where1 .= " AND $fieldname='" .addslashes(stripcslashes($oldarray[$fieldname])) ."'";
-                        $where2 .= " AND $fieldname='" .addslashes(stripslashes($fieldarray[$fieldname])) ."'";
-                    } // if
-                } // foreach
+                $where1 = $this->buildKeyString ($oldarray, $key);
+                $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
@@ -887,6 +957,9 @@ class pgsql
 					    case 'string':
     						$fieldarray[$field] = $_SESSION['logon_user_id'];
     						break;
+    					case 'integer':
+					        $fieldarray[$field] = $oldarray[$field] +1;
+					        break;
     					default:
     						// do nothing
     				} // switch
@@ -895,16 +968,32 @@ class pgsql
         } // if
 
         // build update string from non-pkey fields
-        $update = NULL;
+        $update = '';
         foreach ($fieldarray as $item => $value) {
-            // require this item if it IS NOT part of primary key
+            // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
-                if (is_null($value)) {
+                if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } else {
-                    // change to the new value
-                    $update .= "$item='$value', ";
+                    if (eregi('set|array|varray', $fieldspec[$item]['type'])) {
+                    	// assume a one-dimensional array
+                    	$array1  = explode(',', $value);
+                    	$string1 = '';
+                    	foreach ($array1 as $value1) {
+                    	    $value1 = pg_escape_string($value1);
+                    		if (empty($string1)) {
+                    			$string1 = '"' .$value1 .'"';
+                    		} else {
+                    		    $string1 .= ', "' .$value1 .'"';
+                    		} // if
+                    	} // foreach
+                    	// enclose array in curly braces
+                    	$update .= "$item='{" .$string1 ."}', ";
+                    } else {
+                        // change to the new value
+                        $update .= "$item='" .pg_escape_string($value) ."', ";
+                    } // if
                 } // if
             } // if
         } // foreach
@@ -914,7 +1003,7 @@ class pgsql
 
         // append WHERE clause to SQL query
         $this->query = "UPDATE $tablename SET $update WHERE $where";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
@@ -940,10 +1029,10 @@ class pgsql
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_affected_rows($result);
 
@@ -972,13 +1061,13 @@ class pgsql
 
         $colspecs['bigint']     = array('name' => 'BIGINT',
                                         'type' => 'integer',
-                                        'minvalue' => -9223372036854775808,
-                                        'maxvalue' => 9223372036854775807,
-                                        'size' => 21);
+                                        'minvalue' => '-9223372036854775808',
+                                        'maxvalue' => '9223372036854775807',
+                                        'size' => 20);
         $colspecs['bigserial']  = array('name' => 'BIGSERIAL',
                                         'type' => 'integer',
                                         'minvalue' => 1,
-                                        'maxvalue' => 9223372036854775807,
+                                        'maxvalue' => '9223372036854775807',
                                         'auto_increment' => 'y');
         $colspecs['bit']        = array('name' => 'BIT',
                                         'type' => 'bit');
@@ -1001,7 +1090,7 @@ class pgsql
                                         'size' => 12);
         $colspecs['double']     = array('name' => 'DOUBLE PRECISION',
                                         'type' => 'float',
-                                        'size' => 21);
+                                        'size' => 20);
         $colspecs['integer']    = array('name' => 'INTEGER',
                                         'type' => 'integer',
                                         'minvalue' => -2147483648,
@@ -1039,12 +1128,15 @@ class pgsql
         $colspecs['timestamp']  = array('name' => 'TIMESTAMP without time zone',
                                         'type' => 'datetime',
                                         'size' => 20);
-        $colspecs['timetz']     = array('name' => 'TIME with time zone',
+        $colspecs['time_tz']     = array('name' => 'TIME with time zone',
                                         'type' => 'time',
                                         'size' => 8);
-        $colspecs['timestamptz']= array('name' => 'TIMESTAMP with time zone',
+        $colspecs['timestamp_tz']= array('name' => 'TIMESTAMP with time zone',
                                         'type' => 'datetime',
                                         'size' => 20);
+        $colspecs['array']      = array('name' => 'ARRAY',
+                                        'type' => 'array');
+
         // these are computer adresses
         $colspecs['cidr']       = array('name' => 'CIDR',
                                         'type' => 'network address');
@@ -1069,6 +1161,22 @@ class pgsql
         $colspecs['lseg']       = array('name' => 'LINE SEGMENT',
                                         'type' => 'shape');
 
+        // these are here just for compatability with MySQL
+        $colspecs['datetime']   = array('name' => 'DATETIME',
+                                        'type' => 'datetime');
+        $colspecs['set']        = array('name' => 'SET',
+                                        'type' => 'array');
+        $colspecs['enum']       = array('name' => 'ENUM',
+                                        'type' => 'array');
+        $colspecs['mediumint']  = array('name' => 'MEDIUMINT',
+                                        'type' => 'integer');
+        $colspecs['tinytext']   = array('name' => 'TINYTEXT',
+                                        'type' => 'string');
+        $colspecs['mediumtext'] = array('name' => 'MEDIUMTEXT',
+                                        'type' => 'string');
+        $colspecs['longtext']   = array('name' => 'LONGTEXT',
+                                        'type' => 'string');
+
         return $colspecs;
 
     } // ddl_getColumnSpecs
@@ -1077,15 +1185,14 @@ class pgsql
     function ddl_showColumns ($schema, $tablename)
     // obtain a list of column names within the selected database table.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
-        $array = array();
+        $out_array = array();
 
         // build the query string and run it
         $this->query = "SELECT * FROM information_schema.columns WHERE table_schema='$schema' AND table_name='$tablename' ORDER BY ordinal_position";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_num_rows($result);
 
@@ -1094,20 +1201,15 @@ class pgsql
 
         $colspecs = $this->ddl_getColumnSpecs();
 
+        // identify primary and other unique keys
         $tablekeys = $this->ddl_showTableKeys($schema, $tablename);
-        // re-organise so that column_name is the key
-        $keyspecs = array();
+        $pkey = array();  // primary key
+        $ukey = array();  // candidate (unique) keys
         foreach ($tablekeys as $key => $spec) {
-        	if (array_key_exists($spec['column_id'], $keyspecs)) {
-        		// already there, so leave it alone
-        	} else {
-        	    if (is_true($spec['is_primary'])) {
-        	    	$keyspecs[$spec['column_id']] = 'PRI';
-        	    } elseif (is_true($spec['is_unique'])) {
-        	        $keyspecs[$spec['column_id']] = 'UNI';
-        	    } else {
-        	        $keyspecs[$spec['column_id']] = 'MUL';
-        	    } // if
+        	if (is_True($spec['is_primary'])) {
+        	    $pkey[] = strtolower($spec['column_id']);
+    	    } elseif (is_True($spec['is_unique'])) {
+    	        $ukey[] = strtolower($spec['column_id']);
         	} // if
         } // foreach
 
@@ -1117,7 +1219,6 @@ class pgsql
             $columnarray = array();
             $columnarray['col_maxsize']         = NULL;
             $columnarray['col_unsigned']        = NULL;
-            $columnarray['col_zerofill_bwz']    = NULL;
             $columnarray['col_precision']       = NULL;
             $columnarray['col_scale']           = NULL;
             $columnarray['col_minvalue']        = NULL;
@@ -1130,8 +1231,10 @@ class pgsql
                 switch ($item) {
                     case 'column_name':
                 		$columnarray['column_id'] = $value;
-                		if (array_key_exists($value, $keyspecs)) {
-                		    $columnarray['col_key'] = $keyspecs[$value];
+                		if (in_array($value, $pkey)) {
+                		    $columnarray['col_key'] = 'PRI';
+                		} elseif (in_array($value, $ukey)) {
+                		    $columnarray['col_key'] = 'UNI';
                 		} // if
                 		break;
                 	case 'ordinal_position':
@@ -1150,7 +1253,6 @@ class pgsql
                             $columnarray['col_null'] = 'Y';
                         } else {
                             $columnarray['col_null'] = 'N';
-                            $columnarray['is_required'] = TRUE;
                         } // if
                 	    break;
                 	case 'data_type':
@@ -1171,11 +1273,15 @@ class pgsql
                 	    	    $columnarray['col_type'] = 'time';
                 	            break;
                 	    	case 'timestamp with time zone';
-                	    	    $columnarray['col_type'] = 'timestamptz';
+                	    	    $columnarray['col_type'] = 'timestamp_tz';
                 	            break;
                 	    	case 'time with time zone';
-                	    	    $columnarray['col_type'] = 'timetz';
+                	    	    $columnarray['col_type'] = 'time_tz';
                 	            break;
+                	    	case 'ARRAY';
+                	    	    $columnarray['col_type']       = 'array';
+                	    	    $columnarray['col_array_type'] = trim($row['udt_name'], '_');
+                	    	    break;
                 	    	default:
                 	    	    $columnarray['col_type'] = $value;
                 	    		break;
@@ -1191,6 +1297,8 @@ class pgsql
                         if (isset($specs['auto_increment'])) {
                             $columnarray['col_auto_increment'] = TRUE;
                         } // if
+
+                        $columnarray['col_type_native'] = $columnarray['col_type'];
 
                         break;
                     case 'character_maximum_length':
@@ -1269,12 +1377,27 @@ class pgsql
                 $columnarray['col_maxvalue'] = (string)$maxvalue;
             } // if
 
-            $array[] = $columnarray;
+            if ($columnarray['col_maxsize'] == 1) {
+                // some columns have the option of being used as BOOLEAN
+            	if ($columnarray['col_type'] == 'char') {
+                    $columnarray['col_type'] = 'char,boolean';
+                } // if
+            } elseif ($columnarray['col_type'] == 'smallint') {
+                $columnarray['col_type'] = 'smallint,boolean';
+            } // if
+
+            $columnarray['col_type_native'] = $columnarray['col_type'];
+
+            if ($columnarray['col_type'] == 'numeric' AND $scale == 0) {
+            	$columnarray['col_type'] = 'integer';
+            } // if
+
+            $out_array[] = $columnarray;
         } // while
 
         pg_free_result($result);
 
-        return $array;
+        return $out_array;
 
     } // ddl_showColumns
 
@@ -1282,15 +1405,15 @@ class pgsql
     function ddl_showDatabases ()
     // obtain a list of existing database (schema in PostgreSQL) names.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect() or trigger_error($this, E_USER_ERROR);
+        $this->connect() or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
         $this->query = "SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg\_%' AND nspname != 'information_schema' ORDER BY nspname";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        //$this->query = "SELECT * FROM information_schema.schemata WHERE schema_name NOT LIKE 'pg\_%' AND schema_name != 'information_schema' ORDER BY schema_name";
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_num_rows($result);
 
@@ -1312,15 +1435,15 @@ class pgsql
     function ddl_showTables ($schema)
     // obtain a list of tables within the specified schema.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
-        $this->query = "SELECT tablename FROM pg_tables WHERE schemaname='$schema' ORDER BY tablename";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $this->query = "SELECT tablename AS table_name FROM pg_tables WHERE schemaname='" .$GLOBALS['dbprefix'] .$schema ."' ORDER BY tablename";
+        //$this->query = "SELECT * FROM information_schema.tables WHERE table_schema='$schema' ORDER BY table_name";
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_num_rows($result);
 
@@ -1329,7 +1452,7 @@ class pgsql
 
         // convert result set into an associative array for each row
         while ($row = pg_fetch_assoc($result)) {
-            $array[] = $row['tablename'];
+            $array[] = $row['table_name'];
         } // while
 
         pg_free_result($result);
@@ -1342,9 +1465,8 @@ class pgsql
     function ddl_showTableKeys ($schema, $tablename)
     // obtain a list of keys (indexes) for this table.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
@@ -1354,7 +1476,13 @@ class pgsql
 			FROM pg_namespace ns, pg_class c, pg_class c2, pg_index i
 			WHERE ns.nspname = '{$schema}' AND c.relname = '{$tablename}' AND ns.oid = c.relnamespace AND c.oid = i.indrelid AND i.indexrelid = c2.oid
 			ORDER BY i.indisprimary desc, i.indisunique desc, c2.relname";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+//        $this->query = "SELECT key_column_usage.*,constraint_type  FROM information_schema.key_column_usage
+//            LEFT JOIN information_schema.table_constraints USING (table_schema,table_name,constraint_name)
+//            WHERE table_schema='$schema' and table_name='$tablename'
+//            ORDER BY constraint_type, constraint_name, ordinal_position";
+
+        $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = pg_num_rows($result);
 
@@ -1376,7 +1504,7 @@ class pgsql
                 $count = 2;
                 while ($count <= $max) {
                 	$this->query = "SELECT pg_get_indexdef($indexrelid, $count, true) AS column_id";
-                	$r2 = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+                	$r2 = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
                 	$d2 = pg_fetch_assoc($r2);
                 	$row['column_id']    = $d2['column_id'];
                 	$row['seq_in_index'] = $count;
@@ -1409,20 +1537,47 @@ class pgsql
         // set locking level
         switch ($this->row_locks){
             case 'SH':
-                $string .= ' IN SHARE MODE';
+                switch (strtoupper($this->row_locks_supp)) {
+                	case 'A':
+                		$mode = 'ACCESS SHARE';
+                		break;
+                	case 'R':
+                	    $mode = 'ROW SHARE';
+                	    break;
+                	case 'UE':
+                	    $mode = 'SHARE UPDATE EXCLUSIVE';
+                	    break;
+                	case 'RE':
+                	    $mode = 'SHARE ROW EXCLUSIVE';
+                	    break;
+                	default:
+                	    $mode = 'SHARE';
+                		break;
+                } // switch
                 break;
             case 'EX':
-                $string .= ' IN EXCLUSIVE MODE';
+                switch (strtoupper($this->row_locks_supp)) {
+                	case 'A':
+                		$mode = 'ACCESS EXCLUSIVE';
+                		break;
+                	case 'R':
+                	    $mode = 'ROW EXCLUSIVE';
+                	    break;
+                	default:
+                	    $mode = 'EXCLUSIVE';
+                		break;
+                } // switch
                 break;
             default:
-                $string .= ' IN SHARE MODE';
+                $mode = 'SHARE';
         } // switch
 
         if (!empty($string)) {
-            $this->query = "LOCK TABLE $string";
-            $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $this->query = "LOCK TABLE $string IN $mode MODE";
+            $result = pg_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery (null, null, $this->query);
+            $this->query = '';
             return true;
         } // if
 

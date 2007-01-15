@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -54,23 +54,19 @@ if (isset($script_vars['dbobject'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from)) {
-        if ($return_action == 'choose' AND !empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose') {
+        if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            $errors[$dbobject->getClassName()] = array_merge($errors[$dbobject->getClassName()], $dbobject->getErrors());
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            } // if
         } // if
     } else {
         // do nothing
     } // if
-    unset($script_vars['selection']);
-    $script_vars['where']    = $where;
-    $script_vars['dbobject'] = serialize($dbobject);
-    $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-    $_SESSION[$PHP_SELF][$task_id] = $script_vars;
 } // if
 
-// look for entered data
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['paste'])) {
         // fill the screen with previously-saved data
@@ -79,17 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $fieldarray = $dbobject->getInitialData($fieldarray);
         $fieldarray = $dbobject->getExtraData($fieldarray);
     } elseif (isset($_POST['copy'])) {
-        $messages = copyForm($_POST, $dbobject, $fieldarray);
+        $messages = copyForm($_POST, $dbobject);
     } else {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update($fieldarray, $_POST);
+        $fieldarray = array_update_associative($fieldarray, $_POST);
+        // ensure that changes are stored inside relevant object
+        $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
 		if (empty($errors)) {
             $dbobject->startTransaction();
             // add this data to the database
             $fieldarray = $dbobject->insertRecord($fieldarray);
+            $messages   = array_merge($messages, $dbobject->getMessages());
             if ($dbobject->errors) {
 				// errors are keyed by object name
 			    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
@@ -109,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         } // if
                     } else {
                         // update was OK - return to previous screen
-                        scriptPrevious(null, null, 'OK', $dbobject->getInstruction());
+                        scriptPrevious(null, $messages, 'OK', $dbobject->getInstruction());
                     } // if
                 } // if
             } else {
@@ -124,6 +123,11 @@ if (isset($_SESSION['data'][$table_id])) {
     $prepend = array('paste' => 'paste');
     $act_buttons = array_merge($prepend, $act_buttons);
 } // if
+
+// save these variables for later in the same session
+$script_vars['where']    = $where;
+$script_vars['dbobject'] = serialize($dbobject);
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

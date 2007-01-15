@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -16,8 +16,6 @@
 <xsl:variable name="script_time"  select="/root/params/script_time"/>
 <xsl:variable name="doc_root"     select="/root/params/doc_root"/>
 <xsl:variable name="help_root"    select="/root/params/help_root"/>
-<xsl:variable name="menu_root"    select="/root/params/menu_root"/>
-<xsl:variable name="http_host"    select="/root/params/http_host"/>
 <xsl:variable name="taskid"       select="/root/params/taskid"/>
 
 <xsl:variable name="session"      select="concat('session_name=',$session_name)" />
@@ -25,13 +23,8 @@
 <xsl:variable name="show"         select="/root/params/text/show"/>
 <xsl:variable name="select-all"   select="/root/params/text/select-all"/>
 <xsl:variable name="unselect-all" select="/root/params/text/unselect-all"/>
-<xsl:variable name="logout"       select="/root/params/text/logout"/>
-<xsl:variable name="new-session"  select="/root/params/text/new-session"/>
-<xsl:variable name="help"         select="/root/params/text/help"/>
 <xsl:variable name="page-created" select="/root/params/text/page-created"/>
 <xsl:variable name="seconds"      select="/root/params/text/seconds"/>
-<xsl:variable name="print"        select="/root/params/text/print"/>
-<xsl:variable name="noprint"      select="/root/params/text/noprint"/>
 
 <xsl:variable name="client-side"  select="/root/params/client-side"/>
 <xsl:variable name="print-preview" select="/root/params/print-preview"/>
@@ -49,7 +42,7 @@
 
       <div class="left">
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
-        <xsl:for-each select="//actbar/button[starts-with(@id,'submit') or @id='choose']">
+        <xsl:for-each select="//actbar/button[starts-with(@id,'submit') or starts-with(@id,'choose')]">
           <!-- create a button for each element within actionbar -->
           <input class="submit" type="submit" name="{@id}" value="{node()}" />
           <xsl:text> </xsl:text>
@@ -58,7 +51,7 @@
 
       <div class="right">
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
-        <xsl:for-each select="//actbar/button[not(starts-with(@id,'submit')) and not(@id='choose')]">
+        <xsl:for-each select="//actbar/button[not(starts-with(@id,'submit')) and not(starts-with(@id,'choose'))]">
           <!-- create a button for each element within actionbar -->
           <input class="submit" type="submit" name="{@id}" value="{node()}" />
           <xsl:text> </xsl:text>
@@ -101,32 +94,47 @@
 
 <!--
 //*****************************************************************************
-// HELP - display hyperlinks for HELP and LOGOUT
+// HELP - create hyperlinks for HELP, LOGOUT, NEW SESSION and PRINT
 //*****************************************************************************
 -->
 <xsl:template name="help">
+
+  <div class="loggedinas">
+    <xsl:if test="not(//params/application='sample')">
+      <!-- do not include this in the sample application -->
+      <xsl:if test="not($mode='logon') and not ($mode='recover')">
+        <!-- do not include this in the logon screen -->
+        <xsl:value-of select="/root/params/text/logged-in-as"/>
+        <xsl:text> </xsl:text>
+        <xsl:value-of select="/root/params/logged-in-as"/>
+      </xsl:if>
+    </xsl:if>
+  </div>
 
   <div class="help">
     <p>
       <xsl:if test="not(//params/application='sample')">
         <!-- do not include this in the sample application -->
-        <xsl:if test="not($mode='logon')">
+        <xsl:if test="not($mode='logon') and not ($mode='recover')">
           <!-- create a logout link -->
-          <a href="{$menu_root}/logon.php" ><xsl:value-of select="$logout"/></a>
+          <a href="{$script}?action=logout&amp;{$session}" ><xsl:value-of select="/root/params/text/logout"/></a>
+          <xsl:text> | </xsl:text>
+          <!-- create a logout (all) link -->
+          <a href="{$script}?action=logout_all&amp;{$session}" ><xsl:value-of select="/root/params/text/logout-all"/></a>
           <xsl:text> | </xsl:text>
           <!-- create a link to start a new session -->
           <!-- (this creates a new session name with a new session id) -->
-          <a href="{$script}?action=newsession&amp;{$session}" ><xsl:value-of select="$new-session"/></a>
+          <a href="{$script}?action=newsession&amp;{$session}" ><xsl:value-of select="/root/params/text/new-session"/></a>
           <xsl:text> | </xsl:text>
 
           <xsl:choose>
             <xsl:when test="$print-preview">
               <!-- create a link to turn off print-preview mode -->
-              <a href="{$script}?action=noprint&amp;{$session}" ><xsl:value-of select="$noprint"/></a>
+              <a href="{$script}?action=noprint&amp;{$session}" ><xsl:value-of select="/root/params/text/noprint"/></a>
             </xsl:when>
             <xsl:otherwise>
               <!-- create a link to redisplay the page in print mode -->
-              <a href="{$script}?action=print&amp;{$session}" ><xsl:value-of select="$print"/></a>
+              <a href="{$script}?action=print&amp;{$session}" ><xsl:value-of select="/root/params/text/print"/></a>
             </xsl:otherwise>
           </xsl:choose>
 
@@ -134,8 +142,14 @@
         </xsl:if>
       </xsl:if>
 
+      <xsl:if test="$mode='logon'">
+          <!-- create a password recovery link -->
+          <a href="{$script}?action=recoverpswd&amp;{$session}" ><xsl:value-of select="/root/params/text/recover-pswd"/></a>
+          <xsl:text> | </xsl:text>
+      </xsl:if>
+
       <!-- create a HELP link -->
-      <a href="{$help_root}/help.php?taskid={$taskid}"><xsl:value-of select="$help"/></a>
+      <a href="{$help_root}/help.php?taskid={$taskid}"><xsl:value-of select="/root/params/text/help"/></a>
     </p>
   </div>
 
@@ -158,16 +172,14 @@
       <ul>
         <xsl:for-each select="//menubar/button">
           <li>
-            <xsl:choose>
-              <xsl:when test="@active">
-                <xsl:attribute name="class">active</xsl:attribute>
-              </xsl:when>
-              <xsl:otherwise>
-                <xsl:attribute name="class">inactive</xsl:attribute>
-              </xsl:otherwise>
-            </xsl:choose>
+            <xsl:attribute name="class">
+              <xsl:choose>
+                <xsl:when test="@active">active</xsl:when>
+                <xsl:otherwise>inactive</xsl:otherwise>
+              </xsl:choose>
+            </xsl:attribute>
 
-            <!-- create a link for each element within navbar -->
+            <!-- create a link for each element within menubar -->
             <xsl:choose>
               <xsl:when test="//params/application='sample'">
                 <!-- this is for the sample application -->
@@ -187,36 +199,37 @@
     <div id="menustack-outer">
       <div id="menustack">
 
-          <!-- this area is the same colour as the active item in the previous line -->
-          <!-- it also contains entries for each page in the current hierarchy (aka 'breadcrumbs') -->
-          <ul>
+        <!-- this area is the same colour as the active item in the previous line -->
+        <!-- it also contains entries for each page in the current hierarchy (aka 'breadcrumbs') -->
+        <ul>
 
-            <xsl:for-each select="//menubar/stack">
-             <li>
-                <xsl:choose>
-                  <xsl:when test="position()=last() or @active">
-                    <!-- last/active entry is not a hyperlink, just plain text -->
+          <xsl:for-each select="//menubar/stack">
+           <li>
+              <xsl:choose>
+                <xsl:when test="position()=last() or @active">
+                  <!-- last/active entry is not a hyperlink, just plain text -->
+                  <xsl:value-of select="node()"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <!-- insert hyperlink -->
+                  <a href="{$script}?selection={@id}&amp;{$session}">
                     <xsl:value-of select="node()"/>
-                  </xsl:when>
-                  <xsl:otherwise>
-                    <!-- insert hyperlink -->
-                    <a href="{$script}?selection={@id}&amp;{$session}">
-                      <xsl:value-of select="node()"/>
-                    </a>
-                  </xsl:otherwise>
-                </xsl:choose>
+                  </a>
+                </xsl:otherwise>
+              </xsl:choose>
 
-                <xsl:if test="not(position()=last())">
-                  <!-- not last entry, so insert a '>>' separator before the next entry -->
-                  <xsl:text>&#187;</xsl:text>
-                </xsl:if>
-              </li>
-            </xsl:for-each>
+              <xsl:if test="not(position()=last())">
+                <!-- not last entry, so insert a '>>' separator before the next one -->
+                <xsl:text>&#187;</xsl:text>
+              </xsl:if>
+            </li>
+          </xsl:for-each>
 
-          </ul>
+        </ul>
 
-          <!-- insert a blank paragraph to get round a bug in the Firefox browser -->
-          <p>&#160;</p>
+        <!-- insert a blank paragraph to get round a bug in the Firefox browser -->
+        <p>&#160;</p>
+
       </div>
     </div>
 
@@ -258,6 +271,7 @@
           <xsl:otherwise><xsl:value-of select="$show"/> 10</xsl:otherwise>
         </xsl:choose>
         <xsl:text> | </xsl:text>
+
         <xsl:choose>
           <xsl:when test="$numrows > 10">
             <a href="{$script}?{$session}&amp;pagesize=25"><xsl:value-of select="$show"/> 25</a>
@@ -265,6 +279,7 @@
           <xsl:otherwise><xsl:value-of select="$show"/> 25</xsl:otherwise>
         </xsl:choose>
         <xsl:text> | </xsl:text>
+
         <xsl:choose>
           <xsl:when test="$numrows > 25">
             <a href="{$script}?{$session}&amp;pagesize=50"><xsl:value-of select="$show"/> 50</a>
@@ -272,12 +287,14 @@
           <xsl:otherwise><xsl:value-of select="$show"/> 50</xsl:otherwise>
         </xsl:choose>
         <xsl:text> | </xsl:text>
+
         <xsl:choose>
           <xsl:when test="$numrows > 50">
             <a href="{$script}?{$session}&amp;pagesize=100"><xsl:value-of select="$show"/> 100</a>
           </xsl:when>
           <xsl:otherwise><xsl:value-of select="$show"/> 100</xsl:otherwise>
         </xsl:choose>
+
         <!-- insert a non-breaking space -->
         <xsl:text>&#160;</xsl:text>
       </p>
@@ -290,13 +307,13 @@
           <p class="selection">
             <!-- these links will allow the user to toggle all select boxes either ON or OFF -->
             <!-- do this only if there is a field called 'selectbox' -->
-            <xsl:if test="//item/cell[@field='selectbox']">
+            <xsl:if test="//row/cell[@field='selectbox']">
               <xsl:text>Selections:&#160;</xsl:text>
               <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
               <xsl:text> | </xsl:text>
               <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>
             </xsl:if>
-            <!-- insert a on-breaking space -->
+            <!-- insert a non-breaking space -->
             <xsl:text>&#160;</xsl:text>
           </p>
         </xsl:when>

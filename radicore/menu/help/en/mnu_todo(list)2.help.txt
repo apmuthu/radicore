@@ -1,0 +1,3 @@
+This will list records on the ToDo table for a particular USER.
+
+Refer to <a href="%root%/mnu_todo(list)2.html">List ToDo for User</a> for full details.

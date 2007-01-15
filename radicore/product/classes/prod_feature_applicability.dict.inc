@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 5:06 pm
+    // file created on November 3, 2006, 11:29 am
     
     // field specifications for table product.prod_feature_applicability
     $fieldspec['product_id']                = array('type' => 'string',
@@ -31,6 +31,7 @@
     $fieldspec['feature_type']              = array('type' => 'string',
                                                     'size' => 1,
                                                     'required' => 'y',
+                                                    'default' => 'O',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'feature_type');
@@ -38,7 +39,7 @@
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00');
+                                                    'default' => '2001-01-01');
     
     $fieldspec['end_date']                  = array('type' => 'date',
                                                     'size' => 12,
@@ -47,24 +48,30 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2001-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('product_id',

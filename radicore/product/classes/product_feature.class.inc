@@ -50,7 +50,7 @@ class product_feature extends Default_Table
     {
         //DebugBreak();
         if (!isset($fieldarray['measurement_reqd'])) {
-            require_once 'product_feature_category.class.inc';
+            require_once 'classes/product_feature_category.class.inc';
             $dbobject =& singleton::getInstance('product_feature_category');
             $dbobject->sql_select = 'measurement_reqd';
             $data = $dbobject->getData("prod_feature_cat_id='{$fieldarray['prod_feature_cat_id']}'");
@@ -81,16 +81,22 @@ class product_feature extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table and add to lookup array
-        require_once 'product_feature_category.class.inc';
+        require_once 'classes/product_feature_category.class.inc';
         $dbobject =& singleton::getInstance('product_feature_category');
         $data_array = $dbobject->getValRep('prod_feaure_cat_id');
         $this->lookup_data['prod_feature_cat_id'] = $data_array;
 
         // get contents of foreign table and add to lookup array
-        require_once 'unit_of_measure.class.inc';
+        require_once 'classes/unit_of_measure.class.inc';
         $dbobject =& singleton::getInstance('unit_of_measure');
         $data_array = $dbobject->getValRep('uom_id');
         $this->lookup_data['uom_id'] = $data_array;
+
+        global $mode;
+
+        if ($mode == 'search') {
+            $fieldarray['measurement_reqd'] = null;
+        } // if
 
         return $fieldarray;
 
@@ -136,24 +142,6 @@ class product_feature extends Default_Table
         return $rowdata;
 
     } // _cm_post_getData
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    {
-        //DebugBreak();
-        if (empty($this->sql_select)) {
-            $this->sql_select = "$this->tablename.*, measurement_reqd, uom_abbrev";
-            $this->sql_from   = "$this->tablename "
-                              . "LEFT JOIN product_feature_category "
-                              . "ON (product_feature_category.prod_feature_cat_id=$this->tablename.prod_feature_cat_id) "
-                              . "LEFT JOIN unit_of_measure "
-                              . "ON (unit_of_measure.uom_id=$this->tablename.uom_id) ";
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

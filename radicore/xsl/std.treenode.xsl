@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -49,6 +49,7 @@
         <xsl:with-param name="child_count" select="//*[name()=$table][position()=$position]/*[name()=$child_count]"/>
         <xsl:with-param name="expanded" select="//*[name()=$table][position()=$position]/*[name()=$expanded]"/>
         <xsl:with-param name="icon" select="//*[name()=$table][position()=$position]/*[name()=$icon]"/>
+        <xsl:with-param name="f-s-depth" select="//*[name()=$table][position()=$position+1]/*[name()=$depth]"/>
       </xsl:call-template>
     </td>
 
@@ -70,12 +71,21 @@
   <xsl:param name="child_count"/>
   <xsl:param name="expanded"/>
   <xsl:param name="icon"/>
+  <xsl:param name="f-s-depth"/> <!-- following sibling depth -->
 
   <!-- insert a bookmark -->
   <a name="{$id}"></a>
 
+  <xsl:variable name="has-sibling">
+    <xsl:choose>
+      <xsl:when test="$f-s-depth = $depth">yes</xsl:when>
+      <xsl:otherwise>no</xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+
   <xsl:call-template name="indent">
     <xsl:with-param name="depth" select="$depth"/>
+    <xsl:with-param name="has-sibling" select="$has-sibling"/>
   </xsl:call-template>
 
   <xsl:choose>
@@ -86,13 +96,13 @@
         <xsl:when test="$expanded">
           <!-- item is expanded, so insert 'collapse' button -->
           <a href="{$script}?{$session}&amp;collapse={$id}#{$id}">
-            <img src="images/minus.gif" height="16" width="16" alt="Collapse Thread" class="border0" />
+            <img src="{$imagedir}minus.gif" height="21" width="16" alt="Collapse Thread" />
           </a>
         </xsl:when>
         <xsl:otherwise>
           <!-- item is collapsed, so insert 'expand' button -->
           <a href="{$script}?{$session}&amp;expand={$id}#{$id}">
-            <img src="images/plus.gif" height="16" width="16" alt="Expand Thread" class="border0" />
+            <img src="{$imagedir}plus.gif" height="21" width="16" alt="Expand Thread" />
           </a>
         </xsl:otherwise>
       </xsl:choose>
@@ -100,17 +110,18 @@
     </xsl:when>
     <xsl:otherwise>
       <!-- no children, so insert blank spacer -->
-      <img src="images/spacer.gif" height="12" width="12" />
+      <img src="{$imagedir}dash.gif" height="21" width="9" />
     </xsl:otherwise>
   </xsl:choose>
 
   <xsl:if test="$icon"> <!-- insert icon if image name supplied -->
-    <xsl:text> </xsl:text>
-    <img src="{$icon}" height="16" width="16"  alt="{$icon}"/>
+    <span class="icon">
+      <img src="{$icon}" height="16" width="16" alt="{$icon}"/>
+      <xsl:text> </xsl:text>
+    </span>
   </xsl:if>
 
-  <xsl:text> </xsl:text>
-  <xsl:value-of select="$desc" />
+  <span class="text"><xsl:value-of select="$desc" /></span>
 
 </xsl:template> <!-- tree_node -->
 
@@ -118,24 +129,34 @@
 
 <xsl:template name="indent">
   <xsl:param name="depth"/>
+  <xsl:param name="has-sibling"/>
 
   <!-- for each of $depth > 1 insert a spacer -->
   <xsl:if test="$depth > 1">
 
     <xsl:choose>
       <xsl:when test="$depth=2">
-        <!-- insert angle symbol -->
-        <img src="images/angle.gif" height="16" width="12" alt='angle.gif' />
+        <xsl:choose>
+          <xsl:when test="$has-sibling='yes'">
+            <!-- insert tee symbol to link with following sibling -->
+            <img src="{$imagedir}tee.gif" height="21" width="16" alt='tee.gif' />
+          </xsl:when>
+          <xsl:otherwise>
+            <!-- no following sibling, so insert angle symbol -->
+            <img src="{$imagedir}angle.gif" height="21" width="16" alt='angle.gif' />
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:when>
       <xsl:otherwise>
         <!-- insert spacer -->
-        <img src="images/spacer.gif" height="12" width="12" />
+        <img src="{$imagedir}spacer.gif" height="21" width="16" />
       </xsl:otherwise>
     </xsl:choose>
 
     <!-- recursive call with $depth decremented -->
     <xsl:call-template name="indent">
       <xsl:with-param name="depth" select="$depth -1"/>
+      <xsl:with-param name="has-sibling" select="$has-sibling"/>
     </xsl:call-template>
 
   </xsl:if>

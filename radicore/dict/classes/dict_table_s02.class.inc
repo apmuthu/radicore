@@ -16,19 +16,15 @@ class dict_table_s02 extends dict_table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
-		global $dbprefix;
+        global $dbprefix;
 
         // create object for retrieving column details
-        require_once 'dict_column.class.inc';
         $columnobj =& singleton::getInstance('dict_column');
 
         // create object for retrieving key details
-        require_once 'dict_table_key.class.inc';
         $keyobj =& singleton::getInstance('dict_table_key');
 
         // create object for retrieving relationship details
-        require_once 'dict_relationship.class.inc';
         $relobj =& singleton::getInstance('dict_relationship');
 
         // process each table separately
@@ -113,12 +109,13 @@ class dict_table_s02 extends dict_table
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-		global $dbprefix;
+        global $dbprefix;
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM table
@@ -138,11 +135,10 @@ class dict_table_s02 extends dict_table
     function _createChildRelations ($rel_array)
     // format the contents of $rel_array into the $child_relations array.
     {
-        //DebugBreak();
         // create an object to obtain column data
         static $colobj;
         if (!is_object($colobj)) {
-            require_once 'dict_related_column.class.inc';
+            require_once 'classes/dict_related_column.class.inc';
             $colobj =& singleton::getInstance('dict_related_column');
         } // if
 
@@ -207,7 +203,6 @@ class dict_table_s02 extends dict_table
     function _createFieldSpecs ($column_array)
     // format the contents of $column_array into the $fieldspec array.
     {
-        //DebugBreak();
         // obtain standard column specs for this DBMS
         static $colspecs;
         if (!isset($colspecs)) {
@@ -225,6 +220,11 @@ class dict_table_s02 extends dict_table
 	            $entry = str_pad($entry, 44);
 	            $type = $column['col_type'];
 	            $entry .= '= array(' ."'type' => '" .$colspecs[$type]['type'] ."'";
+
+	            if (strlen($column['col_array_type']) > 0) {
+	                $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
+	            } // if
+
 	            if (eregi('boolean', $type)) {
 	                // size is irrelevant for boolean fields
 	            } else {
@@ -233,6 +233,16 @@ class dict_table_s02 extends dict_table
 	                        $entry .= ",\n$indent2'size' => " .$column['user_size'];
 	                    } // if
 	                } // if
+	            } // if
+
+	            if (strlen($column['col_values']) > 0) {
+	                $array1 = explode(',', trim($column['col_values'], '()'));
+	                $entry .= ",\n$indent2'values' => " .'array(1 => ';
+                    foreach ($array1 as $array_entry) {
+                        $entry .= $array_entry .',';
+                    } // foreach
+	                $entry = substr($entry, 0, strlen($entry) -1); // remove trailing ','
+	                $entry .= ')';                                 // close array
 	            } // if
 
 	            // these are for numeric fields
@@ -300,8 +310,11 @@ class dict_table_s02 extends dict_table
 	                } // if
 	            } // if
 
-	            if (strlen($column['subtype']) > 0) {
-	                $entry .= ",\n$indent2'subtype' => '" .$column['subtype'] ."'";
+	            if (strlen($column['custom_validation']) > 0) {
+	                $entry .= ",\n$indent2'custom_validation' => '" .$column['custom_validation'] ."'";
+	            } // if
+	            if (strlen($column['col_subtype']) > 0) {
+	                $entry .= ",\n$indent2'subtype' => '" .$column['col_subtype'] ."'";
 	            } // if
 	            if (strlen($column['image_width']) > 0) {
 	                $entry .= ",\n$indent2'imagewidth' => " .$column['image_width'];
@@ -315,14 +328,25 @@ class dict_table_s02 extends dict_table
 	            if (strlen($column['optionlist']) > 0) {
 	                $entry .= ",\n$indent2'optionlist' => '" .$column['optionlist'] ."'";
 	            } // if
+	            if (strlen($column['checkbox_label']) > 0) {
+	                if (preg_match('/^getLanguageText/', $column['checkbox_label'])) {
+	                    // this is a function, not text, so do not enclose in single quotes
+	                	$entry .= ",\n$indent2'label' => " .$column['checkbox_label'];
+	                } else {
+	                    $entry .= ",\n$indent2'label' => '" .$column['checkbox_label'] ."'";
+	                } // if
+	            } // if
 	            if (strlen($column['task_id']) > 0) {
 	                $entry .= ",\n$indent2'task_id' => '" .$column['task_id'] ."'";
 	            } // if
 	            if (strlen($column['foreign_field']) > 0) {
-	                $entry .= ",\n$indent2'foreign_field' => '" .$column['foreign_field'] ."'";
+	                $entry .= ",\n$indent2'foreign_field' => '" .addslashes($column['foreign_field']) ."'";
 	            } // if
 	            if (strlen($column['align_hv']) > 0) {
-	                $entry .= ",\n$indent2'align' => '" .$column['align_hv'] ."'";
+	                $entry .= ",\n$indent2'align_hv' => '" .$column['align_hv'] ."'";
+	            } // if
+	            if (strlen($column['align_lr']) > 0) {
+	                $entry .= ",\n$indent2'align_lr' => '" .$column['align_lr'] ."'";
 	            } // if
 	            if (strlen($column['multi_cols']) > 0) {
 	                $entry .= ",\n$indent2'cols' => " .$column['multi_cols'];
@@ -337,10 +361,10 @@ class dict_table_s02 extends dict_table
 	            if ($column['noedit_nodisplay'] == 'NDI') {
 	                $entry .= ",\n$indent2'nodisplay' => 'y'";
 	            } // if
-	            if ($column['nosearch'] == 'NSR') {
+	            if ($column['no_search'] == 'NSR') {
 	                $entry .= ",\n$indent2'nosearch' => 'y'";
 	            } // if
-                if ($column['noaudit'] == 'NAL') {
+                if ($column['no_audit'] == 'NAL') {
 	                $entry .= ",\n$indent2'noaudit' => 'y'";
 	            } // if
 	            // close array structure and append to output string
@@ -363,11 +387,10 @@ class dict_table_s02 extends dict_table
     function _createParentRelations ($rel_array)
     // format the contents of $rel_array into the $parent_relations array.
     {
-        //DebugBreak();
         // create an object to obtain column data
         static $colobj;
         if (!is_object($colobj)) {
-            require_once 'dict_related_column.class.inc';
+            //require_once 'classes/dict_related_column.class.inc';
             $colobj =& singleton::getInstance('dict_Related_Column');
         } // if
 
@@ -435,7 +458,6 @@ class dict_table_s02 extends dict_table
     function _createPKeySpecs ($key_array)
     // format the contents of $key_array into the $primary_key array.
     {
-        //DebugBreak();
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
         $this->text_out .= $indent .'// primary key details ' ."\n";
@@ -467,7 +489,6 @@ class dict_table_s02 extends dict_table
     // format the contents of $key_array into the $unique_keys array.
     // (note that there can be more than one unique key)
     {
-        //DebugBreak();
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
         $this->text_out .= $indent .'// unique key details ' ."\n";
@@ -512,10 +533,9 @@ class dict_table_s02 extends dict_table
     function _writeClassFile ($db_id, $table_id, $subsys_dir)
     // create the initial class file for this database table.
     {
-        //DebugBreak();
         // read in skeleton class file
         $fname = $_SERVER['DOCUMENT_ROOT']
-                .dirname(dirname($_SERVER['PHP_SELF']))
+                .getParentDIR()
                 .'/default/classes/default.class.inc';
         if (!$template = file_get_contents($fname)) {
             $this->errors[] = "Cannot read file $fname";
@@ -526,11 +546,11 @@ class dict_table_s02 extends dict_table
 		$template = str_replace(array('#dbname#', '#tablename#'), array($db_id, $table_id), $template);
 
 		$fname = $_SERVER['DOCUMENT_ROOT']
-		        .dirname(dirname($_SERVER['PHP_SELF']))
+		        .getParentDIR()
 		        .'/' .$subsys_dir .'/classes/' .$table_id .'.class.inc';
 
 	    if (file_exists($fname)) {
-			// fle already exists, so leave it alone
+			// file already exists, so leave it alone
 		} else {
 	        if (!$fp = fopen($fname, 'w')) {
 	            $this->errors[] = getLanguageText('sys0076', $fname); // "Cannot open file $fname";
@@ -551,10 +571,9 @@ class dict_table_s02 extends dict_table
     function _writeDictFile ($table_id, $subsys_dir)
     // write the contents of $this->text_out to a disk file.
     {
-        //DebugBreak();
-        $fname = $_SERVER['DOCUMENT_ROOT']
-                .dirname(dirname($_SERVER['PHP_SELF']))
-                .'/' .$subsys_dir .'/classes/' .$table_id .'.dict.inc';
+        $fname  = $_SERVER['DOCUMENT_ROOT'];
+        $fname .= getParentDIR();
+        $fname .= '/' .$subsys_dir .'/classes/' .$table_id .'.dict.inc';
 
         if (!$fp = fopen($fname, 'w')) {
             $this->errors[] = getLanguageText('sys0076', $fname); // "Cannot open file $fname";

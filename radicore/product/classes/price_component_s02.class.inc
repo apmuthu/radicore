@@ -58,7 +58,7 @@ class price_component_s02 extends price_component
                 // 'End Date must be earlier than End Date of next entry'
                 $this->errors['end_date'] = getLanguageText('e0008');
                 // use next end_date minus 1 day
-                $fieldarray['end_date'] = $dateobj->addDays($next_end_date, -1);
+                $fieldarray['end_date'] = adjustDate($next_end_date, -1);
             } // if
         } // if
 
@@ -113,7 +113,7 @@ class price_component_s02 extends price_component
                 // 'Start Date must be later than Start Date of previous entry'
                 $this->errors['start_date'] = getLanguageText('e0009');
                 // use previous start_date plus 1 day
-                $fieldarray['start_date'] = $dateobj->addDays($prev_start_date, 1);
+                $fieldarray['start_date'] = adjustDate($prev_start_date, 1);
             } // if
         } // if
 
@@ -122,13 +122,14 @@ class price_component_s02 extends price_component
     } // _checkPrevRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         // perform common processing defined in parent class
-        $where = parent::_cm_pre_getData($where, $where_array);
+        $where = parent::_cm_pre_getData($where, $where_array, $fieldarray);
 
         if ($GLOBALS['mode'] == 'update') {
             $this->fieldspec['product_id']['noedit']      = 'y';
@@ -147,7 +148,7 @@ class price_component_s02 extends price_component
     {
         //DebugBreak();
         if (!empty($fieldarray['product_id'])
-                and !empty($fieldarray['prod_cat_id'])) {
+        and !empty($fieldarray['prod_cat_id'])) {
             // 'Cannot use both PRODUCT and PRODUCT CATEGORY'
             $this->errors['product_id']  = getLanguageText('e0010');
             // 'Cannot use both PRODUCT and PRODUCT CATEGORY'

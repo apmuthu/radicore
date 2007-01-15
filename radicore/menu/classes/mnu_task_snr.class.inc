@@ -40,9 +40,11 @@ class mnu_task_snr extends mnu_task
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // change fieldname in $where from 'menu_id' to 'task_id'
         $where = str_replace('menu_id=', 'task_id=', $where);

@@ -40,7 +40,7 @@ class location_type extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -51,8 +51,6 @@ class location_type extends Default_Table
             $this->sql_orderby = 'location_type_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            //$array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -67,22 +65,6 @@ class location_type extends Default_Table
         return $array;
 
     } // _cm_getValRep
-
-    // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
-    // process a selection returned from a picklist screen.
-    // $fieldarray contains the record data when the popup button was pressed.
-    // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
-    {
-        if ($return_from == 'srv_filepicker') {
-            // get description for selected item
-            $fieldarray['image_fname'] = $selection;
-        } // if
-
-        return $fieldarray;
-
-    } // _cm_popupReturn
 
 // ****************************************************************************
 } // end class

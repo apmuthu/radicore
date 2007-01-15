@@ -1,7 +1,13 @@
 <?php
-    // file created on July 28, 2005, 12:40 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_class_lesson
+    $fieldspec['class_id']                  = array('type' => 'string',
+                                                    'size' => 8,
+                                                    'pkey' => 'y',
+                                                    'required' => 'y',
+                                                    'uppercase' => 'y');
+    
     $fieldspec['lesson_id']                 = array('type' => 'integer',
                                                     'size' => 5,
                                                     'minvalue' => 0,
@@ -9,12 +15,6 @@
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'default' => '0');
-    
-    $fieldspec['class_id']                  = array('type' => 'string',
-                                                    'size' => 8,
-                                                    'pkey' => 'y',
-                                                    'required' => 'y',
-                                                    'uppercase' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('class_id',

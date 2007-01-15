@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -16,8 +16,14 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
         return; // something is wrong, so stop now
     } // if
 
+    global $screen_structure;
+
     // get object name from this object
-    $objectname = $dbobject->getClassName();
+    if (getPatternId() == 'FILEPICKER') {
+    	$objectname = 'file';
+    } else {
+        $objectname = $dbobject->getClassName();
+    } // if
 
     if (empty($errors)) {
         // array is empty
@@ -36,6 +42,10 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 		    $array[] = $object_errors;
 			$object_errors = $array;
 		} // if
+		foreach ($object_errors as $row => $row_errors) {
+			// deal with errors for fields which are not actually displayed
+    		$object_errors[$row] = filterErrors($row_errors, $objectname, $errors[$row], $screen_structure);
+		} // foreach
     } else {
 		// no errors for current object
         $object_errors = array();
@@ -65,10 +75,17 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
             $value = $doc->createTextNode($rowdata);
             $value = $node->appendChild($value);
         } else {
+            $css_array = array();  // optional css class specifications
+            // format data for output
+            $rowdata = $dbobject->formatData($rowdata, $css_array);
             // add a child node for each field
             foreach ($rowdata as $fieldname => $fieldvalue) {
                 $child = $doc->createElement($fieldname);
                 $child = $node->appendChild($child);
+                if (array_key_exists($fieldname, $css_array)) {
+                    // include css class name(s)
+                	$child->set_attribute('css_class', $css_array[$fieldname]);
+                } // if
                 if (isset($fieldspec[$fieldname])) {
                     // field exists in $fieldspec, so get field specifications
                     $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
@@ -103,7 +120,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         if (!empty($object_errors)) {
                             if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
                                 if (array_key_exists($fieldname, $object_errors[$rownum])) {
-                                    $child->setAttribute("error", $object_errors[$rownum][$fieldname]);
+                                    $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
                                     unset($object_errors[$rownum][$fieldname]);
                                 } // if
                             } // if
@@ -114,7 +131,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         if ($spec['type'] == 'boolean') {
                             if (!isset($spec['control'])) {
                                 // no 'control' set, so default to radiogroup
-                            	$spec['control']    = 'radiogroup';
+                            	$spec['control'] = 'radiogroup';
                             } // if
                             if (!isset($spec['optionlist'])) {
                                 // no 'optionlist' set, so default to $fieldname
@@ -128,7 +145,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         		$lookup = getLanguageArray('boolean');
                             } // if
                             // ensure 'true' and 'false' are set to field specifications
-                            $lookup = fixTrueFalse($lookup, $spec['true'], $spec['false']);
+                            $lookup = fixTrueFalse($lookup, $spec);
                             // now put back into object's internal data
                         	$dbobject->lookup_data[$optionlist] = $lookup;
                         } // if
@@ -139,6 +156,17 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         if ($spec['control'] == 'dropdown') {
                             $child->setAttribute('control', 'dropdown');
                             $child->setAttribute('optionlist', $spec['optionlist']);
+                            if (isset($spec['rows'])) {
+                            	$child->setAttribute('rows', $spec['rows']);
+                            } // if
+                        } // if
+                        // option for multi-dropdown fields
+                        if ($spec['control'] == 'multidrop') {
+                            $child->setAttribute('control', 'multidrop');
+                            $child->setAttribute('optionlist', $spec['optionlist']);
+                            if (isset($spec['rows'])) {
+                            	$child->setAttribute('rows', $spec['rows']);
+                            } // if
                         } // if
                         // option for filename fields
                         if ($spec['control'] == 'filepicker') {
@@ -156,7 +184,8 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                                 } // if
                             } // if
                             if (isset($spec['notext'])) {
-                                $child->set_attribute('notext', "{$spec['notext']}");
+                                // display the image without any filename text
+                                $child->setAttribute('notext', "{$spec['notext']}");
                             } // if
                         } // if
                         // options for multiline fields
@@ -176,29 +205,63 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             } // if
                         } // if
                         // option for radio buttons
-                        if ($spec['control'] == 'radiogroup') {
+                        if ($spec['control'] == 'radiogroup' or $spec['control'] == 'radio') {
                             $child->setAttribute('control', 'radiogroup');
                             $child->setAttribute('optionlist', $spec['optionlist']);
-                            if (isset($spec['align'])) {
-                            	$child->setAttribute('align', $spec['align']);
+                            if (isset($spec['align_hv'])) {
+                            	$child->setAttribute('align_hv', strtolower($spec['align_hv']));
+                            } // if
+                            if (isset($spec['align_lr'])) {
+                            	$child->setAttribute('align_lr', strtolower($spec['align_lr']));
                             } // if
                         } // if
-//                    } elseif (isset($spec['type'])) {
-//                        if ($spec['type'] == 'boolean') {
-//                            $child->setAttribute('control', 'boolean');
-//                        } // if
+                        // option for checkbox
+                        if ($spec['control'] == 'checkbox') {
+                            $child->setAttribute('control', 'checkbox');
+                            $child->setAttribute('optionlist', $spec['optionlist']);
+                            if (isset($spec['label'])) {
+                                // convert from internal coding to UTF-8
+                                $spec['label'] = convertEncoding($spec['label'], DEFAULT_CHARSET, 'UTF-8');
+                            	$child->setAttribute('label', $spec['label']);
+                            } // if
+                            if (isset($spec['align_lr'])) {
+                            	$child->setAttribute('align_lr', strtolower($spec['align_lr']));
+                            } // if
+                        } // if
+                        // option for hyperlink
+                        if ($spec['control'] == 'hyperlink') {
+                            $child->setAttribute('control', 'hyperlink');
+                        } // if
+                    } // if
+
+                    // option for javascript events
+                    if (isset($spec['javascript'])) {
+                        foreach ($spec['javascript'] as $event_name => $event_body) {
+                        	$child->setAttribute($event_name, $event_body);
+                        } // foreach
                     } // if
                 } else {
                     // field does not exist in $fieldspec, so make it non-editable
                     $child->setAttribute('noedit', 'y');
                 } // if
 
-                // convert from internal coding to UTF-8
-                $fieldvalue = convertEncoding($fieldvalue, DEFAULT_CHARSET, 'UTF-8');
+                if (is_array($fieldvalue)) {
+                    // output each entry as a separate child node
+                    foreach ($fieldvalue as $entry) {
+                    	$array_value = $doc->createElement('array');
+                        $array_value = $child->appendChild($array_value);
+                        $array_value->setAttribute('id', $entry);
+                        //$value = $doc->createTextNode($entry);
+                        //$value = $array_value->appendChild($value);
+                    } // foreach
+                } else {
+                    // convert from internal coding to UTF-8
+                    $fieldvalue = convertEncoding($fieldvalue, DEFAULT_CHARSET, 'UTF-8');
 
-                // insert as text element for the current node
-                $value = $doc->createTextNode($fieldvalue);
-                $value = $child->appendChild($value);
+                    // insert as text element for the current node
+                    $value = $doc->createTextNode($fieldvalue);
+                    $value = $child->appendChild($value);
+                } // if
             } // foreach
         } // if
 		if (array_key_exists($rownum, $object_errors)) {
@@ -228,21 +291,55 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
     // extract any lookup tables from the current object
     $lookup = $dbobject->getLookupData();
 
-    if ($GLOBALS['mode'] == 'search') {
-        // add in an extra entry for 'undefined' in dropdowns or radio groups
-        // (this will not overwrite an existing blank entry)
-        $undefined = array('' => getLanguageText('undefined'));
-        foreach ($lookup as $field => $data) {
-            if (!array_key_exists(' ', $data)) {
-                $data = array_merge($undefined, $data);
-                $lookup[$field] = $data;
-            } // if
-        } // foreach
-    } // if
+    static $lookup_items = array(); // list of items that have been loaded
 
     if (!empty($lookup)) {
-        // insert LOOKUP arrays into XML document
-        addLookup2XMLdoc($lookup, $doc, $root);
+    	if ($GLOBALS['mode'] == 'search') {
+            $undefined = getLanguageText('undefined');
+    	} else {
+    	    $undefined = ' ';
+        } // if
+        foreach ($lookup as $name => $data) {
+            if (array_key_exists($name, $lookup_items)) {
+            	// item has already been loaded, so don't duplicate it
+                unset($lookup[$name]);
+            } else {
+            	if (array_key_exists($name, $fieldspec)) {
+                    // lookup name is the same as a field name
+                	$spec = $fieldspec[$name];
+                } else {
+                    // find the field which uses this lookup array
+                    $spec = array('type' => 'string');
+                    foreach ($fieldspec as $key => $array) {
+                    	if (array_key_exists('optionlist', $array)) {
+                    		if ($array['optionlist'] == $name) {
+                    			$spec = $array;
+                    			break;
+                    		} // if
+                    	} // if
+                    } // foreach
+                } // if
+            	if ($spec['type'] == 'enum' AND array_key_exists(0, $data)) {
+                	// blank entry already exists, so do not add another
+                } elseif (isset($spec['control']) AND $spec['control'] == 'multidrop') {
+                    // do not add blank entry
+                } elseif (!array_key_exists(' ', $data)) {
+                    // array does not contain blank entry, so insert one
+                    $data2= array('' => $undefined);
+                    // append all existing array entries (so as not to resequence any numerical keys)
+                    foreach ($data as $key => $value) {
+                    	$data2[$key] = $value;
+                    } // foreach
+                    $lookup[$name] = $data2;
+                } // if
+                $lookup_items[$name] = 'done';
+            } // if
+        } // foreach
+
+        if (!empty($lookup)) {
+            // insert LOOKUP arrays into XML document
+            addLookup2XMLdoc($lookup, $doc, $root);
+        } // if
     } // if
 
     if (isset($node)) {
@@ -272,11 +369,22 @@ function addLookup2XMLdoc ($lookup, $doc, $root)
             $child = $occ->appendChild($child);
             $child->setAttribute('id', $id);
 
-            // convert from internal coding to UTF-8
-            $optvalue = convertEncoding($optvalue, DEFAULT_CHARSET, 'UTF-8');
-
-            $value = $doc->createTextNode($optvalue);
-            $value = $child->appendChild($value);
+            if (is_array($optvalue)) {
+            	foreach ($optvalue as $key1 => $value1) {
+            		if ($key1 == 'value') {
+            			$value1 = convertEncoding($value1, DEFAULT_CHARSET, 'UTF-8');
+                        $value = $doc->createTextNode($value1);
+                        $value = $child->appendChild($value);
+            		} else {
+            		    $child->setAttribute($key1, $value1);
+            		} // if
+            	} // foreach
+            } else {
+                // convert from internal coding to UTF-8
+                $optvalue = convertEncoding($optvalue, DEFAULT_CHARSET, 'UTF-8');
+                $value = $doc->createTextNode($optvalue);
+                $value = $child->appendChild($value);
+            } // if
         } // foreach
     } // foreach
 
@@ -292,18 +400,30 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     global $mode;           // insert/update/read/delete
     global $orderby;
     global $orderby_seq;
-    global $protocol;       // HTTP or HTTPS
     global $screen_refresh;
     global $settings;
     global $title;
     global $task_id;
 
-    $xsl_params['script'] = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['PHP_SELF'];
+    if (!empty($_SERVER['HTTPS']) AND is_True($_SERVER['HTTPS'])) {
+        if (strlen($GLOBALS['https_server']) > 0) {
+        	$xsl_params['script'] = 'HTTPS://' .$GLOBALS['https_server'] .$_SERVER['PHP_SELF'];
+        } else {
+            $xsl_params['script'] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+        } // if
+    } else {
+        $xsl_params['script'] = 'HTTP://' . $_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+    } // if
+
     $xsl_params['session_name'] = session_name();
-    $xsl_params['http_host'] = $protocol . $_SERVER['HTTP_HOST'];
-    //$xsl_params['doc_root']  = $_SERVER['DOCUMENT_ROOT'];
+    //$xsl_params['session_id']   = session_id();
 
     $xsl_params['title'] = getLanguageText($task_id);
+
+    if ($handle = fopen('version.txt', "r")) {
+        $xsl_params['version'] = trim(fread($handle, 40));
+        fclose($handle);
+    } // if
 
     $xsl_params['language'] = $language;
 
@@ -319,6 +439,7 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     $xsl_params['text']['select-all']   = getLanguageText('xsl_select_all');
     $xsl_params['text']['unselect-all'] = getLanguageText('xsl_unselect_all');
     $xsl_params['text']['logout']       = getLanguageText('xsl_logout');
+    $xsl_params['text']['logout-all']   = getLanguageText('xsl_logout_all');
     $xsl_params['text']['new-session']  = getLanguageText('xsl_new_session');
     $xsl_params['text']['help']         = getLanguageText('xsl_help');
     $xsl_params['text']['page-created'] = getLanguageText('xsl_page_created');
@@ -328,6 +449,11 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     if (is_true($_SESSION['XSLT_client_side'])) {
         $xsl_params['client-side'] = 'true';
     } // if
+    if (isset($_SESSION['logon_user_name'])) {
+        $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
+        $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
+    } // if
+    $xsl_params['text']['recover-pswd'] = getLanguageText('xsl_recover_pswd');
 
     if (isset($mode)) {
         $xsl_params['mode'] = $mode;
@@ -338,9 +464,13 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
 
     $dir = getParentDIR();
 
-    $xsl_params['help_root'] = $protocol .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
-
-    $xsl_params['menu_root'] = $protocol .$_SERVER['HTTP_HOST'] .$dir .'/menu';
+    if (!empty($GLOBALS['http_server'])) {
+    	$xsl_params['help_root'] = 'HTTP://' .$GLOBALS['http_server'] .$dir .dirname(getSelf());
+        $xsl_params['doc_root']  = 'HTTP://' .$GLOBALS['http_server'] .$dir;
+    } else {
+        $xsl_params['help_root'] = 'HTTP://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
+        $xsl_params['doc_root']  = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir;
+    } // if
 
     // insert sort details
     if (ereg(',', $orderby)) {
@@ -366,7 +496,14 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
 
     if ($settings) {
         // merge $settings array with $xsl_params array
-        $xsl_params = array_merge($settings, $xsl_params);
+        foreach ($settings as $key => $value) {
+            $value = trim($value);
+        	if (strtoupper($value) == 'FALSE') {
+        		// ignore any settings which are FALSE
+        	} else {
+        	    $xsl_params[$key] = $value;
+        	} // if
+        } // foreach
     } // if
 
     // calculate the function's elapsed time
@@ -418,7 +555,6 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     } // if
 
     global $act_buttons;
-    global $css_files;
     global $current_menu;
     global $current_task;
     global $menu_buttons;
@@ -431,7 +567,10 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     global $task_id;
     global $xsl_file;
 
-    $xsl_params = array();
+    $xsl_params    = array();
+    $css_files     = array();
+    $javascript    = array();
+    $errors        = (array)$errors;
 
     // create a new XML document
     $xml_doc = new DomDocument('1.0', 'UTF-8');
@@ -455,11 +594,20 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
         // add this object's name to $node_array
         $node_array[$object->getClassName()] = $child;
         // extract and merge any parameters for the XSL transformation
-        $xsl_params = array_merge_recursive($xsl_params, $object->xsl_params);
+        $xsl_params = array_merge_recursive($xsl_params, (array)$object->xsl_params);
+        // extract and merge any CSS file names
+        $css_files = array_merge_recursive($css_files, (array)$object->css_files);
+        // extract and merge any JavaScript code
+        $javascript = array_merge_recursive($javascript, $object->javascript);
     } // foreach
 
     // insert list of CSS files
     setCSSfiles($xml_doc, $root, $css_files);
+
+    if (!empty($javascript)) {
+    	// insert optional JavaScript
+        setJavaScript($xml_doc, $root, $javascript);
+    } // if
 
     if (isset($_GET['action']) and $_GET['action'] == 'print') {
 	    // skip
@@ -480,18 +628,20 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
             // no navigation buttons exist on the logon screen
         } else {
             if (isset($_GET['action']) and $_GET['action'] == 'print') {
+                // switch into print-preview mode
 	            $xsl_params['noshow']        = 'true';
 	            $xsl_params['noselect']      = 'true';
-	            $xsl_params['print_preview'] = 'true';
+	            $xsl_params['print-preview'] = 'true';
             } else {
                 // get navigation buttons from last $object
-                $nav_buttons = $object->getNavButtons($task_id);
-                if ($object->getErrors()) {
-                    $errors = array_merge($errors, $object->getErrors());
+                $dbnav =& singleton::getInstance('mnu_nav_button');
+                $nav_buttons = $dbnav->getNavButtons($task_id, $object);
+                if ($dbnav->getErrors()) {
+                    $errors = array_merge($errors, $dbnav->getErrors());
                 } // if
             } // if
         } // if
-        // insert navgation buttons
+        // insert navigation buttons
         if (isset($nav_buttons)) {
             setNavBar($xml_doc, $root, $nav_buttons, $remove_buttons);
         } // if
@@ -545,6 +695,11 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
                 $child = $xml_doc->createElement('line');
                 $child = $occ->appendChild($child);
 
+                if (is_string($id)) {
+                	// put fieldname and rownum into error message
+                    $msg = $id .'[' .$rownum .']: ' .$msg;
+                } // if
+
                 // convert from internal coding to UTF-8
                 $msg = convertEncoding($msg, DEFAULT_CHARSET, 'UTF-8');
 
@@ -591,8 +746,13 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     } // if
 
     // look for optional FOOTER.TXT
-    if (file_exists('footer.txt')) {
-        $footer = file_get_contents('footer.txt');
+    if ($GLOBALS['mode'] == 'logon') {
+    	$fname = 'logon_footer.txt';
+    } else {
+        $fname = 'footer.txt';
+    } // if
+    if (file_exists($fname)) {
+        $footer = file_get_contents($fname);
         if (!empty($footer)) {
             $occ = $xml_doc->createElement('footer');
             $occ = $root->appendChild($occ);
@@ -604,11 +764,10 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     // add optional parameters
     addParams2XMLdoc ($xml_doc, $root, $xsl_params);
 
-    if ($_SERVER['SERVER_NAME'] == 'localhost'
-    or  $_SERVER['REMOTE_ADDR'] == '80.177.120.119') {
+    if (is_True($_SESSION['log_xml_document'])) {
         // write XML data to a disk file in XSL subdirectory for debugging
         $fname = './xsl/' . basename($_SERVER['PHP_SELF']) . '.xml' ;
-        if (!$fp = fopen($fname, 'w')) {
+        if (!$fp = @fopen($fname, 'w')) {
             //chmod("./xsl", 0777);
             //if (!$fp = fopen($fname, 'w')) {
             //    trigger_error("Cannot open file $fname", E_USER_ERROR);
@@ -640,23 +799,42 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
 // extract name of XSL file from screen structure.
 {
-    if (array_key_exists('xsl_file', $screen_structure)) {
-    	$xsl_file = $screen_structure['xsl_file'];
+    if (is_array($screen_structure)) {
+        if (array_key_exists('xsl_file', $screen_structure)) {
+        	$xsl_file = $screen_structure['xsl_file'];
+        } // if
     } // if
-
-    global $protocol;       // HTTP or HTTPS
 
     // does a local variation of this XSL file exist?
     $filename = './xsl/' .$xsl_file;
     if (!file_exists($filename)) {
         // no, so load from standard area
-        $dir = getParentDIR();
-        $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/xsl/' .$xsl_file;
-        $xsl_file = $protocol . $_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
+        if (!empty($_SERVER['HTTPS'])) {
+            // use one or the other of these, whichever is available
+            if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
+            	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
+            } else {
+                $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
+            } // if
+            $filename = $dir .'/xsl/' .$xsl_file;
+            //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
+
+            $xsl_url = 'HTTPS://' .$GLOBALS['https_server']
+                                  .$GLOBALS['https_server_suffix']
+                                  .getParentDIR()
+                                  .'/xsl/' .$xsl_file;
+        } else {
+            $dir = getParentDIR();
+            $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/xsl/' .$xsl_file;
+            $xsl_url = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
+        } // if
+        if (!file_exists($filename)) {
+            trigger_error("File $filename does not exist...", E_USER_ERROR);
+        } // if
     } // if
 
     if (is_true($_SESSION['XSLT_client_side'])) {
-    	$pi = $xml_doc->createProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="' .$xsl_file .'"');
+    	$pi = $xml_doc->createProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="' .$xsl_url .'"');
     	$xml_doc->appendChild($pi);
     } // if
 
@@ -696,8 +874,6 @@ function setActBar ($doc, $root, $act_buttons)
 function setCSSfiles ($doc, $root, $css_files)
 // add contents of $css_files to the current XML document
 {
-    global $protocol;       // HTTP or HTTPS
-
     // convert from string to array, if necessary
     if (!is_array($css_files)) {
         $css_files = (array)$css_files;
@@ -705,12 +881,29 @@ function setCSSfiles ($doc, $root, $css_files)
 
     // if no custom stylesheet is specified use 'style_custom.css' in local directory
     if (empty($css_files)) {
-        $css_files[] = $protocol .$_SERVER['SERVER_NAME'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
+        if (!empty($_SERVER['HTTPS'])) {
+            if (strlen($GLOBALS['https_server']) > 0) {
+            	$css_files[] = 'HTTPS://' .$GLOBALS['https_server'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
+            } else {
+                $css_files[] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
+            } // if
+        } else {
+            $css_files[] = 'HTTP://' . $_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
+        } // if
     } // if
 
     // prepend the default stylesheet name from base directory
     $dir = getParentDIR();
-    array_unshift($css_files, $protocol .$_SERVER['SERVER_NAME'] .$dir .'/style_default.css');
+    if (!empty($_SERVER['HTTPS'])) {
+        if (strlen($GLOBALS['https_server']) > 0) {
+        	$default_css = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
+        } else {
+            $default_css = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
+        } // if
+    } else {
+        $default_css = 'HTTP://' . $_SERVER['HTTP_HOST'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
+    } // if
+    array_unshift($css_files, $default_css);
 
     // add element containing action buttons
     $occ = $doc->createElement('cssfiles');
@@ -731,6 +924,83 @@ function setCSSfiles ($doc, $root, $css_files)
     return;
 
 } // setCSSfiles
+
+// ****************************************************************************
+function setJavaScript ($doc, $root, $javascript)
+// add contents of $js_files to the current XML document
+{
+    if (isset($javascript['head'])) {
+        $occ = $doc->createElement('javascript');
+        $occ = $root->appendChild($occ);
+    	foreach ($javascript['head'] as $entry) {
+            if (key($entry) == 'file') {
+                // add a reference to a file
+                $head = $doc->createElement('head');
+                $head->setAttribute('type', 'file');
+                $head = $occ->appendChild($head);
+
+                $url = $entry[key($entry)];
+                if (strtoupper(substr($url, 0, 4)) != 'HTTP') {
+            		if (!empty($_SERVER['HTTPS'])) {
+                        if (strlen($GLOBALS['https_server']) > 0) {
+                        	$url = 'HTTPS://' .$GLOBALS['https_server'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
+                        } else {
+                            $url = 'HTTPS://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
+                        } // if
+                    } else {
+                        $url = 'HTTP://' . $_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
+                    } // if
+                } // if
+
+                $head  = $occ->appendChild($head);
+                $value = $doc->createTextNode($url);
+                $value = $head->appendChild($value);
+            } // if
+
+            if (key($entry) == 'code') {
+            	// add a block of javascript code
+                $head = $doc->createElement('head');
+                $head->setAttribute('type', 'code');
+                $head  = $occ->appendChild($head);
+                $value = $doc->createTextNode($entry[key($entry)]);
+                $value = $head->appendChild($value);
+            } // if
+        } // foreach
+    } // if
+
+    if (isset($javascript['body'])) {
+        // add element containing action buttons
+        $body = $doc->createElement('body');
+        $body = $occ->appendChild($body);
+
+        foreach ($javascript['body'] as $tag => $event) {
+            // add each event to the xml document
+            $body->setAttribute($tag, $event);
+        } // foreach
+    } // if
+
+    if (isset($javascript['tbody'])) {
+        // add element containing action buttons
+        $body = $doc->createElement('tbody');
+        $body = $occ->appendChild($body);
+
+        foreach ($javascript['tbody'] as $tag => $event) {
+            // add each event to the xml document
+            $body->setAttribute($tag, $event);
+        } // foreach
+    } // if
+
+    if (is_True($GLOBALS['force_javascript_footer'])) {
+    	// must also add a javascript footer
+        $foot = $doc->createElement('footer');
+        $foot = $occ->appendChild($foot);
+        $value = $doc->createTextNode('true');
+        $value = $foot->appendChild($value);
+    } // if
+
+    return;
+
+} // setJavaScript
 
 // ****************************************************************************
 function setMenuBar ($doc, $root, $menu_buttons, $current_menu, $current_task)
@@ -771,12 +1041,12 @@ function setMenuBar ($doc, $root, $menu_buttons, $current_menu, $current_task)
             $child = $occ->appendChild($child);
 
             // convert text into output language
-            $data['task_desc'] = getLanguageText($data['task_desc']);
+            $data['button_text'] = getLanguageText($data['button_text']);
 
             // convert from internal coding to UTF-8
-            $data['task_desc'] = convertEncoding($data['task_desc'], DEFAULT_CHARSET, 'UTF-8');
+            $data['button_text'] = convertEncoding($data['button_text'], DEFAULT_CHARSET, 'UTF-8');
 
-            $value = $doc->createTextNode(trim($data['task_desc']));
+            $value = $doc->createTextNode(trim($data['button_text']));
             $value = $child->appendChild($value);
         } // foreach
     } // if
@@ -792,10 +1062,10 @@ function setNavBar ($doc, $root, $nav_buttons, $remove_buttons=null)
     // remove nominated buttons (if necessary)
     if (count($remove_buttons) > 0) {
         // examine each nominated button
-        foreach ($remove_buttons as $script_id) {
+        foreach ($remove_buttons as $task_id) {
             // remove from button array (if found)
         	foreach ($nav_buttons as $num => $button) {
-        		if ($button['script_id'] == $script_id) {
+        		if ($button['task_id'] == $task_id) {
         		    unset($nav_buttons[$num]);
         		} // if
         	} // foreach
@@ -861,6 +1131,7 @@ function setScreenStructure ($xml_doc, $root, $structure)
 
     // structure may contain one or more tables, so step through each one
     foreach ($structure['tables'] as $zone => $id) {
+        $id = removeTableSuffix($id);
         // add this table name as a child to the structure element
         $table = $xml_doc->createElement(strtolower($zone));
         $table = $occ->appendChild($table);
@@ -871,10 +1142,10 @@ function setScreenStructure ($xml_doc, $root, $structure)
             $columns = $table->appendChild($columns);
             foreach ($structure[$zone]['columns'] as $row => $array) {
                 $array = array_change_key_case($array, CASE_LOWER);
+                $column = $xml_doc->createElement('column');
+                $column = $columns->appendChild($column);
                 foreach ($array as $attrname => $attrvalue) {
                     if ($attrname != 'nosort') {
-                        $column = $xml_doc->createElement('column');
-                        $column = $columns->appendChild($column);
                         $column->setAttribute($attrname, $attrvalue);
                     } // if
                 } // foreach
@@ -889,10 +1160,9 @@ function setScreenStructure ($xml_doc, $root, $structure)
 
         // extract field details one row at a time
         foreach ($structure[$zone]['fields'] as $row => $rowdata) {
-        	$rowocc = $xml_doc->createElement('item');
+        	$rowocc = $xml_doc->createElement('row');
             $rowocc = $table->appendChild($rowocc);
-            $key = key($rowdata);
-            if (is_string($key)) {
+            if (is_string(key($rowdata))) {
             	// not indexed by cell number, so assume 'fieldname' => 'label'
 
             	$rowdata = array_change_key_case($rowdata, CASE_LOWER);
@@ -900,9 +1170,16 @@ function setScreenStructure ($xml_doc, $root, $structure)
             	foreach ($rowdata as $fieldname => $fieldlabel) {
                     if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
                         // ignore 'nosort' entry
-                    } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|size|display-empty)$/i', $fieldname, $regs)) {
-                        // write these out as attributes on the current cell
-                        $cell->setAttribute($regs[0], $fieldlabel);
+                    } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|size|display-empty|javascript)$/i', $fieldname, $regs)) {
+                        if ($fieldname == 'javascript' and is_array($fieldlabel)) {
+                        	foreach ($fieldlabel as $attr => $attrvalue) {
+                        		// add this entry as an attribute to the current row
+                        	    $rowocc->setAttribute($attr, $attrvalue);
+                        	} // foreach
+                        } else {
+                            // write these out as attributes on the current cell
+                            $cell->setAttribute($regs[0], $fieldlabel);
+                        } // if
                     } else {
                         $cell = $xml_doc->createElement('cell');
                         $cell = $rowocc->appendChild($cell);
@@ -928,20 +1205,27 @@ function setScreenStructure ($xml_doc, $root, $structure)
             } else {
                 // there is a separate entry for each cell in the current row
                 foreach ($rowdata as $cellno => $cellspec) {
-                    // create XML element for a new cell
-                    $cell = $xml_doc->createElement('cell');
-                    $cell = $rowocc->appendChild($cell);
-
                     $cellspec = array_change_key_case($cellspec, CASE_LOWER);
+                    if (key($cellspec) == 'javascript' and is_array($cellspec[key($cellspec)])) {
+                    	$javascript = $cellspec['javascript'];
+                    	foreach ($javascript as $attr => $attrvalue) {
+                    		// add this entry as an attribute to the current row
+                    	    $rowocc->setAttribute($attr, $attrvalue);
+                    	} // foreach
+                    } else {
+                        // create XML element for a new cell
+                        $cell = $xml_doc->createElement('cell');
+                        $cell = $rowocc->appendChild($cell);
 
-                	foreach ($cellspec as $celltype => $cellvalue) {
-                	    if ($celltype == 'label') {
-                	    	// convert text into output language
-                            $cellvalue = getLanguageText($cellvalue);
-                	    } // if
-                		// add this entry as an attribute to the current cell
-                	    $cell->setAttribute($celltype, $cellvalue);
-                	} // foreach
+                    	foreach ($cellspec as $celltype => $cellvalue) {
+                    	    if ($celltype == 'label') {
+                    	    	// convert text into output language
+                                $cellvalue = getLanguageText($cellvalue);
+                    	    } // if
+                    		// add this entry as an attribute to the current cell
+                    	    $cell->setAttribute($celltype, $cellvalue);
+                    	} // foreach
+                    } // if
                 } // foreach
             } // if
         } // foreach
@@ -991,13 +1275,18 @@ function XSLclient ($xml_string)
 {
     // set charset to display accented characters correctly
     header('content-type: application/xml; charset=UTF-8');
+    header('content-length: ' .strlen($xml_string));
 
     // disable any caching by the browser
     header('Expires: Mon, 14 Oct 2002 05:00:00 GMT'); // Date in the past
     header('Last-Modified: ' . gmdate("D, d M Y H:i:s") . ' GMT'); // always modified
-    header('Cache-Control: no-store, no-cache, must-revalidate'); // HTTP 1.1
-    header('Cache-Control: post-check=0, pre-check=0', false);
-    header('Pragma: no-cache'); // HTTP 1.0
+    if (isset($_SERVER['HTTPS']) or (isset($GLOBALS['use_https']) and $GLOBALS['use_https'] == true)) {
+        // skip this next bit
+    } else {
+    	header('Cache-Control: no-store, no-cache, must-revalidate'); // HTTP 1.1
+        header('Cache-Control: post-check=0, pre-check=0', false);
+        header('Pragma: no-cache'); // HTTP 1.0
+    } //if
 
     echo $xml_string;
 

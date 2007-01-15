@@ -6,7 +6,7 @@
 
 $table_id = 'mnu_nav_button';   	// table name
 
-require 'std.delete2.inc';          // activate page controller
+require_once 'std.delete2.inc';     // activate page controller
 
 ?>
 

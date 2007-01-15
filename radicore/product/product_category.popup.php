@@ -5,7 +5,6 @@
 // previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'product_category';                     // table name
 $screen   = 'product_category.list.screen.inc';     // file identifying screen structure
 
@@ -15,9 +14,6 @@ $sql_from   = 'product_category '.
               'LEFT JOIN prod_cat_rollup ON (prod_cat_rollup.prod_cat_id_snr=product_category.prod_cat_id)';
 $sql_where  = NULL;
 $sql_groupby = 'prod_cat_id';
-
-// set default sort sequence
-$sql_orderby = NULL;
 
 require 'std.list1.popup.inc';                      // activate page controller
 

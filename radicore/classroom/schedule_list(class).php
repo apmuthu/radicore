@@ -1,10 +1,9 @@
-<?php 
+<?php
 // *****************************************************************************
-// List the contents of a database table and allow the user to view/modify
-// the contents by activating other screens via navigation buttons.
+// List the contents of a schedule (INNER table) for a selected occurrence of
+// an OUTER table.
 // *****************************************************************************
 
-//DebugBreak();
 $outer_table = 'crs_class';                             // name of outer table
 $inner_table = 'crs_schedule_s03';                      // name of inner table
 $screen      = 'crs_schedule.list(class).screen.inc';   // file identifying screen structure

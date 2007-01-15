@@ -16,8 +16,8 @@ $structure['main']['fields'][] = array('context' => 'Context');
 $structure['main']['fields'][] = array('role_id' => 'Role Id');
 $structure['main']['fields'][] = array('user_id' => 'User Id');
 $structure['main']['fields'][] = array('enabled_date' => 'Enabled Date');
+$structure['main']['fields'][] = array('deadline' => 'Deadline');
 $structure['main']['fields'][] = array('cancelled_date' => 'Cancelled Date');
 $structure['main']['fields'][] = array('finished_date' => 'Finished Date');
-$structure['main']['fields'][] = array('deadline' => 'Deadline');
 
 ?>

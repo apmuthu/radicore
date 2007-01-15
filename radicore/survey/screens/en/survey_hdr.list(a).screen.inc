@@ -15,6 +15,6 @@ $structure['inner']['columns'][] = array('width' => 350);
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('survey_name' => 'Name');
-$structure['inner']['fields'][] = array('survey_desc' => 'Description');
+$structure['inner']['fields'][] = array('survey_long_name' => 'Long Name');
 
 ?>

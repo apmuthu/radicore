@@ -25,12 +25,28 @@ class survey_question extends Default_Table
     } // survey_question
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if ($GLOBALS['mode'] == 'list'
+        or basename($_SERVER['PHP_SELF']) == 'question_prompt_link.php'
+        or basename($_SERVER['PHP_SELF']) == 'answer_option_multi.php') {
+            // display as plain text, not a multi-line box
+        	unset($this->fieldspec['question_text']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get options for answer_type and insert in LOOKUP data
         $array = $this->getValRep('answer_type');
         $this->lookup_data['answer_type'] = $array;
@@ -39,21 +55,17 @@ class survey_question extends Default_Table
         require_once 'risk_status.class.inc';
         $dbobject =& singleton::getInstance('risk_status');
         $data_array = $dbobject->getValRep('risk_status_id');
-
-        // insert blank entry at front of array
-        $blank = array('' => ' ');
-        $data_array = array_merge($blank, $data_array);
         $this->lookup_data['risk_status_id'] = $data_array;
         unset($dbobject);
 
         global $mode;
         if ($mode != 'insert' and $mode != 'search') {
-            // get contents of QUESTION_PROMPT and concatenate into a single list
+            // get contents of QUESTION_PROMPT and concatenate into a single string
             require_once 'question_prompt.class.inc';
             $dbobject =& singleton::getInstance('question_prompt');
             $dbobject->sql_select = "prompt_desc";
             $dbobject->sql_from   = "question_prompt "
-                                  . "LEFT JOIN default_prompt USING (survey_id,prompt_id)";
+                                  . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
             $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());
             $data_array = $dbobject->getData($where2);
             unset($dbobject);
@@ -71,7 +83,7 @@ class survey_question extends Default_Table
         if (isset($fieldarray['answer_type'])) {
             switch ($fieldarray['answer_type']) {
             	case 'M':
-            		// get contents of ANSWER_OPTION and concatenate into a single list
+            		// get contents of ANSWER_OPTION and concatenate into a single string
                     require_once 'answer_option.class.inc';
                     $dbobject =& singleton::getInstance('answer_option');
                     $dbobject->sql_select = "answer_text";
@@ -89,7 +101,7 @@ class survey_question extends Default_Table
                     $fieldarray['answer_list'] = $answer_list;;
             		break;
             	case 'N':
-            		// get contents of NUMBER_OPTION and concatenate into a single list
+            		// get contents of NUMBER_OPTION and concatenate into a single string
                     require_once 'number_option.class.inc';
                     $dbobject =& singleton::getInstance('number_option');
                     $dbobject->sql_select = "min_value, max_value";
@@ -122,10 +134,8 @@ class survey_question extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set question_id to next available number
-        if (!empty($fieldarray['survey_id'])
-                AND !empty($fieldarray['section_id'])) {
+        if (!empty($fieldarray['survey_id']) AND !empty($fieldarray['section_id'])) {
             $where = "survey_id='{$fieldarray['survey_id']}' AND " . "section_id='{$fieldarray['section_id']}'";
             $query = "SELECT max(question_id) FROM $this->tablename WHERE $where";
             $count = $this->getCount($query);
@@ -144,7 +154,6 @@ class survey_question extends Default_Table
         $array = array();
 
         if ($item == 'answer_type') {
-//            $array['']  = ' ';   // start with blank entry
 //            $array['T'] = 'Text';
 //            $array['M'] = 'Multiple Choice';
 //            $array['N'] = 'Number';
@@ -160,19 +169,16 @@ class survey_question extends Default_Table
     function _cm_post_deleteRecord ($fieldarray)
     // perform custom processing after database record is deleted.
     {
-        //DebugBreak();
         // if there are any records with a sequence number greater than the one
         // which has just been deleted then they must be shuffled up in order
         // to absorb the now vacant number.
+        $dboject =& singleton::getInstance('survey_question');
         $survey_id    = $fieldarray['survey_id'];
         $section_id   = $fieldarray['section_id'];
         $question_seq = $fieldarray['question_seq'];
         $where = "survey_id='$survey_id' AND section_id='$section_id' AND question_seq>$question_seq";
-        $this->sql_orderby = 'question_seq';
-        $rowdata = $this->getData_raw($where);
-        if ($this->numrows == 0) {
-            return $fieldarray;
-        } // if
+        $dboject->sql_orderby = 'question_seq';
+        $rowdata = $dboject->getData_raw($where);
 
         foreach ($rowdata as $row => $data) {
             if ($data['question_seq'] <> $question_seq) {
@@ -191,7 +197,6 @@ class survey_question extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
         switch ($GLOBALS['task_id']) {
             case 'srv_answer_option(list)':
             case 'srv_answer_option(multi)':
@@ -211,19 +216,20 @@ class survey_question extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         $where = array2where($fieldarray, $this->getPkeyNames());
 
         switch ($fieldarray['answer_type']) {
             case 'M':
                 $next['task_id'] = 'srv_answer_option(multi)';
-                $next['where'] = $where;
+                $next['where']   = $where;
+                $next['action']  = 'OK';
                 // this is processed by scriptnext() and scriptprevious()
                 $_SESSION['script_sequence'][] = $next;
                 break;
             case 'N':
                 $next['task_id'] = 'srv_number_option(multi)';
-                $next['where'] = $where;
+                $next['where']   = $where;
+                $next['action']  = 'OK';
                 // this is processed by scriptnext() and scriptprevious()
                 $_SESSION['script_sequence'][] = $next;
                 break;
@@ -233,7 +239,7 @@ class survey_question extends Default_Table
 
         $next['task_id'] = 'srv_question_prompt(link)';
         $next['where']   = $where;
-
+        unset($next['action']);
         // this is processed by scriptnext() and scriptprevious()
         $_SESSION['script_sequence'][] = $next;
 
@@ -245,7 +251,6 @@ class survey_question extends Default_Table
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database record is updated.
     {
-        //DebugBreak();
         if ($fieldarray['answer_type'] <> $old_data['answer_type']) {
             // delete data associated with previous answer_type
             $where = array2where($fieldarray, $this->getPkeyNames());

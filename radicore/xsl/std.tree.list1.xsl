@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -33,11 +33,19 @@
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
-    <xsl:call-template name="head" />
+
+  <xsl:call-template name="head" />
+
   <body>
+    <xsl:for-each select="/root/javascript/body[@*]">
+      <!-- add javascript events to the <body> tag -->
+      <xsl:copy-of select="@*" />
+    </xsl:for-each>
 
   <xsl:if test="//header">
-    <xsl:value-of select="//header" disable-output-escaping="yes"/>
+    <div class="header">
+      <xsl:value-of select="//header" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   <form method="post" action="{$script}">
@@ -60,20 +68,20 @@
           <xsl:with-param name="noselect" select="//params/noselect"/>
         </xsl:call-template>
 
-        <div class="main">
+        <div class="tree">
 
           <!-- this is the actual data -->
           <table>
 
             <!-- set up column widths -->
             <xsl:call-template name="column_group">
-              <xsl:with-param name="table" select="'main'"/>
+              <xsl:with-param name="zone" select="'main'"/>
             </xsl:call-template>
 
             <thead>
               <!-- set up column headings -->
               <xsl:call-template name="column_headings">
-                <xsl:with-param name="table" select="'main'"/>
+                <xsl:with-param name="zone" select="'main'"/>
               </xsl:call-template>
             </thead>
 
@@ -103,12 +111,25 @@
 
   </form>
 
-  <xsl:if test="//footer">
-    <xsl:value-of select="//footer" disable-output-escaping="yes"/>
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   </body>
   </html>
+
+  <xsl:if test="/root/javascript/footer">
+    <!-- insert the javascript footer manually because it can't be done automatically -->
+    <xsl:call-template name="javascript_footer"/>
+  </xsl:if>
 
 </xsl:template>
 

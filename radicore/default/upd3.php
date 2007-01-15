@@ -7,7 +7,7 @@
 //*****************************************************************************
 
 $table_id = "#tablename#";                   // table id
-$screen   = '#tablename#.detail.screen.inc'; // file identifying screen structure
+$screen   = '#tablename#.upd3.screen.inc';   // file identifying screen structure
 
 // customise the SQL SELECT statement
 $sql_select  = null;

@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 5:06 pm
+    // file created on November 3, 2006, 11:29 am
     
     // field specifications for table product.prod_feature_interaction
     $fieldspec['product_id']                = array('type' => 'string',
@@ -40,24 +40,30 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2001-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('product_id',
@@ -76,10 +82,12 @@
                                                     'fields' => array('product_id' => 'product_id'));
     
     $this->parent_relations[]               = array('parent' => 'product_feature',
+                                                    'alias' => 'product_feature_snr',
                                                     'parent_field' => 'prod_feature_desc as prod_feature_desc_snr',
                                                     'fields' => array('prod_feature_id_snr' => 'prod_feature_id'));
     
     $this->parent_relations[]               = array('parent' => 'product_feature',
+                                                    'alias' => 'product_feature_jnr',
                                                     'parent_field' => 'prod_feature_desc as prod_feature_desc_jnr',
                                                     'fields' => array('prod_feature_id_jnr' => 'prod_feature_id'));
     

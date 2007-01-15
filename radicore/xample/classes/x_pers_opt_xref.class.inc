@@ -53,7 +53,7 @@ class x_pers_opt_xref extends Default_Table
         //DebugBreak();
         if (eregi('star_sign', $this->sql_select)) {
             // get lookup list for star_sign
-            require_once 'x_person.class.inc';
+            require_once 'classes/x_person.class.inc';
             $dbobject =& singleton::getInstance('x_person');
             $data = $dbobject->getValRep('star_sign');
             $this->lookup_data['star_sign'] = $data;
@@ -69,7 +69,7 @@ class x_pers_opt_xref extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered.
     {
-        // the default is to clear out the contents of $where
+        // clear out the contents of $where
         $where = '';
 
         //if ($popupname == '???_popup') {
@@ -77,12 +77,28 @@ class x_pers_opt_xref extends Default_Table
         //   $where = "???_id='ORG'";
         //} // if
 
-//        // ensure that only one entry can be selected
-//        $settings = 'select_one=true';
+        // allow only one entry to be selected (the default)
+        //$settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        $settings['select_one'] = false;
 
         return $where;
 
     } // _cm_popupCall
+
+    // ****************************************************************************
+    function _cm_post_updateLinkdata ($rows, $postarray)
+    // perform custom processing after multiple database records have been updated.
+    {
+        // get record count for the workflow test
+        $person_id = addslashes($rows[0]['person_id']);
+        $count = $this->getCount("person_id='$person_id'");
+        $rows['count'] = $count;
+
+        return $rows;
+
+    } // _cm_post_updateLinkData
 
 // ****************************************************************************
 } // end class

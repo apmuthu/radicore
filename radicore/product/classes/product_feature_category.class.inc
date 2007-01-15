@@ -25,7 +25,7 @@ class product_feature_category extends Default_Table
     } // product_feature_category
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -36,8 +36,6 @@ class product_feature_category extends Default_Table
             $this->sql_orderby    = 'prod_feature_cat_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {

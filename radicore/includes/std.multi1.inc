@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -41,6 +41,10 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     // get previous data
     $fieldarray = $dbobject->getFieldArray();
+    if (!is_string(key($fieldarray))) {
+        // indexed by row, so use first row only
+        $fieldarray = $fieldarray[key($fieldarray)];
+    } // if
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -49,7 +53,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_where      = &$sql_where;
     $dbobject->sql_groupby    = &$sql_groupby;
     $dbobject->sql_having     = &$sql_having;
-    $dbobject->sql_sort_table = &$sql_sort_table;
+    $dbobject->sql_orderby_table = &$sql_orderby_table;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
     } elseif (!empty($task_order_by)) {
@@ -59,13 +63,12 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->checkPrimaryKey = true;
     // scroll through one item at a time
     $dbobject->setRowsPerPage(1);
-    if (isset($sql_where) and strlen($sql_where) > 0) {
-        // merge two strings into one
-    	$where = mergeWhere($where, $sql_where);
-    	$dbobject->sql_where = null;
-    } // if
     // perform any initialisation
-    $where = $dbobject->initialise($where, $selection);
+    if (!empty($selection)) {
+        $selection = $dbobject->initialise($selection, $where);
+    } else {
+        $where = $dbobject->initialise($where);
+    } // if
 } // if
 
 if (isset($_POST['clear'])) {
@@ -90,7 +93,9 @@ if (isset($_POST['retrieve'])) {
     $where = array2where($_POST, $dbobject->getPkeyNames(), $dbobject);
     // get data from the database
     $fieldarray = $dbobject->getData($where);
-    $errors = $dbobject->getErrors();
+    if ($dbobject->errors) {
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    } // if
     if (!$errors) {
         if ($dbobject->getNumRows() < 1) {
             // get initial data for a new record
@@ -116,7 +121,9 @@ if (isset($_POST['delete'])) {
     // delete the current record
     $dbobject->startTransaction();
     $fieldarray = $dbobject->deleteRecord($fieldarray);
-    $errors     = $dbobject->getErrors();
+    if ($dbobject->errors) {
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    } // if
     if ($errors) {
         $dbobject->rollback();
     } else {
@@ -151,11 +158,13 @@ if (isset($_POST['delete'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from)) {
-        if ($return_action == 'choose' AND !empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose') {
+        if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            $errors     = array_merge($errors, $dbobject->getErrors());
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            } // if
         } // if
     } else {
         if (!empty($selection)) {
@@ -168,10 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
             // get object to set scroll array internally
             $where  = $dbobject->setScrollArray($where);
-            $errors = $dbobject->getErrors();
-            if ($errors) {
-                // beam me up, Scotty!
-                scriptprevious($errors);
+            if ($dbobject->errors) {
+            	// beam me up, Scotty!
+                scriptprevious($dbobject->getErrors());
             } // if
         } else {
             if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
@@ -186,11 +194,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
         // retrieve record from the database
         $fieldarray = $dbobject->getData($where);
+        if ($dbobject->errors) {
+        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+        } // if
 
+        // the following lines are incorrect - if a record does NOT currently exist then
+        // it should be possible to create one (terminating here is wrong!)
+        //if (empty($dbobject->scrollarray)) {
+            //if ($dbobject->numrows < 1) {
+            //    scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
+            //} // if
+        if (!empty($errors)) {
+        	if (!isset($scrolling[$dbobject->getClassName()])) {
+        	    // only one entry selected, so return to previous screen to show the error
+        		scriptPrevious($errors);
+        	} // if
+        } // if
         if (empty($dbobject->scrollarray)) {
-            if ($dbobject->numrows < 1) {
-                scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
-            } // if
             $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
             $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
         } else {
@@ -205,14 +225,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update($fieldarray, $_POST);
+    $fieldarray = array_update_associative($fieldarray, $_POST);
     // check that primary key contains no wildcard characters
     $errors = isPkeyComplete($fieldarray, $dbobject->getPkeyNames());
     if (empty($errors)) {
         // set $where to primary key of current record
         $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
+        // ensure that changes are stored inside relevant object
+        $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
     } else {
         $mode = 'insert';
         $dbobject->setFieldArray($fieldarray);
@@ -227,7 +249,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
             // record does exist, so update it
             $fieldarray = $dbobject->updateRecord($fieldarray);
         } // if
-        if (count($dbobject->getErrors()) > 0) {
+        if ($dbobject->errors) {
 			// errors are keyed by object name
 		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
 		} // if
@@ -248,10 +270,12 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
                 if (empty($dbobject->scrollarray)) {
                     // pick next item from the database
                     $where = $scrolling[$dbobject->getClassName()]['where'];
-                    $dbobject->setPageNo($curitem +1);
+                    $curitem++;
+                    $dbobject->setPageNo($curitem);
                 } else {
                     // pick next item out of $scrollarray
-                    $where = $dbobject->getScrollItem($curitem +1);
+                    $curitem++;
+                    $where = $dbobject->getScrollItem($curitem);
                 } // if
             } // if
             // read chosen record
@@ -279,20 +303,18 @@ if (!$errors) {
 
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
-    $errors     = $dbobject->getErrors();
-    if ($errors) {
+    if ($dbobject->errors) {
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         // remove the SUBMIT button
         unset($act_buttons['submit']);
     } // if
 } // if
 
-// ensure script variables are available throughout this session
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars = updateScriptVars ($script_vars);
 
 if (!$errors) {
     if ($dbobject->getNumRows() > 0) {

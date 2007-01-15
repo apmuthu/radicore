@@ -30,16 +30,13 @@ class x_option extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        global $mode;
-
-        if ($mode == 'search') {
+        if ($GLOBALS['mode'] == 'search') {
             $prev_script = getPreviousScript();
-            if (basename($prev_script) == 'pers_opt_xref_link(a).php') {
+            $pattern_id  = getPatternId($prev_script);
+            //if (basename($prev_script) == 'pers_opt_xref_link(a).php') {
+            if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
-                $this->fieldspec['selected'] = array('type' => 'boolean',
-                                                     'true' => 'Y',
-                                                     'false' => 'N');
+                $this->fieldspec['selected'] = array('type' => 'boolean');
             } // if
         } // if
 
@@ -48,7 +45,7 @@ class x_option extends Default_Table
     } // _cm_changeConfig
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -59,8 +56,6 @@ class x_option extends Default_Table
             $this->sql_orderby = 'option_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {

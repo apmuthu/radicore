@@ -5,7 +5,7 @@
 // the contents by activating other screens via navigation buttons.
 // *****************************************************************************
 
-$outer_table = 'mnu_dialog_type';           // name of outer table
+$outer_table = 'mnu_pattern';           // name of outer table
 $inner_table = 'mnu_task';                  // name of inner table
 $screen = 'mnu_task.list2.screen.inc';      // file identifying screen structure
 

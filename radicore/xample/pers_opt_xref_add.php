@@ -6,12 +6,11 @@
 // the list of one or more PERSON_IDs is provided by a separate popup screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'x_pers_opt_xref';          // table name
 
-$popup_screen = 'x_person(popup)';
+$popup_task = 'x_person(popup)';
 
-require 'std.add3.inc';                 // activate page controller
+require_once 'std.add3.inc';            // activate page controller
 
 ?>
 

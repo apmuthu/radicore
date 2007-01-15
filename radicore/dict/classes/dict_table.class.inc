@@ -85,7 +85,7 @@ class dict_table extends Default_Table
         $this->lookup_data['audit_logging'] = $array;
 
         // get contents of foreign table DATABASE and add as a LOOKUP list
-        require_once 'dict_database.class.inc';
+        require_once 'classes/dict_database.class.inc';
         $dbobject =& singleton::getInstance('dict_database');
         $array    = $dbobject->getValRep('database_id');
         $this->lookup_data['database_id'] = $array;
@@ -95,16 +95,31 @@ class dict_table extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where=null)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
 
         if ($item == 'audit_logging') {
-            // provide values for dropdown list
+//            // provide values for dropdown list
 //            $array['N'] = 'No';
 //            $array['Y'] = 'LOGGING ENABLED';
             $array = getLanguageArray('audit_logging');
+            return $array;
+        } // if
+
+        if ($item == 'table_id') {
+            // get data from the database
+            $this->sql_select     = 'table_id, table_desc';
+            $this->sql_orderby    = 'table_id';
+            $this->sql_ordery_seq = 'asc';
+            $data = $this->getData($where);
+
+            // convert each row into 'id=id' in the output array
+            foreach ($data as $row => $rowdata) {
+                $rowvalues = array_values($rowdata);
+                $array[$rowvalues[0]] = $rowvalues[0];
+            } // foreach
             return $array;
         } // if
 

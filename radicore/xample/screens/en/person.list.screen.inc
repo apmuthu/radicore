@@ -8,7 +8,7 @@ $structure['main']['columns'][] = array('width' => 70);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 150);
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('person_id' => 'Id');

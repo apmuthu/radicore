@@ -15,7 +15,7 @@ $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
 $sql_orderby = null;
-$sql_sort_table = null;
+$sql_orderby_table = null;
 
 // define action buttons
 $act_buttons['clear'] = 'CLEAR';

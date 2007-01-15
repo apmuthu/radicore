@@ -12,7 +12,7 @@ $structure['main']['fields'][] = array('primary_flag' => 'Primary?');
 $structure['main']['fields'][] = array('curr_or_hist' => 'Date Range');
 $structure['main']['fields'][] = array('start_date' => 'Start Date');
 $structure['main']['fields'][] = array('end_date' => 'End Date');
-$structure['main']['fields'][] = array('comment' => 'Comment');
+$structure['main']['fields'][] = array('pcc_comment' => 'Comment');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date');

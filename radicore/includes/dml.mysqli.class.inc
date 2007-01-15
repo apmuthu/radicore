@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -24,7 +24,9 @@ class mysql
     var $primary_key = array(); // array of primary key names
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
+    var $row_locks_supp;        // supplemental lock type
     var $table_locks;           // array of tables to be locked
+    var $transaction_level;     // transaction level
     var $unique_keys = array(); // array of canidate keys
 
     // the following are used to construct an SQL query
@@ -44,7 +46,7 @@ class mysql
     function mysql ($dbname=null)
     {
         if (!empty($dbname)) {
-            $result = $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+            $result = $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
         } else {
             $result = TRUE;
         } // if
@@ -59,23 +61,65 @@ class mysql
     } // mysql
 
     // ****************************************************************************
+    function array2string ($array)
+    // return an array of values (for a SET datatype) as a string.
+    {
+        // return array as a comma-separated string
+        $string = implode(',', $array);
+
+        return $string;
+
+    } // array2string
+
+    // ****************************************************************************
+    function buildKeyString ($fieldarray, $key)
+    // build a string like "name1='value1' AND name2='value2'"
+    // $fieldarray is an associative array of names and values
+    // $key        is an indexed array of key fields
+    {
+        $where = null;
+
+        foreach ($key as $fieldname) {
+            if (array_key_exists($fieldname, $fieldarray)) {
+            	$fieldvalue = mysqli_real_escape_string($this->dbconnect, $fieldarray[$fieldname]);
+            } else {
+                $fieldvalue = '';
+            } // if
+            if (empty($where)) {
+                $where  = "$fieldname='$fieldvalue'";
+            } else {
+                $where .= " AND $fieldname='$fieldvalue'";
+            } // if
+        } // foreach
+
+        if (empty($where)) {
+        	// *NO PRIMARY KEY HAS BEEN DEFINED*
+        	$where = getLanguageText('sys0033');
+        } // if
+
+        return $where;
+
+    } // buildKeyString
+
+    // ****************************************************************************
     function commit ($dbname)
     // commit this transaction
     {
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'COMMIT';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'UNLOCK TABLES';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'SET AUTOCOMMIT=1';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1');
+        $this->query = '';
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -88,15 +132,17 @@ class mysql
     function connect ($dbname=null)
     // establish a connection to the database
     {
-        //DebugBreak();
         global $dbhost, $dbusername, $dbuserpass, $dbprefix;
 
         if (!empty($dbprefix)) {
-			// prefix may be different on different servers
-            $dbname = $dbprefix .$dbname;
+			 if (!eregi('^(' .$dbprefix .')', $dbname)) {
+    			// prefix may be different on different servers
+                $dbname = $dbprefix .$dbname;
+            } // if
         } // if
 
         $this->errors = array();
+        $this->query  = '';
         $this->dbname = $dbname;
 
         static $dbconn;
@@ -104,9 +150,10 @@ class mysql
         if (!$dbconn) {
             $dbconn = mysqli_connect($dbhost, $dbusername, $dbuserpass);
             if ($dbconn) {
+                $this->dbconnect = $dbconn;
                 // use UTF8 for this connection
                 $this->query = "SET names 'UTF8'";
-                $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                $result = mysqli_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
                 // write query to log file, if option is turned on
                 logSqlQuery ($dbname, null, $this->query);
                 // retrieve current server settings
@@ -114,6 +161,11 @@ class mysql
                 $this->client_info = mysqli_get_client_info();
                 $this->host_info   = mysqli_get_host_info($dbconn);
                 $this->server_info = mysqli_get_server_info($dbconn);
+                if (version_compare($this->server_info, '4.1', '>=')) {
+                    $this->query = "SET SESSION sql_mode='ANSI_QUOTES'";
+                    $result = mysqli_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
+                } // if
+                $this->query = '';
             } // if
         } // if
 
@@ -125,7 +177,6 @@ class mysql
             } // if
         } // if
 
-        $this->dbconnect = $dbconn;
         return TRUE;
 
     } // connect
@@ -135,16 +186,16 @@ class mysql
     // delete the record whose primary key is contained within $fieldarray.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         // build 'where' string using values for primary key
-        $where = array2where($fieldarray, $this->primary_key);
+        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
         if (empty($where)) return;    // nothing to delete, so exit
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = mysqli_affected_rows($this->dbconnect);
@@ -167,12 +218,11 @@ class mysql
     function deleteSelection ($dbname, $tablename, $selection)
     // delete a selection of records in a single operation.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = "DELETE FROM $tablename WHERE $selection";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = mysqli_affected_rows($this->dbconnect);
 
@@ -194,14 +244,16 @@ class mysql
     function fetchRow ($dbname, $result)
     // Fetch a row from the given result set (reated with getData_batch() method).
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $row   = mysqli_fetch_assoc($result);
-        $array = array_change_key_case($row, CASE_LOWER);
-
-        return $array;
+        if ($row) {
+        	$array = array_change_key_case($row, CASE_LOWER);
+        	return $array;
+        } else {
+            return false;
+        } // if
 
     } // fetchRow
 
@@ -209,30 +261,39 @@ class mysql
     function getCount ($dbname, $tablename, $where)
     // get count of records that satisfy selection criteria in $where.
     {
-        //DebugBreak();
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+
         if (eregi('^(select )', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
-            $this->query = "SELECT count(*) FROM $tablename WHERE $where";
+            $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
         } // if
 
-        // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-        $query_data = mysqli_fetch_row($result);
-
-        // if 'GROUP BY' was used then return the number of rows
-        if (eregi("group by ", $this->query)) {
-            $count = mysqli_num_rows($result);
+        if (eregi("SQL_CALC_FOUND_ROWS ", $this->query) == true) {
+        	$result     = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error('SQL', E_USER_ERROR);
+            $found_rows = mysqli_fetch_row($result);
+            $count      = $found_rows[0];
         } else {
-            $count = $query_data[0];
+            // if 'GROUP BY' was used then return the number of rows
+            // (ignore GROUP BY if it is in a subselect)
+            if (eregi("group by ", $this->query) == true AND !eregi("\(.+group by.+\)", $this->query)) {
+                $count = mysqli_num_rows($result);
+            } else {
+                $query_data = mysqli_fetch_row($result);
+                $count = $query_data[0];
+            } // if
         } // if
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $count);
+        $this->query = '';
 
         return $count;
 
@@ -243,14 +304,16 @@ class mysql
     // get data from a database table using optional 'where' criteria.
     // Results may be affected by $where and $pageno.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
-        $pageno         = $this->pageno;
-        $rows_per_page  = $this->rows_per_page;
+        $pageno         = (int)$this->pageno;
+        $rows_per_page  = (int)$this->rows_per_page;
         $this->numrows  = 0;
-        $this->lastpage = 0;
+        if ($pageno < 1) {
+        	$pageno = 1; // default to first page
+        } // if
+        $this->lastpage = $pageno;
         $array = array();
 
         // look for optional SELECT parameters, or default to all fields
@@ -291,37 +354,6 @@ class mysql
             $having_str = NULL;
         } // if
 
-        if ($rows_per_page > 0) {
-            // count the rows that satisfy this query
-            $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-            $this->numrows = $this->getCount($dbname, $tablename, $this->query);
-
-            if ($this->numrows <= 0) {
-                $this->pageno = 0;
-                return $array;
-            } // if
-
-            // calculate the total number of pages from this query
-            $this->lastpage = ceil($this->numrows/$rows_per_page);
-        } else {
-            $this->lastpage = 1;
-        } // if
-
-        // ensure pageno is within range
-        if ($pageno == '' OR $pageno <= '1') {
-            $pageno = 1;
-        } elseif ($pageno > $this->lastpage) {
-            $pageno = $this->lastpage;
-        } // if
-        $this->pageno = $pageno;
-
-        // set the limit and offset values to retrieve the specified page number
-        if ($rows_per_page > 0) {
-            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
-        } else {
-            $limit_str = '';
-        } // if
-
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
@@ -345,26 +377,56 @@ class mysql
                         $lock_str = 'FOR UPDATE';
                         break;
                     default:
-                        $lock_str = null;
+                        $lock_str = 'LOCK IN SHARE MODE';
                 } // switch
                 $this->row_locks = null;
             } // if
         } // if
 
-        // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-        if (!$result = mysqli_query($this->dbconnect, $this->query)) {
-            trigger_error($this, E_USER_ERROR);
-        } // if
+        do {
+            if ($pageno > $this->lastpage) {
+                // requested page is out of range, so reset it
+                $pageno = $this->lastpage;
+            } // if
+
+            // set the limit and offset values to retrieve the specified page number
+            if ($rows_per_page > 0) {
+                $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+            } else {
+                $limit_str = '';
+            } // if
+
+            // build the query string and run it
+            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+
+            $result2    = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error('SQL', E_USER_ERROR);
+            $found_rows = mysqli_fetch_row($result2);
+            $count      = $found_rows[0];
+
+            $this->numrows = $count;
+
+            if ($count == 0) {
+                $this->lastpage = 0;
+                $this->pageno   = 0;
+            	break;
+            } // if
+
+            if ($rows_per_page > 0) {
+                $this->lastpage = ceil($count/$rows_per_page);
+                $this->pageno = $pageno;
+            } else {
+                $this->lastpage = 1;
+                $this->pageno   = 1;
+            } // if
+        } while ($pageno > $this->lastpage); // requested page may be out of range
 
         // convert result set into a simple associative array for each row
         while ($row = mysqli_fetch_assoc($result)) {
             $array[] = array_change_key_case($row, CASE_LOWER);
         } // while
 
-        if ($rows_per_page == 0) {
-            $this->numrows = mysqli_num_rows($result);
-        } // if
+        //$this->numrows = mysqli_num_rows($result);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
@@ -382,7 +444,7 @@ class mysql
     // be retrieved using the fetchRow() method.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         // look for optional SELECT parameters, or default to all fields
         if (empty($this->sql_select)) {
@@ -430,10 +492,8 @@ class mysql
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-        if (!$result = mysqli_query($this->dbconnect, $this->query)) {
-            trigger_error($this, E_USER_ERROR);
-        } // if
+        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str";
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $this->numrows = mysqli_num_rows($result);
 
@@ -448,13 +508,12 @@ class mysql
     function getEnum ($dbname, $tablename, $fieldname)
     // get the contents of an ENUM field and return it as an array.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         // obtain 'enum' values for the specified column
         $this->query = "SHOW COLUMNS FROM $tablename LIKE '$fieldname'";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $query_data = mysqli_fetch_array($result);
 
@@ -473,6 +532,7 @@ class mysql
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $enum);
+        $this->query = '';
 
         return $enum_array;
 
@@ -484,6 +544,16 @@ class mysql
         return $this->errors;
 
     } // getErrors
+
+    // ****************************************************************************
+    function getErrorNo ()
+    // return number of last error.
+    {
+        $errno = mysqli_errno($this->dbconnect);
+
+        return $errno;
+
+    } // getErrorNo
 
     // ****************************************************************************
     function getErrorString ()
@@ -509,12 +579,21 @@ class mysql
     } // getErrorString
 
     // ****************************************************************************
-    function getFunctionID ()
-    // return the function identifier for this class.
+    function getErrorString2 ()
+    // return additional information.
     {
-        return 'mysqli';
+        if ($this->dbconnect) {
+        	$string  = 'Host Info: ' .$this->host_info ;
+            $string .= ', Server Version: ' .$this->server_info;
+            $string .= '<br>Client Info: ' .$this->client_info;
+            $string .= ', Client Encoding: ' .$this->charset;
+        } else {
+            $string = '';
+        } // if
 
-    } // getFunctionID
+        return $string;
+
+    } // getErrorString2
 
     // ****************************************************************************
     function getLastPage ()
@@ -556,9 +635,8 @@ class mysql
     function insertRecord ($dbname, $tablename, $fieldarray)
     // insert a record using the contents of $fieldarray.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -605,16 +683,7 @@ class mysql
 
 		if (empty($auto_increment)) {
 	        // build 'where' string using values for primary key
-	        $where = NULL;
-	        foreach ($fieldarray as $item => $value) {
-	            // require this item if it IS part of primary key
-	            if (in_array($item, $this->primary_key)) {
-	                $where .= "$item='$value' AND ";
-	            } // if
-	        } // foreach
-
-	        // remove trailing ' AND '
-	        $where = rtrim($where, ' AND ');
+	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
 	        // find out if a record with this primary key already exists
 	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
@@ -637,14 +706,7 @@ class mysql
         if (!empty($this->unique_keys)) {
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
-                $where = NULL;
-                foreach ($key as $fieldname) {
-                    if (empty($where)) {
-                        $where  = "$fieldname='{$fieldarray[$fieldname]}'";
-                    } else {
-                        $where .= " AND $fieldname='{$fieldarray[$fieldname]}'";
-                    } // if
-                } // foreach
+                $where = $this->buildKeyString ($fieldarray, $key);
                 $this->query = "SELECT count(*) FROM $tablename WHERE $where";
                 $count = $this->getCount($dbname, $tablename, $this->query);
                 if ($count <> 0) {
@@ -661,7 +723,7 @@ class mysql
         $this->query = "INSERT INTO $tablename SET ";
         foreach ($fieldarray as $item => $value) {
             if (isset($value)) {
-                $this->query .= "$item='$value', ";
+                $this->query .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
             } else {
                 $this->query .= "$item=NULL, ";
             } // if
@@ -669,7 +731,8 @@ class mysql
 
         // remove trailing comma
         $this->query = rtrim($this->query, ', ');
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query);
@@ -677,7 +740,7 @@ class mysql
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
 			$fieldarray[$auto_increment] = mysqli_insert_id($this->dbconnect);
-			$primary_key = $auto_increment .'=' .$fieldarray[$auto_increment];
+			$primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 		} // if
 
         if ($this->audit_logging) {
@@ -703,20 +766,21 @@ class mysql
         } // if
 
         $this->query = 'ROLLBACK';
-        //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
         if (!$result = mysqli_query($this->dbconnect, $this->query)) {
             if (mysqli_errno($this->dbconnect) == 1196) {
                 // Warning: Some non-transactional changed tables couldn't be rolled back
             } else {
-                trigger_error($this, E_USER_ERROR);
+                trigger_error('SQL', E_USER_ERROR);
             } // if
         } // if
 
         $this->query = 'UNLOCK TABLES';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES');
+        $this->query = '';
 
         $auditobj =& singleton::getInstance('audit_tbl');
         $result = $auditobj->close();
@@ -729,7 +793,6 @@ class mysql
     function selectDB ($dbname)
     // select a different database via the current connection.
     {
-
         return mysqli_select_db($this->dbconnect, $dbname);
 
     } // selectDB
@@ -769,7 +832,7 @@ class mysql
     } // setPageNo
 
     // ****************************************************************************
-    function setRowLocks ($level=null)
+    function setRowLocks ($level=null, $supplemental=null)
     // set row-level locks on next SELECT statement
     {
         // upshift first two characters
@@ -785,6 +848,8 @@ class mysql
             default:
                 $this->row_locks = null;
         } // switch
+
+        $this->row_locks_supp = $supplemental;
 
         return;
 
@@ -813,14 +878,14 @@ class mysql
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = 'SET AUTOCOMMIT=0';
-
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'START TRANSACTION (SET AUTOCOMMIT=0)');
+        $this->query = '';
 
         if (!empty($this->table_locks)) {
         	$result = $this->_setDatabaseLock($this->table_locks);
@@ -831,12 +896,11 @@ class mysql
     } // startTrasaction
 
     // ****************************************************************************
-    function updateRecord ($dbname, $tablename, $fieldarray, $oldarray)
+    function updateRecord ($dbname, $tablename, $fieldarray, $oldarray, $where=null)
     // update a record using the contents of $fieldarray.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -850,24 +914,20 @@ class mysql
             } // if
         } // foreach
 
-        // build 'where' string using values for primary key
-        $where = array2where($oldarray, $this->primary_key);
+        if (strlen($where) == 0) {
+            // build 'where' string using values for primary key
+            $where = $this->buildKeyString ($oldarray, $this->primary_key);
+        } else {
+        	// use $where as supplied, and remove pkey specs so their values can be changed
+        	$this->primary_key = array();
+        } // if
 
         // validate any optional unique/candidate keys
         if (!empty($this->unique_keys)) {
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
-                $where1 = NULL;   // for original values
-                $where2 = NULL;   // for changed values
-                foreach ($key as $fieldname) {
-                    if (empty($where1)) {
-                        $where1  = "$fieldname='" .addslashes(stripcslashes($oldarray[$fieldname])) ."'";
-                        $where2  = "$fieldname='" .addslashes(stripslashes($fieldarray[$fieldname])) ."'";
-                    } else {
-                        $where1 .= " AND $fieldname='" .addslashes(stripcslashes($oldarray[$fieldname])) ."'";
-                        $where2 .= " AND $fieldname='" .addslashes(stripslashes($fieldarray[$fieldname])) ."'";
-                    } // if
-                } // foreach
+                $where1 = $this->buildKeyString ($oldarray, $key);
+                $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
@@ -911,6 +971,9 @@ class mysql
 					    case 'string':
     						$fieldarray[$field] = $_SESSION['logon_user_id'];
     						break;
+    					case 'integer':
+					        $fieldarray[$field] = $oldarray[$field] +1;
+					        break;
     					default:
     						// do nothing
     				} // switch
@@ -919,16 +982,16 @@ class mysql
         } // if
 
         // build update string from non-pkey fields
-        $update = NULL;
+        $update = '';
         foreach ($fieldarray as $item => $value) {
-            // require this item if it IS NOT part of primary key
+            // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
-                if (is_null($value)) {
+                if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } else {
                     // change to the new value
-                    $update .= "$item='$value', ";
+                    $update .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
             } // if
         } // foreach
@@ -938,7 +1001,7 @@ class mysql
 
         // append WHERE clause to SQL query
         $this->query = "UPDATE $tablename SET $update WHERE $where";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = mysqli_affected_rows($this->dbconnect);
@@ -961,12 +1024,11 @@ class mysql
     function updateSelection ($dbname, $tablename, $replace, $selection)
     // update a selection of records in a single operation.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
         $count = mysqli_affected_rows($this->dbconnect);
 
@@ -992,7 +1054,6 @@ class mysql
     function ddl_getColumnSpecs ()
     // return the array of column specifications.
     {
-        //DebugBreak();
         $colspecs['varchar']    = array('name' => 'VARCHAR',
                                         'type' => 'string',
                                         'size' => 255);
@@ -1019,16 +1080,18 @@ class mysql
                                         'type' => 'integer',
                                         'minvalue' => -2147483648,
                                         'maxvalue' => 2147483647);
+        $colspecs['integer']    = array('name' => 'INTEGER',
+                                        'type' => 'integer');
         $colspecs['bigint']     = array('name' => 'BIGINT',
                                         'type' => 'integer',
-                                        'minvalue' => -9223372036854775808,
-                                        'maxvalue' => 9223372036854775807);
+                                        'minvalue' => '-9223372036854775808',
+                                        'maxvalue' => '9223372036854775807');
         $colspecs['float']      = array('name' => 'FLOAT',
                                         'type' => 'float',
-                                        'size' => 21);
+                                        'size' => 22);
         $colspecs['double']     = array('name' => 'DOUBLE',
                                         'type' => 'float',
-                                        'size' => 21);
+                                        'size' => 22);
         $colspecs['date']       = array('name' => 'DATE',
                                         'type' => 'date',
                                         'size' => 12);
@@ -1037,7 +1100,7 @@ class mysql
                                         'size' => 20);
         $colspecs['time']       = array('name' => 'TIME',
                                         'type' => 'time',
-                                        'size' => 8);
+                                        'size' => 10);
         $colspecs['timestamp']  = array('name' => 'TIMESTAMP',
                                         'type' => 'timestamp',
                                         'size' => 20);
@@ -1073,7 +1136,7 @@ class mysql
         $colspecs['enum']       = array('name' => 'ENUM',
                                         'type' => 'enum');
         $colspecs['set']        = array('name' => 'SET',
-                                        'type' => 'set');
+                                        'type' => 'array');
         $colspecs['varbinary']  = array('name' => 'VARBINARY',
                                         'type' => 'blob',
                                         'size' => 255);
@@ -1086,17 +1149,18 @@ class mysql
     function ddl_showColumns ($dbname, $tablename)
     // obtain a list of column names within the selected database table.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
-        $array = array();
+        $out_array = array();
+
+        $dbname = $GLOBALS['dbprefix'] .$dbname;
 
         // build the query string and run it
-        $this->query = "SHOW COLUMNS FROM $tablename FROM $dbname";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $this->query = 'SHOW COLUMNS FROM "' .$tablename .'" FROM ' .$dbname;
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
-        $count = mysql_num_rows($result);
+        $count = mysqli_num_rows($result);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $count);
@@ -1109,7 +1173,6 @@ class mysql
             $columnarray = array();
             $columnarray['col_maxsize']         = NULL;
             $columnarray['col_unsigned']        = NULL;
-            $columnarray['col_zerofill_bwz']    = NULL;
             $columnarray['col_precision']       = NULL;
             $columnarray['col_scale']           = NULL;
             $columnarray['col_minvalue']        = NULL;
@@ -1131,23 +1194,19 @@ class mysql
                             // include a space after each comma otherwise the string is
                             // treated as a single word in the HTML output
                             $value = str_replace("','", "', '", $value);
-                            $columnarray['col_values'] = $value;
-                        // look for 'type(n,m) stuff'
-                        } elseif (strpos($value, '(')) {
-                            $pos1 = strpos($value, '(');
-                            $type = substr($value, 0, $pos1);
-                            $pos2 = strpos($value, ')', $pos1);
-                            $pos1++;
-                            $size = substr($value, $pos1, $pos2 - $pos1);
-                            $stuff = substr($value, $pos2+1);
+                            $columnarray['col_values'] = trim($value, '()');
+                        // look for 'type(n,m) other'
+                        } elseif (preg_match('/\(.+\)/', $value, $regs)) {
+                            list($type, $other) = explode($regs[0], $value);
+                            $size               = trim($regs[0], '()');
                             $columnarray['col_type']    = $type;
                             $columnarray['col_maxsize'] = $size;
 
-                            // look for 'unsigned' and 'zerofill' in $stuff
-                            if (eregi('unsigned', $stuff)) {
+                            // look for 'unsigned' and 'zerofill' in $other
+                            if (eregi('unsigned', $other)) {
                                 $columnarray['col_unsigned'] = TRUE;
                             } // if
-                            if (eregi('zerofill', $stuff)) {
+                            if (eregi('zerofill', $other)) {
                                 $columnarray['col_zerofill_bwz'] = 'ZF';
                             } // if
 
@@ -1181,7 +1240,7 @@ class mysql
                                 } // if
                             } // if
                             if (isset($minvalue)) {
-                                if (eregi('unsigned', $stuff)) {
+                                if (eregi('unsigned', $other)) {
                                     $minvalue = 0;
                                 } // if
                                 $columnarray['col_minvalue'] = $minvalue;
@@ -1201,9 +1260,10 @@ class mysql
                                 } // if
                             } // if
                             if (isset($maxvalue)) {
-                                if (eregi('unsigned', $stuff)) {
+                                if (eregi('unsigned', $other)) {
                                     if ($specs['type']  == 'integer') {
                                         $maxvalue = ($specs['maxvalue'] * 2) +1;
+                                        //$maxvalue = number_format(($specs['maxvalue'] * 2) +1, 0, '', '');
                                     } // if
                                 } // if
                                 $columnarray['col_maxvalue'] = $maxvalue;
@@ -1228,16 +1288,29 @@ class mysql
                             } // if
                         } // if
 
+                        if ($columnarray['col_maxsize'] == 1) {
+                            // some columns have the option of being used as BOOLEAN
+                        	if ($columnarray['col_type'] == 'char') {
+                                $columnarray['col_type'] = 'char,boolean';
+                            } elseif ($columnarray['col_type'] == 'tinyint') {
+                                $columnarray['col_type'] = 'tinyint,boolean';
+                            } // if
+                        } // if
+
+                        $columnarray['col_type_native'] = $columnarray['col_type'];
+
+                        if ($columnarray['col_type'] == 'decimal' AND $scale == 0) {
+                        	$columnarray['col_type'] = 'integer';
+                        } // if
+
                         break;
                     case 'null':
-                        // is this column allowd to be NULL?
+                        // is this column allowed to be NULL?
                 		if (is_True($value)) {
-                            $value = 'YES';
+                            $columnarray['col_null'] = 'Y';
                         } else {
-                            $value = 'NO';
-                            $columnarray['is_required'] = TRUE;
+                            $columnarray['col_null'] = 'N';
                         } // if
-                        $columnarray['col_null'] = substr($value, 0);
                 		break;
                     case 'extra':
                         if (eregi('auto_increment', $value)) {
@@ -1245,15 +1318,16 @@ class mysql
                         } // if;
                         break;
                 	default:
+                	    // default is to prefix column name with 'col_'
                 		$columnarray['col_' .strtolower($item)] = $value;
                 } // switch
             } // foreach
-            $array[] = $columnarray;
+            $out_array[] = $columnarray;
         } // while
 
         mysqli_free_result($result);
 
-        return $array;
+        return $out_array;
 
     } // ddl_showColumns
 
@@ -1261,17 +1335,16 @@ class mysql
     function ddl_showDatabases ()
     // obtain a list of existing database names.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect() or trigger_error($this, E_USER_ERROR);
+        $this->connect() or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
-        $this->query = "SHOW DATABASES";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $this->query = 'SHOW DATABASES';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
-        $count = mysql_num_rows($result);
+        $count = mysqli_num_rows($result);
 
         // write query to log file, if option is turned on
         logSqlQuery (null, null, $this->query, $count);
@@ -1291,17 +1364,18 @@ class mysql
     function ddl_showTables ($dbname)
     // obtain a list of tables within the specified database.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
-        // build the query string and run it
-        $this->query = "SHOW TABLES FROM $dbname";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $dbname = $GLOBALS['dbprefix'] .$dbname;
 
-        $count = mysql_num_rows($result);
+        // build the query string and run it
+        $this->query = 'SHOW TABLES FROM ' .$dbname;
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+
+        $count = mysqli_num_rows($result);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, $this->query, $count);
@@ -1321,17 +1395,16 @@ class mysql
     function ddl_showTableKeys ($dbname, $tablename)
     // obtain a list of keys (indexes) for this table.
     {
-        //DebugBreak();
         // connect to database
-        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
-        $this->query = "SHOW INDEX FROM $tablename";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $this->query = 'SHOW INDEX FROM "' .$tablename .'"';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
 
-        $count = mysql_num_rows($result);
+        $count = mysqli_num_rows($result);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $count);
@@ -1378,11 +1451,12 @@ class mysql
 
         if (!empty($string)) {
             $this->query = 'SET AUTOCOMMIT=0';
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
             $this->query = "LOCK TABLES $string";
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery (null, null, $this->query);
+            $this->query = '';
             return $result;
         } // if
 

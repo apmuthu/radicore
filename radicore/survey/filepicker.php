@@ -4,12 +4,9 @@
 // chose one of the files.
 //*****************************************************************************
 
-//DebugBreak();
+$table_id = 'tree_node';                    // table id
 $screen   = 'filepicker.list.screen.inc';   // file identifying screen structure
-$subdir   = 'icons';                        // subdirectory
-$filetype = 'image';                        // file types to process
 
-// activate page controller
-require 'std.filepicker1.inc';
+require 'std.filepicker1.inc';      // activate page controller
 
 ?>

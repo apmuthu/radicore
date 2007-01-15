@@ -1,5 +1,5 @@
 <?php
-    // file created on February 6, 2006, 3:46 pm
+    // file created on November 3, 2006, 11:34 am
     
     // field specifications for table workflow.wf_token
     $fieldspec['case_id']                   = array('type' => 'integer',

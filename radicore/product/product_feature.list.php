@@ -6,11 +6,10 @@
 // The identity of the OUTER table is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'product_feature';               // name of inner table
 $screen = 'product_feature.list.screen.inc'; // file identifying screen structure
 
-//// identify extra parameters for a JOIN
+// identify extra parameters for a JOIN
 $sql_select = NULL;
 $sql_from   = NULL;
 $sql_where  = NULL;

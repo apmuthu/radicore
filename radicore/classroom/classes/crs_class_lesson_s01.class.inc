@@ -16,10 +16,11 @@ class crs_class_lesson_s01 extends crs_class_lesson
     {
         //DebugBreak();
         // get contents of foreign table TEACHER and add to lookup array
-        require_once "crs_teacher.class.inc";
+        require_once "classes/crs_teacher.class.inc";
         $object =& singleton::getInstance('crs_teacher');
         $data = $object->getValRep('teacher_id');
         $this->lookup_data['teacher_id'] = $data;
+
         // ensure field is populated from the dropdown list
         $this->fieldspec['teacher_id'] = array('type' => 'integer',
                                                'control' => 'dropdown',

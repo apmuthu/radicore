@@ -4,6 +4,7 @@ $structure['xsl_file'] = 'std.list2.xsl';
 $structure['tables']['outer'] = 'x_tree_level';
 
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 $structure['outer']['fields'][] = array('tree_type_desc' => 'Tree Type');
 $structure['outer']['fields'][] = array('tree_level_desc' => 'Tree Level');

@@ -1,60 +1,7 @@
 <?php
-    // file created on July 28, 2005, 12:41 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_student
-    $fieldspec['revised_user']              = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'autoupdate' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['revised_date']              = array('type' => 'datetime',
-                                                    'size' => 20,
-                                                    'autoupdate' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['created_user']              = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'autoinsert' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['created_date']              = array('type' => 'datetime',
-                                                    'size' => 20,
-                                                    'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
-                                                    'autoinsert' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['student_notes']             = array('type' => 'string',
-                                                    'size' => 65535,
-                                                    'control' => 'multiline',
-                                                    'cols' => 70,
-                                                    'rows' => 5);
-    
-    $fieldspec['class_id']                  = array('type' => 'string',
-                                                    'size' => 8,
-                                                    'uppercase' => 'y',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'class_id');
-    
-    $fieldspec['year']                      = array('type' => 'numeric',
-                                                    'size' => 2,
-                                                    'precision' => 1,
-                                                    'scale' => 0,
-                                                    'minvalue' => 1,
-                                                    'maxvalue' => 9);
-    
-    $fieldspec['initials']                  = array('type' => 'string',
-                                                    'size' => 4,
-                                                    'uppercase' => 'y');
-    
-    $fieldspec['last_name']                 = array('type' => 'string',
-                                                    'size' => 40,
-                                                    'required' => 'y');
-    
-    $fieldspec['first_name']                = array('type' => 'string',
-                                                    'size' => 40,
-                                                    'required' => 'y');
-    
     $fieldspec['student_id']                = array('type' => 'integer',
                                                     'size' => 5,
                                                     'minvalue' => 0,
@@ -62,6 +9,66 @@
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'default' => '0');
+    
+    $fieldspec['first_name']                = array('type' => 'string',
+                                                    'size' => 40,
+                                                    'required' => 'y');
+    
+    $fieldspec['last_name']                 = array('type' => 'string',
+                                                    'size' => 40,
+                                                    'required' => 'y');
+    
+    $fieldspec['initials']                  = array('type' => 'string',
+                                                    'size' => 4,
+                                                    'uppercase' => 'y');
+    
+    $fieldspec['year']                      = array('type' => 'numeric',
+                                                    'size' => 2,
+                                                    'precision' => 1,
+                                                    'scale' => 0,
+                                                    'blank_when_zero' => 'y',
+                                                    'minvalue' => 1,
+                                                    'maxvalue' => 9);
+    
+    $fieldspec['class_id']                  = array('type' => 'string',
+                                                    'size' => 8,
+                                                    'uppercase' => 'y',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'class_id');
+    
+    $fieldspec['student_notes']             = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 70,
+                                                    'rows' => 5);
+    
+    $fieldspec['created_date']              = array('type' => 'datetime',
+                                                    'size' => 20,
+                                                    'required' => 'y',
+                                                    'default' => '0000-00-00 00:00:00',
+                                                    'autoinsert' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['created_user']              = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
+                                                    'autoinsert' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['revised_date']              = array('type' => 'datetime',
+                                                    'size' => 20,
+                                                    'autoupdate' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['revised_user']              = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'autoupdate' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('student_id');

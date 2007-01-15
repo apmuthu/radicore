@@ -15,6 +15,6 @@ $structure['inner']['columns'][] = array('width' => '*');
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('prod_cat_id_jnr' => 'Id');
-$structure['inner']['fields'][] = array('prod_cat_desc' => 'Description');
+$structure['inner']['fields'][] = array('prod_cat_desc_jnr' => 'Description');
 
 ?>

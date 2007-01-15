@@ -32,7 +32,7 @@ class unit_of_measure extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table and add to lookup array
-        require_once 'uom_category.class.inc';
+        require_once 'classes/uom_category.class.inc';
         $dbobject =& singleton::getInstance('uom_Category');
         $data_array = $dbobject->getValRep('uom_cat_id');
         $this->lookup_data['uom_cat_id'] = $data_array;
@@ -42,7 +42,7 @@ class unit_of_measure extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -53,8 +53,6 @@ class unit_of_measure extends Default_Table
             $this->sql_orderby    = 'uom_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {

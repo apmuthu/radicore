@@ -2,7 +2,29 @@
 
 // Each entry must be an array of values
 
-$array['boolean']  = array('true' => 'Yes', 'false' => 'No');
+$array['boolean']  = array('true' => 'Yes',
+                           'false' => 'No');
+
+$array['curr_or_hist'] = array('C' => 'Current',
+                               'H' => 'Historic',
+                               'F' => 'Future',
+                               'A' => 'All');
+
+$array['day_names_short']  = array('mon' => 'Mon',
+                                   'tue' => 'Tue',
+                                   'wed' => 'Wed',
+                                   'thu' => 'Thu',
+                                   'fri' => 'Fri',
+                                   'sat' => 'Sat',
+                                   'sun' => 'Sun');
+
+$array['day_names_long']  = array('monday' => 'Monday',
+                                  'tuesday' => 'Tuesday',
+                                  'wednesday' => 'Wednesday',
+                                  'thursday' => 'Thursday',
+                                  'friday' => 'Friday',
+                                  'saturday' => 'Saturday',
+                                  'sunday' => 'Sunday');
 
 $array['month_names_short']  = array(1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 

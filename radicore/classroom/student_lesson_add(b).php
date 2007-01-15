@@ -6,13 +6,11 @@
 // the list of one or more STUDENT_IDs is provided by a separate popup screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'crs_student_lesson';   // table name
 
-$popup_screen = 'crs_student(popup)';
+$popup_task = 'crs_student(popup)';
 
-// activate page controller
-require 'std.add3.inc';
+require 'std.add3.inc';             // activate page controller
 
 ?>
 

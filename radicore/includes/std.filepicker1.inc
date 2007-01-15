@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -12,6 +12,10 @@
 
 require_once 'include.general.inc';
 
+// identify mode for XSL file
+$mode = 'read';
+
+// load session variables
 initSession();
 
 // load session variables
@@ -21,13 +25,22 @@ if (isset($_POST['quit'])) {
     scriptPrevious(getLanguageText('sys0087')); // 'Nothing selected from filepicker screen.'
 } // if
 
+if (isset($_POST['choosenull'])) {
+    // send NULL selection back to the previous script
+    $prev_script = getPreviousScript();
+    $prev_task   = getPreviousTask($prev_script);
+    $_SESSION[$prev_script][$prev_task]['selection'] = '';
+    scriptPrevious(null, null, 'choose');
+} // if
+
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, null, null, $where);
+    $errors = childForm($_POST, null, $where);
 } // if
 
 // define action buttons
 $act_buttons['quit'] = 'cancel';
+$act_buttons['choosenull'] = 'choosenull';
 
 if (isset($_GET['select'])) {
     // send selection back to the previous script
@@ -37,15 +50,27 @@ if (isset($_GET['select'])) {
     scriptPrevious(null, null, 'choose');
 } // if
 
-$errors = array();
+// create a class instance for the main database table
+require_once "classes/$table_id.class.inc";
+if (isset($script_vars['fileobject'])) {
+    // use data from previous instance for this script
+    $fileobject = unserialize($script_vars['fileobject']);
+} else {
+    $fileobject = new $table_id;
+    // do not create hyperlinks for column labels
+    $fileobject->xsl_params['nosort'] = 'y';
+    // do not display the 'show nn' hyperlinks
+    $fileobject->xsl_params['noshow'] = 'y';
+    // perform any initialisation
+    $fileobject->initialiseFilePicker();
+    if ($fileobject->errors) {
+    	scriptPrevious($fileobject->errors);
+    } // if
+} // if
 
-switch ($filetype) {
-    case 'image':
-        $filemask = "(\.gif|\.jpg|\.png|\.bmp)$";
-        break;
-    default:
-        $errors[] = getLanguageText('sys0059', $filetype); // "Unknown filetype ($filetype)"
-} // switch
+$subdir   = $fileobject->picker_subdir;
+$filemask = $fileobject->picker_filetypes;
+$errors = array();
 
 $this_dir = @opendir($subdir);
 $file_list = array();
@@ -59,14 +84,11 @@ while (false !== ($file = readdir($this_dir))) {
 closedir($this_dir);
 sort($file_list);
 
-// copy data into a dummy object
-require_once 'std.table.class.inc';
-class File extends Default_Table {} ;
-$fileobj = new File;
-$fileobj->setFieldArray($file_list);
+// copy data into main object
+$fileobject->setFieldArray($file_list);
 
 // build list of objects for output to XML data
-$xml_objects[]['root'] = &$fileobj;
+$xml_objects[]['root'] = &$fileobject;
 
 // build XML document and perform XSL transformation
 buildXML($xml_objects, $errors, $messages);

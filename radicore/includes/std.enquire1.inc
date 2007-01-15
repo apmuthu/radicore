@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -100,11 +100,11 @@ $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
 $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
 $scrolling[$dbobject->getClassName()]['where']    = $where;
 
-unset($script_vars['selection']);
+// save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['scrolling'] = $scrolling;
-$PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$script_vars['dbobject']  = serialize($dbobject);
+$script_vars = updateScriptVars ($script_vars);
 
 // get any extra data and merge with $fieldarray
 $fieldarray = $dbobject->getExtraData($fieldarray);
@@ -114,10 +114,10 @@ $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
 
 if (!empty($_POST)) {
     if (isset($_POST['copy'])) {
-        $messages = copyForm($_POST, $dbobject, $fieldarray);
+        $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
     } // endif
 } // if
 

@@ -4,11 +4,9 @@
 // The identity of the selected occurrence(s) is passed from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'prod_cat_rollup';   // table name
+$table_id = 'prod_cat_rollup';      // table name
 
-// activate page controller
-require 'std.delete2.inc';
+require_once 'std.delete2.inc';     // activate page controller
 
 ?>
 

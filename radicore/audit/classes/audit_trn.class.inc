@@ -38,9 +38,9 @@ class audit_trn extends Default_Table
             $count = $this->getCount($select);
             $fieldarray['tran_seq_no'] = $count + 1;
             // fill in other data
-            $fieldarray['task_id'] = $GLOBALS['task_id'];
-            $fieldarray['date']    = getTimeStamp('date');
-            $fieldarray['time']    = getTimeStamp('time');
+            $fieldarray['task_id']  = $GLOBALS['task_id'];
+            $fieldarray['trn_date'] = getTimeStamp('date');
+            $fieldarray['trn_time'] = getTimeStamp('time');
         } // if
 
         return $fieldarray;

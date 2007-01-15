@@ -14,10 +14,11 @@ require_once 'include.general.inc';
 
 $xsl_file = 'menu.xsl';       // xsl file for transformation
 
+// identify mode for XSL file
+$mode = 'read';
+
 // load session variables
 initSession();
-
-$mode = 'read';
 
 require_once 'classes/mnu_todo.class.inc';
 $db_todo = new mnu_todo;
@@ -27,7 +28,7 @@ $db_todo->xsl_params['text']['todo-user'] = getLanguageText('xsl_todo_user');
 
 // ****************************************************************************
 
-// get paginaton details for 'workitem_role'
+// get paginaton details for 'mnu_todo'
 if (isset($pagination['mnu_todo'])) {
    $db_todo->setPageNo($pagination['mnu_todo']['curpage']);
 } // if
@@ -51,7 +52,7 @@ $pagination['mnu_todo']['lastpage'] = $db_todo->getLastPage();
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, $db_todo, 'db_todo', $where);
+    $errors = childForm($_POST, array('db_todo' => $db_todo), $where);
 } // if
 
 // ****************************************************************************

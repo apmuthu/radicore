@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update4.inc
@@ -10,6 +10,7 @@
 
 // This will allow one or more database rows to be updated without being displayed.
 // The contents of $where (optional) is passed down from the previous screen.
+
 // NOTE: There is no dialog with the user.
 
 require_once 'include.general.inc';
@@ -28,6 +29,12 @@ $dbobject->sql_from    = &$sql_from;
 $dbobject->sql_where   = &$sql_where;
 $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
+// perform any initialisation
+if (!empty($selection)) {
+    $selection = $dbobject->initialise($selection);
+} else {
+    $where = $dbobject->initialise($where);
+} // if
 
 // retrieve profile must have been set by previous screen
 if (!empty($selection)) {
@@ -35,17 +42,20 @@ if (!empty($selection)) {
     $selection = null;
 } // if
 if (empty($where)) {
-    scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
+    $batch_errors = scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
+    return $batch_errors;
 } // if
 
 // get data from the database
 $fieldarray = $dbobject->getData($where);
 if ($dbobject->getErrors()) {
     // some sort of error - return to previous script
-    scriptprevious($dbobject->getErrors(), $messages, null, $dbobject->getInstruction());
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, null, $dbobject->getInstruction());
+    return $batch_errors;
 } // if
 if ($dbobject->getNumRows() < 1) {
-    scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    $batch_errors = scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    return $batch_errors;
 } // if
 
 $messages = $dbobject->getMessages();
@@ -59,9 +69,12 @@ if ($dbobject->errors) {
     $errors = $dbobject->getErrors();
 } else {
     $errors = $dbobject->commit();
+    if (empty($messages)) {
+    	$messages = $dbobject->getMessages();
+    } // if
 } // if
 
-scriptPrevious($errors, $messages, null, $dbobject->getInstruction());
-exit;
+$batch_errors = scriptPrevious($errors, $messages, null, $dbobject->getInstruction());
+return $batch_errors;
 
 ?>

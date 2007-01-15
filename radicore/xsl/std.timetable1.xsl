@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -23,6 +23,7 @@
 
 <!-- include common templates -->
 <xsl:include href="std.buttons.xsl"/>
+<xsl:include href="std.column_hdg.xsl"/>
 <xsl:include href="std.data_field.xsl"/>
 <xsl:include href="std.head.xsl"/>
 <xsl:include href="std.pagination.xsl"/>
@@ -35,11 +36,19 @@
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
-    <xsl:call-template name="head" />
-  <body>
 
-  <xsl:if test="//header">
-    <xsl:value-of select="//header" disable-output-escaping="yes"/>
+  <xsl:call-template name="head" />
+
+  <body>
+    <xsl:for-each select="/root/javascript/body[@*]">
+      <!-- add javascript events to the <body> tag -->
+      <xsl:copy-of select="@*" />
+    </xsl:for-each>
+
+  <xsl:if test="/root/header">
+    <div class="header">
+      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   <form method="post" action="{$script}">
@@ -88,14 +97,15 @@
           <table class="timetable">
 
             <!-- set up column widths -->
-            <xsl:call-template name="column_group">
-              <xsl:with-param name="table" select="'inner'"/>
+            <xsl:call-template name="column_group_timetable">
+              <xsl:with-param name="zone" select="'inner'"/>
             </xsl:call-template>
 
             <thead>
               <!-- set up column headings -->
               <xsl:call-template name="column_headings">
-                <xsl:with-param name="table" select="'inner'"/>
+                <xsl:with-param name="zone"   select="'inner'"/>
+                <xsl:with-param name="nosort" select="'y'"/>
               </xsl:call-template>
             </thead>
 
@@ -122,32 +132,45 @@
 
   </form>
 
-  <xsl:if test="//footer">
-    <xsl:value-of select="//footer" disable-output-escaping="yes"/>
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   </body>
   </html>
+
+  <xsl:if test="/root/javascript/footer">
+    <!-- insert the javascript footer manually because it can't be done automatically -->
+    <xsl:call-template name="javascript_footer"/>
+  </xsl:if>
 
 </xsl:template>
 
 <!-- *********************************************************************** -->
 
 <!-- create <colgroup> entries to define the widths of each column -->
-<xsl:template name="column_group">
-  <xsl:param name="table"/>
+<xsl:template name="column_group_timetable">
+  <xsl:param name="zone"/>
 
   <!-- create entry for 'time' column -->
   <colgroup width="1%"/>
 
   <!-- set equal widths for the number of days -->
-  <xsl:call-template name="col">
+  <xsl:call-template name="col_timetable">
     <xsl:with-param name="day" select="1"/>
   </xsl:call-template>
 
-</xsl:template> <!-- COLUMN_GROUP -->
+</xsl:template> <!-- COLUMN_GROUP_TIMETABLE -->
 
-<xsl:template name="col">
+<xsl:template name="col_timetable">
   <xsl:param name="day"/>
 
   <colgroup>
@@ -160,42 +183,12 @@
 
   <!-- repeat until all days have been processed -->
   <xsl:if test="$day &lt; $last_day_no">
-    <xsl:call-template name="col">
+    <xsl:call-template name="col_timetable">
       <xsl:with-param name="day" select="$day +1"/>
     </xsl:call-template>
   </xsl:if>
 
-</xsl:template> <!-- COL -->
-
-<!-- set up the column headings using fieldlist in XML file -->
-<xsl:template name="column_headings">
-  <xsl:param name="table"/>
-
-  <th>Time</th>
-
-  <xsl:call-template name="hdg">
-    <xsl:with-param name="day" select="1"/>
-  </xsl:call-template>
-
-</xsl:template> <!-- COLUMN_HDG -->
-
-<xsl:template name="hdg">
-  <xsl:param name="day"/>
-
-  <th>
-     <!-- retrieve value from XML file -->
-     <xsl:value-of select ="//lookup/day_no/option[@id=$day]"/>
-  </th>
-
-  <!-- repeat until all days have been processed -->
-  <xsl:if test="$day &lt; $last_day_no">
-    <xsl:call-template name="hdg">
-      <xsl:with-param name="day" select="$day +1"/>
-    </xsl:call-template>
-  </xsl:if>
-
-</xsl:template> <!-- HDG -->
-
+</xsl:template> <!-- COL_TIMETABLE -->
 
 
 <!-- *********************************************************************** -->
@@ -228,7 +221,7 @@
 
   <xsl:if test="$this-hhmm &lt; $end-hhmm">
 
-    <tr class="timetable">
+    <tr>
       <!-- column 1 contains the time -->
       <td class="time"><xsl:value-of select="concat($hour, ':', $mins)"/></td>
 
@@ -299,7 +292,7 @@
       </xsl:call-template>
     </xsl:if>
 
-    <td rowspan="{$segments}" class="timetable">
+    <td rowspan="{$segments}">
       <xsl:for-each select="//*[name()=$zone][start_time=$time][day_no=$day_no]">
         <xsl:value-of select="item_name"/>
         <xsl:if test="string-length(item_subname) > 0">

@@ -17,7 +17,7 @@ $screen = 'dict_related_column.multi.screen.inc';   // file identifying screen s
 $outer_sql_select = '';
 $outer_sql_from   = '';
 $outer_sql_where  = '';
-$outer_sort_table= 'dict_table_snr';
+$outer_orderby_table= 'dict_table_snr';
 
 $inner_sql_select = '';
 $inner_sql_from   = '';

@@ -23,8 +23,8 @@ class survey_question_s01 extends survey_question
         } // if
 
         // check that this record can be moved UP in the sequence
-        $survey_id = $rowdata[0]['survey_id'];
-        $section_id = $rowdata[0]['section_id'];
+        $survey_id   = $rowdata[0]['survey_id'];
+        $section_id  = $rowdata[0]['section_id'];
         $question_id = $rowdata[0]['question_id'];
 
         // tell previous screen to keep this row selected
@@ -60,9 +60,11 @@ class survey_question_s01 extends survey_question
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // check that full primary key has been passed down from parent form
         $this->checkPrimaryKey = true;

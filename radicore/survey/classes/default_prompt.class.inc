@@ -35,9 +35,11 @@ class default_prompt extends Default_Table
 
         if ($mode == 'search') {
             $prev_script = getPreviousScript();
-            if (basename($prev_script) == 'question_prompt_link.php') {
+            $pattern_id  = getPatternId($prev_script);
+            //if (basename($prev_script) == 'question_prompt_link.php') {
+            if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
-                $this->fieldspec['selected'] = array('type' => 'radiogroup');
+                $this->fieldspec['selected'] = array('type' => 'boolean');
             } // if
         } // if
 
@@ -65,19 +67,17 @@ class default_prompt extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
 
         if ($item == 'prompt_id') {
             // get data from the database
-            $this->sql_select = 'prompt_id, prompt_desc';
-            $this->sql_orderby = 'prompt_id';
+            $this->sql_select     = 'prompt_id, prompt_desc';
+            $this->sql_orderby    = 'prompt_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {

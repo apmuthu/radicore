@@ -11,14 +11,43 @@ class audit_tbl_key extends audit_tbl
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $this->where = $where;  // save this for later
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        // this is here to override the method in the parent class
+        if (!empty($this->where)) {
+        	$where = $this->where;  // restore saved value
+        } // if
+
+        //$this->pageno = 7;  // this is a test
+
+        return $where;
+
+    } // _cm_initialise
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // do not bother with primary key check
         $this->checkPrimaryKey = FALSE;
 
-        // do not bother to read the database for sany data
+        // do not bother to read the database for any data - it will be constructed here
         $this->skip_getdata = TRUE;
 
         // remove RESET key
@@ -36,9 +65,10 @@ class audit_tbl_key extends audit_tbl
         // convert from string to an associative array
         $array = where2array($where);
 
-        $this->fieldarray = array();
+        // allow this value to be extracted into the XML file so that it can appear in the screen
+        $array['audit_dtl_key'] = $where;
 
-        $this->fieldarray[]['audit_dtl_key'] = $where;
+        $this->fieldarray = array();
 
         $this->fieldarray[] = $array;
 

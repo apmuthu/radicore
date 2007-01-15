@@ -1,5 +1,5 @@
 <?php
-    // file created on July 24, 2005, 8:56 pm
+    // file created on November 3, 2006, 11:29 am
     
     // field specifications for table product.price_component
     $fieldspec['price_component_id']        = array('type' => 'integer',
@@ -13,7 +13,7 @@
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00');
+                                                    'default' => '2001-01-01');
     
     $fieldspec['end_date']                  = array('type' => 'date',
                                                     'size' => 12,
@@ -23,6 +23,7 @@
                                                     'size' => 13,
                                                     'precision' => 11,
                                                     'scale' => 2,
+                                                    'blank_when_zero' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 999999999.99);
     
@@ -84,24 +85,30 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2001-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('price_component_id');
@@ -126,7 +133,7 @@
                                                     'fields' => array('prod_feature_id' => 'prod_feature_id'));
     
     $this->parent_relations[]               = array('parent' => 'unit_of_measure',
-                                                    'parent_field' => 'uom_desc',
+                                                    'parent_field' => 'uom_desc, uom_abbrev',
                                                     'fields' => array('uom_id' => 'uom_id'));
     
     // determines if database updates are recorded in an audit log 

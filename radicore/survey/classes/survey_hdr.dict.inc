@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2005, 7:29 pm
+    // file created on November 3, 2006, 11:31 am
     
     // field specifications for table survey.survey_hdr
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -14,8 +14,9 @@
                                                     'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['survey_desc']               = array('type' => 'string',
+    $fieldspec['survey_long_name']          = array('type' => 'string',
                                                     'size' => 255,
+                                                    'required' => 'y',
                                                     'control' => 'multiline',
                                                     'cols' => 70,
                                                     'rows' => 5);
@@ -32,22 +33,28 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('survey_id');
@@ -56,23 +63,7 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
-    $this->child_relations[]                = array('child' => 'answer_option',
-                                                    'type' => 'RES',
-                                                    'fields' => array('survey_id' => 'survey_id'));
-    
     $this->child_relations[]                = array('child' => 'default_prompt',
-                                                    'type' => 'RES',
-                                                    'fields' => array('survey_id' => 'survey_id'));
-    
-    $this->child_relations[]                = array('child' => 'number_option',
-                                                    'type' => 'RES',
-                                                    'fields' => array('survey_id' => 'survey_id'));
-    
-    $this->child_relations[]                = array('child' => 'question_prompt',
-                                                    'type' => 'RES',
-                                                    'fields' => array('survey_id' => 'survey_id'));
-    
-    $this->child_relations[]                = array('child' => 'survey_answer_dtl',
                                                     'type' => 'RES',
                                                     'fields' => array('survey_id' => 'survey_id'));
     

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update3.inc
@@ -46,45 +46,55 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_where   = &$sql_where;
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
+    // perform any initialisation
+    if (!empty($selection)) {
+        $selection = $dbobject->initialise($selection, $where);
+    } else {
+        $where = $dbobject->initialise($where);
+    } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from)) {
-        if ($return_action == 'choose' AND !empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose') {
+        if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            $errors     = array_merge($errors, $dbobject->getErrors());
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            } // if
         } // if
     } else {
         // get data from the database
         $fieldarray = $dbobject->getData($where);
-        if ($dbobject->getErrors()) {
+        if ($dbobject->errors) {
             // some sort of error - return to previous script
             scriptprevious($dbobject->getErrors(), $messages);
         } // if
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
     } // if
-    unset($script_vars['selection']);
+
+    // save these variables for later in the same session
     $script_vars['where']    = $where;
     $script_vars['dbobject'] = serialize($dbobject);
-    $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-    $_SESSION[$PHP_SELF][$task_id] = $script_vars;
+    $script_vars = updateScriptVars ($script_vars);
 } // if
 
 // look for entered data
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update($fieldarray, $_POST);
+    $fieldarray = array_update_associative($fieldarray, $_POST);
+    // ensure that changes are stored inside relevant object
+    $dbobject->setFieldArray($fieldarray);
     // look for an action which is another script
-    $errors = childForm($_POST, $dbobject, 'dbobject', $where, $fieldarray);
+    $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
     if (empty($errors)) {
         $dbobject->startTransaction();
         // update this data in the database
         $fieldarray = $dbobject->updateSelection($fieldarray, null);
-        if (count($dbobject->getErrors()) > 0) {
+        if ($dbobject->errors) {
 			// errors are keyed by object name
 		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
 		} // if

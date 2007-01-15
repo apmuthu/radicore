@@ -25,16 +25,39 @@ class mnu_menu extends Default_Table
     } // mnu_menu
 
     // ****************************************************************************
-    function _cm_changeConfig ($where, $fieldarray)
-    // Change the table configuration for the duration of this instance.
-    // $where = a string in SQL 'where' format.
-    // $fieldarray = the contents of $where as an array.
+    function getMenuButtons ($task_id)
+    // return current menu buttons as an array.
     {
-        return $fieldarray;
+        $role_id = $_SESSION['role_id'];
 
-    } // _cm_changeConfig
+        // identify extra parameters for a JOIN, as follows:-
+        // MNU_MENU identifies list of tasks which are attached to the current menu,
+        // MNU_ROLE_TASK identifies which taks the members of the current role may access,
+        // (this is ignored if GLOBAL_ACCESS is TRUE).
+        // MNU_TASK holds task descriptions, and whether a particular task has ben disabled
+        // (in which case it must also be removed from he selection)
 
-    // ***************************************************************************
+        $this->sql_select = 'mnu_task.task_id, mnu_task.task_desc, mnu_menu.button_text, global_access, '
+                          . 'CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 1 ELSE 0 END AS access_allowed';
+        $this->sql_from   = 'mnu_menu '
+                          . 'LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_menu.task_id_jnr) '
+                          . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_menu.task_id_jnr AND mnu_role_task.role_id='$role_id') "
+                          . "LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
+        $this->sql_where  = "(mnu_role_task.role_id IS NOT NULL OR mnu_role.global_access='Y') "
+                          . "AND (mnu_task.is_disabled='N')";
+
+        $dbmenu_data = $this->getData_raw("menu_id='$task_id'");
+
+        $menu_buttons = array();
+        foreach ($dbmenu_data as $data) {
+            $menu_buttons[$data['task_id']] = $data['button_text'];
+        } // foreach
+
+        return $menu_buttons;
+
+    } // getMenuBttons
+
+    // ****************************************************************************
     function _cm_commonValidation ($fieldarray, $orignaldata)
     // perform validation that is common to INSERT and UPDATE
     {
@@ -54,7 +77,8 @@ class mnu_menu extends Default_Table
     {
         if (!empty($fieldarray['menu_id'])) {
             // supply next value for SORT_SEQ
-            $query = "SELECT max(sort_seq) FROM $this->tablename " . "WHERE menu_id='{$fieldarray['menu_id']}'";
+            $query = "SELECT max(sort_seq) FROM $this->tablename "
+                   . "WHERE menu_id='{$fieldarray['menu_id']}'";
             $count = $this->getCount($query);
             $fieldarray['sort_seq'] = $count + 1;
         } // if
@@ -64,31 +88,23 @@ class mnu_menu extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         //DebugBreak();
         switch (basename($_SERVER['PHP_SELF'])) {
             // may need to change the contents of $where
         	case 'mnu_menu_link.php':
-        		// do nothing
+        		// alter sort criteria
+        		$this->sql_orderby = str_replace('mnu_menu.task_id_jnr', 'task_id_jnr', $this->sql_orderby);
         		break;
-            case 'mnu_menu_multi.php':
-                $where = str_replace('mnu_task.task_id=', 'mnu_menu.menu_id=', $where);
+
         	default:
         		$where = str_replace('task_id=', 'menu_id=', $where);
         } // switch
-
-//        if (empty($this->sql_select)) {
-//            // include columns from foreign table
-//            $this->sql_select = 'mnu_menu.*, mnu_task_snr.task_desc AS menu_desc, mnu_task_jnr.task_desc AS task_desc_jnr';
-//            $this->sql_from   = 'mnu_menu '
-//                              . 'LEFT JOIN mnu_task AS mnu_task_snr '
-//                              . 'ON (mnu_task_snr.task_id=mnu_menu.menu_id) '
-//                              . 'LEFT JOIN mnu_task AS mnu_task_jnr '
-//                              . 'ON (mnu_task_jnr.task_id=mnu_menu.task_id_jnr) ';
-//        } // if
 
         return $where;
 
@@ -98,33 +114,25 @@ class mnu_menu extends Default_Table
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-        //DebugBreak();
-        // change fieldname in $fieldarray from 'task_id' to 'task_id_jnr'
         if (array_key_exists('task_id', $fieldarray)) {
+            // change fieldname in $fieldarray from 'task_id' to 'task_id_jnr'
             $fieldarray['task_id_jnr'] = $fieldarray['task_id'];
             unset($fieldarray['task_id']);
         } // if
 
-        global $mode;
-        switch ($mode) {
-            case 'insert':
-                if (array_key_exists('task_id_jnr', $fieldarray)) {
-                    $task_id_jnr = $fieldarray['task_id_jnr'];
-                    // get default button text from mnu_task table
-                    require_once 'mnu_task.class.inc';
-                    $dbobject =& singleton::getInstance('mnu_task');
-                    $dbobject->setSqlSelect('button_text');
-                    $data = $dbobject->getData("task_id='$task_id_jnr'");
-                    $fieldarray = array_merge($fieldarray, $data[0]);
-                } // if
-                break;
-            default:
-                ;
-        } // switch
+        if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
+            $task_id_jnr = $fieldarray['task_id_jnr'];
+            // get default button text from mnu_task table
+            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject->sql_select = 'button_text';
+            $data = $dbobject->getData("task_id='$task_id_jnr'");
+            $fieldarray = array_merge($fieldarray, $data[0]);
+        } // if
 
         return $fieldarray;
 
     } // _cm_pre_insertRecord
+
     // ****************************************************************************
     function _cm_pre_updateLinkdata ($fieldarray, &$postarray)
     // $fieldarray is an array of field data (multiple rows).
@@ -150,17 +158,19 @@ class mnu_menu extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     {
-        // the default is to clear out the contents of $where
+        // clear out the contents of $where
         $where = '';
+
+        // allow only one entry to be selected (the default)
+        //$settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        $settings['select_one'] = false;
 
         //if ($popupname == '???_popup') {
         //   // replace $where for this popup
         //   $where = "???_id='ORG'";
         //} // if
-
-        // ensure that only one entry can be selected
-        // (multiple entries may be defined by separating them with '&')
-        //$settings = 'select_one=true';
 
         return $where;
 

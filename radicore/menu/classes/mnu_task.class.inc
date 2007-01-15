@@ -37,45 +37,56 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, dialog_type_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, '
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, '
                            .'CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 1 ELSE 0 END AS access_allowed';
         $this->sql_from   = 'mnu_task '
-                          . 'LEFT JOIN mnu_subsystem '
-                          . 'ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
-                          . 'LEFT JOIN mnu_role_task '
-                          . "ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
-                          . 'LEFT JOIN mnu_role '
-                          . "ON (mnu_role.role_id='$role_id')";
+                          . 'LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
+                          . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
+                          . "LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
         $this->sql_where  = '';
 
         $this->errors = array();
 
-        $fieldarray = $this->getData("task_id='$task_id'");
+        $fieldarray = $this->getData_raw("mnu_task.task_id='" .addslashes($task_id) ."'");
         if ($this->numrows <> 1) {
-            $this->errors[] = getLanguageText('sys0030', $task_id); // "Task '$task_id' does not exist.";
+            // "Task '$task_id' does not exist."
+            $this->errors[] = getLanguageText('sys0030', $task_id);
             return;
         } else {
             // use data from first row only
             $fieldarray = $fieldarray[0];
             if (is_True($fieldarray['is_disabled'])) {
-                $this->errors[] = getLanguageText('sys0031', $task_id); // "Task '$task_id' has been disabled";
+                // "Task '$task_id' has been disabled"
+                $this->errors[] = getLanguageText('sys0031', $task_id);
                 return;
             } // if
             if (!is_True($fieldarray['global_access'])) {
                 if (!is_True($fieldarray['access_allowed'])) {
-                    $this->errors[] = getLanguageText('sys0032', $task_id); // "Access to task '$task_id' has not been allowed";
+                    // "Access to task '$task_id' has not been allowed"
+                    $this->errors[] = getLanguageText('sys0032', $task_id);
                     return;
                 } // if
             } // if
         } // if
 
-        if ($fieldarray['task_type'] <> 'MENU') {
+        if (strtoupper($fieldarray['task_type']) <> 'MENU') {
             // this script must exist as a file
-            $filename = $_SERVER['DOCUMENT_ROOT']
-                       .getParentDIR () .'/'
-                       .$fieldarray['subsys_dir'] .'/' .$fieldarray['script_id'];
+            if (!empty($_SERVER['HTTPS'])) {
+                // use one or the other of these, whichever is available
+                if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
+                	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
+                } else {
+                    $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
+                } // if
+                $filename = $dir .'/' .$fieldarray['subsys_dir'] .'/' .$fieldarray['script_id'];
+            } else {
+                $dir = getParentDIR();
+                $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/' .$fieldarray['subsys_dir'] .'/' .$fieldarray['script_id'];
+            } // if
+
             if (!$fp = @fopen($filename, 'r')) {
-                $this->errors[] = getLanguageText('sys0057', $fieldarray['script_id']); // "File '{$fieldarray['script_id']}' does not exist";
+                // "File '{$fieldarray['script_id']}' does not exist"
+                $this->errors[] = getLanguageText('sys0057', $fieldarray['script_id']);
                 return;
             } // if
             fclose($fp);
@@ -92,31 +103,34 @@ class mnu_task extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         //DebugBreak();
-        global $mode;
-        if ($mode == 'search') {
+        if ($GLOBALS['mode'] == 'search') {
             $prev_script = getPreviousScript();
+            $pattern_id  = getPatternId($prev_script);
+            if ($pattern_id == 'LINK1') {
+                // add an extra field to the field list
+                $this->fieldspec['selected'] = array('type' => 'boolean');
+            } // if
+
             switch (basename($prev_script)) {
             	case 'mnu_role_task_link(b).php':
+            	    break;
                 case 'mnu_nav_button_link.php':
+                    break;
                 case 'mnu_menu_link.php':
-            		// add an extra field to the field list
-                    $this->fieldspec['selected'] = array('type' => 'boolean',
-                                                         'true' => 'Y',
-                                                         'false' => 'N');
+            		// turn off 'noedit' attribute for search screen
+                    unset($this->fieldspec['task_id']['noedit']);
+                    unset($fieldarray['task_id']);
             		break;
             	default:
             		;
             } // switch
 
-            // turn off 'noedit' attribute for search screen
-            unset($this->fieldspec['task_id']['noedit']);
-            //unset($fieldarray['task_id']);
         } // if
 
         if (isset($fieldarray['task_type'])) {
-            if ($fieldarray['task_type'] == 'MENU') {
+            if (strtoupper($fieldarray['task_type']) == 'MENU') {
                 // these fields are irrelevant for menus, so turn them off
-                $this->fieldspec['dialog_type_id']['noedit']      = 'y';
+                $this->fieldspec['pattern_id']['noedit']          = 'y';
                 $this->fieldspec['script_id']['nodisplay']        = 'y';
                 $this->fieldspec['initial_passthru']['nodisplay'] = 'y';
                 $this->fieldspec['selection_fixed']['nodisplay']  = 'y';
@@ -126,9 +140,10 @@ class mnu_task extends Default_Table
                 $this->fieldspec['keep_data']['nodisplay']        = 'y';
                 $this->fieldspec['log_sql_query']['nodisplay']    = 'y';
                 $this->fieldspec['screen_refresh']['nodisplay']   = 'y';
+                $this->fieldspec['use_https']['nodisplay']        = 'y';
             } else {
                 // turn these fields back on
-                unset($this->fieldspec['dialog_type_id']['noedit']);
+                unset($this->fieldspec['pattern_id']['noedit']);
                 unset($this->fieldspec['script_id']['nodisplay']);
                 unset($this->fieldspec['initial_passthru']['nodisplay']);
                 unset($this->fieldspec['selection_fixed']['nodisplay']);
@@ -138,6 +153,7 @@ class mnu_task extends Default_Table
                 unset($this->fieldspec['keep_data']['nodisplay']);
                 unset($this->fieldspec['log_sql_query']['nodisplay']);
                 unset($this->fieldspec['screen_refresh']['nodisplay']);
+                unset($this->fieldspec['use_https']['nodisplay']);
             } // if
         } // if
 
@@ -150,15 +166,16 @@ class mnu_task extends Default_Table
     // perform validation that is common to INSERT and UPDATE.
     {
         //DebugBreak();
-        switch ($fieldarray['task_type']) {
+        switch (strtoupper($fieldarray['task_type'])) {
             case 'MENU':
                 // menus always have these values
-                $fieldarray['dialog_type_id']   = 'MENU';
+                $fieldarray['pattern_id']       = 'MENU';
                 $fieldarray['script_id']        = 'menu.php';
                 $fieldarray['initial_passthru'] = null;
                 $fieldarray['selection_fixed']  = null;
                 $fieldarray['selection_temp']   = null;
                 $fieldarray['settings']         = null;
+                $fieldarray['use_https']        = null;
                 break;
             case 'PROC':
                 // script_id must not include any directory names
@@ -182,11 +199,17 @@ class mnu_task extends Default_Table
                 $this->errors['initial_passthru'] = getLanguageText('e0019', $fieldarray['initial_passthru']);
                 return $fieldarray;
             } // if
-            if ($data[0]['task_type'] != 'PROC') {
+            if (strtoupper($data[0]['task_type']) != 'PROC') {
                 // "This task must be of type PROC"
                 $this->errors['initial_passthru'] = getLanguageText('e0020');
                 return $fieldarray;
             } // if
+        } // if
+
+        // remove leading/trailing spaces, and replace embedded spaces with underscores
+        $fieldarray['task_id'] = str_replace(' ', '_', trim($fieldarray['task_id']));
+        if (isset($fieldarray['new_task_id'])) {
+        	$fieldarray['new_task_id'] = str_replace(' ', '_', trim($fieldarray['new_task_id']));
         } // if
 
         return $fieldarray;
@@ -204,14 +227,14 @@ class mnu_task extends Default_Table
         $array = $this->getValRep('task_type');
         $this->lookup_data['task_type'] = $array;
 
-        // get contents of foreign table DIALOG_TYPE and add as a LOOKUP list
-        require_once 'mnu_dialog_type.class.inc';
-        $dbobject =& singleton::getInstance('mnu_dialog_type');
-        $array = $dbobject->getValRep('dialog_type_id');
-        $this->lookup_data['dialog_type_id'] = $array;
+        // get contents of foreign table PATTERN and add as a LOOKUP list
+        //require_once 'classes/mnu_pattern.class.inc';
+        $dbobject =& singleton::getInstance('mnu_pattern');
+        $array = $dbobject->getValRep('pattern_id');
+        $this->lookup_data['pattern_id'] = $array;
 
         // get contents of foreign table SUBSYSTEM and add as a LOOKUP list
-        require_once 'mnu_subsystem.class.inc';
+        //require_once 'classes/mnu_subsystem.class.inc';
         $dbobject =& singleton::getInstance('mnu_subsystem');
         $array = $dbobject->getValRep('subsys_id');
         $this->lookup_data['subsys_id'] = $array;
@@ -228,6 +251,10 @@ class mnu_task extends Default_Table
         // this field should not appear in the INSERT screen
         $this->fieldspec['is_disabled']['nodisplay'] = 'y';
 
+        if ($fieldarray['task_type'] == 'MENU') {
+        	$fieldarray['pattern_id'] = 'MENU';
+        } // if
+
         return $fieldarray;
 
     } // _cm_getInitialData
@@ -239,8 +266,7 @@ class mnu_task extends Default_Table
         $array = array();
 
         if ($item == 'task_type') {
-            // provide values for dropdown list
-//            $array['']     = ' ';   // start with blank entry
+//            // provide values for dropdown list
 //            $array['PROC'] = 'Proc';
 //            $array['MENU'] = 'Menu';
             $array = getLanguageArray('task_type');
@@ -250,6 +276,82 @@ class mnu_task extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_output_multi ($name, $fieldarray)
+    // get extra data to pass to PDF class.
+    {
+        $outarray = array();
+
+        if (strtoupper($fieldarray['task_type']) != 'MENU') {
+            return false;
+        } // if
+
+        switch ($name) {
+        	case 'multi1':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi2':
+                // retrieve associated data from MNU_MENU table
+                $object =& singleton::getInstance('mnu_menu');
+                $menu_id  = $fieldarray['task_id'];
+                $object->sql_orderby = 'sort_seq asc';
+                $outarray = $object->getData("menu_id='$menu_id'");
+                if (empty($outarray)) {
+                    // print an empty line
+                    $outarray[] = array('dummy' => '');
+                } // if
+
+        		break;
+
+        	case 'multi3':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi4':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi5':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi6':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi7':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi8':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	case 'multi9':
+                // return a non-empty array to print an empty line
+                $outarray[] = array('dummy' => '');
+        		break;
+
+        	default:
+        		break;
+        } // switch
+
+        if ($outarray) {
+        	return $outarray;
+        } else {
+            return false;
+        } // if
+
+    } // _cm_output_multi
 
     // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
@@ -268,7 +370,7 @@ class mnu_task extends Default_Table
         switch (basename($_SERVER['PHP_SELF'])) {
             case 'mnu_task_field_list.php':
             case 'mnu_role_taskfield_multi(a).php':
-                if ($rowdata[0]['task_type'] != 'PROC') {
+                if (strtoupper($rowdata[0]['task_type']) != 'PROC') {
                     // "This function is only valid if TASK_TYPE='PROC'"
                     $this->errors = getLanguageText('e0021');
                 } // if
@@ -280,7 +382,7 @@ class mnu_task extends Default_Table
         // switch between MENU or PROC
         $rowdata[0] = $this->_cm_changeConfig($where, $rowdata[0]);
 
-        if (isset($rowdata[0]['task_type']) AND $rowdata[0]['task_type'] == 'MENU') {
+        if (isset($rowdata[0]['task_type']) AND strtoupper($rowdata[0]['task_type']) == 'MENU') {
             if (isset($rowdata[0]['task_id'])) {
             	// check to see if any menu items exist
                 require_once 'mnu_menu.class.inc';
@@ -306,10 +408,10 @@ class mnu_task extends Default_Table
     // perform custom processing before database record is inserted.
     {
         //DebugBreak();
-        if ($fieldarray['task_type'] == 'MENU') {
+        if (strtoupper($fieldarray['task_type']) == 'MENU') {
             // menus always have these values
-            $fieldarray['dialog_type_id'] = 'MENU';
-            $fieldarray['script_id']      = 'menu.php';
+            $fieldarray['pattern_id'] = 'MENU';
+            $fieldarray['script_id']  = 'menu.php';
         } // if
 
         return $fieldarray;
@@ -317,12 +419,27 @@ class mnu_task extends Default_Table
     } // _cm_pre_insertRecord
 
     // ****************************************************************************
+    function _cm_pre_output ($string)
+    // perform any processing required before the output operation
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+        	// do not display long text from option lists for these fields
+            unset($this->fieldspec['subsys_id']['optionlist']);
+            unset($this->fieldspec['pattern_id']['optionlist']);
+        } // if
+
+        return $string;
+
+    } // _cm_pre_output
+
+    // ****************************************************************************
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
         // valid characters are numbers, letters, and '_#$()'
         if (ereg('[^0-9a-zA-Z_#$()]', $fieldarray['task_id'], $regs)) {
-            $this->errors['task_id'] = getLanguageText('e0022', $regs[0]); // "Contains invalid character ($regs[0])";
+            // "Contains invalid character ($regs[0])"
+            $this->errors['task_id'] = getLanguageText('e0022', $regs[0]);
         } // if
 
         return $fieldarray;

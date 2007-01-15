@@ -4,6 +4,9 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 $structure['tables']['main'] = 'survey_question';
 
 $structure['main']['columns'][] = array('width' => '25%');
+$structure['main']['columns'][] = array('width' => 10);
+$structure['main']['columns'][] = array('width' => 50);
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][1][] = array('label' => 'Survey Id');
 $structure['main']['fields'][1][] = array('field' => 'survey_id');

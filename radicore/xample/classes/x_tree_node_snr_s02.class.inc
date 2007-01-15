@@ -43,14 +43,16 @@ class x_tree_node_snr_s02 extends x_tree_node_snr
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        if (empty($this->sql_select)) {
-        	// obtain an extra field from x_tree_level
-            $this->sql_select = 'x_tree_node.*, tree_level_seq';
-        } // if
+//        if (empty($this->sql_select)) {
+//        	// obtain an extra field from x_tree_level
+//            $this->sql_select = 'x_tree_node.*, tree_level_seq';
+//        } // if
 
         return $where;
 

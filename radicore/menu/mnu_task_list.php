@@ -4,7 +4,7 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-$table_id = 'mnu_task';    	                // table name
+$table_id = 'mnu_task';                     // table name
 $screen   = 'mnu_task.list.screen.inc';     // file identifying screen structure
 
 require 'std.list1.inc';                    // activate page controller

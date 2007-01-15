@@ -25,31 +25,10 @@ class survey_section extends Default_Table
     } // survey_section
 
     // ****************************************************************************
-    function _cm_getExtraData ($where, $fieldarray)
-    // Perform custom processing for the getExtraData method.
-    // $where = a string in SQL 'where' format.
-    // $fieldarray = the contents of $where as an array.
-    {
-        //DebugBreak();
-
-        switch ($GLOBALS['task_id']) {
-            case 'srv_survey_question(list)':
-                $fieldarray['section_name'] = $fieldarray['section_seq'] . ' - ' . $fieldarray['section_name'];
-                break;
-            default:
-                ;
-        } // switch
-
-        return $fieldarray;
-
-    } // _cm_getExtraData
-
-    // ****************************************************************************
     function _cm_getInitialData ($fieldarray)
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set section_id to next available number
         if (!empty($fieldarray['survey_id'])) {
             $where = "survey_id='{$fieldarray['survey_id']}'";
@@ -59,7 +38,7 @@ class survey_section extends Default_Table
             $fieldarray['section_seq'] = $count + 1;
         } // if
 
-        $this->fieldspec['survey_id']['noedit']  = 'y';
+        $this->fieldspec['survey_id']['noedit']   = 'y';
         $this->fieldspec['section_id']['noedit']  = 'y';
         $this->fieldspec['section_seq']['noedit'] = 'y';
 
@@ -71,13 +50,12 @@ class survey_section extends Default_Table
     function _cm_post_deleteRecord ($fieldarray)
     // perform custom processing after database record is deleted.
     {
-        //DebugBreak();
         // if there are any records with a sequence number greater than the one
         // which has just been deleted then they must be shuffled up in order
         // to absorb the now vacant number.
-        $survey_id = $fieldarray['survey_id'];
+        $survey_id   = $fieldarray['survey_id'];
         $section_seq = $fieldarray['section_seq'];
-        $where = "survey_id='$survey_id' and section_seq>$section_seq";
+        $where       = "survey_id='$survey_id' and section_seq > $section_seq";
         $this->sql_orderby = 'section_seq';
         $rowdata = $this->getData_raw($where);
         if ($this->numrows == 0) {

@@ -1,5 +1,5 @@
 <?php
-    // file created on January 6, 2006, 10:46 pm
+    // file created on October 9, 2006, 10:31 am
     
     // field specifications for table xample.x_person_addr
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -17,10 +17,14 @@
                                                     'default' => '0');
     
     $fieldspec['telephone_no']              = array('type' => 'string',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'subtype' => 'custom',
+                                                    'custom_validation' => 'sample.validation.class.inc/sample_validation_class/telephone_no');
     
     $fieldspec['fax_no']                    = array('type' => 'string',
-                                                    'size' => 20);
+                                                    'size' => 20,
+                                                    'subtype' => 'custom',
+                                                    'custom_validation' => 'sample.validation.class.inc/sample_validation_class/fax_no');
     
     $fieldspec['addr_line_1']               = array('type' => 'string',
                                                     'size' => 30,
@@ -43,7 +47,9 @@
     $fieldspec['postcode']                  = array('type' => 'string',
                                                     'size' => 10,
                                                     'required' => 'y',
-                                                    'uppercase' => 'y');
+                                                    'uppercase' => 'y',
+                                                    'subtype' => 'custom',
+                                                    'custom_validation' => 'sample.validation.class.inc/sample_validation_class/postcode');
     
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,
@@ -60,24 +66,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('person_id',

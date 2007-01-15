@@ -4,7 +4,6 @@
 // The identity of the selected occurrence is passed down from the previous screen.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'risk_weighting';                       // table id
 $screen   = 'risk_weighting.detail.screen.inc';     // file identifying screen structure
 
@@ -13,7 +12,6 @@ $sql_select = NULL;
 $sql_from   = NULL;
 $sql_where  = NULL;
 
-// activate page controller
-require 'std.enquire1.inc';
+require 'std.enquire1.inc';     // activate page controller
 
 ?>

@@ -9,6 +9,19 @@ class dict_dataBase_s01 extends dict_dataBase
     // ****************************************************************************
     // this class is used to import existing database names
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $this->fieldspec['database_id']['control']    = 'dropdown';
+        $this->fieldspec['database_id']['optionlist'] = 'database_id';
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getDatabaseLock ()
     // return array of database tables to be locked in current transaction.
     {
@@ -40,29 +53,44 @@ class dict_dataBase_s01 extends dict_dataBase
 
     // ****************************************************************************
     function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    // Perform custom processing prior to insertRecord().
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
-        // get list of existing database names
-        $array = $this->_ddl_showDatabases();
+        if (array_key_exists('database_id', $this->lookup_data)) {
+            // already there, so don't build it again
+        	return $fieldarray;
+        } // if
 
-        // filter out those that already exist in DICT database
+        // get list of existing database names
+        $array  = $this->_ddl_showDatabases();
+        $array2 = array();
+
+        global $dbprefix;
+
+        // filter out those databases that already exist in DICT database
         $i = 0;
-        foreach ($array as $dbname) {
+        foreach ($array as $row => $dbname) {
+            $dbname = strtolower($dbname);
+            if (!empty($dbprefix)) {
+                // remove server prefix from dbname
+                if (eregi('^(' .$dbprefix .')', $dbname)) {
+                    $prefix_len = strlen($dbprefix);
+        			$dbname = substr($dbname, $prefix_len);
+                    $array[$row] = $dbname;
+                } // if
+            } // if
         	$count = $this->getCount("database_id='$dbname'");
             if ($count == 0) {
-                // insert details of new database
-                $fieldarray[$i]['database_id']   = $dbname;
-                $fieldarray[$i]['database_desc'] = $dbname;
-                $fieldarray[$i]['subsys_id']     = '?';
-                $i++;
+                // store details of new database
+                $array2[$dbname] = $dbname;
             } // if
         } // foreach
 
-        if (empty($fieldarray)) {
-            // do not fill empty array with null values
-        	$this->ignore_empty_fields = TRUE;
+        if (empty($array2)) {
+            // 'There are no new database schemas to import'
+        	$this->errors[] = getLanguageText('e0025');
+        } else {
+            $this->lookup_data['database_id'] = $array2;
         } // if
 
         return $fieldarray;
@@ -73,21 +101,26 @@ class dict_dataBase_s01 extends dict_dataBase
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         // import tables from database just processed
         static $tableobj;
         if (!is_object($tableobj)) {
-            require_once 'dict_table_s01.class.inc';
+            //require_once 'classes/dict_table_s01.class.inc';
             $tableobj =& singleton::getInstance('dict_table_s01');
         } // if
 
-        $array = $tableobj->getInitialData($fieldarray);
+        $array = $tableobj->getInitialDataMultiple($fieldarray);
         $array = $tableobj->insertMultiple($array);
         if ($tableobj->getErrors()) {
             $errors = $tableobj->getErrors();
             foreach ($errors as $row => $error) {
             	$this->errors[] = 'From DICT_TABLE: ' .$error[key($error)];
             } // foreach
+        } // if
+
+        if (empty($this->errors)) {
+        	$next['task_id'] = 'dict_table(list)2';
+            $next['where']   = array2where($fieldarray, $this->primary_key);
+            $_SESSION['script_sequence'][] = $next;
         } // if
 
         return $fieldarray;

@@ -31,7 +31,7 @@ class answer_option extends Default_Table
         //DebugBreak();
         if (strlen($fieldarray['jumpto_section_seq']) > 0) {
             // get sequence number of curren section
-            require_once 'survey_section.class.inc';
+            require_once 'classes/survey_section.class.inc';
             $dbobject =& singleton::getInstance('survey_section');
 
             $dbobject->sql_select = 'section_seq';
@@ -81,8 +81,8 @@ class answer_option extends Default_Table
         //DebugBreak();
         // set answer_id to next available number
         if (!empty($fieldarray['survey_id'])
-                AND !empty($fieldarray['section_id'])
-                AND !empty($fieldarray['question_id'])) {
+        AND !empty($fieldarray['section_id'])
+        AND !empty($fieldarray['question_id'])) {
             $where = "survey_id='{$fieldarray['survey_id']}' AND " . "section_id='{$fieldarray['section_id']}' AND " . "question_id='{$fieldarray['question_id']}'";
         } // if
 
@@ -101,7 +101,7 @@ class answer_option extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -112,8 +112,6 @@ class answer_option extends Default_Table
             $this->sql_orderby    = 'answer_seq';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData($where);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -128,25 +126,6 @@ class answer_option extends Default_Table
         return $array;
 
     } // _cm_getValRep
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        switch ($GLOBALS['task_id']) {
-            case 'srv_answer_option(multi)':
-                // remove any tablenames in front of column names
-                $where = unqualifyWhere($where);
-                break;
-            default:
-                ;
-        } // switch
-
-        return $where;
-
-    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

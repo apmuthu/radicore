@@ -1,5 +1,5 @@
 <?php
-    // file created on July 28, 2005, 12:41 pm
+    // file created on November 3, 2006, 11:07 am
     
     // field specifications for table classroom.crs_student_lesson
     $fieldspec['student_id']                = array('type' => 'integer',
@@ -34,7 +34,7 @@
                                                     'fields' => array('lesson_id' => 'lesson_id'));
     
     $this->parent_relations[]               = array('parent' => 'crs_student',
-                                                    'parent_field' => 'CONCAT(last_name, ", ", first_name) AS student_name',
+                                                    'parent_field' => 'CONCAT(last_name, \', \', first_name) AS student_name',
                                                     'fields' => array('student_id' => 'student_id'));
     
     // determines if database updates are recorded in an audit log 

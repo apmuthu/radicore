@@ -41,7 +41,7 @@ class mnu_role_taskfield extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item='', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -50,7 +50,7 @@ class mnu_role_taskfield extends Default_Table
 //            $array['FULL'] = 'Full';
 //            $array['NED']  = 'NOEDIT';
 //            $array['NDI']  = 'NODISPLAY';
-            $array = getLanguageArray('pswd_change');
+            $array = getLanguageArray('access_type');
             return $array;
         } // if
 

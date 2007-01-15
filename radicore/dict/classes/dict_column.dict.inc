@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:20 pm
+    // file created on January 5, 2007, 5:38 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -38,19 +38,26 @@
                                                     'size' => 255,
                                                     'required' => 'y');
     
-    $fieldspec['comment']                   = array('type' => 'string',
+    $fieldspec['col_comment']               = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
-                                                    'cols' => 65,
+                                                    'cols' => 70,
                                                     'rows' => 5,
                                                     'nosearch' => 'y');
     
     $fieldspec['col_type']                  = array('type' => 'string',
-                                                    'size' => 12,
+                                                    'size' => 20,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'col_type');
+    
+    $fieldspec['col_type_native']           = array('type' => 'string',
+                                                    'size' => 32,
+                                                    'required' => 'y');
+    
+    $fieldspec['col_array_type']            = array('type' => 'string',
+                                                    'size' => 20);
     
     $fieldspec['col_values']                = array('type' => 'string',
                                                     'size' => 65535);
@@ -58,14 +65,14 @@
     $fieldspec['user_size']                 = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 18446744073710000000,
+                                                    'maxvalue' => 1.844674407371e+019,
                                                     'required' => 'y',
                                                     'default' => '0');
     
     $fieldspec['col_maxsize']               = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 18446744073710000000,
+                                                    'maxvalue' => 1.844674407371e+019,
                                                     'required' => 'y',
                                                     'default' => '0',
                                                     'noedit' => 'y');
@@ -119,7 +126,7 @@
     $fieldspec['col_precision']             = array('type' => 'integer',
                                                     'size' => 3,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 32);
+                                                    'maxvalue' => 39);
     
     $fieldspec['col_scale']                 = array('type' => 'integer',
                                                     'size' => 3,
@@ -131,14 +138,14 @@
                                                     'noedit' => 'y');
     
     $fieldspec['col_maxvalue']              = array('type' => 'float',
-                                                    'size' => 20,
+                                                    'size' => 21,
                                                     'noedit' => 'y');
     
     $fieldspec['user_minvalue']             = array('type' => 'float',
                                                     'size' => 21);
     
     $fieldspec['user_maxvalue']             = array('type' => 'float',
-                                                    'size' => 20);
+                                                    'size' => 21);
     
     $fieldspec['noedit_nodisplay']          = array('type' => 'string',
                                                     'size' => 3,
@@ -146,16 +153,15 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'noedit_nodisplay');
     
-    $fieldspec['nosearch']                  = array('type' => 'string',
+    $fieldspec['no_search']                 = array('type' => 'string',
                                                     'size' => 3,
-                                                    'uppercase' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'nosearch');
+                                                    'optionlist' => 'no_search');
     
-    $fieldspec['noaudit']                   = array('type' => 'string',
+    $fieldspec['no_audit']                  = array('type' => 'string',
                                                     'size' => 3,
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'noaudit');
+                                                    'optionlist' => 'no_audit');
     
     $fieldspec['upper_lowercase']           = array('type' => 'string',
                                                     'size' => 5,
@@ -195,11 +201,10 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'infinityisnull');
     
-    $fieldspec['subtype']                   = array('type' => 'string',
+    $fieldspec['col_subtype']               = array('type' => 'string',
                                                     'size' => 10,
-                                                    'lowercase' => 'y',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'subtype');
+                                                    'optionlist' => 'col_subtype');
     
     $fieldspec['image_width']               = array('type' => 'integer',
                                                     'size' => 6,
@@ -216,6 +221,8 @@
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean',
                                                     'noedit' => 'y');
     
     $fieldspec['boolean_true']              = array('type' => 'string',
@@ -236,6 +243,9 @@
                                                     'size' => 64,
                                                     'lowercase' => 'y');
     
+    $fieldspec['checkbox_label']            = array('type' => 'string',
+                                                    'size' => 64);
+    
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 64,
                                                     'lowercase' => 'y',
@@ -253,6 +263,12 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'align_hv');
     
+    $fieldspec['align_lr']                  = array('type' => 'string',
+                                                    'size' => 1,
+                                                    'uppercase' => 'y',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'align_lr');
+    
     $fieldspec['multi_cols']                = array('type' => 'integer',
                                                     'size' => 3,
                                                     'minvalue' => 0,
@@ -263,29 +279,36 @@
                                                     'minvalue' => 0,
                                                     'maxvalue' => 127);
     
+    $fieldspec['custom_validation']         = array('type' => 'string',
+                                                    'size' => 255);
+    
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('database_id',

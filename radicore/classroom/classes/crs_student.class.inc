@@ -26,7 +26,6 @@ class crs_student extends Default_Table
     function _cm_formatData ($fieldarray)
     // perform custom formatting before values are shown to the user.
     {
-        //DebugBreak();
         if (!isset($fieldarray['student_name'])) {
             if (isset($fieldarray['first_name'])) {
                 $fieldarray['student_name'] = $fieldarray['first_name']
@@ -43,7 +42,6 @@ class crs_student extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         if (isset($fieldarray['year']) and isset($fieldarray['class_id'])) {
             $this->errors['year']     = getLanguageText('e0013'); // 'cannot set both YEAR and CLASS';
             $this->errors['class_id'] = getLanguageText('e0013'); // 'cannot set both YEAR and CLASS';
@@ -59,11 +57,10 @@ class crs_student extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get contents of foreign table CLASS and add to lookup array
-        require_once 'crs_class.class.inc';
+        require_once 'classes/crs_class.class.inc';
         $object =& singleton::getInstance('crs_class');
-        $data = $object->getValRep('class_id');
+        $data   = $object->getValRep('class_id');
         $this->lookup_data['class_id'] = $data;
 
         return $fieldarray;
@@ -86,7 +83,7 @@ class crs_student extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -97,8 +94,6 @@ class crs_student extends Default_Table
             $this->sql_orderby    = 'last_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -114,11 +109,12 @@ class crs_student extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         if (basename($_SERVER['PHP_SELF']) == 'student_popup.php') {
             $prev_script = getPreviousScript();
             if (basename($prev_script) == 'student_lesson_add(b).php') {
@@ -141,17 +137,11 @@ class crs_student extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
         if (basename($_SERVER['PHP_SELF']) == 'lesson_list(a).php') {
             if (isset($rowdata[0]['class_id'])) {
                 // 'Student is assigned to a class - cannot assign individual lessons'
                 $this->errors[] = getLanguageText('e0014');
-                $GLOBALS['remove_buttons'][] = 'student_lesson_add(a).php';
-            } // if
-
-            if (isset($rowdata[0]['year']) and $rowdata[0]['year'] > 0) {
-                // apply a retrieve profile to the popup form
-                $GLOBALS['script_vars']['popup_where'] = "year={$rowdata[0]['year']}";
+                $GLOBALS['remove_buttons'][] = 'crs_student_lesson(add)a';
             } // if
         } // if
 
@@ -163,9 +153,8 @@ class crs_student extends Default_Table
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update.
     {
-        //DebugBreak();
         if (empty($originaldata['class_id']) and !empty($fieldarray['class_id'])) {
-            $count = $this->_dml_getCount("SELECT count(*) FROM crs_student_lesson WHERE student_id='{$fieldarray['student_id']}'");
+            $count = $this->getCount("SELECT count(*) FROM crs_student_lesson WHERE student_id='{$fieldarray['student_id']}'");
             if ($count > 0) {
                 // 'Cannot assign to a Class while individual lessons exist'
                 $this->errors['class_id'] = getLanguageText('e0015');

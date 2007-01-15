@@ -53,7 +53,7 @@ class prod_cat_class extends Default_Table
             // 'End Date must be earlier than End Date of next entry'
             $this->errors['end_date'] = getLanguageText('e0008');
             // use next end_date minus 1 day
-            $fieldarray['end_date'] = $dateobj->addDays($next_end_date, -1);
+            $fieldarray['end_date'] = adjustDate($next_end_date, -1);
         } // if
 
         return $fieldarray;
@@ -89,7 +89,7 @@ class prod_cat_class extends Default_Table
             // 'Start Date must be later than Start Date of previous entry'
             $this->errors['start_date'] = getLanguageText('e0009');
             // use previous start_date plus 1 day
-            $fieldarray['start_date'] = $dateobj->addDays($prev_start_date, 1);
+            $fieldarray['start_date'] = adjustDate($prev_start_date, 1);
         } // if
 
         return $fieldarray;
@@ -101,10 +101,8 @@ class prod_cat_class extends Default_Table
     // update the start_date of the next record so that it is
     // 1 day later than the end_date of the current record
     {
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
         $end_date   = $fieldarray['end_date'];
-        $start_date = $dateobj->addDays($end_date, 1);
+        $start_date = adjustDate($end_date, 1);
 
         $update_array['product_id']  = $fieldarray['product_id'];
         $update_array['prod_cat_id'] = $fieldarray['prod_cat_id'];
@@ -122,10 +120,8 @@ class prod_cat_class extends Default_Table
     // update the end_date of the previous record so that it is
     // 1 day earlier than the start_date of the current record
     {
-        require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
         $start_date = $fieldarray['start_date'];
-        $end_date   = $dateobj->addDays($start_date, -1);
+        $end_date   = adjustDate($start_date, -1);
 
         $update_array['product_id']  = $fieldarray['product_id'];
         $update_array['prod_cat_id'] = $fieldarray['prod_cat_id'];
@@ -225,8 +221,17 @@ class prod_cat_class extends Default_Table
 
                 // use previous start_date plus 1 day
                 $start_date = $prev_rec_data['start_date'];
-                $start_date = $dateobj->addDays($start_date, 1);
+                $start_date = adjustDate($start_date, 1);
                 $fieldarray['start_date'] = $dateobj->getExternalDate($start_date);
+            } // if
+        } // if
+
+        if (!isset($fieldarray['primary_flag'])) {
+            $count = $this->getCount("product_id='{$fieldarray['product_id']}'");
+            if ($count == 0) {
+                $fieldarray['primary_flag'] = $this->fieldspec['primary_flag']['true'];
+            } else {
+                $fieldarray['primary_flag'] = $this->fieldspec['primary_flag']['false'];
             } // if
         } // if
 
@@ -243,6 +248,13 @@ class prod_cat_class extends Default_Table
             // update end_date on previous record
             $fieldarray = $this->_updatePrevRecord($fieldarray);
             if ($this->errors) return $fieldarray;
+        } // if
+
+        if (is_True($fieldarray['primary_flag'])) {
+            // is this record is TRUE then all others must be set to FALSE
+        	$selection = "product_id='{$fieldarray['product_id']}' AND prod_cat_id != '{$fieldarray['prod_cat_id']}'";
+        	$replace   = "primary_flag='" .$this->fieldspec['primary_flag']['false'] ."'";
+        	$count = $this->_dml_updateSelection($selection, $replace);
         } // if
 
         return $fieldarray;
@@ -273,29 +285,16 @@ class prod_cat_class extends Default_Table
             if ($this->errors) return $fieldarray;
         } // if
 
+        if (is_True($fieldarray['primary_flag'])) {
+            // is this record is TRUE then all others must be set to FALSE
+        	$selection = "product_id='{$fieldarray['product_id']}' AND prod_cat_id != '{$fieldarray['prod_cat_id']}'";
+        	$replace   = "primary_flag='" .$this->fieldspec['primary_flag']['false'] ."'";
+        	$count = $this->_dml_updateSelection($selection, $replace);
+        } // if
+
         return $fieldarray;
 
     } // _cm_post_updateRecord
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        if (empty($this->sql_select)) {
-            // include columns from foreign table
-            $this->sql_select = 'prod_cat_class.*, product.product_name, product_category.prod_cat_desc';
-            $this->sql_from   = 'prod_cat_class '
-                              . 'LEFT JOIN product '
-                              . 'ON (product.product_id=prod_cat_class.product_id) '
-                              . 'LEFT JOIN product_category '
-                              . 'ON (product_category.prod_cat_id=prod_cat_class.prod_cat_id)';
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_validateDelete ($fieldarray)

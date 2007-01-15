@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:40 pm
+    // file created on November 3, 2006, 11:29 am
     
     // field specifications for table product.unit_of_measure
     $fieldspec['uom_id']                    = array('type' => 'string',
@@ -26,25 +26,30 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2001-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('uom_id');
@@ -66,10 +71,12 @@
                                                     'fields' => array('uom_id' => 'uom_id'));
     
     $this->child_relations[]                = array('child' => 'uom_conversion',
+                                                    'alias' => 'uom_conversion_from',
                                                     'type' => 'RES',
                                                     'fields' => array('uom_id' => 'uom_id_from'));
     
     $this->child_relations[]                = array('child' => 'uom_conversion',
+                                                    'alias' => 'uom_conversion_to',
                                                     'type' => 'RES',
                                                     'fields' => array('uom_id' => 'uom_id_to'));
     

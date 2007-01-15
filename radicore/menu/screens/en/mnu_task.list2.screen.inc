@@ -1,11 +1,11 @@
 <?php
 $structure['xsl_file'] = 'std.list2.xsl';
 
-$structure['tables']['outer'] = 'mnu_dialog_type';
+$structure['tables']['outer'] = 'mnu_pattern';
 
 $structure['outer']['columns'][] = array('width' => '25%');
 
-$structure['outer']['fields'][] = array('dialog_type_desc' => 'Dialog Type');
+$structure['outer']['fields'][] = array('pattern_desc' => 'Pattern');
 
 $structure['tables']['inner'] = 'mnu_task';
 

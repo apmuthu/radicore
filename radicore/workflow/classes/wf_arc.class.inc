@@ -29,7 +29,6 @@ class wf_arc extends Default_Table
     // examine an INWARD arc (from a place into a transition) to see if a
     // workitem can be created for the transition.
     {
-        //DebugBreak();
         $workflow_id   = $arc_data['workflow_id'];
         $transition_id = $arc_data['transition_id'];
         $case_id       = $arc_data['case_id'];
@@ -52,7 +51,7 @@ class wf_arc extends Default_Table
         foreach ($place_data as $place) {
             $place_id = $place['place_id'];
             $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND case_id='$case_id' AND token_status='FREE'";
-            $token_data = $dbtoken->getData($where);
+            $token_data = $dbtoken->getData_raw($where);
             $token_count = count($token_data);
             if ($token_count == 0) {
                 // no tokens at this place, so unable to proceed
@@ -82,6 +81,9 @@ class wf_arc extends Default_Table
         $workitem_data['task_id'] = $arc_data['task_id'];
         $workitem_data['context'] = $arc_data['context'];
         $workitem_data['transition_trigger'] = $arc_data['transition_trigger'];
+        if ($arc_data['transition_trigger'] == 'TIME') {
+        	$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
+        } // if
 
         $workitem_data = $dbworkitem->insertRecord($workitem_data);
         if ($dbworkitem->errors) {
@@ -106,7 +108,6 @@ class wf_arc extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         $arc_type = $fieldarray['arc_type'];
 
         if (!empty($fieldarray['place_id'])) {
@@ -114,7 +115,7 @@ class wf_arc extends Default_Table
             require_once 'classes/wf_place.class.inc';
             $dbobject =& singleton::getInstance('wf_place');
             $dbobject->sql_select = 'place_type';
-            $place_data = $dbobject->getData("workflow_id='{$fieldarray['workflow_id']}' AND place_id='{$fieldarray['place_id']}'");
+            $place_data = $dbobject->getData_raw("workflow_id='{$fieldarray['workflow_id']}' AND place_id='{$fieldarray['place_id']}'");
             $place_type = $place_data[0]['place_type'];
         } // if
 
@@ -122,11 +123,12 @@ class wf_arc extends Default_Table
         if (isset($place_type) and !empty($fieldarray['direction'])) {
             switch ($place_type) {
                 case '1':
-                    if ($fieldarray['direction'] == 'OUT') {
-                        // 'Cannot use direction OUT on START place'
-                        $this->errors['direction'] = getLanguageText('e0001');
-                        return $fieldarray;
-                    } // if
+                    // Explicit OR Split is allowed to go to START place
+//                    if ($fieldarray['direction'] == 'OUT') {
+//                        // 'Cannot use direction OUT on START place'
+//                        $this->errors['direction'] = getLanguageText('e0001');
+//                        return $fieldarray;
+//                    } // if
                     break;
                 case '9':
                     if ($fieldarray['direction'] == 'IN') {
@@ -189,7 +191,6 @@ class wf_arc extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get array for arc_type and put into LOOKUP_DATA
         $array = $this->getValRep('arc_type');
         $this->lookup_data['arc_type'] = $array;
@@ -219,7 +220,7 @@ class wf_arc extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item, $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -249,17 +250,17 @@ class wf_arc extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         if (empty($this->sql_select)) {
             $this->sql_select = 'wf_arc.*, transition_name, place_name, place_type ';
             $this->sql_from   = 'wf_arc '
                                .'LEFT JOIN wf_transition ON (wf_transition.workflow_id=wf_arc.workflow_id AND wf_transition.transition_id=wf_arc.transition_id) '
                                .'LEFT JOIN wf_place ON (wf_place.workflow_id=wf_arc.workflow_id AND wf_place.place_id=wf_arc.place_id)';
-            $this->default_orderby = 'created_date';
         } // if
 
         return $where;

@@ -5,8 +5,8 @@
 
 <!--
 //*****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -31,11 +31,19 @@
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
-    <xsl:call-template name="head" />
-  <body>
 
-  <xsl:if test="//header">
-    <xsl:value-of select="//header" disable-output-escaping="yes"/>
+  <xsl:call-template name="head" />
+
+  <body>
+    <xsl:for-each select="/root/javascript/body[@*]">
+      <!-- add javascript events to the <body> tag -->
+      <xsl:copy-of select="@*" />
+    </xsl:for-each>
+
+  <xsl:if test="/root/header">
+    <div class="header">
+      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   <form method="post" action="{$script}">
@@ -53,7 +61,10 @@
         <h1><xsl:value-of select="$title"/></h1>
 
         <!-- create navigation buttons -->
-        <xsl:call-template name="navbar" />
+        <xsl:call-template name="navbar">
+          <xsl:with-param name="noshow"   select="//params/noshow"/>
+          <xsl:with-param name="noselect" select="//params/noselect"/>
+        </xsl:call-template>
 
         <div class="main">
           <!-- this is the actual data -->
@@ -61,15 +72,16 @@
 
             <!-- set up column widths -->
             <xsl:call-template name="column_group">
-              <xsl:with-param name="table" select="'main'"/>
+              <xsl:with-param name="zone" select="'main'"/>
               <xsl:with-param name="count" select="'2'"/>
             </xsl:call-template>
 
             <thead>
               <!-- set up column headings -->
               <xsl:call-template name="column_headings">
-                <xsl:with-param name="table" select="'main'"/>
-                <xsl:with-param name="count" select="'2'"/>
+                <xsl:with-param name="zone"   select="'main'"/>
+                <xsl:with-param name="count"  select="'2'"/>
+                <xsl:with-param name="nosort" select="//params/nosort"/>
               </xsl:call-template>
             </thead>
 
@@ -104,14 +116,29 @@
 
   </form>
 
-  <xsl:if test="//footer">
-    <xsl:value-of select="//footer" disable-output-escaping="yes"/>
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+    </div>
   </xsl:if>
 
   </body>
   </html>
 
+  <xsl:if test="/root/javascript/footer">
+    <!-- insert the javascript footer manually because it can't be done automatically -->
+    <xsl:call-template name="javascript_footer"/>
+  </xsl:if>
+
 </xsl:template>
+
+
 
 <xsl:template name="display_file">
   <xsl:param name="item"/>
@@ -132,8 +159,8 @@
     <td>
       <xsl:call-template name="icon">
         <xsl:with-param name="icon" select="node()" />
-        <xsl:with-param name="height" select="//structure/main/item/cell/@imageheight" />
-        <xsl:with-param name="width" select="//structure/main/item/cell/@imagewidth" />
+        <xsl:with-param name="height" select="//structure/main/row/cell/@imageheight" />
+        <xsl:with-param name="width" select="//structure/main/row/cell/@imagewidth" />
       </xsl:call-template>
     </td>
 
@@ -148,8 +175,8 @@
         <td>
           <xsl:call-template name="icon">
             <xsl:with-param name="icon" select="following-sibling::*" />
-            <xsl:with-param name="height" select="//structure/main/item/cell/@imageheight" />
-            <xsl:with-param name="width" select="//structure/main/item/cell/@imagewidth" />
+            <xsl:with-param name="height" select="//structure/main/row/cell/@imageheight" />
+            <xsl:with-param name="width" select="//structure/main/row/cell/@imagewidth" />
           </xsl:call-template>
         </td>
       </xsl:when>

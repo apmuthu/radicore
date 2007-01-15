@@ -7,28 +7,18 @@ require_once 'answer_option.class.inc';
 class answer_option_s01 extends answer_option
 {
     // member variables
-    var $done;          // flag to indicate that function has already been processed
 
     // ****************************************************************************
     // special subtype for use only by script 'answer_option_quick.php'.
     // ****************************************************************************
-    function _cm_getInitialData ($fieldarray)
-    // Perform custom processing for the getInitialData method.
+    function _cm_getInitialDataMultiple ($fieldarray)
+    // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
         //DebugBreak();
-        if ($this->done) {
-            // this function has already been done, so use the function from
-            // the parent class instead
-            $fieldarray = parent::_cm_getInitialData($fieldarray);
-            return $fieldarray;
-        } else {
-            $this->done = true;
-        } // if
-
         if (!empty($fieldarray['survey_id'])
-                AND !empty($fieldarray['section_id'])
-                AND !empty($fieldarray['question_id'])) {
+        AND !empty($fieldarray['section_id'])
+        AND !empty($fieldarray['question_id'])) {
             $where = "survey_id='{$fieldarray['survey_id']}' AND " . "section_id='{$fieldarray['section_id']}' AND " . "question_id='{$fieldarray['question_id']}'";
         } // if
 
@@ -59,7 +49,7 @@ class answer_option_s01 extends answer_option
 
         return $fieldarray;
 
-    } // _cm_getInitialData
+    } // _cm_getInitialDataMultiple
 
 // ****************************************************************************
 } // end class

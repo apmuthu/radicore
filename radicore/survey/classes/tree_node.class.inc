@@ -28,12 +28,11 @@ class tree_node extends Default_Table
     function _cm_formatData ($fieldarray)
     // perform custom formatting before values are shown to the user.
     {
-        //DebugBreak();
         if (isset($fieldarray['node_type'])) {
             switch ($fieldarray['node_type']) {
                 case 'O':
                     if (array_key_exists('org_type_id', $fieldarray)) {
-                        require_once 'org_type.class.inc';
+                        require_once 'classes/org_type.class.inc';
                         $dbobject =& singleton::getInstance('org_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("org_type_id='{$fieldarray['org_type_id']}'");
@@ -42,7 +41,7 @@ class tree_node extends Default_Table
                     break;
                 case 'L':
                     if (array_key_exists('location_type_id', $fieldarray)) {
-                        require_once 'location_type.class.inc';
+                        require_once 'classes/location_type.class.inc';
                         $dbobject =& singleton::getInstance('location_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("location_type_id='{$fieldarray['location_type_id']}'");
@@ -51,7 +50,7 @@ class tree_node extends Default_Table
                     break;
                 case 'A':
                     if (array_key_exists('asset_type_id', $fieldarray)) {
-                        require_once 'asset_type.class.inc';
+                        require_once 'classes/asset_type.class.inc';
                         $dbobject =& singleton::getInstance('asset_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("asset_type_id='{$fieldarray['asset_type_id']}'");
@@ -73,7 +72,6 @@ class tree_node extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get valrep list for node_type and insert into lookup array
         $array = $this->getValRep('node_type');
         $this->lookup_data['node_type'] = $array;
@@ -93,7 +91,7 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table ORG_TYPE and add as a LOOKUP list
-                require_once 'org_type.class.inc';
+                require_once 'classes/org_type.class.inc';
                 $dbobject =& singleton::getInstance('org_type');
                 $data_array = $dbobject->getValRep('org_type_id');
                 $this->lookup_data['org_type_id'] = $data_array;
@@ -108,13 +106,13 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table LOCATION_TYPE and add as a LOOKUP list
-                require_once 'location_type.class.inc';
+                require_once 'classes/location_type.class.inc';
                 $dbobject =& singleton::getInstance('location_type');
                 $data_array = $dbobject->getValRep('location_type_id');
                 $this->lookup_data['location_type_id'] = $data_array;
 
                 // get address data associated with this location
-                require_once 'location_address.class.inc';
+                require_once 'classes/location_address.class.inc';
                 $address =& singleton::getInstance('location_address');
                 $node_id = $fieldarray['node_id'];
                 $address_data = $address->getData("node_id='$node_id'");
@@ -130,8 +128,14 @@ class tree_node extends Default_Table
                     } // foreach
                 } // if
 
-                // merge fieldspecs
-                $this->fieldspec = array_merge($this->fieldspec, $address->getFieldspec());
+                // get list of field specs from address table and merge with current specs
+                $address_spec = $address->getFieldspec();
+                foreach ($address_spec as $field => $spec) {
+                    // if field does not already exist then insert the specs
+                	if (!array_key_exists($field, $this->fieldspec)) {
+                		$this->fieldspec[$field] = $spec;
+                	} // if
+                } // foreach
                 break;
             case 'A':
                 // allow asset type only
@@ -143,7 +147,7 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['location_type_id']['required']);
 
                 // get contents of foreign table ASSET_TYPE and add as a LOOKUP list
-                require_once 'asset_type.class.inc';
+                require_once 'classes/asset_type.class.inc';
                 $dbobject =& singleton::getInstance('asset_type');
                 $data_array = $dbobject->getValRep('asset_type_id');
                 $this->lookup_data['asset_type_id'] = $data_array;
@@ -170,18 +174,32 @@ class tree_node extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
+    function _cm_initialiseFilePicker ()
+    // perform any initialisation before displaying the File Picker screen.
+    {
+        // identify the subdirectory which contains the files
+        $this->picker_subdir      = 'icons';
+
+        // identify the file types that may be picked
+        $this->picker_filetypes   = array('bmp', 'jpg', 'png', 'gif');
+
+        return;
+
+    } // _cm_initialiseFilePicker
+
+    // ****************************************************************************
     function _cm_getNodeData ($expanded, $where, $wherearray = null)
     // retrieve requested node data from the database.
     // $expanded may be a list of nodes to be expanded, or 'ALL' nodes.
     // $where may contain specific selection criteria as a string.
     // $wherearray is $where but converted into an array.
     {
-        //DebugBreak();
-        $this->sql_select  = 'tree_node.node_id, tree_node.node_desc, tree_node.node_depth, COUNT(child.node_id) AS child_count';
+        $this->sql_select  = 'tree_node.node_id, tree_node.node_desc, tree_node.node_type, tree_node.node_depth, COUNT(child.node_id) AS child_count, '
+                           . 'tree_node.org_type_id, tree_node.location_type_id, tree_node.asset_type_id';
         $this->sql_from    = 'tree_node '
                            . 'LEFT JOIN tree_node AS child ON (tree_node.node_id=child.node_id_snr)';
         $this->sql_where   = '';
-        $this->sql_groupby = 'tree_node.node_id, tree_node.node_desc, tree_node.node_depth';
+        $this->sql_groupby = 'tree_node.node_id, tree_node.node_desc, tree_node.node_type, tree_node.node_depth, tree_node.org_type_id, tree_node.location_type_id, tree_node.asset_type_id ';
         $this->sql_having  = '';
 
         if (empty($where)) {
@@ -219,13 +237,12 @@ class tree_node extends Default_Table
     } // _cm_getTreeNode
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
 
         if ($item == 'node_type') {
-//            $array['']  = ' ';   // start with blank entry
 //            $array['O'] = 'Organisation';
 //            $array['L'] = 'Location';
 //            $array['A'] = 'Asset';
@@ -241,10 +258,9 @@ class tree_node extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         if ($fieldarray['node_type'] == 'L') {
             // insert address data associated with this location
-            require_once 'location_address.class.inc';
+            require_once 'classes/location_address.class.inc';
             $address =& singleton::getInstance('location_address');
             $fieldarray = $address->insertRecord($fieldarray);
             $address_errors = $address->getErrors();
@@ -261,10 +277,9 @@ class tree_node extends Default_Table
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database record is updated.
     {
-        //DebugBreak();
         if ($fieldarray['node_type'] == 'L') {
             // update address data associated with this location
-            require_once 'location_address.class.inc';
+            require_once 'classes/location_address.class.inc';
             $address =& singleton::getInstance('location_address');
             $count = $address->getCount("node_id='{$fieldarray['node_id']}'");
             if ($count == 0) {
@@ -282,9 +297,11 @@ class tree_node extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         if (empty($this->sql_select)) {
             $this->sql_select = 'tree_node.*, tree_node_snr.node_desc as node_desc_snr';

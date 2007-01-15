@@ -25,6 +25,21 @@ class wf_workitem extends Default_Table
     } // wf_workitem
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if ($GLOBALS['mode'] == 'search') {
+        	unset($this->fieldspec['workitem_status']['noedit']);
+        	unset($this->fieldspec['transition_trigger']['noedit']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -39,19 +54,19 @@ class wf_workitem extends Default_Table
         $array = $this->getValRep('transition_trigger');
         $this->lookup_data['transition_trigger'] = $array;
 
-        require_once 'classes/mnu_role.class.inc';
+        //require_once 'classes/mnu_role.class.inc';
         $dbobject =& singleton::getInstance('mnu_role');
         $role_array = $dbobject->getValRep('role_id');
         $this->lookup_data['role_id'] = $role_array;
 
-        require_once 'classes/mnu_user.class.inc';
+        //require_once 'classes/mnu_user.class.inc';
         $dbobject =& singleton::getInstance('mnu_user');
         $role_array = $dbobject->getValRep('user_id');
         $this->lookup_data['user_id'] = $role_array;
 
         // get list of workflow names
         if (!class_exists('wf_workflow', false)) {
-        	require_once 'wf_workflow.class.inc';
+        	require_once 'classes/wf_workflow.class.inc';
         } // if
         $dbobject =& singleton::getInstance('wf_workflow');
         $array = $dbobject->getValRep('workflow_id');
@@ -60,7 +75,7 @@ class wf_workitem extends Default_Table
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            require_once 'wf_transition.class.inc';
+            //require_once 'classes/wf_transition.class.inc';
             $dbobject =& singleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
@@ -81,10 +96,10 @@ class wf_workitem extends Default_Table
         //DebugBreak();
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
-            require_once 'wf_case.class.inc';
+            require_once 'classes/wf_case.class.inc';
             $dbobject =& singleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
-            $array = $dbobject->getData("case_id='{$fieldarray['case_id']}'");
+            $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
             // add to current data
             $fieldarray = array_merge($fieldarray, $array[0]);
             // make this field 'read only'
@@ -119,7 +134,7 @@ class wf_workitem extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -134,7 +149,7 @@ class wf_workitem extends Default_Table
         } // if
 
         if ($item == 'transition_trigger') {
-            require_once 'wf_transition.class.inc';
+            require_once 'classes/wf_transition.class.inc';
             $dbtransition =& singleton::getInstance('wf_transition');
             $array = $dbtransition->getValRep($item);
             return $array;
@@ -154,16 +169,18 @@ class wf_workitem extends Default_Table
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
         global $dbprefix;
 
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
-            $this->sql_select = 'user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, deadline, context, workflow_name, task_desc';
+            $this->sql_select = 'user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name, task_desc';
             $this->sql_from   = 'wf_workitem '
                               . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
                               . 'LEFT JOIN ' . $dbprefix . 'menu.mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';

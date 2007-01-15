@@ -4,10 +4,8 @@
 // chose one of the files.
 //*****************************************************************************
 
-//DebugBreak();
+$table_id = 'x_person';                     // table id
 $screen   = 'person.filepicker.screen.inc'; // file identifying screen structure
-$subdir   = 'pictures';                     // subdirectory
-$filetype = 'image';                        // file types to process
 
 // activate page controller
 require 'std.filepicker1.inc';

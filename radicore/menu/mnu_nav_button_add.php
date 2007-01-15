@@ -9,9 +9,9 @@
 $table_id = 'mnu_nav_button';   // table name
 
 // this screen is used to select occurrences of ONE(b)
-$popup_screen = 'mnu_task(popup)a';
+$popup_task = 'mnu_task(popup)a';
 
-require 'std.add3.inc';         // activate page controller
+require_once 'std.add3.inc';    // activate page controller
 
 ?>
 

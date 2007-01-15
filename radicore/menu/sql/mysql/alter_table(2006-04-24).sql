@@ -1,0 +1,1 @@
+ALTER TABLE `mnu_user` ADD UNIQUE (`email_addr`);

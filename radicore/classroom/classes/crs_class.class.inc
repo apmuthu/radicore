@@ -23,7 +23,7 @@ class crs_class extends Default_Table
     } // crs_class
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -34,8 +34,6 @@ class crs_class extends Default_Table
             $this->sql_orderby    = 'class_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -56,33 +54,26 @@ class crs_class extends Default_Table
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
         //DebugBreak();
-        if (basename($_SERVER['PHP_SELF']) == 'lesson_list(b).php') {
-            if (isset($rowdata[0]['year']) and $rowdata[0]['year'] > 0) {
-                // apply a retrieve profile to the popup form
-                $GLOBALS['script_vars']['popup_where'] = "year={$rowdata[0]['year']}";
-            } // if
-        } // if
-
         if (count($rowdata) == 0) {
             return $rowdata;
         } // if
 
-        require_once 'crs_student.class.inc';
-        $objectS =& singleton::getInstance('crs_student');
+        require_once 'classes/crs_student.class.inc';
+        $obj_student =& singleton::getInstance('crs_student');
 
-        require_once 'crs_class_lesson.class.inc';
-        $objectCL =& singleton::getInstance('crs_class_lesson');
+        require_once 'classes/crs_class_lesson.class.inc';
+        $obj_class_lesson =& singleton::getInstance('crs_class_lesson');
 
         foreach ($rowdata as $rownum => $row) {
             if (isset($row['class_id'])) {
                 $class_id = $row['class_id'];
 
-                $count = $objectS->getCount("class_id='$class_id'");
+                $count = $obj_student->getCount("class_id='$class_id'");
                 if ($count > 0) {
                     $rowdata[$rownum]['student_count'] = $count;
                 } // if
 
-                $count = $objectCL->getCount("class_id='$class_id'");
+                $count = $obj_class_lesson->getCount("class_id='$class_id'");
                 if ($count > 0) {
                      $rowdata[$rownum]['lesson_count'] = $count;
                 } // if

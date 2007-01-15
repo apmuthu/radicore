@@ -7,7 +7,6 @@ require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
 {
     // variables
-    var $encrypt_flag;      // are passwords encrypted?
 
     // ****************************************************************************
     // class constructor
@@ -31,8 +30,6 @@ class mnu_user extends Default_Table
     function setPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
-        //DebugBreak();
-        require_once 'std.encryption.class.inc';
         $crypt_obj =& singleton::getInstance('encryption_class');
 
         // read records for all current users
@@ -51,14 +48,15 @@ class mnu_user extends Default_Table
             if (is_True($switch)) {
                 $password = $crypt_obj->encrypt($data['user_id'], $data['user_password'], $size);
             } else {
-                $password = $crypt_obj->decrypt($data['user_id'], $data['user_password'], $size);
+                $password = $crypt_obj->decrypt($data['user_id'], $data['user_password']);
             } // if
             if ($crypt_obj->errors) {
-            	return $crypt_obj->errors;
+            	$this->errors['user_password'] = $crypt_obj->errors[0];
+            	return $this->errors;
             } // if
             // now update this record on the database
             $newdata = $data;
-            $newdata['user_password'] = addslashes($password);
+            $newdata['user_password'] = $password;
             $this->_dml_updateRecord($newdata, $data);
             if ($this->errors) {
                 return $this->errors;
@@ -75,7 +73,6 @@ class mnu_user extends Default_Table
     function validatePassword ($password, $format)
     // validate $password against specification in $format
     {
-        //DebugBreak();
         $format_minlen = (int)$format['pswd_format_minlen'];
         $format_digits = (int)$format['pswd_format_digits'];
         $format_lower  = (int)$format['pswd_format_lower'];
@@ -118,6 +115,14 @@ class mnu_user extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        // find out if user passwords are to be hidden or not
+        static $pswd_hidden;
+        if (!is_bool($pswd_hidden)) {
+        	$dbobject =& singleton::getInstance('mnu_control');
+            $pswd_hidden = $dbobject->getControlData('pswd_hidden');
+            unset($dbobject);
+        } // if
+
         global $mode;
         if ($mode == 'search') {
             // remove certain 'noedit' flags
@@ -126,9 +131,27 @@ class mnu_user extends Default_Table
             unset($this->fieldspec['pswd_count']['noedit']);
             unset($this->fieldspec['logon_date']['noedit']);
             unset($this->fieldspec['logon_time']['noedit']);
-        } elseif ($mode != 'insert') {
-            // not insert mode, so cannot edit this field
-            $this->fieldspec['user_password']['noedit'] = 'y';
+            $this->fieldspec['user_password']['nodisplay'] = 'y';
+            unset($this->fieldspec['ip_address']['noedit']);
+
+        } elseif ($mode == 'insert') {
+            // these fields should not appear on INSERT screen
+            $this->fieldspec['pswd_chg_date']['nodisplay'] = 'y';
+            $this->fieldspec['pswd_chg_time']['nodisplay'] = 'y';
+            $this->fieldspec['pswd_count']['nodisplay']    = 'y';
+            $this->fieldspec['in_use']['nodisplay']        = 'y';
+            $this->fieldspec['is_disabled']['nodisplay']   = 'y';
+            $this->fieldspec['logon_date']['nodisplay']    = 'y';
+            $this->fieldspec['logon_time']['nodisplay']    = 'y';
+            $this->fieldspec['ip_address']['nodisplay']    = 'y';
+        } else {
+            if ($pswd_hidden) {
+            	// not insert mode, so cannot edit this field
+                $this->fieldspec['user_password']['nodisplay'] = 'y';
+            } else {
+                // not insert mode, so cannot edit this field
+                $this->fieldspec['user_password']['noedit'] = 'y';
+            } // if
         } // if
 
         return $fieldarray;
@@ -139,7 +162,16 @@ class mnu_user extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
+        $start_date = $fieldarray['start_date'];
+        $end_date   = $fieldarray['end_date'];
+
+        if ($start_date > $end_date) {
+            // 'Start Date cannot be later than End Date';
+            $this->errors['start_date'] = getLanguageText('e0036');
+            // 'End Date cannot be earlier than Start Date';
+            $this->errors['end_date']   = getLanguageText('e0037');
+        } // if
+
         global $mode;
 
         if ($mode <> 'insert') {
@@ -152,7 +184,6 @@ class mnu_user extends Default_Table
         } // if
 
         // find out if user passwords are encrypted or not
-        require_once 'mnu_control.class.inc';
         $dbobject =& singleton::getInstance('mnu_control');
 
         $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
@@ -185,13 +216,17 @@ class mnu_user extends Default_Table
         if (isset($fieldarray['user_id']) AND isset($fieldarray['user_password'])) {
             // only encrypt if the encryption flag is set
             if ($encrypt_flag) {
-                require_once 'std.encryption.class.inc';
+                //require_once 'std.encryption.class.inc';
                 $crypt_obj =& singleton::getInstance('encryption_class');
                 $key = $fieldarray['user_id'];
                 $string = $fieldarray['user_password'];
                 $spec = $this->fieldspec['user_password'];
-                $fieldarray['user_password'] = addslashes($crypt_obj->encrypt($key, $string, $spec['size']));
-                $this->errors = array_merge($this->errors, $crypt_obj->errors);
+                $fieldarray['user_password'] = $crypt_obj->encrypt($key, $string, $spec['size']);
+                if ($crypt_obj->errors) {
+                	$this->errors['user_password'] = $crypt_obj->errors[0];
+                } // if
+                // insert dummy field to say that password has been encrypted
+                $fieldarray['pswd_is_encrypted'] = true;
             } // if
         } // if
 
@@ -212,50 +247,30 @@ class mnu_user extends Default_Table
     function _cm_formatData ($fieldarray)
     // perform custom formatting before values are shown to the user.
     {
-        //DebugBreak();
-        $method = getEntryPoint($this);
+        static $encrypt_flag = null;
+        if (!is_bool($encrypt_flag)) {
+        	$dbobject =& singleton::getInstance('mnu_control');
+            $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
+        } // if
 
-        if (strtolower($method) == 'getdata') {
-            // retrieving data from the database, so decrypt it (if necessary)
+        if ((isset($fieldarray['pswd_is_encrypted']) and $fieldarray['pswd_is_encrypted']) or $encrypt_flag == true) {
+        	// decrypt the password (if it is encrypted)
             if (!empty($fieldarray['user_id']) and !empty($fieldarray['user_password'])) {
                 // find out if user passwords are encrypted or not
-                if (!isset($this->encrypt_flag)) {
-                    require_once 'mnu_control.class.inc';
-                    $dbobject =& singleton::getInstance('mnu_control');
-                    $this->encrypt_flag = $dbobject->getControlData('pswd_encrypt');
-                    unset($dbobject);
-                } // if
-                if ($this->encrypt_flag) {
-                    require_once 'std.encryption.class.inc';
+                if ($encrypt_flag) {
+                    //require_once 'std.encryption.class.inc';
                     $crypt_obj =& singleton::getInstance('encryption_class');
                     $key = $fieldarray['user_id'];
                     $string = $fieldarray['user_password'];
                     $fieldarray['user_password'] = $crypt_obj->decrypt($key, $string);
-                    $this->errors = array_merge($this->errors, $crypt_obj->errors);
+                    if ($crypt_obj->errors) {
+                    	$this->errors['user_password'] = $crypt_obj->errors[0];
+                    } // if
+                    //$this->errors = array_merge($this->errors, $crypt_obj->errors);
                 } // if
             } // if
+            unset($fieldarray['pswd_is_encrypted']);
         } // if
-
-//        global $mode;
-//        switch ($mode) {
-//            case 'read':
-//            case 'delete':
-//            case 'update':
-//                // concatenate date and time fields into a single string
-//                if (array_key_exists('pswd_chg_date', $fieldarray) and array_key_exists('pswd_chg_time', $fieldarray)) {
-//                //if (isset($fieldarray['pswd_chg_date']) and isset($fieldarray['pswd_chg_time'])) {
-//                    $fieldarray['pswd_chg_date'] .= ' ' . $fieldarray['pswd_chg_time'];
-//                    unset($fieldarray['pswd_chg_time']);
-//                } // if
-//                if (array_key_exists('logon_date', $fieldarray) and array_key_exists('logon_time', $fieldarray)) {
-//                //if (isset($fieldarray['logon_date']) and isset($fieldarray['logon_time'])) {
-//                    $fieldarray['logon_date'] .= ' ' . $fieldarray['logon_time'];
-//                    unset($fieldarray['logon_time']);
-//                } // if
-//                break;
-//            default:
-//                ;
-//        } // switch
 
         return $fieldarray;
 
@@ -298,16 +313,13 @@ class mnu_user extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get contents of foreign table MNU_ROLE and put into lookup_data
-        require_once 'mnu_role.class.inc';
         $dbobject =& singleton::getInstance('mnu_role');
         $array = $dbobject->getValRep('role_id');
         $this->lookup_data['role_id'] = $array;
 
         // get array of language codes
-        $array = array('' => ' '); // start with blank entry
-        $array = array_merge($array, getLanguageArray('languages'));
+        $array = getLanguageArray('languages');
         $this->lookup_data['language_code'] = $array;
 
         return $fieldarray;
@@ -319,22 +331,16 @@ class mnu_user extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
-        // these fields should not appear on INSERT screen
-        $this->fieldspec['pswd_chg_date']['nodisplay'] = 'y';
-        $this->fieldspec['pswd_chg_time']['nodisplay'] = 'y';
-        $this->fieldspec['pswd_count']['nodisplay']    = 'y';
-        $this->fieldspec['in_use']['nodisplay']        = 'y';
-        $this->fieldspec['is_disabled']['nodisplay']   = 'y';
-        $this->fieldspec['logon_date']['nodisplay']    = 'y';
-        $this->fieldspec['logon_time']['nodisplay']    = 'y';
+        if (empty($fieldarray['start_date'])) {
+        	$fieldarray['start_date'] = getTimeStamp('date');
+        } // if
 
         return $fieldarray;
 
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -345,8 +351,6 @@ class mnu_user extends Default_Table
             $this->sql_orderby    = 'user_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -361,32 +365,58 @@ class mnu_user extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where, $selection)
-    // perform any initialisation for the current task.
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        // customisable code goes here
-        $prev = getPreviousScript();
-        if (basename($prev) == 'menu.php') {
-            // called from the menu/home page, so supply a default value
-        	$where = "user_id='{$_SESSION['logon_user_id']}'";
+        static $encrypt_flag = null;
+
+        if (!is_bool($encrypt_flag)) {
+        	$dbobject =& singleton::getInstance('mnu_control');
+            $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
         } // if
 
-        return $where;
+        if ($encrypt_flag == true) {
+        	foreach ($rows as $row => $rowdata) {
+                // insert dummy field to say that data is currently encrypted
+            	$rows[$row]['pswd_is_encrypted'] = true;
+            } // foreach
+        } // if
 
-    } // _cm_initialise
+        return $rows;
+
+    } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_updateRecord ($fieldarray)
+    function _cm_pre_insertRecord ($rowdata)
+    // perform custom processing before database record is inserted.
+    // if anything is placed in $this->errors the insert will be terminated.
+    {
+        if (isset($rowdata['user_password'])) {
+            // if pswd is being input it has not been encrypted yet
+        	unset($rowdata['pswd_is_encrypted']);
+        } // if
+
+        return $rowdata;
+
+    } // _cm_pre_insertRecord
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($rowdata)
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        //DebugBreak();
-        // these two fields have been changed into datetime fields for display
-        // purposes and are no longer valid, so remove them
-        unset($fieldarray['pswd_chg_date']);
-        unset($fieldarray['logon_date']);
+        if (isset($rowdata['user_password'])) {
+            $spec = $this->fieldspec['user_password'];
+            if (isset($spec['noedit']) or isset($spec['nodisplay'])) {
+            	// not being input by user, so leave alone
+            } else {
+                // if pswd is being input it has not been encrypted yet
+            	unset($rowdata['pswd_is_encrypted']);
+            } // if
+        } // if
 
-        return $fieldarray;
+        return $rowdata;
 
     } // _cm_pre_updateRecord
 

@@ -32,9 +32,9 @@ class audit_ssn extends Default_Table
     // $fieldarray contains data from the initial $where clause.
     {
         if (!isset($fieldarray['user_id'])) {
-            $fieldarray['user_id'] = $_SESSION['logon_user_id'];
-            $fieldarray['date']    = getTimeStamp('date');
-            $fieldarray['time']    = getTimeStamp('time');
+            $fieldarray['user_id']  = $_SESSION['logon_user_id'];
+            $fieldarray['ssn_date'] = getTimeStamp('date');
+            $fieldarray['ssn_time'] = getTimeStamp('time');
         } // if
 
         return $fieldarray;

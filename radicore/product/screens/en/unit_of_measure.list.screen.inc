@@ -6,7 +6,7 @@ $structure['tables']['main'] = 'unit_of_measure';
 $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 50);
+$structure['main']['columns'][] = array('width' => 60);
 $structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');

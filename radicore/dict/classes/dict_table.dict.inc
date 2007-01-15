@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2006, 6:20 pm
+    // file created on January 4, 2007, 1:45 pm
     
     // field specifications for table dict.dict_table
     $fieldspec['database_id']               = array('type' => 'string',
@@ -20,10 +20,10 @@
                                                     'size' => 255,
                                                     'required' => 'y');
     
-    $fieldspec['comment']                   = array('type' => 'string',
+    $fieldspec['tbl_comment']               = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
-                                                    'cols' => 65,
+                                                    'cols' => 70,
                                                     'rows' => 5,
                                                     'nosearch' => 'y');
     
@@ -43,24 +43,28 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['revised_user']              = array('type' => 'string',
                                                     'size' => 16,
                                                     'autoupdate' => 'y',
-                                                    'noedit' => 'y');
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('database_id',

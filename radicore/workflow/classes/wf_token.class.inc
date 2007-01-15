@@ -68,7 +68,7 @@ class wf_token extends Default_Table
             require_once 'wf_case.class.inc';
             $dbobject =& singleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
-            $array = $dbobject->getData("case_id='{$fieldarray['case_id']}'");
+            $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
             // add to current data
             $fieldarray = array_merge($fieldarray, $array[0]);
             // make this field 'read only'
@@ -102,7 +102,7 @@ class wf_token extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -125,7 +125,7 @@ class wf_token extends Default_Table
     // perform custom processing after database record is inserted.
     {
         //DebugBreak();
-        $fieldarray['context'] = stripslashes($fieldarray['context']);
+        //$fieldarray['context'] = $fieldarray['context'];
 
         if ($fieldarray['place_type'] == '9') {
             // this is the END place, so ....
@@ -136,8 +136,24 @@ class wf_token extends Default_Table
             $token_data['consumed_date'] = getTimeStamp();
             $token_data = $this->updateRecord($token_data);
             if ($this->errors) return $fieldarray;
+
+            // mark any outstanding tokens as cancelled
+            $where = "case_id='{$fieldarray['case_id']}' AND token_status IN ('FREE', 'LOCK')";
+            $token_data = $this->updateSelection($where);
+            if ($this->errors) return $fieldarray;
+
+            // mark any outstanding workitems as cancelled
+            require_once 'classes/wf_workitem.class.inc';
+            $dbworkitem =& singleton::getInstance('wf_workitem');
+            $where = "case_id='{$fieldarray['case_id']}' AND workitem_status IN ('EN', 'IP')";
+            $workitem_data = $dbworkitem->updateSelection($where);
+            if ($dbworkitem->errors) {
+                $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
+                return $fieldarray;
+            } // if
+
             // mark this case as closed
-            require_once 'wf_case.class.inc';
+            require_once 'classes/wf_case.class.inc';
             $dbcase =& singleton::getInstance('wf_case');
             $case_data['case_id']     = $fieldarray['case_id'];
             $case_data['case_status'] = 'CL';
@@ -155,7 +171,7 @@ class wf_token extends Default_Table
         $place_id = $fieldarray['place_id'];
 
         // find all transitions which are joined to this place via INWARD arcs
-        require_once 'wf_arc.class.inc' ;
+        require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& singleton::getInstance('wf_arc');
         $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit';
         $dbarc->sql_from = 'wf_arc '
@@ -166,6 +182,10 @@ class wf_token extends Default_Table
         foreach ($arc_data as $arc_instance) {
             $arc_instance['case_id'] = $fieldarray['case_id'];
             $arc_instance['context'] = $fieldarray['context'];
+            if (empty($arc_instance['role_id'])) {
+                // not defined, so default to crrent user's role_id
+            	$arc_instance['role_id'] = $_SESSION['role_id'];
+            } // if
             $arc_instance = $dbarc->examineInwardArc($arc_instance);
             if ($dbarc->errors) {
                 $this->errors = array_merge($this->errors, $dbarc->getErrors());
@@ -178,9 +198,11 @@ class wf_token extends Default_Table
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {

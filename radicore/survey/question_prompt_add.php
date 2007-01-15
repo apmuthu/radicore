@@ -6,13 +6,11 @@
 // while values for the other are selected from a separate popup screen.
 //*****************************************************************************
 
-//DebugBreak();
-$table_id = 'question_prompt';       	   // table name
+$table_id = 'question_prompt';       	      // table name
 
-$popup_screen = 'srv_default_prompt(popup)';
+$popup_task = 'srv_default_prompt(popup)';
 
-// activate page controller
-require 'std.add3.inc';
+require_once 'std.add3.inc';    // activate page controller
 
 ?>
 

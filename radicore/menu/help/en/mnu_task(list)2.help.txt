@@ -1,3 +1,3 @@
-This will list records on the TASK table for a selected DIALOG TYPE.
+This will list records on the TASK table for a selected PATTERN.
 
-Refer to <a href="%root%/mnu_task(list)2.html">List Task by Dialog Type</a> for full details.
+Refer to <a href="%root%/mnu_task(list)2.html">List Task by Pattern</a> for full details.

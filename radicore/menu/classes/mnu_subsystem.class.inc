@@ -6,6 +6,8 @@
 require_once 'std.table.class.inc';
 class mnu_subsystem extends Default_Table
 {
+    var $count;         // record count for PDF output
+
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
@@ -33,17 +35,31 @@ class mnu_subsystem extends Default_Table
             $this->errors['subsys_dir'] = getLanguageText('e0034');
         } // if
 
-        if (!is_dir('../' .$fieldarray['subsys_dir'])) {
-            // not a valid directory name
-            $this->errors['subsys_dir'] = getLanguageText('e0035');
-        } // if
+//        if (!is_dir('../' .$fieldarray['subsys_dir'])) {
+//            // Directory name does not exist
+//            $this->errors['subsys_dir'] = getLanguageText('e0035');
+//        } // if
 
         return $fieldarray;
 
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+//        if ($fieldarray['count'] <= 50) {
+//            $css_array['count'] = 'red';
+//            $css_array['subsys_desc'] = 'red';
+//        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
+
+    // ****************************************************************************
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -54,8 +70,6 @@ class mnu_subsystem extends Default_Table
             $this->sql_orderby    = 'subsys_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -70,6 +84,34 @@ class mnu_subsystem extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['subsys_desc'] = 'Total count for all Subsystems:';
+        $array['count'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    {
+        // customisable code goes here
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count += $rows[0]['count'];
+        } // if
+
+        return $rows;
+
+    } // _cm_post_getData
 
     // ****************************************************************************
     function _cm_pre_eraseRecord ($fieldarray)

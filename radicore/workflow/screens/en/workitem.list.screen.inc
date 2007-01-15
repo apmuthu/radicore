@@ -17,6 +17,6 @@ $structure['main']['fields'][] = array('case_id' => 'Case Id');
 $structure['main']['fields'][] = array('transition_trigger' => 'Transition Trigger');
 $structure['main']['fields'][] = array('workitem_status' => 'Workitem Status');
 $structure['main']['fields'][] = array('enabled_date' => 'Enabled Date');
-$structure['main']['fields'][] = array('deadine' => 'Deadline');
+$structure['main']['fields'][] = array('deadline' => 'Deadline');
 
 ?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update2.inc
@@ -9,7 +9,7 @@
 // type = update2
 
 // This will update records in the database using data in $where (supplied by the
-// previous screen) plus data selected by a popup screen which will called next.
+// previous screen) plus data selected by a popup screen which will be called next.
 // NOTE: There is no dialog with the user.
 
 require_once 'include.general.inc';
@@ -24,15 +24,27 @@ initSession();
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
 
+if (!isset($popup_task)) {
+	$popup_task =& $popup_screen;
+} // if
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    if (basename($return_from) <> $popup_screen) {
+    if (basename($return_from) <> $popup_task) {
         // have not been to popup screen yet, so go there now
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-        $_SESSION[$PHP_SELF][$task_id]['selection'] = null;
-        scriptNext($popup_screen, $where);
+        $script_vars = $_SESSION[$PHP_SELF][$task_id];
+        $fieldarray  = array();
+        $settings    = null;
+        // may need to adjust contents of $where or $settings
+        $where       = $dbobject->popupCall($popup_task, $where, $script_vars, $fieldarray, $settings);
+        $task_array['settings'] = $settings;
+        $batch_errors = scriptNext($popup_task, $where, null, $task_array);
+        return $batch_errors;
     } else {
         if (empty($selection)) {
-            scriptprevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+            // 'Nothing selected from popup screen.'
+            $batch_errors = scriptprevious(getLanguageText('sys0083'));
+            return $batch_errors;
         } // if
     } // if
 
@@ -54,15 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if (isset($popup_repeat)) {
             // clear output from previous popup
             unset($script_vars['selection']);
-            $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-            $_SESSION[$PHP_SELF][$task_id] = $script_vars;
+            $script_vars = updateScriptVars ($script_vars);
             // repeat popup screen
-            scriptnext($popup_screen, $where);
+            $batch_errors = scriptnext($popup_task, $where);
+            return $batch_errors;
         } // if
     } // if
 
     // return to previous screen
-    scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages);
+    return $batch_errors;
 } // if
 
 ?>

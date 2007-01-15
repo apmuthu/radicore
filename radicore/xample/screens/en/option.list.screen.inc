@@ -11,6 +11,6 @@ $structure['main']['columns'][] = array('width' => '*');
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('option_id' => 'Id');
 $structure['main']['fields'][] = array('option_desc' => 'Description');
-$structure['main']['fields'][] = array('null' => '');
+$structure['main']['fields'][] = array('blank' => '');
 
 ?>

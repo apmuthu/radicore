@@ -9,6 +9,6 @@ $structure['main']['columns'][] = array('width' => 350);
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('survey_name' => 'Name');
-$structure['main']['fields'][] = array('survey_desc' => 'Description');
+$structure['main']['fields'][] = array('survey_long_name' => 'Long Name');
 
 ?>

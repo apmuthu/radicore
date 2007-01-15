@@ -1,75 +1,14 @@
 <?php
-    // file created on July 28, 2005, 12:41 pm
+    // file created on January 4, 2007, 1:40 pm
     
     // field specifications for table classroom.crs_schedule
-    $fieldspec['revised_user']              = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'autoupdate' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['revised_date']              = array('type' => 'datetime',
-                                                    'size' => 20,
-                                                    'autoupdate' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['created_user']              = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'autoinsert' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['created_date']              = array('type' => 'datetime',
-                                                    'size' => 20,
-                                                    'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
-                                                    'autoinsert' => 'y',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['schedule_errors']           = array('type' => 'string',
-                                                    'size' => 65535,
-                                                    'control' => 'multiline',
-                                                    'cols' => 70,
-                                                    'rows' => 5,
-                                                    'noedit' => 'y');
-    
-    $fieldspec['is_valid']                  = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['lesson_id']                 = array('type' => 'integer',
+    $fieldspec['schedule_id']               = array('type' => 'integer',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
+                                                    'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'lesson_id');
-    
-    $fieldspec['end_time']                  = array('type' => 'time',
-                                                    'size' => 5,
-                                                    'required' => 'y',
-                                                    'default' => '00:00:00');
-    
-    $fieldspec['start_time']                = array('type' => 'time',
-                                                    'size' => 5,
-                                                    'required' => 'y',
-                                                    'default' => '00:00:00');
-    
-    $fieldspec['day_no']                    = array('type' => 'integer',
-                                                    'size' => 1,
-                                                    'minvalue' => 1,
-                                                    'maxvalue' => 7,
-                                                    'required' => 'y',
-                                                    'default' => '0',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'day_no');
-    
-    $fieldspec['room_id']                   = array('type' => 'string',
-                                                    'size' => 8,
-                                                    'required' => 'y',
-                                                    'uppercase' => 'y',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'room_id');
+                                                    'default' => '0');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
                                                     'size' => 5,
@@ -80,13 +19,85 @@
                                                     'default' => '0',
                                                     'noedit' => 'y');
     
-    $fieldspec['schedule_id']               = array('type' => 'integer',
+    $fieldspec['room_id']                   = array('type' => 'string',
+                                                    'size' => 8,
+                                                    'required' => 'y',
+                                                    'uppercase' => 'y',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'room_id');
+    
+    $fieldspec['day_no']                    = array('type' => 'numeric',
+                                                    'size' => 2,
+                                                    'precision' => 1,
+                                                    'scale' => 0,
+                                                    'unsigned' => 'y',
+                                                    'required' => 'y',
+                                                    'default' => '0',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'day_no');
+    
+    $fieldspec['start_time']                = array('type' => 'time',
+                                                    'size' => 10,
+                                                    'required' => 'y',
+                                                    'default' => '00:00:00');
+    
+    $fieldspec['end_time']                  = array('type' => 'time',
+                                                    'size' => 10,
+                                                    'required' => 'y',
+                                                    'default' => '00:00:00');
+    
+    $fieldspec['lesson_id']                 = array('type' => 'integer',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
-                                                    'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0');
+                                                    'default' => '0',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'lesson_id');
+    
+    $fieldspec['is_valid']                  = array('type' => 'boolean',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean',
+                                                    'noedit' => 'y');
+    
+    $fieldspec['schedule_errors']           = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 70,
+                                                    'rows' => 5,
+                                                    'noedit' => 'y');
+    
+    $fieldspec['created_date']              = array('type' => 'datetime',
+                                                    'size' => 20,
+                                                    'required' => 'y',
+                                                    'default' => '0000-00-00 00:00:00',
+                                                    'autoinsert' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['created_user']              = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'required' => 'y',
+                                                    'default' => 'UNKNOWN',
+                                                    'autoinsert' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['revised_date']              = array('type' => 'datetime',
+                                                    'size' => 20,
+                                                    'autoupdate' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
+    
+    $fieldspec['revised_user']              = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'autoupdate' => 'y',
+                                                    'noedit' => 'y',
+                                                    'nosearch' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('schedule_id',

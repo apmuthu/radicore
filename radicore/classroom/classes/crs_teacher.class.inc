@@ -26,7 +26,6 @@ class crs_teacher extends Default_Table
     function _cm_formatData ($fieldarray)
     // perform custom formatting before values are shown to the user.
     {
-        //DebugBreak();
         $method = getEntryPoint($this);
         if (strtolower($method) == 'getdata') {
             if (!isset($fieldarray['teacher_name'])) {
@@ -47,7 +46,6 @@ class crs_teacher extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         // get array for task_type and put into LOOKUP_DATA
         $array = $this->getValRep('title');
         $this->lookup_data['title'] = $array;
@@ -72,14 +70,12 @@ class crs_teacher extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
-        //DebugBreak();
         // provide values for dropdown list
 
         if (strtolower($item) == 'title') {
-//            $array['']     = ' ';   // start with blank entry
 //            $array['Mr']   = 'Mr';
 //            $array['Mrs']  = 'Mrs';
 //            $array['Ms']   = 'Ms';
@@ -98,8 +94,6 @@ class crs_teacher extends Default_Table
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 
-            $array[''] = ' ';   // start with blank entry
-
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
                 $rowvalues = array_values($rowdata);
@@ -112,6 +106,21 @@ class crs_teacher extends Default_Table
         return array();
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        if (empty($this->sql_select)) {
+        	$this->sql_select = "*, CONCAT(title, ' ', first_name, ' ', last_name) as teacher_name ";
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

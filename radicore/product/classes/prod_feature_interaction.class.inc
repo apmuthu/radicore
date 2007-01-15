@@ -53,7 +53,7 @@ class prod_feature_interaction extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -90,25 +90,6 @@ class prod_feature_interaction extends Default_Table
         return $fieldarray;
 
     } // _cm_popupReturn
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    {
-        //DebugBreak();
-        if (empty($this->sql_select)) {
-            $this->sql_select = "prod_feature_interaction.*, " . "product_feature_snr.prod_feature_desc AS prod_feature_desc_snr, " . "product_feature_jnr.prod_feature_desc AS prod_feature_desc_jnr";
-            $this->sql_from = "prod_feature_interaction "
-                            . "LEFT JOIN product_feature AS product_feature_snr "
-                            . "ON (product_feature_snr.prod_feature_id=prod_feature_interaction.prod_feature_id_snr) "
-                            . "LEFT JOIN product_feature AS product_feature_jnr "
-                            . "ON (product_feature_jnr.prod_feature_id=prod_feature_interaction.prod_feature_id_jnr)";
-        } // if
-
-        return $where;
-
-    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)

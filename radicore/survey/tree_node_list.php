@@ -4,7 +4,6 @@
 // Parent nodes will have a button to allow their children to be expanded or collapsed.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'tree_node';				    // table name
 $screen   = 'tree_node.list.screen.inc';    // file identifying screen structure
 

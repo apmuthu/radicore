@@ -4,7 +4,6 @@
 // This version will ask the user to choose a LOCATION.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'tree_node';				    // table name
 $screen   = 'tree_node.list.screen.inc';    // file identifying screen structure
 

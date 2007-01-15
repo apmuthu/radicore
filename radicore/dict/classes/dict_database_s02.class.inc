@@ -8,18 +8,17 @@ class dict_dataBase_s02 extends dict_dataBase
 {
     // ****************************************************************************
     // This class is used to export all the details of an application database
-    // from the dictionary to an SQL file so that they may be reloaded.
+    // from the dictionary to an SQL file so that they may be reloaded later.
     // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
-		// create object for retrieving table details
-        require_once 'dict_table.class.inc';
+        // create object for retrieving table details
+        require_once 'classes/dict_table.class.inc';
         $tableobj =& singleton::getInstance('dict_table');
 
-        // process each subsystem separately
+        // process each database separately
         foreach ($rowdata as $row => $database_data) {
 
             $database_id = $database_data['database_id'];
@@ -90,18 +89,19 @@ class dict_dataBase_s02 extends dict_dataBase
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array)
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-		global $dbprefix;
+        global $dbprefix;
 
 		if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM
             $this->sql_select = 'dict_database.*, subsys_dir';
             $this->sql_from   = 'dict_database '
-                               .'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem USING (subsys_id)';
+                               .'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
         } // if
 
         return $where;
@@ -154,7 +154,6 @@ class dict_dataBase_s02 extends dict_dataBase
     function _writeTextFile ($text, $database_id, $subsys_dir)
     // write the contents of $text to a disk file.
     {
-        //DebugBreak();
         $sname = $subsys_dir .'/' .strtolower($database_id) .'.dict_export.sql';
         $fname = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$sname;
         if (!$fp = fopen($fname, 'w')) {

@@ -34,19 +34,19 @@ class crs_conflict extends Default_Table
         $this->lookup_data['conflict_type'] = $array;
 
         // get contents of foreign table TEACHER and add to lookup array
-        require_once 'crs_teacher.class.inc';
+        require_once 'classes/crs_teacher.class.inc';
         $object =& singleton::getInstance('crs_teacher');
         $data = $object->getValRep('teacher_id');
         $this->lookup_data['teacher_id'] = $data;
 
         // get contents of foreign table CLASS and add to lookup array
-        require_once 'crs_class.class.inc';
+        require_once 'classes/crs_class.class.inc';
         $object =& singleton::getInstance('crs_class');
         $data = $object->getValRep('class_id');
         $this->lookup_data['class_id'] = $data;
 
         // get contents of foreign table LESSON and add to lookup array
-        require_once 'crs_lesson.class.inc';
+        require_once 'classes/crs_lesson.class.inc';
         $object =& singleton::getInstance('crs_lesson');
         $data = $object->getValRep('lesson_id');
         $this->lookup_data['lesson_id'] = $data;
@@ -56,13 +56,12 @@ class crs_conflict extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         // provide values for dropdown list
 
         if ($item == 'conflict_type') {
-//            $array['']  = ' ';   // start with blank entry
 //            $array['C'] = 'Class';
 //            $array['S'] = 'Student';
 //            $array['T'] = 'Teacher';

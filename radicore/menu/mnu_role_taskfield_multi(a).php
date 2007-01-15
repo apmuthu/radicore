@@ -25,6 +25,7 @@ $middle_sql_where  = "global_access='N'";
 $inner_sql_select = '';
 $inner_sql_from   = '';
 $inner_sql_where  = '';
+$inner_sql_orderby = 'mnu_task_field.field_id';
 
 require 'std.multi3.inc';                           // activate page controller
 

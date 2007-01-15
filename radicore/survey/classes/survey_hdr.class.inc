@@ -25,6 +25,21 @@ class survey_hdr extends Default_Table
     } // survey_hdr
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if ($GLOBALS['mode'] == 'list') {
+            // display as plain text, not a multi-line box
+        	unset($this->fieldspec['survey_long_name']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ***************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -32,7 +47,7 @@ class survey_hdr extends Default_Table
     {
         //DebugBreak();
         // get contents of foreign table SURVEY_TYPE and add as a LOOKUP list
-        require_once 'survey_type.class.inc';
+        require_once 'classes/survey_type.class.inc';
         $dbobject =& singleton::getInstance('survey_type');
         $data_array = $dbobject->getValRep('survey_type_id');
         $this->lookup_data['survey_type_id'] = $data_array;
@@ -57,7 +72,7 @@ class survey_hdr extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -68,8 +83,6 @@ class survey_hdr extends Default_Table
             $this->sql_orderby    = 'survey_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
-
-            $array[''] = ' ';   // start with blank entry
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
