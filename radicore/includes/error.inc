@@ -26,7 +26,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         $breakpoint = 'breakpoint';
     } // if
 
-    //logstuff("error: " .$errstr, $errfile, $errline);
+    //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
 
     static $save_errstr;
 
@@ -51,6 +51,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_RECOVERABLE_ERROR;
             return;
         case E_USER_ERROR:
+            $save_errstr = null;
         case E_ERROR:
         case E_PARSE:
         case E_CORE_ERROR:
@@ -63,8 +64,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         $logon_user_id = $_SESSION['logon_user_id'];
     } // if
 
+    if (!empty($save_errstr)) {
+    	$errstr = $save_errstr;
+    } // if
 
-    $errstr = $save_errstr;
     if (isset($errcontext['this'])) {
         // retrieve error details from DML object
         if (method_exists($errcontext['this'], 'getQuery')) {
@@ -77,8 +80,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         } // if
         if (method_exists($errcontext['this'], 'getErrorString')) {
             $errstr = $errcontext['this']->getErrorString();
-        } else {
-            $errstr = '';
         } // if
         if (method_exists($errcontext['this'], 'getErrorString2')) {
             $errstr2 = $errcontext['this']->getErrorString2();
@@ -120,6 +121,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     $errorstring .= "<p>" .getLanguageText('sys0069', $_SERVER['REQUEST_URI']) ."</p>\n";
 
     global $page_stack;
+    //$history = "<p>" .'Page Stack:' ."</p>\n";
     $history = "<p>" .getLanguageText('sys0073') ."</p>\n";
     $history .= "<pre>\n";
     $ix = 0;
@@ -147,14 +149,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     $result = "<pre>\n" .$result ."\n</pre>\n";
 
-    if (eregi('^(localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
+    if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
         // my development PC does not have 'sendmail', so do nothing
     } else {
         // remove all html tags
         $search = array('<br>', '<p>', '</p>', '<h2>', '</h2>');
-        $mailstring = str_replace($search, '', $errorstring);
+        $mailstring = str_replace($search, '', "$errorstring $history");
         // Send the error to the administrator by email
-        error_log("$mailstring $result", 1, $_SERVER['SERVER_ADMIN']);
+        @error_log("$mailstring $result", 1, $_SERVER['SERVER_ADMIN']);
     } // if
 
     //echo "<h2>This application has encountered an unrecoverable error</h2>\n";
@@ -196,17 +198,11 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         $errors = $dbobject->user_logoff($logon_user_id);
     } // if
 
-    if (isset($_SESSION['XSLT_client_side'])) {
-    	$XSLT_client_side = $_SESSION['XSLT_client_side'];
-    } // if
-
-    if (!isset($GLOBALS['batch']) or !is_True($GLOBALS['batch'])) {
-        session_unset();    // clear current session data
-    } // if
-
-    if (isset($XSLT_client_side)) {
-        // put back the XSLT flag
-        $_SESSION['XSLT_client_side'] = $XSLT_client_side;
+    if (!isset($GLOBALS['batch']) OR !is_True($GLOBALS['batch'])) {
+        if (!empty($_SESSION)) {
+        	session_destroy();
+            session_unset();    // clear current session data
+        } // if
     } // if
 
     die();
@@ -219,17 +215,27 @@ function print_Trace ($level, $string, $result, $indent=null)
 {
     $indent .= '  ';    // increase indent by 2 spaces
     foreach ($string as $level2 => $string2) {
-        if (is_array($string2)) {
-            if (isset($string2['this'])) {
-                // output class name, but no class properties
-                $class = get_class($string2['this']);
-                $result .= $indent ."$level2: object = $class\n";
-            } else {
-                $result .= $indent ."$level2: array =\n";
-                $result = print_Trace($level2, $string2, $result, $indent);
-            } // if
+        if ($level2 === 'GLOBALS') {
+            // ignore
         } else {
-            $result .= $indent ."$level2: " .gettype($string2) ." = $string2\n";
+        	if (is_array($string2)) {
+                if (isset($string2['this'])) {
+                    // output class name, but no class properties
+                    $class = get_class($string2['this']);
+                    $result .= $indent ."$level2: object = $class\n";
+                } else {
+                    $result .= $indent ."$level2: array =\n";
+                    $result = print_Trace($level2, $string2, $result, $indent);
+                } // if
+        	} elseif (is_object($string2)) {
+        	    // do nothing
+            } else {
+                if (is_null($string2)) {
+                	$result .= $indent ."$level2: string = null\n";
+                } else {
+                    $result .= $indent ."$level2: " .gettype($string2) ." = $string2\n";
+                } // if
+            } // if
         } // if
     } // foreach
 

@@ -153,7 +153,7 @@ CREATE TABLE audit_trn (
     tran_seq_no smallint DEFAULT (0)::smallint NOT NULL,
     trn_date date DEFAULT '2000-01-01'::date NOT NULL,
     trn_time time without time zone DEFAULT '00:00:00'::time without time zone NOT NULL,
-    task_id character varying(40) DEFAULT ''::character varying NOT NULL
+    task_id character varying(80) DEFAULT ''::character varying NOT NULL
 );
 
 

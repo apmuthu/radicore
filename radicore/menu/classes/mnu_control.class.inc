@@ -6,8 +6,9 @@
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
 {
-    // extra vaiables
+    // extra variables
     var $record_id;         // part of primary key
+    var $save_fieldarray;   // original data
 
     // ****************************************************************************
     // class constructor
@@ -21,11 +22,11 @@ class mnu_control extends Default_Table
         $this->tablename   = 'mnu_control';
         $this->dbname      = 'menu';
 
-        $this->record_id = 'SYSTEM';
-
         // call this method to get original field specifications
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
+
+        $this->record_id = 'SYSTEM';
 
     } // mnu_control
 
@@ -326,13 +327,7 @@ class mnu_control extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        // if we are validating database data rather than screen data then ignore
-        if (isset($fieldarray['record_id'])) {
-            return $fieldarray;
-        } // if
-
         // get password length from USER class
-        //require_once 'classes/mnu_user.class.inc';
         $dbobject =& singleton::getInstance('mnu_user');
 
         // encrypt or decrypt all user passwords as required
@@ -456,13 +451,17 @@ class mnu_control extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get options for pswd_change and insert in LOOKUP data
-        $array = $this->getValRep('pswd_change');
-        $this->lookup_data['pswd_change'] = $array;
+        if (!array_key_exists('pswd_change', $this->lookup_data)) {
+            // get options for pswd_change and insert in LOOKUP data
+            $array = $this->getValRep('pswd_change');
+            $this->lookup_data['pswd_change'] = $array;
+        } // if
 
-        // get options for language_code
-        $array = getLanguageArray('languages');
-        $this->lookup_data['language_code'] = $array;
+        if (!array_key_exists('language_code', $this->lookup_data)) {
+            // get options for language_code
+            $array = getLanguageArray('languages');
+            $this->lookup_data['language_code'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -487,10 +486,22 @@ class mnu_control extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        $where = "record_id='$this->record_id'";
+
+        return $where;
+
+    } // _cm_initialise
+
+    // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
+        $fieldarray = array();
+
         // turn multiple rows into a single associative array
         foreach ($rowdata as $row => $data) {
             $fieldarray[0][strtolower($data['field_id'])] = $data['field_value'];
@@ -498,13 +509,28 @@ class mnu_control extends Default_Table
 
         // get list of (virtual) fields in this table
         $fieldspec = $this->getFieldSpec();
+        unset($fieldspec['record_id']);
+        unset($fieldspec['field_id']);
 
-        // insert any missing fields from $fieldspec
-        foreach ($fieldspec as $fieldname => $spec) {
-            if (!array_key_exists(strtolower($fieldname), $fieldarray[0])) {
+        $where_array = where2array($where);
+
+        if (!empty($where_array['field_id'])) {
+            // only a single field was specified, so create a null value if not found
+            $fieldname = strtolower($where_array['field_id']);
+        	if (!array_key_exists($fieldname, $fieldarray[0])) {
                 $fieldarray[0][$fieldname] = null;
             } // if
-        } // foreach
+        } else {
+            // insert any missing fields from $fieldspec
+            foreach ($fieldspec as $fieldname => $spec) {
+                if (!array_key_exists(strtolower($fieldname), $fieldarray[0])) {
+                    $fieldarray[0][$fieldname] = null;
+                } // if
+            } // foreach
+        } // if
+
+        // save this to check for changed fields during update processing
+        $this->save_fieldarray = $fieldarray[0];
 
         return $fieldarray;
 
@@ -518,11 +544,12 @@ class mnu_control extends Default_Table
             // if 'pswd_encrypt' has changed then process the change
             if ($fieldarray['field_value'] <> $old_data['field_value']) {
                 // open up a dialog with the user class
-                //require_once 'classes/mnu_user.class.inc';
                 $dbobject =& singleton::getInstance('mnu_user');
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->setPasswords($fieldarray['field_value']);
-                unset($dbobject);
+                if ($dbobject->errors) {
+                	$this->errors = array_merge($this->errors, $dbobject->errors);
+                } // if
             } // if
         } // if
 
@@ -537,9 +564,16 @@ class mnu_control extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        // limit selection by contents of RECORD_ID column
-        $this->record_id = 'SYSTEM';
-        $where = "record_id='$this->record_id'";
+        if (empty($where_array['record_id'])) {
+        	$where_array['record_id'] = $this->record_id;
+        } // if
+
+        // ensure all values are in upper case
+        foreach ($where_array as $field => $value) {
+        	$where_array[$field] = strtoupper($value);
+        } // foreach
+
+        $where = array2where($where_array);
 
         return $where;
 
@@ -549,20 +583,44 @@ class mnu_control extends Default_Table
     function _cm_updateSelection($fieldarray, $replace)
     // update multiple rows in a single operation.
     {
-        $errors = array();
         $this->fieldarray = $fieldarray;
 
         // perform standard declarative checks on input data
         $updatearray = $this->_validateUpdate($fieldarray);
         if (!empty($this->errors)) {
-            return $fieldarray;
+            // replace any empty fields with their default values
+            $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
+            return false;
         } // if
 
+        // these fields are identifiers, and should not be written out
+        unset($updatearray['record_id']);
+        unset($updatearray['field_id']);
+
         // perform any custom validation/processing before update
-        $updatearray = $this->_cm_commonValidation($updatearray, null);
+        $updatearray = $this->_cm_commonValidation($updatearray, $this->save_fieldarray);
         if (!empty($this->errors)) {
-            return $fieldarray;
+            // replace any empty fields with their new values
+            $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
+            return false;
         } // if
+
+        // if 'pswd_encrypt' has changed then check that the passwords can be changed
+        if ($fieldarray['pswd_encrypt'] <> $this->save_fieldarray['pswd_encrypt']) {
+            // open up a dialog with the user class
+            $dbobject =& singleton::getInstance('mnu_user');
+            // encrypt or decrypt all user passwords as required
+            $errors = $dbobject->checkPasswords($fieldarray['pswd_encrypt']);
+            if ($dbobject->errors) {
+                $this->errors['pswd_encrypt'] = $dbobject->errors['user_password'];
+                unset($dbobject->errors['user_password']);
+            	$this->errors = array_merge($this->errors, $dbobject->errors);
+            	return;
+            } // if
+        } // if
+
+        $save_fieldarray = $this->fieldarray;
+        $save_fieldspec  = $this->fieldspec;
 
         // now set $fieldspec to the database view
         $this->fieldspec = $this->getFieldSpec_original();
@@ -580,6 +638,9 @@ class mnu_control extends Default_Table
             // construct 'where' clause from primary key
             $where = array2where($rowdata[$rownum], $pkeynames, $this);
 
+            // turn off all custom validation
+            $this->skip_validation = true;
+
             // find out if this record currently exists or not
             $count = $this->getCount($where);
             if ($count == 0) {
@@ -591,16 +652,14 @@ class mnu_control extends Default_Table
             } // if
 
             if (!empty($this->errors)) {
-                // ignore 'name' and extract 'value' from $this->errors
-                // as 'name' may not be the same as $fieldname
-                $errors[$fieldname] = array_shift($this->errors);
+                $this->fieldarray = $save_fieldarray;
+                $this->fieldspec  = $save_fieldspec;
+                return;
             } // if
             $rownum = $rownum + 1;
         } // foreach
 
-        $this->errors = $errors;
-
-        return $fieldarray;
+        return true;
 
     } // _cm_updateSelection
 

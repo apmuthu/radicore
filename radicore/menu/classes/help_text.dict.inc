@@ -1,9 +1,9 @@
 <?php
-    // file created on November 3, 2006, 11:23 am
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.help_text
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'lowercase' => 'y');

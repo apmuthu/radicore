@@ -20,10 +20,10 @@ $structure['title'][] = array('text' => '- Contents of DICT_COLUMN table -',
 
 // set column widths
 $structure['columns'][] = array('width' => 30);
-$structure['columns'][] = array('width' => 40);
+$structure['columns'][] = array('width' => 40, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 10, 'align' => 'center');
-$structure['columns'][] = array('width' => 50);
-$structure['columns'][] = array('width' => 50);
+$structure['columns'][] = array('width' => 50, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 50, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 30);
 $structure['columns'][] = array('width' => 15);
 $structure['columns'][] = array('width' => 24);

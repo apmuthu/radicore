@@ -14,6 +14,7 @@ $structure['tables']['inner'] = 'answer_option';
 
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => 15);
+$structure['inner']['columns'][] = array('width' => '*');
 $structure['inner']['columns'][] = array('width' => 150);
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');

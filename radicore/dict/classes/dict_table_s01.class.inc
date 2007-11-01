@@ -14,7 +14,11 @@ class dict_table_s01 extends dict_table
     // $fieldarray contains data from the initial $where clause.
     {
         // get list of existing table names
-        $dbname = $fieldarray['database_id'];
+        if (is_string(key($fieldarray))) {
+        	$dbname = $fieldarray['database_id'];
+        } else {
+            $dbname = $fieldarray[0]['database_id'];
+        } // if
         $fieldarray = array();
         $array = $this->_ddl_showTables($dbname);
 
@@ -27,7 +31,7 @@ class dict_table_s01 extends dict_table
                 // insert details of new database
                 $fieldarray[$i]['database_id'] = $dbname;
                 $fieldarray[$i]['table_id']    = $tablename;
-                $fieldarray[$i]['table_desc']  = $tablename;
+                $fieldarray[$i]['table_desc']  = ucwords(str_replace('_', ' ', $tablename));
                 $i++;
             } // if
         } // foreach

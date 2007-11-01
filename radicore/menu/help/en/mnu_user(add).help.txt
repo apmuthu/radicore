@@ -1,5 +1,0 @@
-This will allow a new record to be added to the USER table.
-
-Enter your data then press the SUBMIT button to add it to the database.
-
-Refer to <a href="%root%/mnu_user(add).html">Add User</a> for full details.

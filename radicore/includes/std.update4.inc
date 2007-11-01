@@ -21,6 +21,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
@@ -30,17 +36,13 @@ $dbobject->sql_where   = &$sql_where;
 $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 // perform any initialisation
-if (!empty($selection)) {
-    $selection = $dbobject->initialise($selection);
-} else {
-    $where = $dbobject->initialise($where);
+$where = $dbobject->initialise($where);
+if ($dbobject->errors) {
+    $batch_errors = scriptPrevious($dbobject->errors);
+    return $batch_errors;
 } // if
 
 // retrieve profile must have been set by previous screen
-if (!empty($selection)) {
-    $where     = $selection;
-    $selection = null;
-} // if
 if (empty($where)) {
     $batch_errors = scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
     return $batch_errors;
@@ -48,9 +50,9 @@ if (empty($where)) {
 
 // get data from the database
 $fieldarray = $dbobject->getData($where);
-if ($dbobject->getErrors()) {
+if ($dbobject->errors) {
     // some sort of error - return to previous script
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, null, $dbobject->getInstruction());
+    $batch_errors = scriptPrevious($dbobject->errors, $messages, null, $dbobject->getInstruction());
     return $batch_errors;
 } // if
 if ($dbobject->getNumRows() < 1) {
@@ -66,7 +68,7 @@ $dbobject->startTransaction();
 $fieldarray = $dbobject->updateMultiple($fieldarray, $post);
 if ($dbobject->errors) {
     $dbobject->rollback();
-    $errors = $dbobject->getErrors();
+    $errors = $dbobject->errors;
 } else {
     $errors = $dbobject->commit();
     if (empty($messages)) {

@@ -32,7 +32,6 @@ class dict_table_key extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] != 'search') {
 			// do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
@@ -78,12 +77,12 @@ class dict_table_key extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table DATABASE and add as a LOOKUP list
-        require_once 'classes/dict_database.class.inc';
-        $dbobject =& singleton::getInstance('dict_database');
-        $array    = $dbobject->getValRep('database_id');
-        $this->lookup_data['database_id'] = $array;
+        if (!array_key_exists('database_id', $this->lookup_data)) {
+            // get contents of foreign table DATABASE and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('dict_database');
+            $array    = $dbobject->getValRep('database_id');
+            $this->lookup_data['database_id'] = $array;
+        } // if
 
 		return $fieldarray;
 
@@ -94,17 +93,22 @@ class dict_table_key extends Default_Table
     // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        if (isset($fieldarray['database_id']) and isset($fieldarray['table_id'])) {
-            // continue
+        // extract database and table names
+        if (is_string(key($fieldarray))) {
+            $dbname    =& $fieldarray['database_id'];
+            $tablename =& $fieldarray['table_id'];
         } else {
+            $dbname    =& $fieldarray[0]['database_id'];
+            $tablename =& $fieldarray[0]['table_id'];
+        } // if
+
+        if (empty($dbname) OR empty($tablename)) {
             // 'Database and/or Table id is missing - please check selection'
             $this->errors[] = getLanguageText('e0019');
             return $fieldarray;
         } // if
 
         // get any existing data for this table
-        $dbname    = $fieldarray['database_id'];
-        $tablename = $fieldarray['table_id'];
         $this->sql_orderby = 'key_name, seq_in_index';
         $old_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
 

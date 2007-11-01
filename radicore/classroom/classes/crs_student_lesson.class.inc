@@ -29,11 +29,12 @@ class crs_student_lesson extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if (basename($_SERVER['PHP_SELF']) == 'lesson_list(a).php') {
-            // get contents of foreign table TEACHER and add to lookup array
-            require_once 'classes/crs_teacher.class.inc';
-            $object =& singleton::getInstance('crs_teacher');
-            $data = $object->getValRep('teacher_id');
-            $this->lookup_data['teacher_id'] = $data;
+            if (!array_key_exists('teacher_id', $this->lookup_data)) {
+                // get contents of foreign table TEACHER and add to lookup array
+                $object =& singleton::getInstance('crs_teacher');
+                $data = $object->getValRep('teacher_id');
+                $this->lookup_data['teacher_id'] = $data;
+            } // if
             // ensure field is populated from the dropdown list
             $this->fieldspec['teacher_id'] = array('type' => 'integer',
                                                    'control' => 'dropdown',

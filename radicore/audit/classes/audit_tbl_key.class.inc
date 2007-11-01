@@ -11,24 +11,12 @@ class audit_tbl_key extends audit_tbl
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_changeConfig ($where, $fieldarray)
-    // Change the table configuration for the duration of this instance.
-    // $where = a string in SQL 'where' format.
-    // $fieldarray = the contents of $where as an array.
-    {
-        $this->where = $where;  // save this for later
-
-        return $fieldarray;
-
-    } // _cm_changeConfig
-
-    // ***************************************************************************
     function _cm_initialise ($where)
     // perform any initialisation for the current task.
     {
-        // this is here to override the method in the parent class
-        if (!empty($this->where)) {
-        	$where = $this->where;  // restore saved value
+        if (!empty($where)) {
+            // do not allow contents of $where to be filtered out
+        	$this->where = $where;
         } // if
 
         //$this->pageno = 7;  // this is a test

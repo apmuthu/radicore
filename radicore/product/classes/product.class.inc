@@ -68,14 +68,18 @@ class product extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for product_subtype and put into LOOKUP_DATA
-        $array = $this->getValRep('product_subtype');
-        $this->lookup_data['product_subtype'] = $array;
+        if (!array_key_exists('product_subtype', $this->lookup_data)) {
+            // get array for product_subtype and put into LOOKUP_DATA
+            $array = $this->getValRep('product_subtype');
+            $this->lookup_data['product_subtype'] = $array;
+        } // if
 
-        // get array for good_identity_type and put into LOOKUP_DATA
-        $object =& singleton::getInstance('good_identity_type');
-        $array  = $object->getValRep('identity_type_id');
-        $this->lookup_data['identity_type_id'] = $array;
+        if (!array_key_exists('identity_type_id', $this->lookup_data)) {
+            // get array for good_identity_type and put into LOOKUP_DATA
+            $object =& singleton::getInstance('good_identity_type');
+            $array  = $object->getValRep('identity_type_id');
+            $this->lookup_data['identity_type_id'] = $array;
+        } // if
 
         return $fieldarray;
 

@@ -43,6 +43,7 @@ class mnu_user_s05 extends mnu_user
     // perform any initialisation for the current task.
     {
         // this is here to neutralise the method in the parent class
+        $this->where = $where;
 
         return $where;
 

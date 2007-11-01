@@ -39,13 +39,13 @@ function get_languages()
 	$a_languages = getLanguageArray('languages');
 	$index = '';
 	$complete = '';
-	$found = false;// set to default value
+	$found = false;  // set to default value
 
 	$user_languages = array();
 
-	//check to see if language is set
+	// check to see if language is set
 	if (isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
-		//explode languages into array
+		// explode languages into array
 		$languages = strtolower( $_SERVER["HTTP_ACCEPT_LANGUAGE"] );
 		$languages = explode( ",", $languages );
 		foreach ($languages as $language_list) {
@@ -59,16 +59,31 @@ function get_languages()
 		} // foreach
 
 		//start going through each one
-		for ($i = 0; $i < count( $user_languages ); $i++ ) {
-			foreach ($a_languages as $index => $complete) {
-				if ($index == $user_languages[$i][0]) {
-					// extract complete language, like english (canada)
-					$user_languages[$i][2] = $complete;
-					// extract working language, like english
-					$user_languages[$i][3] = substr( $complete, 0, strcspn( $complete, ' (' ) );
-				} // if
-			} // foreach
-		} // for
+//		for ($i = 0; $i < count( $user_languages ); $i++ ) {
+//			foreach ($a_languages as $index => $complete) {
+//				if ($index == $user_languages[$i][0]) {
+//					// extract complete language, like english (canada)
+//					$user_languages[$i][2] = $complete;
+//					// extract working language, like english
+//					$user_languages[$i][3] = substr( $complete, 0, strcspn( $complete, ' (' ) );
+//				} // if
+//			} // foreach
+//		} // for
+		// extract language details from array
+		foreach ($user_languages as $key => $user_language) {
+		    if (array_key_exists($user_language[0], $a_languages)) {
+		    	$complete = $a_languages[$user_language[0]];
+		    } elseif (array_key_exists($user_language[1], $a_languages)) {
+		        $complete = $a_languages[$user_language[1]];
+		    } // if
+		    if (!empty($complete)) {
+		        // insert complete language, like 'english (canada)'
+		    	$user_languages[$key][2] = $complete;
+		    	// insert working language, like 'english'
+				$user_languages[$key][3] = substr( $complete, 0, strcspn( $complete, ' (' ) );
+		    } // if
+		} // foreach
+
 	} else {
 	    // no langages found, so set default
 		$user_languages[0] = array( 'en-gb','en','English (United Kingdom)','English' );

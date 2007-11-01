@@ -1,6 +1,6 @@
 <?php
 
-// Each text string may include parameter substitution - refer to SPRINTF() function
+// Each text string may include parameter substitution - refer to the SPRINTF() function
 
 $array['e0001'] = "";
 $array['e0002'] = "";
@@ -54,37 +54,7 @@ $array['e0039'] = "";
 // navigation button details for subsystem XXX
 
 
-// field labels for subsystem XXX
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
+// field names for subsystem XXX
 $array['']     = '';
 $array['']     = '';
 $array['']     = '';
@@ -96,6 +66,17 @@ $array['']     = '';
 $array['']     = '';
 $array['']     = '';
 
+// field labels for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
 
 return $array;
 

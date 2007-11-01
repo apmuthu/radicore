@@ -23,6 +23,12 @@ $mode = 'delete';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -60,25 +66,24 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->errors);
     } // if
 } // if
 
 // look for SUBMIT button
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbouter'=> $dbouter), $where);
+    $errors = childForm($_POST, array('dbouter'=> $dbouter));
     if (empty($errors)) {
         $dbouter->startTransaction();
         // delete this record from the database
@@ -97,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $dbouter->rollback();
         } // if
     } // if
-
 } // if
 
 // create a class instance for the INNER database table
@@ -116,27 +120,21 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_search_table = &$inner_search_table;
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dbinner->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $null = $dbinner->initialise($selection, $where);
-    } else {
-        $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($where);
+    if ($dbinner->errors) {
+        scriptPrevious($dbinner->errors);
     } // if
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where     = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
-    } // if
+
+if (isset($scrolling)) {
+    // retrieve values from scrolling array
+    $where = $scrolling[$dbouter->getClassName()]['where'];
+    $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
 } // if
 if (empty($where)) {
     if ($dbouter->allow_empty_where == TRUE) {
@@ -257,7 +255,7 @@ if (isset($_GET['action'])) {
 
 // check for only one row being found in POPUP mode
 if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
-    if (isset($choose_single_row)) {
+    if (isset($settings['choose_single_row'])) {
         // convert primary key into SQL where format
         $selection = array2where($inner_data, $dbinner->getPkeyNames(), $dbinner);
         // send primary key back to the previous script
@@ -287,7 +285,7 @@ $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 // get sort details
-$orderby = $dbinner->getOrderBy();
+$orderby     = $dbinner->getOrderBy_Out();
 $orderby_seq = $dbinner->getOrderBySeq();
 
 // build list of objects for output to XML data

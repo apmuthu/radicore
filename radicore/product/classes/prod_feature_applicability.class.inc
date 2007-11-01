@@ -160,10 +160,11 @@ class prod_feature_applicability extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for product_subtype and put into LOOKUP_DATA
-        $array = $this->getValRep('feature_type');
-        $this->lookup_data['feature_type'] = $array;
+        if (!array_key_exists('feature_type', $this->lookup_data)) {
+            // get array for product_subtype and put into LOOKUP_DATA
+            $array = $this->getValRep('feature_type');
+            $this->lookup_data['feature_type'] = $array;
+        } // if
 
         return $fieldarray;
 

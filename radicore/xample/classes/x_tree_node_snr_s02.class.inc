@@ -25,7 +25,7 @@ class x_tree_node_snr_s02 extends x_tree_node_snr
             // keeping reading parent node until NODE_ID_SNR is empty
             while (!empty($rowdata[0]['node_id_snr'])) {
                 // current node has a parent, so get it
-                $this->sql_select = 'node_id, node_id_snr, node_desc, external_code, tree_level_seq, tree_level_desc';
+                $this->sql_select = 'node_id, node_id_snr, node_desc, external_code, tree_level_seq, tree_level_desc, x_tree_level.tree_type_id, x_tree_level.tree_level_id';
                 $this->sql_from   = 'x_tree_node LEFT JOIN x_tree_level ON (x_tree_level.tree_type_id=x_tree_node.tree_type_id AND x_tree_level.tree_level_id=x_tree_node.tree_level_id)';
                 $where = "node_id='{$rowdata[0]['node_id_snr']}'";
                 $data = $this->_dml_getData($where);
@@ -37,6 +37,9 @@ class x_tree_node_snr_s02 extends x_tree_node_snr
             $this->numrows = $numrows;
 
         } // if
+
+        // do not allow getForeignData() method to fetch any other parent data
+        //unset($this->parent_relations);
 
         return $rowdata;
 

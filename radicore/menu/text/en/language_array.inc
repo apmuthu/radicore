@@ -17,8 +17,13 @@ $array['access_type'] = array('FULL' => 'Full',
                               'NED'  => 'NOEDIT',
                               'NDI'  => 'NODISPLAY');
 
+$array['repeat_unit'] = array('D' => 'Days',
+                              'W' => 'Weeks',
+                              'M' => 'Months');
+
 $array['task_type'] = array('PROC' => 'Proc',
                             'MENU' => 'Menu');
+
 return $array;
 
 ?>

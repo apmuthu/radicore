@@ -45,7 +45,6 @@ class x_tree_node extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] == 'search') {
             // get details from parent (foreign) tables
         	if (isset($fieldarray['node_id']) and (!isset($fieldarray['tree_type_id']))) {

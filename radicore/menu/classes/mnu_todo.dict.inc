@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:48 pm
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -35,6 +35,13 @@
                                                     'required' => 'y',
                                                     'default' => '0000-00-00');
     
+    $fieldspec['visibility']                = array('type' => 'integer',
+                                                    'size' => 3,
+                                                    'minvalue' => 1,
+                                                    'maxvalue' => 99,
+                                                    'required' => 'y',
+                                                    'default' => '0');
+    
     $fieldspec['is_complete']               = array('type' => 'boolean',
                                                     'required' => 'y',
                                                     'default' => 'N',
@@ -42,6 +49,25 @@
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
+    
+    $fieldspec['repeat_interval']           = array('type' => 'integer',
+                                                    'size' => 4,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 999);
+    
+    $fieldspec['repeat_unit']               = array('type' => 'string',
+                                                    'size' => 1,
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'repeat_unit');
+    
+    $fieldspec['task_id']                   = array('type' => 'string',
+                                                    'size' => 80,
+                                                    'control' => 'popup',
+                                                    'task_id' => 'mnu_task(popup1)a',
+                                                    'foreign_field' => 'task_desc');
+    
+    $fieldspec['task_context']              = array('type' => 'string',
+                                                    'size' => 255);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -82,6 +108,10 @@
     $this->child_relations                  = array();
     
     // parent relationship details 
+    $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'parent_field' => 'task_desc',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));

@@ -15,17 +15,21 @@ class answer_option_s01 extends answer_option
     // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
-        if (!empty($fieldarray['survey_id'])
-        AND !empty($fieldarray['section_id'])
-        AND !empty($fieldarray['question_id'])) {
-            $where = "survey_id='{$fieldarray['survey_id']}' AND " . "section_id='{$fieldarray['section_id']}' AND " . "question_id='{$fieldarray['question_id']}'";
+        if (is_string(key($fieldarray))) {
+            $survey_id   =& $fieldarray['survey_id'];
+            $section_id  =& $fieldarray['section_id'];
+            $question_id =& $fieldarray['question_id'];
+        } else {
+            $survey_id   =& $fieldarray[0]['survey_id'];
+            $section_id  =& $fieldarray[0]['section_id'];
+            $question_id =& $fieldarray[0]['question_id'];
         } // if
 
-        if (empty($where)) {
+        if (empty($survey_id) OR empty($section_id) OR empty($question_id)) {
             $this->errors[] = getLanguageText('sys0082'); // 'No parent has been selected yet.';
-            return;
         } // if
+
+        $where = "survey_id='$survey_id' AND section_id='$section_id' AND question_id='$question_id'";
 
         $count = $this->getCount($where);
         if ($count == 0) {

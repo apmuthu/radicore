@@ -246,8 +246,9 @@ class x_person_addr extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_validateDelete ($fieldarray)
+    function _cm_validateDelete ($fieldarray, $parent_table)
     // verify that the selected record can be deleted.
+    // $parent_table is not empty during a cascade delete.
     // (put any errors in $this->errors)
     {
         $dbobject =& singleton::getInstance('x_person');

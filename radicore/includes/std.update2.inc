@@ -23,6 +23,7 @@ initSession();
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
+$where = $dbobject->initialise($where);
 
 if (!isset($popup_task)) {
 	$popup_task =& $popup_screen;
@@ -42,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         return $batch_errors;
     } else {
         if (empty($selection)) {
-            // 'Nothing selected from popup screen.'
+            // 'Nothing selected from popup screen'
             $batch_errors = scriptprevious(getLanguageText('sys0083'));
             return $batch_errors;
         } // if

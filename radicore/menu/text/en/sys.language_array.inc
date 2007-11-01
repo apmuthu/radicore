@@ -7,8 +7,7 @@ $array['boolean']  = array('true' => 'Yes',
 
 $array['curr_or_hist'] = array('C' => 'Current',
                                'H' => 'Historic',
-                               'F' => 'Future',
-                               'A' => 'All');
+                               'F' => 'Future');
 
 $array['day_names_short']  = array('mon' => 'Mon',
                                    'tue' => 'Tue',
@@ -166,7 +165,7 @@ $array['languages'] = array('af' => 'Afrikaans [af]',
         	                'sw' => 'Swahili [sw]',
         	                'sv-fi' => 'Swedish (Finland) [sv_FI]',
         	                'sv' => 'Swedish [sv]',
-        	                'syr' => 'Syriac[syr]',
+        	                'syr' => 'Syriac [syr]',
         	                'ta' => 'Tamil [ta]',
         	                'tt' => 'Tatar [tt]',
         	                'te' => 'Telugu [te]',

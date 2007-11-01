@@ -14,7 +14,7 @@ $dbobject = new dict_column;
 $dbobject->sql_select = 'database_id, table_id, column_id, column_desc';
 $dbobject->sql_from   = '';
 $dbobject->sql_groupby = '';
-$dbresult = $dbobject->getData_batch('column_desc LIKE BINARY column_id');
+$dbresult = $dbobject->getData_serial('column_desc LIKE BINARY column_id');
 $dbobject->startTransaction();
 while ($row = $dbobject->fetchRow($dbresult)) {
     $row['column_desc'] = ucwords(str_replace('_', ' ', $row['column_id']));

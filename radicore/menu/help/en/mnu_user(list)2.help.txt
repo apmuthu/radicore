@@ -1,3 +1,0 @@
-This will list records on the USER table for a selected ROLE.
-
-Refer to <a href="%root%/mnu_user(list)2.html">List User by Role</a> for full details.

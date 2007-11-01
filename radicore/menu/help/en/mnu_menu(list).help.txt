@@ -1,3 +1,0 @@
-This will list records on the MENU table for a selected Task of type 'menu'.
-
-Refer to <a href="%root%/mnu_menu(list).html">List Menu Items</a> for full details.

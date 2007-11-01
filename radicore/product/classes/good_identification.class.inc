@@ -50,12 +50,12 @@ class good_identification extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table and add to lookup array
-        require_once 'classes/good_identity_type.class.inc';
-        $dbobject =& singleton::getInstance('good_identity_type');
-        $data_array = $dbobject->getValRep('identity_type_id');
-        $this->lookup_data['identity_type_id'] = $data_array;
+        if (!array_key_exists('identity_type_id', $this->lookup_data)) {
+            // get contents of foreign table and add to lookup array
+            $dbobject =& singleton::getInstance('good_identity_type');
+            $data_array = $dbobject->getValRep('identity_type_id');
+            $this->lookup_data['identity_type_id'] = $data_array;
+        } // if
 
         return $fieldarray;
 

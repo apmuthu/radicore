@@ -72,9 +72,11 @@ class tree_node extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get valrep list for node_type and insert into lookup array
-        $array = $this->getValRep('node_type');
-        $this->lookup_data['node_type'] = $array;
+        if (!array_key_exists('node_type', $this->lookup_data)) {
+            // get valrep list for node_type and insert into lookup array
+            $array = $this->getValRep('node_type');
+            $this->lookup_data['node_type'] = $array;
+        } // if
 
         // node_type cannot be changed
         $this->fieldspec['node_type']['noedit'] = 'y';
@@ -91,7 +93,6 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table ORG_TYPE and add as a LOOKUP list
-                require_once 'classes/org_type.class.inc';
                 $dbobject =& singleton::getInstance('org_type');
                 $data_array = $dbobject->getValRep('org_type_id');
                 $this->lookup_data['org_type_id'] = $data_array;
@@ -106,13 +107,11 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table LOCATION_TYPE and add as a LOOKUP list
-                require_once 'classes/location_type.class.inc';
                 $dbobject =& singleton::getInstance('location_type');
                 $data_array = $dbobject->getValRep('location_type_id');
                 $this->lookup_data['location_type_id'] = $data_array;
 
                 // get address data associated with this location
-                require_once 'classes/location_address.class.inc';
                 $address =& singleton::getInstance('location_address');
                 $node_id = $fieldarray['node_id'];
                 $address_data = $address->getData("node_id='$node_id'");
@@ -147,7 +146,6 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['location_type_id']['required']);
 
                 // get contents of foreign table ASSET_TYPE and add as a LOOKUP list
-                require_once 'classes/asset_type.class.inc';
                 $dbobject =& singleton::getInstance('asset_type');
                 $data_array = $dbobject->getValRep('asset_type_id');
                 $this->lookup_data['asset_type_id'] = $data_array;

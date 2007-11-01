@@ -7,8 +7,7 @@ require_once 'mnu_task.class.inc';
 class mnu_task_s02 extends mnu_task
 {
     // ****************************************************************************
-    // this class is for use by script: mnu_task_upd2.php
-    // purpose: to rename a task
+    // this class is for use by script: mnu_task(upd2).php (rename task)
     // ****************************************************************************
 
     // ****************************************************************************
@@ -20,7 +19,7 @@ class mnu_task_s02 extends mnu_task
         //DebugBreak();
         $this->fieldspec['task_desc']['noedit'] = 'y';
         $this->fieldspec['new_task_id']     = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => $this->fieldspec['task_id']['size'],
                                                     'required' => 'y',
                                                     'lowercase' => 'y');
         $fieldarray['new_task_id']          = null;
@@ -33,10 +32,17 @@ class mnu_task_s02 extends mnu_task
     } // _cm_changeConfig
 
     // ****************************************************************************
-    function _cm_post_updateRecord ($fieldarray, $old_data)
-    // perform custom processing after database record is updated.
+    function _cm_validateUpdate ($fieldarray, $originaldata)
+    // perform custom validation before update.
     {
-        //DebugBreak();
+        $where = "task_id='{$fieldarray['new_task_id']}'";
+        $count = $this->getCount($where);
+        if ($count > 0) {
+            // "This TASK_ID is already in use"
+            $this->errors['new_task_id'] = getLanguageText('e0023');
+            return $fieldarray;
+        } // if
+
         $old_task_id = $fieldarray['task_id'];
         $new_task_id = $fieldarray['new_task_id'];
 
@@ -49,7 +55,7 @@ class mnu_task_s02 extends mnu_task
                 unset($childobj);
                 // instantiate an object for this table
                 if (array_key_exists('subsys_dir', $reldata)) {
-                    $dir = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() ."/" .$reldata['subsys_dir'] ."/";
+                    $dir = "../" .$reldata['subsys_dir'] ."/";
                 } else {
                     $dir = NULL;
                 } // if
@@ -77,21 +83,7 @@ class mnu_task_s02 extends mnu_task
 
         $this->messages = $msg;
 
-        return $fieldarray;
-
-    } // _cm_post_updateRecord
-
-    // ****************************************************************************
-    function _cm_validateUpdate ($fieldarray, $originaldata)
-    // perform custom validation before update.
-    {
-        //DebugBreak();
-        $where = "task_id='{$fieldarray['new_task_id']}'";
-        $count = $this->getCount($where);
-        if ($count > 0) {
-            // "This TASK_ID is already in use"
-            $this->errors['new_task_id'] = getLanguageText('e0023');
-        } // if
+        $fieldarray = array();  // do not update anything else
 
         return $fieldarray;
 

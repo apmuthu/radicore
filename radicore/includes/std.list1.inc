@@ -18,11 +18,28 @@ $mode = 'list';
 // load session variables
 initSession();
 
+if (isset($act_buttons['choose'])) {
+    if ($return_action == 'insert' AND !empty($selection)) {
+    	// send selection back to the previous script
+        $prev_script = getPreviousScript();
+        $prev_task   = getPreviousTask($prev_script);
+        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        scriptPrevious(null, null, 'choose');
+    } // if
+} // if
+
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
     // clear this script from session details and return to previous page
     if (isset($act_buttons) AND array_key_exists('choose', $act_buttons)) {
-        scriptPrevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+        // 'Nothing selected from popup screen'
+        scriptPrevious(getLanguageText('sys0083'),null,'quit');
     } else {
         scriptPrevious();
     } // if
@@ -35,6 +52,7 @@ if (isset($act_buttons['choose'])) {
 } // if
 if (array_key_exists('select_one', $settings)) {
 	if (!is_True($settings['select_one'])) {
+	    // this option is not valid with multiple selections
     	unset($act_buttons['choosenull']);
     } // if
 } // if
@@ -45,7 +63,7 @@ if (isset($script_vars['dbobject'])) {
     // use data from previous instance of this script
     $dbobject = unserialize($script_vars['dbobject']);
     // refetch data for lookup lists in case they have changed
-    $null = $dbobject->setLookupData(null);
+    $null = $dbobject->setLookupData($where);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -54,19 +72,16 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_where   = &$sql_where;
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
+    $dbobject->sql_search_table = &$sql_search_table;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
-    } elseif (isset($task_order_by)) {
-        $dbobject->setDefaultOrderby($task_order_by);
+    } elseif (isset($task_orderby)) {
+        $dbobject->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbobject->initialise($selection, $where);
-    } else {
-        $where = $dbobject->initialise($where);
-    } // if
+    $where = $dbobject->initialise($where);
     // get any data for lookup lists
-    $null = $dbobject->getExtraData(null);
+    $null = $dbobject->getExtraData($where);
 } // if
 
 // the 'choose' button should only be used in popup screens
@@ -76,7 +91,7 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+    $errors = childForm($_POST, array('dbobject' => $dbobject));
 } // if
 
 if (isset($_SESSION['rowsperpage'])) {
@@ -109,12 +124,6 @@ if (isset($instruction)) {
     $dbobject->setInstruction($instruction);
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been set by previous screen
-    $where     = $selection;
-    $selection = null;
-} // if
-
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
     $dbobject->reset($where);
@@ -122,13 +131,23 @@ if (isset($_POST['reset'])) {
 
 // get data from the database
 $fieldarray = $dbobject->getData($where);
+if ($dbobject->errors) {
+	$prev_script = getPreviousScript();
+    $prev_task   = getPreviousTask($prev_script);
+    // send selection back to the previous script
+    $_SESSION[$prev_script][$prev_task]['selection'] = 'NULL=NULL';
+    scriptPrevious($dbobject->errors);
+} // if
+
+// $where may have been changed in database object
+$where = $dbobject->getWhere();
 
 if ($dbobject->getNumRows() == 0) {
     $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
     if (strtolower($return_action) == 'search') {
         if (isset($return_from)) {
             // go back to script which generated this profile
-            scriptNext($return_from);
+            scriptNext($return_from, $where);
         } // if
     } // if
     if (array_key_exists('choose', $act_buttons)) {
@@ -139,21 +158,21 @@ if ($dbobject->getNumRows() == 0) {
 
 // check for only one row being found in POPUP mode
 if ($dbobject->getNumRows() == 1 AND isset($act_buttons['choose'])) {
-    // convert selection into SQL where format
-    $selection = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
-    // send selection back to the previous script
-    $prev_script = getPreviousScript();
-    $prev_task   = getPreviousTask($prev_script);
-    $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
-    scriptPrevious(null, null, 'choose');
+    if (array_key_exists('choose_single_row', $settings)) {
+        $prev_script = getPreviousScript();
+        $prev_task   = getPreviousTask($prev_script);
+        // convert selection into SQL where format
+        $pkey_array = $dbobject->getPkeyArray($fieldarray, $prev_task);
+        $selection = array2where($pkey_array);
+        // send selection back to the previous script
+        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        scriptPrevious(null, null, 'choose');
+    } // if
 } // if
 
 if (isset($_GET['action'])) {
     $fieldarray = $dbobject->setAction($_GET['action']);
 } // if
-
-// $where may have been changed in database object
-$where = $dbobject->getWhere();
 
 // get pagination details
 $pagination['main']['numrows']  = $dbobject->getNumRows();
@@ -166,7 +185,7 @@ $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbobject->getOrderBy();
+$orderby     = $dbobject->getOrderBy_Out();
 $orderby_seq = $dbobject->getOrderBySeq();
 
 // build list of objects for output to XML data

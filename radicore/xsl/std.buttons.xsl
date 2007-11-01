@@ -42,7 +42,7 @@
 
       <div class="left">
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
-        <xsl:for-each select="//actbar/button[starts-with(@id,'submit') or starts-with(@id,'choose')]">
+        <xsl:for-each select="/root/actbar/button[starts-with(@id,'submit') or starts-with(@id,'choose')]">
           <!-- create a button for each element within actionbar -->
           <input class="submit" type="submit" name="{@id}" value="{node()}" />
           <xsl:text> </xsl:text>
@@ -51,7 +51,7 @@
 
       <div class="right">
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
-        <xsl:for-each select="//actbar/button[not(starts-with(@id,'submit')) and not(starts-with(@id,'choose'))]">
+        <xsl:for-each select="/root/actbar/button[not(starts-with(@id,'submit')) and not(starts-with(@id,'choose'))]">
           <!-- create a button for each element within actionbar -->
           <input class="submit" type="submit" name="{@id}" value="{node()}" />
           <xsl:text> </xsl:text>
@@ -100,7 +100,7 @@
 <xsl:template name="help">
 
   <div class="loggedinas">
-    <xsl:if test="not(//params/application='sample')">
+    <xsl:if test="not(/root/params/application='sample')">
       <!-- do not include this in the sample application -->
       <xsl:if test="not($mode='logon') and not ($mode='recover')">
         <!-- do not include this in the logon screen -->
@@ -113,7 +113,7 @@
 
   <div class="help">
     <p>
-      <xsl:if test="not(//params/application='sample')">
+      <xsl:if test="not(/root/params/application='sample')">
         <!-- do not include this in the sample application -->
         <xsl:if test="not($mode='logon') and not ($mode='recover')">
           <!-- create a logout link -->
@@ -170,7 +170,7 @@
     <div id="menubar">
       <!-- produce a list of menu items, with the one which is active being highlighted -->
       <ul>
-        <xsl:for-each select="//menubar/button">
+        <xsl:for-each select="/root/menubar/button">
           <li>
             <xsl:attribute name="class">
               <xsl:choose>
@@ -181,7 +181,7 @@
 
             <!-- create a link for each element within menubar -->
             <xsl:choose>
-              <xsl:when test="//params/application='sample'">
+              <xsl:when test="/root/params/application='sample'">
                 <!-- this is for the sample application -->
                 <a href="{$help_root}/{@id}?{$session}"><xsl:value-of select="node()"/></a>
               </xsl:when>
@@ -203,7 +203,7 @@
         <!-- it also contains entries for each page in the current hierarchy (aka 'breadcrumbs') -->
         <ul>
 
-          <xsl:for-each select="//menubar/stack">
+          <xsl:for-each select="/root/menubar/stack">
            <li>
               <xsl:choose>
                 <xsl:when test="position()=last() or @active">
@@ -250,10 +250,10 @@
 
   <div class="navbar">
 
-    <xsl:if test="//navbar/*[@context_preselect='N']">
+    <xsl:if test="/root/navbar/*[@context_preselect='N']">
       <!-- pick out the entries that do not require a selection to be made -->
       <p class="withoutselection">
-        <xsl:for-each select="//navbar/*[@context_preselect='N']">
+        <xsl:for-each select="/root/navbar/*[@context_preselect='N']">
             <!-- create a button for each element within navbar -->
             <input class="submit" type="submit" name="{@id}" value="{node()}" />
             <xsl:text> </xsl:text>
@@ -307,7 +307,7 @@
           <p class="selection">
             <!-- these links will allow the user to toggle all select boxes either ON or OFF -->
             <!-- do this only if there is a field called 'selectbox' -->
-            <xsl:if test="//row/cell[@field='selectbox']">
+            <xsl:if test="/root/structure/*/row/cell[@field='selectbox']">
               <xsl:text>Selections:&#160;</xsl:text>
               <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
               <xsl:text> | </xsl:text>
@@ -326,10 +326,10 @@
       </xsl:choose>
     </xsl:if>
 
-    <xsl:if test="//navbar/*[@context_preselect='Y']">
+    <xsl:if test="/root/navbar/*[@context_preselect='Y']">
       <!-- pick out the entries that require a selection to be made before the button is pressed -->
       <p class="withselection">
-        <xsl:for-each select="//navbar/*[@context_preselect='Y']">
+        <xsl:for-each select="/root/navbar/*[@context_preselect='Y']">
             <!-- create a button for each element within navbar -->
             <input class="submit" type="submit" name="{@id}" value="{node()}" />
             <xsl:text> </xsl:text>
@@ -345,12 +345,12 @@
 <!-- this version is for DETAIL screens -->
 <xsl:template name="navbar_detail">
 
-  <xsl:if test="count(//navbar/*)&gt;0">
+  <xsl:if test="count(/root/navbar/*)&gt;0">
 
     <div class="navbar">
       <!-- no preselection is required as everything works off the current record -->
       <p class="withoutselection">
-        <xsl:for-each select="//navbar/*">
+        <xsl:for-each select="/root/navbar/*">
             <!-- create a button for each element within navbar -->
             <input class="submit" type="submit" name="{@id}" value="{node()}" />
             <xsl:text> </xsl:text>

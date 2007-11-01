@@ -20,8 +20,8 @@ $structure['title'][] = array('text' => '- Contents of DICT_TABLE table -',
 
 // set column widths
 $structure['columns'][] = array('width' => 30);
-$structure['columns'][] = array('width' => 40);
-$structure['columns'][] = array('width' => 92);
+$structure['columns'][] = array('width' => 50, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 82);
 $structure['columns'][] = array('width' => 70, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 45);
 

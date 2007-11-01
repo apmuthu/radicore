@@ -1,3 +1,0 @@
-This will display the contents of a record from the PATTERN table.
-
-Refer to <a href="%root%/mnu_pattern(enq).html">Enquire Pattern</a> for full details.

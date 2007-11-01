@@ -6,7 +6,7 @@
 require_once 'std.table.class.inc';
 class dict_table extends Default_Table
 {
-    // member variables
+    var $count;         // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -30,7 +30,6 @@ class dict_table extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] != 'search') {
 			// do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
@@ -79,16 +78,18 @@ class dict_table extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get arrays to put into LOOKUP_DATA
-        $array = $this->getValRep('audit_logging');
-        $this->lookup_data['audit_logging'] = $array;
+        if (!array_key_exists('audit_logging', $this->lookup_data)) {
+            // get arrays to put into LOOKUP_DATA
+            $array = $this->getValRep('audit_logging');
+            $this->lookup_data['audit_logging'] = $array;
+        } // if
 
-        // get contents of foreign table DATABASE and add as a LOOKUP list
-        require_once 'classes/dict_database.class.inc';
-        $dbobject =& singleton::getInstance('dict_database');
-        $array    = $dbobject->getValRep('database_id');
-        $this->lookup_data['database_id'] = $array;
+        if (!array_key_exists('database_id', $this->lookup_data)) {
+            // get contents of foreign table DATABASE and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('dict_database');
+            $array    = $dbobject->getValRep('database_id');
+            $this->lookup_data['database_id'] = $array;
+        } // if
 
 		return $fieldarray;
 
@@ -109,10 +110,14 @@ class dict_table extends Default_Table
         } // if
 
         if ($item == 'table_id') {
-            // get data from the database
-            $this->sql_select     = 'table_id, table_desc';
-            $this->sql_orderby    = 'table_id';
+            // get data from the database, ignoring any tables which have no entries on DICT_COLUMN
+            $this->sql_select     = 'dict_table.table_id, table_desc, count(dict_column.table_id) as column_count';
+            $this->sql_orderby    = 'dict_table.table_id';
             $this->sql_ordery_seq = 'asc';
+            $this->sql_from       = 'dict_table '
+                                  . 'LEFT JOIN dict_column ON (dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id) ';
+            $this->sql_having     = 'count(dict_column.table_id) > 0';
+            $this->sql_groupby    = 'dict_table.table_id, table_desc';
             $data = $this->getData($where);
 
             // convert each row into 'id=id' in the output array
@@ -126,6 +131,50 @@ class dict_table extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['table_id'] = 'Total count:';
+        $array['table_desc'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        $pattern_id = getPatternId();
+
+        if (eregi('^popup', $pattern_id)) {
+            $this->sql_having  = 'count(dict_column.table_id) > 0';
+        	$this->sql_groupby = 'dict_table.database_id, dict_table.table_id, dict_table.table_desc';
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

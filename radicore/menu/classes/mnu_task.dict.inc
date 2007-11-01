@@ -1,19 +1,19 @@
 <?php
-    // file created on January 4, 2007, 1:47 pm
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'lowercase' => 'y');
     
     $fieldspec['task_desc']                 = array('type' => 'string',
-                                                    'size' => 50,
+                                                    'size' => 80,
                                                     'required' => 'y');
     
     $fieldspec['button_text']               = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y');
     
     $fieldspec['task_type']                 = array('type' => 'string',
@@ -24,7 +24,7 @@
                                                     'optionlist' => 'task_type');
     
     $fieldspec['script_id']                 = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y');
     
@@ -44,7 +44,7 @@
                                                     'optionlist' => 'pattern_id');
     
     $fieldspec['subsys_id']                 = array('type' => 'string',
-                                                    'size' => 8,
+                                                    'size' => 16,
                                                     'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
@@ -68,12 +68,14 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['keep_data']                 = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['log_sql_query']             = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -85,6 +87,7 @@
                                                     'maxvalue' => 3600);
     
     $fieldspec['use_https']                 = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -135,6 +138,14 @@
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_role',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_user',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_menu',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'menu_id'));
@@ -168,6 +179,10 @@
                                                     'fields' => array('task_id' => 'initial_passthru'));
     
     $this->child_relations[]                = array('child' => 'mnu_task_field',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_todo',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     

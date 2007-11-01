@@ -1,4 +1,4 @@
--- file created on October 31, 2006, 10:02 am
+-- file created on March 26, 2007, 5:02 pm
     
 REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_prefix`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('CRSS', 'Classroom Scheduling System', 'classroom', 'crs_', '2004-12-19 15:51:55', 'AJM', '2006-04-22 09:38:27', 'AJM');
@@ -6,6 +6,15 @@ REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_pr
 REPLACE INTO `mnu_role` (`role_id`, `role_desc`, `start_task_id`, `global_access`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'Demonstration Class', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL),
 ('READONLY', 'Read Only', 'main_menu', 'N', '2003-01-01 12:00:00', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_class_lesson(add)a', 'Add Lesson(s) to selected Class', 'Insert', 'PROC', 'class_lesson_add(a).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:00:29', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_class_lesson(add)b', 'Add Class(es) to selected Lesson', 'Insert', 'PROC', 'class_lesson_add(b).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:01:08', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_class_lesson(del)', 'Delete from Class/Lesson cross-reference', 'Delete', 'PROC', 'class_lesson_del.php', 'N', 'DEL2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:02:05', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_class(add)', 'Add Class', 'New', 'PROC', 'class_add.php', 'N', 'ADD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-25 19:51:11', 'AJM', NULL, NULL);
@@ -48,7 +57,7 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 ('DEMO', 'crs_class(list)a', '2005-01-15 18:48:30', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_class(popup)', 'Choose Class', 'Choose', 'PROC', 'class_popup.php', 'N', 'LIST1', 'CRSS', NULL, NULL, NULL, NULL, 'class_name', 'N', NULL, NULL, 'N', '2005-01-30 17:07:19', 'AJM', NULL, NULL);
+('crs_class(popup)', 'Choose Class', 'Choose', 'PROC', 'class_popup.php', 'N', 'POPUP1', 'CRSS', NULL, NULL, NULL, NULL, 'class_name', 'N', 'N', NULL, 'N', '2005-01-30 17:07:19', 'AJM', '2007-03-05 17:34:28', 'AJM');
 
 REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('DEMO', 'crs_class(popup)', '2005-04-19 18:44:07', 'AJM', NULL, NULL);
@@ -61,15 +70,6 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_class(upd)', 'Update Class', 'Update', 'PROC', 'class_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-25 19:52:20', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_class_lesson(add)a', 'Add Lesson(s) to selected Class', 'Insert', 'PROC', 'class_lesson_add(a).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:00:29', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_class_lesson(add)b', 'Add Class(es) to selected Lesson', 'Insert', 'PROC', 'class_lesson_add(b).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:01:08', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_class_lesson(del)', 'Delete from Class/Lesson cross-reference', 'Delete', 'PROC', 'class_lesson_del.php', 'N', 'DEL2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-26 11:02:05', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_confict(list)', 'List Lesson Conflicts', 'Conflicts', 'PROC', 'conflict_list.php', 'N', 'LIST1', 'CRSS', NULL, NULL, NULL, NULL, 'conflict_id', 'N', NULL, NULL, 'N', '2005-01-01 17:57:41', 'AJM', '2005-01-01 20:05:47', 'AJM');
@@ -215,6 +215,55 @@ REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `sc
 ('crs_room(upd)', 'Update Room', 'Update', 'PROC', 'room_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-19 21:39:47', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(add)', 'Add Schedule Header', 'New', 'PROC', 'schedule_hdr_add.php', 'N', 'ADD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:25:06', 'AJM', '2005-01-03 16:27:19', 'AJM');
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(choose)', 'Choose Schedule Id', 'Choose Schedule', 'PROC', 'schedule_hdr_choose.php', 'N', 'UPD2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-03-11 15:48:47', 'AJM', '2006-03-11 18:23:43', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'crs_schedule_hdr(choose)', '2006-04-07 17:27:42', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(del)', 'Delete Schedule Header', 'Delete', 'PROC', 'schedule_hdr_del.php', 'N', 'DEL1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:25:43', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(enq)', 'Enquire Schedule Header', 'Read', 'PROC', 'schedule_hdr_enq.php', 'N', 'ENQ1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:06', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'crs_schedule_hdr(enq)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(list)', 'List Schedule Header', 'Schedules', 'PROC', 'schedule_hdr_list.php', 'N', 'LIST1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:24:42', 'AJM', '2005-01-03 16:27:33', 'AJM');
+
+REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(list)', 'crs_schedule_hdr(add)', '001', 'New', 'N', '2005-01-03 16:28:31', 'AJM', '2005-01-03 16:29:01', 'AJM'),
+('crs_schedule_hdr(list)', 'crs_schedule_hdr(search)', '002', 'Search', 'N', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:01', 'AJM'),
+('crs_schedule_hdr(list)', 'crs_schedule_hdr(enq)', '003', 'Read', 'Y', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:01', 'AJM'),
+('crs_schedule_hdr(list)', 'crs_schedule_hdr(upd)', '004', 'Update', 'Y', '2005-01-03 16:28:18', 'AJM', NULL, NULL),
+('crs_schedule_hdr(list)', 'crs_schedule_hdr(del)', '005', 'Delete', 'Y', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:00', 'AJM'),
+('crs_schedule_hdr(list)', 'crs_schedule(list)', '006', 'Events', 'Y', '2005-01-03 17:22:34', 'AJM', '2005-01-05 21:42:22', 'AJM'),
+('crs_schedule_hdr(list)', 'audit_dtl(list)3', '007', 'Audit Trail', 'Y', '2005-01-03 18:05:22', 'AJM', NULL, NULL),
+('crs_schedule_hdr(list)', 'audit_dtl(list)3exact', '008', 'Audit Trail (exact)', 'Y', '2005-01-03 18:05:22', 'AJM', '2005-01-03 18:06:00', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'crs_schedule_hdr(list)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(popup)', 'Choose Schedule Id', 'Choose', 'PROC', 'schedule_hdr_popup.php', 'N', 'POPUP1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-03-11 15:34:08', 'AJM', '2006-10-06 13:23:11', 'AJM');
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'crs_schedule_hdr(popup)', '2006-04-07 17:27:42', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(search)', 'Search Schedule Header', 'Search', 'PROC', 'schedule_hdr_search.php', 'N', 'SRCH', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:33', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('DEMO', 'crs_schedule_hdr(search)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
+('crs_schedule_hdr(upd)', 'Update Schedule Header', 'Update', 'PROC', 'schedule_hdr_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:55', 'AJM', NULL, NULL);
+
+REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_schedule(add)', 'Add Schedule Event', 'New', 'PROC', 'schedule_add.php', 'N', 'ADD2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 17:18:30', 'AJM', '2005-01-05 21:44:38', 'AJM');
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
@@ -278,8 +327,8 @@ REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button
 ('crs_schedule(multi)', 'crs_schedule(enq)', '002', 'Read', 'Y', '2005-02-14 22:12:53', 'AJM', '2006-07-12 21:32:22', 'AJM'),
 ('crs_schedule(multi)', 'crs_schedule(upd)', '003', 'Update', 'Y', '2006-07-13 11:08:10', 'AJM', '2006-07-13 11:08:28', 'AJM'),
 ('crs_schedule(multi)', 'crs_schedule(del)', '004', 'Delete', 'Y', '2005-02-14 20:13:45', 'AJM', '2006-07-13 11:08:28', 'AJM'),
-('crs_schedule(multi)', 'crs_schedule(list)room', '005', 'Show Schedule', 'N', '2005-02-26 15:32:48', 'AJM', '2006-07-13 11:08:28', 'AJM'),
-('crs_schedule(multi)', 'audit_dtl(list)3', '005', 'Audit Trail', 'Y', '2006-07-13 11:03:28', 'AJM', NULL, NULL);
+('crs_schedule(multi)', 'audit_dtl(list)3', '005', 'Audit Trail', 'Y', '2006-07-13 11:03:28', 'AJM', NULL, NULL),
+('crs_schedule(multi)', 'crs_schedule(list)room', '005', 'Show Schedule', 'N', '2005-02-26 15:32:48', 'AJM', '2006-07-13 11:08:28', 'AJM');
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_schedule(search)', 'Search Schedule Event', 'Search', 'PROC', 'schedule_search.php', 'N', 'SRCH', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 17:20:25', 'AJM', '2005-01-05 21:44:15', 'AJM');
@@ -291,53 +340,13 @@ REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `sc
 ('crs_schedule(upd)', 'Update Schedule Event', 'Update', 'PROC', 'schedule_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2005-01-03 17:20:50', 'AJM', '2006-03-19 18:06:34', 'AJM');
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(add)', 'Add Schedule Header', 'New', 'PROC', 'schedule_hdr_add.php', 'N', 'ADD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:25:06', 'AJM', '2005-01-03 16:27:19', 'AJM');
+('crs_student_lesson(add)a', 'Add Lesson(s) to selected Student', 'Insert', 'PROC', 'student_lesson_add(a).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 17:20:51', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(choose)', 'Choose Schedule Id', 'Choose Schedule', 'PROC', 'schedule_hdr_choose.php', 'N', 'UPD2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-03-11 15:48:47', 'AJM', '2006-03-11 18:23:43', 'AJM');
-
-REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('DEMO', 'crs_schedule_hdr(choose)', '2006-04-07 17:27:42', 'AJM', NULL, NULL);
+('crs_student_lesson(add)b', 'Add Students(s) to selected Lesson', 'Insert', 'PROC', 'student_lesson_add(b).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-25 12:05:08', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(del)', 'Delete Schedule Header', 'Delete', 'PROC', 'schedule_hdr_del.php', 'N', 'DEL1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:25:43', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(enq)', 'Enquire Schedule Header', 'Read', 'PROC', 'schedule_hdr_enq.php', 'N', 'ENQ1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:06', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('DEMO', 'crs_schedule_hdr(enq)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(list)', 'List Schedule Header', 'Schedules', 'PROC', 'schedule_hdr_list.php', 'N', 'LIST1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:24:42', 'AJM', '2005-01-03 16:27:33', 'AJM');
-
-REPLACE INTO `mnu_nav_button` (`task_id_snr`, `task_id_jnr`, `sort_seq`, `button_text`, `context_preselect`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(list)', 'crs_schedule_hdr(add)', '001', 'New', 'N', '2005-01-03 16:28:31', 'AJM', '2005-01-03 16:29:01', 'AJM'),
-('crs_schedule_hdr(list)', 'crs_schedule_hdr(search)', '002', 'Search', 'N', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:01', 'AJM'),
-('crs_schedule_hdr(list)', 'crs_schedule_hdr(enq)', '003', 'Read', 'Y', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:01', 'AJM'),
-('crs_schedule_hdr(list)', 'crs_schedule_hdr(upd)', '004', 'Update', 'Y', '2005-01-03 16:28:18', 'AJM', NULL, NULL),
-('crs_schedule_hdr(list)', 'crs_schedule_hdr(del)', '005', 'Delete', 'Y', '2005-01-03 16:28:18', 'AJM', '2005-01-03 16:29:00', 'AJM'),
-('crs_schedule_hdr(list)', 'crs_schedule(list)', '006', 'Events', 'Y', '2005-01-03 17:22:34', 'AJM', '2005-01-05 21:42:22', 'AJM'),
-('crs_schedule_hdr(list)', 'audit_dtl(list)3', '007', 'Audit Trail', 'Y', '2005-01-03 18:05:22', 'AJM', NULL, NULL),
-('crs_schedule_hdr(list)', 'audit_dtl(list)3exact', '008', 'Audit Trail (exact)', 'Y', '2005-01-03 18:05:22', 'AJM', '2005-01-03 18:06:00', 'AJM');
-
-REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('DEMO', 'crs_schedule_hdr(list)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(popup)', 'Choose Schedule Id', 'Choose', 'PROC', 'schedule_hdr_popup.php', 'N', 'POPUP1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', '2006-03-11 15:34:08', 'AJM', '2006-10-06 13:23:11', 'AJM');
-
-REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('DEMO', 'crs_schedule_hdr(popup)', '2006-04-07 17:27:42', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(search)', 'Search Schedule Header', 'Search', 'PROC', 'schedule_hdr_search.php', 'N', 'SRCH', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:33', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('DEMO', 'crs_schedule_hdr(search)', '2005-04-19 18:45:00', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_schedule_hdr(upd)', 'Update Schedule Header', 'Update', 'PROC', 'schedule_hdr_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-01-03 16:26:55', 'AJM', NULL, NULL);
+('crs_student_lesson(del)', 'Delete from Student/Lesson cross-reference', 'Delete', 'PROC', 'student_lesson_del.php', 'N', 'DEL2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 17:25:02', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_student(add)', 'Add Student', 'New', 'PROC', 'student_add.php', 'N', 'ADD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 12:53:41', 'AJM', NULL, NULL);
@@ -401,15 +410,6 @@ REPLACE INTO `mnu_role_task` (`role_id`, `task_id`, `created_date`, `created_use
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_student(upd)', 'Update Student', 'Update', 'PROC', 'student_upd.php', 'N', 'UPD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 12:55:20', 'AJM', '2005-01-29 19:53:01', 'AJM');
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_student_lesson(add)a', 'Add Lesson(s) to selected Student', 'Insert', 'PROC', 'student_lesson_add(a).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 17:20:51', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_student_lesson(add)b', 'Add Students(s) to selected Lesson', 'Insert', 'PROC', 'student_lesson_add(b).php', 'N', 'ADD3', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-25 12:05:08', 'AJM', NULL, NULL);
-
-REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('crs_student_lesson(del)', 'Delete from Student/Lesson cross-reference', 'Delete', 'PROC', 'student_lesson_del.php', 'N', 'DEL2', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2004-12-24 17:25:02', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_task` (`task_id`, `task_desc`, `button_text`, `task_type`, `script_id`, `is_disabled`, `pattern_id`, `subsys_id`, `initial_passthru`, `selection_fixed`, `selection_temp`, `settings`, `order_by`, `keep_data`, `log_sql_query`, `screen_refresh`, `use_https`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('crs_subject(add)', 'Add Subject', 'New', 'PROC', 'subject_add.php', 'N', 'ADD1', 'CRSS', NULL, NULL, NULL, NULL, NULL, 'N', NULL, NULL, 'N', '2005-07-28 12:33:40', 'AJM', NULL, NULL);
@@ -500,6 +500,6 @@ REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `c
 ('crss2', 'crs_schedule_hdr(list)', '002', 'Schedules', '2005-01-03 16:29:33', 'AJM', NULL, NULL);
 
 REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('proto', 'crss', '004', 'Classroom Scheduling', '2005-05-05 17:45:59', 'AJM', '2005-05-05 17:49:41', 'AJM');
+('proto', 'crss', '003', 'Classroom', '2005-05-05 17:45:59', 'AJM', '2007-02-24 11:42:19', 'AJM');
 
 -- finished

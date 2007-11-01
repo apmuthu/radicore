@@ -35,7 +35,6 @@ class x_tree_level_s01 extends x_tree_level
 
         if ($newdata[0]['tree_level_id_jnr'] <> $tree_level_id_jnr) {
             // child level has changed, so update all nodes in previous child level
-            require_once 'classes/x_tree_node.class.inc';
             $dbnode =& singleton::getInstance('x_tree_node');
             $where = "tree_type_id='$tree_type_id' AND tree_level_id='$tree_level_id_jnr'";
             $replace = 'node_id_snr=NULL';

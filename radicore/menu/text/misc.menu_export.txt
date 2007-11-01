@@ -1,14 +1,16 @@
-// file created on October 31, 2006, 10:02 am
+// file created on July 12, 2007, 6:55 pm
     
 // menu details for subsystem MISC
 
 // task details for subsystem MISC
-$array['date(current)']                     = 'Select Records with Current Dates';
-$array['date(future)']                      = 'Select Records with Future Dates';
-$array['date(historic)']                    = 'Select Records with Historic Dates';
+$array['date(current)']                           = 'Select Records with Current Dates';
+$array['date(future)']                            = 'Select Records with Future Dates';
+$array['date(historic)']                          = 'Select Records with Historic Dates';
 
 // navigation button details for subsystem MISC
-$array['Current']                           = 'Current';
-$array['Historic']                          = 'Historic';
+$array['Current']                                 = 'Current';
+$array['Historic']                                = 'Historic';
+
+// column details for subsystem MISC
 
 // finished

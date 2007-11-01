@@ -4,6 +4,7 @@ $structure['xsl_file'] = 'std.tree.list1.xsl';
 $structure['tables']['main'] = 'tree_node';
 
 $structure['main']['columns'][] = array('width' => 5);
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('node_desc' => 'Node Description', 'nosort' => 'y');

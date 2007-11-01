@@ -306,3 +306,13 @@ div.red {
   background: red;
   color: white;
 }
+.overdue {
+  background: red;
+  color: yellow;
+  font-weight: bold;
+}
+div.todo_user .overdue {
+  background: transparent;
+  color: red;
+  font-weight: bold;
+}

@@ -1,7 +1,14 @@
 <?php
-    // file created on November 3, 2006, 11:34 am
+    // file created on September 17, 2007, 9:57 am
     
     // field specifications for table workflow.wf_workitem
+    $fieldspec['rdcaccount_id']             = array('type' => 'integer',
+                                                    'size' => 11,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 4294967295,
+                                                    'required' => 'y',
+                                                    'default' => '1');
+    
     $fieldspec['case_id']                   = array('type' => 'integer',
                                                     'size' => 10,
                                                     'minvalue' => 0,
@@ -48,11 +55,11 @@
                                                     'noedit' => 'y');
     
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_task(popup)a',
+                                                    'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'task_desc',
                                                     'noedit' => 'y');
     
@@ -112,6 +119,11 @@
     $this->child_relations                  = array();
     
     // parent relationship details 
+    $this->parent_relations[]               = array('parent' => 'mnu_account',
+                                                    'dbname' => 'menu',
+                                                    'subsys_dir' => 'menu',
+                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
+    
     $this->parent_relations[]               = array('parent' => 'mnu_role',
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',

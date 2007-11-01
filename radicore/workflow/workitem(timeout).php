@@ -1,7 +1,7 @@
 <?
 
 /*
-Look for wf_workitem records whose deadline has passed so that they nay be closed
+Look for wf_workitem records whose deadline has passed so that they may be closed
 */
 
 ini_set('include_path', '.');
@@ -20,7 +20,7 @@ $workflow = new workflow_engine;
 $now = getTimeStamp();
 $where = "workitem_status='EN' AND deadline <= '$now'";
 $workitem->sql_orderby = 'case_id, deadline';
-$workitem_result = $workitem->getData_batch($where);
+$workitem_result = $workitem->getData_serial($where);
 $workflow->startTransaction();
 while ($row = $workitem->fetchRow($workitem_result)) {
     $case_id     = $row['case_id'];

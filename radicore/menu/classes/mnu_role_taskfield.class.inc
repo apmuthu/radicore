@@ -31,10 +31,11 @@ class mnu_role_taskfield extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-
-        // get options for access_type and insert in LOOKUP data
-        $array = $this->getValRep('access_type');
-        $this->lookup_data['access_type'] = $array;
+        if (!array_key_exists('access_type', $this->lookup_data)) {
+            // get options for access_type and insert in LOOKUP data
+            $array = $this->getValRep('access_type');
+            $this->lookup_data['access_type'] = $array;
+        } // if
 
         return $fieldarray;
 

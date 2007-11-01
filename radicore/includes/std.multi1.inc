@@ -24,6 +24,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -56,18 +62,21 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_orderby_table = &$sql_orderby_table;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dbobject->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dbobject->setDefaultOrderby($task_orderby);
     } // if
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // scroll through one item at a time
     $dbobject->setRowsPerPage(1);
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbobject->initialise($selection, $where);
-    } else {
-        $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where);
+    // save $where in $scrollarray
+    $scrolling[$dbobject->getClassName()]['where'] = $where;
+    // get object to set scroll array internally
+    $where  = $dbobject->setScrollArray($where);
+    if ($dbobject->errors) {
+    	scriptprevious($dbobject->errors);
     } // if
 } // if
 
@@ -94,7 +103,7 @@ if (isset($_POST['retrieve'])) {
     // get data from the database
     $fieldarray = $dbobject->getData($where);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    	$errors[$dbobject->getClassName()] = $dbobject->errors;
     } // if
     if (!$errors) {
         if ($dbobject->getNumRows() < 1) {
@@ -104,6 +113,9 @@ if (isset($_POST['retrieve'])) {
         } else {
             // get extra data for lookup lists
             $fieldarray = $dbobject->getExtraData($fieldarray);
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            } // if
             // set new scrolling values
             $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
             $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
@@ -122,7 +134,7 @@ if (isset($_POST['delete'])) {
     $dbobject->startTransaction();
     $fieldarray = $dbobject->deleteRecord($fieldarray);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    	$errors[$dbobject->getClassName()] = $dbobject->errors;
     } // if
     if ($errors) {
         $dbobject->rollback();
@@ -158,44 +170,37 @@ if (isset($_POST['delete'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action == 'choose') {
+    if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            	$errors[$dbobject->getClassName()] = $dbobject->errors;
             } // if
         } // if
     } else {
-        if (!empty($selection)) {
-            // use selection from previous screen
-            $where     = $selection;
-            $selection = null;
-
-            // save $where in $scrollarray
-            $scrolling[$dbobject->getClassName()]['where'] = $where;
-
-            // get object to set scroll array internally
-            $where  = $dbobject->setScrollArray($where);
-            if ($dbobject->errors) {
-            	// beam me up, Scotty!
-                scriptprevious($dbobject->getErrors());
-            } // if
-        } else {
-            if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
-                if (empty($dbobject->scrollarray)) {
-                	$dbobject->setPageNo($_GET['item']);
-                } else {
-                    // set index number of item to be read from current scrollarray
-                    $where = $dbobject->getScrollItem($_GET['item']);
-                } // if
+        if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
+            if (empty($dbobject->scrollarray)) {
+            	$dbobject->setPageNo($_GET['item']);
+            } else {
+                // set index number of item to be read from current scrollarray
+                $where = $dbobject->getScrollItem($_GET['item']);
             } // if
         } // if
 
         // retrieve record from the database
         $fieldarray = $dbobject->getData($where);
         if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            if (empty($dbobject->scrollarray) OR count($dbobject->scrollarray) == 1) {
+                $errors = $dbobject->errors;
+//                foreach ($errors as $key => $value) {
+//                    $errors[$where] = $value;
+//                    unset($errors[$key]);
+//                } // foreach
+            	scriptPrevious($errors);
+            } else {
+        	    $errors[$dbobject->getClassName()] = $dbobject->errors;
+            } // if
         } // if
 
         // the following lines are incorrect - if a record does NOT currently exist then
@@ -210,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         		scriptPrevious($errors);
         	} // if
         } // if
+
         if (empty($dbobject->scrollarray)) {
             $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
             $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
@@ -222,7 +228,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 } // if
 
 // look for entered data
-if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
+//if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
     $fieldarray = array_update_associative($fieldarray, $_POST);
@@ -234,7 +241,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+        $errors = childForm($_POST, array('dbobject' => $dbobject));
     } else {
         $mode = 'insert';
         $dbobject->setFieldArray($fieldarray);
@@ -251,7 +258,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
         } // if
         if ($dbobject->errors) {
 			// errors are keyed by object name
-		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+		    $errors[$dbobject->getClassName()] = $dbobject->errors;
 		} // if
         if ($errors) {
             $dbobject->rollback();
@@ -296,15 +303,15 @@ if (!$errors) {
     if ($dbobject->getNumRows() < 1) {
         // get initial data for a new record
         $fieldarray = $dbobject->getInitialData($where);
-        if ($dbobject->getErrors()) {
-            scriptPrevious($dbobject->getErrors(), $messages);
+        if ($dbobject->errors) {
+            scriptPrevious($dbobject->errors, $messages);
         } // if
     } // if
 
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    	$errors[$dbobject->getClassName()] = $dbobject->errors;
         // remove the SUBMIT button
         unset($act_buttons['submit']);
     } // if

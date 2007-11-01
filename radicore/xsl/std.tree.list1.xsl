@@ -26,7 +26,7 @@
 <xsl:include href="std.treenode.xsl"/>
 
 <!-- get the name of the MAIN table -->
-<xsl:variable name="main" select="//structure/main/@id"/>
+<xsl:variable name="main" select="/root/structure/main/@id"/>
 
 <xsl:variable name="numrows">0</xsl:variable>
 
@@ -42,9 +42,9 @@
       <xsl:copy-of select="@*" />
     </xsl:for-each>
 
-  <xsl:if test="//header">
+  <xsl:if test="/root/header">
     <div class="header">
-      <xsl:value-of select="//header" disable-output-escaping="yes"/>
+      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
     </div>
   </xsl:if>
 
@@ -65,7 +65,7 @@
         <!-- create navigation buttons -->
         <xsl:call-template name="navbar">
           <xsl:with-param name="noshow"   select="'y'"/>
-          <xsl:with-param name="noselect" select="//params/noselect"/>
+          <xsl:with-param name="noselect" select="/root/params/noselect"/>
         </xsl:call-template>
 
         <div class="tree">
@@ -87,7 +87,7 @@
 
             <tbody>
               <!-- process each non-empty row in the MAIN table of the XML file -->
-              <xsl:for-each select="//*[name()=$main][count(*)&gt;0]">
+              <xsl:for-each select="/root/*[name()=$main][count(*)&gt;0]">
 
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_tree_node">
@@ -125,11 +125,6 @@
 
   </body>
   </html>
-
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
 
 </xsl:template>
 

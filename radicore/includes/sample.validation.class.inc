@@ -32,7 +32,17 @@ class sample_validation_class
         $input = strtoupper($input);
 
         if (!empty($input)) {
-            $pattern = "^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} [0-9]{1}[A-Z]{2}$";
+            $pattern = '^'                          // begins with
+                     . '('
+                     . '[A-Z]{1,2}[0-9]{1,2}'       // AN, ANN, AAN, AANN
+                     . '|'                          // or
+                     . '[A-Z]{1}[0-9]{1}[A-Z]{1}'   // ANA
+                     . '|'                          // or
+                     . '[A-Z]{2}[0-9]{1}[A-Z]{1}'   // AANA
+                     . ')'
+                     . ' '                          // space
+                     . '[0-9]{1}[A-Z]{2}'           // NAA
+                     . '$';                         // ends with
             if (!ereg($pattern, $input)) {
                 // 'Invalid format for a postcode.'
                 return getLanguageText('sample001');

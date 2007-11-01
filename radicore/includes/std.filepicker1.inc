@@ -22,7 +22,7 @@ initSession();
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
     // clear this script from session details and return to previous page
-    scriptPrevious(getLanguageText('sys0087')); // 'Nothing selected from filepicker screen.'
+    scriptPrevious(getLanguageText('sys0087'),null,'quit'); // 'Nothing selected from filepicker screen.'
 } // if
 
 if (isset($_POST['choosenull'])) {
@@ -84,7 +84,24 @@ while (false !== ($file = readdir($this_dir))) {
 closedir($this_dir);
 sort($file_list);
 
-// copy data into main object
+// set pagination data
+$limit     = 100;
+$num_rows  = count($file_list);
+$last_page = ceil($num_rows / $limit);
+if (isset($_GET['page'])) {
+	$curr_page = abs($_GET['page']);
+} // if
+if (empty($curr_page) OR $curr_page < 1) {
+	$curr_page = 1;
+} // if
+$offset = ($curr_page - 1) * $limit;
+
+$pagination['main']['numrows']  = $num_rows;
+$pagination['main']['curpage']  = $curr_page;
+$pagination['main']['lastpage'] = $last_page;
+
+// copy data into object's $fieldarray so that it can be displayed
+$file_list = array_slice($file_list, $offset, $limit);
 $fileobject->setFieldArray($file_list);
 
 // build list of objects for output to XML data

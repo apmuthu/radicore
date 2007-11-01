@@ -92,7 +92,7 @@ class mnu_user_s01 extends mnu_user
     function _cm_initialise ($where)
     // perform any initialisation for the current task.
     {
-        // this may be called fromthe home page, so insert user's id
+        // this may be called from the home page, so insert user's id
         if (empty($where)) {
         	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
         } // if

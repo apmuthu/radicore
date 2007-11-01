@@ -119,10 +119,12 @@ class inventory_item_status_hist extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for inv_item_status_id and put into LOOKUP_DATA
-        $object =& singleton::getInstance('inventory_item_status');
-        $array  = $object->getValRep('inv_item_status_id');
-        $this->lookup_data['inv_item_status_id'] = $array;
+        if (!array_key_exists('inv_item_status_id', $this->lookup_data)) {
+            // get array for inv_item_status_id and put into LOOKUP_DATA
+            $object =& singleton::getInstance('inventory_item_status');
+            $array  = $object->getValRep('inv_item_status_id');
+            $this->lookup_data['inv_item_status_id'] = $array;
+        } // if
 
         return $fieldarray;
 

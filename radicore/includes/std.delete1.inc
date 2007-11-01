@@ -21,6 +21,12 @@ $mode = 'delete';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -55,12 +61,17 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
         $dbobject->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbobject->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbobject->setOrderBySeq($orderby_seq);
         } // if
+    } // if
+    // perform any initialisation
+    $where = $dbobject->initialise($where);
+    if ($dbobject->errors) {
+        scriptPrevious($dbobject->errors);
     } // if
 } // if
 
@@ -70,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+        $errors = childForm($_POST, array('dbobject' => $dbobject));
         if (empty($errors)) {
             $dbobject->startTransaction();
             // delete this record from the database
@@ -92,16 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } // if
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbobject->getClassName()]['where'];
-        $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
-    } // if
+if (isset($scrolling)) {
+    // retrieve values from scrolling array
+    $where = $scrolling[$dbobject->getClassName()]['where'];
+    $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
 } // if
 if (empty($where)) {
     scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'

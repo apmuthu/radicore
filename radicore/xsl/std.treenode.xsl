@@ -18,12 +18,12 @@
   <xsl:variable name="position" select="position()"/>   <!-- current row within table -->
 
   <!-- obtain the names used for each of the node components -->
-  <xsl:variable name="id" select="//structure/*[name()=$zone]/node_data_names/@id"/>
-  <xsl:variable name="desc" select="//structure/*[name()=$zone]/node_data_names/@desc"/>
-  <xsl:variable name="depth" select="//structure/*[name()=$zone]/node_data_names/@depth"/>
-  <xsl:variable name="child_count" select="//structure/*[name()=$zone]/node_data_names/@child_count"/>
-  <xsl:variable name="expanded" select="//structure/*[name()=$zone]/node_data_names/@expanded"/>
-  <xsl:variable name="icon" select="//structure/*[name()=$zone]/node_data_names/@icon"/>
+  <xsl:variable name="id" select="/root/structure/*[name()=$zone]/node_data_names/@id"/>
+  <xsl:variable name="desc" select="/root/structure/*[name()=$zone]/node_data_names/@desc"/>
+  <xsl:variable name="depth" select="/root/structure/*[name()=$zone]/node_data_names/@depth"/>
+  <xsl:variable name="child_count" select="/root/structure/*[name()=$zone]/node_data_names/@child_count"/>
+  <xsl:variable name="expanded" select="/root/structure/*[name()=$zone]/node_data_names/@expanded"/>
+  <xsl:variable name="icon" select="/root/structure/*[name()=$zone]/node_data_names/@icon"/>
 
   <tr>
     <!-- set the row class to 'odd' or 'even' to determine the colour -->

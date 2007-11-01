@@ -21,6 +21,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -56,44 +62,40 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
         $dbobject->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbobject->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbobject->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbobject->initialise($selection, $where);
-    } else {
-        $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where);
+    if ($dbobject->errors) {
+        scriptPrevious($dbobject->errors);
     } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action == 'choose') {
+    if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            } // if
+            // some data may have been changed in the child form, so refresh it
+            $fieldarray = $dbobject->getExtraData($fieldarray);
+            if ($dbobject->errors) {
+            	$errors[$dbobject->getClassName()] = $dbobject->errors;
             } // if
         } // if
-        // some data may have been changed in the child form, so refresh it
-        $fieldarray = $dbobject->getExtraData($fieldarray);
     } else {
-        if (!empty($selection)) {
-            // retrieve profile has been passed down from previous screen
-            $where     = $selection;
-            $selection = null;
-        } else {
-            if (isset($scrolling)) {
-                // retrieve values from scrolling array
-                $where = $scrolling[$dbobject->getClassName()]['where'];
-                $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
-            } // if
+        if (isset($scrolling)) {
+            // retrieve values from scrolling array
+            $where = $scrolling[$dbobject->getClassName()]['where'];
+            $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
         } // if
         if (empty($where)) {
             scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
@@ -107,9 +109,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         // get data from the database
         $fieldarray = $dbobject->getData($where);
         if ($dbobject->errors) {
-            // some sort of error - return to previous script
-            $messages = array_merge($messages, $dbobject->getMessages());
-            scriptprevious($dbobject->getErrors(), $messages);
+            if ($dbobject->numrows > 1) {
+                // multiple rows, so display error message with this screen
+                $errors[$dbobject->getClassName()] = $dbobject->errors;
+            	unset($act_buttons['submit']);
+                unset($act_buttons['submitnext']);
+            } else {
+                // single row, so return to previous script before displaying error message
+                $messages = array_merge($messages, $dbobject->getMessages());
+                scriptprevious($dbobject->errors, $messages);
+            } // if
         } // if
         if ($dbobject->getNumRows() < 1) {
             scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
@@ -122,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        } // if
 
         // rebuild selection criteria using primary key of 1st occurrence
         $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
@@ -135,8 +147,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['paste'])) {
         // merge initial data with previously saved data
-        $fieldarray = array_merge_nonkey($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
+        $fieldarray = pasteData($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
         $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        } // if
     } elseif (isset($_POST['copy'])) {
         $messages = copyForm($_POST, $dbobject);
     } else {
@@ -146,14 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+        $errors = childForm($_POST, array('dbobject' => $dbobject));
         if (empty($errors)) {
             $dbobject->startTransaction();
             // update this data in the database
             $fieldarray = $dbobject->updateRecord($fieldarray);
             if ($dbobject->errors) {
-				// errors are keyed by object name
-			    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+				$errors[$dbobject->getClassName()] = $dbobject->errors;
 			} // if
             $messages = $dbobject->getMessages();
             if (empty($errors)) {
@@ -200,6 +214,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     } // if
                     // get any extra data and merge with $fieldarray
                     $fieldarray = $dbobject->getExtraData($fieldarray);
+                    if ($dbobject->errors) {
+                    	$errors[$dbobject->getClassName()] = $dbobject->errors;
+                    } // if
                     // rebuild selection criteria using primary key of 1st occurrence
                     $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
                 } // if

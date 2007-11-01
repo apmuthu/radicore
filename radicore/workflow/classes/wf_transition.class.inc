@@ -30,15 +30,17 @@ class wf_transition extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for after_submit and put into LOOKUP_DATA
-        $array = $this->getValRep('transition_trigger');
-        $this->lookup_data['transition_trigger'] = $array;
+        if (!array_key_exists('transition_trigger', $this->lookup_data)) {
+            // get array for after_submit and put into LOOKUP_DATA
+            $array = $this->getValRep('transition_trigger');
+            $this->lookup_data['transition_trigger'] = $array;
+        } // if
 
-        require_once 'classes/mnu_role.class.inc';
-        $dbobject =& singleton::getInstance('mnu_role');
-        $role_array = $dbobject->getValRep('role_id');
-        $this->lookup_data['role_id'] = $role_array;
+        if (!array_key_exists('role_id', $this->lookup_data)) {
+            $dbobject =& singleton::getInstance('mnu_role');
+            $role_array = $dbobject->getValRep('role_id');
+            $this->lookup_data['role_id'] = $role_array;
+        } // if
 
         return $fieldarray;
 
@@ -127,7 +129,7 @@ class wf_transition extends Default_Table
     {
         //DebugBreak();
         switch ($popupname) {
-            case 'mnu_task(popup)':
+            case 'mnu_task(popup1)':
                 $where = null;
                 if ($GLOBALS['mode'] == 'search') {
                     // use input from current screen
@@ -136,7 +138,7 @@ class wf_transition extends Default_Table
                     } // if
                 } // if
                 break;
-            case 'mnu_role(popup)':
+            case 'mnu_role(popup1)':
                 $where = null;
                 if ($GLOBALS['mode'] == 'search') {
                     // use input from current screen

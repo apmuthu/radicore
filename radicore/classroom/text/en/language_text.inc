@@ -144,6 +144,18 @@ $array['New Class']                     = 'New Class';
 $array['Show Schedule']                 = 'Show Schedule';
 $array['Students']                      = 'Students';
 
+// field names for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+
 // field labels for subsystem CRSS
 $array['Active?']                   = 'Active?';
 $array['Capacity']                  = 'Capacity';
@@ -186,23 +198,6 @@ $array['Type']                      = 'Type';
 $array['Valid?']                    = 'Valid?';
 $array['Wed']                       = 'Wed';
 $array['Year']                      = 'Year';
-
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-
 
 return $array;
 

@@ -60,20 +60,15 @@ class dict_dataBase_s02 extends dict_dataBase
                 // export contents of DICT_RELATIONSHIP for this database
             	$tableobj->sql_select = '*';
             	$tableobj->sql_from   = 'dict_relationship';
+
+            	$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
             	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
-                $data = $tableobj->getData_raw("database_id_snr='$database_id' AND table_id_snr='$table_id'");
-                foreach ($data as $reldata) {
-                	$output = $this->_exportSqlData('dict_relationship', $reldata, $output);
-                	// export contents of DICT_RELATED_COLUMN for this table
-                	$db_id_jnr  = $reldata['database_id_jnr'];
-                	$tbl_id_jnr = $reldata['table_id_jnr'];
-                	$seq_no     = $reldata['seq_no'];
-                    $tableobj->sql_select = '*';
-                	$tableobj->sql_from   = 'dict_related_column';
-                	$tableobj->sql_orderby = 'column_id_snr,database_id_jnr,table_id_jnr,seq_no';
-                    $data = $tableobj->getData_raw("database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
-                    $output = $this->_exportSqlData('dict_related_column', $data, $output);
-                } // foreach
+            	$output = $this->_extractRelationships ($tableobj, $where, $output);
+
+            	$where = "database_id_snr!='$database_id' AND database_id_jnr='$database_id' AND table_id_jnr='$table_id'";
+            	$tableobj->sql_orderby = 'database_id_snr,table_id_snr,seq_no';
+            	$output = $this->_extractRelationships ($tableobj, $where, $output);
+
             } // foreach
 
             $output .= "-- finished\r\n";
@@ -149,6 +144,31 @@ class dict_dataBase_s02 extends dict_dataBase
         return $output;
 
     } // _exportSqlData
+
+
+    // ****************************************************************************
+    function _extractRelationships ($tableobj, $where, $output)
+    // extract relationships and wrte to $output
+    {
+        $data = $tableobj->getData_raw($where);
+        foreach ($data as $reldata) {
+        	$output = $this->_exportSqlData('dict_relationship', $reldata, $output);
+        	// export contents of DICT_RELATED_COLUMN for this table
+        	$db_id_snr  = $reldata['database_id_snr'];
+        	$tbl_id_snr = $reldata['table_id_snr'];
+        	$db_id_jnr  = $reldata['database_id_jnr'];
+        	$tbl_id_jnr = $reldata['table_id_jnr'];
+        	$seq_no     = $reldata['seq_no'];
+            $tableobj->sql_select = '*';
+        	$tableobj->sql_from   = 'dict_related_column';
+        	$tableobj->sql_orderby = 'column_id_snr,database_id_jnr,table_id_jnr,seq_no';
+            $data = $tableobj->getData_raw("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
+            $output = $this->_exportSqlData('dict_related_column', $data, $output);
+        } // foreach
+
+        return $output;
+
+    } // _extractRelationships
 
     // ****************************************************************************
     function _writeTextFile ($text, $database_id, $subsys_dir)

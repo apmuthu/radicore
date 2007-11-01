@@ -1,7 +1,14 @@
 <?php
-    // file created on November 3, 2006, 11:34 am
+    // file created on September 17, 2007, 9:57 am
     
     // field specifications for table workflow.wf_token
+    $fieldspec['rdcaccount_id']             = array('type' => 'integer',
+                                                    'size' => 11,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 4294967295,
+                                                    'required' => 'y',
+                                                    'default' => '1');
+    
     $fieldspec['case_id']                   = array('type' => 'integer',
                                                     'size' => 10,
                                                     'minvalue' => 0,
@@ -74,6 +81,11 @@
     $this->child_relations                  = array();
     
     // parent relationship details 
+    $this->parent_relations[]               = array('parent' => 'mnu_account',
+                                                    'dbname' => 'menu',
+                                                    'subsys_dir' => 'menu',
+                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
+    
     $this->parent_relations[]               = array('parent' => 'wf_case',
                                                     'fields' => array('case_id' => 'case_id'));
     

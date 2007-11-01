@@ -79,18 +79,19 @@ class product_feature extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table and add to lookup array
-        require_once 'classes/product_feature_category.class.inc';
-        $dbobject =& singleton::getInstance('product_feature_category');
-        $data_array = $dbobject->getValRep('prod_feaure_cat_id');
-        $this->lookup_data['prod_feature_cat_id'] = $data_array;
+        if (!array_key_exists('prod_feature_cat_id', $this->lookup_data)) {
+            // get contents of foreign table and add to lookup array
+            $dbobject =& singleton::getInstance('product_feature_category');
+            $data_array = $dbobject->getValRep('prod_feaure_cat_id');
+            $this->lookup_data['prod_feature_cat_id'] = $data_array;
+        } // if
 
-        // get contents of foreign table and add to lookup array
-        require_once 'classes/unit_of_measure.class.inc';
-        $dbobject =& singleton::getInstance('unit_of_measure');
-        $data_array = $dbobject->getValRep('uom_id');
-        $this->lookup_data['uom_id'] = $data_array;
+        if (!array_key_exists('uom_id', $this->lookup_data)) {
+            // get contents of foreign table and add to lookup array
+            $dbobject =& singleton::getInstance('unit_of_measure');
+            $data_array = $dbobject->getValRep('uom_id');
+            $this->lookup_data['uom_id'] = $data_array;
+        } // if
 
         global $mode;
 

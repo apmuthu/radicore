@@ -12,6 +12,6 @@ initSession();      // initialise session
 $prev_script = getPreviousScript();
 $prev_task   = getPreviousTask($prev_script);
 $_SESSION[$prev_script][$prev_task]['search'] = "curr_or_hist='F'";
-scriptPrevious(null, 'OK');
+scriptPrevious(null, getLanguageText('sys0097'));  // Date range has been set to FUTURE
 
 ?>

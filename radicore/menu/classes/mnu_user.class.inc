@@ -6,7 +6,7 @@
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
 {
-    // variables
+    var $count;         // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -25,6 +25,42 @@ class mnu_user extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // mnu_user
+
+    // ****************************************************************************
+    function checkPasswords ($switch)
+    // encrypt or decrypt all user passwords according to $switch
+    {
+        $crypt_obj =& singleton::getInstance('encryption_class');
+
+        // read records for all current users
+        $this->sql_select = 'user_id,user_password';
+        $rowdata = $this->getData_raw(null);
+        if ($this->errors) {
+            return $this->errors;
+        } // if
+
+        // get size of password field
+        $size = $this->fieldspec['user_password']['size'];
+
+        // step through all database rows
+        foreach ($rowdata as $row => $data) {
+            // encrypt or decrypt user password according to $switch
+            if (is_True($switch)) {
+                $password = $crypt_obj->encrypt($data['user_id'], $data['user_password'], $size);
+            } else {
+                $password = $crypt_obj->decrypt($data['user_id'], $data['user_password']);
+            } // if
+            if ($crypt_obj->errors) {
+            	$this->errors['user_password'] = getLanguageText('e0048', $data['user_id']) .' - ' .$crypt_obj->errors[0];
+            	return $this->errors;
+            } // if
+        } // foreach
+
+        unset ($crypt_obj);
+
+        return $this->errors;
+
+    } // checkPasswords
 
     // ****************************************************************************
     function setPasswords ($switch)
@@ -154,6 +190,10 @@ class mnu_user extends Default_Table
             } // if
         } // if
 
+        if (!empty($_SESSION['rdcaccount_id'])) {
+        	$this->fieldspec['rdcaccount_id']['noedit'] = 'y';
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -196,8 +236,8 @@ class mnu_user extends Default_Table
                 // check that password has correct format
                 if ($error = $this->validatePassword ($fieldarray['new_password1'], $pswd_format)) {
                     $this->errors['new_password1'] = $error;
-                    $fieldarray['new_password1']   = null;
-                    $fieldarray['new_password2']   = null;
+                    //$fieldarray['new_password1']   = null;
+                    //$fieldarray['new_password2']   = null;
                     return $fieldarray;
                 } else {
                     $fieldarray['user_password'] = $fieldarray['new_password1'];
@@ -214,19 +254,26 @@ class mnu_user extends Default_Table
 
         // if both 'user_id' and 'user_password' exist then encrypt the password
         if (isset($fieldarray['user_id']) AND isset($fieldarray['user_password'])) {
-            // only encrypt if the encryption flag is set
-            if ($encrypt_flag) {
-                //require_once 'std.encryption.class.inc';
-                $crypt_obj =& singleton::getInstance('encryption_class');
-                $key = $fieldarray['user_id'];
-                $string = $fieldarray['user_password'];
-                $spec = $this->fieldspec['user_password'];
-                $fieldarray['user_password'] = $crypt_obj->encrypt($key, $string, $spec['size']);
-                if ($crypt_obj->errors) {
-                	$this->errors['user_password'] = $crypt_obj->errors[0];
+            // always encryptstring to ensure it has valid characters
+            $crypt_obj =& singleton::getInstance('encryption_class');
+            $key = $fieldarray['user_id'];
+            $string = $fieldarray['user_password'];
+            $spec = $this->fieldspec['user_password'];
+            $encrypted_string = $crypt_obj->encrypt($key, $string, $spec['size']);
+            if ($crypt_obj->errors) {
+                if (isset($fieldarray['new_password1'])) {
+                	$this->errors['new_password1'] = $crypt_obj->errors[0];
+                } else {
+            	    $this->errors['user_password'] = $crypt_obj->errors[0];
                 } // if
-                // insert dummy field to say that password has been encrypted
-                $fieldarray['pswd_is_encrypted'] = true;
+                return $fieldarray;
+            } else {
+                if ($encrypt_flag) {
+                    // replace string with encrypted version
+                    $fieldarray['user_password'] = $encrypted_string;
+                    // insert dummy field to say that password has been encrypted
+                    $fieldarray['pswd_is_encrypted'] = true;
+                } // if
             } // if
         } // if
 
@@ -313,14 +360,25 @@ class mnu_user extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get contents of foreign table MNU_ROLE and put into lookup_data
-        $dbobject =& singleton::getInstance('mnu_role');
-        $array = $dbobject->getValRep('role_id');
-        $this->lookup_data['role_id'] = $array;
+        if (!array_key_exists('role_id', $this->lookup_data)) {
+            // get contents of foreign table MNU_ROLE and put into lookup_data
+            $dbobject =& singleton::getInstance('mnu_role');
+            $array = $dbobject->getValRep('role_id');
+            $this->lookup_data['role_id'] = $array;
+        } // if
 
-        // get array of language codes
-        $array = getLanguageArray('languages');
-        $this->lookup_data['language_code'] = $array;
+        if (!array_key_exists('language_code', $this->lookup_data)) {
+            // get array of language codes
+            $array = getLanguageArray('languages');
+            $this->lookup_data['language_code'] = $array;
+        } // if
+
+        if (!array_key_exists('rdcaccount_id', $this->lookup_data)) {
+            // get contents of foreign table and put into lookup_data
+            $dbobject =& singleton::getInstance('mnu_account');
+            $array = $dbobject->getValRep('rdcaccount_id');
+            $this->lookup_data['rdcaccount_id'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -363,6 +421,48 @@ class mnu_user extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        // this may be called from the home page, so insert user's id
+        if (empty($where)) {
+            $pattern_id = getPatternId();
+            if (eregi('upd1|enq1', $pattern_id)) {
+            	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
+            } // if
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['user_id'] = 'Total count:';
+        $array['user_name'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_post_getData ($rows, &$where)

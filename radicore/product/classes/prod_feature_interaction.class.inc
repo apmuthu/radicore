@@ -43,10 +43,11 @@ class prod_feature_interaction extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for lookup list and put into LOOKUP_DATA
-        $array = $this->getValRep('feature_interaction');
-        $this->lookup_data['feature_interaction'] = $array;
+        if (!array_key_exists('feature_interaction', $this->lookup_data)) {
+            // get array for lookup list and put into LOOKUP_DATA
+            $array = $this->getValRep('feature_interaction');
+            $this->lookup_data['feature_interaction'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -70,21 +71,22 @@ class prod_feature_interaction extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
         //DebugBreak();
         if ($return_from == 'pro_prod_feature(popup)snr') {
-            $fieldarray['prod_feature_id_snr'] = $fieldarray['prod_feature_id'];
-            unset($fieldarray['prod_feature_id']);
+            $fieldarray['prod_feature_id_snr'] = $select_array['prod_feature_id'];
+            unset($select_array['prod_feature_id']);
         } // if
 
         if ($return_from == 'pro_prod_feature(popup)jnr') {
-            $fieldarray['prod_feature_id_jnr'] = $fieldarray['prod_feature_id'];
-            unset($fieldarray['prod_feature_id']);
+            $fieldarray['prod_feature_id_jnr'] = $select_array['prod_feature_id'];
+            unset($select_array['prod_feature_id']);
         } // if
 
         return $fieldarray;

@@ -25,9 +25,9 @@
 <xsl:include href="std.pagination.xsl"/>
 
 <!-- get the name of the OUTER and INNER tables -->
-<xsl:variable name="outer" select="//structure/outer/@id"/>
-<xsl:variable name="inner" select="//structure/inner/@id"/>
-<xsl:variable name="numrows" select="//pagination/page[@id='inner']/@numrows"/>
+<xsl:variable name="outer" select="/root/structure/outer/@id"/>
+<xsl:variable name="inner" select="/root/structure/inner/@id"/>
+<xsl:variable name="numrows" select="/root/pagination/page[@id='inner']/@numrows"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -65,11 +65,11 @@
 
           <!-- This is the OUTER/PARENT table -->
           <table>
-            <xsl:for-each select="//*[name()=$outer][1]">
+            <xsl:for-each select="/root/*[name()=$outer][1]">
               <!-- display all the fields in the current row -->
               <xsl:call-template name="display_vertical">
                 <xsl:with-param name="zone"   select="'outer'"/>
-                <xsl:with-param name="noedit" select="//params/outer_noedit"/>
+                <xsl:with-param name="noedit" select="/root/params/outer_noedit"/>
               </xsl:call-template>
             </xsl:for-each>
           </table>
@@ -83,8 +83,8 @@
 
         <!-- create navigation buttons -->
         <xsl:call-template name="navbar">
-          <xsl:with-param name="noshow"   select="//params/noshow"/>
-          <xsl:with-param name="noselect" select="//params/noselect"/>
+          <xsl:with-param name="noshow"   select="/root/params/noshow"/>
+          <xsl:with-param name="noselect" select="/root/params/noselect"/>
         </xsl:call-template>
 
         <div class="inner">
@@ -101,17 +101,18 @@
               <!-- set up column headings -->
               <xsl:call-template name="column_headings">
                 <xsl:with-param name="zone"   select="'inner'"/>
-                <xsl:with-param name="nosort" select="//params/nosort"/>
+                <xsl:with-param name="nosort" select="/root/params/nosort"/>
               </xsl:call-template>
             </thead>
 
             <tbody>
               <!-- process each non-empty row in the INNER/CHILD table of the XML file -->
-              <xsl:for-each select="//*[name()=$inner][count(*)&gt;0]">
+              <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$inner][count(*)&gt;0]">
 
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_horizontal">
                   <xsl:with-param name="zone"     select="'inner'"/>
+                  <xsl:with-param name="currocc"  select="." />
                   <xsl:with-param name="multiple" select="'y'"/>
                 </xsl:call-template>
 
@@ -151,11 +152,6 @@
 
   </body>
   </html>
-
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
 
 </xsl:template>
 

@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:34 am
+    // file created on September 10, 2007, 5:56 pm
     
     // field specifications for table workflow.wf_workflow
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -22,14 +22,15 @@
                                                     'rows' => 5);
     
     $fieldspec['start_task_id']             = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_task(popup)a',
+                                                    'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'start_task_desc');
     
     $fieldspec['is_valid']                  = array('type' => 'string',
+                                                    'size' => 1,
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'noedit' => 'y');

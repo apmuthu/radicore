@@ -47,21 +47,23 @@ class survey_question extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get options for answer_type and insert in LOOKUP data
-        $array = $this->getValRep('answer_type');
-        $this->lookup_data['answer_type'] = $array;
+        if (!array_key_exists('answer_type', $this->lookup_data)) {
+            // get options for answer_type and insert in LOOKUP data
+            $array = $this->getValRep('answer_type');
+            $this->lookup_data['answer_type'] = $array;
+        } // if
 
-        // get contents of foreign table RISK_STATUS and add as a LOOKUP list
-        require_once 'risk_status.class.inc';
-        $dbobject =& singleton::getInstance('risk_status');
-        $data_array = $dbobject->getValRep('risk_status_id');
-        $this->lookup_data['risk_status_id'] = $data_array;
-        unset($dbobject);
+        if (!array_key_exists('risk_status_id', $this->lookup_data)) {
+            // get contents of foreign table RISK_STATUS and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('risk_status');
+            $data_array = $dbobject->getValRep('risk_status_id');
+            $this->lookup_data['risk_status_id'] = $data_array;
+            unset($dbobject);
+        } // if
 
         global $mode;
         if ($mode != 'insert' and $mode != 'search') {
             // get contents of QUESTION_PROMPT and concatenate into a single string
-            require_once 'question_prompt.class.inc';
             $dbobject =& singleton::getInstance('question_prompt');
             $dbobject->sql_select = "prompt_desc";
             $dbobject->sql_from   = "question_prompt "
@@ -84,7 +86,6 @@ class survey_question extends Default_Table
             switch ($fieldarray['answer_type']) {
             	case 'M':
             		// get contents of ANSWER_OPTION and concatenate into a single string
-                    require_once 'answer_option.class.inc';
                     $dbobject =& singleton::getInstance('answer_option');
                     $dbobject->sql_select = "answer_text";
                     $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());
@@ -102,7 +103,6 @@ class survey_question extends Default_Table
             		break;
             	case 'N':
             		// get contents of NUMBER_OPTION and concatenate into a single string
-                    require_once 'number_option.class.inc';
                     $dbobject =& singleton::getInstance('number_option');
                     $dbobject->sql_select = "min_value, max_value";
                     $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());

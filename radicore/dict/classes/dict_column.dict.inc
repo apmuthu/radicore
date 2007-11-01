@@ -1,5 +1,5 @@
 <?php
-    // file created on January 5, 2007, 5:38 pm
+    // file created on September 10, 2007, 5:36 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -66,15 +66,13 @@
                                                     'size' => 20,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.844674407371e+019,
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'required' => 'y');
     
     $fieldspec['col_maxsize']               = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.844674407371e+019,
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['col_null']                  = array('type' => 'boolean',
@@ -247,10 +245,10 @@
                                                     'size' => 64);
     
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 64,
+                                                    'size' => 80,
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_task(popup)a',
+                                                    'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'task_desc');
     
     $fieldspec['foreign_field']             = array('type' => 'string',

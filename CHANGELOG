@@ -1,0 +1,424 @@
+﻿RADICORE for PHP - news
+
+2007-11-01, version 1.30.0
+- modified 'include.general.inc' to allow 'MATCH(...) AGAINST(...)' in query strings for the MySQL database. 
+- modified 'getForeignData()' inside 'std.table.class.inc' so that if the lookup on the foreign table fails then the foreign key field(s) are only cleared if they do not form part of the primary key.
+- modified 'std.table.class.inc' so that if the 'insertOrUpdate()' method is given an associative array (containing a single database row) it will return an associative array, and if it is given an indexed array (containing a number of database rows) it will return an indexed array.
+- modified 'std.table.class.inc' so that the 'getInitialDataMultiple()' method can deal with a $where string that contains ') OR (' to indicate a selection of multiple rows. The input to the '_cm_getInitialDataMultiple()' method will now be a multi-dimensional array, indexed by row number.
+- modified 'std.filepicker1.inc' to enable pagination. This currently has a fixed page size of 100 rows which will be displayed in 2 columns of 50 rows each.
+- fixed bug in 'std.search1.inc' which treated '0' as empty instead of false for boolean fields.
+- fixed bug in the 'setAction()' method within 'std.table.class.inc' which caused a ghost entry to be inserted into an otherwise empty array when either the 'selectall' or 'unselectall' hyperlinks were used in a Multi3, Multi2 and List2 screens.
+- fixed bug in 'std.data_field.xsl' when, for a field with a control of 'popup', the field name is the same as the foreign field.
+- fixed bug in 'setScreenStructure()' of 'include.xml.php4/5.inc' so that 'size=<string>' is treated as a field name and 'size=<numeric>' is treated as an field attribute. 
+- fixed bug in ADD2 pattern which caused it to use $selection instead of $where.
+- fixed bug in processing of Multi4 pattern which caused popup in outer table to be directed to the inner table instead.
+- fixed bug in 'std.enquire1.inc' which caused it to process the previous selection when restarted with a new selection.
+- fixed bug in logon processing which failed to use addslashes() when building the WHERE string from the user's input.
+- modified 'dml.mysql.class.inc' and 'dml.mysqli.class.inc' to deal correctly with backslashes in the WHERE string. Values such as [name='value\\'] must be left alone while [name LIKE 'value\\'] must be changed to [name LIKE 'value\\\\'].
+- modified 'std.validation.class.inc' so that an integer of size=3 will accept a maximum value of 999, not 127.
+- added function 'resizeImage()' to 'include.general.inc'.
+- modified 'std.fileupload1.inc' to call resizeImage() if $object->resize_array is not empty.
+
+2007-10-01, version 1.29.0
+- renamed MENU tasks in the MENU database so that they conform to the format 'table_name(pattern)suffix'. You will need to run script radicore\menu\sql\menu.menu_export(2007-09-10).sql in order to update any previous installations.
+- fixed bug in 'dict_table(export)' when using a PostgreSQL database which failed to deal properly with column types of tinyint and mediumint.
+- fixed bug in 'language_detection.inc' which failed to recognise France when the language array contained [fr] instead of [fr-fr].
+- fixed bug in 'std.validation.class.inc' which failed to convert French decimal point ',' to '.' before testing for a numeric value.
+- fixed bug in 'std.search.inc' which failed to convert French decimal point ',' to '.' before passing search string back to previous form.
+- changed 'dict_column(import)' so that it reports the column name instead of the column number in any error messages.
+- fixed bug in 'std.tree_view2.inc' which caused the saved version of $dbouter to be lost from the $_SESSION array.
+- fixed bug in 'dml.mysql.class.inc' and 'dml.mysqli.class.inc' which did not deal properly with column names used in unique or non-unique keys which contained uppercase characters.
+- added an option for Virtual Private Databases (VPD), also known as Row Level Security (RLS). This allows a database table to contain data for multiple accounts, but each user can only access the data for his/her account. This feature is documented in http://www.tonymarston.net/php-mysql/virtual-private-database.html. This will require the following scripts to be run:
+-- radicore\menu\sql\mysql\alter_table(2007-09-14).sql - to update the structure of the MENU database
+-- radicore\menu\sql\menu.menu_export(2007-09-14).sql - to update the contents of the MENU database
+-- radicore\workflow\sql\mysql\alter_table(2007-09-17).sql - to update the structure of the WORKFLOW database
+- Added function 'free_result()' to 'std.table.class.inc' to release the resource created by 'getData_serial()'.
+
+2007-09-01, version 1.28.0
+- fixed bug which caused message produced by 'Recover Password' task to be lost when returning to the logon page when it is displayed using the HTTPS protocol.
+- fixed bug which allowed invalid characters in user passwords to be allowed if they were not encrypted. This caused a problem when using the Control screen to set all passwords from unencrypted to encrypted as this processing would fail if it hit a password which contained invalid characters.
+- PDF library changed from http://www.fpdf.org/ to http://tcpdf.sourceforge.net/ as this includes support for UTF-8 unicode fonts and barcode generation.
+- fixed bug in $where string processing (converting from string to array and back again) which caused problems when the leading characters of a string field contained relative operators such as '<', '>', '<=', '>=', etc.
+
+2007-08-20, version 1.27.0
+- fixed bug in dictionary import when dealing with unsigned FLOAT columns.
+- created function 'append2ScriptSequence()' for adding entries to $_SESSION['script_sequence'] to include additional standard processing.
+- updated 'std.add1/2.inc', 'std.update1/3.inc' and 'std.multi1/2/3.inc' to check for errors after calling the $dbobject->getExtraData() method.
+- fixed bug in 'std.delete2.inc' which made it ignore the contents of $where in favour of $selection.
+- updated workflow subsystem to add a new task to list expired workitems (timed items which have gone past their time limit) and a child task to trigger the expired item. This is for those users who do not use a cron job to trigger a selected expired item. Please use script radicore\workflow\sql\workflow.menu_export(2007-08-05).sql to update your menu database.
+- fixed bug in getLanguageText() caused when obtaining text from a subsystem other than the current subsystem.
+- added tasks 'mnu_menu(list2)a' and 'mnu_nav_button(list2)a' which will show the parents of the selected task instead of its children. You will have to import script 'radicore\menu\sql\menu.menu_export(2007-08-12).sql' to change your menu database.
+- fixed bug in 'qualifyWhere()' function where $this->sql_search_table contained 'tablename AS alias'.
+- fixed bug which caused 'recover password' function to fail.
+- fixed bug which failed to show 'Reset User Password' screen when user is forced to change his password after 'n' days or 'n' logons.
+
+2007-07-25, version 1.26.0
+- changed the 'initialise()' method inside 'std.table.class.inc' so that values from 'mnu_initial_value_role' and 'mnu_initial_value_user' can be used as WHERE criteria on any LIST pattern, not just LIST1.
+- changed 'std.fileupload1.inc' so that if any type of image can be uploaded then the $filetypes variable can be set to the string value 'image' instead an array of all possible image types.
+- modified the MULTI4 pattern so that any editable field in the parent area which also exists in the $fieldspec array of the child will be added to the field data which is given to the child object.
+- added '_cm_ListView_header()' method to 'std.table.class.inc' which will be called just before titles are printed at the top of each page. This is a more convenient place to define data values that can be inserted into title elements by means of field names with the '%%' prefix.
+- modified 'std.pdf.class.inc' to allow 'type'=>'date/time/pageno' to be used in title elements as well as footer elements.
+- corrected 'radicore\default\reports\en\output2.report.inc' which had 'type'=>'text','value'=>'<string>' instead of 'text'=>'<string>' in the title array. 
+- modified 'getInitialData()' method inside 'std.table.class.inc' so that if $where contains any 'IS NULL' or 'IS NOT NULL' values then this will not cause those fields to become display-only.
+- modified POPUP processing to allow a value to be entered before the POPUP form is called. Please refer to http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq81 for details.
+- added the 'choose_single_row' setting for use in POPUP forms so that if only a single row is retrieved from the database then it will automatically be selected without waiting for the user to press the CHOOSE button.
+- removed all references to 'javascript_footer' as I have been informed that the issue I was trying to solve was actually being caused by a certain brand of anti-virus software, and my solution was not a real solution after all.
+- if any subsystem directory contains a file called 'include.subsystem.inc' then its contents will be included during the inclusion of 'include.general.inc'. This will allow changes at the subsystem level, such as modifying INCLUDE_PATH, defining additional global functions, et cetera.
+
+2007-06-30, version 1.25.0
+- changed all dml.*.class.inc' files so that if a value is supplied for an auto_increment column it will be used instead of generating a new one.
+- changed 'insertRecord' in 'std.table.class.inc' to skip the insert if the data array is empty. This will allow the array to be cleared in the _cm_validateInsert() method so that the record can be updated manually in the _cm_post_insertRecord() method.
+- updated 'std.data_field.xsl' so that it will accept a 'size' attribute on a field in a horizontal display in order to reduce the size of a large field.
+- updated 'mnu_subystem(export)' so that the contents of the mnu_control table where record_id='<subsystem>' will be included in the export file. This will allow each subsystem to have its own data on the mnu_control table.
+- changed the default behaviour for search screens so that if anything is entered for a string field without a wildcard character '%' then '%' will be appended to the string. This is to emulate the behaviour of other common software where text such as 'ABC' means 'beginning with ABC'.
+- changed processing of popup1 screen so that if a navigation button is used to add a new record, upon returning to the popup screen the identity of the new record will automatically be passed back as the selection. This avoids the process of having to find the new record in the popup screen so that the CHOOSE button can be pressed.
+- changed the fetchrow() method so that it calls _cm_post_fetchRow() to process a single occurrence instead of _cm_post_getData() which expects multiple occurrences.
+- changed 'dml.mysql*.class.inc' so that if 'WITH ROLLUP' is encountered in the GROUP BY clause the ORDER BY string will be ignored. This fixes the problem reported in http://www.radicore.org/forum/index.php?t=msg&th=237
+- removed method 'getData_batch()' as it does the same thing as 'getData_serial()'
+
+- added table 'mnu_initial_value_role' and 'mnu_initial_value_user' to the 'menu' database in order to hold initial values for fields within tasks for either roles (groups of users) or individual users. The field names are taken from those entered in the 'List Task Field' screen. The way that this information is used depends on the task being run:
+-- if it inserts new records then this data is added to $fieldarray (unless the field already has a non-empty value) just before the call to the '_cm_getInitialData()' method.
+-- if it is pattern LIST1 and the $where string is empty it will be inserted into the $where string before any data is retrieved from the database.
+The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu_initial_value_user'. You will need to import file 'radicore\menu\sql\mysql\alter_table(2007-05-26).sql' in order to make these changes to your database schema
+
+- changed the Output2 and Output3 patterns so that the call to _cm_post_output() is surrounded by startTransaction() and commit()/rollback() to allow a database update to take place after the PDF document has been produced.
+- created task 'audit_tbl(upd4)' and added it as a navigation button on 'audit_dtl(list)2' in order to generate an SQL query which will reproduce the database change that is currently being displayed. The query string will be appended to a file called 'audit_export.sql' which will be written to the 'radicore\audit\sql' directory. This can be useful when changes made in one database need to be replicated in another database. The details of this new task can be imported into your current MENU database by running script 'radicore\audit\sql\audit.menu_export(2007-06-23).sql' which was created using this facility.
+
+
+2007-05-01, version 1.24.0
+- changed 'std.session.inc' so that the argument 'csxslt=on' in the URL (which turns on client-side XSL transformations) will propagate itself via a cookie instead of being repeated in all subsequent URLs. This is because a session abort will cause this setting in the URL to be lost, which means that the session would restart without that setting in effect.
+- amended 'std.table.class.inc' so that the _dml_ReadBeforeUpdate() method will use an additional argument called $this->reuse_previous_select. This is boolean and set to FALSE by default, but can be set to TRUE within the _cm_pre_updateRecord() method. This will allow _dml_ReadBeforeUpdate() to reuse the previous SELECT statement instead of the default 'SELECT * FROM $this->table WHERE pkey=X' in those cases where a field obtained from another table via a JOIN is retrieved and made available for update. Although this other field cannot be updated in the standard updateRecord() mechanism, a change in values can be detected in the _cm_post_updateRecord() method where code can be inserted to update the other table.
+- modified 'dml.pgsql.class.inc' to allow columns of type BOOLEAN to be imported correctly into the data dictionary.
+- modified 'std.add3.inc' so that error messages generated within the database object are appended to the array which is returned to the previous form instead of being replaced with a generic message.
+- modified 'std.data_field.xsl' so that it will process a "class" attribute on a field entry when constructing a vertical display. This will allow CSS properties to be applied to an individual field instead of all fields which occupy that column in the HTML table.
+- modified 'dict_column.class.inc', 'include.xml.php4/5.inc' and 'std.data_field.xsl' to include a new 'multi-checkbox' control which can be used instead of a multi-dropdown when the user can make multiple choices.
+- added new pattern 'Update 5' which will take an collection of records and perform either an INSERT or an UPDATE on each record depending on whether it currently exists or not.
+- added custom method '_cm_getPkeyNames()' to 'std.table.class.inc' so that the list of primary key fields can be adjusted before the selection string is constructed and passed to a child form when a navigation button is pressed. 
+- added custom method '_cm_validateSearch() to 'std.table.class.inc' which will be called before any input to a search screen is passed back to the previous form, thus allowing any custom validation (or other processing) to be performed.
+
+
+2007-03-30, version 1.23.0
+- fixed bug in 'std.list2.inc' and 'std.list3.inc' which failed to deal correctly with a selection returned from a popup form.
+- fixed bug in 'dml.mysql.class.inc' and 'dml.mysqli.class.inc' which prevented the tables from a database with a name which is a reserved word (such as 'order') from being imported into the data dictionary.
+- fixed bug with an sql SELECT statement containing HAVING, as reported in http://www.radicore.org/forum/index.php?t=msg&th=201
+- fixed bug in 'dict_table(generate)b' when dealing with MULTI3 and MULTI4 patterns, as reported in http://www.radicore.org/forum/index.php?t=msg&th=204 
+- updated 'std.search1.inc' so that it will automatically include fields from compound keys which are returned from a popup and which are not displayed on the current screen. Previously these fields had to be included in the screen with 'control' => 'hidden' in order to have their values added to the $where string which is returned to the previous form when the SUBMIT button is pressed.
+- updated 'std.table.class.inc' to include a new '_cm_post_popupReturn()' method which is called after '_cm_popupReturn()' and 'getForeignData()'.
+- updated database schemas to change task_id from varchar(40) to varchar(80), and subsys_id from varchar(8) to varchar(16). Please run the following scripts to update your databases:
+-- radicore/audit/sql/mysql/alter_table(2007-03-06).sql
+-- radicore/dict/sql/mysql/alter_table(2007-03-06).sql
+-- radicore/menu/sql/mysql/alter_table(2007-03-06).sql
+-- radicore/workflow/sql/mysql/alter_table(2007-03-06).sql
+
+- updated 'dict/table_export.php' so that it will not export anything for a database table that has no columns.
+- updated 'dict/table_popup.php' so that it will not show any tables which have no columns.
+- updated '_cm_validateDelete()' method to include a new $parent_table argument. This will be empty for ordinary deletes, but for cascade deletes it will identify the table from which the delete is being initiated.
+- modified all XSL stylesheets to improve performance using ideas identified in http://www.radicore.org/forum/index.php?t=msg&th=95&goto=701#msg_701
+- updated 'std.validation.class.inc' so that it will retrieve translated field (column) names from the 'language_text.inc' file when constructing error messages. The task 'mnu_subsystem(export)' will include a list of column names when building file '<subsystem>.menu_export.txt'. This is in response to the request at http://www.radicore.org/forum/index.php?t=msg&th=203
+
+
+2007-03-03, version 1.22.0
+- fixed bug in 'dict_table_generate(b)' which failed to create a valid (sub)class file for a table alias. See http://www.radicore.org/forum/index.php?t=msg&th=179 for details.
+- fixed bug in 'std.list2.inc' which combined values from $selection and $where, causing the resulting SELECT statement to find no records. See http://www.radicore.org/forum/index.php?t=msg&th=182 for details.
+- fixed bug in the updateRecord() method within 'std.table.class.inc' which was reported in http://www.radicore.org/forum/index.php?t=msg&th=189
+- fixed bug in 'getForeignData()' method of 'std.table.class.inc' which did not deal correctly with a list of several parent fields instead of the usual single field.
+- fixed bug in '_cm_InitialiseFileupload()' method of 'std.table.class.inc' which failed to return $fieldarray, as reported in http://www.radicore.org/forum/index.php?t=msg&th=191
+- updated 'mnu_task(pdf)' to include a record count.
+- updated 'include.xml.php4.inc', 'include.xml.php5.inc' and 'std.data_field.xsl' to allow a field specification of 'control' => 'hidden' to allow a field value to be included in an HTML form without being visible. This is to allow  that value to be included in the $_POST array for search forms when dealing with compound keys which are returned from a popup, and where not all the fields are visible on the form.
+- updated 'std.multi3.inc' so that the middle entity will accept additional selection criteria from a search screen, which can be activated from a navigation button.
+- updated the 'updateRecord()' method in all 'dml.*.class.inc' files so that the values for numeric fields are not enclosed in quotes. This is to allow updates such as "field=field+1" which would otherwise be constructed as "field='field+1'". See http://www.radicore.org/forum/index.php?t=msg&th=183 for details.
+- updated 'mnu_task' table on menu database so that the 'task_desc', 'button_text' and 'script_id' fields have their maximum sizes increased to 80 characters. Please import file radicore/menu/sql/mysql/alter_table(2007-02-12).sql to alter your database schema.
+- updated 'dict_database(list)' to include a table count.
+- updated 'dict_table_generate(b)' so that for the LIST2 pattern there is the option of selecting the outer entity from a different database to that of the inner entity.
+- updated 'std.table.class.inc' so that if a search screen contains the 'curr_or_hist' field without a value it will have an initial value of 'C' (current).
+
+
+2007-02-05, version 1.21.0
+- fixed bug in 'include.session.inc' when using the COPY button on forms which contain dates. These have to be converted from 'dd Mmm YYYY' to 'yyyy-mm-dd' so that when the PASTE button is used they can be converted back to 'dd Mmm yyyy' correctly.
+- fixed bug in 'std.link1.inc' which caused popups in 'inner' area not to function properly.
+- fixed bug in 'std.validation.class.inc' which did not deal with a missing/invalid custom validation file correctly. See http://www.radicore.org/forum/index.php?t=msg&th=165 for details. 
+- updated 'dict_database(import)' so that when table details are imported the 'table_desc' field has underscores removed and the first character of each word upshifted, thus turning 'table_desc' into 'Table Desc'.
+- updated 'dict_table(generate)b' so that when entries are added to the 'mnu_task' table all descriptions use the 'table_desc' field and not the 'table_id' field.
+- updated 'dict_table(generate)b' so that when generating tasks which require a popup the name of the popup form is requested, not the popup table. This is because the popup may require two tables.
+- updated 'std.table.class.inc' to include new custom method '_cm_getOrderBy()'. This can be used when the column name in the orderby clause needs to be adjusted before it can be included in an SQL statement, then adjusted back again so the original column name in the screen can have the ascending/descending icon associated with it.
+- updated 'include.general.inc' to automatically add 'menu', 'audit' and 'workflow' directories to include_path, thus removing the need to have them specified in the htaccess file.
+- updated 'config.inc' to include $GLOBALS['use_https'] which, if set to TRUE, will cause all pages to use the secure HTTPS protocol instead of the default HTTP.
+- updated 'std.table.class.inc' so that it can deal with subqueries of type 'EXISTS (SELECT...)' and 'NOT EXISTS (SELECT...)' in $this->sql_search. 
+
+
+2007-01-15, version 1.20.0
+- updated 'dml.*.class.inc' to avoid 'object to string' conversion errors.
+- fixed bug http://www.radicore.org/forum/index.php?t=msg&th=143
+- fixed bug in 'std.output2.inc' and 'std.output3.inc' which occasionally caused the pdf output to disappear.
+- updated custom validation (http://www.tonymarston.net/php-mysql/custom-validation.html) to allow it to be specified for any type of field, not just strings, and without the need to set SUBTYPE=CUSTOM. This will bypass all validation performed by the framework except for (a) required fields cannot be empty, and (b) value cannot exceed maximum size. All other validation will be performed within the specified custom method.
+- created 'dml.oracle.php4.class.inc' and 'dml.oracle.php5.class.inc' to allow connections to an Oracle database. Certain existing column names caused problems as they are reserved words in Oracle, so they have been renamed as follows:
+-- database 'audit':
+--- table 'audit_ssn', changed 'date' to 'ssn_date' and 'time' to 'ssn_time'.
+--- table 'audit_trn', changed 'date' to 'trn_date' and 'time' to 'trn_time'.
+--- table 'audit_logon_errors', changed 'timestamp' to 'err_timestamp'.
+--- Please import radicore/audit/sql/mysql/alter_table(2006-12-12).sql to alter your database schema.
+-- database 'dict':
+--- table 'dict_column', changed 'comment' to 'col_comment', 'nosearch' to 'no_search', 'noaudit' to 'no_audit' and  'subtype' to 'col_subtype'. Changed 'user_size' and 'col_maxsize' from NOT NULL to NULL.
+--- table 'dict_database', changed 'comment' to 'db_comment'.
+--- table 'dict_relationsip', changed 'comment' to 'rel_comment'.
+--- table 'dict_table', changed 'comment' to 'tbl_comment'.
+--- Please import radicore/dict/sql/mysql/alter_table(2006-12-15).sql to alter your database schema.
+-- database 'product':
+--- table 'product', changed 'comment' to 'prod_comment'.
+--- table 'inventory_item_variance', changed 'comment' to 'var_comment'.
+--- table 'prod_cat_class', changed 'comment' to 'pcc_comment'.
+--- Please import radicore/product/sql/mysql/alter_table(2006-12-16).sql to alter your database schema.
+- update 'dict_column' table in 'dict' database to cater for differences in Oracle database:
+-- changed 'col_type' from varchar(12) to varchar(20)
+-- changed 'col_array_type' from varchar(12) to varchar(20)
+-- added 'col_type_native' varchar(32)
+- updated 'std.output2.inc' to allow the option of a totals line at the end of the report. Examples are provided in  'mnu_pattern(pdf).php' and 'mnu_subsystem(pdf).php'.
+- updated '_cm_formatData()' method to include a new argument which will allow a custom CSS class (or PDF style) to be specified for selected fields. This will allow the display attributes of those selected fields to be modified at run time. This can be used in financial applications for example to show negative and positive values in different colours. Please see http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq73 for details.
+- updated popup and filepicker screens to include a 'Choose Null' button which will cause the current selection to be nullified (cleared). This is different from the 'Cancel' button which will terminate the popup process without making a selection, thus leaving any current selection unchanged.
+- added a new record to 'mnu_pattern' table in 'menu' database with pattern_id='OTHER', and updated several entries  on 'mnu_task' table to relate to this pattern_id. See file radicore/menu/sql/mysql/alter_table(2007-01-10).sql for details.
+- changed the method of putting blank entries into lookup arrays (used by dropdown lists and radio groups) to solve the problem identfied in http://www.radicore.org/forum/index.php?t=msg&th=156
+- updated 'error.inc' to include E_RECOVERABLE_ERROR (introduced in PHP 5.2) in its list of non-fatal error codes.
+
+2006-12-05, version 1.19.0
+- fixed bug in 'std.multi2.inc' which caused screen contents not to be refreshed when returning from a form which was not a popup.
+- fixed all page controllers so that when the RESET button is pressed this will cause the initialise() method to be called on all objects. This is in case any one of these objects wishes to start at something other than the first record. This is to solve the problem identified in http://www.radicore.org/forum/index.php?t=msg&th=133
+- updated 'dml.*.class.inc' to allow database names with '-' (hyphen) instead of '_' (underscore), otherwise they cannot be imported into the data dictionary. For MySQL this uses "sql_mode='ANSI_QUOTES' so that database names can be enclosed in double quotes as well as backticks. If your version of MySQL is before 4.1 then you must go ino MySQL Administrator->Startup Variables->Advanced and ensure that 'Use ANSI SQL' is checked ON. If your version of MySQL is 4.1 or later this option will be set programatically.
+- amended 'dict_column(upd)' to allow the AUTO-UPDATE setting for fields of type INTEGER. This can be used with a special field named 'rdcversion' (Radicore Version Number) to help prevent simultaneous updates of the same database record. See http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq70 for details.
+
+2006-11-18, version 1.18.0
+- added option for each subsystem to show its version number. If a file called 'version.txt' is found in a subsystem's subdirectory then its contents (up to 20 characters) will be displayed at the bottom of the screen.
+- fixed bug in 'include.session.inc' which caused the 'Log SQL queries?' option in the 'Update Session data' screen not to be carried forward.
+- fixed bug in 'std.update2.inc' which prevented it from calling the popup task.
+- fixed bug in 'tree_nde_jnr.popup.php' which prevented it from displaying the correct entries.
+- fixed bug in 'dict_table(generate)b' which did not replace '#popup_table#' in the component script with null if no value has been supplied.
+- fixed bug in 'mnu_task_s02.class.inc' which caused 'mnu_task(rename)' to malfunction.
+- fixed bug in 'std.multi4.inc' which failed to refresh screen after returning from a child form which was activated by a navigation button.
+- fixed bug which caused 'std.multi4.inc' to retrieve primary key from the wrong entity when passing selection to a child form.
+- fixed bug which caused 'std.output2.inc' and 'std.output3.inc' to return to the previous screen after writing the PDF output to disk instead of sending it the browser. 
+- fixed bug in 'std.filepicker.list1.xsl' which prevented images from being displayed with the specified width and height.
+- fixed bug in the logon screen when run with Microsoft IIS which caused it to use HTTPS even when an HTTPS server had not been specified.
+- fixed bug with ENUM types as reported in http://www.radicore.org/forum/index.php?t=msg&th=123
+
+- changed the way the FILEDOWLOAD pattern is implemented. Instead of having the options defined in the _cm_pre_getData() method of the table class they now go into the _cm_initialiseFileDownload() method. Please see  http://www.tonymarston.net/php-mysql/dialog-types.html#filedownload for details.
+- changed the way the FILEPICKER pattern is implemented. Instead of having the options defined in the component script they now go into the _cm_initialiseFilePicker() method of the table class. Please see  http://www.tonymarston.net/php-mysql/dialog-types.html#filepicker for details.
+
+- modified 'dict_table(generate)b' so that it will include alias names from relationships in the dropdown list of table names.
+- modified 'mnu_task(rename)' to replace any embedded spaces with '_' (underscore) because when used in navigation buttons embedded spaces are automatically changed to '_' in the $_POST array, and this causes the lookup using that task_id to fail.
+- modified the '_cm_pre_getData()' method so that it now includes the $fieldarray argument.
+- modified XSL stylesheets so that they will accept the 'nosort' parameter to remove all sorting hyperlinks from the column headings. This feature can be turned on by inserting the line '$this->xsl_params['nosort'] = 'y';' in your table class.
+- modified 'Export Subsystem' so that the file '<subsystem>/sql/<subsystem>.menu_export.sql' includes all MNU_ROLE entries which are found on the MNU_ROLE_TASK table for all tasks within the selected subsystem.
+- modified 'Export Subsystem' so that the file '<subsystem>/text/en/<subsystem>.menu_export.txt' is created without the 4 character indent on each line.
+- modified 'std.update1.inc' so that it can generate a 'paste' button if the ''copy' button is pressed (for use in 'dict_table(generate)b').
+- made 'xsl/std.list2.xsl' the same as 'xsl/std.multi2.xsl', which means that 'std.multi2.xsl' is now redundant. This means that all screen structure scripts which refer to 'std.multi2.xsl' should be changed.
+- modified 'std.multi4.inc' so that it generates the message 'N records have been updated on XXX' for both database tables.
+- modified 'sample.validation.class.inc' and 'std.validation.class.inc' so that the $input parameter on the custom methods is passed by reference, thus allowing the value to be changed inside the method.
+- modified 'dml.*.class.inc' so that if a table is read during a database transaction (i.e. between 'start transaction' and 'commit/rollback') then the SELECT statement is altered to include 'LOCK IN SHARE MODE' (MySQL) or 'FOR UPDATE' (PostgreSQL).
+
+2006-10-18, version 1.17.0
+- fixed bug which caused an invalid sql statement to be created when navigating from 'List To-Do by User' to 'List Audit Details'. This was caused by an inappropriate entry in $search not being filtered out as it specified a tablename which was not defined in the FROM clause.
+- fixed bug in xample/sql/mysql/xample-schema.sql by adding in missing column 'fckeditor_test'.
+- fixed bug in menu/classes/mnu_user.class.inc as reported in http://www.radicore.org/forum/index.php?t=msg&th=99.
+- fixed bug in product_category.class.inc which caused non-database field 'rollup' to be qualified with a table name when selected as a sort item, thus causing an invalid SQL statement to be generated.
+- fixed bug in include.xml.php5.inc where it was calling ->set_attribute() instead of ->setAttribute().
+- removed global variable $popup_where as it is redundant,
+- removed entries for 'POPUP', 'TREE1POPUP' and 'TREE2POPUP' from MNU_PATTERN table in MENU database. These have been replaced by 'POPUP1', 'POPUP2', 'POPUP3' and 'POPUP4'. Please import radicore/menu/sql/mysql/alter_table(2006-09-06).sql to delete the old entries and radicore/menu/sql/menu.menu_export.sql to insert the new entries.
+- changed dict_column(import) so that the default value for column_desc is column_id, but with '_' (underscore) replaced with ' ' (space), then the first character of each word shifted to upper case.
+- changed include.session.inc so that when navigating to 'audit_dtl(list)3' the selection criteria includes the current database_id, and when navigating to 'audit_dtl(list)3exact' the selection criteria includes the current database_id and table_id.
+- added a series of 'xxx-wide' CSS files which set the screen width to 100% instead of 750px. This is for people with screen resolutions which are greater than 800x600.
+- added function getPatternId() to file 'include.session.inc' to return the pattern_id of the selected script.
+- added task 'mnu_subsystem(build)' which will build the directory structure for a new subsystem. You will need to import radicore/menu/sql/menu.menu_export.sql to see this task.
+- added task 'dict_table(generate)a' and 'dict_table(generate)b' which will generate the component scripts and screen structure scripts for selected tables and transaction patterns. You will need to import radicore/dict/sql/dict.menu_export.sql to see these tasks.
+
+
+2006-09-18, version 1.16.0
+- updated popup processing to allow a MULTI4 pattern to have popup controls in both the single occurrence of the OUTER entity and the multiple occurrences of the INNER entity.
+- found and fixed several E_NOTICE errors.
+
+2006-09-11, version 1.15.0
+- fixed bug in 'includes/std.table.class.inc' where '_examineWorkflow()' method failed to initialise $this->errors.
+- fixed bug in 'includes/include.general.inc' which caused the 'fixTrueFalse()' method to corrupt values in some circumstances.
+- fixed bug in 'includes/include.session.inc' which caused the 'childform()' method to load previous search criteria using $dbobject->tablename instead of $dbobject->sql_search_table.
+- modified search screen to allow operators of '<=', '<', '>=', '>', '<>' and '!=' to be used on numeric fields.
+- modified various components in order to allow any search criteria used in a task to be made available to a child task so that the same search criteria can be applied in the child.
+
+- updated DICT schema to include a 'custom_validation' field on the DICT_COLUMNS table. You will need to import radicore/dict/sql/mysql/alter_table(2006-09-09).sql to make this change. You should also import radicore/dict/sql/dict.dict_export.sql to update the Data Dictionary.
+- added 'CUSTOM' to the list of subtypes in the dict_column(upd) screen, as well as a 'custom_validation' field.
+- modified 'x_person_addr' table in data dictionary to make use of the custom validation feature. You should import radicore/xample/sql/xample.dict_export.sql to update the Data Dictionary. This uses the contents of file 'sample.validation.class.inc'.
+
+2006-08-28, version 1.14.0
+- added pattern 'Output1' to the MENU database and created controller 'includes/std.output1.inc'. You will need to import /radicore/menu/sql/menu.menu_export.sql to see this change.
+- added task 'x_person(csv)' to the Example Prototype which demonstrates how to use the output1 pattern to export data to a CSV file. You will need to import /radicore/xample/sql/xample.menu_export.sql to see this change.
+- fixed a bug in 'includes/std.session.inc' which passed the contents of any search criteria down to all child forms instead of selected child forms, as reported in http://www.radicore.org/forum/index.php?t=msg&th=83&start=0
+- fixed a bug in '/xample/screens/en/person_detail.screen.inc' which caused fields to be displayed out of alignment in the Add screen.
+- fixed a bug in '/dict/classes/dict_related_column_s01.class.inc' which caused the wrong value to be written to the 'seq_in_index' column.
+- fixed a bug in 'includes/std.table.class.inc' which caused data from a field of type SET (MySQL) or ARRAY (PostgreSQL) to be lost after navigating to another screen.
+- added PDF library from www.fpdf.org which is extended by 'std.pdf.class.inc'
+- added patterns 'output2' and 'output3' to the menu database and created controllers 'includes/std.output2.inc' and 'includes/std.output3.inc'. You will need to import /radicore/menu/sql/menu.menu_export.sql to see this change.
+- added tasks 'x_person(pdf)', 'x_person(pdf)2' and 'x_person(pdf)3' to the Example Prototype which demonstrates how to use the output2/3 patterns to export data to a PDF file. You will need to import /radicore/xample/sql/xample.menu_export.sql to see these tasks.
+- added several tasks to the DICT subsystem to create PDF output. You will need to import /radicore/dict/sql/dict.menu_export.sql to see these additional tasks.
+- added several tasks to the MENU subsystem to create PDF output. You will need to import /radicore/menu/sql/menu.menu_export.sql to see these additional tasks.
+
+2006-08-09, version 1.13.0
+- added a multi-select dropdown list to the library of HTML controls supported by the framework.
+- updated XAMPLE schema to include a new column called 'favourite_food' to demonstrate a multi-select dropdown list. This uses the MySQL column type of 'set' and the PostgreSQL type of 'array'. You will need to import radicore/xample/sql/mysql/alter_table(2006-08-01).sql to make this change. You should also import radicore/xample/sql/xample.dict_export.sql to update the Data Dictionary.
+- updated DICT schema to include a new column called 'col_array_type' on the 'dict_column' table. This is for use on PostgreSQL databases where 'col_type' = 'array' and 'col_array_type' identifies the type of elements within the array, such as 'char', 'varchar', 'integer' or whatever. You will need to import /radicore/dict/sql/mysql/alter_table(2006-08-01).sql to make the change. You should also import radicore/dict/sql/dict.dict_export.sql to update the Data Dictionary.
+- an example multi-select dropdown list is now included in the "Update Person" screen in the "Example System" prototype.
+
+- added initial support for javascript into the framework. This will allow various pieces of javascript code and events to be defined inside table classes for inclusion in the XML document so that they can be built into the HTML document by the XSL transformation.
+- added $GLOBALS['force_javascript_footer'] to file CONFIG.INC which writes the javascript footer manually in the HTML document as it is sometimes not written automatically (don't ask me why).
+- added an extra screen to the "Example System" prototype called "Update Person (js)" which uses javascript to show a calendar control for the choosing of dates.
+- added an extra screen to the "Example System" prototype called "Update Person (js2)" which uses javascript to show the FCKeditor control. This is available as a navigation button within "Update Person (js)". You will need to import /radicore/xample/sql/xample.menu_export.sql to see these new tasks on the navigation bars.
+
+2006-07-28, version 1.12.0
+- added TIMETABLE1 to the list of patterns in the menu database. You will need to import details from radicore/menu/sql/menu.menu_export.sql
+- changed several tasks in the Classroom Scheduling prototype to use the TIMETABLE1 pattern. You will need to import details from radicore/classroom/sql/crss.menu_export.sql
+- added FILEDOWNLOAD to the list of patterns in the menu database. You will need to import details from /radicore/menu/sql/menu.menu_export.sql
+- added person_filedownoad.php to demonstrate the FILEDOWNLOAD pattern. This can be accessed from the "Enquire Person" screen. You will need to import /radicore/xample/sql/xample.menu_export.sql to load the definition for the new transaction.
+- fixed problem with the "Choose Schedule" option in the Classroom Scheduling prototype.
+- amended "Search Audit detail" screen so that the use of the FROM date/time and TO date/time fields is more logical.
+- changed std.add1/2/3.inc so that the contents of $messages is passed back to the previous script.
+- changed std.multi3.inc so that it does not read INNER if MIDDLE is empty.
+- changed std.treenode.xsl so that it encloses each icon with <span class="icon">...</span> which allows it to be given its own style attributes in the CSS file.
+- renamed column SURVEY_DESC to SURVEY_LONG_NAME on SURVEY.SURVEY_HDR table to be consistent, and changed column MIN_VALUE on SURVEY.NUMBER_OPTION to be required instead of optional.
+
+  You will need to import radicore/survey/sql/mysql/alter_table(2006-07-16).sql
+  You will need to import radicore/survey/sql/survey.dict_export.sql
+
+- changed std.multi1.inc to return to calling script if the call to $object->getData() returns an error.
+- amended "Update Menu Control Data" screen to include an option to keep all user passwords hidden.
+- changed column ARC_TYPE on WORKFLOW.WF_ARC so that default is 'SEQ' instead of 'NORMAL'.
+
+  You will need to import radicore/workflow/sql/mysql/alter_table(2006-07-19).sql
+  You will need to import radicore/workflow/sql/workflow.dict_export.sql
+
+- amended include.session.inc, std.table.class.inc, std.list1/2.inc to allow search criteria used in a parent screen to be passed down to a child screen. For example, screen A shows a list of customers, but only those customers who have orders which satisfy certain selection criteria. Screen B will usually show all orders for a selected customer, but if it is called from screen A it must only show those orders which satisfy the search criteria that was used in screen A. This search criteria is automatically made available to all inner objects in the standard $where argument.
+- fixed include.xml.php4/5.inc so that multiple attributes for the same column are grouped together.
+- changed std.column_hdg.xsl so that it can deal with <col> attributes of align, valign, char and style (as well as width and class) in the screen structure file.
+- changed all css files to remove all text-align and vertical-align specifications for table cells so as not to override what is specified in the screen structure file.
+- updated the dictionary details for the MENU database. You can import these details from radicore/menu/sql/menu.dict_export.sql
+- updated the dictionary details for the AUDIT database. You can import these details from radicore/audit/sql/audit.dict_export.sql
+- updated the dictionary details for the WORKFLOW database. You can import these details from radicore/workflow/sql/workflow.dict_export.sql
+- updated the dictionary details for the DICT database. You can import these details from radicore/dict/sql/dict.dict_export.sql
+- amended include.general.inc to reference either std.singleton.php4.inc or std.singleton.php5.inc as different code is needed for the different PHP versions.
+
+2006-07-10, version 1.11.0
+- fixed problem in php_session.class.inc which was caused by trying to create a duplicate record.
+- fixed problem in std.table.class.inc which caused method _sqlAssembleWhereLink() to remove 'A', 'N' or 'D' character from the end of column names.
+- changed dml.*.class.inc so that auto_increment key values are enclosed in single quotes when appearing in the PKEY field of the AUDIT_TBL table. This is to make it consistent with all other values, numeric or not.
+- changed the menu structure for the PRODUCT prototype to include a set of new inventory transactions.
+
+  You will need to delete the existing data by logging on and running Menu System -> Subsystem, select "product" then press the "erase" button.
+  Then import new details from radicore/product/sql/product.menu_export.sql
+
+- fixed std.validation.class.inc so that if a required field is empty and (a) it has a default value defined and (b) it has an option list defined (for a dropdown or radio group) then the default value is only used if it also appears in the option list. This is for those situations where a numeric required field has a default value of '0' but the option list starts at '1'.
+- fixed include.session.inc so that the 'Log SQL Query?' option in the 'Update Task' function works properly.
+- changed include.general.inc to include an adjustDate() function.
+- changed include.general.inc to include an isPrimaryObject() function.
+- fixed xample/pers_opt_xref_del.php so that it refers to table 'x_pers_opt_xref' instead of 'pers_opt_xref'.
+- fixed workflow/sql/mysql/workflow-data.sql so that it contains data for the WF_ARC table.
+- changed wf_transition table in the workflow database so that role_id is now optional.
+
+  You will need to import radicore/workflow/sql/mysql/alter_table(2006-07-09).sql
+  You will need to import radicore/workflow/sql/workflow.dict_export.sql
+
+- fixed workflow processing which failed to deal with a workitem whose context was not an exact match to the current object's primary key. 
+
+2006-06-22, version 1.10.0
+- fixed column sizes in audit database to be same as on menu and dict databases:
+  audit_trn.task_id should be varchar(40) not (32)
+  audit_tbl.base_name should be varchar(64) not (32)
+  audit_tbl.table_name should be varchar(64) not (32)
+
+  You will need to import radicore/audit/sql/mysql/alter_table(2006-06-20).sql
+  You will need to import radicore/audit/sql/audit.dict_export.sql
+
+- fixed task 'audit_dtl(list)3exact' so that 'pattern=exact' is in the 'settings' field instead of the 'Selection (fixed)' field.
+
+  You will need to import radicore/audit/sql/audit.menu_export(2006-06-20).sql
+
+- fixed 'import database' and 'import columns' functions in Data Dictionary to work on a shared server where a value is defined for $GLOBALS['dbprefix'].
+- changed 'import database' so that it will allow the user to choose which database to import instead of automatically importing all available databases. It will also import the table names and then activate the 'list tables within database' function.
+
+  You will need to import radicore/dict/sql/dict.menu_export(2006-06-22).sql
+
+2006-06-19, version 1.9.0
+- changed the PostgreSQL driver (dml.pgsql.class.inc) to use pg_escape_string() instead of addslashes() following the advice given with the release of version 8.1.4
+- changed the MySQL drivers (dml.mysql.class.inc and dml.mysqli.class.inc) to use SQL_CALC_FOUND_ROWS and FOUND_ROWS() to obtain row count. This fixes a problem using SELECT count(*) with a GROUP BY clause.
+- updated file include.xml.php5.inc to include the align_hv/align_lr specifications for radio groups and the align_lr specification for checkboxes.
+- updated various xsl stylesheets and templates to use the variable 'zone' instead of 'table' to be consistent with the documentation.
+- changed std.validation.class.inc to use the default value (if it has been defined) when no value has been supplied, even when the field is not marked as "required".
+- changed std.datevalidation.class.inc to deal with a choice of 'dmy', 'mdy' and 'ymd' date formats. The choice can be set in $GLOBALS['date_format'] in the CONFIG.INC file. Will default to 'dmy' if not specified. 
+- fixed bug in audit_dtl_list3.php which prevented the message "No parent has been selected yet" from being displayed when no parent had been selected.
+- created directory CSS to hold a series of css files (which makes 'radicore/style_default.css' redundant), and modified mnu_session_upd.php to allow the user to choose one. This choice will be stored in a cookie so that it persists beyond the current session.
+- moved all individual 'radicore/<subsys>/images' subdirectories into a single 'radicore/images' directory.
+- changed the images, css files and xsl files which deal with tree structures to improve the screen display.
+
+2006-05-16, version 1.8.0
+- added an extra parameter ($where_array) to _cm_fileUpload() method so that the contents of the $where string which was passed to initialiseFileUpload() are available for processing.
+- changed audit_* tables from MyISAM to INNODB to incorporate transactional processing. See file radicore/audit/sql/mysql/alter_table(2006-05-11).sql for details.
+- added control='hyperlink' to columns within data dictionary which causes a URL to be displayed as a clickable link.
+- removed the call to addslashes() from the validateField() function as the escaped field could be echoed back to the user, which would be incorrect. It is now only done in array2where() when creating a WHERE string from an array, and in the DAO when constructing SQL query strings.
+
+2006-04-30, version 1.7.0
+- added 'recover password' link to logon screen which will allow a user to request an e-mail containing his password.
+- amended table MNU_USER in MENU database to make EMAIL_ADDR a unique key.
+- added column ALIGN_LR to DICT_COLUMN table in DICT database.
+- added column CHECKBOX_LABEL to DICT_COLUMN able in DICT database.
+- added CHECKBOX to list of available controls in DICT_COLUMN screen, with ability to put the optional label text on either the left or right.
+- amended std.fileupload1.inc and std.table.class.inc to include new initialiseFileUpload() and fileUpload() methods to add more flexibility to the file upload function.
+
+  You will need to import radicore/menu/sql/mysql/alter_table(2006-04-24).sql
+  You will need to import radicore/menu/sql/menu.dict_export.sql
+  You will need to import radicore/dict/sql/mysql/alter_table(2006-04-25).sql
+
+2006-04-21, version 1.6.0
+- amended files include.xml.php4/5.inc so that function setCSSfiles() uses $_SERVER['HTTP_HOST'] instead of $_SERVER['SERVER_NAME'] to fix problem http://www.radicore.org/forum/index.php?t=msg&th=5&start=0
+- added a "logout (all)" option to the menu bar
+- updated Menu Control Data to include shutdown periods during which the system will be inaccessible.
+
+2006-04-13, version 1.5.1
+- fixed problem in file include.xml.php5.inc when attempting to perform XSL transformations on the client.
+- fixed problem which prevented script help_text_multi.php from deleting entries.
+- fixed problem with scripts mnu_role_taskfield_multi(a) and (b) where entries not yet defined on the database were not being displayed with default values.
+- fixed problem in files dml.*.class.inc caused by SELECT count(*) containing a GROUP BY clause.
+
+2006-04-10, version 1.5.0
+- changed MENU database - see radicore/menu/sql/mysql/alter_table(2006-03-27).sql 
+- added $GLOBALS['log_xml_document'] to CONFIG.INC.DEFAULT file to allow all XML files to be written to disk as a debugging aid.
+- added task wf_workitem(upd) - load file /workflow/sql/workflow.menu_export.sql to add this to your menu database.
+- added task mnu_session(upd) - load file /menu/sql/menu.menu_export.sql to add this to your menu database.
+- removed $GLOBALS['use_HTTPS'] from CONFIG.INC.DEFAULT. This as been replaced by $GLOBALS['http_server'], $GLOBALS['https_server'] and $GLOBALS['https_server_suffix'] as it is possible to use a shared secured server which has a different host name.
+
+2006-03-21, version 1.4.0
+- created 5 sample workflows (see notes in /radicore/workflow/docs).
+- created an audit_dtl(del) job to delete entries from the audit database, but this will not
+  appear on any navigation button until you set "disabled = FALSE" on the task details.
+- changed MENU database - see radicore/menu/sql/mysql/alter_table(2006-03-15).sql
+
+  You will need to import radicore/workflow/sql/mysql/workflow-data.sql
+  You will need to import radicore/audit/sql/audit.menu_export.sql
+
+2006-03-12, version 1.3.0
+- changed AUDIT database - see radicore/audit/sql/mysql/alter_table(2006-03-07).sql
+- changed MENU database - see radicore/menu/sql/mysql/alter_table(2006-03-06).sql
+- changed WORKFLOW database - radicore/workflow/sql/mysql/alter_table(2006-02-13).sql
+
+- updated file CONFIG.INC.DEFAULT to include a new setting $GLOBALS['use_HTTPS'] which by default is FALSE.
+- changed the _cm_popupCall() method in radicore/includes/std.table.class.inc so that $settings is now an array instead of a string. So instead of 
+    $settings = 'select_one = true';
+  you will need 
+    $settings['select_one'] = true;
+
+  You will need to reload MENU data from radicore/menu/sql/mysql/dict-data.sql
+  You will need to reload DICT data from radicore/dict/sql/mysql/dict-data.sql
+
+2006-02-08, version 1.2.0
+- changed MENU database - see radicore/menu/sql/mysql/alter_table(2006-02-03).sql
+  This adds the ability to cause an automatic screen refresh. 
+
+2006-01-20, version 1.1.0
+- changed MENU database - see radicore/menu/sql/mysql/alter_table(2006-01-16).sql
+  This adds the ability to write each sql query to a log file.
+
+2006-01-10, version 1.0.0
+- first release

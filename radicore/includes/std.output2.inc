@@ -21,6 +21,12 @@ $mode = 'pdf-list';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 // create a class instance of the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
@@ -31,42 +37,36 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 if (!empty($sql_orderby)) {
     $dbobject->setDefaultOrderby($sql_orderby);
-} elseif (isset($task_order_by)) {
-    $dbobject->setDefaultOrderby($task_order_by);
+} elseif (isset($task_orderby)) {
+    $dbobject->setDefaultOrderby($task_orderby);
 } // if
 // set sort order (if defined)
-if (!empty($order_by)) {
-    $string = validateSortItem('body', $order_by, $dbobject, $report_structure);
+if (!empty($orderby)) {
+    $string = validateSortItem('body', $orderby, $dbobject, $report_structure);
     $dbobject->setOrderBy($string);
-    if (!empty($order_by_seq)) {
-        $dbobject->setOrderBySeq($order_by_seq);
+    if (!empty($orderby_seq)) {
+        $dbobject->setOrderBySeq($orderby_seq);
     } // if
 } // if
 // perform any initialisation
-if (!empty($selection)) {
-    $selection = $dbobject->initialise($selection);
-} else {
-    $where = $dbobject->initialise($where);
+$where = $dbobject->initialise($where);
+if (empty($dbobject->errors)) {
+	// get any data for lookup lists
+    $null = $dbobject->getExtraData($where);
 } // if
-// get any data for lookup lists
-$null = $dbobject->getExtraData(null);
+if ($dbobject->errors) {
+	scriptPrevious($dbobject->errors);
+} // if
 
 // load optional criteria from search screen
 if (isset($search)) {
     $dbobject->setSqlSearch($search);
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been set by previous screen
-    $where     = $selection;
-    $selection = null;
-} // if
-
 // get data from the database
 $resource = $dbobject->getData_serial($where);
-$errors   = $dbobject->getErrors();
-if (!empty($errors)) {
-	scriptPrevious($errors);
+if (!empty($dbobject->errors)) {
+	scriptPrevious($dbobject->errors);
 } // if
 
 if ($dbobject->getNumRows() == 0) {
@@ -76,13 +76,16 @@ if ($dbobject->getNumRows() == 0) {
 // transform output to PDF format and deal with it as specified in $report
 $destination = $dbobject->outputPDF_ListView($resource, $report_structure);
 
+$messages = $dbobject->messages;
+$errors   = $dbobject->errors;
+
 $prev_script = getPreviousScript($task_id);
 $prev_task   = getPreviousTask($prev_script);
 // tell previous script that we are returning
 $_SESSION[$prev_script][$prev_task]['return_from'] = 'pdf';
 
-if ($destination == 'F') {
-	scriptPrevious();
+if (!eregi('(D|I)', $destination) OR !empty($errors)) {
+	scriptPrevious($errors, $messages);
 } else {
     unset($_SESSION[getSelf()]);  // delete current script from session array
 } // if

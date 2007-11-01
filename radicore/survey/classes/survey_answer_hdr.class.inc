@@ -32,7 +32,8 @@ class survey_answer_hdr extends Default_Table
     {
         //DebugBreak();
         if (!empty($fieldarray['survey_answer_id'])) {
-            $query = "select count(*) FROM survey_answer_dtl WHERE survey_answer_id='{$fieldarray['survey_answer_id']}'";
+            $survey_answer_id = stripOperators($fieldarray['survey_answer_id']);
+            $query = "select count(*) FROM survey_answer_dtl WHERE survey_answer_id='$survey_answer_id'";
             $count = $this->getCount($query);
         } else {
             $count = 0;
@@ -50,7 +51,7 @@ class survey_answer_hdr extends Default_Table
         if (($GLOBALS['mode'] == 'search')) {
             $fieldarray['user_name'] = null;
             // add specification to invoke popup for USER_NAME field
-            $this->fieldspec['user_id']['task_id'] = 'mnu_user(popup)';
+            $this->fieldspec['user_id']['task_id'] = 'mnu_user(popup1)';
             unset($this->fieldspec['user_id']['noedit']);
             unset($this->fieldspec['is_complete']['noedit']);
         } else {
@@ -118,7 +119,7 @@ class survey_answer_hdr extends Default_Table
     // NOTE: $settings is passed BY REFERENCE as it may be altered.
     {
         //DebugBreak();
-        if ($popupname == 'mnu_user(popup)') {
+        if ($popupname == 'mnu_user(popup1)') {
             // use input from current screen
             if (!empty($_POST['user_id'])) {
                 $where = "user_id LIKE '{$_POST['user_id']}'";
@@ -152,17 +153,19 @@ class survey_answer_hdr extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
         if ($return_from == 'srv_tree_node(popup)') {
             // get description for selected item
             require_once 'classes/tree_node.class.inc';
             $dbobject =& singleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
+            $selection = array2where($select_array);
             $foreign_data = $dbobject->getData($selection);
 
             if ($foreign_data[0]['node_type'] == 'L') {
@@ -170,7 +173,7 @@ class survey_answer_hdr extends Default_Table
                 $fieldarray = array_merge($fieldarray, $foreign_data[0]);
             } else {
                 // invalid type, so try again
-                scriptnext($return_from);
+                scriptNext($return_from);
                 // $fieldarray['node_id'] = null;
                 // $this->errors['node_id'] = 'You must choose a LOCATION';
             } // if

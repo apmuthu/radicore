@@ -9,10 +9,10 @@ $GLOBALS['dbms']   = 'mysql';      // database engine is MySQL
 //$GLOBALS['dbms']   = 'pgsql';      // database engine is PostgreSQL
 //$GLOBALS['dbms']   = 'oracle';     // database engine is PostgreSQL
 
-if ($dbms == "oracle") {
-    $dbhost = '//localhost/xe';
+if ($GLOBALS['dbms'] == "oracle") {
+    $GLOBALS['dbhost'] = '//localhost/xe';
 } else {
-    $dbhost = 'localhost';
+    $GLOBALS['dbhost'] = 'localhost';
 } // if
 
 // NOTE: with MYSQL there are tables withing databases, and within a single connection
@@ -27,7 +27,7 @@ $GLOBALS['PGSQL_dbname'] = 'radicore';
 // NOTE: $dbprefix is for my web host (shared) where my databases are prefixed
 // with my account name to keep them separate from other accounts.
 
-if (eregi('^(localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {    // this is for my PC
+if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {    // this is for my PC
     $GLOBALS['dbusername'] = '****';
     $GLOBALS['dbuserpass'] = '****';
     $GLOBALS['dbprefix']   = null;
@@ -56,12 +56,12 @@ $GLOBALS['log_sql_query'] = false;
 // set this to TRUE to write all XML documents to file 'xsl/<script_id>.xml' (for debugging)
 $GLOBALS['log_xml_document'] = false;
 
-// create javascript footer manually
-$GLOBALS['force_javascript_footer'] = true;
-
 // set date format - choose one of the following
 $GLOBALS['date_format'] = 'dmy';
 //$GLOBALS['date_format'] = 'mdy';
 //$GLOBALS['date_format'] = 'ymd';
+
+// use HTTPS for all web pages
+$GLOBALS['use_https'] = false;
 
 ?>

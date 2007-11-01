@@ -21,6 +21,16 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
+if (empty($where)) {
+    scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
+} // if
+
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
@@ -31,15 +41,6 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 // return a single selection only
 $dbobject->setRowsPerPage(1);
-
-// retrieve profile must have been set by previous screen
-if (!empty($selection)) {
-    $where     = $selection;
-    $selection = null;
-} // if
-if (empty($where)) {
-    scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
-} // if
 
 // get data from the database
 $fieldarray = $dbobject->initialiseFileDownload($where);

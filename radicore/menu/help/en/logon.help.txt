@@ -1,4 +1,4 @@
-Welcome to Tony Marston's amazing Menu & Security system.
+Welcome to the RADICORE Menu & Security system.
 
 You must enter a valid user id and password before you can continue any further.
 

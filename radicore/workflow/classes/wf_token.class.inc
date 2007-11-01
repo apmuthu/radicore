@@ -30,21 +30,22 @@ class wf_token extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for after_submit and put into LOOKUP_DATA
-        $array = $this->getValRep('token_status');
-        $this->lookup_data['token_status'] = $array;
+        if (!array_key_exists('token_status', $this->lookup_data)) {
+            // get array for after_submit and put into LOOKUP_DATA
+            $array = $this->getValRep('token_status');
+            $this->lookup_data['token_status'] = $array;
+        } // if
 
-        // get list of workflow names
-        require_once 'wf_workflow.class.inc';
-        $dbobject =& singleton::getInstance('wf_workflow');
-        $array = $dbobject->getValRep('workflow_id');
-        $this->lookup_data['workflow_id'] = $array;
+        if (!array_key_exists('workflow_id', $this->lookup_data)) {
+            // get list of workflow names
+            $dbobject =& singleton::getInstance('wf_workflow');
+            $array = $dbobject->getValRep('workflow_id');
+            $this->lookup_data['workflow_id'] = $array;
+        } // if
 
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table PLACE and add as a LOOKUP list
-            require_once 'wf_place.class.inc';
             $dbobject =& singleton::getInstance('wf_place');
             $array = $dbobject->getValRep('place_id', "workflow_id='$workflow_id'");
             $this->lookup_data['place_id'] = $array;

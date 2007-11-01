@@ -63,6 +63,18 @@ $array['Audit Trail (2)']               = 'Audit Trail (2)';
 $array['Audit Trail (exact)']           = 'Audit Trail (exact)';
 $array['Logon Errors']                  = 'Logon Errors';
 
+// field names for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+
 // field labels for subsystem AUDIT
 $array['Database']                  = 'Database';
 $array['Date From']                 = 'Date From';

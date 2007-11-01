@@ -273,6 +273,10 @@ class audit_tbl extends Default_Table
             unset($this->fieldspec['base_name']['noedit']);
             unset($this->fieldspec['table_name']['noedit']);
             unset($this->fieldspec['pkey']['noedit']);
+            // do not include these fields in the search string
+            unset($this->fieldspec['session_id']);
+            unset($this->fieldspec['table_seq_no']);
+            unset($this->fieldspec['tran_seq_no']);
         } // if
 
         return $fieldarray;
@@ -309,9 +313,13 @@ class audit_tbl extends Default_Table
             	scriptPrevious();
             } // if
         	if ($GLOBALS['mode'] == 'search') {
-                // set initial values in screen
-                $where = "user_id='" .$_SESSION['logon_user_id'] ."' AND "
-                        ."date_from='" .getTimeStamp('date') ."'";
+        	    if (isset($_SESSION['search'][$this->tablename])) {
+        	        // previois searc criteria exists, so dont change it
+        	    } else {
+                    // set initial values in screen
+                    $where = "user_id='" .$_SESSION['logon_user_id'] ."' AND "
+                            ."date_from='" .getTimeStamp('date') ."'";
+        	    } // if
             } // if
         } // if
 

@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:46 pm
+    // file created on September 12, 2007, 3:46 pm
     
     // field specifications for table dict.dict_table_key
     $fieldspec['database_id']               = array('type' => 'string',
@@ -92,6 +92,11 @@
     $this->child_relations                  = array();
     
     // parent relationship details 
+    $this->parent_relations[]               = array('parent' => 'dict_column',
+                                                    'fields' => array('database_id' => 'database_id',
+                                                                      'table_id' => 'table_id',
+                                                                      'column_id' => 'column_id'));
+    
     $this->parent_relations[]               = array('parent' => 'dict_table',
                                                     'parent_field' => 'table_desc',
                                                     'fields' => array('database_id' => 'database_id',
@@ -101,7 +106,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'database_id, table_id, key_name, seq_in_index';
     
     // finished
 ?>

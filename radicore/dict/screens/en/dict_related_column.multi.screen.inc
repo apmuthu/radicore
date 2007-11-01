@@ -32,9 +32,11 @@ $structure['outer']['fields'][] = array('calc_field' => 'Calculated Field', 'col
 
 $structure['tables']['inner'] = 'dict_related_column';
 
+//$structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => '50%');
 $structure['inner']['columns'][] = array('width' => '50%');
 
+//$structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('column_id_snr' => 'Column Id (snr)');
 $structure['inner']['fields'][] = array('column_id_jnr' => 'Column Id (jnr)');
 

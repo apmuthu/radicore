@@ -150,10 +150,12 @@ class inventory_item_variance extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for inv_item_status_id and put into LOOKUP_DATA
-        $object =& singleton::getInstance('inventory_variance_reason');
-        $array  = $object->getValRep('inv_var_reason_id');
-        $this->lookup_data['inv_var_reason_id'] = $array;
+        if (!array_key_exists('inv_var_reason_id', $this->lookup_data)) {
+            // get array for inv_item_status_id and put into LOOKUP_DATA
+            $object =& singleton::getInstance('inventory_variance_reason');
+            $array  = $object->getValRep('inv_var_reason_id');
+            $this->lookup_data['inv_var_reason_id'] = $array;
+        } // if
 
         return $fieldarray;
 

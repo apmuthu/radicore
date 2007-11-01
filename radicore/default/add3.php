@@ -6,7 +6,7 @@
 // more primary keys from ONE(b) are selected in a separate popup screen.
 //*****************************************************************************
 
-$table_id = '#tablename#';     // table name
+$table_id = '#tablename#';      // table name
 
 // this screen is used to select occurrences from ONE(b)
 $popup_task = '#popup_task#';

@@ -54,7 +54,7 @@ class workflow_engine extends wf_workflow
         require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& singleton::getInstance('wf_workitem');
 
-        //check that workitem has not already been processed
+        // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status IN ('EN','IP')";
         $data = $dbworkitem->getData_raw($where);
         if ($dbworkitem->errors) {
@@ -258,17 +258,17 @@ class workflow_engine extends wf_workflow
         require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& singleton::getInstance('wf_workitem');
 
-        //check that workitem has not already been processed
+        // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status='EN'";
         $data = $dbworkitem->getData_raw($where);
         if ($dbworkitem->errors) {
             $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
-            return;
+            return $fieldarray;
         } // if
 
         // if nothing found exit now
         if ($dbworkitem->numrows == 0) {
-            return;
+            return $fieldarray;
         } // if
 
         // mark this workitem as 'in progress'
@@ -279,7 +279,7 @@ class workflow_engine extends wf_workflow
         $workitem_array = $dbworkitem->updateRecord($workitem_array);
         if ($dbworkitem->errors) {
             $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
-            return;
+            return $fieldarray;
         } // if
 
         // ********************************************************************
@@ -294,23 +294,23 @@ class workflow_engine extends wf_workflow
         $arc_data = $dbarc->getData($where);
         if ($dbarc->errors) {
             $this->errors = array_merge($this->errors, $dbarc->getErrors());
-            return;
+            return $fieldarray;
         } // if
 
         if (count($arc_data) < 1) {
          	// "Not enough inward Arcs for transition '%1\$s'"
          	$this->errors[] = getLanguageText('e0062', $transition_id);
-         	return;
+         	return $fieldarray;
         } // if
         if (count($arc_data) > 1) {
          	// "Too many inward Arcs for transition '%1\$s'"
          	$this->errors[] = getLanguageText('e0063', $transition_id);
-         	return;
+         	return $fieldarray;
         } // if
         if ($arc_data[0]['arc_type'] != 'OR-SPLIT-I') {
         	// "Timed Transition '%1\$s' must have an inward Arc of type OR-split (Implicit)"
         	$this->errors[] = getLanguageText('e0064', $transition_id);
-         	return;
+         	return $fieldarray;
         } // if
 
         // now mark it as consumed
@@ -323,7 +323,7 @@ class workflow_engine extends wf_workflow
             $token_data = $dbtoken->updateRecord($arc);
             if ($dbtoken->errors) {
                 $this->errors = array_merge($this->errors, $dbtoken->getErrors());
-                return;
+                return $fieldarray;
             } // if
         } // foreach
 
@@ -334,15 +334,15 @@ class workflow_engine extends wf_workflow
         // find other arcs of type OR-split (Implicit) and cancel it/them
         $this->_cancelSplit ($workflow_id, $transition_id, $case_id, $place_id_in, $arc_type_in);
         if ($this->errors) {
-            return;
+            return $fieldarray;
         } // if
 
         // put timed transition (task) into the processing queue
         $next['task_id'] = $fieldarray['task_id'];
         $next['where']   = $context;
-        $_SESSION['script_sequence'][] = $next;
+        append2ScriptSequence($next);
 
-        return;
+        return $fieldarray;
 
     } // fireTimedEvent
 
@@ -353,9 +353,9 @@ class workflow_engine extends wf_workflow
         $dbarc =& singleton::getInstance('wf_arc');
 
         // find out if the place on the current inward arc has other inward arcs
-        $dbarc->sql_select = 'wf_arc.transition_id, arc_type, workitem_id';
+        $dbarc->sql_select = 'wf_arc.transition_id, arc_type, workitem_id, case_id, workitem_status';
         $dbarc->sql_from   = 'wf_arc '
-                           . "LEFT JOIN wf_workitem ON (wf_workitem.workflow_id='$workflow_id' AND wf_workitem.transition_id=wf_arc.transition_id) ";
+                           . "LEFT JOIN wf_workitem ON (wf_workitem.case_id='$case_id' AND wf_workitem.workflow_id='$workflow_id' AND wf_workitem.transition_id=wf_arc.transition_id) ";
         $where = "workflow_id='$workflow_id' AND transition_id != '$transition_id' AND place_id='$place_id_in' AND direction='IN'";
         $arc_data = $dbarc->getData($where);
         if ($dbarc->numrows = 0) {
@@ -372,17 +372,19 @@ class workflow_engine extends wf_workflow
                     return;
                 } // if
 
-                // mark this workitem as cancelled
-                $workitem_array = array();
-                $workitem_array['case_id']         = $case_id;
-                $workitem_array['workitem_id']     = $arc['workitem_id'];
-                $workitem_array['workitem_status'] = 'CA';
-                $workitem_array['cancelled_date']  = getTimeStamp();
-                $workitem_array['user_id']         = $_SESSION['logon_user_id'];
-                $workitem_array = $dbworkitem->updateRecord($workitem_array);
-                if ($dbworkitem->errors) {
-                    $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
-                    return;
+                if ($arc['workitem_status'] != 'CA') {
+                	// mark this workitem as cancelled
+                    $workitem_array = array();
+                    $workitem_array['case_id']         = $case_id;
+                    $workitem_array['workitem_id']     = $arc['workitem_id'];
+                    $workitem_array['workitem_status'] = 'CA';
+                    $workitem_array['cancelled_date']  = getTimeStamp();
+                    $workitem_array['user_id']         = $_SESSION['logon_user_id'];
+                    $workitem_array = $dbworkitem->updateRecord($workitem_array);
+                    if ($dbworkitem->errors) {
+                        $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
+                        return;
+                    } // if
                 } // if
 
             } // foreach

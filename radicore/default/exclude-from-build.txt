@@ -14,7 +14,9 @@ filepicker.php
 fileupload.php
 link1.php
 list1.php
+list1.popup.php
 list2.php
+list2.popup.php
 list3.php
 multi1.php
 multi2.php
@@ -30,11 +32,15 @@ popup4.php
 search.php
 timetable1.php
 tree1.php
+tree1.popup.php
 tree2.php
+tree2.popup.php
 upd1.php
 upd2.php
 upd3.php
 upd4.php
+upd5.php
+alias.class.inc
 default.class.inc
 output2.report.inc
 output3.report.inc
@@ -59,3 +65,4 @@ timetable1.screen.inc
 tree1.screen.inc
 tree2.screen.inc
 upd3.screen.inc
+

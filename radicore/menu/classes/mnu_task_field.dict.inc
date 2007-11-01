@@ -1,9 +1,9 @@
 <?php
-    // file created on November 3, 2006, 11:23 am
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_task_field
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'lowercase' => 'y');
@@ -50,6 +50,16 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_role',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id',
+                                                                      'field_id' => 'field_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_user',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id',
+                                                                      'field_id' => 'field_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_role_taskfield',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id',

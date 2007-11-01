@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:50 pm
+    // file created on September 10, 2007, 5:48 pm
     
     // field specifications for table survey.survey_answer_hdr
     $fieldspec['survey_answer_id']          = array('type' => 'integer',
@@ -14,7 +14,7 @@
                                                     'size' => 16,
                                                     'uppercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_user(popup)',
+                                                    'task_id' => 'mnu_user(popup1)',
                                                     'foreign_field' => 'user_name');
     
     $fieldspec['answer_date']               = array('type' => 'date',

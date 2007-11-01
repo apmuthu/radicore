@@ -1,4 +1,4 @@
--- file created on January 4, 2007, 2:07 pm
+-- file created on March 6, 2007, 12:02 pm
 
 REPLACE INTO `dict_database` (`database_id`, `database_desc`, `db_comment`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit', 'Author: A J Marston
@@ -7,7 +7,7 @@ Date: August, 2004
 This is the database for the Audit Logging system. It also holds the data for PHP sessions and logon errors.', 'AUDIT', '2005-03-27 15:45:30', 'AJM', '2006-08-17 20:25:00', 'AJM');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'audit_fld', 'audit_fld (field)', 'This records each field (column) which has been updated durng a user\'s session.', 'N', 'session_id, tran_seq_no, table_seq_no, field_id', '2005-12-30 09:54:51', 'AJM', '2006-08-25 18:17:59', 'AJM');
+('audit', 'audit_fld', 'Audit Field', 'This records each field (column) which has been updated durng a user\'s session.', 'N', 'session_id, tran_seq_no, table_seq_no, field_id', '2005-12-30 09:54:51', 'AJM', '2007-02-24 15:36:56', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_fld', 'PRIMARY', 'session_id', '1', 'Y', '0', '2005-12-30 11:44:10', 'AJM', NULL, NULL),
@@ -24,7 +24,7 @@ REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`
 ('audit', 'audit_fld', 'new_value', '6', 'New Value', 'This was the contents of the field AFTER the database update.', 'text', 'text', NULL, NULL, '65535', '65535', 'Y', 'N', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-12-30 11:44:10', 'AJM', '2006-10-06 19:09:24', 'batch');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'audit_logon_errors', 'audit_logon_errors', 'This holds the details of any logon attempt which failed.', 'Y', 'err_timestamp desc', '2006-03-07 11:06:19', 'AJM', '2006-12-12 18:00:41', 'AJM');
+('audit', 'audit_logon_errors', 'Audit Logon Errors', 'This holds the details of any logon attempt which failed.', 'Y', 'err_timestamp desc', '2006-03-07 11:06:19', 'AJM', '2007-02-24 15:37:10', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_logon_errors', 'PRIMARY', 'id', '1', 'Y', '0', '2006-03-07 11:41:11', 'AJM', NULL, NULL);
@@ -37,7 +37,7 @@ REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`
 ('audit', 'audit_logon_errors', 'user_password', '5', 'User Password', 'This is the user_password that was used in this failed logon attempt.', 'varchar', 'varchar', NULL, NULL, '16', '16', 'N', 'Y', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2006-03-07 11:18:43', 'AJM', '2006-10-06 19:09:26', 'batch');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'audit_ssn', 'audit_ssn (session)', 'This records the start of each user session for logging purposes.', 'N', 'ssn_date, ssn_time', '2005-12-30 09:54:51', 'AJM', '2006-12-12 18:01:02', 'AJM');
+('audit', 'audit_ssn', 'Audit Session', 'This records the start of each user session for logging purposes.', 'N', 'ssn_date, ssn_time', '2005-12-30 09:54:51', 'AJM', '2007-02-24 15:37:23', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_ssn', 'PRIMARY', 'session_id', '1', 'Y', '0', '2005-12-30 11:44:22', 'AJM', NULL, NULL);
@@ -55,7 +55,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('audit', 'audit_ssn', 'session_id', 'audit', 'audit_trn', '0', 'session_id', '1', '2005-12-30 12:23:21', 'AJM', '2005-12-30 12:23:30', 'AJM');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'audit_tbl', 'audit_tbl (table)', 'This records each database table which is updated within a transaction within a user\'s session.', 'N', 'session_id, tran_seq_no, table_seq_no', '2005-12-30 09:54:51', 'AJM', '2006-08-25 18:18:19', 'AJM');
+('audit', 'audit_tbl', 'Audit Table', 'This records each database table which is updated within a transaction within a user\'s session.', 'N', 'session_id, tran_seq_no, table_seq_no', '2005-12-30 09:54:51', 'AJM', '2007-02-24 15:37:37', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_tbl', 'pkey', 'pkey', '1', 'N', '3', '2005-12-30 11:44:30', 'AJM', NULL, NULL),
@@ -80,7 +80,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('audit', 'audit_tbl', 'tran_seq_no', 'audit', 'audit_fld', '0', 'tran_seq_no', '2', '2005-12-30 12:24:29', 'AJM', '2005-12-30 12:24:40', 'AJM');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'audit_trn', 'audit_trn (transaction)', 'This records each database transaction within a user\'s session.', 'N', 'session_id, tran_seq_no', '2005-12-30 09:54:51', 'AJM', '2005-12-30 09:58:30', 'AJM');
+('audit', 'audit_trn', 'Audit Transaction', 'This records each database transaction within a user\'s session.', 'N', 'session_id, tran_seq_no', '2005-12-30 09:54:51', 'AJM', '2007-02-24 15:37:52', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_trn', 'PRIMARY', 'session_id', '1', 'Y', '0', '2005-12-30 11:44:38', 'AJM', NULL, NULL),
@@ -90,8 +90,8 @@ REPLACE INTO `dict_column` (`database_id`, `table_id`, `column_id`, `column_seq`
 ('audit', 'audit_trn', 'session_id', '1', 'Session Id', 'This points to an entry on the AUDIT_SSN table.', 'bigint', 'bigint', NULL, NULL, '20', '20', 'N', 'Y', 'PRI', '0', 'N', 'Y', NULL, NULL, NULL, '0', '1.844674407371e+019', '0', '9.2233720368548e+018', 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-12-30 11:44:37', 'AJM', '2006-10-06 19:09:28', 'batch'),
 ('audit', 'audit_trn', 'tran_seq_no', '2', 'Tran Seq No', 'This identifies each transaction within this session. It is incremented each time a new database transaction is started.', 'smallint', 'smallint', NULL, NULL, '6', '6', 'N', 'Y', 'PRI', '0', 'N', 'Y', NULL, NULL, NULL, '0', '65535', '0', '32767', 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-12-30 11:44:37', 'AJM', '2006-10-06 19:09:28', 'batch'),
 ('audit', 'audit_trn', 'trn_date', '3', 'Trn Date', 'This is the date on which this database transaction started.', 'date', 'date', NULL, NULL, '12', '12', 'N', 'Y', NULL, '2000-01-01', 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2006-12-12 16:55:40', 'AJM', '2006-12-12 16:56:00', 'AJM'),
-('audit', 'audit_trn', 'trn_time', '4', 'Trn Time', 'This is the time on which this database transaction started.', 'time', 'time', NULL, NULL, '8', '8', 'N', 'Y', NULL, '00:00:00', 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2006-12-12 16:55:40', 'AJM', '2006-12-12 16:56:19', 'AJM'),
-('audit', 'audit_trn', 'task_id', '5', 'Task Id', 'This is the identity of the task which created this database transaction.', 'varchar', 'varchar', NULL, NULL, '40', '40', 'N', 'Y', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, 'LOWER', 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-12-30 11:44:38', 'AJM', '2006-10-07 10:16:48', 'AJM');
+('audit', 'audit_trn', 'trn_time', '4', 'Trn Time', 'This is the time on which this database transaction started.', 'time', 'time', NULL, NULL, '10', '10', 'N', 'Y', NULL, '00:00:00', 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, NULL, 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2006-12-12 16:55:40', 'AJM', '2007-03-06 12:02:13', 'AJM'),
+('audit', 'audit_trn', 'task_id', '5', 'Task Id', 'This is the identity of the task which created this database transaction.', 'varchar', 'varchar', NULL, NULL, '80', '80', 'N', 'Y', NULL, NULL, 'N', 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'NED', NULL, NULL, 'LOWER', 'N', 'N', 'N', 'N', NULL, NULL, NULL, 'N', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2005-12-30 11:44:38', 'AJM', '2007-03-06 12:02:13', 'AJM');
 
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_desc`, `rel_comment`, `rel_type`, `orderby`, `parent_field`, `calc_field`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'audit_trn', 'audit', 'audit_tbl', '0', NULL, NULL, 'Links AUDIT_TRN to AUDIT_TBL', NULL, 'DEL', NULL, NULL, NULL, '2005-12-30 12:23:54', 'AJM', '2006-07-23 19:02:53', 'AJM');
@@ -101,7 +101,7 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 ('audit', 'audit_trn', 'tran_seq_no', 'audit', 'audit_tbl', '0', 'tran_seq_no', '2', '2005-12-30 12:23:54', 'AJM', '2005-12-30 12:24:05', 'AJM');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_desc`, `tbl_comment`, `audit_logging`, `default_orderby`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('audit', 'php_session', 'php_session', 'This holds the data for each PHP session.', 'N', NULL, '2005-04-09 16:08:14', 'AJM', '2006-07-23 15:20:21', 'AJM');
+('audit', 'php_session', 'PHP Session', 'This holds the data for each PHP session.', 'N', NULL, '2005-04-09 16:08:14', 'AJM', '2007-02-24 15:38:03', 'AJM');
 
 REPLACE INTO `dict_table_key` (`database_id`, `table_id`, `key_name`, `column_id`, `seq_in_index`, `is_unique`, `column_seq`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('audit', 'php_session', 'last_updated', 'last_updated', '1', 'N', '1', '2005-04-09 16:08:54', 'AJM', '2005-04-10 17:38:56', 'AJM'),

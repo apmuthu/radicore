@@ -138,6 +138,18 @@ $array['Tree Structure']                = 'Tree Structure';
 $array['Unlink Child']                  = 'Unlink Child';
 $array['Update Seq Number']             = 'Update Seq Number';
 
+// field names for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+
 // field labels for subsystem XAMPLE
 $array['Address Line 1']    = 'Address Line 1';
 $array['Address Line 2']    = 'Address Line 2';

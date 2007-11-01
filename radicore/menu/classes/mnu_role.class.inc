@@ -6,6 +6,8 @@
 require_once 'std.table.class.inc';
 class mnu_role extends Default_Table
 {
+    var $count;         // record count for PDF output
+
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
@@ -134,6 +136,19 @@ class mnu_role extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['role_id'] = 'Total count:';
+        $array['role_desc'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
     // if a popup button has been pressed the contents of $where amy need to
     // be altered before the popup screen is called.
@@ -141,8 +156,8 @@ class mnu_role extends Default_Table
     {
         //DebugBreak();
         switch ($popupname) {
-            case 'mnu_task(popup)':
-            case 'mnu_task(popup)b':
+            case 'mnu_task(popup1)':
+            case 'mnu_task(popup1)b':
                 $where = null;
                 if ($GLOBALS['mode'] == 'search') {
                     // use input from current screen
@@ -166,22 +181,36 @@ class mnu_role extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
-    // process a selection returned from a popup screen.
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
+    /// process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
 
-        if (isset($fieldarray['task_id'])) {
-            // change 'task_id' to 'start_task_id'
-            $fieldarray['start_task_id'] = $fieldarray['task_id'];
-            unset($fieldarray['task_id']);
-        } // if
+//        if (isset($select_array['task_id'])) {
+//            // change 'task_id' to 'start_task_id'
+//            $fieldarray['start_task_id'] = $select_array['task_id'];
+//            unset($select_array['task_id']);
+//        } // if
 
         return $fieldarray;
 
     } // _cm_popupReturn
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)

@@ -24,6 +24,7 @@ initSession();
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
+$where = $dbobject->initialise ($where);
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // retrieve profile must have been set by previous screen

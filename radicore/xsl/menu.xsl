@@ -31,7 +31,7 @@
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
-  <html xml:lang="{//params/language}" lang="{//params/language}">
+  <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
     <xsl:call-template name="head" />
   <body>
     <xsl:for-each select="/root/javascript/body[@*]">
@@ -104,23 +104,22 @@
   </body>
   </html>
 
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
-
 </xsl:template>
 
 <xsl:template name="todo_user">
 
   <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
 
-  <xsl:if test="//mnu_todo/user_id">
+  <xsl:if test="/root/mnu_todo/user_id">
 
     <h2><xsl:value-of select="$todo-user"/>: <xsl:value-of select="//mnu_todo/user_id"/></h2>
 
-    <xsl:for-each select="//mnu_todo" >
+    <xsl:for-each select="/root/mnu_todo" >
       <p>
+        <xsl:if test="due_date/@css_class">
+           <xsl:attribute name="class"><xsl:value-of select="due_date/@css_class" /></xsl:attribute>
+        </xsl:if>
+
         <xsl:value-of select="due_date" />
         <xsl:text> - </xsl:text>
         <xsl:value-of select="item_desc" />
@@ -140,11 +139,11 @@
 
   <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
 
-  <xsl:if test="//wf_workitem_role/role_id">
+  <xsl:if test="/root/wf_workitem_role/role_id">
 
-    <h2><xsl:value-of select="$workitems-for-role"/>: <xsl:value-of select="//wf_workitem_role/role_id"/></h2>
+    <h2><xsl:value-of select="$workitems-for-role"/>: <xsl:value-of select="/root/wf_workitem_role/role_id"/></h2>
 
-    <xsl:for-each select="//wf_workitem_role" >
+    <xsl:for-each select="/root/wf_workitem_role" >
       <xsl:call-template name="workitem"/>
     </xsl:for-each>
 
@@ -161,11 +160,11 @@
 
   <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
 
-  <xsl:if test="//wf_workitem_user/user_id">
+  <xsl:if test="/root/wf_workitem_user/user_id">
 
-    <h2><xsl:value-of select="$workitems-for-user"/>: <xsl:value-of select="//wf_workitem_user/user_id"/></h2>
+    <h2><xsl:value-of select="$workitems-for-user"/>: <xsl:value-of select="/root/wf_workitem_user/user_id"/></h2>
 
-    <xsl:for-each select="//wf_workitem_user" >
+    <xsl:for-each select="/root/wf_workitem_user" >
       <xsl:call-template name="workitem"/>
     </xsl:for-each>
 

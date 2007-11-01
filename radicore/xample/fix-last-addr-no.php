@@ -14,7 +14,7 @@ $dbobject = new x_person;
 $dbobject->sql_select = 'x_person.person_id, x_person.last_addr_no, count(address_no) as count';
 $dbobject->sql_from   = 'x_person LEFT JOIN x_person_addr ON (x_person_addr.person_id=x_person.person_id)';
 $dbobject->sql_groupby = 'x_person.person_id, x_person.last_addr_no';
-$dbresult = $dbobject->getData_batch();
+$dbresult = $dbobject->getData_serial();
 $dbobject->startTransaction();
 while ($row = $dbobject->fetchRow($dbresult)) {
     if ($row['last_addr_no'] <> $row['count']) {

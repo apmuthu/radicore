@@ -28,6 +28,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // close this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -62,18 +68,17 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->errors);
     } // if
 } // if
 
@@ -92,13 +97,13 @@ if (isset($script_vars['dblink'])) {
     $dblink->sql_where        = &$link_sql_where;
     $dblink->sql_groupby      = &$link_sql_groupby;
     $dblink->sql_having       = &$link_sql_having;
-    $dblink->sql_search_table = &$link_search_table;
+    $dblink->sql_orderby_table = &$link_sql_orderby_table;
+    $dblink->sql_search_table  = &$link_search_table;
     if (!empty($link_sql_orderby)) {
         $dblink->setDefaultOrderby($link_sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dblink->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dblink->setDefaultOrderby($task_orderby);
     } // if
-
     // these are used to signify an outer-link-inner relationship
     $dblink->outer_table    = $outer_table;
     $dblink->inner_table    = $inner_table;
@@ -112,8 +117,8 @@ if (!empty($_POST)) {
     // ensure that changes are stored inside relevant object
     $dblink->setFieldArray($link_data);
     // look for an action which is another script
-    $errors = childForm($_POST, array('dblink' => $dblink), $where);
-    if (empty($errors)) {
+    $errors = childForm($_POST, array('dblink' => $dblink));
+    if (empty($errors) AND empty($search)) {
     	// update this data in the database
         $dblink->startTransaction();
         $link_data = $dblink->updateLinkData($link_data, $_POST);
@@ -135,8 +140,8 @@ if (!empty($_POST)) {
 } // if
 
 // check if we are returning from a child form
-if (!empty($return_from) AND $return_action == 'choose') {
-    if ($popup_object == 'dbouter' AND isset($selection)) {
+if (!empty($return_from) AND !empty($popup_object)) {
+    if (isset($selection) AND $popup_object == 'dbouter') {
         // merge previous saved variables with selection from popup form
         $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection);
         if ($dbouter->errors) {
@@ -144,16 +149,10 @@ if (!empty($return_from) AND $return_action == 'choose') {
         } // if
     } // if
 } else {
-    if (!empty($selection)) {
-        // retrieve profile has been passed down from previous screen
-        $where     = $selection;
-        $selection = null;
-    } else {
-        if (isset($scrolling)) {
-            // retrieve values from scrolling array
-            $where = $scrolling[$dbouter->getClassName()]['where'];
-            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
-        } // if
+    if (isset($scrolling)) {
+        // retrieve values from scrolling array
+        $where = $scrolling[$dbouter->getClassName()]['where'];
+        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
     } // if
 
     if (empty($where)) {
@@ -167,6 +166,7 @@ if (!empty($return_from) AND $return_action == 'choose') {
 
     // get data from the outer table
     $outer_data = $dbouter->getData($where);
+
     if ($dbouter->errors) {
         // some sort of error - return to previous script
         scriptprevious($dbouter->getErrors(), $messages);
@@ -177,9 +177,6 @@ if (!empty($return_from) AND $return_action == 'choose') {
 
     // get any extra data and merge with $outer_data
     $outer_data = $dbouter->getExtraData($outer_data);
-
-    // $where may have been changed in database object
-    $where = $dbouter->getWhere();
 
     // set variables to be included in XML output
     $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
@@ -212,7 +209,7 @@ if (isset($search)) {
     $dblink->setSqlSearch($search);
 } // if
 
-// get primary key of row retrieved from OUTER entity
+// get primary key of current row retrieved from OUTER entity
 $where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
 
 // ensure that column names are qualified in the 'where' clause
@@ -225,10 +222,10 @@ if (isset($_POST['reset'])) {
 
 if (count($outer_data) > 0) {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action != 'search') {
-        if ($return_action == 'choose' AND $popup_object == 'dblink' AND isset($selection)) {
+    if (!empty($return_from) AND !empty($popup_object)) {
+        if (isset($selection) AND $popup_object == 'dblink') {
             // merge previous saved variables with selection from popup form
-            $link_data = $dblink->popupReturn($ink_data, basename($return_from), $selection);
+            $link_data = $dblink->popupReturn($link_data, basename($return_from), $selection, $popup_offset);
             if ($dblink->errors) {
             	$errors[$dblink->getClassName()] = $dblink->getErrors();
             } // if
@@ -268,7 +265,7 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dblink->getOrderBy();
+$orderby     = $dblink->getOrderBy_Out();
 $orderby_seq = $dblink->getOrderBySeq();
 
 // build list of objects for output to XML data

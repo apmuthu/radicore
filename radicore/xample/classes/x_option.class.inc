@@ -33,7 +33,6 @@ class x_option extends Default_Table
         if ($GLOBALS['mode'] == 'search') {
             $prev_script = getPreviousScript();
             $pattern_id  = getPatternId($prev_script);
-            //if (basename($prev_script) == 'pers_opt_xref_link(a).php') {
             if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
                 $this->fieldspec['selected'] = array('type' => 'boolean');
@@ -52,8 +51,8 @@ class x_option extends Default_Table
 
         if ($item == 'option_id') {
             // get data from the database
-            $this->sql_select = 'option_id, option_desc';
-            $this->sql_orderby = 'option_id';
+            $this->sql_select     = 'option_id, option_desc';
+            $this->sql_orderby    = 'option_id';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 

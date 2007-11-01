@@ -27,7 +27,8 @@ $link_sql_where   = null;
 $link_sql_groupby = null;
 $link_sql_having  = null;
 $link_sql_orderby = null;
-$link_search_table = null;
+$link_sql_orderby_table = null;
+$link_search_table      = '#inner_table#';
 
 require 'std.link1.inc';            // activate page controller
 

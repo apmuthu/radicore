@@ -33,9 +33,10 @@ class x_tree_node_jnr extends x_tree_node
     {
         //DebugBreak();
         $this->sql_select  = 'x_tree_node.node_id, x_tree_node.node_desc, x_tree_level.tree_level_seq, COUNT(child.node_id) AS child_count';
-        $this->sql_from    = 'x_tree_level, x_tree_node '
+        $this->sql_from    = 'x_tree_node '
+                           . 'LEFT JOIN x_tree_level ON (x_tree_level.tree_type_id=x_tree_node.tree_type_id AND x_tree_level.tree_level_id=x_tree_node.tree_level_id)'
                            . 'LEFT JOIN x_tree_node AS child ON (x_tree_node.node_id=child.node_id_snr)';
-        $this->sql_where   = 'x_tree_level.tree_type_id=x_tree_node.tree_type_id AND x_tree_level.tree_level_id=x_tree_node.tree_level_id';
+        $this->sql_where   = '';
         $this->sql_groupby = 'x_tree_node.node_id, x_tree_node.node_desc, x_tree_node.tree_level_id, x_tree_level.tree_level_seq';
         $this->sql_having  = '';
         $this->sql_orderby = 'x_tree_node.tree_level_id, x_tree_node.node_id';
@@ -50,7 +51,7 @@ class x_tree_node_jnr extends x_tree_node
 
         foreach ($data_raw as $row => $rowdata) {
             // append data for current node to output array
-            $fieldarray[] = $this->formatData($rowdata);
+            $fieldarray[] = $rowdata;
             $node_id = $rowdata['node_id'];
             if ($rowdata['child_count'] > 0) {
                 // child nodes exist, but do we expand them?

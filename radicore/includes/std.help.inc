@@ -40,11 +40,6 @@ if (isset($GLOBALS['language'])) {
 
 $errors = array();
 
-//require_once "classes/$table_id.class.inc";
-//$dbobject = new $table_id;
-//$fieldarray = $dbobject->getData("task_id='$help_id'");
-//$help_text = &$fieldarray[0]['help_text'];
-
 // get subdirectory which matches user's language code
 $subdir = getLanguageSubDir ('./help');
 

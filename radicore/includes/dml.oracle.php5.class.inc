@@ -47,7 +47,7 @@ class oracle
     // ****************************************************************************
     function oracle ($schema=null)
     {
-        $result = $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         if (!class_exists('audit_tbl')) {
     	    // obtain definition of the audit_tbl class
@@ -130,6 +130,16 @@ class oracle
     // - replace 'backslash+quote' with 'quote+quote'
     {
         $string_out = null;
+
+        // change 'datefield - INTERVAL interval DAY' to 'datefield - interval'
+        $pattern = '/INTERVAL( )+.+( )+DAY/i';
+
+        if (preg_match($pattern, $string_in, $regs)) {
+            $original = $regs[0];
+            $modified = substr($original, 8);  // strip leading 'INTERVAL'
+            $modified = substr($modified, 0, strlen($modified)-3);  // strip trailing 'DAY'
+        	$string_in = str_replace($original, trim($modified), $string_in);
+        } // if
 
         $pattern = '/\\\/';  // look for 'backslash'
 
@@ -215,9 +225,9 @@ class oracle
     // commit this transaction
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        $result = oci_commit($this->dbconnect) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_commit($this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         return $result;
 
@@ -234,23 +244,23 @@ class oracle
         static $dbconn;
 
         if (!$dbconn) {
-            $dbconn = oci_connect($dbusername, $dbuserpass, $dbhost, 'UTF-8');
+            $dbconn = oci_pconnect($dbusername, $dbuserpass, $dbhost, 'UTF8');
             if ($dbconn) {
                 $this->server_info = oci_server_version ($dbconn);
                 // get name of current database
                 $this->query = "SELECT * FROM global_name";
                 $this->stmt  = oci_parse($dbconn, $this->query);
-                $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
                 $row = oci_fetch_array ($this->stmt, OCI_NUM);
                 $this->dbname = $row[0];
                 // change format for DATE datatype
                 $this->query = "ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'";
                 $this->stmt  = oci_parse($dbconn, $this->query);
-                $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
                 // change format for TIMESTAMP datatype
                 $this->query = "ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'";
                 $this->stmt  = oci_parse($dbconn, $this->query);
-                $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
             } // if
         } // if
         if (!$dbconn) {
@@ -266,9 +276,9 @@ class oracle
             	    // try again, but this time unquoted in lower case
             	    $this->query = 'ALTER SESSION SET CURRENT_SCHEMA = ' .$schema;
             		$this->stmt  = oci_parse($dbconn, $this->query);
-                    $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+                    $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
             	} else {
-            	    trigger_error('SQL', E_USER_ERROR);
+            	    trigger_error($this, E_USER_ERROR);
             	} // if
             } // if
             // write query to log file, if option is turned on
@@ -289,7 +299,7 @@ class oracle
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // build 'where' string using values for primary key
         $where = $this->buildKeyString ($fieldarray, $this->primary_key);
@@ -304,9 +314,9 @@ class oracle
         $this->query = "DELETE FROM $tablename WHERE $where";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
-        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error('SQL', E_USER_ERROR);
+        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
         } else {
-            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
 
         // write query to log file, if option is turned on
@@ -330,7 +340,7 @@ class oracle
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
@@ -339,9 +349,9 @@ class oracle
         $this->query = "DELETE FROM $tablename WHERE $selection";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
-        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error('SQL', E_USER_ERROR);
+        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
         } else {
-            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
 
         // write query to log file, if option is turned on
@@ -360,10 +370,10 @@ class oracle
 
     // ****************************************************************************
     function fetchRow ($schema, $statement)
-    // Fetch a row from the given result set (reated with getData_batch() method).
+    // Fetch a row from the given result set (created with getData_serial() method).
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $this->stmt = $statement;
 
@@ -383,13 +393,26 @@ class oracle
     } // fetchRow
 
     // ****************************************************************************
+    function free_result ($dbname, $resource)
+    // release a resource created with getData_serial() method.
+    {
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $result = oci_free_statement($resource);
+
+        return $result;
+
+    } // free_result
+
+    // ****************************************************************************
     function getCount ($schema, $tablename, $where)
     // get count of records that satisfy selection criteria in $where.
     {
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         if (eregi('^(select )', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
@@ -400,11 +423,11 @@ class oracle
         } // if
 
         $this->stmt = oci_parse($this->dbconnect, $this->query);
-        $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (eregi("group by ", $this->query) == true AND !eregi("\(.+group by.+\)", $this->query)) {
+        if (eregi("group by ", $this->query) == true AND !eregi("\(SELECT .+group by.+\)", $this->query)) {
             oci_fetch_all($this->stmt, $row, null, null, OCI_NUM);
             $count = count($row[0]);
         } else {
@@ -432,7 +455,7 @@ class oracle
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
         $rows_per_page  = (int)$this->rows_per_page;
@@ -467,6 +490,11 @@ class oracle
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
+            if (preg_match('/WITH ROLLUP/i', $this->sql_groupby, $regs)) {
+                // convert 'field1, field2 WITH ROLLUP' to 'ROLLUP (field1, field2)'
+            	$this->sql_groupby = str_replace($regs[0], '', $this->sql_groupby);
+            	$this->sql_groupby = "ROLLUP ($this->sql_groupby)";
+            } // if
             $group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
@@ -559,7 +587,7 @@ class oracle
         } // if
 
         $this->stmt = oci_parse($this->dbconnect, $this->query);
-        $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
 
         // convert result set into a simple associative array for each row
         while ($row = oci_fetch_array ($this->stmt, OCI_ASSOC+OCI_RETURN_NULLS+OCI_RETURN_LOBS)) {
@@ -588,7 +616,7 @@ class oracle
             if ($error_array['code'] == 1002) {
             	// ORA-01002: fetch out of sequence - IGNORE
             } else {
-        	    trigger_error('SQL', E_USER_ERROR);
+        	    trigger_error($this, E_USER_ERROR);
             } // if
         } // if
 
@@ -605,13 +633,21 @@ class oracle
     } // getData
 
     // ****************************************************************************
-    function getData_batch ($schema, $tablename, $where)
+    function getData_serial ($schema, $tablename, $where)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+
+        $pageno         = (int)$this->pageno;
+        $rows_per_page  = (int)$this->rows_per_page;
+        $this->numrows  = 0;
+        if ($pageno < 1) {
+        	$pageno = 1; // default to first page
+        } // if
+        $this->lastpage = $pageno;
 
         // look for optional SELECT parameters, or default to all fields
         if (empty($this->sql_select)) {
@@ -639,6 +675,11 @@ class oracle
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
+            if (preg_match('/WITH ROLLUP/i', $this->sql_groupby, $regs)) {
+                // convert 'field1 field2 WITH ROLLUP' to 'ROLLUP (field1, field2)'
+            	$this->sql_groupby = str_replace($regs[0], '', $this->sql_groupby);
+            	$this->sql_groupby = "ROLLUP ($this->sql_groupby)";
+            } // if
             $group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
@@ -663,16 +704,25 @@ class oracle
         $this->numrows = $this->getCount($schema, $tablename, $this->query);
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str";
+        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
+        if ($rows_per_page > 0) {
+            // insert code for pagination
+            $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            $max_rows = ($min_rows + $rows_per_page) -1;
+            $this->query = 'select * from ( select a.*, rownum as rnum from ( '
+                         . $this->query
+                         . ") a where rownum <= $max_rows ) where rnum >= $min_rows";
+        } // if
+
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
-        $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
         return $this->stmt;
 
-    } // getData_batch
+    } // getData_serial
 
     // ****************************************************************************
     function getErrors ()
@@ -685,8 +735,12 @@ class oracle
     function getErrorNo ()
     // return number of last error.
     {
-        $array = oci_error($this->stmt);
-        $errno = $array['code'];
+        if (isset($this->stmt)) {
+        	$array = oci_error($this->stmt);
+            $errno = $array['code'];
+        } else {
+            $errno = null;
+        } // if
 
         return $errno;
 
@@ -767,7 +821,7 @@ class oracle
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -818,8 +872,12 @@ class oracle
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
-			    $auto_increment = $pkey ;                // save name of related sequence
-				unset($fieldarray[$pkey]);	             // remove from data array
+			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
+			    	// value has been supplied manually, so do not auto-generate
+			    } else {
+    			    $auto_increment = $pkey ;                // save name of related sequence
+    				unset($fieldarray[$auto_increment]);     // remove from data array
+			    } // if
 			} // if
 		} // foreach
 
@@ -903,7 +961,7 @@ class oracle
             } // foreach
         } // if
 
-        $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
 
         if (!empty($lob_names)) {
             foreach ($lob_names as $lob_name => $lob_value) {
@@ -921,7 +979,7 @@ class oracle
         if (!empty($auto_increment)) {
             $this->query = "SELECT $tablename" .'_seq.currval FROM DUAL';
             $this->stmt  = oci_parse($this->dbconnect, $this->query);
-            $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
             $row = oci_fetch_array ($this->stmt, OCI_NUM);
             $fieldarray[$auto_increment] = $row[0];
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
@@ -951,7 +1009,7 @@ class oracle
             return FALSE;
         } // if
 
-        $result = oci_rollback($this->dbconnect) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_rollback($this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, null, 'ROLLBACK');
@@ -968,7 +1026,7 @@ class oracle
     function selectDB ($schema)
     // select a different schema (database) via the current connection.
     {
-        if ($this->connect($schema) or trigger_error('SQL', E_USER_ERROR)) {
+        if ($this->connect($schema) or trigger_error($this, E_USER_ERROR)) {
             return TRUE;
         } else {
             return FALSE;
@@ -1057,14 +1115,14 @@ class oracle
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $result = true;
 
         if (!empty($this->transaction_level)) {
         	$this->query = $this->transaction_level;
             $this->stmt  = oci_parse($this->dbconnect, $this->query);
-            $result = oci_execute($this->stmt) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
 
             // write query to log file, if option is turned on
             logSqlQuery ($schema, null, $this->query);
@@ -1084,7 +1142,7 @@ class oracle
     // update a record using the contents of $fieldarray.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -1178,19 +1236,21 @@ class oracle
 
         // build update string from non-pkey fields
         $update = '';
+        $pattern = '/(integer|decimal|numeric|float|real)/i';
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
                 if (array_key_exists($item, $lob_names)) {
                 	$update .= "$item = EMPTY_CLOB(), ";
+                } elseif (is_null($value)) {
+                    // null entries are set to NULL, not '' (there is a difference!)
+                    $update .= "$item=NULL,";
+                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                    // do not enclose numbers in quotes (this also allows 'value=value+1'
+                    $update .= "$item=$value,";
                 } else {
-                    if (is_null($value)) {
-                        // null entries are set to NULL, not '' (there is a difference!)
-                        $update .= "$item=NULL,";
-                    } else {
-                        // change to the new value
-                        $update .= "$item='" .$this->adjustData($value) ."', ";
-                    } // if
+                    // change to the new value
+                    $update .= "$item='" .$this->adjustData($value) ."', ";
                 } // if
             } // if
         } // foreach
@@ -1216,7 +1276,7 @@ class oracle
             } // foreach
         } // if
 
-        $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
 
         if (!empty($lob_names)) {
             foreach ($lob_names as $lob_name => $lob_value) {
@@ -1253,7 +1313,7 @@ class oracle
         $this->errors = array();
 
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
@@ -1262,9 +1322,9 @@ class oracle
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
-        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error('SQL', E_USER_ERROR);
+        	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
         } else {
-            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
 
         // write query to log file, if option is turned on
@@ -1398,13 +1458,21 @@ class oracle
         $colspecs['varchar']    = array('name' => 'VARCHAR',
                                         'type' => 'string');
         $colspecs['tinyint']    = array('name' => 'TINYINT',
-                                        'type' => 'integer');
+                                        'type' => 'integer',
+                                        'minvalue' => -128,
+                                        'maxvalue' => 127);
         $colspecs['smallint']   = array('name' => 'SMALLINT',
-                                        'type' => 'integer');
+                                        'type' => 'integer',
+                                        'minvalue' => -32768,
+                                        'maxvalue' => 32767);
         $colspecs['mediumint']  = array('name' => 'MEDIUMINT',
-                                        'type' => 'integer');
+                                        'type' => 'integer',
+                                        'minvalue' => -8388608,
+                                        'maxvalue' => 8388607);
         $colspecs['bigint']     = array('name' => 'BIGINT',
-                                        'type' => 'integer');
+                                        'type' => 'integer',
+                                        'minvalue' => '-9223372036854775808',
+                                        'maxvalue' => '9223372036854775807');
         $colspecs['tinytext']   = array('name' => 'TINYTEXT',
                                         'type' => 'string');
         $colspecs['text']       = array('name' => 'TEXT',
@@ -1423,7 +1491,7 @@ class oracle
     // obtain a list of column names within the selected database table.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $out_array = array();
 
@@ -1437,7 +1505,7 @@ class oracle
         $this->query = "SELECT * FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
         $statement  = oci_parse($this->dbconnect, $this->query);
         $this->stmt = $statement;
-        $result = oci_execute($statement) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
@@ -1664,7 +1732,7 @@ class oracle
     // obtain a list of existing database (schema in PostgreSQL) names.
     {
         // connect to database
-        $this->connect() or trigger_error('SQL', E_USER_ERROR);
+        $this->connect() or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
@@ -1672,7 +1740,7 @@ class oracle
         $this->query = "SELECT username FROM sys.all_users WHERE username NOT IN ('CTXSYS','DBSNMP','FLOWS_020100','FLOWS_FILES','MDSYS','OUTLN','SYS','SYSTEM','TSMSYS','XDB') AND EXISTS (SELECT * FROM sys.all_tables WHERE all_tables.owner=all_users.username) ORDER BY username";
         $statement  = oci_parse($this->dbconnect, $this->query);
         $this->stmt = $statement;
-        $result = oci_execute($statement) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
 
         // convert result set into a simple indexed array for each row
         while ($data = oci_fetch_array ($statement, OCI_ASSOC+OCI_RETURN_NULLS)) {
@@ -1695,7 +1763,7 @@ class oracle
     // obtain a list of tables within the specified schema.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
@@ -1705,7 +1773,7 @@ class oracle
         $this->query = "SELECT table_name FROM sys.all_tables WHERE owner='$schema' ORDER BY table_name";
         $statement  = oci_parse($this->dbconnect, $this->query);
         $this->stmt = $statement;
-        $result = oci_execute($statement) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
 
         // convert result set into a simple indexed array for each row
         while ($data = oci_fetch_array ($statement, OCI_ASSOC+OCI_RETURN_NULLS)) {
@@ -1728,7 +1796,7 @@ class oracle
     // obtain a list of keys (indexes) for this table.
     {
         // connect to database
-        $this->connect($schema) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
@@ -1748,7 +1816,7 @@ class oracle
 	        ORDER BY key_name, seq_in_index, column_id";
         $statement = oci_parse($this->dbconnect, $this->query);
         $this->stmt = $statement;
-        $result = oci_execute($statement) or trigger_error('SQL', E_USER_ERROR);
+        $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
@@ -1824,7 +1892,7 @@ class oracle
             $this->query = "LOCK TABLE $string IN $mode MODE";
             $statement  = oci_parse($this->dbconnect, $this->query);
             $this->stmt = $statement;
-            $result = oci_execute($statement) or trigger_error('SQL', E_USER_ERROR);
+            $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery (null, null, $this->query);
             $this->query = '';

@@ -100,14 +100,18 @@ class inventory_item extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for inv_type and put into LOOKUP_DATA
-        $array = $this->getValRep('inv_type');
-        $this->lookup_data['inv_type'] = $array;
+        if (!array_key_exists('inv_type', $this->lookup_data)) {
+            // get array for inv_type and put into LOOKUP_DATA
+            $array = $this->getValRep('inv_type');
+            $this->lookup_data['inv_type'] = $array;
+        } // if
 
-        // get array for inv_item_status_id and put into LOOKUP_DATA
-        $object =& singleton::getInstance('inventory_item_status');
-        $array  = $object->getValRep('inv_item_status_id');
-        $this->lookup_data['inv_item_status_id'] = $array;
+        if (!array_key_exists('inv_item_status_id', $this->lookup_data)) {
+            // get array for inv_item_status_id and put into LOOKUP_DATA
+            $object =& singleton::getInstance('inventory_item_status');
+            $array  = $object->getValRep('inv_item_status_id');
+            $this->lookup_data['inv_item_status_id'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -175,11 +179,12 @@ class inventory_item extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
 
         if ($return_from == 'pro_facility(popup)') {

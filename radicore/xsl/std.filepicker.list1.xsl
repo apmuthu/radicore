@@ -25,8 +25,8 @@
 <xsl:include href="std.pagination.xsl"/>
 
 <!-- get the name of the MAIN table -->
-<xsl:variable name="main" select="//structure/main/@id"/>
-<xsl:variable name="numrows" select="count(//*[name()=$main])"/>
+<xsl:variable name="main" select="/root/structure/main/@id"/>
+<xsl:variable name="numrows" select="count(/root/*[name()=$main])"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -62,8 +62,8 @@
 
         <!-- create navigation buttons -->
         <xsl:call-template name="navbar">
-          <xsl:with-param name="noshow"   select="//params/noshow"/>
-          <xsl:with-param name="noselect" select="//params/noselect"/>
+          <xsl:with-param name="noshow"   select="/root/params/noshow"/>
+          <xsl:with-param name="noselect" select="/root/params/noselect"/>
         </xsl:call-template>
 
         <div class="main">
@@ -81,14 +81,14 @@
               <xsl:call-template name="column_headings">
                 <xsl:with-param name="zone"   select="'main'"/>
                 <xsl:with-param name="count"  select="'2'"/>
-                <xsl:with-param name="nosort" select="//params/nosort"/>
+                <xsl:with-param name="nosort" select="/root/params/nosort"/>
               </xsl:call-template>
             </thead>
 
             <tbody>
               <!-- process each odd-numbered row in the MAIN table of the XML file -->
               <!-- (even-numbered entries are automatically appended) -->
-              <xsl:for-each select="//*[name()=$main][position()mod 2=1]">
+              <xsl:for-each select="/root/*[name()=$main][position()mod 2=1]">
 
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_file">
@@ -105,7 +105,9 @@
         <xsl:call-template name="message"/>
 
         <!-- insert the page navigation links -->
-        <!-- <xsl:call-template name="pagination" /> -->
+        <xsl:call-template name="pagination" >
+          <xsl:with-param name="object" select="'main'"/>
+        </xsl:call-template>
 
         <!-- create standard action buttons -->
         <xsl:call-template name="actbar" />
@@ -131,11 +133,6 @@
   </body>
   </html>
 
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
-
 </xsl:template>
 
 
@@ -159,8 +156,8 @@
     <td>
       <xsl:call-template name="icon">
         <xsl:with-param name="icon" select="node()" />
-        <xsl:with-param name="height" select="//structure/main/row/cell/@imageheight" />
-        <xsl:with-param name="width" select="//structure/main/row/cell/@imagewidth" />
+        <xsl:with-param name="height" select="/root/structure/main/row/cell/@imageheight" />
+        <xsl:with-param name="width" select="/root/structure/main/row/cell/@imagewidth" />
       </xsl:call-template>
     </td>
 
@@ -175,8 +172,8 @@
         <td>
           <xsl:call-template name="icon">
             <xsl:with-param name="icon" select="following-sibling::*" />
-            <xsl:with-param name="height" select="//structure/main/row/cell/@imageheight" />
-            <xsl:with-param name="width" select="//structure/main/row/cell/@imagewidth" />
+            <xsl:with-param name="height" select="/root/structure/main/row/cell/@imageheight" />
+            <xsl:with-param name="width" select="/root/structure/main/row/cell/@imagewidth" />
           </xsl:call-template>
         </td>
       </xsl:when>

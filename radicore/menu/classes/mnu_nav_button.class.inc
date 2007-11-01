@@ -184,12 +184,12 @@ class mnu_nav_button extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //DebugBreak();
-        switch (basename($_SERVER['PHP_SELF'])) {
+        $pattern_id = getPatternId();
+        switch (strtolower($pattern_id)) {
             // may need to change the contents of $where
-            case 'mnu_nav_button_link.php':
+        	case 'link1':
                 // alter sort criteria
-        		$this->sql_orderby = str_replace('mnu_nav_button.task_id_jnr', 'task_id_jnr', $this->sql_orderby);
+        		//$this->sql_orderby = str_replace('mnu_nav_button.task_id_jnr', 'task_id_jnr', $this->sql_orderby);
         		break;
 
             default:

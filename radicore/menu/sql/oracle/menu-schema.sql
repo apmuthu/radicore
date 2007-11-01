@@ -19,7 +19,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 -- 
 
 CREATE TABLE help_text (
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   help_text clob,
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
@@ -30,6 +30,27 @@ CREATE TABLE help_text (
 
 REVOKE ALL ON help_text FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON help_text TO PUBLIC;
+
+--
+-- Table structure for table mnu_account
+--
+
+CREATE TABLE mnu_account (
+  rdcaccount_id number(10) NOT NULL,
+  account_name varchar2(255) NOT NULL,
+  rdcversion number(10) default 1 NOT NULL,
+  created_date timestamp NOT NULL,
+  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  revised_date timestamp,
+  revised_user varchar2(16),
+  PRIMARY KEY  (rdcaccount_id)
+);
+CREATE SEQUENCE mnu_account_seq; 
+
+REVOKE ALL ON mnu_account FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_account TO PUBLIC;
+REVOKE ALL ON mnu_account_seq FROM PUBLIC; 
+GRANT SELECT,ALTER ON mnu_account_seq TO PUBLIC; 
 
 -- 
 -- Table structure for table mnu_control
@@ -50,12 +71,52 @@ REVOKE ALL ON mnu_control FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_control TO PUBLIC;
 
 -- 
+-- Table structure for table mnu_initial_value_role 
+-- 
+
+CREATE TABLE mnu_initial_value_role (
+  role_id varchar2(16) NOT NULL,
+  task_id varchar2(80) NOT NULL,
+  field_id varchar2(40) NOT NULL,
+  initial_value varchar2(40),
+  created_date timestamp NOT NULL,
+  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  revised_date timestamp,
+  revised_user varchar2(16),
+  PRIMARY KEY  (role_id,task_id,field_id)
+);
+CREATE INDEX  mnu_initial_value_role_idx1 ON  mnu_initial_value_role (task_id);
+
+REVOKE ALL ON mnu_initial_value_role FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_initial_value_role TO PUBLIC;
+
+-- 
+-- Table structure for table mnu_initial_value_user 
+-- 
+
+CREATE TABLE mnu_initial_value_user (
+  user_id varchar2(16) NOT NULL,
+  task_id varchar2(80) NOT NULL,
+  field_id varchar2(40) NOT NULL,
+  initial_value varchar2(40),
+  created_date timestamp NOT NULL,
+  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  revised_date timestamp,
+  revised_user varchar2(16),
+  PRIMARY KEY  (user_id,task_id,field_id)
+);
+CREATE INDEX  mnu_initial_value_user_idx1 ON  mnu_initial_value_user (task_id);
+
+REVOKE ALL ON mnu_initial_value_user FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_initial_value_user TO PUBLIC;
+
+-- 
 -- Table structure for table mnu_menu
 -- 
 
 CREATE TABLE mnu_menu (
-  menu_id varchar2(40) NOT NULL,
-  task_id_jnr varchar2(40) NOT NULL,
+  menu_id varchar2(80) NOT NULL,
+  task_id_jnr varchar2(80) NOT NULL,
   sort_seq number(3) default '000' NOT NULL,
   button_text varchar2(40),
   created_date timestamp NOT NULL,
@@ -73,8 +134,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_menu TO PUBLIC;
 -- 
 
 CREATE TABLE mnu_nav_button (
-  task_id_snr varchar2(40) NOT NULL,
-  task_id_jnr varchar2(40) NOT NULL,
+  task_id_snr varchar2(80) NOT NULL,
+  task_id_jnr varchar2(80) NOT NULL,
   sort_seq number(3) default '000' NOT NULL,
   button_text varchar2(40),
   context_preselect char(1),
@@ -116,7 +177,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_pattern TO PUBLIC;
 CREATE TABLE mnu_role (
   role_id varchar2(16) NOT NULL,
   role_desc varchar2(30) NOT NULL,
-  start_task_id varchar2(40),
+  start_task_id varchar2(80),
   global_access char(1),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
@@ -134,7 +195,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role TO PUBLIC;
 
 CREATE TABLE mnu_role_task (
   role_id varchar2(16) NOT NULL,
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -151,7 +212,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role_task TO PUBLIC;
 
 CREATE TABLE mnu_role_taskfield (
   role_id varchar2(16) NOT NULL,
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   field_id varchar2(40) NOT NULL,
   access_type varchar2(4),
   created_date timestamp NOT NULL,
@@ -160,6 +221,7 @@ CREATE TABLE mnu_role_taskfield (
   revised_user varchar2(16),
   PRIMARY KEY  (role_id,task_id,field_id)
 );
+CREATE INDEX  mnu_role_taskfield_idx1 ON  mnu_role_taskfield (task_id);
 
 REVOKE ALL ON mnu_role_taskfield FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role_taskfield TO PUBLIC;
@@ -169,7 +231,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role_taskfield TO PUBLIC;
 -- 
 
 CREATE TABLE mnu_subsystem (
-  subsys_id varchar2(8) NOT NULL,
+  subsys_id varchar2(16) NOT NULL,
   subsys_desc varchar2(255) NOT NULL,
   subsys_dir varchar2(255),
   task_prefix varchar2(8),
@@ -188,14 +250,14 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_subsystem TO PUBLIC;
 -- 
 
 CREATE TABLE mnu_task (
-  task_id varchar2(40) NOT NULL,
-  task_desc varchar2(50) NOT NULL,
-  button_text varchar2(40),
+  task_id varchar2(80) NOT NULL,
+  task_desc varchar2(80) NOT NULL,
+  button_text varchar2(80),
   task_type varchar2(4),
-  script_id varchar2(40),
+  script_id varchar2(80),
   is_disabled char(1),
   pattern_id varchar2(16),
-  subsys_id varchar2(8),
+  subsys_id varchar2(16),
   initial_passthru varchar2(40),
   selection_fixed varchar2(255),
   selection_temp varchar2(255),
@@ -222,7 +284,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task TO PUBLIC;
 -- 
 
 CREATE TABLE mnu_task_field (
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   field_id varchar2(40) NOT NULL,
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
@@ -244,7 +306,12 @@ CREATE TABLE mnu_todo (
   item_desc varchar2(80) NOT NULL,
   item_notes clob,
   due_date date NOT NULL,
+  visibility number(3) NOT NULL,
   is_complete char(1) default 'N' NOT NULL,
+  repeat_interval decimal(3,0),
+  repeat_unit char(1),
+  task_id varchar2(80),
+  task_context varchar2(255) default NULL,
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -284,6 +351,7 @@ CREATE TABLE mnu_user (
 );
 CREATE UNIQUE INDEX  mnu_user_idx1 ON  mnu_user (email_addr);
 CREATE INDEX  mnu_user_idx2 ON  mnu_user (role_id);
+CREATE INDEX  mnu_user_idx3 ON  mnu_user (rdcaccount_id);
 
 REVOKE ALL ON mnu_user FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_user TO PUBLIC;

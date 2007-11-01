@@ -19,6 +19,7 @@ class PDF_list extends PDF
         } // if
 
         if (isset($this->structure['title'])) {
+            $this->fieldarray = $this->dbobject->_cm_ListView_header($this->fieldarray);
             // this code is in the parent class
             parent::header();
         } // if

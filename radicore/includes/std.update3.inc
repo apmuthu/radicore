@@ -22,6 +22,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
@@ -47,21 +53,20 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbobject->initialise($selection, $where);
-    } else {
-        $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where);
+    if ($dbobject->errors) {
+        scriptPrevious($dbobject->errors);
     } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action == 'choose') {
+    if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            	$errors[$dbobject->getClassName()] = $dbobject->errors;
             } // if
         } // if
     } else {
@@ -69,10 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getData($where);
         if ($dbobject->errors) {
             // some sort of error - return to previous script
-            scriptprevious($dbobject->getErrors(), $messages);
+            scriptprevious($dbobject->errors, $messages);
         } // if
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        } // if
     } // if
 
     // save these variables for later in the same session
@@ -89,14 +97,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // ensure that changes are stored inside relevant object
     $dbobject->setFieldArray($fieldarray);
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+    $errors = childForm($_POST, array('dbobject' => $dbobject));
     if (empty($errors)) {
         $dbobject->startTransaction();
         // update this data in the database
-        $fieldarray = $dbobject->updateSelection($fieldarray, null);
+        $msg = $dbobject->updateSelection($fieldarray, null);
         if ($dbobject->errors) {
 			// errors are keyed by object name
-		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+		    $errors[$dbobject->getClassName()] = $dbobject->errors;
 		} // if
         if (empty($errors)) {
             $errors = $dbobject->commit();
@@ -108,6 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $dbobject->rollback();
         } // if
     } // if
+} // if
+
+if (!empty($msg)) {
+	$messages[] = $msg;
 } // if
 
 // build list of objects for output to XML data

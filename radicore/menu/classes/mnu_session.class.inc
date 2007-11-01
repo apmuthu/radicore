@@ -112,6 +112,8 @@ class mnu_session extends Default_Table
         $_SESSION['log_sql_query']    = $fieldarray['log_sql_query'];
 
         if (is_True($fieldarray['drop_saved_pages'])) {
+            // remove any tasks that have been placed in the queue
+            unset($_SESSION['script_sequence']);
             // delete current scripts from memory
         	foreach ($_SESSION as $key => $value) {
         		if (substr($key, 0, 1) == '/') {
@@ -135,7 +137,7 @@ class mnu_session extends Default_Table
 
         // store name of selected CSS file
         $_SESSION['css_file'] = $fieldarray['css_file'];
-        setcookie("theme", $fieldarray['css_file'], time()+7776000);
+        setcookie("theme", $fieldarray['css_file'], time()+7776000, '/');
 
         return $fieldarray;
 

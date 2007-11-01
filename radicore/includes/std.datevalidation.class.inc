@@ -144,6 +144,10 @@ class date_class {
         if (strlen($input) > 10) {
             // input is too long, so split into two pieces and process first piece
             list($date, $time) = explode(' ', $input);
+            if (strlen($date) == strlen($input)) {
+                // same length, so drop last character
+            	$date = substr($date, 0, strlen($date)-1);
+            } // if
             $this->internaldate = $this->getInternalDate($date);
             return $this->internaldate;
         } // if
@@ -286,7 +290,7 @@ class date_class {
     // ****************************************************************************
     function verifyTime ($hours, $minutes, $seconds)
     {
-        if ($hours > 24) {
+        if ($hours > 23) {
             $this->errors = getLanguageText('sys0043'); // 'Invalid HOURS'
             return false;
         } // if
@@ -391,9 +395,15 @@ class date_class {
             return false;
         } // if
 
-        if (strlen($input) > 10) {
-            // input is too long, so split into two pieces and process first piece
-            list($date, $time) = explode(' ', $input);
+        if (strlen($input) == 11) {
+        	// this could already be in external format, so leave it alone
+        	return $input;
+        } // if
+
+        if (strlen($input) > 11) {
+            // input is too long, so split into two pieces (after last ' ') and process first piece
+            $time = strrchr($input, ' ');
+            $date = substr($input, 0, strlen($input)-strlen($time));
             $this->externaldate = $this->getExternalDate($date);
             return $this->externaldate;
         } // if
@@ -432,11 +442,41 @@ class date_class {
     } // addDays
 
     // ****************************************************************************
+    function addWeeks ($internaldate, $weeks)
+    // add a number of days (may be negative) to $internaldate (YYYY-MM-DD)
+    // and return the result in the same format
+    {
+        // multiply weeks by 7 to get days
+        $result = $this->addDays($internaldate, $weeks*7);
+
+        return $result;
+
+    } // addWeeks
+
+    // ****************************************************************************
+    function addMonths ($internaldate, $months)
+    // add a number of days (may be negative) to $internaldate (YYYY-MM-DD)
+    // and return the result in the same format
+    {
+        // ensure date is in internal format
+        $internaldate = $this->getInternalDate($internaldate);
+
+        // adjust it by speciied number of months
+        $timestamp = strtotime($internaldate .' + ' .$months .' months');
+
+        // convert from unix timestamp into a human-readable date
+        $result = date('Y-m-d', $timestamp);
+
+        return $result;
+
+    } // addMonths
+
+    // ****************************************************************************
     function getErrors ()
     {
         return $this->errors;
 
-    } // getErrMsg
+    } // getErrors
 
 // ****************************************************************************
 } // end date_class

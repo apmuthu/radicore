@@ -11,7 +11,7 @@ class x_tree_level_s02 extends x_tree_level
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_changeConfig (&$where, $fieldarray)
+    function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.

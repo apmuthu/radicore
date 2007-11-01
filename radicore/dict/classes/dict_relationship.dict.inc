@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:45 pm
+    // file created on March 8, 2007, 5:04 pm
     
     // field specifications for table dict.dict_relationship
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -146,7 +146,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'database_id_snr, table_id_snr, database_id_jnr, table_id_jnr';
     
     // finished
 ?>

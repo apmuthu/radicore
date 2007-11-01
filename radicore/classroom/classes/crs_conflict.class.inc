@@ -28,28 +28,32 @@ class crs_conflict extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for task_type and put into LOOKUP_DATA
-        $array = $this->getValRep('conflict_type');
-        $this->lookup_data['conflict_type'] = $array;
+        if (!array_key_exists('conflict_type', $this->lookup_data)) {
+            // get array for task_type and put into LOOKUP_DATA
+            $array = $this->getValRep('conflict_type');
+            $this->lookup_data['conflict_type'] = $array;
+        } // if
 
-        // get contents of foreign table TEACHER and add to lookup array
-        require_once 'classes/crs_teacher.class.inc';
-        $object =& singleton::getInstance('crs_teacher');
-        $data = $object->getValRep('teacher_id');
-        $this->lookup_data['teacher_id'] = $data;
+        if (!array_key_exists('teacher_id', $this->lookup_data)) {
+            // get contents of foreign table TEACHER and add to lookup array
+            $object =& singleton::getInstance('crs_teacher');
+            $data = $object->getValRep('teacher_id');
+            $this->lookup_data['teacher_id'] = $data;
+        } // if
 
-        // get contents of foreign table CLASS and add to lookup array
-        require_once 'classes/crs_class.class.inc';
-        $object =& singleton::getInstance('crs_class');
-        $data = $object->getValRep('class_id');
-        $this->lookup_data['class_id'] = $data;
+        if (!array_key_exists('class_id', $this->lookup_data)) {
+            // get contents of foreign table CLASS and add to lookup array
+            $object =& singleton::getInstance('crs_class');
+            $data = $object->getValRep('class_id');
+            $this->lookup_data['class_id'] = $data;
+        } // if
 
-        // get contents of foreign table LESSON and add to lookup array
-        require_once 'classes/crs_lesson.class.inc';
-        $object =& singleton::getInstance('crs_lesson');
-        $data = $object->getValRep('lesson_id');
-        $this->lookup_data['lesson_id'] = $data;
+        if (!array_key_exists('lesson_id', $this->lookup_data)) {
+            // get contents of foreign table LESSON and add to lookup array
+            $object =& singleton::getInstance('crs_lesson');
+            $data = $object->getValRep('lesson_id');
+            $this->lookup_data['lesson_id'] = $data;
+        } // if
 
         return $fieldarray;
 

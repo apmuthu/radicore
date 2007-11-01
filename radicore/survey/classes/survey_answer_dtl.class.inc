@@ -48,15 +48,11 @@ class survey_answer_dtl extends Default_Table
 
         if (!empty($question_id)) {
             if (empty($fieldarray['question_text']) or empty($fieldarray['answer_type']) or empty($fieldarray['question_seq']) or empty($fieldarray['advice_text'])) {
-            	include_once 'classes/survey_question.class.inc';
-                $dbobject =& singleton::getInstance('survey_question');
-
+            	$dbobject =& singleton::getInstance('survey_question');
                 $dbobject->sql_select = 'question_text, question_seq, advice_text, answer_type';
                 $data = $dbobject->getData($question_where);
-
                 // use data from 1st row only
                 $fieldarray = array_merge($fieldarray, $data[0]);
-
                 unset($dbobject);
             } // if
         } // if
@@ -64,10 +60,9 @@ class survey_answer_dtl extends Default_Table
         if ($fieldarray['answer_type'] == 'M') {
             if (!isset($fieldarray['answer_text'])) {
             	// get the current answer
-            	$save_select = $this->sql_select;
-                $this->sql_select = 'answer_text';
-                $data = $this->getData($where);
-                $this->sql_select = $save_select;
+            	$dbobject =& singleton::getInstance('survey_answer_dtl');
+            	$dbobject->sql_select = 'answer_text';
+                $data = $dbobject->getData($where);
                 if (!empty($data)) {
                 	$fieldarray = array_merge($fieldarray, $data[0]);
                 } // if
@@ -75,7 +70,6 @@ class survey_answer_dtl extends Default_Table
 
             if (isset($fieldarray['answer_text'])) {
                 // answer is multiple choice, so see if a JUMP TO has been set for the current answer
-                require_once 'classes/answer_option.class.inc';
                 $dbobject =& singleton::getInstance('answer_option');
 
                 $dbobject->sql_select = 'jumpto_section_seq';
@@ -105,6 +99,23 @@ class survey_answer_dtl extends Default_Table
         return $fieldarray;
 
     } // checkJumpTo
+
+    // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        // display autoinsert/autoupdate fields on this input screen
+        foreach ($this->fieldspec as $field => $spec) {
+        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+        	    unset($this->fieldspec[$field]['nodisplay']);
+        	} // if
+        } // foreach
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
 
     // ****************************************************************************
     function _cm_getDatabaseLock ()
@@ -145,7 +156,6 @@ class survey_answer_dtl extends Default_Table
     {
         if (!empty($fieldarray['survey_answer_id']) and empty($fieldarray['answer_date'])) {
             // not supplied yet, so get it manually
-            require_once 'classes/survey_answer_hdr.class.inc';
             $dbobject =& singleton::getInstance('survey_answer_hdr');
             $dbobject->sql_select = 'survey_id, survey_answer_id, user_id, answer_date, node_id, is_complete';
             $data = $dbobject->getData("survey_answer_id='$this->survey_answer_id'");
@@ -167,7 +177,6 @@ class survey_answer_dtl extends Default_Table
 
         if ($fieldarray['answer_type'] == 'M') {
             // get contents of ANSWER_OPTION and add as a LOOKUP list
-            require_once 'classes/answer_option.class.inc';
             $dbobject =& singleton::getInstance('answer_option');
 
             $data_array = $dbobject->getValRep('answer_id', $question_where);
@@ -184,7 +193,6 @@ class survey_answer_dtl extends Default_Table
 
         } elseif ($fieldarray['answer_type'] == 'N') {
             // get contents of NUMBER_OPTION for possible min/max values
-            require_once 'classes/number_option.class.inc';
             $dbobject =& singleton::getInstance('number_option');
 
             $dbobject->sql_select = 'min_value,max_value';
@@ -222,15 +230,15 @@ class survey_answer_dtl extends Default_Table
                                                         'required' => 'y');
         } // if
 
-        // get contents of foreign table RISK_WEIGHTING and add as a LOOKUP list
-        require_once 'classes/risk_weighting.class.inc';
-        $dbobject =& singleton::getInstance('risk_weighting');
-        $data_array = $dbobject->getValRep('weighting_id');
-        $this->lookup_data['weighting_id'] = $data_array;
-        unset($dbobject);
+        if (!array_key_exists('weighting_id', $this->lookup_data)) {
+            // get contents of foreign table RISK_WEIGHTING and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('risk_weighting');
+            $data_array = $dbobject->getValRep('weighting_id');
+            $this->lookup_data['weighting_id'] = $data_array;
+            unset($dbobject);
+        } // if
 
         // get contents of QUESTION_PROMPT and concatenate into a single list
-        require_once 'classes/question_prompt.class.inc';
         $dbobject =& singleton::getInstance('question_prompt');
         $dbobject->sql_select = "prompt_desc";
         $dbobject->sql_from   = "question_prompt "
@@ -263,11 +271,11 @@ class survey_answer_dtl extends Default_Table
     // $fieldarray contains data from the initial $where clause.
     {
         // display autoinsert/autoupdate fields on this input screen
-        foreach ($this->fieldspec as $field => $spec) {
-        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
-        	    unset($this->fieldspec[$field]['nodisplay']);
-        	} // if
-        } // foreach
+//        foreach ($this->fieldspec as $field => $spec) {
+//        	if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+//        	    unset($this->fieldspec[$field]['nodisplay']);
+//        	} // if
+//        } // foreach
 
         return $fieldarray;
 

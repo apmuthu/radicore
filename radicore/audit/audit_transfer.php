@@ -37,7 +37,7 @@ $audit_fld = new Audit_fld;
 
 // 'audit_hdr' data is to be split across 'audit_ssn' and 'audit_trn'
 $audit_hdr->sql_orderby = 'date,time,tran_seq_no';
-$audit_hdr_result = $audit_hdr->getData_batch();
+$audit_hdr_result = $audit_hdr->getData_serial();
 $session_id  = '';
 while ($row = $audit_hdr->fetchRow($audit_hdr_result)) {
     $audit_ssn_data['user_id'] = $row['user_id'];
@@ -54,7 +54,7 @@ while ($row = $audit_hdr->fetchRow($audit_hdr_result)) {
     check_errors($audit_trn);
 
     $tran_seq_no = $row['tran_seq_no'];
-    $audit_dtl_result = $audit_dtl->getData_batch("session_id='$session_id' AND tran_seq_no='$tran_seq_no'");
+    $audit_dtl_result = $audit_dtl->getData_serial("session_id='$session_id' AND tran_seq_no='$tran_seq_no'");
     // 'audit_dtl' data is to be split across 'audit_tbl' and 'audit_fld'
     while ($row2 = $audit_dtl->fetchRow($audit_dtl_result)) {
         $audit_tbl_data = $row2;

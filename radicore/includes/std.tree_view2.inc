@@ -22,10 +22,17 @@ $mode = 'read';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
     if (isset($act_buttons) AND array_key_exists('choose', $act_buttons)) {
-        scriptPrevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+        // 'Nothing selected from popup screen'
+        scriptPrevious(getLanguageText('sys0083'),null,'quit');
     } else {
         scriptPrevious();
     } // if
@@ -60,11 +67,6 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
     $messages = chooseButton($_POST, $dbinner);
 } // if
 
-if (!empty($_POST)) {
-    // look for an action which is another script
-    $errors = childForm($_POST, array('dbinner' => $dbinner), null);
-} // if
-
 // create a class instance for the outer database table
 require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
@@ -88,31 +90,26 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
-    } // if
+    $where = $dbouter->initialise($where);
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
-    } // if
+if (!empty($_POST)) {
+    // look for an action which is another script
+    $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+} // if
+
+if (isset($scrolling)) {
+    // retrieve values from scrolling array
+    $where = $scrolling[$dbouter->getClassName()]['where'];
+    $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
 } // if
 if (empty($where)) {
     scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'

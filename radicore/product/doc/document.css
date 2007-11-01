@@ -1,0 +1,403 @@
+a:link { color: #0000FF }
+a:hover { color: #CC0000 }
+a:visited { color: #800080 }
+a:active { color: #FF0000 }
+
+acronym {
+  color: brown;
+  border-bottom: 1pt dotted black;
+}
+body {
+  font-size: 100%;
+  color: #000000;
+  background: #FFFFFF;
+  margin: 1em 2%;
+  text-align: justify;
+}
+body, p, td, th, ol, ul {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: normal;
+}
+body dl, body dl dt, body dl dd {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: medium;
+  font-weight: normal;
+  margin-bottom: 0em;
+}
+body dl dt {
+  font-size: 110%;
+  font-weight: bold;
+}
+body dl dd {
+  margin-left: 1.5em;
+}
+dl#index dt {
+  font-size: 90%;
+  font-weight: bold;
+}
+dl#index dd {
+  margin-left: 1.5em;
+}
+blockquote, q {
+  font-family: Arial, Helvetica, sans-serif;
+}
+blockquote p {
+  font-family: Arial, Helvetica, sans-serif;
+  margin-bottom: 0;
+}
+blockquote hr {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+blockquote {
+  padding: 0.25em;
+  margin-left: 2em;
+  margin-right: 2em;
+  background: #ddd;
+}
+blockquote blockquote {
+  border: 1px dotted black;
+  background: #eee;
+  margin-top: 0;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+blockquote blockquote, blockquote pre {
+  border: 1px dotted black;
+  background: #eee;
+  padding: 0.25em;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+blockquote.me {
+  background: #cfc;
+}
+caption {
+  font-weight: bold;
+}
+code {
+  font-family: monospace;
+  font-size: 95%;
+  font-weight: bold;
+  color: green;
+  text-transform: none;
+}
+dl.contents dt, dl.contents dd {
+	font-family: Aria, Helvetica, sans-serif;
+	font-weight: normal;
+}
+dl.contents dl dt {
+}
+dl.contents dt {
+	font-weight: normal;
+	margin-top: 0.5em;
+	margin-bottom: 0em;
+}
+dl.contents dl dt {
+	margin-top: 0em;
+}
+dl.contents dd, dl.contents dl {
+	margin-left: 1.5em;
+}
+em {
+  font-style: italic;
+}
+h1 { 
+  clear: both;
+  color: white; 
+  background-color: teal; 
+  font-size: 120%; 
+  font-weight: bold;
+  font-style: normal;
+  margin-bottom: 1em;
+  margin-top: 5px;
+}
+h2 { 
+  color: teal; 
+  font-size: 115%; 
+  font-weight: bold;
+  font-style: normal;
+}
+h3 {
+  font-size: 110%;
+  font-weight: bold;
+  font-style: normal;
+  margin-bottom: 1em;
+}
+h4 {
+  font-size: 110%;
+  font-weight: bold;
+  font-style: normal;
+}
+h5 {
+  font-size: 100%;
+  font-weight: bold;
+}
+h6 {
+  font-size: 100%;
+  font-weight: bold;
+}
+
+hr {
+  width: 100%;
+  margin-top: 0.5em;
+  margin-left: 0pt;
+  margin-right: 0pt;
+}
+hr.half {
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  border-style: dotted;
+  border-color: black;
+}
+li {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.compress li, .compress p {
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  font-weight: normal;
+}
+.expand li, .expand p {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-weight: normal;
+}
+#menu {
+  float:right;
+  border:1px solid #000;
+  background:#eee;
+  margin:0px 0px 0px 10px;
+  padding: 5px 5px 5px 5px;
+  text-align: left;
+}
+#menu dl, #menu dt, #menu dd, #menu p {
+  font-family: Verdana, Helvetica, sans-serif;
+  font-size: 75%;
+  font-weight: normal;
+}
+#menu dl dl dt {
+}
+#menu dl, #menu dt, #menu p {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+#menu dl dd, #menu dl dl dt {
+  margin-left: 1em;
+}
+ol {
+  list-style-type: decimal;
+  font-weight: normal;
+  padding: 0pt;
+  margin-left: 2.5em;
+  margin-top: 0em;
+  margin-bottom: 1em;
+}
+ol ol {
+  list-style-type: lower-alpha;
+  margin-left: 2.5%;
+}
+ol ol ol {
+  list-style-type: lower-roman;
+  margin-left: 2.5%;
+}
+p.announce {
+  border: 2px dotted red;
+  padding: 5px;
+}
+pre {
+  font-size: 90%;
+  font-family: monospace;
+  font-weight: bold;
+  color: green;
+  background: #ddd;
+  white-space: pre;
+  text-align: left;
+}
+html>pre { /* this is ignored by IE */
+  font-size: 100%;
+}
+pre.border {
+  border: thin dotted black;
+  padding: 0.5em;
+}
+pre.indent {
+  margin-left: 1em;
+}
+pre a:link, pre a:visited, pre a:active {
+	color: purple;
+}
+pre a:hover {
+	color: red;
+}
+
+q {
+  font-style: italic;
+}
+
+#radicorelogo {
+  float: left;
+  height: 95px;
+}
+#radicoreheader {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+#radicoretitle {
+  clear: right;
+  background: #0065b5 url(radicore-bg.gif) top left no-repeat;
+  border-bottom: 5px solid #003c73;
+	margin-left: 175px;
+  margin-top: 0;
+	padding-left: 10px;
+  padding-top: 5px;
+  padding-bottom: 0;
+  height: 80px;
+}
+html>body #radicoretitle {
+  height: 60px;
+  padding-top: 25px;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+#radicoretitle h2 {
+  color: white;
+  font-size: 95%;
+  padding-top: 10px;
+  margin-top: 25px;
+  margin-bottom: 10px;
+}
+html>body #radicoretitle h2 {
+  padding-top: 0;
+  margin-top: 10px;
+}
+
+td {
+  vertical-align: top;
+  padding: 5px;
+}
+th {
+  font-weight: bold;
+  padding: 5px;
+}
+tr.shaded {
+  background: #ccffff;
+}
+ul {
+  font-weight: normal;
+  margin-left: 1.5em;
+  margin-top: 0em;
+  margin-bottom: 1em;
+  padding: 0pt;
+}
+ul ul {
+  font-weight: normal;
+  margin-left: 2.5%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+}
+
+/* class for colouring PHP scripts */
+.comment { color: #FF9900; }
+.default { color: #0000BB; }
+.html    { color: #000000; font-weight: normal; }
+.keyword { color: #000000; font-weight: bold; }
+.string  { color: #DD0000; }
+.purple  { color: purple; }
+
+/* generic classes */
+.bold {
+  font-weight: bold;
+}
+
+.center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.center table {
+  text-align: left;
+  margin-left: auto;
+  margin-right: auto;
+}
+.center table caption {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.justify {
+  text-align: justify;
+}
+.left {
+	text-align: left;
+}
+.right {
+	text-align: right;
+}
+.margin {
+	margin-left: 2.5%;
+}
+.nomargin {
+	margin-left: 0%;
+}
+.normal {
+	font-weight: normal;
+}
+.indent {
+	margin-left: 1em;
+}
+.nobottom {
+	margin-bottom: 0pt;
+}
+.nopadding {
+	padding-left: 0em;
+	padding-right: 0em;
+	padding-top: 0em;
+	padding-bottom: 0em;
+}
+.red {
+	color: red;
+}
+.sig {
+	font-family: "Comic Sans MS", Verdana, Arial, Helvetica, sans-serif;
+	color: blue;
+	font-size: 125%;
+	font-weight: bold;
+	font-style: italic;
+}
+
+/* options for printing */
+@media print {
+	body {
+		font-size: 80%;
+		margin-left: 0%;
+		margin-right: 0%;
+	}
+	body dl dt { font-size: 80%; }
+	body dl dd { font-size: 80%; }
+  
+  #radicorelogo {
+    float: none;
+    height: 0;
+  }
+  html>body #radicorelogo {
+    float: right;
+    height: 0;
+  }
+  #radicoretitle {
+  	margin: 0;
+    padding: 0;
+    height: 20px;
+	}
+  #radicoretitle h2 {
+  	margin: 0;
+    padding: 0;
+    height: 0;
+	}
+}

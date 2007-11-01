@@ -14,24 +14,21 @@ class x_person_s04 extends x_person
     var $total_price;       //
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
-    // perform custom formatting before values are shown to the user.
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
     {
-        $fieldarray['invoice_date'] = '2006-08-26';
-        $fieldarray['invoice_no']   = '06/1001';
-
-        $fieldarray['invoice_to']   = "Invoice line 1 one two three four five six seven eight nine ten el\nInvoice line 2\nInvoice line 3\nInvoice line 4\nInvoice line 5\nInvoice line 6\nInvoice line 7\nInvoice line 8";
-        $fieldarray['ship_to']      = "Ship line 1 one two three four five six seven eight nine ten eleve\nShip line 2\nShip line 3\nShip line 4\nShip line 5\nShip line 6\nShip line 7\nShip line 8";
-
-        $fieldarray['payment_terms']     = '60 days';
-        $fieldarray['purchase_order_id'] = 'A/1234';
-        $fieldarray['ship_date']         = '2006-08-28';
-        $fieldarray['carrier_id']        = 'ACME Freight';
-        $fieldarray['cust_contact']      = 'Bill Gates';
+        if (!isset($this->fieldspec['invoice_date'])) {
+            // provide specifications so that these fields can be formatted
+        	$this->fieldspec['invoice_date']   = array('type' => 'date');
+        	$this->fieldspec['ship_date']      = array('type' => 'date');
+        	$this->fieldspec['sub_total']      = array('type' => 'numeric', 'precision' => 9, 'scale' => 2);
+        } // if
 
         return $fieldarray;
 
-    } // _cm_formatData
+    } // _cm_changeConfig
 
     // ****************************************************************************
     function _cm_output_multi ($name, $fieldarray)
@@ -119,7 +116,8 @@ class x_person_s04 extends x_person
 
         	case 'multi4':
                 // return a non-empty array to print an empty line
-                $outarray[] = array('dummy' => '');
+                //$outarray[] = array('dummy' => '');
+                $outarray[] = array('barcode' => '0123456789');
         		break;
 
         	case 'multi5':
@@ -158,6 +156,30 @@ class x_person_s04 extends x_person
         } // if
 
     } // _cm_output_multi
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        $fieldarray['company_name']    = 'Radicore Software Limited';
+        $fieldarray['company_address'] = "Code Castle\nWebtown\nFrameworkshire\nEngland, AA1 1AA";
+
+        $fieldarray['invoice_date'] = '2006-08-26';
+        $fieldarray['invoice_no']   = '06/1001';
+
+        $fieldarray['invoice_to']   = "Invoice line 1 one two three four five six seven eight nine ten el\nInvoice line 2\nInvoice line 3\nInvoice line 4\nInvoice line 5\nInvoice line 6\nInvoice line 7\nInvoice line 8";
+        $fieldarray['ship_to']      = "Ship line 1 one two three four five six seven eight nine ten eleve\nShip line 2\nShip line 3\nShip line 4\nShip line 5\nShip line 6\nShip line 7\nShip line 8";
+
+        $fieldarray['payment_terms']     = '60 days';
+        $fieldarray['purchase_order_id'] = 'A/1234';
+        $fieldarray['ship_date']         = '2006-08-28';
+        $fieldarray['carrier_id']        = 'ACME Freight';
+        $fieldarray['cust_contact']      = 'Bill Gates';
+        $fieldarray['barcode']           = '9876543210';
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)

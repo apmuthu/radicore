@@ -45,12 +45,12 @@ class survey_hdr extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table SURVEY_TYPE and add as a LOOKUP list
-        require_once 'classes/survey_type.class.inc';
-        $dbobject =& singleton::getInstance('survey_type');
-        $data_array = $dbobject->getValRep('survey_type_id');
-        $this->lookup_data['survey_type_id'] = $data_array;
+        if (!array_key_exists('survey_type_id', $this->lookup_data)) {
+            // get contents of foreign table SURVEY_TYPE and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('survey_type');
+            $data_array = $dbobject->getValRep('survey_type_id');
+            $this->lookup_data['survey_type_id'] = $data_array;
+        } // if
 
         return $fieldarray;
 

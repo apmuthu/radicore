@@ -20,6 +20,12 @@ $mode = 'insert';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
@@ -30,18 +36,21 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 
 // get initial data for new record(s)
-$fieldarray = $dbobject->getInitialDataMultiple($where);
-if ($dbobject->getErrors()) {
+$where = $dbobject->initialise($where);
+if (empty($dbobject->errors)) {
+	$fieldarray = $dbobject->getInitialDataMultiple($where);
+} // if
+if ($dbobject->errors) {
     // error detected, so quit now
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
+    $batch_errors = scriptPrevious($dbobject->errors, $messages);
     return $batch_errors;
 } // if
 
 // add record(s) to the database
 $dbobject->startTransaction();
 $fieldarray = $dbobject->insertMultiple($fieldarray);
-$errors = $dbobject->getErrors();
-$messages = $dbobject->getMessages();
+$errors   = $dbobject->errors;
+$messages = $dbobject->messages;
 if ($errors) {
     $dbobject->rollback();
 } else {

@@ -25,7 +25,7 @@
 <xsl:include href="std.pagination.xsl"/>
 
 <!-- get the name of the MAIN table -->
-<xsl:variable name="main" select="//structure/main/@id"/>
+<xsl:variable name="main" select="/root/structure/main/@id"/>
 <xsl:variable name="numrows">1</xsl:variable>
 
 <xsl:template match="/">
@@ -90,7 +90,7 @@
           <table>
 
             <!-- process the first row in the MAIN table of the XML file -->
-            <xsl:for-each select="//*[name()=$main][1]">
+            <xsl:for-each select="/root/*[name()=$main][1]">
 
               <!-- display all the fields in the current record -->
               <xsl:call-template name="display_vertical">
@@ -133,11 +133,6 @@
 
   </body>
   </html>
-
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer" />
-  </xsl:if>
 
 </xsl:template>
 

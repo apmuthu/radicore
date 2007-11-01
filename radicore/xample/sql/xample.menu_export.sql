@@ -1,4 +1,4 @@
--- file created on October 31, 2006, 10:02 am
+-- file created on January 22, 2007, 11:00 am
     
 REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_prefix`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('XAMPLE', 'Example application', 'xample', 'x_', '2003-01-01 12:00:00', 'AJM', '2006-04-22 09:40:39', 'AJM');
@@ -668,7 +668,7 @@ REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `c
 ('xample', 'test_autoinsert(add)', '005', 'Auto-Increment', '2005-05-25 21:07:55', 'AJM', '2005-05-25 21:32:27', 'AJM');
 
 REPLACE INTO `mnu_menu` (`menu_id`, `task_id_jnr`, `sort_seq`, `button_text`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
-('proto', 'xample', '001', 'Example System', '2005-05-05 17:46:15', 'AJM', '2005-05-05 17:46:24', 'AJM');
+('proto', 'xample', '001', 'Example', '2005-05-05 17:46:15', 'AJM', '2007-01-22 10:58:39', 'AJM');
 
 REPLACE INTO `help_text` (`task_id`, `help_text`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('x_option(add)', 'This will allow a new record to be added to the OPTION table.

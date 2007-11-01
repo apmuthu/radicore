@@ -99,19 +99,17 @@ class mnu_subsystem extends Default_Table
     } // _cm_ListView_total
 
     // ****************************************************************************
-    function _cm_post_getData ($rows, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
     {
-        // customisable code goes here
         if ($GLOBALS['mode'] == 'pdf-list') {
             // accumulate totals for PDF report
-            $this->count += $rows[0]['count'];
+            $this->count += $fieldarray['count'];
         } // if
 
-        return $rows;
+        return $fieldarray;
 
-    } // _cm_post_getData
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_pre_eraseRecord ($fieldarray)

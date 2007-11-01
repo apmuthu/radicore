@@ -25,8 +25,8 @@
 <xsl:include href="std.pagination.xsl"/>
 
 <!-- get the name of the MAIN table -->
-<xsl:variable name="main" select="//structure/main/@id"/>
-<xsl:variable name="numrows" select="//pagination/page[@id='main']/@numrows"/>
+<xsl:variable name="main" select="/root/structure/main/@id"/>
+<xsl:variable name="numrows" select="/root/pagination/page[@id='main']/@numrows"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -80,17 +80,18 @@
               <!-- set up column headings -->
               <xsl:call-template name="column_headings">
                 <xsl:with-param name="zone"   select="'main'"/>
-                <xsl:with-param name="nosort" select="//params/nosort"/>
+                <xsl:with-param name="nosort" select="/root/params/nosort"/>
               </xsl:call-template>
             </thead>
 
             <tbody>
               <!-- process each non-empty row in the MAIN table of the XML file -->
-              <xsl:for-each select="//*[name()=$main][count(*)&gt;0]">
+              <xsl:for-each select="/root/*[name()=$main][count(*)&gt;0]">
 
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_horizontal">
-                    <xsl:with-param name="zone" select="'main'"/>
+                  <xsl:with-param name="zone"    select="'main'"/>
+                  <xsl:with-param name="currocc" select="." />
                 </xsl:call-template>
 
               </xsl:for-each>
@@ -130,11 +131,6 @@
 
   </body>
   </html>
-
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
 
 </xsl:template>
 

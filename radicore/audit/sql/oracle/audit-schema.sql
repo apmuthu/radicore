@@ -96,7 +96,7 @@ CREATE TABLE audit_trn (
   tran_seq_no number(6) NOT NULL,
   trn_date date NOT NULL,
   trn_time char(8) NOT NULL,
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   PRIMARY KEY  (session_id,tran_seq_no)
 );
 

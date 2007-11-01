@@ -4,10 +4,12 @@
 </Files>
 
 php_value default_charset "UTF-8"
-php_value include_path ".;F:\Apache2\HTDOCS\RADICORE\INCLUDES;F:\Apache2\HTDOCS\RADICORE\MENU;F:\Apache2\HTDOCS\RADICORE\audit;F:\Apache2\HTDOCS\RADICORE\workflow;F:\Apache2\HTDOCS\INCLUDES"
+php_value include_path ".;F:\Apache2\HTDOCS\RADICORE\INCLUDES;F:\Apache2\HTDOCS\INCLUDES"
 
 php_value register_globals 0
 php_value magic_quotes_gpc 0
+php_value magic_quotes_runtime 0
+php_value magic_quotes_sybase 0
 php_value session.use_cookies 1
 php_value session.use_only_cookies 0
 php_value session.use_trans_sid 1

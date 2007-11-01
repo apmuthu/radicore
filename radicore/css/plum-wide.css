@@ -199,7 +199,7 @@ div.uploadbg {
   background: #cccccc;
 }
 div.upload {
-  width: 400px; 
+  width: 500px; 
   margin-left: auto; 
   margin-right: auto;
   background: #dddddd;
@@ -711,6 +711,9 @@ textarea {
   margin-left: auto;
   margin-right: auto;
 }
+.divider {
+  height: 6px;
+}
 .error {
   clear: left;
   font-style: italic;
@@ -739,6 +742,21 @@ textarea {
 .right {
   text-align: right;
 }
+
+/* for items which are due or overdue */
+.overdue {
+  background: red;
+  color: yellow;
+  font-style: italic;
+  font-weight: normal;
+}
+.due {
+  background: orange;
+  color: green;
+  font-style: italic;
+  font-weight: normal;
+}
+
 /* options for printing */
 @media print {
 	div.universe {

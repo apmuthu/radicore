@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2006 by A J Marston <http://www.tonymarston.net>
+// Copyright 2003-2007 by A J Marston <http://www.tonymarston.net>
 // Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
@@ -31,6 +31,11 @@ if (isset($_GET['session_id'])) {
 } // if
 session_start();
 
+$PHP_SELF = getSelf();
+
+if (isset($_SESSION[$PHP_SELF])) {
+    $logon_data = $_SESSION[$PHP_SELF];
+} // if
 if (isset($_SESSION['messages'])) {
     $messages_bf = (array)$_SESSION['messages'];
 } // if
@@ -69,8 +74,12 @@ if (isset($_SESSION['default_language'])) {
     $default_language    = $mnu_control->getControlData('default_language');
 } // if
 
-// unset any previous session data
-session_unset();
+if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
+    // script will be restarted using HTTPS protocol, so do not clear session data
+} else{
+    // unset any previous session data
+    session_unset();
+} // if
 
 if (isset($messages_bf)) {
     $_SESSION['messages'] = $messages_bf;  // put this message back
@@ -92,6 +101,15 @@ $act_buttons['submit'] = 'login';
 if (isset($_POST['quit']) or (isset($_POST['quit_x']))) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, 'quit');
+} // if
+
+if (isset($logon_data)) {
+    if (isset($logon_data['logon']['errors'])) {
+    	$errors = (array)$logon_data['logon']['errors'];
+    } // if
+    if (isset($logon_data['logon']['messages'])) {
+    	$messages = (array)$logon_data['logon']['messages'];
+    } // if
 } // if
 
 if (isset($logon_retries)) {

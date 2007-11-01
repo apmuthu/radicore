@@ -1,5 +1,5 @@
 <?php
-    // file created on October 9, 2006, 10:31 am
+    // file created on August 7, 2007, 1:15 pm
     
     // field specifications for table xample.x_person_addr
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -18,12 +18,10 @@
     
     $fieldspec['telephone_no']              = array('type' => 'string',
                                                     'size' => 20,
-                                                    'subtype' => 'custom',
                                                     'custom_validation' => 'sample.validation.class.inc/sample_validation_class/telephone_no');
     
     $fieldspec['fax_no']                    = array('type' => 'string',
                                                     'size' => 20,
-                                                    'subtype' => 'custom',
                                                     'custom_validation' => 'sample.validation.class.inc/sample_validation_class/fax_no');
     
     $fieldspec['addr_line_1']               = array('type' => 'string',
@@ -48,8 +46,8 @@
                                                     'size' => 10,
                                                     'required' => 'y',
                                                     'uppercase' => 'y',
-                                                    'subtype' => 'custom',
-                                                    'custom_validation' => 'sample.validation.class.inc/sample_validation_class/postcode');
+                                                    'custom_validation' => 'sample.validation.class.inc/sample_validation_class/postcode',
+                                                    'subtype' => 'custom');
     
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,

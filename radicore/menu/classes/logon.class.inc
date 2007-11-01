@@ -64,11 +64,11 @@ class logon extends mnu_user
         } // if
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id ';
+        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id, mnu_user.rdcaccount_id ';
         $this->sql_from   = 'mnu_user '
                           . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
-
-        $fieldarray = $this->getData_raw("user_id='$logon_user_id' AND user_password='$logon_password'");
+        $where = "user_id='" .addslashes($logon_user_id) ."' AND user_password='" .addslashes($logon_password) ."'";
+        $fieldarray = $this->getData_raw($where);
         if ($this->numrows <> 1) {
             $this->errors[] = getLanguageText('e0000'); // 'Security violation';
             $this->PasswordRetries($logon_user_id, $updatearray['user_password']);
@@ -110,6 +110,7 @@ class logon extends mnu_user
         if (strlen($fieldarray['language_code']) > 0) {
         	$_SESSION['user_language'] = $fieldarray['language_code'];
         } // if
+        $_SESSION['rdcaccount_id']    = $fieldarray['rdcaccount_id'];
 
         // update user record to show that he/she has logged in
         $updatearray['user_id']       = $logon_user_id;
@@ -128,7 +129,7 @@ class logon extends mnu_user
             $next['action']   = 'OK';
             $next['messages'] = getLanguageText('e0002'); // 'You must change your password';
             // this is processed by scriptnext() and scriptprevious()
-            $_SESSION['script_sequence'][] = $next;
+            append2ScriptSequence($next);
         } else {
             // find out is the user's password is due to expire in the near future
             if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {

@@ -30,6 +30,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
     scriptPrevious(null, null, 'quit');
@@ -64,18 +70,17 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->errors);
     } // if
 } // if
 
@@ -100,10 +105,9 @@ if (isset($script_vars['dbmiddle'])) {
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
     // perform any initialisation
-    if (!empty($selection)) {
-        $null = $dbmiddle->initialise($selection, $where);
-    } else {
-        $null = $dbmiddle->initialise($where);
+    $null = $dbmiddle->initialise($where);
+    if ($dbmiddle->errors) {
+        scriptPrevious($dbmiddle->errors);
     } // if
 } // if
 
@@ -125,14 +129,13 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_search_table = &$inner_search_table;
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dbinner->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $null = $dbinner->initialise($selection, $where);
-    } else {
-        $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($where);
+    if ($dbinner->errors) {
+        scriptPrevious($dbinner->errors);
     } // if
 } // if
 
@@ -143,7 +146,7 @@ if (!empty($_POST)) {
     $inner_data = array_update_indexed($inner_data, $inner_post);
     $dbinner->setFieldArray($inner_data);
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbinner' => $dbinner), $where);
+    $errors = childForm($_POST, array('dbmiddle' => $dbmiddle, 'dbinner' => $dbinner));
 } // if
 
 // look for entered data
@@ -154,7 +157,7 @@ if (isset($_POST['submit'])) {
     if ($dbinner->errors) {
         $dbinner->rollback();
 		// errors are keyed by object name
-        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+        $errors[$dbinner->getClassName()] = $dbinner->errors;
     } else {
         // update was OK
         $dbinner->wf_case_id     = $dbouter->wf_case_id;
@@ -167,16 +170,10 @@ if (isset($_POST['submit'])) {
     } // if
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
-    } // if
+if (isset($scrolling)) {
+    // retrieve values from scrolling array
+    $where = $scrolling[$dbouter->getClassName()]['where'];
+    $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
 } // if
 if (empty($where)) {
     if ($dbouter->allow_empty_where == TRUE) {
@@ -206,10 +203,10 @@ if ($dbouter->errors) {
     // some sort of error
     if ($dbouter->getLastPage() <= 1) {
         // only 1 entry requested, so return to previous script
-        scriptprevious($dbouter->getErrors(), $messages);
+        scriptprevious($dbouter->errors, $messages);
     } else {
         // multiple entries requested, so display error message
-        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+        $errors[$dbouter->getClassName()] = $dbouter->errors;
     } // if
 } // if
 $messages = array_merge($messages, $dbouter->getMessages());
@@ -224,6 +221,9 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 
 // get any additional data for current record
 $outer_data = $dbouter->getExtraData($outer_data);
+if ($dbouter->errors) {
+	$errors[$dbouter->getClassName()] = $dbouter->errors;
+} // if
 
 if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
     // set index number of item to be read from current $where list
@@ -241,11 +241,15 @@ if (isset($_POST['reset'])) {
     $dbmiddle->reset($where);
 } // if
 
+if (isset($search)) {
+    $dbmiddle->setSqlSearch($search);
+} // if
+
 // get data from the middle table
 $middle_data = $dbmiddle->getData($where);
 if ($dbmiddle->errors) {
     // errors are keyed by object name
-    $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+    $errors[$dbmiddle->getClassName()] = $dbmiddle->errors;
 } // if
 if ($dbmiddle->getNumRows() < 1) {
     // scriptPrevious('Nothing retrieved from the database.');
@@ -255,6 +259,9 @@ if ($dbmiddle->getNumRows() < 1) {
 
 // get any additional data for current record
 $middle_data = $dbmiddle->getExtraData($middle_data);
+if ($dbmiddle->errors) {
+	$errors[$dbmiddle->getClassName()] = $dbmiddle->errors;
+} // if
 
 // get primary key of row retrieved from middle entity
 $middle_where = array2where($middle_data, $dbmiddle->getPkeyNames(), $dbmiddle);
@@ -294,9 +301,6 @@ if (isset($_GET['page'])) {
     $dbinner->setPageNo($_GET['page']);
 } // if
 
-// load in current data from $middle in case it is needed
-$dbinner->setFieldArray($middle_data);
-
 // merge OUTER and MIDDLE where to get selection criteria for INNER
 $inner_where = mergeWhere($where, $middle_where);
 
@@ -307,30 +311,39 @@ if (isset($_POST['reset'])) {
 
 // only read INNER if MIDDLE is not empty
 if (count($middle_data) > 0) {
-    // get data from the database
-    $inner_data = $dbinner->getData($inner_where);
-    if ($dbinner->errors) {
-        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-    } // if
+    if (!empty($return_from) AND !empty($popup_object)) {
+        if (isset($selection) AND $popup_object == 'dbinner') {
+            $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset);
+        } //if
+    } else {
+        // load in current data from $middle in case it is needed
+        $dbinner->setFieldArray($middle_data);
 
-    if ($dbinner->getNumRows() == 0) {
-        if (!is_array($errors)) {
-            $errors = (array)$errors;
+        // get data from the database
+        $inner_data = $dbinner->getData($inner_where);
+        if ($dbinner->errors) {
+            $errors[$dbinner->getClassName()] = $dbinner->errors;
         } // if
-        $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
-        unset($act_buttons['submit']);
-    } // if
 
-    // get any additional data for current record
-    $inner_data = $dbinner->getExtraData($inner_data);
+        if ($dbinner->getNumRows() == 0) {
+            if (!is_array($errors)) {
+                $errors = (array)$errors;
+            } // if
+            $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+            unset($act_buttons['submit']);
+        } // if
+
+        // get any additional data for current record
+        $inner_data = $dbinner->getExtraData($inner_data);
+        if ($dbinner->errors) {
+        	$errors[$dbinner->getClassName()] = $dbinner->errors;
+        } // if
+    } // if
 } // if
 
 if (isset($_GET['action'])) {
     $inner_data = $dbinner->setAction($_GET['action']);
 } // if
-
-// $where may have been changed in database object
-$where = $dbinner->getWhere();
 
 // get pagination details
 $pagination['inner']['numrows']  = $dbinner->getNumRows();
@@ -346,7 +359,7 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
+$orderby     = $dbinner->getOrderBy_Out();
 $orderby_seq = $dbinner->getOrderBySeq();
 
 // build list of objects for output to XML data

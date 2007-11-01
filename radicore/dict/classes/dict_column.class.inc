@@ -8,6 +8,7 @@ class dict_column extends Default_Table
 {
     // member variables
     var $colspecs = array();    // array of column specifications
+    var $count;                 // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -352,19 +353,21 @@ class dict_column extends Default_Table
         } // if
 
         if (isset($fieldarray['align_hv'])) {
-            if ($fieldarray['control'] != 'radio') {
-                // "Invalid unless CONTROL = 'radio group'"
+           if (!eregi('(radio|m_checkbox)', $fieldarray['control'])) {
+                // "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'"
                 $this->errors['align_hv'] = getLanguageText('e0007');
             } // if
         } // if
         if (isset($fieldarray['align_lr'])) {
-            if (eregi('(radio|checkbox)', $fieldarray['control'])) {
+            if (eregi('(radio|checkbox|m_checkbox)', $fieldarray['control'])) {
                 // this is valid
             } else {
-                // "Invalid unless CONTROL = 'radio group' or 'checkbox'"
+                // "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'"
                 $this->errors['align_lr'] = getLanguageText('e0030');
             } // if
-            if ($fieldarray['control'] == 'checkbox') {
+            if (eregi('(radio|checkbox)', $fieldarray['control'])) {
+                // skip the next bit
+            } else {
                 if (empty($fieldarray['checkbox_label'])) {
                 	// "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
                     $this->errors['align_lr'] = getLanguageText('e0033');
@@ -376,6 +379,11 @@ class dict_column extends Default_Table
                 // "Invalid unless CONTROL = 'popup'"
                 $this->errors['foreign_field'] = getLanguageText('e0008');
             } // if
+            $count = preg_match_all('/\w+/', $fieldarray['foreign_field'], $regs);
+            if ($count > 1) {
+                // "This field can only contain a single word"
+            	$this->errors['foreign_field'] = getLanguageText('e0039');
+            } // if
         } // if
         if (isset($fieldarray['task_id'])) {
             if (eregi('(popup|filepicker)', $fieldarray['control'])) {
@@ -386,10 +394,10 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['optionlist'])) {
-            if (eregi('(dropdown|multidrop|radio)', $fieldarray['control'])) {
+            if (eregi('(dropdown|multidrop|radio|m_checkbox)', $fieldarray['control'])) {
                 // this is valid
             } else {
-                // "Invalid unless CONTROL = 'dropdown', 'multidropdown' or 'radio group'"
+                // "Invalid unless CONTROL = 'dropdown', 'multidropdown', 'radio group' or 'multi-checkbox'"
                 $this->errors['optionlist'] = getLanguageText('e0010');
             } // if
         } // if
@@ -435,6 +443,12 @@ class dict_column extends Default_Table
         		        // "CONTROL cannot be 'checkbox' unless TYPE is 'boolean'"
         		        $this->errors['control'] = getLanguageText('e0031');
         		    } // if
+            		break;
+            	case 'm_checkbox':
+            		if (!isset($fieldarray['optionlist'])) {
+            		    // "Required if CONTROL = 'dropdown', 'multidrop' or 'multi-checkbox'"
+                        $this->errors['optionlist'] = getLanguageText('e0011');
+            		} // if
             		break;
             	case 'multiline':
             		if (!isset($fieldarray['multi_cols'])) {
@@ -594,6 +608,8 @@ class dict_column extends Default_Table
                 $colspecs['col_auto_increment'] = 'y';
                 $colspecs['col_unsigned']       = 'y';
                 $colspecs['col_zerofill_bwz']   = 'y';
+                $colspecs['auto_insert']        = 'y';
+                $colspecs['auto_update']        = 'y';
                 $colspecs['control']            = '?';
                 $colspecs['optionlist']         = '?';
                 $colspecs['align_hv']           = '?';
@@ -616,8 +632,11 @@ class dict_column extends Default_Table
             switch ($fieldarray['control']) {
             	case 'dropdown':
             	case 'multidrop':
-                    $colspecs['multi_rows']       = 'y';
+                    $colspecs['multi_rows'] = 'y';
             	    break;
+            	case 'm_checkbox':
+            	    $colspecs['align_lr']   = 'y';
+            	    $colspecs['align_hv']   = 'y';
             	default:
             	    break;
             } // switch
@@ -633,8 +652,7 @@ class dict_column extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        if (empty($this->lookup_data)) {
+        if (!array_key_exists('align_hv', $this->lookup_data)) {
             // get arrays to put into LOOKUP_DATA
             $array = $this->getValRep('align_hv');
             $this->lookup_data['align_hv'] = $array;
@@ -692,9 +710,10 @@ class dict_column extends Default_Table
 
             $array = $this->getValRep('upper_lowercase');
             $this->lookup_data['upper_lowercase'] = $array;
+        } // if
 
+        if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DATABASE and add as a LOOKUP list
-            //require_once 'classes/dict_database.class.inc';
             $dbobject =& singleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
@@ -826,6 +845,19 @@ class dict_column extends Default_Table
     } // _cm_initialise
 
     // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['database_id'] = 'Total count:';
+        $array['table_id'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
     // if a popup button has been pressed the contents of $where amy need to
     // be altered before the popup screen is called.
@@ -852,14 +884,23 @@ class dict_column extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
+
+    // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        if (eregi('^(csv|pdf|batch)', strtolower($GLOBALS['mode']))) {
-            return $rowdata;  // do nothing
-        } // if
-
         // make all optional columns invisible (this may be reversed later)
         $this->fieldspec['user_size']['nodisplay']          = 'y';
         $this->fieldspec['col_auto_increment']['nodisplay'] = 'y';

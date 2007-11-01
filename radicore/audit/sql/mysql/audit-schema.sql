@@ -1,11 +1,12 @@
 -- phpMyAdmin SQL Dump
--- version 2.7.0
+-- version 2.10.0.2
 -- http://www.phpmyadmin.net
 -- 
 -- Host: localhost
--- Generation Time: Dec 16, 2006 at 10:38 AM
--- Server version: 4.0.26
--- PHP Version: 4.4.4
+-- Generation Time: Mar 06, 2007 at 11:41 AM
+-- Server version: 4.1.22
+-- PHP Version: 4.4.6
+
 -- 
 -- Database: `audit`
 -- 
@@ -37,13 +38,13 @@ CREATE TABLE IF NOT EXISTS `audit_fld` (
 -- 
 
 CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
-  `id` int(11) unsigned NOT NULL auto_increment,
+  `id` int(11) NOT NULL auto_increment,
   `err_timestamp` datetime NOT NULL default '0000-00-00 00:00:00',
   `ip_address` varchar(16) NOT NULL default '0.0.0.0',
   `user_id` varchar(16) NOT NULL default '',
   `user_password` varchar(16) NOT NULL default '',
   PRIMARY KEY  (`id`)
-) TYPE=MyISAM AUTO_INCREMENT=35 ;
+) TYPE=MyISAM  AUTO_INCREMENT=22 ;
 
 -- --------------------------------------------------------
 
@@ -57,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `audit_ssn` (
   `ssn_date` date NOT NULL default '2000-01-01',
   `ssn_time` time NOT NULL default '00:00:00',
   PRIMARY KEY  (`session_id`)
-) TYPE=InnoDB COMMENT='Audit Trail Session data' AUTO_INCREMENT=2702 ;
+) TYPE=InnoDB COMMENT='Audit Trail Session data' AUTO_INCREMENT=1873 ;
 
 -- --------------------------------------------------------
 
@@ -87,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
   `tran_seq_no` smallint(6) unsigned NOT NULL default '0',
   `trn_date` date NOT NULL default '2000-01-01',
   `trn_time` time NOT NULL default '00:00:00',
-  `task_id` varchar(40) NOT NULL default '',
+  `task_id` varchar(80) NOT NULL default '',
   PRIMARY KEY  (`session_id`,`tran_seq_no`)
 ) TYPE=InnoDB COMMENT='Audit Trail Transaction data';
 

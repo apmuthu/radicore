@@ -15,8 +15,7 @@ $structure['tables']['middle'] = '#middle_table#';
 $structure['middle']['columns'][] = array('width' => '25%');
 
 // identify the field names and their screen labels
-$structure['middle']['fields'][] = array('fieldname' => 'Label',
-                                       'fieldname' => 'Label');
+$structure['middle']['fields'][] = array('fieldname' => 'Label');
 
 $structure['tables']['inner'] = '#inner_table#';
 

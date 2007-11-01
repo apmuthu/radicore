@@ -27,19 +27,6 @@ class mnu_pattern extends Default_Table
     } // mnu_pattern
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray, &$css_array)
-    // perform custom formatting before values are shown to the user.
-    // Note: $css_array is passed BY REFERENCE as it may be modified.
-    {
-//        if (eregi('2$', $fieldarray['pattern_id'])) {
-//            $css_array['pattern_desc'] = 'red';
-//        } // if
-
-        return $fieldarray;
-
-    } // _cm_formatData
-
-    // ****************************************************************************
     function _cm_getValRep ($item=null, $where=nul)
     // get Value/Representation list as an associative array.
     {
@@ -79,19 +66,17 @@ class mnu_pattern extends Default_Table
     } // _cm_ListView_total
 
     // ****************************************************************************
-    function _cm_post_getData ($rows, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
     {
-        // customisable code goes here
         if ($GLOBALS['mode'] == 'pdf-list') {
             // accumulate totals for PDF report
-            $this->count += $rows[0]['count'];
+            $this->count += $fieldarray['count'];
         } // if
 
-        return $rows;
+        return $fieldarray;
 
-    } // _cm_post_getData
+    } // _cm_post_fetchRow
 
 // ****************************************************************************
 } // end class

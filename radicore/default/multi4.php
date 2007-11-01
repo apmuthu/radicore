@@ -1,7 +1,7 @@
 <?php
 //*****************************************************************************
 // This will display data from 2 tables in a ONE-to-MANY relationship.
-// (also known as a PARENT-CHILD or OUTER-INNER retaltionship).
+// (also known as a PARENT-CHILD or OUTER-INNER relationship).
 // It will start by reading the OUTER entity using the primary key passed down
 // from the previous screen, then show existing occurrences of INNER.
 // The data on the OUTER entity may be updated.

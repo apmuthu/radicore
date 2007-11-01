@@ -20,19 +20,26 @@ $mode = 'delete';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
+$where = $dbobject->initialise ($where);
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // retrieve profile must have been set by previous screen
-    if (empty($selection)) {
+    if (empty($where)) {
          // 'Nothing has been selected yet.'
         $batch_errors = scriptPrevious(getLanguageText('sys0081'));
         return $batch_errors;
     } // if
     // convert selection from SQL 'where' format into an array using ') OR ' separator
-    $fieldarray = splitWhereByRow($selection);
+    $fieldarray = splitWhereByRow($where);
 
     $dbobject->startTransaction();
 

@@ -1,6 +1,10 @@
 RADICORE software copyright 2003-2005 A J MARSTON <http://www.tonymarston.net>
-RADICORE software copyright 2006 Radicore Software Limited <http://www.radicore.org>
+RADICORE software copyright 2006-2007 Radicore Software Limited <http://www.radicore.org>
 
-You are granted a license to use this software on 1 (one) project for evaluation purposes.
+You do not own this software, you are simply granted a license to use it. Ownership of this software remains with the copyright holder.
 
-Ownership of this software remains with the copyright holder.
+This software is made available under the terms of version 3 the GPL (http://www.gnu.org/copyleft/gpl.html). If any derivative work is not also made available under the GPL it will require a commercial license.
+
+This software is made available at no charge. Any derivative work must also made available at no charge, otherwise it will require a commercial license.
+
+For full details regarding the licensing structure, and the circumstances when a commercial license will be required, please refer to http://www.radicore.org/licensing.php

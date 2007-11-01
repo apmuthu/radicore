@@ -69,12 +69,12 @@ class crs_schedule_hdr extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get day number and add to lookup array
-        require_once 'classes/crs_schedule.class.inc';
-        $object =& singleton::getInstance('crs_schedule');
-        $data = $object->getValRep('day_no');
-        $this->lookup_data['day_no'] = $data;
+        if (!array_key_exists('day_no', $this->lookup_data)) {
+            // get day number and add to lookup array
+            $object =& singleton::getInstance('crs_schedule');
+            $data = $object->getValRep('day_no');
+            $this->lookup_data['day_no'] = $data;
+        } // if
 
         return $fieldarray;
 

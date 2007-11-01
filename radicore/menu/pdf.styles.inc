@@ -97,6 +97,13 @@ $style['foot']['drawcolour'] = array(255,255,255);      // colour for line drawi
 $style['textalignleft']['font'] = array('align' => 'left');     // text alignment = left
 $style['textalignright']['font'] = array('align' => 'right');   // text alignment = right
 $style['textaligncenter']['font'] = array('align' => 'center'); // text alignment = center
+$style['noborder']['drawcolour'] = array(255,255,255);          // border = white
+
+// barcode styles
+$style['barcode1']['type'] = 'I25';         // I25, C128A, C128B, C128C, C39
+$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right
+$style['barcode1']['xres'] = 2;             // 1,2,3
+$style['barcode1']['fontsize'] = 5;         // 1,2,3,4,5
 
 // example of a style to be requested dynamically
 $style['red']['fillcolour'] = array(255,0,0);          // colour for background

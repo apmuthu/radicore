@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:23 am
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_control
     $fieldspec['record_id']                 = array('type' => 'string',

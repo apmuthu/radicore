@@ -46,7 +46,7 @@ class mysql
     function mysql ($dbname=null)
     {
         if (!empty($dbname)) {
-            $result = $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+            $result = $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = TRUE;
         } // if
@@ -59,6 +59,33 @@ class mysql
         return $result;
 
     } // mysql
+
+    // ****************************************************************************
+    function adjustWhere ($string_in)
+    // modify string which may have been altered by addslashes() as in some cases
+    // '\\' (double backslash) must be doubled up to '\\\\'
+    // - [name = 'value\\'] mst be left alone
+    // - [name LIKE 'value\\'] must be changed to [name LIKE 'value\\\\']
+    {
+        $string_out = $string_in;
+
+        $modified = false;
+        $array = where2array($string_in, false, false);
+        foreach ($array as $name => $value) {
+            $value = ltrim($value);
+        	if (eregi('^like ', $value)) {
+        		$array[$name] = str_replace('\\\\', '\\\\\\\\', $value);
+        		$modified = true;
+        	} // if
+        } // foreach
+
+        if ($modified) {
+        	$string_out = array2where($array);
+        } // if
+
+        return $string_out;
+
+    } // adjustWhere
 
     // ****************************************************************************
     function array2string ($array)
@@ -106,16 +133,16 @@ class mysql
     // commit this transaction
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'COMMIT';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'UNLOCK TABLES';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'SET AUTOCOMMIT=1';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1');
@@ -151,19 +178,20 @@ class mysql
             $dbconn = mysqli_connect($dbhost, $dbusername, $dbuserpass);
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
-                // use UTF8 for this connection
+                // use UTF8 character set for this connection
                 $this->query = "SET names 'UTF8'";
-                $result = mysqli_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
-                // write query to log file, if option is turned on
-                logSqlQuery ($dbname, null, $this->query);
+                $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
                 // retrieve current server settings
                 $this->charset     = mysqli_client_encoding($dbconn);
                 $this->client_info = mysqli_get_client_info();
                 $this->host_info   = mysqli_get_host_info($dbconn);
                 $this->server_info = mysqli_get_server_info($dbconn);
                 if (version_compare($this->server_info, '4.1', '>=')) {
-                    $this->query = "SET SESSION sql_mode='ANSI_QUOTES'";
-                    $result = mysqli_query($dbconn, $this->query) or trigger_error('SQL', E_USER_ERROR);
+                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES'";
+                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES,ONLY_FULL_GROUP_BY'";
+                    $this->query = "SET SESSION sql_mode=CONCAT('ANSI_QUOTES,',@@sql_mode)";
+                    $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
                 } // if
                 $this->query = '';
             } // if
@@ -171,7 +199,9 @@ class mysql
 
         if (!$dbconn) {
             return FALSE;
-        } elseif ($dbname) {
+        } // if
+
+        if ($dbname) {
             if (!mysqli_select_db($dbconn, $dbname)) {
                 return FALSE;
             } // if
@@ -186,7 +216,7 @@ class mysql
     // delete the record whose primary key is contained within $fieldarray.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // build 'where' string using values for primary key
         $where = $this->buildKeyString ($fieldarray, $this->primary_key);
@@ -195,7 +225,7 @@ class mysql
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = mysqli_affected_rows($this->dbconnect);
@@ -219,10 +249,10 @@ class mysql
     // delete a selection of records in a single operation.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "DELETE FROM $tablename WHERE $selection";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_affected_rows($this->dbconnect);
 
@@ -242,12 +272,12 @@ class mysql
 
     // ****************************************************************************
     function fetchRow ($dbname, $result)
-    // Fetch a row from the given result set (reated with getData_batch() method).
+    // Fetch a row from the given result set (created with getData_serial() method).
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        $row   = mysqli_fetch_assoc($result);
+        $row = mysqli_fetch_assoc($result);
         if ($row) {
         	$array = array_change_key_case($row, CASE_LOWER);
         	return $array;
@@ -258,13 +288,26 @@ class mysql
     } // fetchRow
 
     // ****************************************************************************
+    function free_result ($dbname, $resource)
+    // release a resource created with getData_serial() method.
+    {
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        mysqli_free_result($resource);
+
+        return;
+
+    } // free_result
+
+    // ****************************************************************************
     function getCount ($dbname, $tablename, $where)
     // get count of records that satisfy selection criteria in $where.
     {
         $this->errors = array();
 
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         if (eregi('^(select )', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
@@ -274,10 +317,10 @@ class mysql
             $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
         } // if
 
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         if (eregi("SQL_CALC_FOUND_ROWS ", $this->query) == true) {
-        	$result     = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error('SQL', E_USER_ERROR);
+        	$result     = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
             $found_rows = mysqli_fetch_row($result);
             $count      = $found_rows[0];
         } else {
@@ -305,7 +348,7 @@ class mysql
     // Results may be affected by $where and $pageno.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
         $rows_per_page  = (int)$this->rows_per_page;
@@ -337,12 +380,15 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = "WHERE $where";
+            $where_str = 'WHERE ' .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
             $group_str = "GROUP BY $this->sql_groupby";
+            if (eregi("WITH ROLLUP", $this->sql_groupby)) {
+            	$this->sql_orderby = null;
+            } // if
         } else {
             $group_str = NULL;
         } // if
@@ -398,9 +444,9 @@ class mysql
 
             // build the query string and run it
             $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
-            $result2    = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error('SQL', E_USER_ERROR);
+            $result2    = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
             $found_rows = mysqli_fetch_row($result2);
             $count      = $found_rows[0];
 
@@ -438,13 +484,21 @@ class mysql
     } // getData
 
     // ****************************************************************************
-    function getData_batch ($dbname, $tablename, $where)
+    function getData_serial ($dbname, $tablename, $where)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $pageno         = (int)$this->pageno;
+        $rows_per_page  = (int)$this->rows_per_page;
+        $this->numrows  = 0;
+        if ($pageno < 1) {
+        	$pageno = 1; // default to first page
+        } // if
+        $this->lastpage = $pageno;
 
         // look for optional SELECT parameters, or default to all fields
         if (empty($this->sql_select)) {
@@ -473,6 +527,9 @@ class mysql
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
             $group_str = "GROUP BY $this->sql_groupby";
+            if (eregi(" WITH ROLLUP", $this->sql_groupby)) {
+            	$this->sql_orderby = null;
+            } // if
         } else {
             $group_str = NULL;
         } // if
@@ -491,9 +548,15 @@ class mysql
             $sort_str = '';
         } // if
 
+        if ($rows_per_page > 0) {
+            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+        } else {
+            $limit_str = '';
+        } // if
+
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $this->numrows = mysqli_num_rows($result);
 
@@ -502,18 +565,18 @@ class mysql
 
         return $result;
 
-    } // getData_batch
+    } // getData_serial
 
     // ****************************************************************************
     function getEnum ($dbname, $tablename, $fieldname)
     // get the contents of an ENUM field and return it as an array.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // obtain 'enum' values for the specified column
         $this->query = "SHOW COLUMNS FROM $tablename LIKE '$fieldname'";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $query_data = mysqli_fetch_array($result);
 
@@ -549,7 +612,11 @@ class mysql
     function getErrorNo ()
     // return number of last error.
     {
-        $errno = mysqli_errno($this->dbconnect);
+        if (empty($this->dbconnect)) {
+            $errno = null;
+        } else {
+        	$errno = mysqli_errno($this->dbconnect);
+        } // if
 
         return $errno;
 
@@ -584,7 +651,7 @@ class mysql
     {
         if ($this->dbconnect) {
         	$string  = 'Host Info: ' .$this->host_info ;
-            $string .= ', Server Version: ' .$this->server_info;
+            $string .= '<br>Server Version: ' .$this->server_info;
             $string .= '<br>Client Info: ' .$this->client_info;
             $string .= ', Client Encoding: ' .$this->charset;
         } else {
@@ -636,7 +703,7 @@ class mysql
     // insert a record using the contents of $fieldarray.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -676,8 +743,12 @@ class mysql
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
-			    $auto_increment = $pkey;				// save name of field
-				unset($fieldarray[$auto_increment]);	// remove from data array
+			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
+			    	// value has been supplied manually, so do not auto-generate
+			    } else {
+    			    $auto_increment = $pkey;				// save name of field
+    				unset($fieldarray[$auto_increment]);	// remove from data array
+			    } // if
 			} // if
 		} // foreach
 
@@ -732,7 +803,7 @@ class mysql
         // remove trailing comma
         $this->query = rtrim($this->query, ', ');
 
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query);
@@ -766,17 +837,17 @@ class mysql
         } // if
 
         $this->query = 'ROLLBACK';
-        //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         if (!$result = mysqli_query($this->dbconnect, $this->query)) {
             if (mysqli_errno($this->dbconnect) == 1196) {
                 // Warning: Some non-transactional changed tables couldn't be rolled back
             } else {
-                trigger_error('SQL', E_USER_ERROR);
+                trigger_error($this, E_USER_ERROR);
             } // if
         } // if
 
         $this->query = 'UNLOCK TABLES';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES');
@@ -878,10 +949,10 @@ class mysql
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'SET AUTOCOMMIT=0';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'START TRANSACTION (SET AUTOCOMMIT=0)');
@@ -900,7 +971,7 @@ class mysql
     // update a record using the contents of $fieldarray.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
@@ -983,12 +1054,16 @@ class mysql
 
         // build update string from non-pkey fields
         $update = '';
+        $pattern = '/(integer|decimal|numeric|float|real)/i';
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
                 if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
+                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                    // do not enclose numbers in quotes (this also allows 'value=value+1'
+                    $update .= "$item=$value,";
                 } else {
                     // change to the new value
                     $update .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
@@ -1001,7 +1076,7 @@ class mysql
 
         // append WHERE clause to SQL query
         $this->query = "UPDATE $tablename SET $update WHERE $where";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
         $this->numrows = mysqli_affected_rows($this->dbconnect);
@@ -1025,10 +1100,10 @@ class mysql
     // update a selection of records in a single operation.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_affected_rows($this->dbconnect);
 
@@ -1134,9 +1209,11 @@ class mysql
                                         'type' => 'blob',
                                         'size' => 4294967295);
         $colspecs['enum']       = array('name' => 'ENUM',
-                                        'type' => 'enum');
+                                        'type' => 'enum',
+                                        'size' => 255);
         $colspecs['set']        = array('name' => 'SET',
-                                        'type' => 'array');
+                                        'type' => 'array',
+                                        'size' => 255);
         $colspecs['varbinary']  = array('name' => 'VARBINARY',
                                         'type' => 'blob',
                                         'size' => 255);
@@ -1150,15 +1227,15 @@ class mysql
     // obtain a list of column names within the selected database table.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $out_array = array();
 
         $dbname = $GLOBALS['dbprefix'] .$dbname;
 
         // build the query string and run it
-        $this->query = 'SHOW COLUMNS FROM "' .$tablename .'" FROM ' .$dbname;
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $this->query = 'SHOW COLUMNS FROM "' .$tablename .'" FROM "' .$dbname .'"';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
 
@@ -1273,11 +1350,13 @@ class mysql
                             // look for 'unsigned' and 'zerofill' after the type
                             if (eregi('unsigned', $value, $regs)) {
                                 $value = str_replace($regs[0], '', $value);
+                                $value = trim($value);
                                 $columnarray['col_unsigned'] = TRUE;
                                 $columnarray['col_minvalue'] = 0;
                             } // if
                             if (eregi('zerofill', $value, $regs)) {
                                 $value = str_replace($regs[0], '', $value);
+                                $value = trim($value);
                                 $columnarray['col_zerofill_bwz'] = 'ZF';
                             } // if
                             // no size information, so output 'as-is'
@@ -1322,6 +1401,11 @@ class mysql
                 		$columnarray['col_' .strtolower($item)] = $value;
                 } // switch
             } // foreach
+            if (!isset($columnarray['col_maxsize'])) {
+            	if (isset($colspecs[$columnarray['col_type']]['size'])) {
+            		$columnarray['col_maxsize'] = $colspecs[$columnarray['col_type']]['size'];
+            	} // if
+            } // if
             $out_array[] = $columnarray;
         } // while
 
@@ -1336,13 +1420,13 @@ class mysql
     // obtain a list of existing database names.
     {
         // connect to database
-        $this->connect() or trigger_error('SQL', E_USER_ERROR);
+        $this->connect() or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
         $this->query = 'SHOW DATABASES';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
 
@@ -1365,15 +1449,15 @@ class mysql
     // obtain a list of tables within the specified database.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
         $dbname = $GLOBALS['dbprefix'] .$dbname;
 
         // build the query string and run it
-        $this->query = 'SHOW TABLES FROM ' .$dbname;
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $this->query = 'SHOW TABLES FROM "' .$dbname .'"';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
 
@@ -1396,13 +1480,13 @@ class mysql
     // obtain a list of keys (indexes) for this table.
     {
         // connect to database
-        $this->connect($dbname) or trigger_error('SQL', E_USER_ERROR);
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
 
         // build the query string and run it
         $this->query = 'SHOW INDEX FROM "' .$tablename .'"';
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
 
@@ -1412,10 +1496,11 @@ class mysql
         // convert result set into a simple indexed array for each row
         while ($row = mysqli_fetch_assoc($result)) {
             $keyarray = array();
+            $row = array_change_key_case($row, CASE_LOWER);
             foreach ($row as $item => $value) {
                 $item = strtolower($item);
                 if ($item == 'column_name') {
-                    $keyarray['column_id'] = $value;
+                    $keyarray['column_id'] = strtolower($value);
                 } elseif ($item == 'non_unique') {
                     if ($value == 0) {
                         $keyarray['is_unique'] = TRUE;
@@ -1451,9 +1536,9 @@ class mysql
 
         if (!empty($string)) {
             $this->query = 'SET AUTOCOMMIT=0';
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $this->query = "LOCK TABLES $string";
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error('SQL', E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery (null, null, $this->query);
             $this->query = '';

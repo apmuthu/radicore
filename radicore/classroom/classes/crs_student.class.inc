@@ -57,11 +57,12 @@ class crs_student extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get contents of foreign table CLASS and add to lookup array
-        require_once 'classes/crs_class.class.inc';
-        $object =& singleton::getInstance('crs_class');
-        $data   = $object->getValRep('class_id');
-        $this->lookup_data['class_id'] = $data;
+        if (!array_key_exists('class_id', $this->lookup_data)) {
+            // get contents of foreign table CLASS and add to lookup array
+            $object =& singleton::getInstance('crs_class');
+            $data   = $object->getValRep('class_id');
+            $this->lookup_data['class_id'] = $data;
+        } // if
 
         return $fieldarray;
 
@@ -141,7 +142,7 @@ class crs_student extends Default_Table
             if (isset($rowdata[0]['class_id'])) {
                 // 'Student is assigned to a class - cannot assign individual lessons'
                 $this->errors[] = getLanguageText('e0014');
-                $GLOBALS['remove_buttons'][] = 'crs_student_lesson(add)a';
+                $GLOBALS['nav_buttons_omit'][] = 'crs_student_lesson(add)a';
             } // if
         } // if
 

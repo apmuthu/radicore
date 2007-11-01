@@ -11,6 +11,34 @@ class dict_related_column_s01 extends dict_related_column
     // this subclass is used to import existing column names for a selected table
     // ****************************************************************************
 
+    // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $this->fieldspec['parent_field'] = array('type' => 'string', 'nondb' => 'y');
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_getPkeyNames ($pkey_array, $task_id, $pattern_id)
+    // return the list of primary key fields in this table before the selection string
+    // is constructed and passed to another form.
+    // $pkey_array contains the current list of primary key fields.
+    // $task_id identifies the task to which the primary key(s) will be passed.
+    // $pattern_id identifies the task's pattern.
+    {
+        $pkey_array[] = 'parent_field';       // append to array
+        //$pkey_array = array('whatever');  // replace array
+
+        return $pkey_array;
+
+    } // _cm_getPkeyNames
+
+    // ****************************************************************************
     function _cm_pre_updateMultiple ($fieldarray)
     // perform custom processing before multiple database records are updated.
     {

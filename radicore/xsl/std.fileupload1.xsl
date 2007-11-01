@@ -23,11 +23,9 @@
 <xsl:include href="std.data_field.xsl"/>
 <xsl:include href="std.head.xsl"/>
 
-<!-- get the name of the MAIN table -->
-<xsl:variable name="main" select="//structure/main/@id"/>
 <xsl:variable name="numrows">1</xsl:variable>
 
-<xsl:variable name="max_file_size" select="//file/maxfilesize"/>
+<xsl:variable name="max_file_size" select="/root/file/maxfilesize"/>
 
 <xsl:template match="/">
 
@@ -70,9 +68,9 @@
               <!-- create standard action buttons -->
               <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
 
-              <p><xsl:value-of select="//file/msg1" /> <input name="userfile" type="file" /></p>
-              <p><xsl:value-of select="//file/msg2" /></p>
-              <p><xsl:value-of select="//file/msg3" /></p>
+              <p><xsl:value-of select="/root/file/msg1" /> <input name="userfile" type="file" /></p>
+              <p><xsl:value-of select="/root/file/msg2" /></p>
+              <p><xsl:value-of select="/root/file/msg3" /></p>
 
             </div>
           </div>
@@ -104,11 +102,6 @@
 
   </body>
   </html>
-
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
 
 </xsl:template>
 

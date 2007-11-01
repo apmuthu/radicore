@@ -177,6 +177,18 @@ $array['Quick Setup']                   = 'Quick Setup';
 $array['Resequence']                    = 'Resequence';
 $array['Update Status']                 = 'Update Status';
 
+// field names for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+
 // field labels for subsystem SURVEY
 $array['Address 1']                     = 'Address 1';
 $array['Address 2']                     = 'Address 2';

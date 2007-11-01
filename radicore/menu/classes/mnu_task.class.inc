@@ -6,6 +6,8 @@
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
 {
+    var $count;         // record count for PDF output
+
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
@@ -212,6 +214,13 @@ class mnu_task extends Default_Table
         	$fieldarray['new_task_id'] = str_replace(' ', '_', trim($fieldarray['new_task_id']));
         } // if
 
+        if (is_True($fieldarray['keep_data'])) {
+        	if (!eregi('list1|popup1|tree1', $fieldarray['pattern_id'])) {
+        	    // 'This setting is not valid for this pattern'
+        		$this->errors['keep_data'] = getLanguageText('e0055');
+        	} // if
+        } // if
+
         return $fieldarray;
 
     } // _cm_commonValidation
@@ -222,22 +231,25 @@ class mnu_task extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for task_type and put into LOOKUP_DATA
-        $array = $this->getValRep('task_type');
-        $this->lookup_data['task_type'] = $array;
+        if (!array_key_exists('task_type', $this->lookup_data)) {
+            // get array for task_type and put into LOOKUP_DATA
+            $array = $this->getValRep('task_type');
+            $this->lookup_data['task_type'] = $array;
+        } // if
 
-        // get contents of foreign table PATTERN and add as a LOOKUP list
-        //require_once 'classes/mnu_pattern.class.inc';
-        $dbobject =& singleton::getInstance('mnu_pattern');
-        $array = $dbobject->getValRep('pattern_id');
-        $this->lookup_data['pattern_id'] = $array;
+        if (!array_key_exists('pattern_id', $this->lookup_data)) {
+            // get contents of foreign table PATTERN and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('mnu_pattern');
+            $array = $dbobject->getValRep('pattern_id');
+            $this->lookup_data['pattern_id'] = $array;
+        } // if
 
-        // get contents of foreign table SUBSYSTEM and add as a LOOKUP list
-        //require_once 'classes/mnu_subsystem.class.inc';
-        $dbobject =& singleton::getInstance('mnu_subsystem');
-        $array = $dbobject->getValRep('subsys_id');
-        $this->lookup_data['subsys_id'] = $array;
+        if (!array_key_exists('subsys_id', $this->lookup_data)) {
+            // get contents of foreign table SUBSYSTEM and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('mnu_subsystem');
+            $array = $dbobject->getValRep('subsys_id');
+            $this->lookup_data['subsys_id'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -276,6 +288,19 @@ class mnu_task extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['task_id'] = 'Total count:';
+        $array['task_desc'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
 
     // ****************************************************************************
     function _cm_output_multi ($name, $fieldarray)
@@ -354,11 +379,23 @@ class mnu_task extends Default_Table
     } // _cm_output_multi
 
     // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
+
+    // ****************************************************************************
     function _cm_post_getData ($rowdata, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
         $entry = getEntryPoint($this);
         if (strtolower($entry) != 'getdata') {
             // not initiated via the 'getdata' method, so this section is not required
@@ -412,6 +449,16 @@ class mnu_task extends Default_Table
             // menus always have these values
             $fieldarray['pattern_id'] = 'MENU';
             $fieldarray['script_id']  = 'menu.php';
+        } // if
+
+        if (strlen($fieldarray['task_desc']) > $this->fieldspec['task_desc']['size']) {
+            // automatically truncate data (may come from data dictionary)
+        	$fieldarray['task_desc'] = substr($fieldarray['task_desc'], 0, $this->fieldspec['task_desc']['size']);
+        } // if
+
+        if (strlen($fieldarray['button_text']) > $this->fieldspec['button_text']['size']) {
+            // automatically truncate data (may come from data dictionary)
+        	$fieldarray['button_text'] = substr($fieldarray['button_text'], 0, $this->fieldspec['button_text']['size']);
         } // if
 
         return $fieldarray;

@@ -16,11 +16,19 @@ $structure['title'][] = array('image' => 'images/radicore.jpg',
                               'imagewidth' => 84,
                               'imageheight' => 45);
 
-$structure['title'][] = array('text' => "Radicore Software Ltd\nCode Castle\nWebtown\nFrameworkshire\nEngland, AA1 1AA",
+$structure['title'][] = array('text' => "%%company_name",
                               'width' => 60,
                               'style' => 'address2',
                               'align' => 'left',
                               'marginleft' => 34.5);
+
+$structure['title'][] = array('text' => "%%company_address",
+                              'width' => 60,
+                              'style' => 'address',
+                              'align' => 'left',
+                              'marginleft' => 34.5,
+                              'x' => 95.5,
+                              'y' => 5);
 
 $structure['title'][] = array('text' => "Invoice",
                               'width' => 30,
@@ -183,6 +191,27 @@ $structure['title'][] = array('text' => '%%cust_contact',
                               'border' => 'y',
                               'newline' => 'y');
 
+// sample barcode
+$structure['title'][] = array('text' => 'Barcode->',
+                              'width' => 20,
+                              'height' => 8,
+                              'style' => 'textaligncenter',
+                              'y_relative' => 1,
+                              'border' => 'y');
+
+$structure['title'][] = array('barcode' => '%%barcode',
+                              'barcode_style' => 'barcode1',
+                              'width' => 80,
+                              'height' => 25,
+                              'border' => 'y');
+
+$structure['title'][] = array('text' => '<-Barcode',
+                              'width' => 20,
+                              'height' => 8,
+                              'style' => 'textaligncenter',
+                              'border' => 'y',
+                              'newline' => 'y');
+
 // start second heading line
 $structure['title'][] = array('text' => 'QUANTITY',
                               'width' => 20,
@@ -256,15 +285,23 @@ $structure['multi3']['fields'][3][] = array('label' => 'Thank you for your order
 $structure['multi3']['fields'][3][] = array('label' => 'TOTAL    ', 'width' => 35, 'style' => 'total1', 'align' => 'right');
 $structure['multi3']['fields'][3][] = array('field' => 'inv_total', 'width' => 30, 'style' => 'total2');
 
+// identify output for 4th additional zone (2 lines)
+//$structure['multi4']['fields'][1][] = array('label' => 'Phone #', 'width' => 40, 'align' => 'center', 'height' => 8, 'y_relative' => 1);
+//$structure['multi4']['fields'][1][] = array('label' => 'Fax #', 'width' => 40, 'align' => 'center', 'height' => 8);
+//$structure['multi4']['fields'][1][] = array('barcode' => 'barcode', 'barcode_style' => 'barcode1', 'width' => 80, 'height' => 25);
+//$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222222', 'width' => 40, 'align' => 'center', 'height' => 8);
+//$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223', 'width' => 40, 'align' => 'center', 'height' => 8);
+
 $structure['multi4']['fields'][1][] = array('label' => 'Phone #', 'width' => 40, 'align' => 'center', 'height' => 8, 'y_relative' => 1);
+$structure['multi4']['fields'][1][] = array('barcode' => 'barcode', 'barcode_style' => 'barcode1', 'width' => 80, 'height' => 25);
 $structure['multi4']['fields'][1][] = array('label' => 'Fax #', 'width' => 40, 'align' => 'center', 'height' => 8);
 $structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222222', 'width' => 40, 'align' => 'center', 'height' => 8);
-$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223', 'width' => 40, 'align' => 'center', 'height' => 8);
+$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223', 'width' => 40, 'align' => 'center', 'height' => 8, 'marginleft' => 80);
 
 // define contents of page footer
 //$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
 //$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
-$structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
+$structure['foot2'][] = array('text' => '%%company_name', 'align' => 'center');
 
 ?>

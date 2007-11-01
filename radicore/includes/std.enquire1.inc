@@ -19,6 +19,15 @@ $mode = 'read';
 // load session variables
 initSession();
 
+if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+    $new_selection = true;
+} else{
+    $new_selection = false;
+} // if
+
 // look for a button being pressed
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -52,21 +61,22 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('main', $order_by, $dbobject, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
         $dbobject->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbobject->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbobject->setOrderBySeq($orderby_seq);
         } // if
     } // if
+    // perform any initialisation
+    $where = $dbobject->initialise($where);
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
+if (isset($scrolling)) {
+    if ($new_selection === true) {
+    	// selection has changed, so use new value in $where
+    	$dbobject->setPageNo(1);
+    } else {
         // retrieve values from scrolling array
         $where = $scrolling[$dbobject->getClassName()]['where'];
         $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
@@ -95,6 +105,9 @@ if ($dbobject->getNumRows() < 1) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
 
+// get any extra data and merge with $fieldarray
+$fieldarray = $dbobject->getExtraData($fieldarray);
+
 // set variables to be included in XML output
 $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
 $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
@@ -106,9 +119,6 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
-// get any extra data and merge with $fieldarray
-$fieldarray = $dbobject->getExtraData($fieldarray);
-
 // rebuild selection using primary key of retrieved row
 $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
 
@@ -117,7 +127,7 @@ if (!empty($_POST)) {
         $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+        $errors = childForm($_POST, array('dbobject' => $dbobject));
     } // endif
 } // if
 

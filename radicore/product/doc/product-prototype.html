@@ -1,0 +1,960 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+<title>Prototype Product Application</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="author" lang="EN" content="Tony Marston">
+	<meta name="description" content="Prototype Product Application">
+	<meta name="keywords" content="PHP, radicore, Prototype Product Application, inventory">
+  <link rel="stylesheet" type="text/css" href="document.css">
+  <STYLE type="text/css">
+	<!--
+    table { margin-top: 1em; }
+    td ul.compress { margin-top: 0; margin-bottom: 0; }
+	-->
+	</STYLE>
+</head>
+<body>
+
+<h1>Prototype Product Application</h1>
+
+<h2>By Tony Marston</h2>
+
+<p>29th June 2006<br>Amended 9th July 2006</p>
+
+<dl id="index">
+<dt><a href="#introduction">Introduction</a></dt>
+<dt><a href="#database.schema1">Database Schema - Product details</a></dt>
+<dt><a href="#product.definition">Product Definition</a></dt>
+<dt><a href="#product.category">Product Category</a></dt>
+<dt><a href="#product.id">Product Identification Codes</a></dt>
+<dt><a href="#product.features">Product Features</a></dt>
+<dt><a href="#unit.of.measure">Units of Measure</a></dt>
+<dt><a href="#product.search">Product Search</a></dt>
+<dt><a href="#price.components">Price Components</a></dt>
+<dt><a href="#database.schema2">Database Schema - Inventory</a></dt>
+<dt><a href="#inventory.item">Inventory Item</a></dt>
+<dt><a href="#inventory.item.location">Inventory Item Location</a></dt>
+<dt><a href="#inventory.item.status">Inventory Item Status</a></dt>
+<dt><a href="#inventory.item.variance">Inventory Item Variance</a></dt>
+<dt><a href="#lot.tracking">Lot Tracking</a></dt>
+<dt><a href="#history">Amendment History</a></dt>
+</dl>
+
+<h2><a name="introduction">Introduction</a></h2>
+
+<p>The download of the <a href="http://www.radicore.org">Radicore</a> framework includes several prototype applications which demonstrate the kind of application which the framework is designed to support. One of these is the PRODUCT application, and the purpose of this article is to provide a description of that application so that you can see what it does as well as how it does it. This may prove useful in the event that you should ever want to build your own version of the prototype.</p>
+
+<h2><a name="database.schema1">Database Schema - Product details</a></h2>
+
+<p>This is the database schema used by this application showing all the entities (tables) and the relationships between them.</p>
+
+<p>This schema is based on the one documented in <a href="http://www.amazon.com/gp/product/0471380237/qid=1151491622">The Data Model Resource Book</a> by Len Silverston.</p>
+
+<div class="center">
+<p><a name="figure1">Figure 1</a> - Database Schema (Product details)</p>
+<map NAME="dbschema1">
+<AREA HREF="#good_identification.table" ALT="good_identification table" COORDS="192,30,292,80">
+<AREA HREF="#good_identity_type.table" ALT="good_identity_type table" COORDS="42,30,142,80">
+<AREA HREF="#price_component.table" ALT="price_component table" COORDS="192,110,292,160">
+<AREA HREF="#product.table" ALT="product table" COORDS="344,30,444,80">
+<AREA HREF="#product_category.table" ALT="product_category table" COORDS="162,195,262,245">
+<AREA HREF="#product_feature.table" ALT="product_feature table" COORDS="20,281,120,331">
+<AREA HREF="#product_feature_category.table" ALT="product_feature_category table" COORDS="20,195,120,245">
+<AREA HREF="#prod_cat_class.table" ALT="prod_cat_class table" COORDS="303,281,403,331">
+<AREA HREF="#prod_cat_rollup.table" ALT="prod_cat_rollup table" COORDS="162,282,262,331">
+<AREA HREF="#prod_feature_applicability.table" ALT="prod_feature_applicability table" COORDS="192,361,292,410">
+<AREA HREF="#prod_feature_interaction.table" ALT="prod_feature_interaction table" COORDS="192,447,292,496">
+<AREA HREF="#unit_of_measure.table" ALT="unit_of_measure table" COORDS="495,30,595,80">
+<AREA HREF="#uom_category.table" ALT="uom_category table" COORDS="646,30,746,80">
+<AREA HREF="#uom_conversion.table" ALT="uom_conversion table" COORDS="495,110,595,160">
+</map>
+<img usemap="#dbschema1" src="product-prototype-001.png" alt="product-prototype-001 (3K)" height="497" width="746" border="0" />
+</div>
+
+<h2><a name="product.definition">Product Definition</a></h2>
+
+<p>The product database includes products which the organisation provides. These may be assembled or manufactured internally, or may be obtained from external suppliers. Some of the information may be independent of the supplier, such as the description, category and features of the product. Some of the information may depend on the supplier, such as availability and pricing.</p>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT" width="100%">
+<caption><a name="product.table">PRODUCT</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>product_name</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>product_subtype</td>
+  <td>
+  	<ul class="compress">
+		<li>Good</li>
+    <li>Service</li>
+		</ul>
+  </td>
+</tr>
+<tr>
+	<td>uom_id</td>
+  <td>This is a foreign key to the <a href="#unit_of_measure.table">UNIT_OF_MEASURE</a> table.</td>
+</tr>
+<tr>
+	<td>date_intro</td>
+  <td>This is the date the product was introduced.</td>
+</tr>
+<tr>
+	<td>end_date_sales</td>
+  <td>This is the date after which the product will no longer be sold.</td>
+</tr>
+<tr>
+	<td>end_date_support</td>
+  <td>This is the date after which the product will no longer be supported.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure2">Figure 2</a> - Product Definition</p>
+<img alt="product-prototype-002 (12K)" src="product-prototype-002.png" height="526" width="752" />
+</div>
+
+<h2><a name="product.category">Product Category</a></h2>
+
+<p>The classification of products is a key aspect of maintaining product information. Products are often classified in many ways - by product line, by model, by product grade, by industry segments, and by various other categories. Instead of giving each of these classifications a separate entity in the data model it is often a better idea to group them together in a single entity as this allows categories to be easily related as supertype and subtype. This allows the targeting of market interest in products based on several product categories, and also allows product pricing to be based on and related to many product categories.</p>
+
+<p>It is also possible for a product category to contain other product categories. For example, the categories "paper" and "pens" can be defined as sub-categories to "office supplies". It is also possible for any category to belong to more than one super-category. For example, "paper" is a sub-class of "office supplies" but may also be a sub-class of "computer supplies".</p>
+
+<p>It is possible to give a product more than one category. For example, diskettes are categorised both as office supplies and computer supplies. When performing various queries by category, such as sales reports, it would be possible for the same product's sales to appear under multiple categories. The mode has a <b>primary flag</b> to indicate which is the primary category for each product to avoid this situation.</p>
+
+<ul class="compress">
+<li>The <a href="#product_category.table">PRODUCT_CATEGORY</a> table holds all the product categories.</li>
+<li>The <a href="#prod_cat_rollup.table">PROD_CAT_ROLLUP</a> table shows where a product category is made up of other product categories in a recursive hierarchy.</li>
+<li>The <a href="#prod_cat_class.table">PROD_CAT_CLASS</a> table links a product category to a product.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT CATEGORY" width="100%">
+<caption><a name="product_category.table">PRODUCT_CATEGORY</a> table</caption>
+<col width="175px">
+<tr>
+	<td>prod_cat_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>prod_cat_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>product_usage</td>
+  <td>This is a way of categorising products by usage.</td>
+</tr>
+<tr>
+	<td>product_industry</td>
+  <td>This is a way of categorising products by industry.</td>
+</tr>
+<tr>
+	<td>product_materials</td>
+  <td>This is a way of categorising products by material.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure3">Figure 3</a> - Product Category</p>
+<img alt="product-prototype-003 (10K)" src="product-prototype-003.png" height="521" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PROD CAT ROLLUP" width="100%">
+<caption><a name="prod_cat_rollup.table">PROD_CAT_ROLLUP</a> table</caption>
+<col width="175px">
+<tr>
+	<td>prod_cat_id_snr</td>
+  <td>This is the senior/parent entry in the hierarchy. It is a foreign key to the <a href="#product_category.table">PRODUCT_CATEGORY</a> table.</td>
+</tr>
+<tr>
+	<td>prod_cat_id_jnr</td>
+  <td>This is the junior/child entry in the hierarchy. It is a foreign key to the <a href="#product_category.table">PRODUCT_CATEGORY</a> table.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure4">Figure 4</a> - Product Category Rollup</p>
+<img alt="product-prototype-004 (8K)" src="product-prototype-004.png" height="355" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PROD CAT CLASS" width="100%">
+<caption><a name="prod_cat_class.table">PROD_CAT_CLASS</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>prod_cat_id</td>
+  <td>This is a foreign key to the <a href="#product_category.table">PRODUCT_CATEGORY</a> table.</td>
+</tr>
+<tr>
+	<td>seq_no</td>
+  <td>This is a system generated number which makes the primary key unique.</td>
+</tr>
+<tr>
+	<td>primary_flag</td>
+  <td>Used to show that this is the primary category category for reporting purposes.</td>
+</tr>
+<tr>
+	<td>start_date</td>
+  <td>This is the date on which this entry starts.</td>
+</tr>
+<tr>
+	<td>end_date</td>
+  <td>This is the date on which this entry ends.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure5">Figure 5</a> - Product Category Classification</p>
+<img alt="product-prototype-005 (9K)" src="product-prototype-005.png" height="352" width="752" />
+</div>
+
+<h2><a name="product.id">Product Identification Codes</a></h2>
+
+<p>Goods may have various ids that are used as a standard means of identifying them. The data model must therefore allow each product to have any number of different identity codes.</p>
+
+<ul class="compress">
+<li>The <a href="#good_identity_type.table">GOOD_IDENTITY_TYPE</a> table holds the various identity types.</li>
+<li>The <a href="#good_identification.table">GOOD_IDENTIFICATION</a> table holds the various identity values for each product.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="GOOD IDENTITY TYPE" width="100%">
+<caption><a name="good_identity_type.table">GOOD_IDENTITY_TYPE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>identity_type_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>identity_type_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure6">Figure 6</a> - Product Identity Types</p>
+<img alt="product-prototype-006 (8K)" src="product-prototype-006.png" height="385" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="GOOD IDENTIFICATION" width="100%">
+<caption><a name="good_identification.table">GOOD_IDENTIFICATION</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>identity_type_id</td>
+  <td>This is a foreign key to the <a href="#good_identity_type.table">GOOD_IDENTITY_TYPE</a> table.</td>
+</tr>
+<tr>
+	<td>id_value</td>
+  <td>This is the value for this combination of product and identity type.</td>
+</tr>
+</table>
+
+<p>Unique keys are:</p>
+<ul class="compress">
+<li>PRODUCT_ID and IDENTITY_TYPE_ID</li>
+<li>IDENTITY_TYPE_ID and ID_VALUE</li>
+</ul>
+
+<div class="center">
+<p><a name="figure7">Figure 7</a> - Product Identification</p>
+<img alt="product-prototype-007 (8K)" src="product-prototype-007.png" height="355" width="752" />
+</div>
+
+<h2><a name="product.features">Product Features</a></h2>
+
+<p>Products may have features that could also be called characteristics, options, variations or modifiers, allowing either customisation of a product or describing the characteristics of a product. These features and options are combined into a single table as what might be a feature to one product could be an option on another. Also, the same product variation may be part of the product one day but later in time be considered as an optional feature.</p>
+
+<p>The data model must therefore be capable of holding details of features that may be required as part of the product, may come standard with the product (meaning that they may be de-selected), or may be selected as an option. It should also be possible to define certain combinations of features as either mutually exclusive or mandatory.</p>
+
+<ul class="compress">
+<li>The <a href="#product_feature_category.table">PRODUCT_FEATURE_CATEGORY</a> table holds all the categories of product feature.</li>
+<li>The <a href="#product_feature.table">PRODUCT_FEATURE</a> table holds all the product features.</li>
+<li>The <a href="#prod_feature_applicability.table">PROD_FEATURE_APPLICABILITY</a> table shows which features apply to which products.</li>
+<li>The <a href="#prod_feature_interaction.table">PROD_FEATURE_INTERACTION</a> table shows how one feature interacts with another.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT FEATURE CATEGORY" width="100%">
+<caption><a name="product_feature_category.table">PRODUCT_FEATURE_CATEGORY</a> table</caption>
+<col width="175px">
+<tr>
+	<td>prod_feature_cat_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>prod_feature_cat_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>measurement_reqd</td>
+  <td>This identifies if this type of feature requires a measurement.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure8">Figure 8</a> - Product Feature Category</p>
+<img alt="product-prototype-008 (10K)" src="product-prototype-008.png" height="497" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT FEATURE" width="100%">
+<caption><a name="product_feature.table">PRODUCT_FEATURE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>prod_feature_id</td>
+  <td>This is a unique identifier which is generated by the system.</td>
+</tr>
+<tr>
+	<td>prod_feature_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>prod_feature_cat_id</td>
+  <td>This is a foreign key to the <a href="#product_feature_category.table">PRODUCT_FEATURE_CATEGORY</a> table.</td>
+</tr>
+<tr>
+	<td>uom_id</td>
+  <td>If this category of feature requires a measurement then this is a foreign key to the <a href="#unit_of_measure.table">UNIT_OF_MEASURE</a> table.</td>
+</tr>
+<tr>
+	<td>measurement</td>
+  <td>If this category of feature requires a measurement then this is the number of units.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure9">Figure 9</a> - Product Feature</p>
+<img alt="product-prototype-009 (9K)" src="product-prototype-009.png" height="481" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT FEATURE APPLICABILITY" width="100%">
+<caption><a name="prod_feature_applicability.table">PROD_FEATURE_APPLICABILITY</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>prod_feature_id</td>
+  <td>This is a foreign key to the <a href="#product_feature.table">PRODUCT_FEATURE</a> table.</td>
+</tr>
+<tr>
+	<td>seq_no</td>
+  <td>This is a system generated number which makes the primary key unique.</td>
+</tr>
+<tr>
+	<td>feature_type</td>
+  <td>
+  	<ul class="compress">
+		<li>Standard</li>
+    <li>Optional</li>
+    <li>Required</li>
+    <li>Selectable</li>
+		</ul>
+  </td>
+</tr>
+<tr>
+	<td>start_date</td>
+  <td>The date on which this entry starts.</td>
+</tr>
+<tr>
+	<td>end_date</td>
+  <td>The date on which this entry ends.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure10">Figure 10</a> - Product Feature Applicability</p>
+<img alt="product-prototype-010 (13K)" src="product-prototype-010.png" height="523" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRODUCT FEATURE INTERACTION" width="100%">
+<caption><a name="prod_feature_interaction.table">PROD_FEATURE_INTERACTION</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>prod_feature_id_snr</td>
+  <td>This is a foreign key to the <a href="#product_feature.table">PRODUCT_FEATURE</a> table.</td>
+</tr>
+<tr>
+	<td>prod_feature_id_jnr</td>
+  <td>This is a foreign key to the <a href="#product_feature.table">PRODUCT_FEATURE</a> table.</td>
+</tr>
+<tr>
+	<td>feature_interaction</td>
+  <td>
+  	<ul class="compress">
+		<li>Dependent - if you have one feature then you MUST have the other.</li>
+		<li>Incompatible - if you have one feature then you MUST NOT have the other.</li>
+		</ul>
+  </td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure11">Figure 11</a> - Product Feature Interaction</p>
+<img alt="product-prototype-011 (8K)" src="product-prototype-011.png" height="328" width="752" />
+</div>
+
+<h2><a name="unit.of.measure">Units of Measure</a></h2>
+
+<p>Although a unit of measure may be considered to be an example of another product feature, in actuality most organisations will conclude that if the same type of product is sold in different units of measure then it is a different product. For example, a ream of paper is quite different from a box which contains 5 reams, and would be regarded as a separate product. This is why UOM_ID is included in the <a href="#product.table">PRODUCT</a> table.</p>
+
+<p>It is important for organisations to be able to determine inventory for products that are identical except for the unit of measure. The <a href="#uom_conversion.table">UOM_CONVERSION</a> table provides the capability to use a common unit of measure to calculate how much inventory of a product the organisation has. For example, there may be several products for Henry #2 pencils that have different units of measure such as "each", "small box" and "large box". In many cases, organisations need to show total inventories, costs and sales for all of a product regardless of its unit of measure. By defining a common unit of measure such as "each", and including a conversion factor (for example, 12 for "small box" and 24 or "large box") it is possible to determine the total amount of Henry #2 pencils that are in inventory and how many have been sold.</p>
+
+<ul class="compress">
+<li>The <a href="#uom_category.table">UOM_CATEGORY</a> table holds all the categories of units of measure.</li>
+<li>The <a href="#unit_of_measure.table">UNIT_OF_MEASURE</a> table holds all the units of measure.</li>
+<li>The <a href="#uom_conversion.table">UOM_CONVERSION</a> table provides values which allow conversion from one type of unit to another.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="UOM CATEGORY" width="100%">
+<caption><a name="uom_category.table">UOM_CATEGORY</a> table</caption>
+<col width="175px">
+<tr>
+	<td>uom_cat_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>uom_cat_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure12">Figure 12</a> - Unit of Measure Category</p>
+<img alt="product-prototype-012 (9K)" src="product-prototype-012.png" height="457" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="UNIT_OF_MEASURE" width="100%">
+<caption><a name="unit_of_measure.table">UNIT_OF_MEASURE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>uom_id</td>
+  <td>This is the entry's identity.</td>
+</tr>
+<tr>
+	<td>uom_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>uom_cat_id</td>
+  <td>This is a foreign key to the <a href="#uom_category.table">UOM_CATEGORY</a> table.</td>
+</tr>
+<tr>
+	<td>uom_abbrev</td>
+  <td>This is an abbreviation of the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure13">Figure 13</a> - Unit of Measure</p>
+<img alt="product-prototype-013 (11K)" src="product-prototype-013.png" height="505" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="UOM CONVERSION" width="100%">
+<caption><a name="uom_conversion.table">UOM_CONVERSION</a> table</caption>
+<col width="175px">
+<tr>
+	<td>uom_id_from</td>
+  <td>This is the unit of measure being converted FROM.</td>
+</tr>
+<tr>
+	<td>uom_id_to</td>
+  <td>This is the unit of measure being converted TO.</td>
+</tr>
+<tr>
+	<td>conversion_factor</td>
+  <td>This is a multiplier. The FROM units are multiplied by this number to obtain the number of TO units.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure14">Figure 14</a> - Unit of Measure Conversion</p>
+<img alt="product-prototype-014 (8K)" src="product-prototype-014.png" height="379" width="752" />
+</div>
+
+<h2><a name="product.search">Product Search</a></h2>
+
+<p>Many different options can be applied to each product, so it should be possible to search for products via any of these options. This makes the search a little more complicated as it has to scan several database tables instead of just one, and in the case of <a href="#product_category.table">PRODUCT_CATEGORY</a> it will also have to navigate down the hierarchy of sub-categories.</p>
+
+<div class="center">
+<p><a name="figure15">Figure 15</a> - Product Search</p>
+<img alt="product-prototype-015 (8K)" src="product-prototype-015.png" height="482" width="752" />
+</div>
+
+<h2><a name="price.components">Price Components</a></h2>
+
+<p>Every organisation seems to have different mechanisms for pricing its products. Most organisations have several aspects to their product price - the base price, various discounts such as quantity breaks, surcharges such as freight and handling charges, and the manufacturer's recommended price.</p>
+
+<p>Each price component stores a <b>start_date</b> and <b>end_date</b> to indicate the dates for which the entry is valid. Each component also stores either a <b>price</b> or a <b>percentage</b> (such as for discounts), but not both.</p>
+
+<p>Each price component may be based on many variables or combinations of these variables. As well as <a href="#product.table">PRODUCT</a> and <a href="#product_feature.table">PRODUCT_FEATURE</a> there may be others such as:</p>
+
+<ul class="compress">
+<li><a href="#product_category.table">PRODUCT_CATEGORY</a> - e.g. to allow a discount of 2% on all paper goods during the month of March.</li>
+<li>GEOGRAPHIC BOUNDARY - e.g. for surcharges when delivering to an area outside the organisation's normal geographic boundary.</li>
+<li>PARTY TYPE - e.g. to allow discounts for certain types of purchaser, such as government departments, charities or minority-owned businesses.</li>
+<li>QUANTITY BREAK - e.g. to allow discounts based on the quantity ordered.</li>
+<li>ORDER VALUE - e.g. to allow discounts on orders above certain values.</li>
+<li>SALE TYPE - e.g. to allow a discount for purchasing over the internet.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="PRICE COMPONENT" width="100%">
+<caption><a name="price_component.table">PRICE_COMPONENT</a> table</caption>
+<col width="175px">
+<tr>
+	<td>price_component_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>prod_feature_id</td>
+  <td>This is a foreign key to the <a href="#product_feature.table">PRODUCT_FEATURE</a> table.</td>
+</tr>
+<tr>
+	<td>prod_cat_id</td>
+  <td>This is a foreign key to the <a href="#product_category.table">PRODUCT_CATEGORY</a> table.</td>
+</tr>
+<tr>
+	<td>start_date</td>
+  <td>The date on which this entry starts.</td>
+</tr>
+<tr>
+	<td>end_date</td>
+  <td>The date on which this entry ends.</td>
+</tr>
+<tr>
+	<td>price</td>
+  <td>A value expressed in local currency.</td>
+</tr>
+<tr>
+	<td>percent</td>
+  <td>A percentage of the base price.</td>
+</tr>
+<tr>
+	<td>price_type</td>
+  <td>
+  	<ul class="compress">
+		<li>Base Price</li>
+    <li>Discount</li>
+    <li>Surcharge</li>
+    <li>MRP</li>
+		</ul>
+  </td>
+</tr>
+<tr>
+	<td>price_frequency</td>
+  <td>
+  	<ul class="compress">
+		<li>One Time Charge - e.g. for buying the product.</li>
+    <li>Recurring Charge - e.g. an ongoing charge such as a monthly fee.</li>
+    <li>Utilisation Charge - e.g. for using the product.</li>
+    </ul>
+  </td>
+</tr>
+<tr>
+	<td>uom_id</td>
+  <td>This is a foreign key to the <a href="#unit_of_measure.table">UNIT_OF_MEASURE</a> table.</td>
+</tr>
+<tr>
+	<td>quantity</td>
+  <td>A number of units.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure16">Figure 16</a> - Price Components</p>
+<img alt="product-prototype-016 (10K)" src="product-prototype-016.png" height="380" width="752" />
+</div>
+
+<p>Price component details can be accessed from the following:</p>
+
+<ul class="compress">
+<li>Products</li>
+<li>Product Categories</li>
+<li>Product Features</li>
+</ul>
+
+<h2><a name="database.schema2">Database Schema - Inventory</a></h2>
+
+<p>The following database schema is based on the one documented in <a href="http://www.amazon.com/gp/product/0471380237/qid=1151491622">The Data Model Resource Book</a> by Len Silverston.</p>
+
+<div class="center">
+<p><a name="figure17">Figure 17</a> - Database Schema (Inventory)</p>
+<map NAME="dbschema2">
+<AREA HREF="#container.table" ALT="container table" COORDS="300,148,399,197">
+<AREA HREF="#container_type.table" ALT="container_type table" COORDS="439,148,538,197">
+<AREA HREF="#facility.table" ALT="facility table" COORDS="300,69,399,118">
+<AREA HREF="#facility_type.table" ALT="facility_type table" COORDS="439,69,538,118">
+<AREA HREF="#inventory_item.table" ALT="inventory_item table" COORDS="139,148,238,197">
+<AREA HREF="#inventory_item_status.table" ALT="inventory_item_status table" COORDS="16,227,115,276">
+<AREA HREF="#inventory_item_status_hist.table" ALT="inventory_item_status_hist table" COORDS="76,313,175,362">
+<AREA HREF="#inventory_item_variance.table" ALT="inventory_item_variance table" COORDS="197,313,296,362">
+<AREA HREF="#inventory_variance_reason.table" ALT="inventory_variance_reason table" COORDS="257,227,356,276">
+<AREA HREF="#lot.table" ALT="lot table" COORDS="16,69,115,118">
+<AREA HREF="#product.table" ALT="product table" COORDS="139,6,238,55">
+</map>
+<img usemap="#dbschema2" alt="product-prototype-017 (2K)" src="product-prototype-017.png" height="370" width="559" border="0"/>
+</div>
+
+<h2><a name="inventory.item">Inventory Item</a></h2>
+
+<p>While a GOOD represents a catalogued item or a standard product that can be purchased, an INVENTORY ITEM represents the physical occurrence of a good at a location. The good may be "Johnson fine grade 8&frac12; by 11 bond paper" while the inventory item is 100 reams of this good sitting in the central warehouse.</p>
+
+<p>The inventory item may be <b>serialised</b>, which means that each unit has its own serial number by which it can be tracked, or <b>non-serialised</b>, which means that a group of items has a on-hand quantity which may be split across several locations. Non-serialised items may also be tracked by their <a href="#lot.tracking">LOT</a> number.</p>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="INVENTORY_ITEM" width="100%">
+<caption><a name="inventory_item.table">INVENTORY_ITEM</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#product.table">PRODUCT</a> table.</td>
+</tr>
+<tr>
+	<td>inventory_item_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>inv_type</td>
+  <td>
+  	<ul class="compress">
+		<li>Serialised</li>
+    <li>Non-serialised</li>
+		</ul>
+  </td>
+</tr>
+<tr>
+	<td>serial_no</td>
+  <td>A unique value for the product, only required if the product is serialised.</td>
+</tr>
+<tr>
+	<td>qty_on_hand</td>
+  <td>Quantity on hand. This is always 1 for a serialised part.</td>
+</tr>
+<tr>
+	<td>total_qty</td>
+  <td>This is the total quantity before any variances are taken into account.
+  <p>QTY_ON_HAND = TOTAL_QTY + VARIANCE_QTY.</p></td>
+</tr>
+<tr>
+	<td>facility_id</td>
+  <td>This is a foreign key to the <a href="#facility.table">FACILITY</a> table.</td>
+</tr>
+<tr>
+	<td>container_id</td>
+  <td>This is a foreign key to the <a href="#container.table">CONTAINER</a> table.</td>
+</tr>
+<tr>
+	<td>lot_id</td>
+  <td>This is a foreign key to the <a href="#lot.table">LOT</a> table.</td>
+</tr>
+<tr>
+	<td>inv_item_status_id</td>
+  <td>If there are any entries on <a href="#inventory_item_status_hist.table">INV_ITEM_STATUS_HIST</a> then this is taken from the entry with the latest date. Defaults to '1' (OK) otherwise.</td>
+</tr>
+</table>
+
+<p>Unique keys are:</p>
+
+<ul class="compress">
+<li>PRODUCT_ID and INVENTORY_ITEM_ID</li> 
+<li>PRODUCT_ID and SERIAL_NO</li>
+</ul>
+
+<div class="center">
+<p><a name="figure18">Figure 18</a> - Inventory Items</p>
+<img alt="product-prototype-018 (10K)" src="product-prototype-018.png" height="410" width="752" />
+</div>
+
+<h2><a name="inventory.item.location">Inventory Item Location</a></h2>
+
+<p>Each inventory item may be tracked at a facility level, such as a warehouse, or it may be tracked at a more detailed level within a facility such as a container or a bin.</p>
+
+<ul class="compress">
+<li>The <a href="#facility_type.table">FACILITY_TYPE</a> table identifies all the different types of facility that may exist within an organisation.</li>
+<li>The <a href="#facility.table">FACILITY</a> table identifies all the organisation's facilities.</li>
+<li>The <a href="#container_type.table">CONTAINER_TYPE</a> table identifies all the different types of container that may exist within any of the organisation's facilities.</li>
+<li>The <a href="#container.table">CONTAINER</a> table identifies each container that exists within a facility.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="FACILITY_TYPE" width="100%">
+<caption><a name="facility_type.table">FACILITY_TYPE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>facility_type_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>facility_type_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure19">Figure 19</a> - Facility Types</p>
+<img alt="product-prototype-019 (7K)" src="product-prototype-019.png" height="337" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="FACILITY" width="100%">
+<caption><a name="facility.table">FACILITY</a> table</caption>
+<col width="175px">
+<tr>
+	<td>facility_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>facility_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>facility_type_id</td>
+  <td>This is a foreign key to the <a href="#facility_type.table">FACILITY_TYPE</a> table.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure20">Figure 20</a> - Facilities</p>
+<img alt="product-prototype-020 (8K)" src="product-prototype-020.png" height="313" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="CONTAINER_TYPE" width="100%">
+<caption><a name="container_type.table">CONTAINER_TYPE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>container_type_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>container_type_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure21">Figure 21</a> - Container Types</p>
+<img alt="product-prototype-021 (8K)" src="product-prototype-021.png" height="457" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="CONTAINER" width="100%">
+<caption><a name="container.table">CONTAINER</a> table</caption>
+<col width="175px">
+<tr>
+	<td>facility_id</td>
+  <td>This is a foreign key to the <a href="#facility.table">FACILITY</a> table.</td>
+</tr>
+<tr>
+	<td>container_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>container_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+<tr>
+	<td>container_type_id</td>
+  <td>This is a foreign key to the <a href="#container_type.table">CONTAINER_TYPE</a> table.  If a facility does not have individual containers then the dummy container "unspecified" should be used.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure22">Figure 22</a> - Containers</p>
+<img alt="product-prototype-022 (11K)" src="product-prototype-022.png" height="446" width="752" />
+</div>
+
+<h2><a name="inventory.item.status">Inventory Item Status</a></h2>
+
+<p>Each inventory item has a status which records its current condition, for example "OK", "damaged", "being repaired", et cetera. Inventory items which are <b>serialised</b> may have their status changed to different values over a period of time and these changes will be recorded in a separate <a href="#inventory_item_status_hist.table">HISTORY</a> table. Inventory items which are <b>non-serialised</b> should use <a href="#inventory.item.variance">inventory item variance</a> instead as this allows different quantities of the same item to be given different status values.</p>
+
+<ul class="compress">
+<li>The <a href="#inventory_item_status.table">INVENTORY_ITEM_STATUS</a> table holds the various status values.</li>
+<li>The <a href="#inventory_item_status_hist.table">INVENTORY_ITEM_STATUS_HIST</a> table holds the history of status changes for each serialised item.</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="INVENTORY_ITEM_STATUS" width="100%">
+<caption><a name="inventory_item_status.table">INVENTORY_ITEM_STATUS</a> table</caption>
+<col width="175px">
+<tr>
+	<td>inv_item_status_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>inv_item_status_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure23">Figure 23</a> - Inventory Item Status</p>
+<img alt="product-prototype-023 (8K)" src="product-prototype-023.png" height="385" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="INVENTORY_ITEM_STATUS_HIST" width="100%">
+<caption><a name="inventory_item_status_hist.table">INVENTORY_ITEM_STATUS_HIST</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#inventory_item.table">INVENTORY_ITEM</a> table.</td>
+</tr>
+<tr>
+	<td>inventory_item_id</td>
+  <td>This is a foreign key to the <a href="#inventory_item.table">INVENTORY_ITEM</a> table.</td>
+</tr>
+<tr>
+	<td>seq_no</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>inv_item_status_id</td>
+  <td>This is a foreign key to the <a href="#inventory_item_status.table">INVENTORY_ITEM_STATUS</a> table.</td>
+</tr>
+<tr>
+	<td>status_date</td>
+  <td>This is the date on which the status changed.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure24">Figure 24</a> - Inventory Item Status History</p>
+<img alt="product-prototype-024 (8K)" src="product-prototype-024.png" height="358" width="752" />
+</div>
+
+<h2><a name="inventory.item.variance">Inventory Item Variance</a></h2>
+
+<p>It is possible that the quantity of a item recorded in the system is different to the actual physical quantity. This difference, either a shrinkage or overage, may be discovered during a stock check or inspection. The <b>variance quantity</b> is the difference between the <b>on-hand quantity</b> of the item and the physical inventory at the time of the <b>inventory date</b>. As each variance record is created the item's <b>on-hand quantity</b> will automatically be adjusted.</p>
+
+<ul class="compress">
+<li>The <a href="#inventory_variance_reason.table">INVENTORY_VARIANCE_REASON</a> table holds all the possible reasons for a variance.</li>
+<li>The <a href="#inventory_item_variance.table">INVENTORY_ITEM_VARIANCE</a> table holds the variance history for each non-serialised item</li>
+</ul>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="INVENTORY_VARIANCE_REASON" width="100%">
+<caption><a name="inventory_variance_reason.table">INVENTORY_VARIANCE_REASON</a> table</caption>
+<col width="175px">
+<tr>
+	<td>inv_var_reason_id</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>inv_var_reason_desc</td>
+  <td>This is the entry's description.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure25">Figure 25</a> - Inventory Item Variance Reason</p>
+<img alt="product-prototype-025 (8K)" src="product-prototype-025.png" height="361" width="752" />
+</div>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="INVENTORY_ITEM_VARIANCE" width="100%">
+<caption><a name="inventory_item_variance.table">INVENTORY_ITEM_VARIANCE</a> table</caption>
+<col width="175px">
+<tr>
+	<td>product_id</td>
+  <td>This is a foreign key to the <a href="#inventory_item.table">INVENTORY_ITEM</a> table.</td>
+</tr>
+<tr>
+	<td>inventory_item_id</td>
+  <td>This is a foreign key to the <a href="#inventory_item.table">INVENTORY_ITEM</a> table.</td>
+</tr>
+<tr>
+	<td>seq_no</td>
+  <td>This is a unique key generated by the system.</td>
+</tr>
+<tr>
+	<td>inv_var_reason_id</td>
+  <td>This is a foreign key to the <a href="#inventory_variance_reason.table">INVENTORY_VARIANCE_REASON</a> table.</td>
+</tr>
+<tr>
+	<td>inventory_date</td>
+  <td>This is the date on which the variance was discovered.</td>
+</tr>
+<tr>
+	<td>variance_qty</td>
+  <td>This is the variance quantity.
+  <ul class="compress">
+  <li>Negative amounts will reduce the <b>on-hand quantity</b> for the item</li>
+  <li>Positive amounts will increase the <b>on-hand quantity</b> for the item</li>
+	</ul>
+  </td>
+</tr>
+<tr>
+	<td>comment</td>
+  <td>This is to allow non-standard explanations.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure26">Figure 26</a> - Inventory Item Variance</p>
+<img alt="product-prototype-026 (9K)" src="product-prototype-026.png" height="371" width="752" />
+</div>
+
+<h2><a name="lot.tracking">Lot Tracking</a></h2>
+
+<p>A concept found in some production-oriented industries is that of the LOT. A lot is simply a grouping of items of the same type generally used to track inventory items back to their source, and is often the result of a production run. Another source of lot information may be from the shipment from suppliers, which would determine the lot. This information is very important in the event that a recall of items is required.</p>
+
+<p>Inventory items can be separately identified by lots because each <a href="#inventory_item.table">INVENTORY ITEM</a> may be made up of one and only one <a href="#lot.table">LOT</a>. This implies that there may be more than one inventory item of the same item type at a specific location if there is more than one lot involved.</p>
+
+<table border="1" cellpadding="0" cellspacing="0" summary="LOT" width="100%">
+<caption><a name="lot.table">LOT</a> table</caption>
+<col width="175px">
+<tr>
+	<td>lot_id</td>
+  <td>This identifies the lot. It is entered manually, not generated by the system.</td>
+</tr>
+<tr>
+	<td>quantity</td>
+  <td>This is the quantity made available with this lot.</td>
+</tr>
+<tr>
+	<td>manuf_date</td>
+  <td>This is the date on which the lot was produced or manufactured.</td>
+</tr>
+<tr>
+	<td>expiry_date</td>
+  <td>This is the expiry date (if any) for the lot.</td>
+</tr>
+</table>
+
+<div class="center">
+<p><a name="figure27">Figure 27</a> - Lots</p>
+<img alt="product-prototype-027 (7K)" src="product-prototype-027.png" height="326" width="752" />
+</div>
+
+<hr>
+<p>&copy; <span class="sig">Tony Marston</span><br>
+29th June 2006<br>
+<br><a href="http://www.tonymarston.net">http://www.tonymarston.net</a>
+<br><a href="http://www.radicore.org">http://www.radicore.org</a></p>
+
+<p><a name="history">Amendment history:</a></p>
+<div style="margin-left: 1em; margin-right: 1em; ">
+<table>
+<colgroup valign="top" width="150">
+
+<tr>
+	<td><a name="2006-07-09">9th July 2006</a></td>
+	<td>Added tables and functions to deal with <a href="#database.schema2">product inventory</a>.</td>
+</tr>
+</table>
+</div>
+
+<p><img src="http://www.tonymarston.net/counter.php?noshow&amp;page=/php-mysql/product-prototype.html" alt="counter" border="0"></p>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-// file created on October 31, 2006, 10:02 am
+// file created on March 26, 2007, 5:02 pm
     
 // menu details for subsystem CRSS
 $array['Classes']                           = 'Classes';
@@ -12,6 +12,9 @@ $array['Subjects']                          = 'Subjects';
 $array['Teachers']                          = 'Teachers';
 
 // task details for subsystem CRSS
+$array['crs_class_lesson(add)a']            = 'Add Lesson(s) to selected Class';
+$array['crs_class_lesson(add)b']            = 'Add Class(es) to selected Lesson';
+$array['crs_class_lesson(del)']             = 'Delete from Class/Lesson cross-reference';
 $array['crs_class(add)']                    = 'Add Class';
 $array['crs_class(del)']                    = 'Delete Class';
 $array['crs_class(enq)']                    = 'Enquire Class';
@@ -20,9 +23,6 @@ $array['crs_class(list)a']                  = 'List Classes For a Lesson';
 $array['crs_class(popup)']                  = 'Choose Class';
 $array['crs_class(search)']                 = 'Search Class';
 $array['crs_class(upd)']                    = 'Update Class';
-$array['crs_class_lesson(add)a']            = 'Add Lesson(s) to selected Class';
-$array['crs_class_lesson(add)b']            = 'Add Class(es) to selected Lesson';
-$array['crs_class_lesson(del)']             = 'Delete from Class/Lesson cross-reference';
 $array['crs_confict(list)']                 = 'List Lesson Conflicts';
 $array['crs_confict(reset)']                = 'Reset Lesson Conflicts';
 $array['crs_conflict(search)']              = 'Search Conflict';
@@ -43,6 +43,14 @@ $array['crs_room(enq)']                     = 'Enquire Room';
 $array['crs_room(list)']                    = 'List Room';
 $array['crs_room(search)']                  = 'search Room';
 $array['crs_room(upd)']                     = 'Update Room';
+$array['crs_schedule_hdr(add)']             = 'Add Schedule Header';
+$array['crs_schedule_hdr(choose)']          = 'Choose Schedule Id';
+$array['crs_schedule_hdr(del)']             = 'Delete Schedule Header';
+$array['crs_schedule_hdr(enq)']             = 'Enquire Schedule Header';
+$array['crs_schedule_hdr(list)']            = 'List Schedule Header';
+$array['crs_schedule_hdr(popup)']           = 'Choose Schedule Id';
+$array['crs_schedule_hdr(search)']          = 'Search Schedule Header';
+$array['crs_schedule_hdr(upd)']             = 'Update Schedule Header';
 $array['crs_schedule(add)']                 = 'Add Schedule Event';
 $array['crs_schedule(del)']                 = 'Delete Schedule Event';
 $array['crs_schedule(enq)']                 = 'Read Schedule Event';
@@ -55,14 +63,9 @@ $array['crs_schedule(list)teacher']         = 'Show Schedule for Teacher';
 $array['crs_schedule(multi)']               = 'Maintain Schedule Events';
 $array['crs_schedule(search)']              = 'Search Schedule Event';
 $array['crs_schedule(upd)']                 = 'Update Schedule Event';
-$array['crs_schedule_hdr(add)']             = 'Add Schedule Header';
-$array['crs_schedule_hdr(choose)']          = 'Choose Schedule Id';
-$array['crs_schedule_hdr(del)']             = 'Delete Schedule Header';
-$array['crs_schedule_hdr(enq)']             = 'Enquire Schedule Header';
-$array['crs_schedule_hdr(list)']            = 'List Schedule Header';
-$array['crs_schedule_hdr(popup)']           = 'Choose Schedule Id';
-$array['crs_schedule_hdr(search)']          = 'Search Schedule Header';
-$array['crs_schedule_hdr(upd)']             = 'Update Schedule Header';
+$array['crs_student_lesson(add)a']          = 'Add Lesson(s) to selected Student';
+$array['crs_student_lesson(add)b']          = 'Add Students(s) to selected Lesson';
+$array['crs_student_lesson(del)']           = 'Delete from Student/Lesson cross-reference';
 $array['crs_student(add)']                  = 'Add Student';
 $array['crs_student(del)']                  = 'Delete Student';
 $array['crs_student(enq)']                  = 'Enquire Student';
@@ -72,9 +75,6 @@ $array['crs_student(list)b']                = 'List Students for a Class';
 $array['crs_student(popup)']                = 'Choose Student';
 $array['crs_student(search)']               = 'Search Student';
 $array['crs_student(upd)']                  = 'Update Student';
-$array['crs_student_lesson(add)a']          = 'Add Lesson(s) to selected Student';
-$array['crs_student_lesson(add)b']          = 'Add Students(s) to selected Lesson';
-$array['crs_student_lesson(del)']           = 'Delete from Student/Lesson cross-reference';
 $array['crs_subject(add)']                  = 'Add Subject';
 $array['crs_subject(del)']                  = 'Delete Subject';
 $array['crs_subject(enq)']                  = 'Enquire Subject';
@@ -105,5 +105,48 @@ $array['Search']                            = 'Search';
 $array['Show Schedule']                     = 'Show Schedule';
 $array['Students']                          = 'Students';
 $array['Update']                            = 'Update';
+
+// column details for subsystem CRSS
+$array['class_id']                          = 'class_id';
+$array['class_name']                        = 'class_name';
+$array['class_notes']                       = 'class_notes';
+$array['conflict_id']                       = 'conflict_id';
+$array['conflict_type']                     = 'conflict_type';
+$array['created_date']                      = 'created_date';
+$array['created_user']                      = 'created_user';
+$array['day_no']                            = 'day_no';
+$array['end_time']                          = 'end_time';
+$array['first_name']                        = 'first_name';
+$array['initials']                          = 'initials';
+$array['is_active']                         = 'is_active';
+$array['is_valid']                          = 'is_valid';
+$array['last_day_no']                       = 'last_day_no';
+$array['last_name']                         = 'last_name';
+$array['lesson_id']                         = 'lesson_id';
+$array['lesson_id1']                        = 'lesson_id1';
+$array['lesson_id2']                        = 'lesson_id2';
+$array['lesson_name']                       = 'lesson_name';
+$array['lesson_notes']                      = 'lesson_notes';
+$array['lesson_short_name']                 = 'lesson_short_name';
+$array['revised_date']                      = 'revised_date';
+$array['revised_user']                      = 'revised_user';
+$array['room_capacity']                     = 'room_capacity';
+$array['room_desc']                         = 'room_desc';
+$array['room_id']                           = 'room_id';
+$array['room_notes']                        = 'room_notes';
+$array['schedule_desc']                     = 'schedule_desc';
+$array['schedule_errors']                   = 'schedule_errors';
+$array['schedule_id']                       = 'schedule_id';
+$array['schedule_notes']                    = 'schedule_notes';
+$array['seq_no']                            = 'seq_no';
+$array['start_time']                        = 'start_time';
+$array['student_id']                        = 'student_id';
+$array['student_notes']                     = 'student_notes';
+$array['subject_id']                        = 'subject_id';
+$array['subject_name']                      = 'subject_name';
+$array['teacher_id']                        = 'teacher_id';
+$array['teacher_notes']                     = 'teacher_notes';
+$array['title']                             = 'title';
+$array['year']                              = 'year';
 
 // finished

@@ -64,8 +64,10 @@ class help_text extends Default_Table
     {
         //DebugBreak();
         if (isset($_POST['retrieve'])) {
-            unset($where_array['help_text']);
-            $where = array2where($where_array);
+            if (isset($where_array['help_text'])) {
+            	unset($where_array['help_text']);
+                $where = array2where($where_array);
+            } // if
             return $where;
         } // if
 

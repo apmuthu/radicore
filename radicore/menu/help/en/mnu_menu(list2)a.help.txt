@@ -1,0 +1,3 @@
+This will list parent records on the MENU table for a selected Task of type 'menu'.
+
+Refer to <a href="%root%/mnu_menu(list2)a.html">List Menu Parents</a> for full details.

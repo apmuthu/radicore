@@ -6,7 +6,7 @@
 require_once 'std.table.class.inc';
 class dict_relationship extends Default_Table
 {
-    // member variables
+    var $count;         // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -30,7 +30,6 @@ class dict_relationship extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         global $mode;
         if ($mode == 'search') {
             // in SEARCH mode set control to POPUP
@@ -119,12 +118,12 @@ class dict_relationship extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table DICT_DATABASE and add as a LOOKUP list
-        //require_once 'classes/dict_database.class.inc';
-        $dbobject =& singleton::getInstance('dict_database');
-        $array = $dbobject->getValRep('database_id');
-        $this->lookup_data['database_id'] = $array;
+        if (!array_key_exists('database_id', $this->lookup_data)) {
+            // get contents of foreign table DICT_DATABASE and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('dict_database');
+            $array = $dbobject->getValRep('database_id');
+            $this->lookup_data['database_id'] = $array;
+        } // if
 
         if (isset($fieldarray['database_id_snr']) AND !isset($fieldarray['database_id_jnr'])) {
             // current values are to be used for the SNR (parent)
@@ -136,16 +135,17 @@ class dict_relationship extends Default_Table
 
         if (isset($fieldarray['database_id_snr']) and isset($fieldarray['table_id_snr'])) {
             // get column details for snr table and add as a LOOKUP list
-            //require_once 'classes/dict_column.class.inc';
             $dbobject =& singleton::getInstance('dict_column');
             $array = $dbobject->getValRep('column_id', "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'");
             $array = array_merge(array('' => ' ', '#calc#' => 'CALCULATED'), $array);
             $this->lookup_data['parent_field'] = $array;
         } // if
 
-        // get array of relationship types
-        $array = $this->getValRep('rel_type');
-        $this->lookup_data['rel_type'] = $array;
+        if (!array_key_exists('rel_type', $this->lookup_data)) {
+            // get array of relationship types
+            $array = $this->getValRep('rel_type');
+            $this->lookup_data['rel_type'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -230,6 +230,19 @@ class dict_relationship extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['database_id_snr'] = 'Total count:';
+        $array['table_id_snr'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
     function _cm_output_multi ($name, $fieldarray)
     // get extra data to pass to PDF class.
     {
@@ -302,35 +315,32 @@ class dict_relationship extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
-        //DebugBreak();
         switch ($return_from) {
             // move returned value to the correct field
             case 'dict_table(popup)':
-                $fieldarray['database_id_jnr'] = $fieldarray['database_id'];
-                $fieldarray['table_id_jnr']    = $fieldarray['table_id'];
-                // remove redundant data
-                unset($fieldarray['database_id']);
-                unset($fieldarray['table_id']);
+//                $fieldarray['database_id_jnr'] = $select_array['database_id'];
+//                $fieldarray['table_id_jnr']    = $select_array['table_id'];
+//                unset($select_array['database_id']);
+//                unset($select_array['table_id']);
                 break;
             case 'dict_table(popup)snr':
-                $fieldarray['database_id_snr'] = $fieldarray['database_id'];
-                $fieldarray['table_id_snr']    = $fieldarray['table_id'];
-                // remove redundant data
-                unset($fieldarray['database_id']);
-                unset($fieldarray['table_id']);
+//                $fieldarray['database_id_snr'] = $select_array['database_id'];
+//                $fieldarray['table_id_snr']    = $select_array['table_id'];
+//                unset($select_array['database_id']);
+//                unset($select_array['table_id']);
                 break;
             case 'dict_column(popup)':
-                $fieldarray['parent_field'] = $fieldarray['column_id'];
-                // remove redundant data
-                unset($fieldarray['database_id']);
-                unset($fieldarray['table_id']);
-                unset($fieldarray['column_id']);
+//                $fieldarray['parent_field'] = $select_array['column_id'];
+//                unset($select_array['database_id']);
+//                unset($select_array['table_id']);
+//                unset($select_array['column_id']);
                 break;
             default:
                 ;
@@ -341,15 +351,26 @@ class dict_relationship extends Default_Table
     } // _cm_popupReturn
 
     // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
+
+    // ****************************************************************************
     function _cm_post_getData ($rows, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        // customisable code goes here
         if (is_string(key($rows))) {
         	if (isset($rows['database_id_snr']) and isset($rows['table_id_snr'])) {
                 // get column details for snr table and add as a LOOKUP list
-                //require_once 'classes/dict_column.class.inc';
                 $dbobject =& singleton::getInstance('dict_column');
                 $array = $dbobject->getValRep('column_id', "database_id='{$rows['database_id_snr']}' AND table_id='{$rows['table_id_snr']}'");
                 $array = array_merge(array('#calc#' => 'CALCULATED'), $array);

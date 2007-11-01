@@ -28,18 +28,19 @@ class crs_lesson extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get contents of foreign table TEACHER and add to lookup array
-        require_once 'classes/crs_teacher.class.inc';
-        $object =& singleton::getInstance('crs_teacher');
-        $data = $object->getValRep('teacher_id');
-        $this->lookup_data['teacher_id'] = $data;
+        if (!array_key_exists('teacher_id', $this->lookup_data)) {
+            // get contents of foreign table TEACHER and add to lookup array
+            $object =& singleton::getInstance('crs_teacher');
+            $data = $object->getValRep('teacher_id');
+            $this->lookup_data['teacher_id'] = $data;
+        } // if
 
-        // get contents of foreign table SUBJECT and add to lookup array
-        require_once 'classes/crs_subject.class.inc';
-        $object =& singleton::getInstance('crs_subject');
-        $data = $object->getValRep('subject_id');
-        $this->lookup_data['subject_id'] = $data;
+        if (!array_key_exists('subject_id', $this->lookup_data)) {
+            // get contents of foreign table SUBJECT and add to lookup array
+            $object =& singleton::getInstance('crs_subject');
+            $data = $object->getValRep('subject_id');
+            $this->lookup_data['subject_id'] = $data;
+        } // if
 
         return $fieldarray;
 

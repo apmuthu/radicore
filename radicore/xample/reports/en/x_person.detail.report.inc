@@ -24,7 +24,15 @@ $structure['columns'][] = array('width' => 40, 'align' => 'right');
 $structure['columns'][] = array('width' => 150, 'align' => 'left');
 
 // this example has more than one column to a line
-$structure['body']['fields'][1] = array('person_id' => 'Id');
+$structure['body']['fields'][1][] = array('label' => 'Id', 'width' => 40);
+$structure['body']['fields'][1][] = array('field' => 'person_id', 'width' => 30);
+$structure['body']['fields'][1][] = array('label' => 'Barcode', 'width' => 30);
+$structure['body']['fields'][1][] = array('barcode' => 'barcode', 'barcode_style' => 'barcode1', 'width' => 90, 'height' => 25);
+
+//$structure['body']['fields'][1][] = array('label' => 'Barcode', 'width' => 30);
+//$structure['body']['fields'][1][] = array('barcode' => 'barcode', 'barcode_style' => 'barcode1', 'width' => 90, 'height' => 25);
+//$structure['body']['fields'][1][] = array('label' => 'Id', 'width' => 40);
+//$structure['body']['fields'][1][] = array('field' => 'person_id', 'width' => 30);
 
 $structure['body']['fields'][2][] = array('label' => 'First Name', 'width' => 40);
 $structure['body']['fields'][2][] = array('field' => 'first_name', 'width' => 30);

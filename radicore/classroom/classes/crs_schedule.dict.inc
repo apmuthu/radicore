@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:40 pm
+    // file created on January 23, 2007, 6:53 pm
     
     // field specifications for table classroom.crs_schedule
     $fieldspec['schedule_id']               = array('type' => 'integer',
@@ -37,12 +37,12 @@
                                                     'optionlist' => 'day_no');
     
     $fieldspec['start_time']                = array('type' => 'time',
-                                                    'size' => 10,
+                                                    'size' => 5,
                                                     'required' => 'y',
                                                     'default' => '00:00:00');
     
     $fieldspec['end_time']                  = array('type' => 'time',
-                                                    'size' => 10,
+                                                    'size' => 5,
                                                     'required' => 'y',
                                                     'default' => '00:00:00');
     

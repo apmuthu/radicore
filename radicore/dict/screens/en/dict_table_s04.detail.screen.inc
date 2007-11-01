@@ -20,6 +20,7 @@ $structure['main']['fields'][] = array('pattern_desc' => 'Pattern', 'colspan' =>
 $structure['main']['fields'][] = array('task_id' => 'Task ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('script_id' => 'Script ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('tablename' => 'Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('database_id_outer' => 'Outer Database', 'colspan' => 3);
 $structure['main']['fields'][] = array('outer_table' => 'Outer Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('link_table' => 'Link Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('middle_table' => 'Middle Table Name', 'colspan' => 3);
@@ -28,6 +29,6 @@ $structure['main']['fields'][] = array('inner_table_alias' => 'Inner Table Alias
 $structure['main']['fields'][] = array('screen_file' => 'Screen Structure', 'colspan' => 3);
 $structure['main']['fields'][] = array('report_file' => 'Report Structure', 'colspan' => 3);
 $structure['main']['fields'][] = array('child_forms' => 'Child Forms', 'colspan' => 3);
-$structure['main']['fields'][] = array('popup_table' => 'Popup Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('popup_task_id' => 'Popup Task', 'colspan' => 3);
 
 ?>

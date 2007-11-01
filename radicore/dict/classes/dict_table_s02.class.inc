@@ -34,72 +34,79 @@ class dict_table_s02 extends dict_table
             $table_id    = $tabledata['table_id'];
             $subsys_dir  = $tabledata['subsys_dir'];
 
-			// write initial class file to disk
-            $this->_writeClassFile ($database_id, $table_id, $subsys_dir);
-
-            $this->text_out = '    // file created on ' .date('F j, Y, g:i a') ."\n    \n";
-
-            // process column details
-        	$columnobj->sql_orderby = 'column_seq';
-            $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id'");
-			if (empty($data)) {
-			    $data[0]['database_id'] = $database_id;
-				$data[0]['table_id']    = $table_id;
-			} // if
-			$this->_createFieldSpecs($data);
-
-            // process primary key details
-            $keyobj->sql_orderby = 'seq_in_index';
-            $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
-            $this->_createPKeySpecs($data);
-
-            // process candidate key details
-            $keyobj->sql_orderby = 'seq_in_index';
-            $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name<>'PRIMARY' AND is_unique='Y'");
-            $this->_createUKeySpecs($data);
-
-            // process child relationships
-            $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
-            $relobj->sql_from    = 'dict_relationship '
-                                 . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
-                                 . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
-            $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
-            $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
-            $this->_createChildRelations($data);
-
-            // process parent relationships
-            $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
-            $relobj->sql_from    = 'dict_relationship '
-                                 . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
-                                 . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
-            $relobj->sql_orderby = 'database_id_snr, table_id_snr';
-            $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
-            $this->_createParentRelations($data);
-
-            // audit logging
-            $this->text_out .= '    // determines if database updates are recorded in an audit log ' ."\n";
-            $entry = '    $this->audit_logging';
-            $entry = str_pad($entry, 44);
-            if (is_True($tabledata['audit_logging'])) {
-                $entry .= "= TRUE;\n";
+            $count = $columnobj->getCount("database_id='$database_id' AND table_id='$table_id'");
+            if ($count == 0) {
+                // "Nothing exported for $table_id as it has no columns"
+                $this->messages[] = getLanguageText('e0026', strtoupper($table_id));
             } else {
-                $entry .= "= FALSE;\n";
+
+    			// write initial class file to disk
+                $this->_writeClassFile ($database_id, $table_id, $subsys_dir);
+
+                $this->text_out = '    // file created on ' .date('F j, Y, g:i a') ."\n    \n";
+
+                // process column details
+            	$columnobj->sql_orderby = 'column_seq';
+                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id'");
+    			if (empty($data)) {
+    			    $data[0]['database_id'] = $database_id;
+    				$data[0]['table_id']    = $table_id;
+    			} // if
+    			$this->_createFieldSpecs($data);
+
+                // process primary key details
+                $keyobj->sql_orderby = 'seq_in_index';
+                $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
+                $this->_createPKeySpecs($data);
+
+                // process candidate key details
+                $keyobj->sql_orderby = 'seq_in_index';
+                $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name<>'PRIMARY' AND is_unique='Y'");
+                $this->_createUKeySpecs($data);
+
+                // process child relationships
+                $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
+                $relobj->sql_from    = 'dict_relationship '
+                                     . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
+                                     . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
+                $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
+                $this->_createChildRelations($data);
+
+                // process parent relationships
+                $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
+                $relobj->sql_from    = 'dict_relationship '
+                                     . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
+                                     . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                $relobj->sql_orderby = 'database_id_snr, table_id_snr';
+                $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
+                $this->_createParentRelations($data);
+
+                // audit logging
+                $this->text_out .= '    // determines if database updates are recorded in an audit log ' ."\n";
+                $entry = '    $this->audit_logging';
+                $entry = str_pad($entry, 44);
+                if (is_True($tabledata['audit_logging'])) {
+                    $entry .= "= TRUE;\n";
+                } else {
+                    $entry .= "= FALSE;\n";
+                } // if
+                $this->text_out .= $entry;
+                $this->text_out .= "    \n";
+
+                // default sort sequence
+                $this->text_out .= '    // default sort sequence ' ."\n";
+                $entry = '    $this->default_orderby';
+                $entry = str_pad($entry, 44);
+                $entry .= "= '".$tabledata['default_orderby'] ."';\n";
+                $this->text_out .= $entry;
+                $this->text_out .= "    \n";
+
+                $this->text_out .= '    // finished' ."\n";
+
+                // write completed dict file to disk
+                $this->_writeDictFile ($table_id, $subsys_dir);
             } // if
-            $this->text_out .= $entry;
-            $this->text_out .= "    \n";
-
-            // default sort sequence
-            $this->text_out .= '    // default sort sequence ' ."\n";
-            $entry = '    $this->default_orderby';
-            $entry = str_pad($entry, 44);
-            $entry .= "= '".$tabledata['default_orderby'] ."';\n";
-            $this->text_out .= $entry;
-            $this->text_out .= "    \n";
-
-            $this->text_out .= '    // finished' ."\n";
-
-            // write completed dict file to disk
-            $this->_writeDictFile ($table_id, $subsys_dir);
 
         } // foreach
 
@@ -115,6 +122,9 @@ class dict_table_s02 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+        // ensure that at least one entry has been selected
+        $this->checkPrimaryKey = true;
+
         global $dbprefix;
 
         if (empty($this->sql_select)) {
@@ -219,6 +229,10 @@ class dict_table_s02 extends dict_table
 	        	$entry = $indent .'$fieldspec' ."['" .$column['column_id'] ."']";
 	            $entry = str_pad($entry, 44);
 	            $type = $column['col_type'];
+	            if (empty($colspecs[$type]['type'])) {
+	                // "Value is missing for fieldspec['type]"
+	            	$this->errors[$column['column_id']] = getLanguageText('e0027');
+	            } // if
 	            $entry .= '= array(' ."'type' => '" .$colspecs[$type]['type'] ."'";
 
 	            if (strlen($column['col_array_type']) > 0) {

@@ -31,7 +31,7 @@
     <div class="pagination">
 
       <!-- look for the entry with the specified value in the id attribute -->
-      <xsl:for-each select="//pagination/page[@id=$object]">
+      <xsl:for-each select="/root/pagination/page[@id=$object]">
 
         <xsl:choose>
           <xsl:when test="@curpage&lt;=1">
@@ -93,7 +93,7 @@
       <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
 
       <!-- look for the entry with the specified value in the id attribute -->
-      <xsl:for-each select="//scrolling/scroll[@id=$object]">
+      <xsl:for-each select="/root/scrolling/scroll[@id=$object]">
 
         <!-- include only if there is more than 1 item -->
         <xsl:if test="@lastitem&gt;1">

@@ -9,7 +9,7 @@
 // type = multi4
 
 // This will display data from 2 tables in a ONE-to-MANY relationship.
-// (also known as a PARENT-CHILD or OUTER-INNER retaltionship).
+// (also known as a PARENT-CHILD or OUTER-INNER relationship).
 // It will start by reading the OUTER entity using the primary key passed down
 // from the previous screen, then show existing occurrences of INNER.
 // The data on the OUTER entity may be updated.
@@ -23,6 +23,12 @@ $mode = 'update';
 
 // load session variables
 initSession();
+
+if (!empty($selection) AND !isset($return_from)) {
+	// $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
 
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
@@ -59,18 +65,17 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->errors);
     } // if
 } // if
 
@@ -91,14 +96,13 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_search_table = &$inner_search_table;
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dbinner->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $null = $dbinner->initialise($selection, $where);
-    } else {
-        $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($where);
+    if ($dbinner->errors) {
+        scriptPrevious($dbinner->errors);
     } // if
 } // if
 
@@ -113,10 +117,8 @@ if (!empty($_POST)) {
     $inner_data = array_update_indexed($inner_data, $inner_post);
     $dbinner->setFieldArray($inner_data);
 
-    $object_array['dbouter'] =& $dbouter;
-    $object_array['dbinner'] =& $dbinner;
     // look for an action which is another script
-    $errors = childForm($_POST, $object_array, $where);
+    $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
 } // if
 
 // look for entered data
@@ -126,7 +128,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
     $outer_data = $dbouter->updateRecord($outer_data);
     if ($dbouter->errors) {
 		// errors are keyed by object name
-	    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+	    $errors[$dbouter->getClassName()] = $dbouter->errors;
 	} // if
     $messages  = $dbouter->getMessages();
     // '$count records were updated in $tablename'
@@ -137,7 +139,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
         if ($dbinner->errors) {
             $dbinner->rollback();
     		// errors are keyed by object name
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            $errors[$dbinner->getClassName()] = $dbinner->errors;
         } else {
             // update was OK
             $messages = array_merge($messages, $dbinner->getMessages());
@@ -176,25 +178,19 @@ if (isset($_POST['reset'])) {
 } // if
 
 // check if we are returning from a child form
-if (!empty($return_from) AND $return_action == 'choose') {
-    if ($popup_object == 'dbouter' AND isset($selection)) {
+if (!empty($return_from) AND !empty($popup_object)) {
+    if (isset($selection) AND $popup_object == 'dbouter') {
         // merge previous saved variables with selection from popup form
         $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection);
         if ($dbouter->errors) {
-        	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
+        	$errors[$dbouter->getClassName()] = $dbouter->errors;
         } // if
     } // if
 } else {
-    if (!empty($selection)) {
-        // retrieve profile has been passed down from previous screen
-        $where     = $selection;
-        $selection = null;
-    } else {
-        if (isset($scrolling)) {
-            // retrieve values from scrolling array
-            $where = $scrolling[$dbouter->getClassName()]['where'];
-            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
-        } // if
+    if (isset($scrolling)) {
+        // retrieve values from scrolling array
+        $where = $scrolling[$dbouter->getClassName()]['where'];
+        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
     } // if
 
     if (empty($where)) {
@@ -220,12 +216,12 @@ if (!empty($return_from) AND $return_action == 'choose') {
         // some sort of error
         if ($dbouter->getLastPage() <= 1) {
             // only 1 entry requested, so return to previous script
-            scriptprevious($dbouter->getErrors(), $messages);
+            scriptprevious($dbouter->errors, $messages);
         } else {
             // multiple entries requested, so disable SUBMIT button
             unset($act_buttons['submit']);
             if ($dbouter->errors) {
-            	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            	$errors[$dbouter->getClassName()] = $dbouter->errors;
             } // if
         } // if
     } // if
@@ -235,6 +231,9 @@ if (!empty($return_from) AND $return_action == 'choose') {
 
     // get any additional data for the current record
     $outer_data = $dbouter->getExtraData($outer_data);
+    if ($dbouter->errors) {
+    	$errors[$dbouter->getClassName()] = $dbouter->errors;
+    } // if
 
     // set variables to be included in XML output
     $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
@@ -276,9 +275,12 @@ if (isset($_POST['reset'])) {
 } // if
 
 if (count($outer_data) > 0) {
-    if (!empty($return_from) AND $return_action == 'choose') {
-        if ($popup_object == 'dbinner' AND isset($selection)) {
+    if (!empty($return_from) AND !empty($popup_object)) {
+        if (isset($selection) AND $popup_object == 'dbinner') {
             $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset);
+            if ($dbinner->errors) {
+            	$errors[$dbinner->getClassName()] = $dbinner->errors;
+            } // if
         } //if
     } else {
         // load in current data from $outer in case it is needed
@@ -292,15 +294,14 @@ if (count($outer_data) > 0) {
             unset($act_buttons['submit']);
         } // if
 
-        // get any additional data for current record
-        $inner_data = $dbinner->getExtraData($inner_data);
-
-        // $where may have been changed in database object
-        $where = $dbinner->getWhere();
+        if (empty($dbinner->errors)) {
+        	// get any additional data for current record
+            $inner_data = $dbinner->getExtraData($inner_data);
+        } // if
     } // if
 
     if ($dbinner->errors) {
-    	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    	$errors[$dbinner->getClassName()] = $dbinner->errors;
     } // if
 } // if
 
@@ -321,7 +322,7 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
+$orderby     = $dbinner->getOrderBy_Out();
 $orderby_seq = $dbinner->getOrderBySeq();
 
 // build list of objects for output to XML data

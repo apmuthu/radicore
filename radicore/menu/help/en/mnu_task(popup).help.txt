@@ -1,5 +1,0 @@
-This will list records on the TASK table and allow one or more to be selected.
-
-After selecting records please press the CHOOSE button.
-
-Refer to <a href="%root%/mnu_task(popup).html">Choose Task</a> for full details.

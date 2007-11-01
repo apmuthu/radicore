@@ -38,9 +38,11 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'mnu_todo') {
 } // if
 
 // get any 'to do' items for the current user
+$today = getTimeStamp('date');
 $db_todo->sql_select  = 'mnu_todo.user_id, item_desc, due_date';
 $db_todo->setRowsPerPage(10);
-$todo_data = $db_todo->getData("user_id='{$_SESSION['logon_user_id']}' AND is_complete='N'");
+$db_todo->sql_where = "is_complete='N' AND due_date - INTERVAL visibility DAY <= '$today'";
+$todo_data = $db_todo->getData("user_id='{$_SESSION['logon_user_id']}'");
 $errors = array_merge($errors, $db_todo->getErrors());
 
 // save pagination details for XML output
@@ -52,7 +54,7 @@ $pagination['mnu_todo']['lastpage'] = $db_todo->getLastPage();
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('db_todo' => $db_todo), $where);
+    $errors = childForm($_POST, null, null);
 } // if
 
 // ****************************************************************************

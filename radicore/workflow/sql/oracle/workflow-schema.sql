@@ -42,6 +42,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON wf_arc TO PUBLIC;
 -- 
 
 CREATE TABLE wf_case (
+  rdcaccount_id number(10) default 1 NOT NULL,
   case_id number(10) NOT NULL,
   workflow_id number(5) NOT NULL,
   context varchar2(255) NOT NULL,
@@ -55,6 +56,7 @@ CREATE TABLE wf_case (
   PRIMARY KEY  (case_id)
 );
 CREATE INDEX  wf_case_idx1 ON  wf_case (workflow_id);
+CREATE INDEX  wf_case_idx2 ON  wf_case (rdcaccount_id);
 
 REVOKE ALL ON wf_case FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON wf_case TO PUBLIC;
@@ -84,6 +86,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON wf_place TO PUBLIC;
 -- 
 
 CREATE TABLE wf_token (
+  rdcaccount_id number(10) default 1 NOT NULL,
   case_id number(10) NOT NULL,
   token_id number(5) NOT NULL,
   workflow_id number(6) NOT NULL,
@@ -96,6 +99,7 @@ CREATE TABLE wf_token (
   PRIMARY KEY  (case_id,token_id)
 );
 CREATE INDEX  wf_token_idx1 ON  wf_token (workflow_id,place_id);
+CREATE INDEX  wf_token_idx2 ON  wf_token (rdcaccount_id);
 
 REVOKE ALL ON wf_token FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON wf_token TO PUBLIC;
@@ -111,7 +115,7 @@ CREATE TABLE wf_transition (
   transition_desc clob,
   transition_trigger varchar2(4) default 'USER' NOT NULL,
   time_limit number(5),
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   role_id varchar2(16),
   created_date timestamp NOT NULL,
   created_user varchar2(16) NOT NULL,
@@ -131,7 +135,7 @@ CREATE TABLE wf_workflow (
   workflow_id number(5) NOT NULL,
   workflow_name varchar2(80) NOT NULL,
   workflow_desc clob,
-  start_task_id varchar2(40) NOT NULL,
+  start_task_id varchar2(80) NOT NULL,
   is_valid char(1) default 'N' NOT NULL,
   workflow_errors clob,
   start_date date,
@@ -151,12 +155,13 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON wf_workflow TO PUBLIC;
 -- 
 
 CREATE TABLE wf_workitem (
+  rdcaccount_id number(10) default 1 NOT NULL,
   case_id number(10) NOT NULL,
   workitem_id number(5) NOT NULL,
   workflow_id number(6) NOT NULL,
   transition_id number(5) NOT NULL,
   transition_trigger varchar2(4) default 'USER' NOT NULL,
-  task_id varchar2(40) NOT NULL,
+  task_id varchar2(80) NOT NULL,
   context varchar2(255) NOT NULL,
   workitem_status char(2) default 'EN' NOT NULL,
   enabled_date date,
@@ -168,6 +173,7 @@ CREATE TABLE wf_workitem (
   PRIMARY KEY  (case_id,workitem_id)
 );
 CREATE INDEX  wf_workitem_idx1 ON  wf_workitem (workflow_id,transition_id);
+CREATE INDEX  wf_workitem_idx2 ON  wf_workitem (rdcaccount_id);
 
 REVOKE ALL ON wf_workitem FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON wf_workitem TO PUBLIC;

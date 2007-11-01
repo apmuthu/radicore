@@ -110,8 +110,8 @@ class wf_workflow extends Default_Table
     {
         //DebugBreak();
         switch ($popupname) {
-            case 'mnu_task(popup)':
-            case 'mnu_task(popup)b':
+            case 'mnu_task(popup1)':
+            case 'mnu_task(popup1)b':
                 $where = null;
                 if ($GLOBALS['mode'] == 'search') {
                     // use input from current screen
@@ -135,17 +135,18 @@ class wf_workflow extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
 
-        if (isset($fieldarray['task_id'])) {
-            $fieldarray['start_task_id'] = $fieldarray['task_id'];
-            unset($fieldarray['task_id']);
-        } // if
+//        if (isset($fieldarray['task_id'])) {
+//            $fieldarray['start_task_id'] = $select_array['task_id'];
+//            unset($select_array['task_id']);
+//        } // if
 
         return $fieldarray;
 

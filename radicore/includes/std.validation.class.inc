@@ -40,27 +40,32 @@ class validation_class
 
         if (!$fp = fopen($file, 'r', true)) {
         	// 'custom validation - File X does not exist'
-            $errors[$fieldname] = getLanguageText('sys0157', $file);
+        	$translated_fieldname=getLanguageText($fieldname);
+            $this->errors[$translated_fieldname] = getLanguageText('sys0157', $file);
+            return $fieldvalue;
         } // if
         fclose($fp);
         require_once($file);
 
         if (!class_exists($class)) {
         	// 'custom validation - Class X does not exist'
-            $errors[$fieldname] = getLanguageText('sys0158', $class);
+        	$translated_fieldname=getLanguageText($fieldname);
+            $errors[$translated_fieldname] = getLanguageText('sys0158', $class);
         } // if
         $object =& singleton::getInstance($class);
 
         if (!method_exists($object, $method)) {
         	// 'custom validation - Method X does not exist'
-            $errors[$fieldname] = getLanguageText('sys0159', $method);
+        	$translated_fieldname=getLanguageText($fieldname);
+            $errors[$translated_fieldname] = getLanguageText('sys0159', $method);
         } // if
 
         if (empty($errors)) {
             // call specified method in custom validation object
         	$failure = $object->$method($fieldvalue, $fieldspec);
             if ($failure) {
-            	$errors[$fieldname] = $failure;
+                $translated_fieldname=getLanguageText($fieldname);
+            	$errors[$translated_fieldname] = $failure;
             } // if
         } // if
 
@@ -88,7 +93,8 @@ class validation_class
 
         if (!preg_match($pattern, $fieldvalue)) {
             // 'Invalid format for e-mail address.'
-            $this->errors[$fieldname] = getLanguageText('sys0039');
+            $translated_fieldname=getLanguageText($fieldname);
+            $this->errors[$translated_fieldname] = getLanguageText('sys0039');
         } // if
 
         return;
@@ -99,6 +105,9 @@ class validation_class
     function validateField ($fieldname, $fieldvalue, $fieldspec)
     // standard function for validating database fields.
     {
+        // find user-friendly version of $fieldname
+        $translated_fieldname=getLanguageText($fieldname);
+
         $this->dateobj =& singleton::getInstance('date_class');
 
         if ($fieldspec['type'] == 'enum') {
@@ -122,7 +131,20 @@ class validation_class
         $fieldvalue = trim($fieldvalue);
 
         if (strlen($fieldvalue) == 0) {
-            if (isset($fieldspec['default'])) {
+            // value is empty, but is there a default which can be inserted?
+            if ($fieldname == 'rdcaccount_id') {
+            	// this table is split by account, so insert user's account_id
+            	if ($_SESSION['rdcaccount_id'] > 1) {
+            	    $fieldvalue = $_SESSION['rdcaccount_id'];
+            	} elseif ($this->caller->tablename == 'mnu_account') {
+            	    // value will be generated automatically
+            	} elseif ($this->caller->tablename == 'mnu_user') {
+            	    // value is optional
+            	} else {
+            	    // default to the shared account
+            	    $fieldvalue = 1;
+            	} // if
+            } elseif (isset($fieldspec['default'])) {
                 if (isset($fieldspec['autoinsert'])
                  or isset($fieldspec['auto_increment'])) {
                     // value will be filled in later
@@ -156,11 +178,10 @@ class validation_class
                     // value will be filled in later, so continue
                 } else {
                     // '$fieldname cannot be blank'
-                    $this->errors[$fieldname] = getLanguageText('sys0020', $fieldname);
+                    $this->errors[$translated_fieldname] = getLanguageText('sys0020', $fieldname);
                 } // if
             } // if
-            if ($fieldspec['type'] == 'date' or $fieldspec['type'] == 'datetime'
-                                             or $fieldspec['type'] == 'timestamp') {
+            if (eregi('date|datetime|timestamp', $fieldspec['type'])) {
                 if (isset($fieldspec['infinityisnull'])) {
                     $fieldvalue = '9999-12-31';
                 } // if
@@ -182,6 +203,12 @@ class validation_class
                 // ignore size on 'array' datatypes
             } else {
                 $size = (double)$fieldspec['size'];
+                if (ereg('decimal|numeric|float|real|double', $fieldspec['type'])) {
+                    // remove thousands separator and ensure decimal point is '.'
+                    $locale = localeconv();
+                    $fieldvalue = str_replace($locale['thousands_sep'], '', $fieldvalue);
+                    $fieldvalue = str_replace($locale['decimal_point'], '.', $fieldvalue);
+                } // if
                 if (ereg('float|real|double', $fieldspec['type'])) {
                 	if (strlen($fieldvalue) > $size) {
                 	    // reduce huge number to scientific notation
@@ -190,7 +217,8 @@ class validation_class
                 } // if
                 if (strlen($fieldvalue) > $size) {
                     // '$fieldname cannot be > $size characters
-                    $this->errors[$fieldname] = getLanguageText('sys0021', $fieldname, $size);
+                    $translated_fieldname=getLanguageText($fieldname);
+                    $this->errors[$translated_fieldname] = getLanguageText('sys0021', $fieldname, $size);
                 } // if
             } // if
         } // if
@@ -201,6 +229,11 @@ class validation_class
         } // if
 
         switch ($fieldspec['type']) {
+            case '':
+                // this points to an error in the dictionary export function
+                $this->errors[$translated_fieldname] = getLanguageText('sys0036', 'null');
+                break;
+
             case 'enum':
                 break;
 
@@ -237,9 +270,16 @@ class validation_class
                         case 'filename':
                         case 'image':
                             // check that value is a valid file name
-                            if (!file_exists($fieldvalue)) {
+                            $try = $fieldvalue;
+                            if (!file_exists($try)) {
                                 // 'Filename does not exist'
-                                $this->errors[$fieldname] = getLanguageText('sys0057', $fieldvalue);
+                                if (!empty($this->caller->picker_subdir)) {
+                                	$try = $this->caller->picker_subdir .'/' .$fieldvalue;
+                                } // if
+                                if (!file_exists($try)) {
+                                    $translated_fieldname=getLanguageText($fieldname);
+                                    $this->errors[$translated_fieldname] = getLanguageText('sys0057', $fieldvalue);
+                                } // if
                             } // if
                             break;
                         case 'email':
@@ -248,7 +288,8 @@ class validation_class
                             break;
                         default:
                             // '$fieldname: specification for subtype is invalid'
-                            $this->errors[$fieldname] = getLanguageText('sys0037', $fieldname, 'subtype');
+                            $translated_fieldname=getLanguageText($fieldname);
+                            $this->errors[$translated_fieldname] = getLanguageText('sys0037', $fieldname, 'subtype');
                     } // switch
                 } // if
 
@@ -266,7 +307,8 @@ class validation_class
                                 break;
                             default:
                                 // '$fieldname: specification for hash is invalid'
-                                $this->errors[$fieldname] = getLanguageText('sys0037', $fieldname, 'hash');
+                                $translated_fieldname=getLanguageText($fieldname);
+                                $this->errors[$translated_fieldname] = getLanguageText('sys0037', $fieldname, 'hash');
                         } // switch
                     } // if
                 } // if
@@ -276,7 +318,8 @@ class validation_class
             case 'date':
                 // value must be a date
                 if (!$internaldate = $this->dateobj->getInternalDate($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
+                    $translated_fieldname=getLanguageText($fieldname);
+                    $this->errors[$translated_fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set date to internal format
                     $fieldvalue = $internaldate;
@@ -287,7 +330,8 @@ class validation_class
             case 'timestamp':
                 // value must be a combined date and time
                 if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
+                    $translated_fieldname=getLanguageText($fieldname);
+                    $this->errors[$translated_fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set date to internal format
                     $fieldvalue = $internaldatetime;
@@ -297,7 +341,8 @@ class validation_class
             case 'time':
                 // value must be a time
                 if (!$internaltime = $this->dateobj->getInternaltime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$fieldname: " . $this->dateobj->getErrors();
+                    $translated_fieldname=getLanguageText($fieldname);
+                    $this->errors[$translated_fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
                 } else {
                     // set time to internal format
                     $fieldvalue = $internaltime;
@@ -381,7 +426,12 @@ class validation_class
                 // obtain value from $fieldspec
                 $maxvalue = (double)$spec['maxvalue'];
             } else {
-                $maxvalue = 127;
+                if (isset($spec['size'])) {
+                	$precision = (int)$spec['size'];
+                } else {
+                    $precision = 3;
+                } // if
+                $maxvalue = (int)str_repeat('9', $precision);
             } // if
 
             if ($number > $maxvalue) {
@@ -408,7 +458,7 @@ class validation_class
             // input must at least be numeric to begin with
             if (!is_numeric(trim($value))) {
                 // 'value is not numeric'
-                $this->errors[$field] = getLanguageText('sys0023');
+                $this->errors[$field] = getLanguageText('sys0023', $value);
                 return $value;
             } // if
 
@@ -434,7 +484,7 @@ class validation_class
             $minvalue = '-' . str_repeat('9', $precision-1);
 
             // maxvalue has no positive sign
-            $maxvalue = str_repeat('9', $precision);
+            $maxvalue = (int)str_repeat('9', $precision);
             if ($scale > 0) {
                 // adjust values to include decimal places
                 $minvalue = $minvalue / pow(10, $scale);
@@ -491,7 +541,7 @@ class validation_class
 
             if (!is_numeric($value)) {
                 // "Value is not a number";
-                $this->errors[$field] = getLanguageText('sys0022');
+                $this->errors[$field] = getLanguageText('sys0022', $value);
                 return $value;
             } // if
 

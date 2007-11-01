@@ -29,9 +29,9 @@
 <xsl:include href="std.pagination.xsl"/>
 
 <!-- get the name of the OUTER and INNER tables -->
-<xsl:variable name="outer" select="//structure/outer/@id"/>
-<xsl:variable name="inner" select="//structure/inner/@id"/>
-<xsl:variable name="numrows" select="//pagination/page[@id='inner']/@numrows"/>
+<xsl:variable name="outer" select="/root/structure/outer/@id"/>
+<xsl:variable name="inner" select="/root/structure/inner/@id"/>
+<xsl:variable name="numrows" select="/root/pagination/page[@id='inner']/@numrows"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -69,7 +69,7 @@
 
           <!-- This is the OUTER/PARENT table -->
           <table>
-            <xsl:for-each select="//*[name()=$outer][1]">
+            <xsl:for-each select="/root/*[name()=$outer][1]">
               <!-- display all the fields in the current row -->
               <xsl:call-template name="display_vertical">
                 <xsl:with-param name="zone"   select="'outer'"/>
@@ -88,7 +88,7 @@
         <!-- create navigation buttons -->
         <xsl:call-template name="navbar">
           <xsl:with-param name="noshow"   select="'y'"/>
-          <xsl:with-param name="noselect" select="//params/noselect"/>
+          <xsl:with-param name="noselect" select="/root/params/noselect"/>
         </xsl:call-template>
 
         <div class="inner">
@@ -147,14 +147,10 @@
   </body>
   </html>
 
-  <xsl:if test="/root/javascript/footer">
-    <!-- insert the javascript footer manually because it can't be done automatically -->
-    <xsl:call-template name="javascript_footer"/>
-  </xsl:if>
-
 </xsl:template>
 
 <!-- *********************************************************************** -->
+
 
 <!-- create <colgroup> entries to define the widths of each column -->
 <xsl:template name="column_group_timetable">
@@ -272,10 +268,10 @@
   <xsl:variable name="time" select="concat($hour, ':', $mins)"/>
 
   <!-- look for a record with this start_time and this day_no -->
-  <xsl:if test="//*[name()=$zone][start_time=$time][day_no=$day_no]">
+  <xsl:if test="/root/*[name()=$outer][1]/*[name()=$zone][start_time=$time][day_no=$day_no]">
 
     <!-- retrieve end_time for current record -->
-    <xsl:variable name="end_time"   select="//*[name()=$zone][start_time=$time][day_no=$day_no]/end_time"/>
+    <xsl:variable name="end_time"   select="/root/*[name()=$outer][1]/*[name()=$zone][start_time=$time][day_no=$day_no]/end_time"/>
 
     <!-- calculate how many 15-minute segments this item uses -->
     <!-- (this is used to set the depth of the column for this item) -->
@@ -293,7 +289,7 @@
     </xsl:if>
 
     <td rowspan="{$segments}">
-      <xsl:for-each select="//*[name()=$zone][start_time=$time][day_no=$day_no]">
+      <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$zone][start_time=$time][day_no=$day_no]">
         <xsl:value-of select="item_name"/>
         <xsl:if test="string-length(item_subname) > 0">
           <br/><xsl:text>(</xsl:text><xsl:value-of select="item_subname"/><xsl:text>)</xsl:text>
@@ -322,7 +318,7 @@
   <xsl:param name="this_day"/>
 
   <!-- get the last cell actually created in this row (may not be present) -->
-  <xsl:variable name="last_cell" select="//*[name()=$zone][day_no &lt; $this_day][translate(start_time,':','') = $time][position()=last()]"/>
+  <xsl:variable name="last_cell" select="/root/*[name()=$outer][1]/*[name()=$zone][day_no &lt; $this_day][translate(start_time,':','') = $time][position()=last()]"/>
 
   <xsl:variable name="test_day">
     <xsl:choose>
@@ -363,7 +359,7 @@
     <!-- find out if this cell is occupied from a previous row using 'rowspan' -->
 
     <!-- remove ':' from times for comparisons -->
-    <xsl:if test="not( //*[name()=$zone][day_no=$test_day] [translate(start_time,':','') &lt;= $time] [translate(end_time,':','') >= $time +1] )">
+    <xsl:if test="not(/root/*[name()=$outer][1]/*[name()=$zone][day_no=$test_day] [translate(start_time,':','') &lt;= $time] [translate(end_time,':','') >= $time +1] )">
       <!-- no entry in this column, so insert a blank cell -->
       <td class="blank">&#160;</td>
     </xsl:if>

@@ -50,13 +50,13 @@ class x_pers_opt_xref extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if (eregi('star_sign', $this->sql_select)) {
-            // get lookup list for star_sign
-            require_once 'classes/x_person.class.inc';
-            $dbobject =& singleton::getInstance('x_person');
-            $data = $dbobject->getValRep('star_sign');
-            $this->lookup_data['star_sign'] = $data;
+            if (!array_key_exists('star_sign', $this->lookup_data)) {
+                // get lookup list for star_sign
+                $dbobject =& singleton::getInstance('x_person');
+                $data = $dbobject->getValRep('star_sign');
+                $this->lookup_data['star_sign'] = $data;
+            } // if
         } // if
 
         return $fieldarray;

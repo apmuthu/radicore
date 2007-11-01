@@ -14,6 +14,7 @@ $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
 $sql_orderby = null;
+$sql_search_table = null;
 
 require 'std.list1.inc';            // activate page controller
 

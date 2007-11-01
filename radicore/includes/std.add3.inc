@@ -24,10 +24,10 @@ initSession();
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
 
-// check to see if this task is a pending workitem
-$errors = $dbobject->checkWorkflow($where);
-if ($errors) {
-    $batch_errors = scriptprevious($errors);
+// perform initialisation, check workflow, etc
+$where = $dbobject->initialise($where);
+if ($dbobject->errors) {
+    $batch_errors = scriptPrevious($dbobject->errors);
     return $batch_errors;
 } // if
 
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         // have not been to popup screen yet, so go there now
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
         $script_vars = $_SESSION[$PHP_SELF][$task_id];
-        $fieldarray  = array();
+        $fieldarray  = where2array($where);
         $settings    = null;
         // may need to adjust contents of $where and $settings
         $where       = $dbobject->popupCall($popup_task, $where, $script_vars, $fieldarray, $settings);
@@ -49,8 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         return $batch_errors;
     } else {
         if (empty($selection)) {
-            // 'Nothing selected from popup screen.'
-            $batch_errors = scriptprevious(getLanguageText('sys0083'));
+            if (empty($errors)) {
+            	// 'Nothing selected from popup screen'
+                $errors[] = getLanguageText('sys0083');
+            } // if
+            $batch_errors = scriptprevious($errors,null,'quit');
             return $batch_errors;
         } // if
     } // if
@@ -82,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // reduce array to primary key for error message
             $where2 = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
             $errors[] = getLanguageText('sys0084', $where2); // "Cannot insert where $where2"
+            $errors = array_merge($errors, $dbobject->errors);
         } // if
     } // foreach
 

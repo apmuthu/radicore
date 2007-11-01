@@ -1,0 +1,3 @@
+This will allow a user's password to be changed.
+
+Refer to <a href="%root%/mnu_user(upd1)b.html">Reset User Password</a> for full details.

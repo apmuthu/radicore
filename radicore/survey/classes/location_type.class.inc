@@ -47,8 +47,8 @@ class location_type extends Default_Table
 
         if ($item == 'location_type_id') {
             // get data from the database
-            $this->sql_select = 'location_type_id, location_type_desc';
-            $this->sql_orderby = 'location_type_desc';
+            $this->sql_select     = 'location_type_id, location_type_desc';
+            $this->sql_orderby    = 'location_type_desc';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 

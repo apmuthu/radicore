@@ -6,8 +6,22 @@
 
 // This file contains generic functions
 
-// create a constant for the default character encoding
-define('DEFAULT_CHARSET', ini_get('default_charset'));
+// modify INCLUDE_PATH
+$include_path = ini_get('include_path');
+if (preg_match('/F:\\\Apache2\\\HTDOCS\\\INCLUDES/i',$include_path, $regs)) {
+    // this applies to my home PC only - remove directory and append it later
+	$include_std = PATH_SEPARATOR .$regs[0];
+	$include_path = str_replace($include_std, '', $include_path);
+} // if
+$include_path .= PATH_SEPARATOR .'../menu';
+$include_path .= PATH_SEPARATOR .'../audit';
+$include_path .= PATH_SEPARATOR .'../workflow';
+if (isset($include_std)) {
+	$include_path .= $include_std;
+} // if
+ini_set('include_path', $include_path);
+
+unset($include_path, $include_std, $regs);
 
 require_once 'config.inc';
 require_once 'error.inc';
@@ -31,8 +45,8 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
 
 if (isset($_SERVER['SERVER_PROTOCOL'])) {
 	$protocol = 'HTTP://';
-    require 'include.jump.inc';
-    require 'include.session.inc';
+    require_once 'include.jump.inc';
+    require_once 'include.session.inc';
 } else {
     // this is being run in batch/cli mode, not from a web server
     $protocol = '';
@@ -40,6 +54,11 @@ if (isset($_SERVER['SERVER_PROTOCOL'])) {
 
 $transaction_has_started = false;
 $use_HTTPS = false;
+
+if (file_exists('include.subsystem.inc')) {
+    // process optional includes from current subsystem directory
+	include('include.subsystem.inc');
+} // if
 
 // ****************************************************************************
 function addPreviousSearchButton ($buttons_in)
@@ -49,7 +68,7 @@ function addPreviousSearchButton ($buttons_in)
         // copy from input to output area
         $buttons_out[] = $button_data;
         if (preg_match('/\(search\)/i', $button_data['task_id'], $regs)) {
-            // found task_id containing (search'), so add an extra button
+            // found task_id containing '(search)', so add an extra button
             $buttons_out[] = array('task_id' => 'previous_search',
                                    'button_text' => 'Previous Search',
                                    'context_preselect' => 'N');
@@ -61,12 +80,29 @@ function addPreviousSearchButton ($buttons_in)
 } // addPreviousSearchButton
 
 // ****************************************************************************
-function adjustDate ($date, $adjustment)
-// adjust a date value by a specified number of days.
+function adjustDate ($date, $adjustment, $units='days')
+// adjust a date value by a specified number of units (days, weeks or months).
 {
     $dateobj =& singleton::getInstance('date_class');
 
-    $out_date = $dateobj->addDays($date, $adjustment);
+    switch (strtolower($units)) {
+    	case 'days':
+    		$out_date = $dateobj->addDays($date, $adjustment);
+    		break;
+
+    	case 'weeks':
+    		$out_date = $dateobj->addWeeks($date, $adjustment);
+    		break;
+
+    	case 'months':
+    		$out_date = $dateobj->addMonths($date, $adjustment);
+    		break;
+
+    	default:
+    	    // "Unknown units in call to adjustDate()"
+    	    trigger_error(getLanguageText('sys0118'), E_USER_ERROR);
+    		break;
+    } // switch
 
     return $out_date;
 
@@ -166,25 +202,18 @@ function array2where ($inputarray, $fieldlist=null, $dbobject=null)
         } // if
     } // if
 
-    $where = null;
-    if (!is_string(key($inputarray))) {
-        // array is indexed, not associative
-        foreach ($inputarray as $index => $string) {
-            if (empty($where)) {
-                // add space as prefix and suffix
-                $where = "($string)";
-            } else {
-        	    $where .= " OR ($string)";
-            } // if
-        } // foreach
-        return $where;
-    } // if
-
-    // array is associative
     // if $fieldlist is empty use $inputarray
     if (empty($fieldlist)) {
         $fieldlist = $inputarray;
+        foreach ($fieldlist as $key => $value) {
+        	if (is_long($key) AND !is_array($value)) {
+        	    // this is a subquery, so delete it
+                unset($fieldlist[$key]);
+        	} // if
+        } // foreach
+        reset($fieldlist);
     } // if
+
     // if $fieldlist is in format 'n=name' change it to 'name=n'
     if (!is_string(key($fieldlist))) {
         $fieldlist = array_flip($fieldlist);
@@ -193,88 +222,176 @@ function array2where ($inputarray, $fieldlist=null, $dbobject=null)
         // undo any formatting of data values
     	$inputarray = $dbobject->unFormatData($inputarray);
     } // if
+
+    $where = null;
+    $prefix = null;
     foreach ($inputarray as $fieldname => $fieldvalue) {
-        // see if field is qualified with table name
-        $fieldname_unq = $fieldname;
-        $namearray = explode('.', $fieldname);
-        if (!empty($namearray[1])) {
-            if (is_object($dbobject)) {
-            	if ($namearray[0] == $dbobject->tablename) {
-            	    // table names match, so unqualify this field name
-            		$fieldname_unq = $namearray[1];
-            	} // if
+        if (!is_string($fieldname)) {
+            $string = trim($fieldvalue);
+            // this is not a name, so assume it's a subquery
+        	if (preg_match('/^(AND |OR |\) OR \(|\( |\) )/i', $string.' ', $regs)) {
+        	    // save prefix then remove it from $string
+                //$prefix = $regs[0];
+                $string = trim(substr($string, strlen($regs[0])));
+                $prefix .= $regs[0];
             } // if
-        } // if
-        // exclude fields not contained in $fieldlist (such as SUBMIT button)
-        if (array_key_exists($fieldname, $fieldlist) or array_key_exists($fieldname_unq, $fieldlist)) {
-            if (strlen($fieldvalue) > 0) {
-                // check fieldspec for upper/lower case
-                if (array_key_exists($fieldname, $fieldspec)) {
-                	if (array_key_exists('uppercase', $fieldspec[$fieldname])) {
-                		$fieldvalue = strtoupper($fieldvalue);
-                	} elseif (array_key_exists('lowercase', $fieldspec[$fieldname])) {
-                	    $fieldvalue = strtolower($fieldvalue);
+            if ($string) {
+                if (!empty($where)) {
+                	if (empty($prefix)) {
+                	    $prefix = 'OR';
+                	} else {
+                	    $prefix = trim($prefix, '() ');
                 	} // if
                 } // if
-                // combine into <name operator value>
-                $operators = "/^(<>|<=|<|>=|>|!=|=|LIKE |IS NOT |IS |IN |BETWEEN )/i";
-                // does $fieldvalue start with a valid operator?
-                if (!preg_match($operators, ltrim($fieldvalue), $regs)) {
-                    // no, so assume operator is '='
-                	$string = $fieldname ."='" .addslashes($fieldvalue) ."'";
+                $prefix = ltrim($prefix, '( ');
+                $prefix = rtrim($prefix, ') ');
+                if (preg_match('/^(EXISTS |NOT EXISTS)/i', $string, $regs)) {
+                	$where .= ' ' .$prefix .' ' .$string .' ';
                 } else {
-                    // operator is already present
-                    $string = $fieldname .' ' .$fieldvalue;
+                    if (substr($prefix, strlen($prefix)-1) == '(') {
+                        // prefix already ends with '(', so don't add another one
+                    	$where .= $prefix .$string .') ';
+                    } else {
+                        $where .= $prefix .' (' .$string .') ';
+                    } // if
                 } // if
-        	    list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
-
-                // now join them together again
-                $namevalue = $fieldname.$operator.$fieldvalue;
-
-                // append to $where string
-                if (empty($where)) {
-                    $where .= $namevalue;
-                } else {
-                    $where .= ' AND ' .$namevalue;
+                $prefix = null;
+            } // if
+        } else {
+            // see if field is qualified with table name
+            $fieldname_unq = $fieldname;
+            $namearray = explode('.', $fieldname);
+            if (!empty($namearray[1])) {
+                if (is_object($dbobject)) {
+                	if ($namearray[0] == $dbobject->tablename) {
+                	    // table names match, so unqualify this field name
+                		$fieldname_unq = $namearray[1];
+                	} // if
                 } // if
             } // if
+            // exclude fields not contained in $fieldlist (such as SUBMIT button)
+            if (array_key_exists($fieldname, $fieldlist) or array_key_exists($fieldname_unq, $fieldlist)) {
+                if (strlen($fieldvalue) > 0) {
+                    // check fieldspec for upper/lower case
+                    if (array_key_exists($fieldname, $fieldspec)) {
+                    	if (array_key_exists('uppercase', $fieldspec[$fieldname])) {
+                    		$fieldvalue = strtoupper($fieldvalue);
+                    	} elseif (array_key_exists('lowercase', $fieldspec[$fieldname])) {
+                    	    $fieldvalue = strtolower($fieldvalue);
+                    	} // if
+                    } // if
+                    // combine into <name operator value>
+                    $operators = "/^(<>|<=|<|>=|>|!=|=|LIKE |IS NOT |IS |IN |BETWEEN )/i";
+                    // does $fieldvalue start with a valid operator?
+                    if (!preg_match($operators, ltrim($fieldvalue), $regs)) {
+                        // no, so assume operator is '='
+                    	$string = $fieldname ."='" .addslashes($fieldvalue) ."'";
+                    } else {
+                        // operator is present, but is it part of the value?
+                        if (array_key_exists($fieldname, $fieldspec)) {
+                            $type = $fieldspec[$fieldname]['type'];
+                            if ($type == 'string') {
+                                // remove operator from front of string
+                            	$value2 = substr($fieldvalue, strlen($regs[0]));
+                            	if (preg_match('/^\w/', ltrim($value2))) {
+                            		// next character is a word character, so operator is part of the value
+                            		$string = $fieldname ."='" .addslashes($fieldvalue) ."'";
+                            	} else {
+                            	    // operator is not part of the value
+                            	    $string = $fieldname .' ' .$fieldvalue;
+                            	} // if
+                            } // if
+                        } else {
+                            // operator is not part of the value
+                            $string = $fieldname .' ' .$fieldvalue;
+                        } // i
+                    } // if
+            	    list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
 
+                    // now join them together again
+                    $namevalue = $fieldname.$operator.$fieldvalue;
+
+                    // append to $where string
+                    if (empty($where)) {
+                        $where .= $namevalue;
+                    } else {
+                        $where .= ' AND ' .$namevalue;
+                    } // if
+                } // if
+            } // if
         } // if
     } // foreach
+
+    $where = trim($where);
+    if (substr_count($where, '(') == 1) {
+        if (substr($where, 0, 1) == '(') {
+        	$where = trim($where, '() ');
+        } // if
+    } // if
+
+    if (empty($where)) {
+    	if (is_object($dbobject) AND !empty($dbobject->unique_keys)) {
+    	    // nothing found using pkey, so try candidate keys
+    	    foreach ($dbobject->unique_keys as $ukey) {
+    	    	$where = array2where($inputarray, $ukey);
+    	    	if (!empty($where)) {
+    	    		break;
+    	    	} // if
+    	    } // foreach
+    	} // if
+    } // if
 
     return $where;
 
 } // array2where
 
 // ****************************************************************************
-function array_merge_nonkey ($fieldspec, $array1, $array2)
-// update contents of $array1 with non-key items from $array2.
-// this will not overwrite any items designated as primary key in $fieldspec.
-// Note: this is different from a merge which will add new fields into $array1
-// if they did not previously exist, which is not what I want.
+function array2where2 ($where_array)
+// turn a $where_array back into a string
 {
-    reset($array1);  // fix for version 4.4.1
-    if (!is_string(key($array1))) {
-        // indexed by row, so use row zero only
-        $array1 = $array1[0];
-    } // if
+    $pattern = '/^('        // begins with
+             . 'OR \('      // 'OR ('
+             . '|'
+             . 'OR'         // 'OR'
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
 
-    reset($array2);  // fix for version 4.4.1
-    if (!is_string(key($array2))) {
-        // indexed by row, so use row zero only
-        $array2 = $array2[0];
-    } // if
-
-    foreach ($array2 as $fieldname => $fieldvalue) {
-        if (!isset($fieldspec[$fieldname]['pkey'])) {
-            // this is not a primary key item, so overwrite it
-            $array1[$fieldname] = $array2[$fieldname];
+    $where = '';
+    foreach ($where_array as $key => $value) {
+        $value = trim($value);
+        if (preg_match($pattern, $value, $regs)) {
+            $where .= $value .' ';
+        } else {
+            $where .= $value .' ';
         } // if
     } // foreach
 
-    return $array1;
+    // look for any conditions in parentheses which have had their contents removed
+    $search = array('(  )', '( )');
+    $where = str_replace($search, '()', $where);        // remove spaces between '(' and ')'
+    //$search = array(' AND ()', ') OR ()', ' OR ()', '()');
+    $search = array(' AND ()', ' OR ()', '()');
+    $where = trim(str_replace($search, '', $where));
 
-} // array_merge_nonkey
+    // remove any leading 'AND ' or 'OR '
+    if (eregi('^(AND |OR )', $where, $regs)) {
+    	$where = substr($where, strlen($regs[0]));
+    } // if
+
+    return trim($where);
+
+} // array2where2
 
 // ****************************************************************************
 function array_update_associative ($array1, $array2)
@@ -306,6 +423,35 @@ function array_update_associative ($array1, $array2)
 } // array_update_associative
 
 // ****************************************************************************
+function array_update_empty ($array1, $array2)
+// update contents of $array1 from contents of $array2.
+// Note: this is different from a merge which will overwrite $array1 with
+// contents of $array2, which is not what I want. This version will only update
+// $array1 if the key does nt exist, or the value is empty.
+{
+    reset($array1);  // fix for version 4.4.1
+    if (!is_string(key($array1))) {
+        // indexed by row, so use row zero only
+        $array1 = $array1[key($array1)];
+    } // if
+
+    reset($array2);  // fix for version 4.4.1
+    if (!is_string(key($array2))) {
+        // indexed by row, so use row zero only
+        $array2 = $array2[key($array2)];
+    } // if
+
+    foreach ($array2 as $fieldname => $fieldvalue) {
+        if (empty($array1[$fieldname]) AND !empty($array2[$fieldname])) {
+            $array1[$fieldname] = $array2[$fieldname];
+        } // if
+    } // foreach
+
+    return $array1;
+
+} // array_update_empty
+
+// ****************************************************************************
 function array_update_indexed ($fieldarray, $postarray)
 // update contents of $fieldarray from contents of $postarray.
 // Note: this is different from a merge which will add new fields into $fieldarray
@@ -313,7 +459,7 @@ function array_update_indexed ($fieldarray, $postarray)
 // will not create any items in $fieldarray which did not previously exist.
 {
     // transfer values from $postarray to $fieldarray
-    // each fieldname in $postarray is an array of values
+    // each fieldname in $postarray should be an array of values (but may not be)
     foreach ($postarray as $fieldname => $valuearray) {
         if (is_array($valuearray)) {
             // copy row value from $postarray to $fieldarray for current $fieldname
@@ -323,6 +469,11 @@ function array_update_indexed ($fieldarray, $postarray)
                     $fieldarray[$row-1][$fieldname] = $postarray[$fieldname][$row];
                 } // if
             } // foreach
+        } else {
+            // value is not an array, so insert it into every row
+            foreach ($fieldarray as $rownum => $rowdata) {
+            	$fieldarray[$rownum][$fieldname] = $valuearray;
+            } // foreach
         } // if
     } // foreach
 
@@ -331,7 +482,7 @@ function array_update_indexed ($fieldarray, $postarray)
 } // array_update_indexed
 
 // ****************************************************************************
-function convertEncoding ($string, $from_encoding, $to_encoding)
+function convertEncoding ($string, $to_encoding, $from_encoding=null)
 // convert string from one character encoding to another, if required.
 {
     if ($string) {
@@ -351,32 +502,31 @@ function convertEncoding ($string, $from_encoding, $to_encoding)
 } // convertEncoding
 
 // ****************************************************************************
-function currentOrHistoric ($string)
+function currentOrHistoric ($string, $start_date='start_date', $end_date='end_date')
 // convert the string 'current/historic/future' into a date range.
+// NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
 {
     // convert search string into an indexed array
     $search = where2array($string, false, false);
-    //$search = where2indexedArray($string);
-    //$search = indexed2assoc($search);
 
     if (isset($search['curr_or_hist'])) {
         // replace Current/Historic/Future with a range of dates
         $search1 = stripOperators($search);
         $date = date('Y-m-d');
-        $time = date('H:i:s');
+        //$time = date('H:i:s');
         switch ($search1['curr_or_hist']) {
             case 'C':
                 // search for records with CURRENT dates
-                $search['start_date'] = "<='$date $time'";
-                $search['end_date']   = ">='$date $time'";
+                $search[$start_date] = "<='$date 00:00:00'";
+                $search[$end_date]   = ">='$date 23:59:59'";
                 break;
             case 'H':
                 // search for records with HISTORIC dates
-                $search['end_date'] = "<'$date $time'";
+                $search[$end_date] = "<'$date 23:59:59'";
                 break;
             case 'F':
                 // search for records with FUTURE dates
-                $search['start_date'] = ">'$date $time'";
+                $search[$start_date] = ">'$date 00:00:00'";
             default:
                 ;
         } // switch
@@ -390,22 +540,59 @@ function currentOrHistoric ($string)
 } // currentOrHistoric
 
 // ****************************************************************************
+function extractFieldNames ($sql_select)
+// extract field names from $sql_select
+{
+    // extract elements separated by commas EXCEPT where the commas appear
+    // inside an expression such as "concat(a, ',', b) as something"
+    $pattern = '/([^(,]*?\([^)]*\)[^,]*|[^(),]*)?,?/';
+
+    $elements = preg_split($pattern, $sql_select, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    // put each element into array as 'alias = original' or 'element = element'
+    foreach ($elements as $element) {
+        $element = trim($element);
+        list($original, $alias) = getFieldAlias3($element);
+        if (!empty($original)) {
+        	$field_array[$alias]   = $original;
+        } else {
+            $field_array[$element] = $element;
+        } // if
+    } // foreach
+
+    return $field_array;
+
+} // extractFieldNames
+
+// ****************************************************************************
 function extractSeparator ($where, &$array)
 // extract separator (AND, OR, '(' and ')') from $where string and add to $array.
-// ($where is passed by reference so that it can be updated).
+// ($array is passed by reference so that it can be updated).
 {
     $where = ltrim($where);
-    if (strtoupper(substr($where, 0, 4)) == 'AND ') {
+    if (preg_match('/^\) +AND +\(/i', $where, $regs)) {
+        $array[] = ') AND (';
+        $where = substr($where, strlen($regs[0]));
+        $where = extractSeparator($where, $array);  // recursive
+    } elseif (preg_match('/^AND +\(/i', $where, $regs)) {
+        $array[] = 'AND (';
+        $where = substr($where, strlen($regs[0]));
+        $where = extractSeparator($where, $array);  // recursive
+    } elseif (preg_match('/^AND +/i', $where, $regs)) {
         $array[] = 'AND';
-        $where = substr($where, 4);
+        $where = substr($where, strlen($regs[0]));
         $where = extractSeparator($where, $array);  // recursive
-    } elseif (strtoupper(substr($where, 0, 6)) == ') OR (') {
+    } elseif (preg_match('/^\) +OR +\(/i', $where, $regs)) {
         $array[] = ') OR (';
-        $where = substr($where, 6);
+        $where = substr($where, strlen($regs[0]));
         $where = extractSeparator($where, $array);  // recursive
-    } elseif (strtoupper(substr($where, 0, 3)) == 'OR ') {
+    } elseif (preg_match('/^OR +\(/i', $where, $regs)) {
+        $array[] = 'OR (';
+        $where = substr($where, strlen($regs[0]));
+        $where = extractSeparator($where, $array);  // recursive
+    } elseif (preg_match('/^OR +/i', $where, $regs)) {
         $array[] = 'OR';
-        $where = substr($where, 3);
+        $where = substr($where, strlen($regs[0]));
         $where = extractSeparator($where, $array);  // recursive
     } elseif (substr($where, 0, 1) == '(') {
         $array[] = '(';
@@ -420,6 +607,93 @@ function extractSeparator ($where, &$array)
     return ltrim($where);
 
 } // extractSeparator
+
+// ****************************************************************************
+function extractTableNames ($sql_from)
+// extract table names from $sql_from
+{
+    // extract first table name (may be 'table AS alias')
+    $count = preg_match("/^\w+ as \w+|\w+/i", $sql_from, $regs);
+    $tablename = $regs[0];
+    list($original, $alias) = getTableAlias3($tablename);
+    if (!empty($original)) {
+    	$table_array[$alias]     = $original;
+    } else {
+        $table_array[$tablename] = $tablename;
+    } // if
+
+    $pattern = '/'                              // start delimiter
+             . '(?<= join )"\w+"\.\w+ AS \w+'   // JOIN "db".table AS alias
+             . '|'                              // or
+             . '(?<= join )\w+\.\w+ AS \w+'     // JOIN db.table AS alias
+             . '|'                              // or
+             . '(?<= join )"\w+"\.\w+'          // JOIN "db".table
+             . '|'                              // or
+             . '(?<= join )\w+\.\w+'            // JOIN db.table
+             . '|'                              // or
+             . '(?<= join )\w+ AS \w+'          // JOIN table AS alias
+             . '|'                              // or
+             . '(?<= join )\w+'                 // JOIN table
+             . '/i';                            // end delimiter, case insensitive
+
+    if ($count = preg_match_all($pattern, $sql_from, $regs)) {
+    	// examine extra table names which follow a JOIN
+        foreach ($regs[0] as $tablename) {
+            if (strpos($tablename, '.') > 0) {
+            	// remove 'dbname' from 'dbname.tablename'
+            	list($dbname, $tablename) = explode('.', $tablename);
+            } // if
+            list($original, $alias) = getTableAlias3($tablename);
+            if (!empty($original)) {
+            	$table_array[$alias]     = $original;
+            } else {
+                $table_array[$tablename] = $tablename;
+            } // if
+        } // foreach
+    } // if
+
+    return $table_array;
+
+} // extractTableNames
+
+// ****************************************************************************
+function extractQualifiedFieldNames ($sql_select)
+// extract qualified field names from $sql_select
+{
+    $field_array = array();
+
+    $pattern = '/('                         // start
+             . '\(SELECT .+\) AS \w+,?'     // '(SELECT ...) AS alias'
+             . '|'                          // or
+             . '\w+\(.+\) AS \w+,?'         // 'function(...) AS alias'
+             . '|'                          // or
+             . '\w+\.\w+ AS \w+,?'          // 'table.field AS alias'
+             . '|'                          // or
+             . '\w+ AS \w+,?'               // 'field AS alias'
+             . '|'                          // or
+             . '\w+\.\*,?'                  // table.*
+             . '|'                          // or
+             . '\w+\.\w+,?'                 // table.field
+             . '|'                          // or
+             . '\w+,?'                      // field
+             . ')/i';                       // case insensitive
+
+    $count = preg_match_all($pattern, $sql_select, $regs);
+
+    foreach ($regs[0] as $entry) {
+        // remove any trailing comma
+    	$entry = trim($entry, ' ,');
+		if ($count = preg_match_all('/(?<= as )\w+/i', $entry, $regs2) > 0) {
+    	    // extract alias (which follows 'AS ') - if there is more than one then use the last one
+    	    $field_array[] = array_pop($regs2[0]);
+    	} else {
+    	    $field_array[] = $entry;
+    	} // if
+    } // foreach
+
+    return $field_array;
+
+} // extractQualifiedFieldNames
 
 // ****************************************************************************
 function extractValue (&$where)
@@ -477,8 +751,10 @@ function extractValue (&$where)
     if (substr($fieldvalue, -1) == ')') {
         // last character is ')' so first character must be '('
         if (substr($fieldvalue, 0, 1) != '(') {
-        	// no match found, so remove trailing ')'
-            $fieldvalue = substr($fieldvalue, 0, -1);
+        	// no match found, so remove ALL trailing ')'
+        	while (substr($fieldvalue, -1) == ')') {
+        		$fieldvalue = substr($fieldvalue, 0, -1);
+        	} // while
         } // if
     } // if
     // remove $fieldvalue from the front of the string
@@ -555,6 +831,242 @@ function filterErrors ($array_in, $objectname, &$errors, $screen_structure)
     return $array_out;
 
 } // filterErrors
+
+// ****************************************************************************
+function filterOrderBy ($orderby, $fieldlist, $tablename)
+// filter out any fields in $orderby which do not belong in this table,
+// (valid fields are identified in the $fieldlist array).
+{
+    // if input string is empty there is nothing to do
+    if (empty($orderby)) return;
+
+    // split string into an array of fieldnames
+    $array1 = explode(',', $orderby);
+
+    $string = null;
+    foreach ($array1 as $fieldname) {
+        if (strpos($fieldname, '.')) {
+            // split into $tablename and $fieldname
+            list($table, $fieldname) = explode('.', $fieldname);
+        } else {
+            $table = null;
+        } // if
+        if (array_key_exists($fieldname, $fieldlist)) {
+            // field is valid, so copy to output string
+            if (empty($string)) {
+                $string = $fieldname;
+            } else {
+                $string .= ', ' .$fieldname;
+            } // if
+        } // if
+    } // foreach
+
+    return $string;
+
+} // filterOrderBy
+
+// ****************************************************************************
+function filterWhere ($where, $fieldlist, $tablename)
+// filter out any fields in $where which do not belong in this table,
+// (valid fields are identified in the $fieldlist array).
+{
+    // if input string is empty there is nothing to do
+    if (empty($where)) return;
+
+    // if $tablename is empty there is nothing to do
+    if (empty($tablename)) return $where;
+
+    // convert from string to indexed array
+    $array1 = where2indexedArray($where);
+
+    reset($fieldlist);  // fix for version 4.4.1
+    if (!is_string(key($fieldlist))) {
+        // flip indexed array so that the values become keys
+        $fieldlist = array_flip($fieldlist);
+    } // if
+
+    $pattern = '/^('        // begins with
+             . 'OR'         // 'OR'
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
+
+    reset($array1);  // fix for version 4.4.1
+    $array_out = array();
+    $last_separator = null;
+    $start_condition = true;
+    foreach ($array1 as $ix => $string) {
+        $string = trim($string);
+        if (preg_match($pattern, $string, $regs)) {
+            // this is a separator, not a field
+            $last_separator = strtoupper($regs[0]);
+            if ($last_separator == '(') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == ')') {
+            	$start_condition = false;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == ') OR (') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } // if
+        } else {
+            if (preg_match('/^(EXISTS |NOT EXISTS)/i', $string, $regs)) {
+    	        if ($last_separator) {
+                	$array_out[] = $last_separator;
+                	$last_separator = null;
+                } // if
+    	        $array_out[] = $string;
+    	    } elseif (preg_match('/^MATCH[ ]*\(/i', $string, $regs)) {
+    	        if ($last_separator) {
+                	$array_out[] = $last_separator;
+                	$last_separator = null;
+                } // if
+    	        $array_out[] = $string;
+    	        $start_condition = false; // this is the end of this condition
+    	    } else {
+    	        $fieldarray2 = where2indexedArray($string);
+    	        foreach ($fieldarray2 as $rownum => $rowdata) {
+                	list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($rowdata);
+                	// if $fieldname is qualified with current $tablename, then unqualify it
+                	$namearray = explode('.', $fieldname);
+                	if (!empty($namearray[1])) {
+                	    if ($namearray[0] == $tablename) {
+                	    	$fieldname = $namearray[1];
+                	    } // if
+                    } // if
+                    $fieldname = str_replace("$tablename.", '', trim($fieldname));
+                    // check if $fieldname exists in $fieldlist array
+                    // (if it contains multiple words then assume its an expression)
+                    if (preg_match('/\w+ \w+/', $fieldname) OR array_key_exists($fieldname, $fieldlist) AND !isset($fieldlist[$fieldname]['nondb'])) {
+                        // field is valid, so copy to output array
+                        if ($last_separator) {
+                    	    if (eregi('^(OR|AND)', $last_separator)) {
+                    	        if ($start_condition) {
+                    	        	// cannot have AND/OR at the start of a conditional statement
+                    	        } else {
+                    	            // insert this separator before the field value
+                    	            $array_out[] = $last_separator;
+                    	        } // if
+                            	$last_separator = null;
+                    	    } // if
+                        } // if
+                        $array_out[] = $fieldname .$operator .$fieldvalue;
+                        $start_condition = false;
+                    } else {
+                        if (eregi('^(OR|AND)', $last_separator)) {
+                        	// field has been dropped, so this separator is no longer valid
+                        	$last_separator = null;
+                        } // if
+                    } // if
+    	        } // foreach
+    	    } // if
+        } // if
+    } // foreach
+
+    // convert back into string
+    $where2 = array2where2($array_out);
+
+    return trim($where2);
+
+} // filterWhere
+
+// ****************************************************************************
+function filterWhereSqlWhere ($where1, $where2)
+// remove entries from $where2 that already exist in $where1
+{
+    if (strlen($where1) == 0) {
+        return $where2;
+    } elseif (strlen($where2) == 0) {
+        return $where1;
+    } // if
+
+    //$where2 .= ' AND ' .$where1 .' AND 1=1'; // TEST
+
+    // convert both input strings to arrays
+    $array1 = where2array($where1, false, false);
+    //$array2 = where2array($where2, false, false);
+    $array2 = where2indexedArray($where2);
+
+    $pattern = '/^('        // begins with
+             . 'OR'         // 'OR'
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
+
+    // remove any entries in $array2 that already exist in $array1
+    $array_out = array();
+    $last_separator = null;
+    foreach ($array2 as $ix => $string) {
+        if (preg_match($pattern, ltrim($string), $regs)) {
+            // this is a separator, not a field, so save it for later
+            $last_separator = $regs[0];
+        } else {
+            list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
+            if (array_key_exists($fieldname, $array1)) {
+                // entry is duplicated, so do not copy to $array_out
+                $fieldname = null;
+            } else {
+                // if fieldname is 'table.field' then remove table name and try again
+                $namearray = explode('.', $fieldname);
+                if (!empty($namearray[1])) {
+                    $fieldname_unq = $namearray[1];
+                    if (array_key_exists($fieldname_unq, $array1)) {
+                        // entry is duplicated, so do not copy to $array_out
+                        $fieldname = null;
+                    } // if
+                } // if
+            } // if
+            if (empty($fieldname)) {
+            	// do not copy to $array_out
+            	if (eregi('^(OR|AND)', $last_separator)) {
+                	// field is not wanted, so this separator is no longer valid
+                	$last_separator = null;
+                } // if
+            } else {
+                // field is not duplicated, so copy to output array
+                if ($last_separator) {
+                	$array_out[] = $last_separator;
+                	$last_separator = null;
+                } // if
+                $array_out[] = $fieldname .$operator .$fieldvalue;
+            } // if
+            $last_separator = null;
+        } // if
+    } // foreach
+
+    if ($last_separator) {
+        if (count($array_out) > 0) {
+        	$array_out[] = $last_separator;
+        } // if
+    } // if
+
+    // convert $array_out back into a string
+    $where2 = array2where2($array_out);
+
+    return $where2;
+
+} // filterWhereSqlWhere
 
 // ****************************************************************************
 function fixTrueFalse($lookup, $spec)
@@ -634,10 +1146,22 @@ function getEntryPoint ($object)
     	        $method = $array[$i]['function'];
                 break;
     	    } // if
-    	    if (is_subclass_of($object, $array[$i]['class'])) {
-    	        $method = $array[$i]['function'];
-                break;
+    	    if (isset($array[$i]['object'])) {
+    	    	if (is_a($array[$i]['object'], $classname)) {
+        	    	$method = $array[$i]['function'];
+        	    	break;
+        	    } // if
+        	    if (is_a($array[$i]['object'], $parentclass)) {
+        	    	$method = $array[$i]['function'];
+        	    	break;
+        	    } // if
     	    } // if
+//    	    if ($array[$i]['class'] != 'Default_Table') {
+//    	    	if (is_subclass_of($object, $array[$i]['class'])) {
+//        	        $method = $array[$i]['function'];
+//                    break;
+//        	    } // if
+//    	    } // if
     	} // if
     } // for
 
@@ -646,16 +1170,90 @@ function getEntryPoint ($object)
 } // getEntryPoint
 
 // ****************************************************************************
+function getFieldAlias3 ($string)
+// look for 'original AS alias' in $string and return both 'original' and 'alias'
+// or 'function (...) AS alias'
+// or 'field1 + field2 AS alias'
+{
+    // look for words in front of ' as ' in $string
+    $pattern = '/'                              // start delimiter
+             . '.*(?= as )'                     // ... AS
+             . '|'                              // or
+             . '\w+\.\w+(?= as )'               // word.word AS
+             . '|'                              // or
+             . '\w+(?= as )'                    // word AS
+             . '/i';                            // end delimiter, case insensitive
+
+    if ($count = preg_match($pattern, $string, $regs) > 0) {
+    	$array[0] = $regs[0];  // original
+    	$count = preg_match('/(?<= as )\w+/i', $string, $regs); // look for word following ' as '
+    	$array[1] = $regs[0];  // alias
+    } else {
+        $array[0] = '';
+        $array[1] = '';
+    } // if
+
+    return $array;
+
+} // getFieldAlias3
+
+// ****************************************************************************
+function getFieldArray ($string)
+// take a string of field names and convert into an array.
+// NOTE: string may be any combination of the following formats:
+// - field1, field2, field3
+// - field1 AS alias1, field2 AS alias2, field3
+// - CONCAT(field1, ' ', field2) AS alias1, field2
+{
+    $array = array();
+    if (empty($string)) {
+    	return $array;
+    } // if
+
+    // extract elements separated by commas EXCEPT where the commas appear
+    // inside an expression such as "concat(a, ',', b) as something"
+    $pattern = '/([^(,]*?\([^)]*\)[^,]*|[^(),]*)?,?/';
+
+    $elements = preg_split($pattern, $string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    foreach ($elements as $element) {
+    	$element = trim($element);
+        list($original, $alias) = getFieldAlias3($element);
+        if (!empty($original)) {
+        	$array[] = $alias;
+        } else {
+            $array[] = $element;
+        } // if
+    } // foreach
+
+    return $array;
+
+} // getFieldArray
+
+// ****************************************************************************
 function getLanguageArray ($id)
 // get named array from the language file.
 {
     static $array1;
     static $array2;
 
+    if (!empty($GLOBALS['classdir'])) {
+        if (substr($GLOBALS['classdir'], -4, 4) == '.inc') {
+            // remove filename to leave a directory name
+        	$GLOBALS['classdir'] = dirname(dirname($GLOBALS['classdir']));
+        } // if
+        // compare directories of current class and current script
+    	if ($GLOBALS['classdir'] != $_SERVER['SCRIPT_FILENAME']) {
+    	    // change to directory of current class to obtain error message
+    		chdir($GLOBALS['classdir']);
+    	} // if
+    } // if
+
     if (!is_array($array1)) {
         $array1 = array();
         // get name of current directory
-        $dir = basename(dirname($_SERVER['PHP_SELF']));
+        //$dir = basename(dirname($_SERVER['PHP_SELF']));
+        $dir = basename(getcwd());  // may be class directory or script directory
         if ($dir == 'menu') {
             $dir = './text';
         } else {
@@ -699,14 +1297,18 @@ function getLanguageArray ($id)
         $value2 = array();
         if (is_array($value)) {
         	foreach ($value as $key1 => $value1) {
-        		$value2[$key1] = convertEncoding($value1, 'latin1', 'UTF-8');
+        		$value2[$key1] = convertEncoding($value1, 'UTF-8');
         	} // foreach
         } else {
-            //$encoding = mb_detect_encoding($value);
-            $value2 = convertEncoding($value, 'latin1', 'UTF-8');
+            $value2 = convertEncoding($value, 'UTF-8');
         } // if
         $result[$key] = $value2;
     } // foreach
+
+    if (getcwd() != dirname($_SERVER['SCRIPT_FILENAME'])) {
+	    // change back to working directory for the current script
+		chdir(dirname($_SERVER['SCRIPT_FILENAME']));
+	} // if
 
     return $result;
 
@@ -789,17 +1391,30 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
     static $array1;
     static $array2;
 
+    if (!empty($GLOBALS['classdir'])) {
+        if (substr($GLOBALS['classdir'], -4, 4) == '.inc') {
+            // remove filename to leave a directory name
+        	$GLOBALS['classdir'] = dirname(dirname($GLOBALS['classdir']));
+        } // if
+        // compare directories of current class and current script
+    	if ($GLOBALS['classdir'] != $_SERVER['SCRIPT_FILENAME']) {
+    	    // change to directory of current class to obtain error message
+    		chdir($GLOBALS['classdir']);
+    		$array2 = false;  // cause this to be reloaded
+    	} // if
+    } // if
+
     if (!is_array($array1)) {
         $array1 = array();
         // get name of current directory
-        $dir = basename(dirname($_SERVER['PHP_SELF']));
+        $dir = basename(getcwd());  // may be class directory or script directory
         if ($dir == 'menu') {
             $dir = './text';
         } else {
         	$dir = '../menu/text';
         } // if
         // include standard text from menu subdirectory
-        $subdir = getLanguageSubDir ($dir);
+        $subdir = getLanguageSubDir($dir);
         $fname = "$subdir/sys.language_text.inc";
         if (!file_exists($fname)) {
             // filename does not exist
@@ -818,7 +1433,7 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
             // filename does not exist
         	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
         } // if
-        $array2 = require_once $fname;
+        $array2 = require $fname;
         unset ($array);
         // use this language code for the HTML output
         $pos = strrpos($subdir, '/');
@@ -832,15 +1447,25 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
     	$string = $array1[$id];
     } else {
         // nothing found, so return original $id
-        return trim($id ." $arg1 $arg2 $arg3 $arg4 $arg5");
+        $string = trim($id ." $arg1 $arg2 $arg3 $arg4 $arg5");
     } // if
 
-    $string = convertEncoding($string, 'latin1', 'UTF-8');
+    $string = convertEncoding($string, 'UTF-8');
 
     if (!is_null($arg1)) {
         // insert argument(s) into string
     	$string = sprintf($string, $arg1, $arg2, $arg3, $arg4, $arg5);
     } // if
+
+    $cwd = getcwd();
+    if (DIRECTORY_SEPARATOR == '\\') {
+     	$cwd = str_replace('\\', '/', $cwd);
+    } // if
+    if ($cwd != dirname($_SERVER['SCRIPT_FILENAME'])) {
+	    // change back to working directory of the current script
+		chdir(dirname($_SERVER['SCRIPT_FILENAME']));
+		$array2 = false;  // cause this to be reloaded
+	} // if
 
     return $string;
 
@@ -868,7 +1493,7 @@ function getParentDIR ($filename=null)
 
     return $dir;
 
-} // getSelf
+} // getParentDIR
 
 // ****************************************************************************
 function getPostArray ($post, $fieldlist)
@@ -986,7 +1611,7 @@ function getTableAlias3 ($string)
 // look for 'original AS alias' in $string and return both 'original' and 'alias'
 {
     // look for words either side of ' as ' in $string
-    if ($count = preg_match('/\w+(?= as )/i', $string, $regs) > 0) {
+    if ($count = preg_match('/\w+\.\w+(?= as )|\w+(?= as )/i', $string, $regs) > 0) {
     	$array[0] = $regs[0];  // original
     	$count = preg_match('/(?<= as )\w+/i', $string, $regs);
     	$array[1] = $regs[0];  // alias
@@ -1048,25 +1673,51 @@ function indexed2assoc ($array_in)
 {
     $array_out = array();
 
-    $separators = '/^('     // beginning with
-                 .'AND'     // AND
-                 .'|'
-                 .'OR'      // OR
-                 .'|'
-                 .'\('      // ( - left parenthesis
-                 .'|'
-                 .'\)'      // ) - right parenthesis
-                 .')$/i';   // ending with, case insensitive
+    $pattern = '/^('        // begins with
+             . 'OR'         // 'OR'
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
 
+    $last_string = null;
     foreach ($array_in as $index => $string) {
-        if (preg_match($separators, $string, $regs)) {
+        if (preg_match('/^(NOT EXISTS |EXISTS )/i', ltrim($string), $regs)) {
+            // this is a subquery
+            if (strlen($last_string) > 1) {
+            	$array_out[] = $last_string .' ' .$string;
+            } else {
+                $array_out[] = ltrim($string);
+            } // if
+            $last_string = null;
+        } elseif (preg_match('/^MATCH[ ]*\(/i', ltrim($string), $regs)) {
+            // this is a MATCH (...) AGAINST (...) string
+            $array_out[] = ltrim($string);
+        } elseif (preg_match($pattern, ltrim($string), $regs)) {
             // ignore this entry
+            $last_string = trim($string);
         } else {
-            // split string into its component parts
-        	list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
-        	if (!array_key_exists($fieldname, $array_out)) {
-        		$array_out[$fieldname] = $operator .$fieldvalue;
-        	} // if
+            $last_string = null;
+            $duff = array();
+            while (!empty($string)) {
+        	    // extract any separator between each element
+        		$string = extractSeparator($string, $duff);
+        		// split element into its component parts
+        		list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
+            	if (!array_key_exists($fieldname, $array_out)) {
+            	    // $fieldname is not in $array_out, so add it
+            		$array_out[$fieldname] = $operator .$fieldvalue;
+            	} // if
+        	} // while
         } // if
     } // foreach
 
@@ -1075,7 +1726,7 @@ function indexed2assoc ($array_in)
 } // indexed2assoc
 
 // ****************************************************************************
-function isPkeyComplete ($where, $pkey)
+function isPkeyComplete ($where, $pkey, $candidate_keys=null)
 // check that $where contains all fields for the primary key.
 {
     if (is_string($where)) {
@@ -1106,9 +1757,27 @@ function isPkeyComplete ($where, $pkey)
         if (array_key_exists($fieldname, $fieldarray)) {
             // value must NOT contain wildcard character
             if (strpos($fieldarray[$fieldname], '%') === false) {
-                // not found, so continue
+                // field is valid, so continue
             } else {
                 $errors[$fieldname] = getLanguageText('sys0017'); // 'Must not use wildcard character (%) in primary key'
+            } // if
+        } elseif (!empty($candidate_keys)) {
+            // look to see if any candidate keys have been supplied
+            foreach ($candidate_keys as $ukey) {
+                $yes_count = 0;
+            	foreach ($ukey as $fieldname) {
+            	    // value must NOT contain wildcard character
+                    if (strpos($fieldarray[$fieldname], '%') === false) {
+                        // field is valid, so continue
+                        $yes_count ++;
+                    } // if
+            	} // foreach
+            	if ($yes_count == count($ukey)) {
+            		break; // all components of this key have been supplied
+            	} // if
+            } // foreach
+            if ($yes_count != count($ukey)) {
+                $errors[] = getLanguageText('sys0018', $fieldname); // "Primary key ($fieldname) is not complete - check selection"
             } // if
         } else {
             $errors[] = getLanguageText('sys0018', $fieldname); // "Primary key ($fieldname) is not complete - check selection"
@@ -1181,6 +1850,10 @@ function logStuff ($string, $function=null, $line=null)
         // this is one my PCs, so continue
     } else {
     	return;
+    } // if
+
+    if (empty($function)) {
+    	$function = getSelf();
     } // if
 
     $header = "\r\n<p>********** " .date('Y-m-d H:i:s') .' ';
@@ -1269,12 +1942,12 @@ function mergeWhere ($where1, $where2)
     $array2 = where2array($where2, false, false);
 
     // remove any entries in $array2 that already exist in $array1
-    foreach ($array2 as $field1 => $value1) {
-        if (array_key_exists($field1, $array1)) {
+    foreach ($array2 as $field2 => $value2) {
+        if (array_key_exists($field2, $array1)) {
             // corresponding entry exists, so remove it
-        	unset($array2[$field1]);
+        	unset($array2[$field2]);
         } else {
-            $namearray = explode('.', $field1);
+            $namearray = explode('.', $field2);
             if (!empty($namearray[1])) {
                 // remove table qualifier
                 $fieldname_unq = $namearray[1];
@@ -1283,15 +1956,24 @@ function mergeWhere ($where1, $where2)
             } // if
             if (array_key_exists($fieldname_unq, $array1)) {
                 // corresponding entry exists, so remove it
-            	unset($array2[$fieldname_unq]);
+            	unset($array2[$field2]);
             } // if
         } // if
     } // foreach
 
-    if (!empty($array2)) {
-    	// convert $array2 back into a sring and append to $where 1
+    if (empty($array2)) {
+        // second string is now enpty, so return first string on its own
+        return $where1;
+    } else {
+    	// convert $array2 back into a string and append it to $where1
         $where3 = array2where($array2);
-        $where1 .= ' AND ' .$where3;
+        if (preg_match('/^(AND |OR )/i', ltrim($where2).' ', $regs)) {
+            // join operator was pre-defined so use it
+            $where1 = "$where1 $regs[0] $where3";
+        } else {
+            // use default join operator
+            $where1 = "$where1 AND $where3";
+        } // if
     } // if
 
     return $where1;
@@ -1329,52 +2011,138 @@ function number_unformat ($input)
 } // number_unformat
 
 // ****************************************************************************
-function orderbyFilter ($orderby, $fieldlist, $tablename)
-// filter out any fields in $orderby which do not belong in this table,
-// (valid fields are identified in the $fieldlist array).
+function pasteData ($fieldspec, $array1, $array2)
+// update the contents of $array1 with saved data in $array2.
+// Observe the following rules:
+// - do not copy into $array1 unless the field exists in $fieldspec.
+// - if a non-null field in $array1 is a primary key then do not update it.
+// - if a field is marked as 'noedit' in $fieldspec then do not update it.
+// - if a field is marked as 'autoinsert' in $fieldspec then do not update it.
+// - if a field is marked as 'autoupdate' in $fieldspec then do not update it.
+// - if a field is a date then do not replace value with an earlier date
 {
-    // if input string is empty there is nothing to do
-    if (empty($orderby)) return;
+    reset($array1);  // fix for version 4.4.1
+    if (!is_string(key($array1))) {
+        // indexed by row, so use row zero only
+        $array1 = $array1[0];
+    } // if
 
-    // split string into an array of fieldnames
-    $array1 = explode(',', $orderby);
+    reset($array2);  // fix for version 4.4.1
+    if (!is_string(key($array2))) {
+        // indexed by row, so use row zero only
+        $array2 = $array2[0];
+    } // if
 
-    $string = null;
-    foreach ($array1 as $fieldname) {
-        if (strpos($fieldname, '.')) {
-            // split into $tablename and $fieldname
-            list($table, $fieldname) = explode('.', $fieldname);
+    foreach ($array2 as $fieldname => $fieldvalue) {
+        if (!array_key_exists($fieldname, $fieldspec)) {
+        	$reason = 1; // field not in $fieldspec, so do not copy;
+        } elseif (isset($fieldspec[$fieldname]['pkey']) AND !empty($array1[$fieldname])) {
+            $reason = 2; // primary key field is not empty, so do not copy
+        } elseif (isset($fieldspec[$fieldname]['noedit'])) {
+            $reason = 3; // field marked as 'noedit', so do not copy
+        } elseif (isset($fieldspec[$fieldname]['autoinsert'])) {
+            $reason = 4; // field marked as 'autoinsert', so do not copy
+        } elseif (isset($fieldspec[$fieldname]['autoupdate'])) {
+            $reason = 5; // field marked as 'autoupdate', so do not copy
+        } elseif ($fieldspec[$fieldname]['type'] == 'date' AND $array1[$fieldname] > $array2[$fieldname]) {
+            $reason = 6; // do not overwrite with an earlier date
         } else {
-            $table = null;
-        } // if
-        if (array_key_exists($fieldname, $fieldlist)) {
-            // field is valid, so copy to output string
-            if (empty($string)) {
-                $string = $fieldname;
-            } else {
-                $string .= ', ' .$fieldname;
-            } // if
+            $array1[$fieldname] = $array2[$fieldname];
         } // if
     } // foreach
 
-    return $string;
+    return $array1;
 
-} // OrderbyFilter
+} // pasteData
 
 // ****************************************************************************
-function qualifyOrderby ($input, $tablename, $fieldspec)
+function qualifyOrderby ($input, $tablename, $fieldspec, $sql_select, $sql_from)
 // add table names to field names in input string, but only for those fields
 // which exist in $fieldspec.
 {
     if (empty($input)) return;
+
+    if (substr_count($input, '.') > 0) {
+        // fieldname is qualified with a tablename (as in 'table.field')
+        list($input_table, $input_field) = explode('.', $input);
+        if (!empty($input_field)) {
+            // if the fieldname in 'order by' string is specified as an alias name in the
+            // sql_select string then it does not need to be qualified.
+        	$alias = getTableAlias1 ($input_field, $sql_select);
+            if ($alias === false) {
+                // continue
+            } else {
+            	return $input_field;     // return unqualified fieldname only
+            } // if
+        } // if
+    } else {
+        $alias = getTableAlias1 ($input, $sql_select);
+        if ($alias) {
+            // found as alias name in SELECT string, so further action is not necessary
+        	return $input;
+        } // if
+    } // if
+
+    if (!empty($sql_select)) {
+        $select_array = extractQualifiedFieldNames($sql_select);
+    } else {
+        $select_array = array();
+    } // if
+
+    if (!empty($sql_from)) {
+        $table_array = extractTableNames($sql_from);
+    } else {
+        $table_array = array();
+    } // if
+
+    if (count($table_array) == 1) {
+        // only 1 table, so no qualification is necessary
+    	return $input;
+    } // if
+
+    if (!array_key_exists($tablename, $table_array) AND !in_array($tablename, $table_array)) {
+        // for some reason $tablename is missing from $table_array, so do nothing
+    	return $input;
+    } // if
 
     // split into substrings separated by comma or space
     $array = preg_split('(( )|(,))', $input, -1, PREG_SPLIT_DELIM_CAPTURE);
 
     $output = null;
     foreach ($array as $key => $value) {
-        if (array_key_exists($value, $fieldspec)) {
-        	$value = $tablename .'.' .$value;
+        if (empty($value) OR ereg(' |,', $value)) {
+        	// continue
+        } else {
+            // find out if fieldname is qualified with tablename
+            $namearray = explode('.', $value);
+            if (isset($namearray[1])) {
+                // fieldname is qualified, but does tablename have an alias?
+                if (in_array($namearray[0], $table_array)) {
+                    // tablename has an alias, so use that instead
+        	        $namearray[0] = array_search($namearray[0], $table_array);
+                } // if
+                $value = $namearray[0] .'.' .$namearray[1];
+            } else {
+                // fieldname is not qualified
+                foreach ($select_array as $tablefield) {
+                    if (strpos($tablefield, '.')) {
+                    	list($select_table, $select_field) = explode('.', $tablefield);
+                    	if ($input == $select_field) {
+                    	    // fieldname is qualified in $sql_select, so keep that qualification
+                    		$value = $tablefield;
+                    		break;
+                    	} // if
+                    } // if
+                } // foreach
+                if (array_key_exists($value, $fieldspec) AND !isset($fieldspec[$value]['nondb'])) {
+                    // it exists within curent table, so qualify it with that tablename
+                    if (in_array($tablename, $table_array)) {
+                        // tablename has an alias, so use that instead
+            	        $tablename = array_search($tablename, $table_array);
+                    } // if
+                	$value = $tablename .'.' .$value;
+                } // if
+            } // if
         } // if
         $output .= $value;
     } // foreach
@@ -1384,70 +2152,90 @@ function qualifyOrderby ($input, $tablename, $fieldspec)
 } // qualifyOrderby
 
 // ****************************************************************************
-function qualifyField ($fieldarray, $tablename, $fieldspec, $table_array, $sql_search_table)
+function qualifyField ($fieldarray, $tablename, $fieldspec, $sql_select, $table_array, $sql_search_table)
 // Examine each field in $fieldarray and ensure that it is qualified with a table name.
 // If it is already qualified then ensure that its table name exists in $table_array.
 // (NOTE: $table_array is in format 'alias = original')
 // If it is not already qualified then find out which table it belongs to.
 {
-    // $tablename may contain 'original AS alias', so split into two
-    if ($count = preg_match("/\w+ as \w+/i", $sql_search_table, $regs)) {
-        // entry contains 'table AS alias', so use original table table
-    	list($search_table_orig, $search_table_alias) = preg_split('/ as /i', $regs[0]);
-    } else {
-        $search_table_orig  = $sql_search_table;
-        $search_table_alias = $sql_search_table;
+    if (!empty($sql_search_table)) {
+        // $sql_search_table may contain 'original AS alias', so split into two
+        if ($count = preg_match("/\w+ as \w+/i", $sql_search_table, $regs)) {
+            // entry contains 'table AS alias', so use original table table
+        	list($search_table_orig, $search_table_alias) = preg_split('/ as /i', $regs[0]);
+        } else {
+            $search_table_orig  = $sql_search_table;
+            $search_table_alias = $sql_search_table;
+        } // if
+        // rebuild $table_array with $sql_search_table at the front
+        $table_array = array_merge(array($search_table_alias => $search_table_orig), $table_array);
     } // if
 
     $output_array = array();
     foreach ($fieldarray as $fieldname => $fieldvalue) {
-        $namearray = explode('.', $fieldname);
-    	if (isset($namearray[1])) {
-    	    // fieldname is qualified, but does tablename exist in $table_array?
-    	    if (array_key_exists($namearray[0], $table_array)) {
-    	        // yes, so copy to $output_array
-    	    	$output_array[$fieldname] = $fieldvalue;
-    	    } else {
-    	        // look for match with original name
-    	        if (in_array($namearray[0], $table_array)) {
-    	        	$alias = array_search($namearray[0], $table_array);
-    	        	$output_array["$alias.$namearray[1]"] = $fieldvalue;
-    	        } // if
-    	    } // if
-    	} else {
-            // if $fieldspec is supplied it must contain fieldname
-            if (empty($fieldspec) or (array_key_exists($fieldname, $fieldspec)) AND !isset($fieldspec[$fieldname]['nondb'])) {
-                // field is in current table, so insert qualified name
-                $output_array["$tablename.$fieldname"] = $fieldvalue;
-            } else {
-                // field is not in current table
-                if (empty($table_array)) {
-                    // no other tables is $sql_from, so leave it alone
-                	$output_array[$fieldname] = $fieldvalue;
-                } else {
-                    // find out if it belongs in one of the tables in $sql_from
-                    foreach ($table_array as $array_tablename) {
-                    	if ($array_tablename != $tablename) {
-                    	    $class = "classes/$array_tablename.class.inc";
+        if (is_integer($fieldname)) {
+        	// this must be a subquery, so it cannot be qualified
+        	$output_array[] = $fieldvalue;
+        } elseif (preg_match('/\w+\(.*\)/', $fieldname, $regs)) {
+            // this is in format "function(...)", so it cannot be qualified
+            $output_array[] = $fieldname.$fieldvalue;
+        } elseif (preg_match('/\w+( )+/', $fieldname, $regs)) {
+            // this is an expression with multiple words, so it cannot be qualified
+            $output_array[] = $fieldname.$fieldvalue;
+        } else {
+            $namearray = explode('.', $fieldname);
+        	if (isset($namearray[1])) {
+        	    // fieldname is qualified, but does tablename exist in $table_array?
+        	    if (array_key_exists($namearray[0], $table_array)) {
+        	        // yes, so copy to $output_array
+        	    	$output_array[$fieldname] = $fieldvalue;
+        	    } else {
+        	        // look for match with original name
+        	        if (in_array($namearray[0], $table_array)) {
+        	        	$alias = array_search($namearray[0], $table_array);
+        	        	$output_array["$alias.$namearray[1]"] = $fieldvalue;
+        	        } // if
+        	    } // if
+        	} else {
+        	    // fieldname is not qualified, but does it need to be?
+        	    if (getTableAlias1($fieldname, $sql_select)) {
+        	    	// fieldname is an alias of something, so does not need to be qualified
+        	    	$output_array[$fieldname] = $fieldvalue;
+        	    } elseif (empty($table_array)) {
+        	        // if $fieldspec is supplied does it contain fieldname?
+        	    	if (empty($fieldspec) or (array_key_exists($fieldname, $fieldspec)) AND !isset($fieldspec[$fieldname]['nondb'])) {
+                        // field is in current table, so insert qualified name
+                        $output_array["$tablename.$fieldname"] = $fieldvalue;
+                    } else {
+                        // no other tables is $table_array, so leave fieldname unqualified
+                    	$output_array[$fieldname] = $fieldvalue;
+                    } // if
+        	    } else {
+                    // find out if it belongs in one of the other tables in $table_array
+                    foreach ($table_array as $array_table_alias => $array_tablename) {
+                        if ($array_tablename == $tablename) {
+                        	$table_fieldspec = $fieldspec;
+                        } else {
+                            $class = "classes/$array_tablename.class.inc";
             			    if ($fp = fopen($class, 'r', true)) {
                             	fclose($fp);
                             	// class exists, so inspect it
                             	$object =& singleton::getInstance($array_tablename);
-                                if (array_key_exists($fieldname, $object->fieldspec) AND !isset($object->fieldspec[$fieldname]['nondb'])) {
-                					// field is in this other table, so insert qualified name
-                					if ($array_tablename == $search_table_orig) {
-                					    // use alias name, not original
-                						$output_array["$search_table_alias.$fieldname"] = $fieldvalue;
-                					} else {
-                					    $output_array["$array_tablename.$fieldname"] = $fieldvalue;
-                					} // i
-                					break;
-                				} // if
-                            } // if
-                    	} // if
+                            	$table_fieldspec = $object->fieldspec;
+            			    } else {
+            			        $table_fieldspec = array();
+            			    } // if
+                        } // if
+                        if (array_key_exists($fieldname, $table_fieldspec) AND !isset($table_fieldspec[$fieldname]['nondb'])) {
+        					// field is in this table, so insert qualified name
+        					$output_array["$array_table_alias.$fieldname"] = $fieldvalue;
+        					break;
+                        } else {
+                            // field does not exist, so it is not carried forward
+        				} // if
                     } // foreach
-                } // if
-            } // if
+        	    } // if
+        	} // if
         } // if
     } // foreach
 
@@ -1460,34 +2248,34 @@ function qualifySelect ($input, $tablename, $fieldspec)
 // add table names to field names in input string, but only for those fields
 // which exist in $fieldspec.
 {
-
     if (empty($input)) return;
 
-    $pattern = '/'          // start delimiter
-              .'(,)'        // comma
-              .'|( as )'    // or ' as '
-              .'|( )'       // or space
-              .'|(\()'      // or '('
-              .'|(\))'      // or ')'
-              .'/i';        // end delimiter, case-insensitive
-    // split into substrings separated by comma or space or left/right parentheseis, or ' AS '
-    $array = preg_split($pattern, $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+    // extract elements separated by commas EXCEPT where the commas appear
+    // inside an expression such as "concat(a, ',', b) as something"
+    $pattern = '/([^(,]*?\([^)]*\)[^,]*|[^(),]*)?,?/';
+
+    $elements = preg_split($pattern, $input, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
     $output   = null;
-    $previous = null;
-    foreach ($array as $key => $value) {
-        if (array_key_exists($value, $fieldspec)) {
-            if (strtoupper($previous) == ' AS ') {
-                // previous word is ' as ', so do not prefix this name
-            } else {
-            	// substring exists in $fieldspec array, so prefix with supplied tablename
-            	$value = $tablename .'.' .$value;
+    // if fieldname exists in fieldspec it must be qualified with $tablename
+    foreach ($elements as $element) {
+        $element = trim($element);
+        // look for 'fieldname AS alias'
+        list($original, $alias) = getFieldAlias3($element);
+        if (!empty($original)) {
+            if (array_key_exists($original, $fieldspec)) {
+                $element = $tablename .'.' .$element;
+            } // if
+        } else {
+            if (array_key_exists($element, $fieldspec)) {
+                $element = $tablename .'.' .$element;
             } // if
         } // if
-        if ($value != ' ') {
-        	$previous = $value; // store previous value (except space)
+        if (empty($output)) {
+        	$output = $element;
+        } else {
+            $output .= ', ' .$element;
         } // if
-        $output .= $value;
     } // foreach
 
     return $output;
@@ -1495,7 +2283,7 @@ function qualifySelect ($input, $tablename, $fieldspec)
 } // qualifySelect
 
 // ****************************************************************************
-function qualifyWhere ($where, $tablename, $fieldspec=null, $sql_from=null, $sql_search_table=null)
+function qualifyWhere ($where, $tablename, $fieldspec=null, $sql_select=null, $sql_from=null, $sql_search_table=null)
 // add table names to field names in 'where' string.
 {
     // if $where is empty do nothing
@@ -1513,84 +2301,123 @@ function qualifyWhere ($where, $tablename, $fieldspec=null, $sql_from=null, $sql
         $fieldarray = where2indexedArray($where);
     } // if
 
-    if (!empty($sql_from)) {
-    	// extract first tablename from $sql_from
-        $count = preg_match("/\w+/", $sql_from, $regs);
-        $table_array[] = $regs[0];
+    if ($count = preg_match("/\w+ as \w+/i", $sql_search_table, $regs)) {
+        // entry contains 'table AS alias', so use original table table
+    	list($original, $alias) = preg_split('/ as /i', $regs[0]);
+    	$sql_search_table = $alias;
+    } // if
 
-        // append any other tablenames (which may be qualified with a database name) which follow the word ' JOIN '
-        if ($count = preg_match_all("/(?<= join )\w+\.\w+|(?<= join )\w+/i", $sql_from, $regs)) {
-        	$table_array = array_merge($table_array, $regs[0]);
+    if (!empty($sql_from)) {
+        $table_array = extractTableNames($sql_from);
+        if (!array_key_exists($sql_search_table, $table_array)) {
+        	$sql_search_table = null;
         } // if
-        if ($count = preg_match_all("/(?<= join )\w+\.\w+/i", $sql_from, $regs)) {
-            // remove any database name which may prefix a table name
-            foreach ($regs[0] as $database_table) {
-                // remove 'database.table' entry
-                $key = array_search($database_table, $table_array);
-            	unset($table_array[$key]);
-            	// replace entry with table name only
-            	list($database, $table) = explode('.', $database_table);
-            	$table_array[] = $table;
-            } // foreach
-        } // if
-        // look for any 'table AS alias' entries
-        if ($count = preg_match_all("/\w+ as \w+/i", $sql_from, $regs)) {
-            foreach ($regs[0] as $entry) {
-            	list($original, $alias) = preg_split('/ as /i', $entry);
-            	$index = array_search($original, $table_array);
-            	if ($index === false) {
-            		// not found, so ignore it
-            	} else {
-            	    // replace 'index = table' with 'alias = table'
-            	    $table_array[$alias] = $original;
-            	    // remove original indexed entry
-            	    unset($table_array[$index]);
-            	} // if
-            } // foreach
-        } // if
-        // replace 'index = table' with 'table = table'
-        foreach ($table_array as $key => $value) {
-        	if (!is_string($key)) {
-        		$table_array[$value] = $value;
-        		unset($table_array[$key]);
-        	} // if
-        } // foreach
     } else {
         $table_array = array();
     } // if
 
-    $where1 = null;
+    $pattern = '/^('        // begins with
+             . 'OR \('      // 'OR ('
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'OR'         // 'OR'
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
 
-    if (in_array(') or (', $fieldarray) or in_array(') OR (', $fieldarray)) {
-        // $where contains multiple selections in the format "(...) OR (...)" so ...
-        // split into separate selections (rows)
-    	$fieldarray = splitWhereByRow($fieldarray);
-    	// process each row separately
-        foreach ($fieldarray as $rownum => $rowdata) {
-            // create a separate array for this row
-            $array1 = where2array($rowdata);
-            $output_array = qualifyField ($array1, $tablename, $fieldspec, $table_array, $sql_search_table);
-            // put modified details back into $fieldarray
-            $fieldarray[$rownum] = $output_array;
-        } // foreach
-
-    } else {
-        reset($fieldarray);  // fix for version 4.4.1
-        if (!is_string(key($fieldarray))) {
-        	$fieldarray = indexed2assoc($fieldarray);       // convert indexed array to associative
-        } // if
-        $output_array = qualifyField ($fieldarray, $tablename, $fieldspec, $table_array, $sql_search_table);
-        // put modified details back into $fieldarray
-        $fieldarray = $output_array;
-    } // if
+    $array_out = array();
+    $last_separator = null;
+    $start_condition = true;
+    foreach ($fieldarray as $key => $string) {
+        $string = trim($string);
+    	if (preg_match($pattern, $string, $regs)) {
+    	    // this is a separator, not a field
+            $last_separator = strtoupper($regs[0]);
+            if ($last_separator == '(') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == ')') {
+            	$start_condition = false;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == ') OR (') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == ') AND (') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == 'OR') {
+            	//$start_condition = true;
+            	//$array_out[] = $last_separator;
+            	$x = 'do nothing';
+            } elseif ($last_separator == 'AND') {
+            	//$start_condition = true;
+            	//$array_out[] = $last_separator;
+            	$x = 'do nothing';
+            } elseif ($last_separator == 'OR (') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } elseif ($last_separator == 'AND (') {
+            	$start_condition = true;
+            	$array_out[] = $last_separator;
+            } // if
+    	} else {
+    	    // look for EXISTS, NOT EXISTS and "function(...)"
+    	    if (preg_match('/^(EXISTS |NOT EXISTS|\w+\(.*\))/i', $string, $regs)) {
+    	        $start_condition = false;
+    	        if ($last_separator) {
+                	$array_out[] = $last_separator;
+                	$last_separator = null;
+                } // if
+    	        $array_out[] = $string;
+    	    } else {
+                $fieldarray2 = where2indexedArray($string);
+                foreach ($fieldarray2 as $rownum => $rowdata) {
+                    // create a separate array for this row
+                    $array1 = where2array($rowdata, false, false);
+                    $array2 = qualifyField ($array1, $tablename, $fieldspec, $sql_select, $table_array, $sql_search_table);
+                    if (empty($array2)) {
+                        // nothing to add
+                        if (eregi('^(OR|AND)', $last_separator)) {
+                            $last_separator = null;  // this is now invalid
+                        } // if
+                    } else {
+                    	// put modified details back into $fieldarray
+                    	if ($last_separator) {
+                    	    if (eregi('^(OR|AND)', $last_separator)) {
+                    	        if ($start_condition) {
+                    	        	// cannot have AND/OR at the start of a conditional statement
+                    	        } else {
+                    	            // insert this separator before the field value
+                    	            $array_out[] = $last_separator;
+                    	        } // if
+                            	$last_separator = null;
+                    	    } // if
+                        } // if
+                        // add these details to the output array
+                        $array_out[] = array2where($array2);
+                        $start_condition = false;
+                    } // if
+                } // foreach
+    	    } // if
+    	} // if
+    } // foreach
 
     if (is_array($where)) {
         // return output as array
-        return $fieldarray;
+        return $array_out;
     } //if
 
     // convert output array to a string
-    $where1 = array2where($fieldarray);
+    $where1 = array2where2($array_out);
 
     return $where1;
 
@@ -1614,6 +2441,164 @@ function removeTableSuffix ($tablename)
 } // removeTableSuffix
 
 // ****************************************************************************
+function requalifyOrderBy ($string, $sql_select, $link_table, $inner_table, $parent_relations)
+// if the 'orderby' string is qualified with the $link_table name it may need
+// to be changed to the $inner_table name instead.
+{
+    if (empty($string)) return;
+
+    if (substr_count($string, '.') < 1) {
+    	return $string;  // fieldname not qualified, so do nothing
+    } // if
+
+    list($tablename, $fieldname) = explode('.', $string);
+
+    $alias = getTableAlias1 ($fieldname, $sql_select);
+    if ($alias) {
+    	return $fieldname;  // return alias name as it does not need to be qualified
+    } // if
+
+    if ($tablename != $link_table) {
+    	return $string;     // fieldname not qualified with $link_table, so do nothing
+    } // if
+
+    // find details of relationship between $link_table and $inner_table
+    $found = false;
+    foreach ($parent_relations as $parent) {
+    	if ($parent['parent'] == $inner_table) {
+    		$found = true;
+    		break;
+    	} // if
+    	if (isset($parent['alias']) AND $parent['alias'] == $inner_table) {
+    		$found = true;
+    		break;
+    	} // if
+    } // foreach
+    if (!$found) {
+    	return $string;
+    } // if
+
+    foreach ($parent['fields'] as $fldchild => $fldparent) {
+    	if ($fldchild == $fieldname) {
+    	    // this field is part of relationship, so switch table names
+    		return $inner_table .'.' .$fieldname;
+    	} // if
+    } // foreach
+
+    return $string;
+
+} // requalifyOrderBy
+
+// ****************************************************************************
+function resizeImage ($source, $destination, $width, $height)
+// resize an image according to the specs in $resize_array
+{
+    if (!file_exists($source)) {
+    	// "File X does not exist"
+    	return getLanguageText('sys0057', $source);
+    } // if
+
+    if (!is_dir($destination) ) {
+        // 'destination directory does not exist'
+        return getLanguageText('sys0123', $destination);
+    } // if
+
+    $width  = (int)$width;
+    $height = (int)$height;
+    if ($width <= 0 OR $height <= 0) {
+        // "Cannot resize image - dimensions are invalid"
+    	return getLanguageText('sys0138', $width, $height);
+    } // if
+
+    // get dimensions of source image
+    $dim = GetImageSize($source);
+
+    // build dimensions of destination image
+    // NOTE: the dimensions of the original image will be maintained,
+    // which may cause blank areas in the new image
+    if ($dim[0] > $dim[1]) {
+    	$to_w = $width;
+    	$to_h = round($dim[1]*($height/$dim[0]));
+    	$to_x = 0;
+    	$to_y = round($width-$to_h)/2;
+    } else {
+    	$to_h = $height;
+    	$to_w = round($dim[0]*($width/$dim[1]));
+    	$to_y = 0;
+    	$to_x = round($height-$to_w)/2;
+    } // if
+
+    switch ($dim['mime']) {
+    	case 'image/jpeg':
+    		$from = ImageCreateFromJPEG($source);
+    		break;
+
+    	case 'image/gif':
+    		$from = ImageCreateFromGIF($source);
+    		break;
+
+    	case 'image/png':
+    		$from = ImageCreateFromPNG($source);
+    		break;
+
+    	default:
+    	    // "Cannot resize image - MIME type (x) is unsupported"
+    	    return getLanguageText('sys0137', $dim['mime']);
+    		break;
+    } // switch
+
+    // create a new image
+	$thumb = imagecreatetruecolor($width, $height);
+	// set background to white, full transparency
+	imagesavealpha($thumb, true);
+	$bgc = imagecolorallocatealpha($thumb, 255, 255, 255, 127);
+	imagefill($thumb, 0, 0, $bgc);
+    // copy 'old' image to the 'new' image, with adjusted dimensions
+	imagecopyresampled($thumb, $from, $to_x, $to_y, 0, 0, $to_w, $to_h, $dim[0], $dim[1]);
+
+	// copy the 'new' image to disk using the correct MIME type
+	list($fname, $ext) = explode('.', basename($source));
+
+ 	switch ($dim['mime']) {
+    	case 'image/jpeg':
+    	    $destination .= '\\' .$fname .'.jpg';
+    	    if (file_exists($destination)) unlink($destination);
+    		$result = ImageJPEG($thumb, $destination, 100);
+    		break;
+
+    	case 'image/gif':
+    	    $destination .= '\\' .$fname .'.gif';
+    	    if (file_exists($destination)) unlink($destination);
+    		$result = ImageGIF($thumb, $destination, 100);
+    		break;
+
+    	case 'image/png':
+    	    $destination .= '\\' .$fname .'.png';
+    	    if (file_exists($destination)) unlink($destination);
+    		$result = ImagePNG($thumb, $destination, 100);
+    		break;
+
+    	default:
+    	    $result = false;
+    		break;
+    } // switch
+
+ 	if ($result) {
+ 	    // "File uploaded into $destination";
+ 	    $msg = getLanguageText('sys0126', $destination ." ($width x $height)");
+	} else {
+	    // "Image NOT resized"
+	    $msg = getLanguageText('sys0139', $width, $height);
+	} // if
+
+	ImageDestroy($from);
+	ImageDestroy($thumb);
+
+    return $msg;
+
+} // resizeImage
+
+// ****************************************************************************
 function selection2null ($pkeyarray)
 // create WHERE clause with each pkey field set to NULL.
 {
@@ -1628,7 +2613,7 @@ function selection2null ($pkeyarray)
 
     return $where;
 
-} // selection2ull
+} // selection2null
 
 // ****************************************************************************
 function selection2where ($pkeyarray, $select)
@@ -1678,21 +2663,38 @@ function splitNameOperatorValue (&$where)
 // ($where is passed by reference so that it can be amended)
 {
     // construct list of possible operators between fieldname and fieldvalue
-    $operators = "/(<>|<=|<|>=|>|!=|=| LIKE | IS NOT | IS | IN | BETWEEN )/i";
+    $operators = "/(<>|<=|<|>=|>|!=|=| LIKE | IS NOT | IS | IN | BETWEEN | NOT EXISTS | EXISTS |MATCH[ ]*\()/i";
+
+    $where = ltrim($where);
+    if (preg_match('/^[a-z]/i', $where, $regs)) {
+        // $where starts with an alphabetic character, so insert a single leading space
+        $where = ' '.$where;
+    } // if
 
     if (preg_match($operators, $where, $regs, PREG_OFFSET_CAPTURE)) {
         $operator = $regs[0][0];    // found an operator
         $startpos = $regs[0][1];    // start position of this operator
-        // everything in front is a fieldname
-        $fieldname = trim(substr($where, 0, $startpos));
-        // strip off any leading parenthesis
-        $fieldname = ltrim($fieldname, '(');
-        // calculate length of $fieldname + operator
-        $endpos = $startpos + strlen($operator);
-        // remove this bit from the front of the string
-        $where = ltrim(substr($where, $endpos));
 
-        $fieldvalue = extractValue($where);
+        if (eregi('^MATCH', $operator)) {
+        	// format = match(field1, field2, ...) against('string')
+        	$count = preg_match("/AGAINST\('.+'\)/i", $where, $regs, PREG_OFFSET_CAPTURE);
+        	$endpos = $regs[0][1] + strlen($regs[0][0]);
+        	$operator   = substr($where, 0, $endpos);
+        	$fieldname  = '';
+        	$fieldvalue = '';
+        	$where = substr($where, $endpos);
+        } else {
+            // everything in front is a fieldname
+            $fieldname = trim(substr($where, 0, $startpos));
+            // strip off any leading parenthesis
+            $fieldname = ltrim($fieldname, '(');
+            // calculate length of $fieldname + operator
+            $endpos = $startpos + strlen($operator);
+            // remove this bit from the front of the string
+            $where = ltrim(substr($where, $endpos));
+
+            $fieldvalue = extractValue($where);
+        } // if
 
         // are we dealing with an operator of BETWEEN?
         if (eregi('BETWEEN', trim($operator))) {
@@ -1715,6 +2717,10 @@ function splitNameOperatorValue (&$where)
         	$where      = null;
         } else {
             list($fieldname, $fieldvalue) = explode(' ', $where, 2);
+            if (empty($fieldname)) {
+            	$fieldname = 'NULL';
+            	$where     = null;
+            } // if
             if (strpos($fieldvalue, '%') === false) {
                 // use default operator
                 $operator = '=';
@@ -1729,9 +2735,12 @@ function splitNameOperatorValue (&$where)
 
     $operator = trim($operator);
     if (preg_match('/^[a-z]/i', $operator, $regs)) {
-        // operator starts with alphabetic character (IS, LIKE, BETWEEN)
+        // operator starts with alphabetic character (IS, LIKE, BETWEEN, MATCH)
         // so insert a leading space and trailing space
-        $operator = ' '.strtoupper($operator) .' ';
+        $operator = ' '.$operator .' ';
+        if (preg_match('/^match/i', $operator, $regs)) {
+        	$operator = strtoupper($operator);
+        } // if
     } // if
 
     // put all three elements into the output array
@@ -1757,7 +2766,7 @@ function splitWhereByRow ($input)
     $array2  = array();
     $string = '';
     foreach ($array1 as $key => $value) {
-    	if (eregi('^) OR \($', $value, $regs)) {
+    	if (eregi('^(\) OR \()$', $value, $regs)) {
             // add current string as a separate entry to output array
             $array2[] = trim($string, '() ');
             $string  = '';
@@ -1768,7 +2777,23 @@ function splitWhereByRow ($input)
     } // foreach
 
     if (!empty($string)) {
-        $array2[] = trim($string, '() ');
+        $string = trim($string, ' ');
+        if (substr($string, 0, 1) == '(') {
+            // remove leading '('
+        	$string = substr($string, 1);
+        	if (substr($string, -1) == ')') {
+        	    // remove trailing ')'
+        		$string = substr($string, 0, -1);
+        	} // if
+        } // if
+        if (substr($string, -1) == ')') {
+            // string has trailing ')', does it also start with one?
+            if (substr($string, 0, 1) != '(') {
+                // no, so remove it
+                $string = substr($string, 0, -1);
+            } // if
+        } // if
+        $array2[] = trim($string, ' ');
     } // if
 
     return $array2;
@@ -1800,10 +2825,10 @@ function stripOperators ($fieldarray)
 
 // ****************************************************************************
 function stripOperators_ex ($input)
-// turn string from "='value'" to "value"
+// turn string from "='value'" or "=value" to "value"
 {
-    if (preg_match('/^(=|LIKE )/i', ltrim($input), $operator)) {
-        $output = ltrim($input, $operator[0]);
+    if (preg_match('/^(!=|=|LIKE )/i', ltrim($input), $operator)) {
+        $output = substr($input, strlen($operator[0]));
         $output = trim($output);
 
         // the next character is the delimiter (single or double quote)
@@ -1812,6 +2837,9 @@ function stripOperators_ex ($input)
             // delimiter found, so remove from both ends of string
             $output = substr($output, 1);
             $output = substr($output, 0, -1);
+        } else {
+        	// no delimiter found, so use whole string
+            $output = $output;
         } // if
 
         return $output;
@@ -1825,7 +2853,6 @@ function stripOperators_ex ($input)
 function unqualifyOrderBy ($string)
 // remove any table names from field names in 'order by' string
 {
-    // if $where is empty do nothing
     if (empty($string)) return;
 
     // split into substrings spearated by comma or space
@@ -1848,47 +2875,53 @@ function unqualifyOrderBy ($string)
 function unqualifyWhere ($where)
 // remove any table names from field names in 'where' string
 {
-    // if $where is empty do nothing
     if (empty($where)) return;
 
     // convert $where string to $fieldarray
     $fieldarray = where2indexedArray($where);
 
-    $array1 = array();
-    if (in_array(') or (', $fieldarray) or in_array(') OR (', $fieldarray)) {
-        // $where contains multiple selections in the format "(...) OR (...)" so...
-        // split into separate selections (rows)
-    	$fieldarray = splitWhereByRow($fieldarray);
-        foreach ($fieldarray as $rownum => $rowdata) {
-        	// create an array for this row
-            $array2 = where2array($rowdata);
-            $array3 = array();
-            foreach ($array2 as $fieldname => $fieldvalue) {
-                if ($substring = strrchr($fieldname, '.')) {
+    $pattern = '/^('        // begins with
+             . 'OR'         // 'OR'
+             . '|'
+             . '\) OR \('   // ') OR ('
+             . '|'
+             . 'AND \('     // 'AND ('
+             . '|'
+             . 'AND'        // 'AND'
+             . '|'
+             . '\) AND \('  // ') AND ('
+             . '|'
+             . '\('         // '('
+             . '|'
+             . '\)'         // ')'
+             . ')$/i';      // ends with, case insensitive
+
+    $where_array = array();
+    foreach ($fieldarray as $key => $string) {
+        $string = trim($string);
+    	if (preg_match($pattern, $string, $regs)) {
+    	    $where_array[] = $regs[0];
+    	} else {
+    	    if (preg_match('/^(EXISTS |NOT EXISTS)/i', $string, $regs)) {
+    	        $where_array[] = $string;
+    	    } else {
+    	        list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
+    	        if ($substring = strrchr($fieldname, '.')) {
                     // now remove the tablename and put amended entry back into the array
                     $fieldname = ltrim($substring, '.');
                 } // if
-                $array3[$fieldname] = $fieldvalue;
-            } // foreach
-            $array1[] = $array3;
-        } // foreach
-    } else {
-        reset($fieldarray);  // fix for version 4.4.1
-        if (!is_string(key($fieldarray))) {
-        	$fieldarray = indexed2assoc($fieldarray);       // convert indexed array to associative
-            $fieldarray = stripOperators($fieldarray);      // strip operators in front of values
-        } // if
-        // there may be more than one row in this array
-        foreach ($fieldarray as $fieldname => $fieldvalue) {
-            if ($substring = strrchr($fieldname, '.')) {
-                // now remove the tablename and put amended entry back into the array
-                $fieldname = ltrim($substring, '.');
-            } // if
-            $array1[$fieldname] =  $fieldvalue;
-        } // foreach
-    } // if
+    	        $where_array[] = $fieldname .$operator .$fieldvalue;
+    	    } // if
+    	} // if
+    } // foreach
 
-    $where1 = array2where($array1);
+    if (is_array($where)) {
+        // return output as array
+        return $where_array;
+    } //if
+
+    // convert output array to a string
+    $where1 = array2where2($where_array);
 
     return $where1;
 
@@ -1906,7 +2939,7 @@ function validateSortItem ($zone, $sortfield, $dbobject, $structure=array())
     	return FALSE; // cannot sort on this field
     } // if
 
-    $fieldspec     = $dbobject->getFieldspec();     // get fieldspecs for current dbobject
+    $fieldspec     = $dbobject->getFieldSpec();     // get fieldspecs for current dbobject
     $orderby_table = $dbobject->sql_orderby_table;  // get name of alternate sort table
 
     $array1 = explode(",", $sortfield);     // convert input string to array of field names
@@ -1915,6 +2948,7 @@ function validateSortItem ($zone, $sortfield, $dbobject, $structure=array())
 
     // look for fields which exist within the current table
     foreach ($array1 as $field) {
+        $field = trim($field);
         // ignore field if 'nondb' option (not in database) is set
         if (array_key_exists($field, $fieldspec) and !isset($fieldspec[$field]['nondb'])) {
             // field exists in this table, so qualify the name
@@ -1981,17 +3015,21 @@ function where2array ($where, $pageno=null, $strip_operators=true)
 
     $array1 = where2indexedArray($where);   // convert string into indexed array
 
-    if (in_array(') or (', $array1) or in_array(') OR (', $array1)) {
+    if (in_array(') or (', $array1) OR in_array(') OR (', $array1)) {
         // $where contains multiple selections in the format "(...) OR (...)" so...
         // split into separate selections (rows)
     	$array1 = splitWhereByRow($array1);
-    	$pageno = (int)$pageno;
-    	if ($pageno <= 0) $pageno = 1;
-    	if ($pageno > 0) {
-            // extract a single row to remove duplicate field names
-        	$array1 = array($array1[$pageno-1]);
-        	$array1 = where2indexedArray($array1);
-        } // if
+    	if (is_null($pageno) or $pageno === FALSE) {
+    	    // do nothing
+    	} else {
+    		$pageno = (int)$pageno;
+        	if ($pageno <= 0) $pageno = 1;
+        	if ($pageno > 0) {
+                // extract a single row to remove duplicate field names
+            	$array1 = array($array1[$pageno-1]);
+            	$array1 = where2indexedArray($array1);
+            } // if
+    	} // if
     } // if
 
     $array2 = indexed2assoc($array1);       // convert indexed array to associative
@@ -2012,7 +3050,7 @@ function where2indexedArray ($where)
 // or possibly: (name BETWEEN 'value1' AND 'value2' AND name='value') ...
 // or possibly: (name='something=\'this\'' AND somethingelse=\'that\'')
 {
-    // if input string is empty therealue is nothing to do
+    // if input string is empty there is nothing to do
     if (empty($where)) return array();
 
     if (is_array($where)) {
@@ -2027,7 +3065,6 @@ function where2indexedArray ($where)
     while (!empty($where)) {
         // start by looking for words or symbols which appear between name=value pairs
         $where = extractSeparator($where, $array);
-
         if (!empty($where)) {
             list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($where);
             // add this $fieldname/$fieldvalue pair to the output array
@@ -2038,121 +3075,6 @@ function where2indexedArray ($where)
     return $array;
 
 } // where2indexedArray
-
-// ****************************************************************************
-function whereFilter ($where, $fieldlist, $tablename)
-// filter out any fields in $where which do not belong in this table,
-// (valid fields are identified in the $fieldlist array).
-{
-    // if input string is empty there is nothing to do
-    if (empty($where)) return;
-
-    if (is_array($where)) {
-        $fieldarray = $where;
-    } else {
-        // convert from string to indexed array
-        $fieldarray = where2indexedArray($where);
-    } // if
-
-    reset($fieldlist);  // fix for version 4.4.1
-    if (!is_string(key($fieldlist))) {
-        // flip indexed array so that the values become keys
-        $fieldlist = array_flip($fieldlist);
-    } // if
-
-    if (in_array(') or (', $fieldarray) or in_array(') OR (', $fieldarray)) {
-        // $where contains multiple selections in the format "(...) OR (...)" so ...
-        // split into separate selections (rows)
-    	$fieldarray = splitWhereByRow($fieldarray);
-    	// process each row separately
-    	$array2 = array();
-        foreach ($fieldarray as $rownum => $rowdata) {
-        	$array1 = where2array($rowdata);
-        	foreach ($array1 as $fieldname => $fieldvalue) {
-        		// if $fieldname is qualified with current $tablename, then unqualify it
-                $fieldname = strtolower(str_replace("$tablename.", '', trim($fieldname)));
-                // check if $fieldname exists in $fieldlist array
-                if (array_key_exists($fieldname, $fieldlist)) {
-                    // field is valid, so copy to output array
-                    $array2[$fieldname] = $fieldvalue;
-                } // if
-        	} // foreach
-        	if (!empty($array2)) {
-        		// update original array with changed data
-            	$fieldarray[$rownum] = array2where($array2);
-        	} // if
-        } // foreach
-        $array2 = $fieldarray;
-
-    } else {
-        reset($fieldarray);  // fix for version 4.4.1
-        if (!is_string(key($fieldarray))) {
-        	$fieldarray = indexed2assoc($fieldarray);       // convert indexed array to associative
-        } // if
-        $array2 = array();
-        foreach ($fieldarray as $fieldname => $fieldvalue) {
-    		// if $fieldname is qualified with current $tablename, then unqualify it
-            $fieldname = str_replace("$tablename.", '', trim($fieldname));
-            // check if $fieldname exists in $fieldlist array
-            if (array_key_exists($fieldname, $fieldlist)) {
-                // field is valid, so copy to output array
-                $array2[$fieldname] = $fieldvalue;
-            } // if
-    	} // foreach
-    } // if
-
-    // convert back into string
-    $where2 = array2where($array2);
-
-    if (is_array($where)) {
-        // replace input array with updated version
-        $where = $array2;
-    } // if
-
-    return $where2;
-
-} // whereFilter
-
-// ****************************************************************************
-function whereFilterWhere ($where1, $where2)
-// remove entries from $where2 that already exist in $where1
-{
-    if (strlen($where1) == 0) {
-        return $where2;
-    } elseif (strlen($where2) == 0) {
-        return $where1;
-    } // if
-
-    // convert both input strings to arrays
-    $array1 = where2array($where1, false, false);
-    $array2 = where2array($where2, false, false);
-
-    // remove any entries in $array2 that already exist in $array1
-    foreach ($array2 as $field1 => $value1) {
-        if (array_key_exists($field1, $array1)) {
-            // corresponding entry exists, so remove it
-        	unset($array2[$field1]);
-        } else {
-            $namearray = explode('.', $field1);
-            if (!empty($namearray[1])) {
-                // remove table qualifier
-                $fieldname_unq = $namearray[1];
-            } else {
-                $fieldname_unq = $namearray[0];
-            } // if
-            if (array_key_exists($fieldname_unq, $array1)) {
-                // corresponding entry exists, so remove it
-            	unset($array2[$fieldname_unq]);
-            } // if
-        } // if
-    } // foreach
-
-    // convert $array2 back into a sring
-    $where2 = array2where($array2);
-
-    return $where2;
-
-} // whereFilterWhere
 
 // ****************************************************************************
 ?>

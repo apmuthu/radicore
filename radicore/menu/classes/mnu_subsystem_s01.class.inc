@@ -18,9 +18,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
+        // (1) create file 'text/<subsys>.menu_export.txt'
+
         // create object for retrieving task details
-        require_once 'classes/mnu_task.class.inc';
         $taskobj =& singleton::getInstance('mnu_task');
+
+        // create object for retrieving dictionary details
+        $dictobj =& singleton::getInstance('dict_column');
 
         // process each subsystem separately
         foreach ($rowdata as $row => $tabledata) {
@@ -51,11 +55,20 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data = $taskobj->getData("subsys_id='$subsys_id'");
 			$this->_createNavDesc($data, $subsys_id);
 
+			// process field (column) names
+        	$dictobj->sql_select = 'column_id, column_desc';
+        	$dictobj->sql_from   = 'dict_column LEFT JOIN dict_database ON (dict_database.database_id=dict_column.database_id)';
+        	$dictobj->sql_orderby = 'dict_column.column_id';
+            $data = $dictobj->getData("subsys_id='$subsys_id'");
+			$this->_createFieldDesc($data, $subsys_id);
+
 			$this->text_out .= '// finished' ."\r\n";
 
             // write completed text file to disk
             $this->_writeTextFile ($this->text_out, $subsys_id, "$subsys_dir/text", 'txt');
             $this->text_out = '';
+
+            // (2) create file '/help/<task_id>.help.txt'
 
             // process help text
         	$taskobj->sql_select = 'mnu_task.task_id, help_text';
@@ -63,6 +76,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_orderby = 'mnu_task.task_id';
             $data = $taskobj->getData("subsys_id='$subsys_id'");
 			$this->_createHelpText($data, $subsys_dir);
+
+			// (3) create file 'sql/<subsys>.menu_export.sql'
 
 			// export details from menu database to an SQL file
 			$this->_exportSQL($subsys_id, $subsys_dir);
@@ -94,10 +109,35 @@ class mnu_subsystem_s01 extends mnu_subsystem
     } // _cm_pre_getData
 
     // ****************************************************************************
+    function _createFieldDesc ($field_array, $subsys_id)
+    // put field (column) details into the output file.
+    {
+        // transfer details to an array to remove duplicate entries
+        foreach ($field_array as $field) {
+        	$array[$field['column_id']] = $field['column_id'];
+        } // foreach
+
+        //$indent  = str_pad('', 4);
+        $indent  = '';
+        $indent2 = str_pad('', 52);
+        $this->text_out .= $indent .'// column details for subsystem ' .$subsys_id ."\r\n";
+
+	    foreach ($array as $key => $value) {
+            $entry = $indent .'$array' ."['" .$key ."']";
+            $entry = str_pad($entry, 50);
+            $entry .= "= '" .addslashes($value) ."';\r\n";
+
+            $this->text_out .= $entry;
+        } // foreach
+
+		$this->text_out .= $indent ."\r\n";
+
+    } // _createFieldDesc
+
+    // ****************************************************************************
     function _createHelpText ($help_array, $subsys_dir)
     // put each task's help text into a separate file.
     {
-        require_once 'classes/mnu_control.class.inc';
         $mnu_control =& singleton::getInstance('mnu_control');
         $language_dir = $mnu_control->getControlData('default_language');
 
@@ -129,8 +169,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
 	    foreach ($menu_array as $menu) {
             $entry = $indent .'$array' ."['" .$menu['button_text'] ."']";
-            $entry = str_pad($entry, 44);
-            $entry .= "= '" .$menu['button_text'] ."';\r\n";
+            $entry = str_pad($entry, 50);
+            $entry .= "= '" .addslashes($menu['button_text']) ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -155,8 +195,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
 	    foreach ($array as $key => $value) {
             $entry = $indent .'$array' ."['" .$key ."']";
-            $entry = str_pad($entry, 44);
-            $entry .= "= '" .$value ."';\r\n";
+            $entry = str_pad($entry, 50);
+            $entry .= "= '" .addslashes($value) ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -176,8 +216,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
 	    foreach ($task_array as $task) {
             $entry = $indent .'$array' ."['" .$task['task_id'] ."']";
-            $entry = str_pad($entry, 44);
-            $entry .= "= '" .$task['task_desc'] ."';\r\n";
+            $entry = str_pad($entry, 50);
+            $entry .= "= '" .addslashes($task['task_desc']) ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -195,13 +235,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $taskobj =& singleton::getInstance('mnu_task');
 
         if ($subsys_id == 'MENU') {
-			// export contents of MNU_CONTROL
-        	$taskobj->sql_select = '*';
-        	$taskobj->sql_from   = 'mnu_control';
-        	$taskobj->sql_orderby = 'record_id, field_id';
-            $data = $taskobj->getData_raw(null);
-            $output = $this->_exportSqlData('mnu_control', $data, $output);
-
             // export contents of MNU_pattern
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_pattern';
@@ -259,11 +292,14 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$output = $this->_exportSqlData('mnu_task', $task_data, $output);
         	$task_id = $task_data['task_id'];
 
-        	// export the contents of MNU_NAV_BUTTON for this task
+        	// export the contents of MNU_NAV_BUTTON for this task (2 passes)
         	$taskobj->sql_select = 'mnu_nav_button.*';
         	$taskobj->sql_from   = 'mnu_nav_button';
         	$taskobj->sql_orderby = 'sort_seq';
-            $data2 = $taskobj->getData_raw("task_id_snr='$task_id'");
+            $data2 = $taskobj->getData_raw("task_id_snr='$task_id'");  // 1st pass
+            $output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
+
+            $data2 = $taskobj->getData_raw("task_id_jnr='$task_id'");  // 2nd pass
             $output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
 
             // export the contents of MNU_TASK_FIELD for this task
@@ -286,6 +322,20 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_orderby = 'field_id,role_id';
             $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_role_taskfield', $data2, $output);
+
+            // export the contents of MNU_INITIAL_VALUE_ROLE for this task
+        	$taskobj->sql_select = 'mnu_initial_value_role.*';
+        	$taskobj->sql_from   = 'mnu_initial_value_role';
+        	$taskobj->sql_orderby = 'field_id,role_id';
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('mnu_initial_value_role', $data2, $output);
+
+            // export the contents of MNU_INITIAL_VALUE_USER for this task
+        	$taskobj->sql_select = 'mnu_initial_value_user.*';
+        	$taskobj->sql_from   = 'mnu_initial_value_user';
+        	$taskobj->sql_orderby = 'field_id,user_id';
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
 
         } // foreach
 
@@ -322,6 +372,28 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	$taskobj->sql_orderby = 'help_text.task_id';
         $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('help_text', $data, $output);
+
+        if ($subsys_id == 'MENU') {
+            // export contents of MNU_TODO for all users
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_todo';
+        	$taskobj->sql_orderby = 'user_id, seq_no';
+            $data = $taskobj->getData_raw();
+            $output = $this->_exportSqlData('mnu_todo', $data, $output);
+			// export contents of MNU_CONTROL where record_id='SYSTEM'
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_control';
+        	$taskobj->sql_orderby = 'record_id, field_id';
+            $data = $taskobj->getData_raw("record_id='SYSTEM'");
+            $output = $this->_exportSqlData('mnu_control', $data, $output);
+        } else {
+            // export contents of MNU_CONTROL where record_id='<subsystem>'
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_control';
+        	$taskobj->sql_orderby = 'record_id, field_id';
+            $data = $taskobj->getData_raw("record_id='" .strtoupper($subsys_id) ."'");
+            $output = $this->_exportSqlData('mnu_control', $data, $output);
+        } // if
 
         $output .= "-- finished\r\n";
 

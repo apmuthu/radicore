@@ -1,22 +1,48 @@
-// file created on October 31, 2006, 10:02 am
+// file created on July 12, 2007, 6:55 pm
     
 // menu details for subsystem AUDIT
 
 // task details for subsystem AUDIT
-$array['audit_dtl(del)']                    = 'Delete Audit Detail';
-$array['audit_dtl(list)2']                  = 'List Audit Details';
-$array['audit_dtl(list)3']                  = 'List Audit Details for an Object';
-$array['audit_dtl(list)3exact']             = 'List Audit Details for an Object (exact match)';
-$array['audit_dtl(search)']                 = 'Search Audit Detail';
-$array['audit_logon_errors(list)']          = 'List Logon Errors';
-$array['audit_logon_errors(search)']        = 'Search Logon Errors';
+$array['audit_dtl(del)']                          = 'Delete Audit Detail';
+$array['audit_dtl(list)2']                        = 'List Audit Details';
+$array['audit_dtl(list)3']                        = 'List Audit Details for an Object';
+$array['audit_dtl(list)3exact']                   = 'List Audit Details for an Object (exact match)';
+$array['audit_dtl(search)']                       = 'Search Audit Detail';
+$array['audit_logon_errors(list)']                = 'List Logon Errors';
+$array['audit_logon_errors(search)']              = 'Search Logon Errors';
+$array['audit_tbl(upd4)']                         = 'Generate SQL';
 
 // navigation button details for subsystem AUDIT
-$array['Audit Trail']                       = 'Audit Trail';
-$array['Audit Trail (2)']                   = 'Audit Trail (2)';
-$array['Audit Trail (exact)']               = 'Audit Trail (exact)';
-$array['Delete']                            = 'Delete';
-$array['Logon Errors']                      = 'Logon Errors';
-$array['Search']                            = 'Search';
+$array['Audit Trail']                             = 'Audit Trail';
+$array['Audit Trail (2)']                         = 'Audit Trail (2)';
+$array['Audit Trail (exact)']                     = 'Audit Trail (exact)';
+$array['Delete']                                  = 'Delete';
+$array['Generate SQL']                            = 'Generate SQL';
+$array['Logon Errors']                            = 'Logon Errors';
+$array['Search']                                  = 'Search';
+
+// column details for subsystem AUDIT
+$array['base_name']                               = 'base_name';
+$array['date_created']                            = 'date_created';
+$array['err_timestamp']                           = 'err_timestamp';
+$array['field_id']                                = 'field_id';
+$array['id']                                      = 'id';
+$array['ip_address']                              = 'ip_address';
+$array['last_updated']                            = 'last_updated';
+$array['new_value']                               = 'new_value';
+$array['old_value']                               = 'old_value';
+$array['pkey']                                    = 'pkey';
+$array['session_data']                            = 'session_data';
+$array['session_id']                              = 'session_id';
+$array['ssn_date']                                = 'ssn_date';
+$array['ssn_time']                                = 'ssn_time';
+$array['table_name']                              = 'table_name';
+$array['table_seq_no']                            = 'table_seq_no';
+$array['task_id']                                 = 'task_id';
+$array['tran_seq_no']                             = 'tran_seq_no';
+$array['trn_date']                                = 'trn_date';
+$array['trn_time']                                = 'trn_time';
+$array['user_id']                                 = 'user_id';
+$array['user_password']                           = 'user_password';
 
 // finished

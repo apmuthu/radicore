@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:45 pm
+    // file created on March 8, 2007, 5:04 pm
     
     // field specifications for table dict.dict_table
     $fieldspec['database_id']               = array('type' => 'string',
@@ -36,7 +36,8 @@
                                                     'optionlist' => 'audit_logging');
     
     $fieldspec['default_orderby']           = array('type' => 'string',
-                                                    'size' => 64);
+                                                    'size' => 64,
+                                                    'lowercase' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -105,7 +106,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'database_id, table_id';
     
     // finished
 ?>

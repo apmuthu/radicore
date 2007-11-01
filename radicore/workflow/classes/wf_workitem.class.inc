@@ -45,37 +45,43 @@ class wf_workitem extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for workitem_status and put into LOOKUP_DATA
-        $array = $this->getValRep('workitem_status');
-        $this->lookup_data['workitem_status'] = $array;
-
-        // get array for transition_trigger and put into LOOKUP_DATA
-        $array = $this->getValRep('transition_trigger');
-        $this->lookup_data['transition_trigger'] = $array;
-
-        //require_once 'classes/mnu_role.class.inc';
-        $dbobject =& singleton::getInstance('mnu_role');
-        $role_array = $dbobject->getValRep('role_id');
-        $this->lookup_data['role_id'] = $role_array;
-
-        //require_once 'classes/mnu_user.class.inc';
-        $dbobject =& singleton::getInstance('mnu_user');
-        $role_array = $dbobject->getValRep('user_id');
-        $this->lookup_data['user_id'] = $role_array;
-
-        // get list of workflow names
-        if (!class_exists('wf_workflow', false)) {
-        	require_once 'classes/wf_workflow.class.inc';
+        if (!array_key_exists('workitem_status', $this->lookup_data)) {
+            // get array for workitem_status and put into LOOKUP_DATA
+            $array = $this->getValRep('workitem_status');
+            $this->lookup_data['workitem_status'] = $array;
         } // if
-        $dbobject =& singleton::getInstance('wf_workflow');
-        $array = $dbobject->getValRep('workflow_id');
-        $this->lookup_data['workflow_id'] = $array;
+
+        if (!array_key_exists('transition_trigger', $this->lookup_data)) {
+            // get array for transition_trigger and put into LOOKUP_DATA
+            $array = $this->getValRep('transition_trigger');
+            $this->lookup_data['transition_trigger'] = $array;
+        } // if
+
+        if (!array_key_exists('role_id', $this->lookup_data)) {
+            $dbobject =& singleton::getInstance('mnu_role');
+            $role_array = $dbobject->getValRep('role_id');
+            $this->lookup_data['role_id'] = $role_array;
+        } // if
+
+        if (!array_key_exists('user_id', $this->lookup_data)) {
+            $dbobject =& singleton::getInstance('mnu_user');
+            $role_array = $dbobject->getValRep('user_id');
+            $this->lookup_data['user_id'] = $role_array;
+        } // if
+
+        if (!array_key_exists('workflow_id', $this->lookup_data)) {
+            // get list of workflow names
+            if (!class_exists('wf_workflow', false)) {
+            	require_once 'classes/wf_workflow.class.inc';
+            } // if
+            $dbobject =& singleton::getInstance('wf_workflow');
+            $array = $dbobject->getValRep('workflow_id');
+            $this->lookup_data['workflow_id'] = $array;
+        } // if
 
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            //require_once 'classes/wf_transition.class.inc';
             $dbobject =& singleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;

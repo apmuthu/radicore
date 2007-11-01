@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:47 pm
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -13,11 +13,11 @@
                                                     'required' => 'y');
     
     $fieldspec['start_task_id']             = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_task(popup)b',
+                                                    'task_id' => 'mnu_task(popup1)b',
                                                     'foreign_field' => 'start_task_desc');
     
     $fieldspec['global_access']             = array('type' => 'boolean',
@@ -63,6 +63,10 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_role',
+                                                    'type' => 'RES',
+                                                    'fields' => array('role_id' => 'role_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_role_task',
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));

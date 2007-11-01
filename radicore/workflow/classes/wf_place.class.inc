@@ -82,11 +82,11 @@ class wf_place extends Default_Table
     } // _cm_pre_insertRecord
 
     // ****************************************************************************
-    function _cm_validateDelete ($fieldarray)
+    function _cm_validateDelete ($fieldarray, $parent_table)
     // verify that the selected record can be deleted.
+    // $parent_table is not empty during a cascade delete.
     // (put any errors in $this->errors)
     {
-        //DebugBreak();
         switch ($fieldarray['place_type']) {
             case '1':
                 $this->errors[] = getLanguageText('e0006'); // 'Cannot delete START place';

@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:38 pm
+    // file created on September 18, 2007, 4:45 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -25,6 +25,13 @@
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'role_id');
+    
+    $fieldspec['rdcaccount_id']             = array('type' => 'integer',
+                                                    'size' => 10,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 4294967295,
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'rdcaccount_id');
     
     $fieldspec['pswd_chg_date']             = array('type' => 'date',
                                                     'size' => 12,
@@ -122,13 +129,11 @@
     $this->unique_keys[]                    = array('email_addr');
     
     // child relationship details 
-    $this->child_relations[]                = array('child' => 'mnu_todo',
+    $this->child_relations[]                = array('child' => 'mnu_initial_value_user',
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
-    $this->child_relations[]                = array('child' => 'survey_answer_hdr',
-                                                    'dbname' => 'survey',
-                                                    'subsys_dir' => 'survey',
+    $this->child_relations[]                = array('child' => 'mnu_todo',
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
@@ -139,6 +144,10 @@
                                                     'fields' => array('user_id' => 'user_id'));
     
     // parent relationship details 
+    $this->parent_relations[]               = array('parent' => 'mnu_account',
+                                                    'parent_field' => 'account_name',
+                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
+    
     $this->parent_relations[]               = array('parent' => 'mnu_role',
                                                     'parent_field' => 'role_desc',
                                                     'fields' => array('role_id' => 'role_id'));

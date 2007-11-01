@@ -1,9 +1,9 @@
 <?php
-    // file created on November 3, 2006, 11:23 am
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',
-                                                    'size' => 8,
+                                                    'size' => 16,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'uppercase' => 'y');

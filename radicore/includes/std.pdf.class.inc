@@ -3,10 +3,19 @@
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
 // Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
-require 'fpdf.php';
-class PDF extends FPDF
+
+// are we using PHP 5, or something earlier?
+if (version_compare(phpversion(), '5.0.0', '<')) {
+    require 'tcpdf/tcpdf_php4.php';
+} else {
+    // PHP 5 uses different code
+    require 'tcpdf/tcpdf_php5.php';
+} // if
+
+class PDF extends TCPDF
 {
     // member variables
+    var $dbobject;                  // the database object from which this is being activated
     var $destination = 'I';         // I=Inline (browser), D=Download (browser), F=Filename (on server), S=String
     var $fieldarray = array();      // array of field data
     var $filename = '';             // filename (if destination = D or F)
@@ -96,7 +105,12 @@ class PDF extends FPDF
         $this->style['default']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
         // now call constructor in parent class
-        parent::FPDF($orientation, $units, $format);
+        if (version_compare(phpversion(), '5.0.0', '<')) {
+            parent::TCPDF($orientation, $units, $format);
+        } else {
+            // PHP 5 uses different code
+            parent::__construct($orientation, $units, $format);
+        } // if
 
         $this->printable_width = $this->w - ($this->lMargin + $this->rMargin);
 
@@ -138,10 +152,13 @@ class PDF extends FPDF
 
         // add each row to the document in a separate page
         while ($fieldarray = $object->fetchRow($resource)) {
+            if ($object->errors) {
+                return;
+            } // if
             // perform any formatting on retrieved data
             $style_array = array();
-            $fieldarray = $object->formatData($fieldarray, $style_array);
-            $this->fieldarray = $fieldarray;  // make this accessible to Header() method
+            $fieldarray_formatted = $object->formatData($fieldarray, $style_array);
+            $this->fieldarray = $fieldarray_formatted;  // make this accessible to Header() method
             $this->AddPage();
             // output each field in the required order
             foreach ($this->structure['body']['fields'] as $column => $columndata) {
@@ -184,8 +201,8 @@ class PDF extends FPDF
                     	$cellspec['style'] = $style_array[$fieldname];
                     } // if
 
-                    if (isset($fieldarray[$fieldname])) {
-                    	$cellspec['text'] = $fieldarray[$fieldname];
+                    if (isset($fieldarray_formatted[$fieldname])) {
+                    	$cellspec['text'] = $fieldarray_formatted[$fieldname];
                     } else {
                         $cellspec['text'] = '';
                     } // if
@@ -206,7 +223,7 @@ class PDF extends FPDF
 
                 	$print_array[1] = $cellspec;
 
-                	$result = $this->printRow($print_array);
+                	$result = $this->printRow($print_array, __FUNCTION__);
 
                 } else {
                     // there is a separate entry for each label or field in the current line
@@ -230,8 +247,8 @@ class PDF extends FPDF
                             // print a cell containing field data
                             $cellspec['default_style'] = $this->structure['data']['style'];
                         	$fieldname = $cellspec['field'];
-                            if (isset($fieldarray[$fieldname])) {
-                            	$cellspec['text'] = $fieldarray[$fieldname];
+                            if (isset($fieldarray_formatted[$fieldname])) {
+                            	$cellspec['text'] = $fieldarray_formatted[$fieldname];
                             } else {
                                 $cellspec['text'] = '';
                             } // if
@@ -239,13 +256,21 @@ class PDF extends FPDF
                         		$cellspec['fieldspec'] = $fieldspec[$fieldname];
                         	} // if
 
+                        } elseif (array_key_exists('barcode', $cellspec)) {
+                            $cellspec['default_style'] = $this->structure['label']['style'];
+                            if (array_key_exists($cellspec['barcode'], $fieldarray)) {
+                            	$cellspec['barcode'] = $fieldarray[$cellspec['barcode']];
+                            } else {
+                                $cellspec['barcode'] = '';
+                            } // if
+
                         } // if
 
                         $print_array[] = $cellspec;
 
                     } // foreach
 
-                    $result = $this->printRow($print_array);
+                    $result = $this->printRow($print_array, __FUNCTION__);
 
                 } // if
             } // foreach
@@ -272,13 +297,15 @@ class PDF extends FPDF
     // append additional data to the current page, where this additional data is
     // obtained by making callbacks to the database object.
     {
-        $fieldspec = $object->fieldspec;
-
         // obtain a number of rows of data for this named area
         $newdata = $object->_cm_output_multi($zone, $current_row);
 
+        $fieldspec = $object->fieldspec;
+
         // process each row, which may produce multiple lines of output
         foreach ($newdata as $rownum => $fieldarray) {
+            $style_array = array();
+            $fieldarray = $object->formatData($fieldarray, $style_array);
             // construct a row of cells which are to be printed
             foreach ($this->structure[$zone]['fields'] as $column => $columndata) {
                 $print_array = array();
@@ -300,6 +327,15 @@ class PDF extends FPDF
                             // include field specifications
                             $cellspec['fieldspec'] = $fieldspec[$cellspec['field']];
                         } // if
+
+                    } elseif (array_key_exists('barcode', $cellspec)) {
+                        $cellspec['default_style'] = $this->structure['label']['style'];
+                        if (array_key_exists($cellspec['barcode'], $fieldarray)) {
+                        	$cellspec['barcode'] = $fieldarray[$cellspec['barcode']];
+                        } else {
+                            $cellspec['barcode'] = '';
+                        } // if
+
                     } else {
                         $cellspec['text'] = '';
                     } // if
@@ -312,7 +348,7 @@ class PDF extends FPDF
                 } // foreach
 
                 // now print this row of cells
-                $result = $this->printRow($print_array);
+                $result = $this->printRow($print_array, __FUNCTION__);
 
             } // foreach
         } // foreach
@@ -375,6 +411,15 @@ class PDF extends FPDF
         	$height = $this->setPrintStyle($celldata['style']);
         } // if
 
+        if (isset($celldata['height']) AND !isset($celldata['barcode'])) {
+        	$this->last_height = $celldata['height'];
+        } else {
+            // use largest font height
+            if ($this->last_height < $height) {
+            	$this->last_height = $height;
+            } // if
+        } // if
+
         $cell_width = $celldata['width'];
 
         if (isset($celldata['fieldspec']) AND isset($celldata['fieldspec']['subtype'])) {
@@ -383,41 +428,50 @@ class PDF extends FPDF
     			// (this includes a 0.5mm margin on the left and right)
     			$cell_width = $cell_width - $this->Pixels2Units($celldata['fieldspec']['imagewidth']) -1;
     			$celldata['width'] = $cell_width;
-    			// insert height of image in lines of text
-    			$celldata['imageheight'] = ceil($this->Pixels2Units($celldata['fieldspec']['imageheight']) / $height);
+    			// insert height of image in current units
+    			$celldata['imageheight'] = ceil($this->Pixels2Units($celldata['fieldspec']['imageheight']));
     		} // if
         } // if
 
         $text = str_replace("\r",'', $celldata['text']);
 
         $line = '';
-        $last_space = 0;
+        $last_split = 0;
         for ($ix = 0; $ix < strlen($text); $ix++) {
             $char = substr($text, $ix, 1);  // extract next character from input string
 
-            if ($char == ' ') {
+            if ($char == ' ' OR $char == '_') {
                 // record location of last space character (may be used in line splitting)
-            	$last_space = $ix;
+            	$last_split = $ix;
             } // if
 
             if ($char == "\n") {
                 // newline required here, so close current line
             	$celldata['line_array'][] = trim($line);
             	$line = '';
-            	$last_space = 0;
+            	$last_split = 0;
             } // if
 
             $line .= $char;  // append char to current line
             if ($this->GetStringWidth($line) > $cell_width-2.25 ) {
             	// this line is too long for current cell
-            	if ($last_space > 0) {
-            		// truncate current line at last space
-            		$line = substr($line, 0, strlen($line) - ($ix - $last_space));
-            		$ix = $last_space;
+            	if ($last_split > 0) {
+            		// truncate current line at last split character
+            		if ($char == '_') {
+            			$split_point = $ix - $last_split +1;
+            		} else {
+            		    $split_point = $ix - $last_split;
+            		} // if
+            		$line = substr($line, 0, strlen($line) - $split_point);
+            		if ($char == '_') {
+            			$ix = $last_split -1;
+            		} else {
+            		    $ix = $last_split;
+            		} // f
             	} // if
             	$celldata['line_array'][] = trim($line);
             	$line = '';
-            	$last_space = 0;
+            	$last_split = 0;
             } // if
 
         } // for
@@ -445,6 +499,8 @@ class PDF extends FPDF
             return;
         } // if
 
+        $dateobj =& singleton::getInstance('date_class');
+
         // process each element in 'title' array
         $max_depth = 0;
         foreach ($this->structure['title'] as $element => $attributes) {
@@ -459,15 +515,13 @@ class PDF extends FPDF
             	} // if
 
             	if (isset($attributes['image'])) {
-            	    $cell_width = $attributes['imagewidth'];
+            	    $cell_width = $this->Pixels2Units($attributes['imagewidth']);
+            	} elseif (isset($attributes['width'])) {
+            	    $cell_width = $attributes['width'];
             	} elseif (isset($attributes['text'])) {
-            	    if (isset($attributes['width'])) {
-                        $cell_width = $attributes['width'];
-                    } else {
-            	    	$cell_width = ceil($this->GetStringWidth($attributes['text']) + 2);
-            	    } // if
+            	    $cell_width = ceil($this->GetStringWidth($attributes['text']) + 2);
             	} else {
-            	    $cell_width = 0;
+            	    $cell_width = 10;
             	} // if
 
             	if (isset($attributes['align'])) {
@@ -520,8 +574,14 @@ class PDF extends FPDF
             	    } // if
             	    $depth = $imageheight;
 
-            	} elseif (isset($attributes['text'])) {
-                    $text = $attributes['text'];
+            	} elseif (isset($attributes['barcode'])) {
+            	    $celldata = $attributes;
+            	    unset($celldata['x']);
+            	    unset($celldata['margin_left']);
+            	    unset($celldata['margin_right']);
+
+            	    $celldata['default_style'] = $this->structure['title']['style'];
+            	    $text = $celldata['barcode'];
                     if (substr($text, 0, 2) == '%%') {
                         // replace field name with field data
                     	$fieldname = substr($text, 2);
@@ -529,6 +589,45 @@ class PDF extends FPDF
                     		$text = $this->fieldarray[$fieldname];
                     	} // if
                     } // if
+                    $celldata['barcode'] = $text;
+
+                    if (isset($celldata['nofill'])) {
+                    	$fill = 0;
+                    } else {
+                        $fill = 1;
+                    } // if
+                    $this->printCell($celldata, 0, 0, $border, $fill);
+                    $depth             = $celldata['height'];
+                    $this->last_height = $celldata['height'];
+
+            	} elseif (isset($attributes['text']) OR isset($attributes['type'])) {
+            	    if (isset($attributes['text'])) {
+            	    	$text = $attributes['text'];
+                        if (substr($text, 0, 2) == '%%') {
+                            // replace field name with field data
+                        	$fieldname = substr($text, 2);
+                        	if (isset($this->fieldarray[$fieldname])) {
+                        		$text = $this->fieldarray[$fieldname];
+                        	} // if
+                        } // if
+            	    } elseif (isset($attributes['type'])) {
+            	        switch (strtolower($attributes['type'])) {
+                	    	case 'pageno':
+                	    		// Print 'Page n of n'
+                                $text = getLanguageText('Page') .' ' .$this->PageNo() .' ' .getLanguageText('of') ." {nb}";
+                	    		break;
+                	    	case 'date':
+                	    	    // get date in user-defined format
+                                $text = $dateobj->getExternalDate(date('Y-m-d'));
+                	    	    break;
+                	    	case 'time':
+                                $text = date('H:i:s');
+                                break;
+                	    	default:
+                	    	    $text = ' ';
+                	    		break;
+                	    } // switch
+            	    } // if
 
                     if (isset($attributes['height'])) {
                     	$line_height = $attributes['height'];
@@ -576,6 +675,8 @@ class PDF extends FPDF
     function listView (&$object, $resource)
     // output data in LIST view (column heading, then one row per record)
     {
+        $this->dbobject =& $object;
+
         // turn on page header and footer
         $this->AliasNbPages();
         $this->print_header = true;
@@ -583,7 +684,7 @@ class PDF extends FPDF
             $this->print_footer = true;
         } // if
 
-        $this->AddPage();
+        //$this->AddPage();
 
         // set print style for main body
         if (!isset($this->structure['body']['style'])) {
@@ -592,13 +693,21 @@ class PDF extends FPDF
         $line_height = $this->setPrintStyle($this->structure['body']['style']);
 
         $fill = 0;
+        $started = false;
 
         // add each row to the document
         while ($fieldarray = $object->fetchRow($resource)) {
+            if ($object->errors) {
+                return;
+            } // if
             // perform any formatting on retrieved data
             $style_array = array();
             $fieldarray = $object->formatData($fieldarray, $style_array);
             $this->fieldarray = $fieldarray;  // make this data accessible to Header() method
+            if ($started == false) {
+            	$started = true;
+            	$this->AddPage();  // do just before output of first record
+            } // if
 
             // assemble a row of details
             $print_array = array();
@@ -608,7 +717,7 @@ class PDF extends FPDF
 
             } // foreach
 
-            $result = $this->printRow($print_array, 'LR', $fill);  // print this row
+            $result = $this->printRow($print_array, __FUNCTION__, 'LR', $fill);  // print this row
             $fill = !$fill;     // toggle between ON and OFF
 
         } // while
@@ -626,7 +735,7 @@ class PDF extends FPDF
 
             } // foreach
 
-            $result = $this->printRow($print_array, 'LRT', 1);  // print this row
+            $result = $this->printRow($print_array, __FUNCTION__, 'LRT', 1);  // print this row
 
         } // if
 
@@ -663,12 +772,14 @@ class PDF extends FPDF
             $text = '';
         } // if
 
-    	// field is not allowed to overflow, so truncate it to fit
     	$text = str_replace("\n", ', ', $text);  // replace <newline> character
     	$cell_width = $cellspec['width'];
-    	while ($this->GetStringWidth($text) > $cell_width-2) {
-    		$text = substr($text, 0, strlen($text) -2);
-    	} // while
+    	if (!isset($this->structure['columns'][$column]['overflow'])) {
+    	    // field is not allowed to overflow, so truncate it to fit
+    		while ($this->GetStringWidth($text) > $cell_width-2) {
+        		$text = substr($text, 0, strlen($text) -2);
+        	} // while
+    	} // if
 
         $cellspec['text'] = $text;
 
@@ -722,6 +833,92 @@ class PDF extends FPDF
     } // Pixels2nits
 
     // ****************************************************************************
+    function printBarcode ($celldata)
+    // print a barcode
+    {
+        define("BCS_BORDER", 1);
+        define("BCS_TRANSPARENT", 2);
+        define("BCS_ALIGN_CENTER", 4);
+        define("BCS_ALIGN_LEFT", 8);
+        define("BCS_ALIGN_RIGHT", 16);
+        define("BCS_IMAGE_JPEG", 32);
+        define("BCS_IMAGE_PNG", 64);
+        define("BCS_DRAW_TEXT", 128);
+        define("BCS_STRETCH_TEXT", 256);
+        define("BCS_REVERSE_COLOR", 512);
+
+        if (isset($celldata['barcode_style'])) {
+        	$celldata = array_merge($this->style[$celldata['barcode_style']], $celldata);
+        } // if
+
+        if (!isset($celldata['type'])) {
+        	$celldata['type']     = 'I25';
+        } else {
+            $celldata['type']     = strtoupper($celldata['type']);
+        } // if
+        if (!isset($celldata['style'])) {
+        	$celldata['style']    = '';
+        } else {
+            $celldata['style']    = strtoupper($celldata['style']);
+        } // if
+        if (!isset($celldata['fontsize'])) {
+        	$celldata['fontsize'] = 5;
+        } // if
+        if (!isset($celldata['xres'])) {
+        	$celldata['xres']     = 2;
+        } // if
+        if (!isset($celldata['width'])) {
+        	$celldata['width']    = 80;
+        } // if
+        if (!isset($celldata['height'])) {
+        	$celldata['height']   = 25;
+        } // if
+
+        $X = $this->getX();
+        $Y = $this->getY();
+
+        // make image 1 unit smaller than cell it will appear in to provide a small border
+    	$celldata['width']  = $celldata['width'] -1;
+    	$celldata['height'] = $celldata['height'] -1;
+
+    	// set up style details
+    	if (empty($celldata['style'])) {
+			$style  = BCS_IMAGE_PNG;
+			$style |= BCS_ALIGN_CENTER;
+			$style |= BCS_TRANSPARENT;
+    	} else {
+    	    $style  = BCS_IMAGE_PNG;
+			if (eregi('B', $celldata['style'])) $style |= BCS_BORDER;
+		    if (eregi('D', $celldata['style'])) $style |= BCS_DRAW_TEXT;
+			if (eregi('S', $celldata['style'])) $style |= BCS_STRETCH_TEXT;
+			if (eregi('N', $celldata['style'])) {
+			    $style |= BCS_REVERSE_COLOR;
+			} else {
+			    $style |= BCS_TRANSPARENT;
+			} // if
+			// only one of these (L,C,R) is relevant
+			if (!eregi('L|C|R', $celldata['style'])) {
+			    $style |= BCS_ALIGN_CENTER;  // default
+			} elseif (eregi('L', $celldata['style'])) {
+			    $style |= BCS_ALIGN_LEFT;
+			} elseif (eregi('C', $celldata['style'])) {
+			    $style |= BCS_ALIGN_CENTER;
+			} elseif (eregi('R', $celldata['style'])) {
+			    $style |= BCS_ALIGN_RIGHT;
+			} // if
+    	} // if
+
+    	// write a barcode into the current cell
+    	$this->writeBarcode($this->getX()+0.5, $this->getY()+0.5,
+    	                    $celldata['width'], $celldata['height'],
+    	                    $celldata['type'], $style, $celldata['fontsize'],
+    	                    $celldata['xres'], $celldata['barcode']);
+
+        return;
+
+    } // printBarcode
+
+    // ****************************************************************************
     function printCell ($celldata, $line_no, $last_line, $border, $fill=1)
     // print a line from this cell using the contents of $celldata
     {
@@ -730,6 +927,11 @@ class PDF extends FPDF
         if (isset($celldata['style'])) {
             // follow with overriding style
         	$height = $this->setPrintStyle($celldata['style']);  // set style override
+        } // if
+
+        if (strtoupper($this->DrawColor) == strtoupper($this->FillColor)) {
+            // both colours are the same, so do not write any borders
+        	$border = false;
         } // if
 
         if (isset($celldata['line_array'][$line_no])) {
@@ -789,7 +991,10 @@ class PDF extends FPDF
 
         if (isset($celldata['height'])) {
 	        $height = $celldata['height'];
-	        $this->last_height = $height;
+	        if (!isset($celldata['barcode'])) {
+	            // ignore this and retain height of previous cell
+	        	$this->last_height = $height;
+	        } // if
 	    } // if
 
 	    if (isset($celldata['marginleft'])) {
@@ -805,10 +1010,36 @@ class PDF extends FPDF
 	        } // if
 	    } // if
 
-        // output a line of text in the current cell
         $X = $this->getX();
-        $this->Cell($cell_width, $height, $text, $mod_border, 0, $align, $fill);
         $Y = $this->getY();
+        if (isset($celldata['barcode'])) {
+            if ($line_no > 0) {
+                // already processed, so do not repeat
+            } else {
+            	unset($celldata['default_style']);
+            	$this->printBarcode($celldata);
+            	if ($this->error) {
+            	    $text = $this->error;
+            		$this->Cell($cell_width, $height, $text, $mod_border, 0, $align, $fill);
+            	} else {
+            	    if ($border == 1 OR eregi('L', $border)) {
+            	    	// draw line along left hand border
+                    	$this->Line($X, $Y, $X, $Y + $celldata['height']);
+            	    } // if
+            	    if ($border == 1 OR eregi('T', $border)) {
+            	    	// draw line along right hand border
+                    	$this->Line($X + $celldata['width'], $Y, $X + $celldata['width'] , $Y + $celldata['height']);
+            	    } // if
+            	} // if
+            } // if
+            if (!$this->error) {
+                $this->setX($this->getX() + $celldata['width']);
+            } // if
+        } else {
+            // output a line of text in the current cell
+            $this->Cell($cell_width, $height, $text, $mod_border, 0, $align, $fill);
+        } // if
+
         if ($line_no == 0) {
             if ($border == 1 OR eregi('T', $border) OR $this->new_page) {
             	// draw line along top border of 1st cell in 1st line, or 1st line of new page
@@ -854,6 +1085,13 @@ class PDF extends FPDF
 
             	if (isset($attributes['text'])) {
             		$text = $attributes['text'];
+            		if (substr($text, 0, 2) == '%%') {
+                        // replace field name with field data
+                    	$fieldname = substr($text, 2);
+                    	if (isset($this->fieldarray[$fieldname])) {
+                    		$text = $this->fieldarray[$fieldname];
+                    	} // if
+                    } // if
 
             	} else {
                 	switch (strtolower($attributes['type'])) {
@@ -941,19 +1179,36 @@ class PDF extends FPDF
     } // printFooter
 
     // ****************************************************************************
-    function printRow ($print_array, $border=1, $fill=1)
-    // print a row containing one or more cells of data
+    function printRow ($print_array, $function, $border=1, $fill=1)
+    // print a row containing one or more cells of data.
+    // NOTE: $function contains the name of the calling function.
     {
         $max_lines = 1;
-        $imageheight = 0;
+        $image_height = 0;
+        $this->last_height = 0;
 
         // calculate number of lines required for each cell in this row
         foreach ($print_array as $cellno => $celldata) {
         	$celldata = $this->getLineCount($celldata);
         	$print_array[$cellno] = $celldata;  // required for PHP4
         	if (isset($celldata['imageheight'])) {
-        		$line_count  = $celldata['imageheight'];
-        		$imageheight = $celldata['imageheight'];
+        		if (!eregi('multi$', $function)) {
+    	            // include barcode size in $line_count
+        	    	$line_count = $celldata['imageheight'] / $this->last_height;
+    	    	} else {
+    	    	    // keep barcode size independent of $line_count
+    	    	    $image_height = $celldata['imageheight'] / $this->last_height;
+        	    } // if
+        	} elseif (isset($celldata['barcode'])) {
+        	    if (isset($celldata['height'])) {
+        	        if (!eregi('multi$', $function)) {
+        	            // include barcode size in $line_count
+            	    	$line_count = $celldata['height'] / $this->last_height;
+        	    	} else {
+        	    	    // keep barcode size independent of $line_count
+        	    	    $image_height = $celldata['height'] / $this->last_height;
+            	    } // if
+        	    } // if
         	} else {
         	    if (isset($celldata['line_array'])) {
         	    	$line_count = count($celldata['line_array']);
@@ -989,8 +1244,8 @@ class PDF extends FPDF
 
         // will this row fit on the current page?
         $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
-        if ($max_lines > $lines_left) {
-            if ($max_lines < 3 OR $lines_left < $imageheight) {
+        if ($max_lines > $lines_left OR $image_height > $lines_left) {
+            if ($max_lines < 3) {
             	$this->AddPage();  // start a new page
             } // if
         } // if
@@ -1000,6 +1255,11 @@ class PDF extends FPDF
             foreach ($print_array as $cellno => $celldata) {
                 $this->printCell($celldata, $i, $max_lines-1, $border, $fill);
             } // foreach
+            if ($i+1 > $max_lines) {
+            	// this is the last line, but what is its depth?
+            	$remainder = $max_lines - $i;
+            	$this->last_height = $this->last_height * $remainder;
+            } // if
             $this->Ln($this->last_height);  // line break
             $this->new_page = false;
         } // for
@@ -1038,7 +1298,7 @@ class PDF extends FPDF
         if (isset($this->style[$style]['font']['height'])) {
         	// set line height for cells which use this font
             $height = $this->style[$style]['font']['height'];
-            $this->last_height = $height;
+            //$this->last_height = $height;
         } else {
             $height = $this->last_height;
         } // if

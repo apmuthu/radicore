@@ -19,10 +19,17 @@ $mode = 'read';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
     if (isset($act_buttons) AND array_key_exists('choose', $act_buttons)) {
-        scriptPrevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+        // 'Nothing selected from popup screen'
+        scriptPrevious(getLanguageText('sys0083'),null,'quit');
     } else {
         scriptPrevious();
     } // if
@@ -50,6 +57,8 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_where   = &$sql_where;
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
+    // perform any initialisation
+    $where = $dbobject->initialise($where);
 } // if
 
 // the 'choose' button should only be available in popup screens
@@ -59,7 +68,7 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject), null);
+    $errors = childForm($_POST, array('dbobject' => $dbobject));
 } // if
 
 // look for optional instructions from previous script

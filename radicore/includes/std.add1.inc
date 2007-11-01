@@ -44,35 +44,41 @@ if (isset($script_vars['dbobject'])) {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     // get initial data for a new record
-    $fieldarray = $dbobject->getInitialData($where);
-    if ($dbobject->errors) {
-        scriptPrevious($dbobject->getErrors());
+    $where = $dbobject->initialise ($where);
+    if (empty($dbobject->errors)) {
+        $fieldarray = $dbobject->getInitialData($where);
     } // if
-    // get any extra data and merge with $fieldarray
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    if ($dbobject->errors) {
+        scriptPrevious($dbobject->errors);
+    } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action == 'choose') {
+    if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+                $errors[$dbobject->getClassName()] = $dbobject->errors;
             } // if
         } // if
-    } else {
-        // do nothing
     } // if
+} // if
+
+// get any extra data and merge with $fieldarray
+$fieldarray = $dbobject->getExtraData($fieldarray);
+if ($dbobject->errors) {
+	$errors[$dbobject->getClassName()] = $dbobject->errors;
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['paste'])) {
         // fill the screen with previously-saved data
-        $fieldarray = array_merge($fieldarray, $_SESSION['data'][$table_id]);
+        $fieldarray = pasteData($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
         // redo any initialisation
         $fieldarray = $dbobject->getInitialData($fieldarray);
+        // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
     } elseif (isset($_POST['copy'])) {
         $messages = copyForm($_POST, $dbobject);
@@ -83,15 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+        $errors = childForm($_POST, array('dbobject' => $dbobject));
 		if (empty($errors)) {
             $dbobject->startTransaction();
             // add this data to the database
             $fieldarray = $dbobject->insertRecord($fieldarray);
             $messages   = array_merge($messages, $dbobject->getMessages());
             if ($dbobject->errors) {
-				// errors are keyed by object name
-			    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+				$errors[$dbobject->getClassName()] = $dbobject->errors;
 			} // if
             if (empty($errors)) {
                 $errors = $dbobject->commit();
@@ -103,12 +108,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         // get any extra data and merge with $fieldarray
                         $fieldarray = $dbobject->getExtraData($fieldarray);
                         if (isset($_SESSION['script_sequence'])) {
+                            $script_vars['dbobject'] = serialize($dbobject);
                             // do other tasks before returning to this one
                             scriptNext($task_id);
                         } // if
                     } else {
                         // update was OK - return to previous screen
-                        scriptPrevious(null, $messages, 'OK', $dbobject->getInstruction());
+                        $selection = array2where($fieldarray, $dbobject->getPkeyNames());
+                        $prev_script = getPreviousScript();
+                        $prev_task   = $_SESSION[$prev_script]['task_id'];
+                        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+                        scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
                     } // if
                 } // if
             } else {
@@ -123,6 +133,8 @@ if (isset($_SESSION['data'][$table_id])) {
     $prepend = array('paste' => 'paste');
     $act_buttons = array_merge($prepend, $act_buttons);
 } // if
+
+$messages = array_merge($messages, $dbobject->messages);
 
 // save these variables for later in the same session
 $script_vars['where']    = $where;

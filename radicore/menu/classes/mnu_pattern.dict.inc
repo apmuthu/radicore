@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:46 pm
+    // file created on September 12, 2007, 12:02 pm
     
     // field specifications for table menu.mnu_pattern
     $fieldspec['pattern_id']                = array('type' => 'string',

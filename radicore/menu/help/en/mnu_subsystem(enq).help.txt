@@ -1,3 +1,0 @@
-This will display the contents of a record from the SUBSYSTEM table.
-
-Refer to <a href="%root%/mnu_subsystem(enq).html">Enquire Subsystem</a> for full details.

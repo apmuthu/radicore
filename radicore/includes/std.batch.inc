@@ -24,6 +24,7 @@ function batchInit ($batchfile)
     $_SERVER['SERVER_NAME'] = $ini_array['server_name'];
     $_SERVER['DOCUMENT_ROOT'] = str_replace("\\", "/", $ini_array['doc_root']);
     $_SERVER["HTTP_ACCEPT_LANGUAGE"] = $ini_array['language'];
+    $_SERVER['SCRIPT_FILENAME'] = $curr_file;
 
     echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
@@ -33,12 +34,14 @@ function batchInit ($batchfile)
     $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
     $_SERVER['PHP_SELF'] = $PHP_SELF;
 
+    $_SESSION['role_id']       = 'batch';
     $_SESSION['logon_user_id'] = 'batch';
     $GLOBALS['task_id']        = basename($PHP_SELF);
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
 
-    require 'include.general.inc';
+    require_once 'include.general.inc';
+    require_once 'include.session.inc';
 
 } // batchInit
 
@@ -57,9 +60,14 @@ function check_errors ($object)
     $errors = $object->getErrors();
 
 	if ($errors) {
-	    foreach ($errors as $ix => $error) {
-	        if (is_string($ix)) {
-	        	$error = $ix .': ' .$error;
+	    foreach ($errors as $ix1 => $error1) {
+	        if (is_string($error1)) {
+	        	$error = $ix1 .': ' .$error1;
+	        } elseif (is_array($error1)) {
+	            foreach ($error1 as $ix2 => $error2) {
+	            	$error = $ix2 .': ' .$error2;
+	            	break; // stop after the 1st entry
+	            } // foreach
 	        } // if
 	    	trigger_error($error, E_USER_ERROR);
 	    } // foreach

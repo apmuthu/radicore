@@ -45,6 +45,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = new $table_id;
     // get any initial values
     $where = $dbobject->initialise($where);
+    $fieldarray = where2array($where);
 } // if
 
 if (isset($_POST['clear'])) {
@@ -53,12 +54,12 @@ if (isset($_POST['clear'])) {
     // clear all editable data from current selection
     $fieldarray = $dbobject->clearEditableData($fieldarray);
     $where      = array2where($fieldarray);
+    $_SERVER['REQUEST_METHOD'] = 'GET';
 } // if
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET'
-or isset($_POST['clear'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND $return_action == 'choose') {
+    if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
@@ -68,12 +69,12 @@ or isset($_POST['clear'])) {
         } // if
     } else {
         // get any data which may contain LOOKUP options
-        $fieldarray = $dbobject->getExtraData($where);
+        $fieldarray = $dbobject->getExtraData($fieldarray);
         // get field specifications for current object
         $fieldspec = $dbobject->getFieldSpec();
         // insert any missing fields from $fieldspec
-        foreach ($fieldspec as $fieldname => $spec) {
-            if (!array_key_exists($fieldname, $fieldarray)) {
+        foreach ($fieldspec as $fieldname => $fieldspec) {
+            if (!isset($fieldarray[$fieldname])) {
                 $fieldarray[$fieldname] = null;
             } // if
         } // foreach
@@ -94,105 +95,123 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $fieldarray = array_update_associative($fieldarray, $_POST);
     // ensure that changes are stored inside relevant object
     $dbobject->setFieldArray($fieldarray);
-    // check to see if a popup form has been called
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject), $where);
+    $errors = childForm($_POST, array('dbobject' => $dbobject));
 
     if (!$errors) {
         if (isset($_POST['submit'])) {
             // initialise search criteria
             $where = ''; // use empty string (''), not NULL
+            // perform any custom validation
+            $fieldarray = $dbobject->validateSearch($fieldarray);
             // get current field specifications
             $fieldspec = $dbobject->getFieldSpec();
             // format POST data into SQL 'where' string
-            $fieldarray = $_POST;
-            //require_once 'std.datevalidation.class.inc';
             $dateobj =& singleton::getInstance('date_class');
             foreach ($fieldarray as $field => $value) {
                 // check that $field exists in $fieldspec array
-                if (!array_key_exists($field, $fieldspec)) {
-                    // it does not (like the SUBMIT button, for example), so remove it
-                    unset ($fieldarray[$field]);
+                if (!isset($fieldspec[$field]) OR isset($fieldspec[$field]['noedit'])) {
+                    // it does not (like the SUBMIT button, for example), so ignore it
+                    //unset($fieldarray[$field]);
                 } else {
                     if (is_string($value)) {
                     	// strip leading/trailing spaces
                         $value = trim($value);
                     } // if
                     // deal with non-empty fields only
-                    if (!empty($value)) {
-                        $spec = $fieldspec[$field];
-                        switch ($spec['type']) {
-                        	case 'date':
-                        	    // if this is a complete and valid date then replace it
-                                if ($internaldate = $dateobj->getInternalDate($value)) {
-                                    // value is a valid date
-                                    $value = $internaldate;
-                                } else {
-                                    $errors[$field] = getLanguageText('sys0040');  // this is not a valid date
-                                } // if
-                        		break;
-                        	case 'time':
-                                // if this is a complete and valid time replace it
-                                if ($internaltime = $dateobj->getInternalTime($value)) {
-                                    $value = $internaltime;
-                                } else {
-                                    $errors[$field] = getLanguageText('sys0041');  // this is not a valid TIME
-                                } // if
-                                break;
-                            case 'boolean':
-                                // result from radiogroup/checkbox may be varied, so convert to TRUE or FALSE
-                                // (where actual values are defined within $fieldspec)
-                                if (is_true($value)) {
-                                    if (isset($spec['true'])) {
-                                        $value = $spec['true'];
-                                    } // if
-                                } else {
-                                    if (isset($spec['false'])) {
-                                        $value = $spec['false'];
-                                    } // if
-                                } // if
-                                break;
-                            case 'set':
-                            case 'array':
-                            case 'varray':
-                                // convert array to string with comma separator (MySQL)
-                                $value = $dbobject->array2string($value);
-                                break;
-                        	case 'decimal':
-                            case 'numeric':
-                            case 'integer':
-                            case 'double':
-                            case 'float':
-                            case 'real':
-                                if (substr_count($value, '%') > 0) {
-                                	$operator = 'LIKE';
-                                } else {
-                                    if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $value, $regs )) {
-                                        $operator = $regs[0];
-                                        $value = ltrim($value, $operator);
+                    if (strlen($value) > 0) {
+                        $spec     = $fieldspec[$field];
+                        $operator = '=';
+                        if (preg_match('/^(is not null|is null)$/i', $value, $regs )) {
+                            $value = strtoupper($regs[0]);
+                            $spec['type'] = 'string';
+                            $operator = '';
+                        } else {
+                            switch ($spec['type']) {
+                            	case 'date':
+                            	    // if this is a complete and valid date then replace it
+                                    if ($internaldate = $dateobj->getInternalDate($value)) {
+                                        // value is a valid date
+                                        $value = $internaldate;
                                     } else {
-                                        $operator = '=';
+                                        $errors[$field] = getLanguageText('sys0040');  // this is not a valid date
                                     } // if
-                                    if (isset($fieldspec[$field]['scale'])) {
-                                       $decimal_places = $fieldspec[$field]['scale'];
+                            		break;
+                            	case 'time':
+                                    // if this is a complete and valid time replace it
+                                    if ($internaltime = $dateobj->getInternalTime($value)) {
+                                        $value = $internaltime;
                                     } else {
-                                       $decimal_places = 0;
+                                        $errors[$field] = getLanguageText('sys0041');  // this is not a valid TIME
+                                    } // if
+                                    break;
+                                case 'boolean':
+                                    // result from radiogroup/checkbox may be varied, so convert to TRUE or FALSE
+                                    // (where actual values are defined within $fieldspec)
+                                    if (is_true($value)) {
+                                        if (isset($spec['true'])) {
+                                            $value = $spec['true'];
+                                        } // if
+                                    } else {
+                                        if (isset($spec['false'])) {
+                                            $value = $spec['false'];
+                                        } // if
+                                    } // if
+                                    break;
+                                case 'set':
+                                case 'array':
+                                case 'varray':
+                                    // convert array to string with comma separator (MySQL)
+                                    $value = $dbobject->array2string($value);
+                                    break;
+                            	case 'decimal':
+                                case 'numeric':
+                                case 'integer':
+                                case 'double':
+                                case 'float':
+                                case 'real':
+                                    if (substr_count($value, '%') > 0) {
+                                    	$operator = 'LIKE';
+                                    } else {
+                                        if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $value, $regs )) {
+                                            $operator = $regs[0];
+                                            $value = ltrim($value, $operator);
+                                        } // if
                                     } // if
                                     $locale = localeconv();
-                                    if ($spec['type'] == 'float' OR $spec['type'] == 'real') {
+                                    // remove thousands separator before using in an sql SELECT statement
+                                    $value = str_replace($locale['thousands_sep'], '', $value);
+                                    // convert user's decimal point to '.'
+                                    $value = str_replace($locale['decimal_point'], '.', $value);
+                                    if (eregi('float|real',$spec['type'])) {
                                     	$value = sprintf('%f', $value);
-                                    	// remove trailing zeroes after decimal point, plus redundant decimal point
-                                    	$value = rtrim($value,'.0');
+                                    	// remove trailing zeroes after any decimal point
+                                    	$value = rtrim($value,'0');
+                                    	// remove any trailing decimal point
+                                    	$value = rtrim($value, '.');
                                     } else {
-                                        // remove thousands separator before using in an sql SELECT statement
-                                        $value = str_replace($locale['thousands_sep'], '', $value);
+                                        if (isset($fieldspec[$field]['scale'])) {
+                                           $decimal_places = $fieldspec[$field]['scale'];
+                                        } else {
+                                           $decimal_places = 0;
+                                        } // if
                                         $value = number_format($value, $decimal_places, '.', '');
                                     } // if
-                                } // if
-                        	    break;
-                        	default:
-                        		break;
-                        } // switch
+                            	    break;
+                            	default:
+                            	    if (substr_count($value, '%') > 0) {
+                                    	$operator = 'LIKE';
+                                    } else {
+                                        if (isset($fieldspec[$field]['control'])) {
+                                        	$operator = '=';
+                                        } else {
+                                            $operator = 'LIKE';
+                                            $value .= '%';  // append wildcard character by default
+                                        } // if
+                                    } // if
+                            		break;
+                            } // switch
+                        } // if
 
                         $value = addslashes($value);
                         if (!empty($where)) {
@@ -213,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 if (preg_match('/^(true|false)$/i', $value, $regs )) {
                                     $where .= "$field=$value";
                                 } else {
-                                    $where .= "$field='$value'";
+                                    $where .= "$field LIKE '$value'";
                                 } // if
                                 break;
                             case 'numeric':
@@ -230,11 +249,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 } // if
                                 break;
                             default:
-                                if (preg_match('/^(is not null|is null)$/i', $value, $regs )) {
-                                    $where .= $field .' ' .strtoupper($regs[0]);
+                                if (!empty($operator)) {
+                                	$where .= "$field $operator '$value'";
                                 } else {
-                                    // value is text, use pattern match
-                                    $where .= "$field LIKE '$value'";
+                                    $where .= "$field $value";
                                 } // if
                                 break;
                         } // switch

@@ -1,0 +1,5 @@
+This will allow the contents of the INITIAL_VALUE_USER table to be maintained for a particular task.
+
+These values are used during the creation of new records.
+
+Refer to <a href="%root%/mnu_initial_value_user(multi3)b.html">Maintain Initial Values by User</a> for full details.

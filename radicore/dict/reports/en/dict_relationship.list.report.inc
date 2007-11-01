@@ -20,11 +20,11 @@ $structure['title'][] = array('text' => "- Contents of DICT_RELATIONSHIP table -
 
 // set column widths
 $structure['columns'][] = array('width' => 30);
-$structure['columns'][] = array('width' => 44);
-$structure['columns'][] = array('width' => 44);
+$structure['columns'][] = array('width' => 44, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 44, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 30);
-$structure['columns'][] = array('width' => 44);
-$structure['columns'][] = array('width' => 44);
+$structure['columns'][] = array('width' => 44, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 44, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 10, 'align' => 'center');
 $structure['columns'][] = array('width' => 30);
 

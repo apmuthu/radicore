@@ -1,3 +1,0 @@
-This will display the contents of the NAVIGATION BUTTON table for a selected Task. Each of these will appear in the navigation bar area for the seected task.
-
-Refer to <a href="%root%/mnu_nav_button(link).html">Maintain Navigation Buttons (2)</a> for full details.

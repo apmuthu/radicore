@@ -10,7 +10,7 @@
 //*****************************************************************************
 
 $outer_table  = '#outer_table#';				    // name of outer table
-$middle_table = '#middle_table#';                   // name of table to be amended
+$middle_table = '#middle_table#';                   // name of middle table
 $inner_table  = '#inner_table#';                    // name of inner table
 $screen       = '#inner_table#.multi3.screen.inc';  // file identifying screen structure
 

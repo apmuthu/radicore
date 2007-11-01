@@ -59,6 +59,7 @@ class dict_table_s03 extends dict_table
         $include_array[] = 'upd2';
         $include_array[] = 'upd3';
         $include_array[] = 'upd4';
+        $include_array[] = 'upd5';
         $select_list = '';
         foreach ($include_array as $item) {
         	if (empty($select_list)) {
@@ -69,10 +70,12 @@ class dict_table_s03 extends dict_table
         } // foreach
         $select_list = strtoupper($select_list);
 
-        // get contents of foreign table MNU_PATTERN and add as a LOOKUP list
-        $dbobject =& singleton::getInstance('mnu_pattern');
-        $array    = $dbobject->getValRep('pattern_id', "pattern_id IN ($select_list)");
-        $this->lookup_data['pattern_id'] = $array;
+        if (!array_key_exists('pattern_id', $this->lookup_data)) {
+            // get contents of foreign table and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('mnu_pattern');
+            $array    = $dbobject->getValRep('pattern_id', "pattern_id IN ($select_list)");
+            $this->lookup_data['pattern_id'] = $array;
+        } // if
 
 		return $fieldarray;
 

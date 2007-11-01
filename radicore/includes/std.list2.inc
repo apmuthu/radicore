@@ -19,11 +19,31 @@ $mode = 'list';
 // load session variables
 initSession();
 
+if (isset($act_buttons['choose'])) {
+    if ($return_action == 'insert' AND !empty($selection)) {
+    	// send selection back to the previous script
+        $prev_script = getPreviousScript();
+        $prev_task   = getPreviousTask($prev_script);
+        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        scriptPrevious(null, null, 'choose');
+    } // if
+} // if
+
+if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+    $new_selection = true;
+} else{
+    $new_selection = false;
+} // if
+
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
     // clear this script from session details and return to previous page
     if (isset($act_buttons) AND array_key_exists('choose', $act_buttons)) {
-        scriptPrevious(getLanguageText('sys0083')); // 'Nothing selected from popup screen.'
+        // 'Nothing selected from popup screen'
+        scriptPrevious(getLanguageText('sys0083'),null,'quit');
     } else {
         scriptPrevious();
     } // if
@@ -66,18 +86,17 @@ if (isset($script_vars['dbouter'])) {
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // set sort order (if defined)
-    if (!empty($order_by)) {
-        $string = validateSortItem('outer', $order_by, $dbouter, $screen_structure);
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
         $dbouter->setOrderBy($string);
-        if (!empty($order_by_seq)) {
-            $dbouter->setOrderBySeq($order_by_seq);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $dbouter->initialise($selection, $where);
-    } else {
-        $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->getErrors(), $messages);
     } // if
 } // if
 
@@ -97,14 +116,13 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_search_table = &$inner_search_table;
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
-    } elseif (!empty($task_order_by)) {
-        $dbinner->setDefaultOrderby($task_order_by);
+    } elseif (!empty($task_orderby)) {
+        $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    if (!empty($selection)) {
-        $null = $dbinner->initialise($selection, $where);
-    } else {
-        $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($where);
+    if ($dbouter->errors) {
+        scriptPrevious($dbinner->getErrors(), $messages);
     } // if
 } // if
 
@@ -115,16 +133,15 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbinner' => $dbinner), $where);
+    $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
 } // if
 
-if (!empty($selection)) {
-    // retrieve profile has been passed down from previous screen
-    $where     = $selection;
-    $selection = null;
-} else {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
+if (isset($scrolling)) {
+    if ($new_selection === true) {
+    	// selection has changed, so use new value in $where
+    	$dbouter->setPageNo(1);
+    } else {
+        // use previous values from scrolling array
         $where = $scrolling[$dbouter->getClassName()]['where'];
         $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
     } // if
@@ -153,6 +170,7 @@ if (isset($_POST['reset'])) {
 
 // get data for the outer table
 $outer_data = $dbouter->getData($where);
+
 if ($dbouter->errors) {
     // some sort of error
     if ($dbouter->getLastPage() <= 1) {
@@ -163,8 +181,16 @@ if ($dbouter->errors) {
         $errors[$dbouter->getClassName()] = $dbouter->getErrors();
     } // if
 } // if
+
 $messages = array_merge($messages, $dbouter->getMessages());
 if ($dbouter->getNumRows() < 1) {
+    if (isset($return_from) AND !empty($return_action) AND !empty($where)) {
+    	// send selection back to the previous script
+        $prev_script = getPreviousScript();
+        $prev_task   = $_SESSION[$prev_script]['task_id'];
+        $_SESSION[$prev_script][$prev_task]['selection'] = $where;
+        scriptPrevious(null, null, 'choose');
+    } // if
     if (count($page_stack) > 2) {
         // 'Nothing retrieved from database table $outer'
         scriptPrevious(getLanguageText('sys0090', strtoupper($dbouter->getTableName())));
@@ -181,6 +207,12 @@ $outer_data = $dbouter->getExtraData($outer_data);
 $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
 $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
 $scrolling[$dbouter->getClassName()]['where']    = $where;
+
+// save these variables for later in the same session in case INNER performs a scriptNext()
+$script_vars['where']     = unqualifyWhere($where);
+$script_vars['dbouter']   = serialize($dbouter);
+$script_vars['scrolling'] = $scrolling;
+$script_vars = updateScriptVars ($script_vars);
 
 if (isset($_SESSION['rowsperpage'])) {
     $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
@@ -207,7 +239,7 @@ if (isset($instruction)) {
     $dbinner->setInstruction($instruction);
 } // if
 
-// get primary key of row retrieved from OUTER entity
+// get primary key of current row retrieved from OUTER entity
 $where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
 
 // load in current data from $outer in case it is needed
@@ -231,7 +263,8 @@ if ($dbinner->errors) {
     $errors[$dbinner->getClassName()] = $dbinner->getErrors();
 } // if
 if ($dbinner->getNumRows() == 0) {
-    $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'no entries found on $inner_table'
+    // 'no entries found on $inner_table'
+    $errors[] = getLanguageText('sys0088', strtoupper($inner_table));
     if (strtolower($return_action) == 'search') {
         if (isset($return_from)) {
             $messages = $errors;
@@ -252,18 +285,16 @@ if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
 } // if
 
-// $where may have been changed in database object
-$where = $dbinner->getWhere();
-
 // check for only one row being found in POPUP mode
 if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
-    if (isset($choose_single_row)) {
-        // convert primary key into SQL where format
-        $selection = array2where($inner_data, $dbinner->getPkeyNames(), $dbinner);
-        // send primary key back to the previous script
-        $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-        $previous = $_SESSION[$PHP_SELF]['previous'];
-        $_SESSION[$previous]['selection'] = $selection;
+    if (array_key_exists('choose_single_row', $settings)) {
+        $prev_script = getPreviousScript();
+        $prev_task   = getPreviousTask($prev_script);
+        // convert selection into SQL where format
+        $pkey_array = $dbinner->getPkeyArray($fieldarray, $prev_task);
+        $selection = array2where($pkey_array);
+        // send selection back to the previous script
+        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -279,8 +310,9 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
 // get sort details
-$orderby = $dbinner->getOrderBy();
+$orderby     = $dbinner->getOrderBy_Out();
 $orderby_seq = $dbinner->getOrderBySeq();
 
 // build list of objects for output to XML data

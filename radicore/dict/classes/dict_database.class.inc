@@ -6,7 +6,7 @@
 require_once 'std.table.class.inc';
 class dict_dataBase extends Default_Table
 {
-    // member variables
+    var $count;         // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -87,7 +87,7 @@ class dict_dataBase extends Default_Table
         } // if
 
         if (!array_key_exists('subsys_id', $this->lookup_data)) {
-            // get contents of foreign table MNU_SUBSYSTEM and put into lookup_data
+            // get contents of foreign table and put into lookup_data
             $dbobject =& singleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
@@ -123,6 +123,32 @@ class dict_dataBase extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['database_id'] = 'Total count:';
+        $array['database_desc'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count++;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_pre_eraseRecord ($fieldarray)

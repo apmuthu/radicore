@@ -31,7 +31,7 @@
   <xsl:param name="zone"/>
   <xsl:param name="count"/>
 
-  <xsl:for-each select="//structure/*[name()=$zone]/columns/column">
+  <xsl:for-each select="/root/structure/*[name()=$zone]/columns/column">
     <!-- copy all column attributes and values to output document -->
     <col>
       <!-- <xsl:copy-of select="@*" /> -->
@@ -88,7 +88,7 @@
   <xsl:param name="count"/>
   <xsl:param name="nosort_all"/>
 
-  <xsl:for-each select="//structure/*[name()=$zone]/row/cell[@label]">
+  <xsl:for-each select="/root/structure/*[name()=$zone]/row/cell[@label]">
     <th>
       <xsl:if test="@colspan">
         <xsl:attribute name="colspan">

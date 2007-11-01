@@ -1,1 +1,1 @@
-﻿Dictionary v1.20.0
+﻿Dictionary v1.30.0

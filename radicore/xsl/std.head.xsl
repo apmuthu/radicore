@@ -72,32 +72,4 @@
 
 </xsl:template>
 
-<xsl:template name="javascript_footer">
-
-<script language="JavaScript">
-  var SymRealOnLoad;
-  var SymRealOnUnload;
-
-  function SymOnUnload()
-  {
-    window.open = SymWinOpen;
-    if(SymRealOnUnload != null)
-       SymRealOnUnload();
-  }
-
-  function SymOnLoad()
-  {
-    if(SymRealOnLoad != null)
-       SymRealOnLoad();
-    window.open = SymRealWinOpen;
-    SymRealOnUnload = window.onunload;
-    window.onunload = SymOnUnload;
-  }
-
-  SymRealOnLoad = window.onload;
-  window.onload = SymOnLoad;
-</script>
-
-</xsl:template>
-
 </xsl:stylesheet>

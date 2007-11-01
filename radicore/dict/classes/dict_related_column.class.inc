@@ -60,8 +60,13 @@ class dict_related_column extends Default_Table
     // Perform custom processing prior to insertMultiple.
     // $fieldarray contains data from the initial $where clause.
     {
-        $database_id = $fieldarray['database_id_snr'];
-        $table_id    = $fieldarray['table_id_snr'];
+        if (is_string(key($fieldarray))) {
+            $database_id = $fieldarray['database_id_snr'];
+            $table_id    = $fieldarray['table_id_snr'];
+        } else {
+            $database_id = $fieldarray[0]['database_id_snr'];
+            $table_id    = $fieldarray[0]['table_id_snr'];
+        } // if
 
         // obtain names of primary key columns from parent table
         require_once 'classes/dict_table_key.class.inc';

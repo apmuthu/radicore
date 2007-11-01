@@ -1,11 +1,12 @@
 -- phpMyAdmin SQL Dump
--- version 2.7.0
+-- version 2.10.0.2
 -- http://www.phpmyadmin.net
 -- 
 -- Host: localhost
--- Generation Time: Dec 22, 2006 at 01:36 PM
--- Server version: 4.1.21
--- PHP Version: 4.4.4
+-- Generation Time: Mar 06, 2007 at 11:46 AM
+-- Server version: 4.1.22
+-- PHP Version: 4.4.6
+
 -- 
 -- Database: `dict`
 -- 
@@ -34,20 +35,20 @@ CREATE TABLE IF NOT EXISTS `dict_column` (
   `col_maxsize` bigint(20) unsigned default NULL,
   `col_null` char(1) NOT NULL default 'Y',
   `is_required` char(1) NOT NULL default 'N',
-  `col_key` char(3) default NULL,
+  `col_key` varchar(3) default NULL,
   `col_default` varchar(40) default NULL,
   `col_auto_increment` char(1) NOT NULL default 'N',
   `col_unsigned` char(1) NOT NULL default 'N',
-  `col_zerofill_bwz` char(3) default NULL,
+  `col_zerofill_bwz` varchar(3) default NULL,
   `col_precision` tinyint(3) unsigned default NULL,
   `col_scale` tinyint(3) unsigned default NULL,
   `col_minvalue` double default NULL,
   `col_maxvalue` double default NULL,
   `user_minvalue` double default NULL,
   `user_maxvalue` double default NULL,
-  `noedit_nodisplay` char(3) default NULL,
-  `no_search` char(3) default NULL,
-  `no_audit` char(3) default NULL,
+  `noedit_nodisplay` varchar(3) default NULL,
+  `no_search` varchar(3) default NULL,
+  `no_audit` varchar(3) default NULL,
   `upper_lowercase` varchar(5) default NULL,
   `is_password` char(1) NOT NULL default 'N',
   `auto_insert` char(1) NOT NULL default 'N',
@@ -62,7 +63,7 @@ CREATE TABLE IF NOT EXISTS `dict_column` (
   `control` varchar(10) default NULL,
   `optionlist` varchar(64) default NULL,
   `checkbox_label` varchar(64) default NULL,
-  `task_id` varchar(64) default NULL,
+  `task_id` varchar(80) default NULL,
   `foreign_field` varchar(64) default NULL,
   `align_hv` char(1) default NULL,
   `align_lr` char(1) default NULL,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS `dict_database` (
   `database_id` varchar(64) NOT NULL default '',
   `database_desc` varchar(255) NOT NULL default '',
   `db_comment` text,
-  `subsys_id` varchar(8) NOT NULL default '',
+  `subsys_id` varchar(16) NOT NULL default '',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -132,7 +133,7 @@ CREATE TABLE IF NOT EXISTS `dict_relationship` (
   `table_alias_jnr` varchar(64) default NULL,
   `relation_desc` varchar(255) default NULL,
   `rel_comment` text,
-  `rel_type` char(3) NOT NULL default '',
+  `rel_type` varchar(3) NOT NULL default '',
   `orderby` varchar(64) default NULL,
   `parent_field` varchar(64) default NULL,
   `calc_field` varchar(255) default NULL,

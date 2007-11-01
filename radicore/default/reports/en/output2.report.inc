@@ -13,8 +13,7 @@ $structure['body']['style']  = 'body';              // style for main body
 $structure['foot']['style']  = 'foot';              // style for page footer
 
 // define contents of page title
-$structure['title'][] = array('type' => 'text',
-                              'value' => "- <insert title here> -",
+$structure['title'][] = array('text' => "- <insert title here> -",
                               'width' => 100,
                               'align' => 'center',
                               'border' => 'y');

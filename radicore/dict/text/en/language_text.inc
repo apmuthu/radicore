@@ -8,12 +8,12 @@ $array['e0003'] = "If TYPE = 'boolean' CONTROL can only be 'dropdown' or 'radiog
 $array['e0004'] = "Invalid unless CONTROL = 'filepicker'";
 $array['e0005'] = "Unknown value for 'subtype' (%1\$s)";
 $array['e0006'] = "Invalid unless SUBTYPE = 'image'";
-$array['e0007'] = "Invalid unless CONTROL = 'radio group'";
+$array['e0007'] = "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'";
 $array['e0008'] = "Invalid unless CONTROL = 'popup'";
 $array['e0009'] = "Invalid unless CONTROL = 'popup' or 'filepicker'";
 
-$array['e0010'] = "Invalid unless CONTROL = 'dropdown', 'multi-dropdown' or 'radio group'";
-$array['e0011'] = "Required if CONTROL = 'dropdown' or 'multi-dropdown'";
+$array['e0010'] = "Invalid unless CONTROL = 'dropdown', 'multi-dropdown', 'radio group' or 'multi-checkbox'";
+$array['e0011'] = "Required if CONTROL = 'dropdown', 'multi-dropdown' or 'multi-checkbox'";
 $array['e0012'] = "Required if CONTROL = 'radio group'";
 $array['e0013'] = "Required if CONTROL = 'multi-line'";
 $array['e0014'] = "Required if CONTROL = 'popup'";
@@ -29,12 +29,12 @@ $array['e0022'] = "Required if display field = 'CALCULATED'";
 $array['e0023'] = "There is no data to insert";
 $array['e0024'] = "Exported to %1\$s";
 $array['e0025'] = "There are no new database schemas to be imported";
-$array['e0026'] = "";
-$array['e0027'] = "";
+$array['e0026'] = "Nothing exported for %1\$s as it has no columns";
+$array['e0027'] = "Value is missing for fieldspec['type']";
 $array['e0028'] = "";
 $array['e0029'] = "";
 
-$array['e0030'] = "Invalid unless CONTROL = 'radio group' or 'checkbox'";
+$array['e0030'] = "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'";
 $array['e0031'] = "CONTROL cannot be 'checkbox' unless TYPE is 'boolean'";
 $array['e0032'] = "Invalid unless CONTROL = 'checkbox'";
 $array['e0033'] = "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set";
@@ -43,7 +43,7 @@ $array['e0035'] = "Invalid unless CONTROL = 'multi-line', 'dropdown' or 'dropdow
 $array['e0036'] = "Invalid unless SUBTYPE = 'custom'";
 $array['e0037'] = "Required if SUBTYPE = 'custom'";
 $array['e0038'] = "Invalid format for CUSTOM_VALIDATION - must be 'file/class/method'";
-$array['e0039'] = "";
+$array['e0039'] = "This field can only contain a single word";
 
 $array['e0040'] = "This id is already in use";
 $array['e0041'] = "A file with this name already exists";
@@ -70,24 +70,35 @@ $array['e0059'] = "";
 // text entries used in dict_table_s04.class.inc
 $array['t0001'] = "Add1, Delete1, Enquire1, Search, Update1, Audit";
 $array['t0002'] = "Add2, Delete1, Enquire1, Search, Update1, Audit";
-$array['t0003'] = "Add3, Popup1, Delete2, Search";
+$array['t0003'] = "Add3, Popup, Delete2, Search";
 $array['t0004'] = "Add2, Delete1, Enqire1, Search, Update1";
 $array['t0005'] = "Search";
 $array['t0006'] = "Link %1\$s to selected %2\$s";
 $array['t0007'] = "List %1\$s by %2\$s";
 $array['t0008'] = "List %1\$s by %2\$s by %3\$s";
-$array['t0009'] = "Update2, Popup2, Delete3, Search";
+$array['t0009'] = "Update2, Popup, Delete3, Search";
 
-$array['t0010'] = "Output %1\$s to CSV";
-$array['t0011'] = "Output to CSV";
-$array['t0012'] = "Output %1\$s to PDF (list view)";
-$array['t0013'] = "Output to PDF(L)";
-$array['t0014'] = "Output %1\$s to PDF (detail view)";
-$array['t0015'] = "Output to PDF(D)";
-$array['t0016'] = "Timetable for %1\$s";
-$array['t0017'] = "Tree Structure for %1\$s";
+$array['t0010'] = "";
+$array['t0011'] = "Add2, Delete1";
+$array['t0012'] = "Add3, Popup, Delete2";
+$array['t0013'] = "";
+$array['t0014'] = "";
+$array['t0015'] = "";
+$array['t0016'] = "";
+$array['t0017'] = "";
 $array['t0018'] = "";
 $array['t0019'] = "";
+
+$array['t0020'] = "Output %1\$s to CSV";
+$array['t0021'] = "Output to CSV";
+$array['t0022'] = "Output %1\$s to PDF (list view)";
+$array['t0023'] = "Output to PDF(L)";
+$array['t0024'] = "Output %1\$s to PDF (detail view)";
+$array['t0025'] = "Output to PDF(D)";
+$array['t0026'] = "Timetable for %1\$s";
+$array['t0027'] = "Tree Structure for %1\$s";
+$array['t0028'] = "";
+$array['t0029'] = "";
 
 $array['by']                = 'by';
 $array['DEFAULT']           = 'DEFAULT';
@@ -160,6 +171,18 @@ $array['Output to PDF(L)']              = 'Output to PDF(L)';
 $array['Relationships (DB)']            = 'Relationships (DB)';
 $array['Relationships (Table)']         = 'Relationships (Table)';
 
+// field names for subsystem XXX
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+$array['']     = '';
+
 // field labels for subsystem DICT
 $array['Alias (jnr)']               = 'Alias (jnr)';
 $array['Alias (snr)']               = 'Alias (snr)';
@@ -193,6 +216,7 @@ $array['Image Width']               = 'Image Width';
 $array['Infinity Is Null?']         = 'Infinity Is Null?';
 $array['Inner Table Name']          = 'Inner Table Name';
 $array['Inner Table Alias']         = 'Inner Table Alias';
+$array['Insert or Update']          = 'Insert or Update';
 $array['Is Unique?']                = 'Is Unique?';
 $array['Key?']                      = 'Key?';
 $array['Key Name']                  = 'Key Name';

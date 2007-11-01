@@ -18,11 +18,17 @@ $mode = 'read';
 // load session variables
 initSession();
 
+if (!empty($selection) AND !isset($return_from)) {
+    // $selection takes precedence over $where
+    $where     = $selection;
+    $selection = null;
+} // if
+
 // load session variables
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
     // clear this script from session details and return to previous page
-    scriptPrevious(getLanguageText('sys0087')); // 'Nothing selected from fileupload screen.'
+    scriptPrevious();
 } // if
 
 // define action buttons
@@ -37,11 +43,7 @@ if (isset($script_vars['fileobject'])) {
 } else {
     $fileobject = new $table_id;
     // perform any initialisation
-    if (!empty($selection)) {
-        $selection = $fileobject->initialiseFileUpload($selection);
-    } else {
-        $where = $fileobject->initialiseFileUpload($where);
-    } // if
+    $where = $fileobject->initialiseFileUpload($where);
     if ($fileobject->errors) {
     	scriptPrevious($fileobject->errors);
     } // if
@@ -106,8 +108,27 @@ if (!empty($_FILES) and empty($errors)) {
         $filename = $_FILES['userfile']['name'];
     } // if
     //  Check to see if a file is the correct type
-    if (!in_array($_FILES['userfile']['type'], $filetypes)) {
-        $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+    if (is_array($filetypes)) {
+    	if (!in_array($_FILES['userfile']['type'], $filetypes)) {
+            $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+        } // if
+    } elseif ($filetypes == 'image') {
+        if (!eregi('^image', $_FILES['userfile']['type'])) {
+        	$errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+        } else {
+            $imageinfo = getimagesize($_FILES['userfile']['tmp_name']);
+            if (!eregi('^image', $imageinfo['mime'])) {
+            	$errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+            } // if
+        } // if
+    } // if
+    // check that the file does not have an invalid extension
+    $blacklist = array("\.php.*", "\..*htm.*");
+    foreach ($blacklist as $item) {
+        if(preg_match("/$item\$/i", $_FILES['userfile']['name'], $regs)) {
+            // "The uploading of 'x' files is not allowed"
+            $errors[] = getLanguageText('sys0136', $regs[0]);
+        } // if
     } // if
     //  Check to see if the directory specified in the store_dir input field is a valid directory
     if (!is_dir($subdir) ) {
@@ -121,6 +142,14 @@ if (!empty($_FILES) and empty($errors)) {
     if (empty($errors)) {
         if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
             $messages[] = getLanguageText('sys0126', $uploadfile); // "File uploaded into $uploadfile";
+            if (!empty($fileobject->resize_array)) {
+                foreach ($fileobject->resize_array as $key => $spec) {
+                    $destination = $spec['directory'];
+                    $width       = $spec['width'];
+                    $height      = $spec['height'];
+                    $messages[]  = resizeImage($uploadfile, $destination, $width, $height);
+                } // foreach
+            } // if
         	// send selection back to the previous script
             $prev_script = getPreviousScript();
             $prev_task   = getPreviousTask($prev_script);
@@ -136,8 +165,18 @@ if (!empty($_FILES) and empty($errors)) {
 $fieldarray['filename']    = $filename;
 $fieldarray['maxfilesize'] = $maxfilesize;
 $fieldarray['msg1']        = getLanguageText('sys0120');
-$fieldarray['msg2']        = getLanguageText('sys0121', $maxfilesize);
-$fieldarray['msg3']        = getLanguageText('sys0122', $filetype);
+if ($maxfilesize > 1000000) {
+	$fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize/1000000 .'M');  // megabytes
+} elseif ($maxfilesize > 1000) {
+	$fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize/1000 .'K');     // kilobytes
+} else {
+    $fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize);               // bytes
+} // if
+if (is_array($filetypes)) {
+	$fieldarray['msg3']    = getLanguageText('sys0122', implode(',', $filetypes));   // array of values
+} else {
+    $fieldarray['msg3']    = getLanguageText('sys0122', $filetypes);                 // single value
+} // if
 $fileobject->setFieldArray($fieldarray);
 
 // save these variables for later in the same session

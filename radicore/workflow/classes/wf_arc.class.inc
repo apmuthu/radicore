@@ -91,8 +91,9 @@ class wf_arc extends Default_Table
             return;
         } // if
 
-        // if trigger is 'AUTO' then process this workitem now
         if ($arc_data['transition_trigger'] == 'AUTO') {
+            // trigger is 'AUTO', so commit current updates and process this workitem now
+            $this->errors = $dbworkitem->commit();
             $next['task_id'] = $arc_data['task_id'];
             $next['where']   = $arc_data['context'];
             $_SESSION['script_sequence'][] = $next;
@@ -191,25 +192,27 @@ class wf_arc extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for arc_type and put into LOOKUP_DATA
-        $array = $this->getValRep('arc_type');
-        $this->lookup_data['arc_type'] = $array;
+        if (!array_key_exists('arc_type', $this->lookup_data)) {
+            // get array for arc_type and put into LOOKUP_DATA
+            $array = $this->getValRep('arc_type');
+            $this->lookup_data['arc_type'] = $array;
+        } // if
 
-        // get array for direction and put into LOOKUP_DATA
-        $array = $this->getValRep('direction');
-        $this->lookup_data['direction'] = $array;
+        if (!array_key_exists('direction', $this->lookup_data)) {
+            // get array for direction and put into LOOKUP_DATA
+            $array = $this->getValRep('direction');
+            $this->lookup_data['direction'] = $array;
+        } // if
 
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
 
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            require_once 'classes/wf_transition.class.inc';
             $dbobject =& singleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
 
             // get contents of foreign table PLACE and add as a LOOKUP list
-            require_once 'classes/wf_place.class.inc';
             $dbobject =& singleton::getInstance('wf_place');
             $array = $dbobject->getValRep('place_id', "workflow_id='$workflow_id'");
             $this->lookup_data['place_id'] = $array;

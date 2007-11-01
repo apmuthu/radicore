@@ -46,9 +46,11 @@ class crs_teacher extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for task_type and put into LOOKUP_DATA
-        $array = $this->getValRep('title');
-        $this->lookup_data['title'] = $array;
+        if (!array_key_exists('title', $this->lookup_data)) {
+            // get array for task_type and put into LOOKUP_DATA
+            $array = $this->getValRep('title');
+            $this->lookup_data['title'] = $array;
+        } // if
 
         return $fieldarray;
 

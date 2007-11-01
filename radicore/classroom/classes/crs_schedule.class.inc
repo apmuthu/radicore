@@ -41,6 +41,10 @@ class crs_schedule extends Default_Table
             $this->fieldspec['lesson_id']['noedit'] = 'y';
         } // if
 
+        // display ehese times as 'hh:mm' and not 'hh:mm@ss'
+        $this->fieldspec['start_time']['size'] = 5;
+        $this->fieldspec['end_time']['size']   = 5;
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -241,21 +245,25 @@ class crs_schedule extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get array for day_no and put into LOOKUP_DATA
-        $array = $this->getValRep('day_no');
-        $this->lookup_data['day_no'] = $array;
+        if (!array_key_exists('day_no', $this->lookup_data)) {
+            // get array for day_no and put into LOOKUP_DATA
+            $array = $this->getValRep('day_no');
+            $this->lookup_data['day_no'] = $array;
+        } // if
 
-        // get contents of foreign table LESSON and add to lookup array
-        //require_once 'classes/crs_lesson.class.inc';
-        $object =& singleton::getInstance('crs_lesson');
-        $data = $object->getValRep('lesson_id');
-        $this->lookup_data['lesson_id'] = $data;
+        if (!array_key_exists('lesson_id', $this->lookup_data)) {
+            // get contents of foreign table LESSON and add to lookup array
+            $object =& singleton::getInstance('crs_lesson');
+            $data = $object->getValRep('lesson_id');
+            $this->lookup_data['lesson_id'] = $data;
+        } // if
 
-        // get contents of foreign table ROOM and add to lookup array
-        //require_once 'classes/crs_room.class.inc';
-        $object =& singleton::getInstance('crs_room');
-        $data = $object->getValRep('room_id');
-        $this->lookup_data['room_id'] = $data;
+        if (!array_key_exists('room_id', $this->lookup_data)) {
+            // get contents of foreign table ROOM and add to lookup array
+            $object =& singleton::getInstance('crs_room');
+            $data = $object->getValRep('room_id');
+            $this->lookup_data['room_id'] = $data;
+        } // if
 
         return $fieldarray;
 

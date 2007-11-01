@@ -1,4 +1,4 @@
--- file created on October 31, 2006, 10:02 am
+-- file created on January 22, 2007, 11:00 am
     
 REPLACE INTO `mnu_subsystem` (`subsys_id`, `subsys_desc`, `subsys_dir`, `task_prefix`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES 
 ('PRODUCT', 'Product Inventory', 'product', 'pro_', '2003-01-01 12:00:00', 'AJM', '2006-07-02 15:06:22', 'AJM');

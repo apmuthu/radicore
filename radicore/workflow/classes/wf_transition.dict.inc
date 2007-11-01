@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:34 am
+    // file created on September 10, 2007, 5:56 pm
     
     // field specifications for table workflow.wf_transition
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -44,11 +44,11 @@
                                                     'maxvalue' => 999);
     
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'mnu_task(popup)a',
+                                                    'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'task_desc');
     
     $fieldspec['role_id']                   = array('type' => 'string',

@@ -1,0 +1,5 @@
+This will allow a new record to be added to the ROLE table.
+
+Enter your data then press the SUBMIT button to add it to the database.
+
+Refer to <a href="%root%/mnu_role(add1).html">Add Role</a> for full details.

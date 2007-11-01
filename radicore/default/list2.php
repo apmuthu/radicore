@@ -25,7 +25,7 @@ $inner_sql_groupby  = null;
 $inner_sql_having   = null;
 $inner_sql_orderby  = null;
 $inner_sql_orderby_table = null;
-$inner_search_table = '#popup_table#';
+$inner_search_table = '';
 
 require 'std.list2.inc';            // activate page controller
 

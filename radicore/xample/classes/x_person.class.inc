@@ -33,7 +33,6 @@ class x_person extends Default_Table
         if ($GLOBALS['mode'] == 'search') {
             $prev_script = getPreviousScript();
             $pattern_id  = getPatternId($prev_script);
-            //if (basename($prev_script) == 'pers_opt_xref_link(b).php') {
             if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
                 $this->fieldspec['selected'] = array('type' => 'boolean');
@@ -122,18 +121,24 @@ class x_person extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // get values for star_sign and insert into lookup array
-        $array = $this->getValRep('star_sign');
-        $this->lookup_data['star_sign'] = $array;
+        if (!array_key_exists('star_sign', $this->lookup_data)) {
+            // get values for star_sign and insert into lookup array
+            $array = $this->getValRep('star_sign');
+            $this->lookup_data['star_sign'] = $array;
+        } // if
 
-        // get values for favourite_food and insert into lookup array
-        $array = $this->getValRep('favourite_food');
-        $this->lookup_data['favourite_food'] = $array;
+        if (!array_key_exists('favourite_food', $this->lookup_data)) {
+            // get values for favourite_food and insert into lookup array
+            $array = $this->getValRep('favourite_food');
+            $this->lookup_data['favourite_food'] = $array;
+        } // if
 
-        // get contents of foreign table PERS_TYPE and add to lookup array
-        $pers_type =& singleton::getInstance('x_pers_type');
-        $pers_type_array = $pers_type->getValRep('pers_type_id');
-        $this->lookup_data['pers_type_id'] = $pers_type_array;
+        if (!array_key_exists('pers_type_id', $this->lookup_data)) {
+            // get contents of foreign table and add to lookup array
+            $pers_type =& singleton::getInstance('x_pers_type');
+            $pers_type_array = $pers_type->getValRep('pers_type_id');
+            $this->lookup_data['pers_type_id'] = $pers_type_array;
+        } // if
 
         return $fieldarray;
 
@@ -204,8 +209,9 @@ class x_person extends Default_Table
     // perform any initialisation before displaying the File Upload screen.
     {
         $this->upload_subdir      = 'pictures';
-        $this->upload_filetypes   = array('image/x-png', 'image/gif');
-        $this->upload_maxfilesize = 100;
+        //$this->upload_filetypes   = array('image/x-png', 'image/gif');
+        $this->upload_filetypes   = 'image';
+        $this->upload_maxfilesize = 100000;
 
         return $fieldarray;
 
@@ -270,7 +276,7 @@ class x_person extends Default_Table
         	case 'multi4':
                 // return a non-empty array to print an empty line
                 $outarray[] = array('dummy' => '');
-        		break;
+                break;
 
         	case 'multi5':
                 // return a non-empty array to print an empty line
@@ -329,6 +335,18 @@ class x_person extends Default_Table
         return $where;
 
     } // _cm_popupCall
+
+    // ****************************************************************************
+    function _cm_post_fetchRow ($fieldarray)
+    // perform custom processing after a call to fetchRow().
+    {
+        if ($GLOBALS['mode'] == 'pdf-detail') {
+        	$fieldarray['barcode'] = '0123456789';
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_fetchRow
 
     // ****************************************************************************
     function _cm_post_updateRecord ($fieldarray, $old_data)

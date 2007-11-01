@@ -55,6 +55,7 @@ ALTER TABLE workflow.wf_arc OWNER TO postgres;
 --
 
 CREATE TABLE wf_case (
+    rdcaccount_id integer NOT NULL default 1,
     case_id integer DEFAULT 0 NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
     context character varying(255),
@@ -98,6 +99,7 @@ ALTER TABLE workflow.wf_place OWNER TO postgres;
 --
 
 CREATE TABLE wf_token (
+    rdcaccount_id integer NOT NULL default 1,
     case_id integer DEFAULT 0 NOT NULL,
     token_id smallint DEFAULT (0)::smallint NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
@@ -125,7 +127,7 @@ CREATE TABLE wf_transition (
     transition_desc text,
     transition_trigger character varying(4) DEFAULT 'USER'::character varying NOT NULL,
     time_limit integer,
-    task_id character varying(40) NOT NULL,
+    task_id character varying(80) NOT NULL,
     role_id character varying(16),
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) NOT NULL,
@@ -146,7 +148,7 @@ CREATE TABLE wf_workflow (
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
     workflow_name character varying(80),
     workflow_desc text,
-    start_task_id character varying(40),
+    start_task_id character varying(80),
     is_valid character(1),
     workflow_errors text,
     start_date date,
@@ -167,12 +169,13 @@ ALTER TABLE workflow.wf_workflow OWNER TO postgres;
 --
 
 CREATE TABLE wf_workitem (
+    rdcaccount_id integer NOT NULL default 1,
     case_id integer DEFAULT 0 NOT NULL,
     workitem_id smallint DEFAULT (0)::smallint NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
     transition_id smallint DEFAULT (0)::smallint NOT NULL,
     transition_trigger character varying(4),
-    task_id character varying(40),
+    task_id character varying(80),
     context character varying(255),
     workitem_status character(2),
     enabled_date timestamp without time zone,
@@ -280,7 +283,8 @@ CREATE INDEX wf_arc_index2 ON wf_arc USING btree (workflow_id, transition_id, di
 -- Name: wf_case_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
-CREATE INDEX wf_case_index ON wf_case USING btree (workflow_id);
+CREATE INDEX wf_case_index1 ON wf_case USING btree (workflow_id);
+CREATE INDEX wf_case_index2 ON wf_case USING btree (rdcaccount_id);
 
 
 --
@@ -289,7 +293,8 @@ CREATE INDEX wf_case_index ON wf_case USING btree (workflow_id);
 -- Name: wf_token_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
-CREATE INDEX wf_token_index ON wf_token USING btree (workflow_id, place_id);
+CREATE INDEX wf_token_index1 ON wf_token USING btree (workflow_id, place_id);
+CREATE INDEX wf_token_index2 ON wf_token USING btree (rdcaccount_id);
 
 
 --
@@ -298,7 +303,8 @@ CREATE INDEX wf_token_index ON wf_token USING btree (workflow_id, place_id);
 -- Name: wf_workitem_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
-CREATE INDEX wf_workitem_index ON wf_workitem USING btree (workflow_id, transition_id);
+CREATE INDEX wf_workitem_index1 ON wf_workitem USING btree (workflow_id, transition_id);
+CREATE INDEX wf_workitem_index2 ON wf_workitem USING btree (rdcaccount_id);
 
 
 --

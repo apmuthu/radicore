@@ -60,16 +60,17 @@ class uom_conversion extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, $selection)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
-    // $selection contains an array of item(s) selected in that popup screen.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
         //DebugBreak();
         if ($return_from == 'pro_uom(popup)') {
-            $fieldarray['uom_id_to'] = $fieldarray['uom_id'];
-            unset($fieldarray['uom_id']);
+            $fieldarray['uom_id_to'] = $select_array['uom_id'];
+            unset($select_array['uom_id']);
         } // if
 
         return $fieldarray;

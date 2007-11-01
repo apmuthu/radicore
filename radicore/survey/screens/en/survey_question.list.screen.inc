@@ -18,7 +18,7 @@ $structure['tables']['inner'] = 'survey_question';
 
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => 25);
-$structure['inner']['columns'][] = array('width' => 500);
+$structure['inner']['columns'][] = array('width' => '*');
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('question_seq' => 'Seq');

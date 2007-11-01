@@ -1,5 +1,5 @@
 <?php
-    // file created on December 12, 2006, 6:01 pm
+    // file created on March 6, 2007, 12:02 pm
     
     // field specifications for table audit.audit_trn
     $fieldspec['session_id']                = array('type' => 'integer',
@@ -27,13 +27,13 @@
                                                     'noedit' => 'y');
     
     $fieldspec['trn_time']                  = array('type' => 'time',
-                                                    'size' => 8,
+                                                    'size' => 10,
                                                     'required' => 'y',
                                                     'default' => '00:00:00',
                                                     'noedit' => 'y');
     
     $fieldspec['task_id']                   = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'noedit' => 'y');

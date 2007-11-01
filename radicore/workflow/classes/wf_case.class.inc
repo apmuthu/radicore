@@ -25,21 +25,39 @@ class wf_case extends Default_Table
     } // wf_case
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $pattern_id = strtolower(getPatternId());
+
+        if ($pattern_id == 'list2') {
+        	unset($this->fieldspec['workflow_id']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
-        // get array for after_submit and put into LOOKUP_DATA
-        $array = $this->getValRep('case_status');
-        $this->lookup_data['case_status'] = $array;
+        if (!array_key_exists('case_status', $this->lookup_data)) {
+            // get array for after_submit and put into LOOKUP_DATA
+            $array = $this->getValRep('case_status');
+            $this->lookup_data['case_status'] = $array;
+        } // if
 
-        // get list of workflow names
-        require_once 'classes/wf_workflow.class.inc';
-        $dbobject =& singleton::getInstance('wf_workflow');
-        $array = $dbobject->getValRep('workflow_id');
-        $this->lookup_data['workflow_id'] = $array;
+        if (!array_key_exists('workflow_id', $this->lookup_data)) {
+            // get list of workflow names
+            $dbobject =& singleton::getInstance('wf_workflow');
+            $array = $dbobject->getValRep('workflow_id');
+            $this->lookup_data['workflow_id'] = $array;
+        } // if
 
         return $fieldarray;
 
@@ -50,7 +68,6 @@ class wf_case extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set workflow_id to next available number
         $query = "SELECT max(case_id) FROM $this->tablename";
         $count = $this->getCount($query);
@@ -89,7 +106,6 @@ class wf_case extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         $workflow_id = $fieldarray['workflow_id'];
 
         // a new workflow instance has started, so ....

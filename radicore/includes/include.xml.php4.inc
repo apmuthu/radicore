@@ -18,8 +18,8 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 
     global $screen_structure;
 
-    // get object name from this object
-    if (getPatternId() == 'FILEPICKER') {
+    // get object name to use as node name in XML file
+    if (eregi('filepicker|fileupload', getPatternId())) {
     	$objectname = 'file';
     } else {
         $objectname = $dbobject->getClassName();
@@ -68,15 +68,14 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
         if (!is_array($rowdata)) {
             // this is not an array, so output as data now
 
-            // convert from internal coding to UTF-8
-            $rowdata = convertEncoding($rowdata, DEFAULT_CHARSET, 'UTF-8');
+            $rowdata = convertEncoding($rowdata, 'UTF-8');
 
             // insert as text element for the current node
             $value = $doc->create_text_node($rowdata);
             $value = $node->append_child($value);
         } else {
             $css_array = array();  // optional css class specifications
-            // format data for output
+        	// format data for output (this converts dates and numbers)
             $rowdata = $dbobject->formatData($rowdata, $css_array);
             // add a child node for each field
             foreach ($rowdata as $fieldname => $fieldvalue) {
@@ -94,7 +93,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         $child->set_attribute('size', $spec['size']);
                     } // if
 
-                    // look for noedit attribute
+                    // look for 'noedit' attribute
                     if (isset($spec['noedit'])) {
                         $child->set_attribute('noedit', 'y');
                     } else {
@@ -111,7 +110,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         } // if
                     } // if
 
-                    // look for nodisplay/hidden attribute
+                    // look for nodisplay attribute (value is not contained within form)
                     if (isset($spec['nodisplay'])) {
                         $child->set_attribute('nodisplay', 'y');
                         $fieldvalue = '**hidden**';
@@ -152,6 +151,10 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                     } // if
 
                     if (isset($spec['control'])) {
+                        // option for hidden field (contained within form but not shown)
+                        if ($spec['control'] == 'hidden') {
+                            $child->set_attribute('control', 'hidden');
+                        } // if
                         // option for dropdown fields
                         if ($spec['control'] == 'dropdown') {
                             $child->set_attribute('control', 'dropdown');
@@ -203,6 +206,9 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             if (isset($spec['task_id'])) {
                                 $child->set_attribute('task_id', "task#{$spec['task_id']}");
                             } // if
+                            if (isset($spec['allow_input'])) {
+                                $child->set_attribute('allow_input', $spec['allow_input']);
+                            } // if
                         } // if
                         // option for radio buttons
                         if ($spec['control'] == 'radiogroup' or $spec['control'] == 'radio') {
@@ -215,14 +221,24 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
                             } // if
                         } // if
-                        // option for checkbox
+                        // option for a single checkbox
                         if ($spec['control'] == 'checkbox') {
                             $child->set_attribute('control', 'checkbox');
                             $child->set_attribute('optionlist', $spec['optionlist']);
                             if (isset($spec['label'])) {
-                                // convert from internal coding to UTF-8
-                                $spec['label'] = convertEncoding($spec['label'], DEFAULT_CHARSET, 'UTF-8');
+                                $spec['label'] = convertEncoding($spec['label'], 'UTF-8');
                             	$child->set_attribute('label', $spec['label']);
+                            } // if
+                            if (isset($spec['align_lr'])) {
+                            	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
+                            } // if
+                        } // if
+                        // option for multiple checkboxes
+                        if ($spec['control'] == 'm_checkbox' OR $spec['control'] == 'checkbox_multi') {
+                            $child->set_attribute('control', 'checkbox_multi');
+                            $child->set_attribute('optionlist', $spec['optionlist']);
+                            if (isset($spec['align_hv'])) {
+                            	$child->set_attribute('align_hv', strtolower($spec['align_hv']));
                             } // if
                             if (isset($spec['align_lr'])) {
                             	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
@@ -243,6 +259,15 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                 } else {
                     // field does not exist in $fieldspec, so make it non-editable
                     $child->set_attribute('noedit', 'y');
+                    // if an error message exists put it into the error attribute
+                    if (!empty($object_errors)) {
+                        if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
+                            if (array_key_exists($fieldname, $object_errors[$rownum])) {
+                                $child->set_attribute('error', $object_errors[$rownum][$fieldname]);
+                                unset($object_errors[$rownum][$fieldname]);
+                            } // if
+                        } // if
+                    } // if
                 } // if
 
                 if (is_array($fieldvalue)) {
@@ -255,8 +280,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         //$value = $array_value->append_child($value);
                     } // foreach
                 } else {
-                    // convert from internal coding to UTF-8
-                    $fieldvalue = convertEncoding($fieldvalue, DEFAULT_CHARSET, 'UTF-8');
+                    $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
 
                     // insert as text element for the current node
                     $value = $doc->create_text_node($fieldvalue);
@@ -372,7 +396,7 @@ function addLookup2XMLdoc ($lookup, $doc, $root)
             if (is_array($optvalue)) {
             	foreach ($optvalue as $key1 => $value1) {
             		if ($key1 == 'value') {
-            			$value1 = convertEncoding($value1, DEFAULT_CHARSET, 'UTF-8');
+            			$value1 = convertEncoding($value1, 'UTF-8');
                         $value = $doc->create_text_node($value1);
                         $value = $child->append_child($value);
             		} else {
@@ -380,8 +404,7 @@ function addLookup2XMLdoc ($lookup, $doc, $root)
             		} // if
             	} // foreach
             } else {
-                // convert from internal coding to UTF-8
-                $optvalue = convertEncoding($optvalue, DEFAULT_CHARSET, 'UTF-8');
+                $optvalue = convertEncoding($optvalue, 'UTF-8');
                 $value = $doc->create_text_node($optvalue);
                 $value = $child->append_child($value);
             } // if
@@ -483,7 +506,7 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         list($table, $column) = split('\.', $orderby);
         $orderby = $column;
     } // if
-    if (isset($orderby)) {
+    if (!empty($orderby)) {
         $xsl_params['orderby'] = $orderby;
         $xsl_params['order']   = trim(strtolower($orderby_seq));
     } // if
@@ -526,16 +549,13 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         		$child1 = $doc->create_element($name1);
                 $child1 = $child->append_child($child1);
 
-                // convert from internal coding to UTF-8
-                $value1 = convertEncoding($value1, DEFAULT_CHARSET, 'UTF-8');
+                $value1 = convertEncoding($value1, 'UTF-8');
 
                 $text = $doc->create_text_node($value1);
                 $text = $child1->append_child($text);
         	} // foreach
         } else {
-            // convert from internal coding to UTF-8
-            $value = convertEncoding($value, DEFAULT_CHARSET, 'UTF-8');
-
+            $value = convertEncoding($value, 'UTF-8');
             $text = $doc->create_text_node($value);
             $text = $child->append_child($text);
         } // if
@@ -560,8 +580,8 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     global $menu_buttons;
     global $mode;
     global $nav_buttons;
+    global $nav_buttons_omit;
     global $pagination;
-    global $remove_buttons;
     global $screen_structure;
     global $scrolling;
     global $task_id;
@@ -613,12 +633,12 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 	    // skip
     } else {
         // insert action buttons
-        if (isset($act_buttons)) {
+        if (!empty($act_buttons)) {
             setActBar($xml_doc, $root, $act_buttons);
         } // if
 
         // insert menu buttons
-        if (isset($menu_buttons)) {
+        if (!empty($menu_buttons)) {
             setMenuBar($xml_doc, $root, $menu_buttons, $current_menu, $current_task);
         } // if
     } // if
@@ -642,18 +662,18 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
             } // if
         } // if
         // insert navigation buttons
-        if (isset($nav_buttons)) {
-            setNavBar($xml_doc, $root, $nav_buttons, $remove_buttons);
+        if (!empty($nav_buttons)) {
+            setNavBar($xml_doc, $root, $nav_buttons, $nav_buttons_omit);
         } // if
     } // if
 
     // insert scrolling details for any number of objects (optional)
-    if (isset($scrolling)) {
+    if (!empty($scrolling)) {
         setScrollbar($xml_doc, $root, $scrolling);
     } // if
 
     // insert pagination details for any number of objects (optional)
-    if (isset($pagination)) {
+    if (!empty($pagination)) {
         setpaginationbar($xml_doc, $root, $pagination);
     } // if
 
@@ -700,8 +720,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
                     $msg = $id .'[' .$rownum .']: ' .$msg;
                 } // if
 
-                // convert from internal coding to UTF-8
-                $msg = convertEncoding($msg, DEFAULT_CHARSET, 'UTF-8');
+                $msg = convertEncoding($msg, 'UTF-8');
 
                 $value = $xml_doc->create_text_node($msg);
                 $value = $child->append_child($value);
@@ -721,15 +740,14 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
             $child = $xml_doc->create_element('line');
             $child = $occ->append_child($child);
 
-            // convert from internal coding to UTF-8
-            $msg = convertEncoding($msg, DEFAULT_CHARSET, 'UTF-8');
+            $msg = convertEncoding($msg, 'UTF-8');
 
             $value = $xml_doc->create_text_node($msg);
             $value = $child->append_child($value);
         } // foreach
     } // if
 
-    if (isset($screen_structure)) {
+    if (!empty($screen_structure)) {
         // put screen structure into XML document
         setScreenStructure($xml_doc, $root, $screen_structure);
     } // if
@@ -807,6 +825,11 @@ function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
         } // if
     } // if
 
+    if (empty($xsl_file)) {
+    	// 'XSL file has not been defined'
+        trigger_error(getLanguageText('sys0074', $screen), E_USER_ERROR);
+    } // if
+
     // does a local variation of this XSL file exist?
     $filename = './xsl/' .$xsl_file;
     if (!file_exists($filename)) {
@@ -861,8 +884,7 @@ function setActBar ($doc, $root, $act_buttons)
         // convert text into output language
         $label = getLanguageText($label);
 
-        // convert from internal coding to UTF-8
-        $label = convertEncoding($label, DEFAULT_CHARSET, 'UTF-8');
+        $label = convertEncoding($label, 'UTF-8');
 
         $value = $doc->create_text_node(trim($label));
         $value = $child->append_child($value);
@@ -916,8 +938,7 @@ function setCSSfiles ($doc, $root, $css_files)
         $child = $doc->create_element('filename');
         $child = $occ->append_child($child);
 
-        // convert from internal coding to UTF-8
-        $filename = convertEncoding($filename, DEFAULT_CHARSET, 'UTF-8');
+        $filename = convertEncoding($filename, 'UTF-8');
 
         $value = $doc->create_text_node($filename);
         $value = $child->append_child($value);
@@ -992,14 +1013,6 @@ function setJavaScript ($doc, $root, $javascript)
         } // foreach
     } // if
 
-    if (is_True($GLOBALS['force_javascript_footer'])) {
-    	// must also add a javascript footer
-        $foot = $doc->create_element('footer');
-        $foot = $occ->append_child($foot);
-        $value = $doc->create_text_node('true');
-        $value = $foot->append_child($value);
-    } // if
-
     return;
 
 } // setJavaScript
@@ -1024,8 +1037,7 @@ function setMenuBar ($doc, $root, $menu_buttons, $current_menu, $current_task)
         // convert text into output language
         $task_desc = getLanguageText($task_desc);
 
-        // convert from internal coding to UTF-8
-        $task_desc = convertEncoding($task_desc, DEFAULT_CHARSET, 'UTF-8');
+        $task_desc = convertEncoding($task_desc, 'UTF-8');
 
         $value = $doc->create_text_node(trim($task_desc));
         $value = $child->append_child($value);
@@ -1045,8 +1057,7 @@ function setMenuBar ($doc, $root, $menu_buttons, $current_menu, $current_task)
             // convert text into output language
             $data['button_text'] = getLanguageText($data['button_text']);
 
-            // convert from internal coding to UTF-8
-            $data['button_text'] = convertEncoding($data['button_text'], DEFAULT_CHARSET, 'UTF-8');
+            $data['button_text'] = convertEncoding($data['button_text'], 'UTF-8');
 
             $value = $doc->create_text_node(trim($data['button_text']));
             $value = $child->append_child($value);
@@ -1058,13 +1069,13 @@ function setMenuBar ($doc, $root, $menu_buttons, $current_menu, $current_task)
 } // setMenuBar
 
 // ****************************************************************************
-function setNavBar ($doc, $root, $nav_buttons, $remove_buttons=null)
+function setNavBar ($doc, $root, $nav_buttons, $nav_buttons_omit=null)
 // add contents of $nav_button array to the current XML document
 {
     // remove nominated buttons (if necessary)
-    if (count($remove_buttons) > 0) {
+    if (count($nav_buttons_omit) > 0) {
         // examine each nominated button
-        foreach ($remove_buttons as $task_id) {
+        foreach ($nav_buttons_omit as $task_id) {
             // remove from button array (if found)
         	foreach ($nav_buttons as $num => $button) {
         		if ($button['task_id'] == $task_id) {
@@ -1088,8 +1099,7 @@ function setNavBar ($doc, $root, $nav_buttons, $remove_buttons=null)
         // convert text into output language
         $button['button_text'] = getLanguageText($button['button_text']);
 
-        // convert from internal coding to UTF-8
-        $button['button_text'] = convertEncoding($button['button_text'], DEFAULT_CHARSET, 'UTF-8');
+        $button['button_text'] = convertEncoding($button['button_text'], 'UTF-8');
 
         $value = $doc->create_text_node(trim($button['button_text']));
         $value = $child->append_child($value);
@@ -1133,11 +1143,12 @@ function setScreenStructure ($xml_doc, $root, $structure)
 
     // structure may contain one or more tables, so step through each one
     foreach ($structure['tables'] as $zone => $id) {
-        $id = removeTableSuffix($id);
+        $id = removeTableSuffix(strtolower(trim($id)));
+        $zone = strtolower(trim($zone));
         // add this table name as a child to the structure element
-        $table = $xml_doc->create_element(strtolower($zone));
+        $table = $xml_doc->create_element($zone);
         $table = $occ->append_child($table);
-        $table->set_attribute('id', strtolower($id));
+        $table->set_attribute('id', $id);
         // set column values for this table, if present
         if (isset($structure[$zone]['columns'])) {
             $columns = $xml_doc->create_element('columns');
@@ -1147,6 +1158,7 @@ function setScreenStructure ($xml_doc, $root, $structure)
                 $column = $xml_doc->create_element('column');
                 $column = $columns->append_child($column);
                 foreach ($array as $attrname => $attrvalue) {
+                    $attrname = trim($attrname);
                     if ($attrname != 'nosort') {
                         $column->set_attribute($attrname, $attrvalue);
                     } // if
@@ -1170,18 +1182,24 @@ function setScreenStructure ($xml_doc, $root, $structure)
             	$rowdata = array_change_key_case($rowdata, CASE_LOWER);
 
             	foreach ($rowdata as $fieldname => $fieldlabel) {
+            	    $fieldname = trim($fieldname);
+            	    if (empty($fieldname)) {
+            	    	$fieldname = 'null';
+            	    } // if
                     if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
                         // ignore 'nosort' entry
-                    } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|size|display-empty|javascript)$/i', $fieldname, $regs)) {
-                        if ($fieldname == 'javascript' and is_array($fieldlabel)) {
-                        	foreach ($fieldlabel as $sttr => $attrvalue) {
-                        		// add this entry as an attribute to the current row
-                        	    $rowocc->set_attribute($sttr, $attrvalue);
-                        	} // foreach
-                        } else {
-                            // write these out as attributes on the current cell
-                            $cell->set_attribute($regs[0], $fieldlabel);
-                        } // if
+                    } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
+                        // 'size=<numeric>' is an attribute of the previous field, whereas
+                        // 'size=<string>' is a new 'field=label' pair
+                        $cell->set_attribute($fieldname, $fieldlabel);
+                    } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
+                        foreach ($fieldlabel as $sttr => $attrvalue) {
+                    		// add this entry as an attribute to the current row
+                    	    $rowocc->set_attribute($sttr, $attrvalue);
+                    	} // foreach
+                    } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|class|display-empty)$/i', $fieldname, $regs)) {
+                        // write these out as attributes on the current cell
+                        $cell->set_attribute($regs[0], $fieldlabel);
                     } else {
                         $cell = $xml_doc->create_element('cell');
                         $cell = $rowocc->append_child($cell);
@@ -1189,8 +1207,7 @@ function setScreenStructure ($xml_doc, $root, $structure)
                         // convert text into output language
                         $fieldlabel = getLanguageText($fieldlabel);
 
-                        // convert from internal coding to UTF-8
-                        $fieldlabel = convertEncoding($fieldlabel, DEFAULT_CHARSET, 'UTF-8');
+                        $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
                         $cell->set_attribute('label', $fieldlabel);
 
                         if (array_key_exists('nosort', $rowdata)) {
@@ -1220,6 +1237,10 @@ function setScreenStructure ($xml_doc, $root, $structure)
                         $cell = $rowocc->append_child($cell);
 
                     	foreach ($cellspec as $celltype => $cellvalue) {
+                    	    $celltype = trim($celltype);
+                    	    if (empty($celltype)) {
+                    	    	$celltype = 'null';
+                    	    } // if
                     	    if ($celltype == 'label') {
                     	    	// convert text into output language
                                 $cellvalue = getLanguageText($cellvalue);
@@ -1237,6 +1258,7 @@ function setScreenStructure ($xml_doc, $root, $structure)
             $columns = $xml_doc->create_element('node_data_names');
             $columns = $table->append_child($columns);
             foreach ($structure[$zone]['node_data_names'] as $item => $value) {
+                $item = strtolower(trim($item));
                 // write the contents of the array as attributes
                 $columns->set_attribute(strtolower($item), $value);
             } // foreach
