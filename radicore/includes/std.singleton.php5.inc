@@ -44,6 +44,10 @@ class singleton
             // instance does not exist, so create it
             $instances[$class] = new $class($arg1);
             $instance =& $instances[$class];
+            if (method_exists($instance, 'initialise')) {
+                // object has an 'initialise' method, so call it
+            	$null = $instance->initialise($arg1);
+            } // if
         } // if
 
         return $instance;

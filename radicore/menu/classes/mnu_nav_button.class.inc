@@ -48,7 +48,7 @@ class mnu_nav_button extends Default_Table
         if ($global_access) {
             // if global_access is ON then all buttons can be accessed without restriction
             // (unless a task has been disabled)
-            $this->sql_select = 'x.task_id, x.script_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
@@ -57,7 +57,7 @@ class mnu_nav_button extends Default_Table
             // if global_access is OFF then a button cannot be loaded unless it has an
             // entry on MNU_ROLE_TASK for the current role
             // (or if it has been disabled)
-            $this->sql_select = 'x.task_id, x.script_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) '

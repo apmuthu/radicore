@@ -364,7 +364,6 @@ class validation_class
     // Errors are returned in $errors array.
     // NOTE: for INSERT all fields contained in $fieldspecs must be present.
     {
-        //DebugBreak();
         $this->errors = array();
 
         $this->caller = &$caller;
@@ -397,7 +396,6 @@ class validation_class
     function validateNumber ($field, $value, $spec)
     // if $spec identifies $field as a number then check that $value is within range.
     {
-        //DebugBreak();
         // check if field type = integer (whole numbers only)
         $pattern = '/(int1|tinyint|int2|smallint|int3|mediumint|int4|integer|int8|bigint|int)/i';
         if (preg_match($pattern, $spec['type'], $match)) {

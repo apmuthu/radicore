@@ -42,6 +42,8 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = unserialize($script_vars['fileobject']);
 } else {
     $fileobject = new $table_id;
+    // indicate that this object was started from a page controller
+    $filebobject->initiated_from_controller = true;
     // perform any initialisation
     $where = $fileobject->initialiseFileUpload($where);
     if ($fileobject->errors) {

@@ -27,6 +27,28 @@
 <!-- get the name of the MAIN table -->
 <xsl:variable name="main" select="/root/structure/main/@id"/>
 <xsl:variable name="numrows" select="count(/root/*[name()=$main])"/>
+  
+<xsl:variable name="image_directory" select="/root/params/image_directory" />
+<xsl:variable name="image_width">
+  <xsl:choose>
+    <xsl:when test="/root/params/image_width">
+      <xsl:value-of select="/root/params/image_width" />  
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="//root/structure/main/row/cell/@imagewidth" />
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:variable>
+<xsl:variable name="image_height">
+  <xsl:choose>
+    <xsl:when test="/root/params/image_height">
+      <xsl:value-of select="/root/params/image_height" />  
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="//root/structure/main/row/cell/@imageheight" />
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:variable>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -156,8 +178,9 @@
     <td>
       <xsl:call-template name="icon">
         <xsl:with-param name="icon" select="node()" />
-        <xsl:with-param name="height" select="/root/structure/main/row/cell/@imageheight" />
-        <xsl:with-param name="width" select="/root/structure/main/row/cell/@imagewidth" />
+        <xsl:with-param name="height" select="$image_height" />
+        <xsl:with-param name="width" select="$image_width" />
+        <xsl:with-param name="directory" select="$image_directory" />
       </xsl:call-template>
     </td>
 
@@ -172,8 +195,9 @@
         <td>
           <xsl:call-template name="icon">
             <xsl:with-param name="icon" select="following-sibling::*" />
-            <xsl:with-param name="height" select="/root/structure/main/row/cell/@imageheight" />
-            <xsl:with-param name="width" select="/root/structure/main/row/cell/@imagewidth" />
+            <xsl:with-param name="height" select="$image_height" />
+            <xsl:with-param name="width" select="$image_width" />
+            <xsl:with-param name="directory" select="$image_directory" />
           </xsl:call-template>
         </td>
       </xsl:when>

@@ -43,6 +43,11 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
     } // if
 } // if
 
+if (ini_get('precision') < 15) {
+	$precision = ini_set('precision', 15);
+} // if
+unset($precision);
+
 if (isset($_SERVER['SERVER_PROTOCOL'])) {
 	$protocol = 'HTTP://';
     require_once 'include.jump.inc';
@@ -67,7 +72,7 @@ function addPreviousSearchButton ($buttons_in)
     foreach ($buttons_in as $button_data) {
         // copy from input to output area
         $buttons_out[] = $button_data;
-        if (preg_match('/\(search\)/i', $button_data['task_id'], $regs)) {
+        if (ereg('SRCH', $button_data['pattern_id'], $regs)) {
             // found task_id containing '(search)', so add an extra button
             $buttons_out[] = array('task_id' => 'previous_search',
                                    'button_text' => 'Previous Search',
@@ -230,8 +235,7 @@ function array2where ($inputarray, $fieldlist=null, $dbobject=null)
             $string = trim($fieldvalue);
             // this is not a name, so assume it's a subquery
         	if (preg_match('/^(AND |OR |\) OR \(|\( |\) )/i', $string.' ', $regs)) {
-        	    // save prefix then remove it from $string
-                //$prefix = $regs[0];
+        	    // save prefix and remove it from $string
                 $string = trim(substr($string, strlen($regs[0])));
                 $prefix .= $regs[0];
             } // if
@@ -309,7 +313,11 @@ function array2where ($inputarray, $fieldlist=null, $dbobject=null)
             	    list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
 
                     // now join them together again
-                    $namevalue = $fieldname.$operator.$fieldvalue;
+                    if ($operator == '=' AND $fieldvalue == "''") {
+                    	$namevalue = $fieldname.' IS NULL';
+                    } else {
+                        $namevalue = $fieldname.$operator.$fieldvalue;
+                    } // if
 
                     // append to $where string
                     if (empty($where)) {
@@ -493,6 +501,14 @@ function convertEncoding ($string, $to_encoding, $from_encoding=null)
             } // if
             if ($from_encoding != $to_encoding) {
                 $string = mb_convert_encoding($string, $to_encoding, $from_encoding);
+            } // if
+        } elseif (function_exists('iconv')) {
+            if (!$from_encoding) {
+                // not supplied, so find out what it is
+                $from_encoding = ini_get('default_charset');
+            } // if
+            if ($from_encoding != $to_encoding) {
+                $string = iconv($from_encoding, $to_encoding, $string);
             } // if
         } // if
     } // if
@@ -1266,7 +1282,7 @@ function getLanguageArray ($id)
             // filename does not exist
         	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
         } // if
-        $array1 = require_once $fname;
+        $array1 = require $fname;
         unset ($array);
     } // if
 
@@ -1279,7 +1295,7 @@ function getLanguageArray ($id)
             // filename does not exist
         	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
         } // if
-        $array2 = require_once $fname;
+        $array2 = require $fname;
         unset ($array);
     } // if
 
@@ -1289,7 +1305,10 @@ function getLanguageArray ($id)
     } elseif (isset($array1[$id])) {
     	$result = $array1[$id];
     } else {
-        // nothing found, so return original input as an array
+        $result = null;
+    } // if
+    if (empty($result)) {
+    	// nothing found, so return original input as an array
         $result = array($id => $id);
     } // if
 
@@ -1420,7 +1439,7 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
             // filename does not exist
         	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
         } // if
-        $array1 = require_once $fname;
+        $array1 = require $fname;
         unset ($array);
     } // if
 
@@ -1446,7 +1465,10 @@ function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $
     } elseif (isset($array1[$id])) {
     	$string = $array1[$id];
     } else {
-        // nothing found, so return original $id
+        $string = null;
+    } // if
+    if (empty($string)) {
+    	// nothing found, so return original $id
         $string = trim($id ." $arg1 $arg2 $arg3 $arg4 $arg5");
     } // if
 
@@ -2062,42 +2084,36 @@ function qualifyOrderby ($input, $tablename, $fieldspec, $sql_select, $sql_from)
 {
     if (empty($input)) return;
 
-    if (substr_count($input, '.') > 0) {
-        // fieldname is qualified with a tablename (as in 'table.field')
-        list($input_table, $input_field) = explode('.', $input);
-        if (!empty($input_field)) {
-            // if the fieldname in 'order by' string is specified as an alias name in the
-            // sql_select string then it does not need to be qualified.
-        	$alias = getTableAlias1 ($input_field, $sql_select);
-            if ($alias === false) {
-                // continue
-            } else {
-            	return $input_field;     // return unqualified fieldname only
-            } // if
-        } // if
-    } else {
-        $alias = getTableAlias1 ($input, $sql_select);
-        if ($alias) {
-            // found as alias name in SELECT string, so further action is not necessary
-        	return $input;
-        } // if
-    } // if
-
-    if (!empty($sql_select)) {
-        $select_array = extractQualifiedFieldNames($sql_select);
-    } else {
-        $select_array = array();
-    } // if
-
     if (!empty($sql_from)) {
         $table_array = extractTableNames($sql_from);
     } else {
         $table_array = array();
     } // if
 
-    if (count($table_array) == 1) {
+    if (count($table_array) <= 1) {
         // only 1 table, so no qualification is necessary
     	return $input;
+    } // if
+
+//    if (substr_count($input, '.') > 0) {
+//        // fieldname is qualified with a tablename (as in 'table.field')
+//        list($input_table, $input_field) = explode('.', $input);
+//        if (!empty($input_field)) {
+//            // if the fieldname in 'order by' string is specified as an alias name in the
+//            // sql_select string then it does not need to be qualified.
+//        	$alias = getTableAlias1 ($input_field, $sql_select);
+//            if ($alias === false) {
+//                // continue
+//            } else {
+//            	return $input_field;     // return unqualified fieldname only
+//            } // if
+//        } // if
+//    } // if
+
+    if (!empty($sql_select)) {
+        $select_array = extractQualifiedFieldNames($sql_select);
+    } else {
+        $select_array = array();
     } // if
 
     if (!array_key_exists($tablename, $table_array) AND !in_array($tablename, $table_array)) {
@@ -2124,23 +2140,28 @@ function qualifyOrderby ($input, $tablename, $fieldspec, $sql_select, $sql_from)
                 $value = $namearray[0] .'.' .$namearray[1];
             } else {
                 // fieldname is not qualified
-                foreach ($select_array as $tablefield) {
-                    if (strpos($tablefield, '.')) {
-                    	list($select_table, $select_field) = explode('.', $tablefield);
-                    	if ($input == $select_field) {
-                    	    // fieldname is qualified in $sql_select, so keep that qualification
-                    		$value = $tablefield;
-                    		break;
-                    	} // if
+                $alias = getTableAlias1 ($value, $sql_select);
+                if ($alias) {
+                    // found as alias name in SELECT string, so further action is not necessary
+                } else {
+                    foreach ($select_array as $tablefield) {
+                        if (strpos($tablefield, '.')) {
+                        	list($select_table, $select_field) = explode('.', $tablefield);
+                        	if ($value == $select_field) {
+                        	    // fieldname is qualified in $sql_select, so keep that qualification
+                        		$value = $tablefield;
+                        		break;
+                        	} // if
+                        } // if
+                    } // foreach
+                    if (array_key_exists($value, $fieldspec) AND !isset($fieldspec[$value]['nondb'])) {
+                        // it exists within current table, so qualify it with that tablename
+                        if (in_array($tablename, $table_array)) {
+                            // tablename has an alias, so use that instead
+                	        $tablename = array_search($tablename, $table_array);
+                        } // if
+                    	$value = $tablename .'.' .$value;
                     } // if
-                } // foreach
-                if (array_key_exists($value, $fieldspec) AND !isset($fieldspec[$value]['nondb'])) {
-                    // it exists within curent table, so qualify it with that tablename
-                    if (in_array($tablename, $table_array)) {
-                        // tablename has an alias, so use that instead
-            	        $tablename = array_search($tablename, $table_array);
-                    } // if
-                	$value = $tablename .'.' .$value;
                 } // if
             } // if
         } // if

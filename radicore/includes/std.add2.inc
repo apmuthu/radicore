@@ -20,6 +20,10 @@ $mode = 'insert';
 initSession();
 
 if (!empty($selection) AND !isset($return_from)) {
+    if (!empty($use_selection_not_where)) {
+        // ignore $where and use $selection
+    	$where = $selection;
+    } // if
     if (empty($where)) {
     	// only use $selection if $where is empty
         $where = $selection;
@@ -52,6 +56,8 @@ if (isset($script_vars['dbobject'])) {
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
+    // indicate that this object was started from a page controller
+    $dbobject->initiated_from_controller = true;
     // get initial data for a new record
     $where = $dbobject->initialise($where);
     if (empty($dbobject->errors)) {

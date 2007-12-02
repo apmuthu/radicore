@@ -1,1 +1,1 @@
-﻿Radicore v1.30.0
+﻿Radicore v1.31.0

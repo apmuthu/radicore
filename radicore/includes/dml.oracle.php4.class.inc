@@ -127,7 +127,8 @@ class oracle
     // use backslash as its escape character. If a string contains a single quote
     // it must be escaped with another single quote, so ...
     // - replace 'backslash+char' with 'char' (i.e. remove the backslash)
-    // - replace 'backslash+quote' with 'quote+quote'
+    // - replace [\'] (backslash+quote) with [''] (quote+quote)
+    // - replace [\\\'] with ['''']
     {
         $string_out = null;
 
@@ -138,42 +139,24 @@ class oracle
             $original = $regs[0];
             $modified = substr($original, 8);  // strip leading 'INTERVAL'
             $modified = substr($modified, 0, strlen($modified)-3);  // strip trailing 'DAY'
-        	$string_in = str_replace($original, trim($modified), $string_in);
+        	$string_out = str_replace($original, trim($modified), $string_in);
+        } else {
+            $string_out = $string_in;
         } // if
 
-        $pattern = '/\\\/';  // look for 'backslash'
+        $search  = array('\\\\\\\'', '\\\''); // [\\\'], [\']
+        $replace = array('\'\'\'\'', '\'\''); // [''''], ['']
+        $string_out = str_replace($search, $replace, $string_out);
 
-        while (!empty($string_in)) {
-            if (preg_match($pattern, $string_in, $regs, PREG_OFFSET_CAPTURE)) {
-                $found = $regs[0][0];
-                $pos   = $regs[0][1];
-                // find character which follows the backslash
-                $char  = substr($string_in, $pos+1, 1);
-                // move leading characters to output string
-                $string_out .= substr($string_in, 0, $pos);
-                // remove from input string
-                $string_in = substr($string_in, $pos+2);
-                switch ($char) {
-                	case "'":
-                	    // replace 'backslash+quote' with 'quote+quote'
-                		$string_out .= "''";
-                		break;
-
-                	default:
-                	    // replace 'backslash+char' with 'char'
-                	    $string_out .= $char;
-                		break;
-                } // switch
-            } else {
-                $string_out .= $string_in;
-                $string_in = null;
-            } // if
+        $pattern = '/(?<=\\\)./'; // backslash followed by any character
+        $offset  = 0;
+        while (preg_match($pattern, $string_out, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $offset    = $regs[0][1];
+            $remainder = strlen($string_out) - $offset;
+            // remove the backslash and keep all remainibng characters
+            $string_out = substr_replace($string_out, '', $offset-1, -$remainder);
+            $offset ++;
         } // while
-
-        if (strpos($string_out, '\\')) {
-            // remove extra backslash from quote which was escaped twice
-        	$string_out = str_replace("\\'", "'", $string_out);
-        } // if
 
         return $string_out;
 
@@ -420,6 +403,7 @@ class oracle
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
+            $where = $this->adjustWhere($where);
             $this->query = "SELECT count(*) FROM $tablename WHERE $where";
         } // if
 
@@ -841,15 +825,6 @@ class oracle
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
-
         $lob_names = array();
         $lob_array = array();
         foreach ($fieldspec as $field => $spec) {
@@ -1162,15 +1137,6 @@ class oracle
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
-
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key
             $where = $this->buildKeyString ($oldarray, $this->primary_key);
@@ -1392,7 +1358,7 @@ class oracle
                                             'scale' => 0);
         $colspecs['float']          = array('name' => 'FLOAT',
                                             'type' => 'numeric',
-                                            'size' => 20,
+                                            'size' => 22,
                                             'precision' => 38,
                                             'scale' => 126);
         $colspecs['clob']           = array('name' => 'CLOB',

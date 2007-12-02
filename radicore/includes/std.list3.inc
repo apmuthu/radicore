@@ -74,6 +74,8 @@ if (isset($script_vars['dbouter'])) {
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
+    // indicate that this object was started from a page controller
+    $dbouter->initiated_from_controller = true;
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -83,10 +85,12 @@ if (isset($script_vars['dbouter'])) {
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } //if
-    // check that primary key is complete
-    $dbouter->checkPrimaryKey = true;
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
+    // check that primary key is complete
+    $dbouter->checkPrimaryKey = true;
+    // perform any initialisation
+    $where = $dbouter->initialise($where);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
@@ -95,8 +99,6 @@ if (isset($script_vars['dbouter'])) {
             $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
-    // perform any initialisation
-    $where = $dbouter->initialise($where);
 } // if
 
 // create a class instance for the MIDDLE database table
@@ -111,6 +113,8 @@ if (isset($script_vars['dbmiddle'])) {
 } else {
     // create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
+    // indicate that this object was started from a page controller
+    $dbmiddle->initiated_from_controller = true;
     $dbmiddle->sql_select  = &$middle_sql_select;
     $dbmiddle->sql_from    = &$middle_sql_from;
     $dbmiddle->sql_where   = &$middle_sql_where;
@@ -136,6 +140,8 @@ if (isset($script_vars['dbinner'])) {
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
+    // indicate that this object was started from a page controller
+    $dbinner->initiated_from_controller = true;
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;

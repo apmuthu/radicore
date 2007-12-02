@@ -64,8 +64,9 @@ class audit_tbl_s01 extends audit_tbl
             $where = "pkey='" . addslashes($where) . "'";
         } else {
             // pkey may contain other values as well as what is in $where
-            // NOTE: must use addslashes TWICE for LIKE operator
-            $where = "pkey LIKE '%" . addslashes(addslashes($where)) . "%'";
+            // NOTE: must use addslashes TWICE for LIKE operator (now performed in DML class)
+            //$where = "pkey LIKE '%" . addslashes(addslashes($where)) . "%'";
+            $where = "pkey LIKE '%" . addslashes($where) . "%'";
         } // if
 
         // remove this so that it does not allow 'date' to appear in the order by clause

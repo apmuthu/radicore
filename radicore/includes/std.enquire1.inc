@@ -51,6 +51,8 @@ if (isset($script_vars['dbobject'])) {
     } // if
 } else {
     $dbobject = new $table_id;
+    // indicate that this object was started from a page controller
+    $dbobject->initiated_from_controller = true;
     $dbobject->sql_select  = &$sql_select;
     $dbobject->sql_from    = &$sql_from;
     $dbobject->sql_where   = &$sql_where;
@@ -60,6 +62,8 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->setRowsPerPage(1);
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
+    // perform any initialisation
+    $where = $dbobject->initialise($where);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
@@ -68,8 +72,6 @@ if (isset($script_vars['dbobject'])) {
             $dbobject->setOrderBySeq($orderby_seq);
         } // if
     } // if
-    // perform any initialisation
-    $where = $dbobject->initialise($where);
 } // if
 
 if (isset($scrolling)) {

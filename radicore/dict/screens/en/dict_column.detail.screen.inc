@@ -69,9 +69,9 @@ $structure['main']['fields'][21][] = array('label' => 'No Audit');
 $structure['main']['fields'][21][] = array('field' => 'no_audit', 'colspan' => 3);
 
 $structure['main']['fields'][22][] = array('label' => 'Minimum Value');
-$structure['main']['fields'][22][] = array('field' => 'user_minvalue', 'size' => 20);
+$structure['main']['fields'][22][] = array('field' => 'user_minvalue', 'size' => 23);
 $structure['main']['fields'][22][] = array('label' => 'Max. Value');
-$structure['main']['fields'][22][] = array('field' => 'user_maxvalue', 'size' => 20, 'colspan' => 3);
+$structure['main']['fields'][22][] = array('field' => 'user_maxvalue', 'size' => 22, 'colspan' => 3);
 
 $structure['main']['fields'][23] = array('infinityisnull' => 'Infinity Is Null?', 'colspan' => 5);
 $structure['main']['fields'][24] = array('col_subtype' => 'Subtype', 'colspan' => 5);

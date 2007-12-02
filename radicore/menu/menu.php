@@ -67,14 +67,19 @@ $dbworkitem_role->xsl_params['text']['workitems-for-role'] = getLanguageText('xs
 
 if (isset($_GET['case_id']) and isset($_GET['workitem_id'])) {
    // a workitem has been selected from the current screen, so jump to it now
-   $where = "case_id='{$_GET['case_id']}' AND workitem_id='{$_GET['workitem_id']}'";
-   $workitem = $dbworkitem_role->getData($where);
+   $case_id     = addslashes($_GET['case_id']);
+   $workitem_id = addslashes($_GET['workitem_id']);
+   $where = "case_id='$case_id' AND workitem_id='$workitem_id'";
+   $workitem_data = $dbworkitem_role->getData($where);
    if ($dbworkitem_role->errors) {
-      $errors = array_merge($errors, $dbworkitem_role->getErrors());
+       $errors = array_merge($errors, $dbworkitem_role->getErrors());
+   } elseif (empty($workitem_data)) {
+       // "Requested record not found"
+       $errors[] = getLanguageText('sys0119');
    } else {
-      $task_id = $workitem[0]['task_id'];
-      $where   = $workitem[0]['context'];
-      scriptNext($task_id, $where);
+       $task_id = $workitem_data[0]['task_id'];
+       $where   = $workitem_data[0]['context'];
+       scriptNext($task_id, $where);
    } // if
 } // if
 

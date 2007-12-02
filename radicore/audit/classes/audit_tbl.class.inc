@@ -314,7 +314,7 @@ class audit_tbl extends Default_Table
             } // if
         	if ($GLOBALS['mode'] == 'search') {
         	    if (isset($_SESSION['search'][$this->tablename])) {
-        	        // previois searc criteria exists, so dont change it
+        	        // previous search criteria exists, so don't change it
         	    } else {
                     // set initial values in screen
                     $where = "user_id='" .$_SESSION['logon_user_id'] ."' AND "

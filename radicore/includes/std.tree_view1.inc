@@ -52,6 +52,8 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
 } else {
     $dbobject = new $table_id;
+    // indicate that this object was started from a page controller
+    $dbobject->initiated_from_controller = true;
     $dbobject->sql_select  = &$sql_select;
     $dbobject->sql_from    = &$sql_from;
     $dbobject->sql_where   = &$sql_where;

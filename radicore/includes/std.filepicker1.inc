@@ -33,22 +33,10 @@ if (isset($_POST['choosenull'])) {
     scriptPrevious(null, null, 'choose');
 } // if
 
-if (!empty($_POST)) {
-    // look for an action which is another script
-    $errors = childForm($_POST, null, $where);
-} // if
-
 // define action buttons
-$act_buttons['quit'] = 'cancel';
+$act_buttons['reset'] = 'reset';
+$act_buttons['quit']  = 'cancel';
 $act_buttons['choosenull'] = 'choosenull';
-
-if (isset($_GET['select'])) {
-    // send selection back to the previous script
-    $prev_script = getPreviousScript();
-    $prev_task   = getPreviousTask($prev_script);
-    $_SESSION[$prev_script][$prev_task]['selection'] = $_GET['select'];
-    scriptPrevious(null, null, 'choose');
-} // if
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -57,6 +45,8 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = unserialize($script_vars['fileobject']);
 } else {
     $fileobject = new $table_id;
+    // indicate that this object was started from a page controller
+    $fileobject->initiated_from_controller = true;
     // do not create hyperlinks for column labels
     $fileobject->xsl_params['nosort'] = 'y';
     // do not display the 'show nn' hyperlinks
@@ -68,16 +58,65 @@ if (isset($script_vars['fileobject'])) {
     } // if
 } // if
 
+if (isset($_GET['select'])) {
+    // send selection back to the previous script
+    $prev_script = getPreviousScript();
+    $prev_task   = getPreviousTask($prev_script);
+    if (!empty($fileobject->picker_subdir)) {
+    	$filename = $fileobject->picker_subdir .'/' .$_GET['select'];
+    } else {
+        $filename = $_GET['select'];
+    } // if
+    $_SESSION[$prev_script][$prev_task]['selection'] = $filename;
+    scriptPrevious(null, null, 'choose');
+} // if
+
+if (!empty($_POST)) {
+    // look for an action which is another script
+    $errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
+} // if
+
 $subdir   = $fileobject->picker_subdir;
 $filemask = $fileobject->picker_filetypes;
 $errors = array();
+
+$fileobject->xsl_params['image_directory'] = $subdir;
+if (!empty($fileobject->image_width)) {
+	$fileobject->xsl_params['image_width'] = $fileobject->image_width;
+} // if
+if (!empty($fileobject->image_height)) {
+	$fileobject->xsl_params['image_height'] = $fileobject->image_height;
+} // if
+
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $fileobject->reset($where);
+    $fileobject->search = null;
+} // if
+
+if (!empty($search)) {
+	$search_array = where2array($search);
+	if (!empty($search_array['filename'])) {
+	    // replace SQL 'any characters' with regex equivalent
+		$search_array['filename'] = str_replace('%', '.*', $search_array['filename']);
+	} // if
+	$fileobject->search = $search_array['filename'];
+} elseif (!empty($fileobject->search)) {
+    $search_array['filename'] = $fileobject->search;
+} // if
 
 $this_dir = @opendir($subdir);
 $file_list = array();
 while (false !== ($file = readdir($this_dir))) {
     // only files of right type are appended to array
     if (eregi($filemask, $file, $regs)) {
-        $file_list[] = "$subdir/$file";
+        if (!empty($search_array['filename'])) {
+            if (eregi($search_array['filename'], $file)) {
+            	$file_list[] = $file;  // display filename without the directory name
+            } // if
+        } else {
+            $file_list[] = $file;  // display filename without the directory name
+        } // if
     } // if
 } // endwhile
 
@@ -96,13 +135,16 @@ if (empty($curr_page) OR $curr_page < 1) {
 } // if
 $offset = ($curr_page - 1) * $limit;
 
+// copy data into object's $fieldarray so that it can be displayed
+$file_list = array_slice($file_list, $offset, $limit);
+$fileobject->setFieldArray($file_list);
+
 $pagination['main']['numrows']  = $num_rows;
 $pagination['main']['curpage']  = $curr_page;
 $pagination['main']['lastpage'] = $last_page;
 
-// copy data into object's $fieldarray so that it can be displayed
-$file_list = array_slice($file_list, $offset, $limit);
-$fileobject->setFieldArray($file_list);
+$script_vars['fileobject'] = serialize($fileobject);
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$fileobject;

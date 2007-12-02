@@ -1,5 +1,19 @@
 ﻿RADICORE for PHP - news
 
+2007-12-02, version 1.31.0
+- modified 'audit_tbl_s01.class.inc' to prevent it from using addslashes() twice with WHERE clauses containing 'name LIKE 'foobar%' as this is now handled differently within each DBMS object.
+- fixed bug in 'dml.pgsql.class.inc' which failed to deal correctly with an empty field of type 'varray' when inserting or updating.
+- fixed bug in 'dml.pgsql.class.inc' which failed to deal correctly with fields in a WHERE string which contain either a backslash or a single quote.
+- fixed bug in 'dml.oracle.php4/5.inc' which failed to deal correctly with fields in a WHERE string which contain either a backslash or a single quote.
+- modified 'geLanguageArray()' and 'getLanguageText()' functions to replace 'require_once' with 'require' as files may have to be reloaded.
+- modified 'std.table.class.inc' so that all insert/update/delete methods can detect when they are being accessed from a script in a different subsystem in order to set $GLOBALS['classdir']. This is used to retrieve messages from the directory associated with the table class, and not the directory associated with the calling script.
+- modified 'std.singleton.php4/5.inc' so that they call the 'initialise()' method after instantiating a new object.
+- modified 'include.general.inc' so that 'array2where()' replaces [name=''] with [name IS NULL].
+- fixed bug in 'std.data_field.xsl' concerning a multi-line text box in a MULTI2 pattern.
+- modified 'include.general.inc' so that if the php.ini setting for 'precision' is less than 15 (the default is 14) it will be set to 15. This is to allow the Data Dictionary to deal properly with the minimum and maximum values for BIGINT columns.
+- modified numerous 'std.???.inc' files so that $dbobject->initialise() is called before $dbobject->setOrderBy() so that the contents of $this->fieldspec can be modified before the sort string is validated.
+- modified 'std.filepicker1.inc' to allow it to accept search criteria for 'filename' from a 'search' screen which can be activated from the navigation bar.
+
 2007-11-01, version 1.30.0
 - modified 'include.general.inc' to allow 'MATCH(...) AGAINST(...)' in query strings for the MySQL database. 
 - modified 'getForeignData()' inside 'std.table.class.inc' so that if the lookup on the foreign table fails then the foreign key field(s) are only cleared if they do not form part of the primary key.

@@ -1,5 +1,5 @@
 <?php
-    // file created on September 10, 2007, 5:36 pm
+    // file created on November 19, 2007, 6:07 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -132,18 +132,18 @@
                                                     'maxvalue' => 32);
     
     $fieldspec['col_minvalue']              = array('type' => 'float',
-                                                    'size' => 21,
+                                                    'size' => 22,
                                                     'noedit' => 'y');
     
     $fieldspec['col_maxvalue']              = array('type' => 'float',
-                                                    'size' => 21,
+                                                    'size' => 22,
                                                     'noedit' => 'y');
     
     $fieldspec['user_minvalue']             = array('type' => 'float',
-                                                    'size' => 21);
+                                                    'size' => 22);
     
     $fieldspec['user_maxvalue']             = array('type' => 'float',
-                                                    'size' => 21);
+                                                    'size' => 22);
     
     $fieldspec['noedit_nodisplay']          = array('type' => 'string',
                                                     'size' => 3,
@@ -330,6 +330,12 @@
                                                     'fields' => array('database_id' => 'database_id_jnr',
                                                                       'table_id' => 'table_id_jnr',
                                                                       'column_id' => 'column_id_jnr'));
+    
+    $this->child_relations[]                = array('child' => 'dict_table_key',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('database_id' => 'database_id',
+                                                                      'table_id' => 'table_id',
+                                                                      'column_id' => 'column_id'));
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'dict_table',

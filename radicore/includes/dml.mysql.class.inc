@@ -70,12 +70,14 @@ class mysql
         $string_out = $string_in;
 
         $modified = false;
-        $array = where2array($string_in, false, false);
+        $array = where2array($string_out, false, false);
         foreach ($array as $name => $value) {
             $value = ltrim($value);
         	if (eregi('^like ', $value)) {
-        		$array[$name] = str_replace('\\\\', '\\\\\\\\', $value);
-        		$modified = true;
+        	    if (ereg('\\\\', $value)) {
+        	    	$array[$name] = str_replace('\\\\', '\\\\\\\\', $value);
+            		$modified = true;
+        	    } // if
         	} // if
         } // foreach
 
@@ -318,6 +320,7 @@ class mysql
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
+            $where = $this->adjustWhere($where);
             $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
         } // if
 
@@ -700,15 +703,6 @@ class mysql
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
-
         foreach ($fieldspec as $field => $spec) {
             // look for fields with 'autoinsert' option set
             if (array_key_exists('autoinsert', $spec)) {
@@ -972,15 +966,6 @@ class mysql
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
-
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
 
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key

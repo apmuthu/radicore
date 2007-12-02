@@ -32,6 +32,8 @@ if (!empty($selection) AND !isset($return_from)) {
 // create a class instance of the main database table
 require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
+// indicate that this object was started from a page controller
+$dbobject->initiated_from_controller = true;
 $dbobject->sql_select  = &$sql_select;
 $dbobject->sql_from    = &$sql_from;
 $dbobject->sql_where   = &$sql_where;
@@ -42,6 +44,16 @@ if (!empty($sql_orderby)) {
 } elseif (isset($task_orderby)) {
     $dbobject->setDefaultOrderby($task_orderby);
 } // if
+
+// perform any initialisation
+$where = $dbobject->initialise($where);
+if (empty($dbobject->errors)) {
+	// get any data for lookup lists
+    $null = $dbobject->getExtraData($where);
+} else {
+	scriptPrevious($dbobject->errors);
+} // if
+
 // set sort order (if defined)
 if (!empty($orderby)) {
     $string = validateSortItem('body', $orderby, $dbobject, $report_structure);
@@ -49,15 +61,6 @@ if (!empty($orderby)) {
     if (!empty($orderby_seq)) {
         $dbobject->setOrderBySeq($orderby_seq);
     } // if
-} // if
-// perform any initialisation
-$where = $dbobject->initialise($where);
-if (empty($dbobject->errors)) {
-	// get any data for lookup lists
-    $null = $dbobject->getExtraData($where);
-} // if
-if ($dbobject->errors) {
-	scriptPrevious($dbobject->errors);
 } // if
 
 // load optional criteria from search screen

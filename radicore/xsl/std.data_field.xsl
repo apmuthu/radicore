@@ -900,11 +900,22 @@
   <xsl:param name="icon"/>
   <xsl:param name="width"/>
   <xsl:param name="height"/>
+  <xsl:param name="directory" />
 
   <!-- if entry is non-blank show it as an image -->
   <xsl:if test="$icon">
+    <xsl:variable name="filename">
+      <xsl:choose>
+        <xsl:when test="$directory">
+          <xsl:value-of select="concat($directory, '/', $icon)"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$icon"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
     <div class="center">
-      <img src="{$icon}" alt="{$icon}">
+      <img src="{$filename}" alt="{$icon}">
         <!-- height and width are optional -->
         <xsl:if test="$height">
           <xsl:attribute name="height"><xsl:value-of select="$height"/></xsl:attribute>
@@ -1077,6 +1088,8 @@
 <xsl:template name="multiline">
   <xsl:param name="item"/>
   <xsl:param name="noedit"/>
+  <xsl:param name="position"/>
+  <xsl:param name="multiple"/>
 
   <xsl:choose>
 
@@ -1100,12 +1113,24 @@
         </xsl:when>
 
         <xsl:otherwise>
+          <xsl:variable name="name">
+            <xsl:choose>
+              <!-- if 'multiple' is set then include row number in item name -->
+              <xsl:when test="$multiple">
+                <xsl:value-of select="concat(name($item),'[',$position,']')"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="name($item)"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:variable>
+          
           <!-- create multiline field to allow data to be input or amended -->
           <textarea class="textarea">
-            <xsl:attribute name="id"><xsl:value-of select="name($item)"/></xsl:attribute>
-            <xsl:attribute name="name"><xsl:value-of select="name($item)"/></xsl:attribute>
+            <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>           
             <xsl:attribute name="rows"><xsl:value-of select="$item/@rows"/></xsl:attribute>
             <xsl:attribute name="cols"><xsl:value-of select="$item/@cols"/></xsl:attribute>
+            <xsl:attribute name="id"><xsl:value-of select="$name"/></xsl:attribute>
 
             <!-- under certain conditions set this field to read only -->
             <xsl:if test="$mode='list' or $mode='read' or $mode='delete' or $item/@noedit or $noedit">

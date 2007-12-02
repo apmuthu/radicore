@@ -67,6 +67,8 @@ class pgsql
     function adjustWhere ($string_in)
     // certain MySQL expressions have to be converted as they are not valid, such as:
     // 'datefield - INTERVAL interval DAY' to 'datefield - interval'
+    // [\\\'] must be changed to [\'\']
+    // [\\]   must be changed to [\\\\]
     {
         $string_out = null;
 
@@ -79,6 +81,24 @@ class pgsql
         	$string_out = str_replace($original, trim($modified), $string_in);
         } else {
             $string_out = $string_in;
+        } // if
+
+        $modified = false;
+        $array = where2array($string_out, false, false);
+        foreach ($array as $name => $value) {
+            $value = ltrim($value);
+        	if (eregi('^like ', $value)) {
+        	    $search  = array('\\\\\\\'', '\\\\');
+        	    $replace = array('\\\'\\\'', '\\\\\\\\');
+        	    if (ereg($search[0], $value) OR ereg($search[1], $value)) {
+        	    	$array[$name] = str_replace($search, $replace, $value);
+            		$modified = true;
+        	    } // if
+        	} // if
+        } // foreach
+
+        if ($modified) {
+        	$string_out = array2where($array);
         } // if
 
         return $string_out;
@@ -319,13 +339,12 @@ class pgsql
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        $where = $this->adjustWhere($where);
-
         if (eregi('^(select )', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
+            $where = $this->adjustWhere($where);
             $this->query = "SELECT count(*) FROM $tablename WHERE $where";
         } // if
 
@@ -671,15 +690,6 @@ class pgsql
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
-
         foreach ($fieldspec as $field => $spec) {
             // look for fields with 'autoinsert' option set
             if (array_key_exists('autoinsert', $spec)) {
@@ -755,18 +765,21 @@ class pgsql
         $cols = '';
         $vals = '';
         foreach ($fieldarray as $item => $value) {
-            if ($fieldspec[$item]['type'] == 'array') {
-            	// assume a one-dimensional array
-            	$array1  = explode(',', $value);
-            	$string1 = '';
-            	foreach ($array1 as $value1) {
-            		if (empty($string1)) {
-            			$string1 = '"' .$value1 .'"';
-            		} else {
-            		    $string1 .= ', "' .$value1 .'"';
-            		} // if
-            	} // foreach
-            	$value .= "$item='{" .$string1 ."}', ";
+            if (eregi('set|array|varray', $fieldspec[$item]['type'])) {
+                if (!empty($value)) {
+                	// assume a one-dimensional array
+                	$array1  = explode(',', $value);
+                	$string1 = '';
+                	foreach ($array1 as $value1) {
+                		if (empty($string1)) {
+                			$string1 = '"' .$value1 .'"';
+                		} else {
+                		    $string1 .= ', "' .$value1 .'"';
+                		} // if
+                	} // foreach
+                	// enclose array in curly braces
+                	$value .= "$item='{" .$string1 ."}', ";
+                } // if
             } // if
             if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
                 // null entries are set to NULL, not '' (there is a difference!)
@@ -954,15 +967,6 @@ class pgsql
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        // remove any non-database fields from input array
-        foreach ($fieldarray as $field => $fieldvalue) {
-            // check that $field exists in $fieldspec array
-            if (!array_key_exists($field, $fieldspec)) {
-                // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
-            } // if
-        } // foreach
-
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key
             $where = $this->buildKeyString ($oldarray, $this->primary_key);
@@ -1040,19 +1044,21 @@ class pgsql
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } elseif (eregi('set|array|varray', $fieldspec[$item]['type'])) {
-                	// assume a one-dimensional array
-                	$array1  = explode(',', $value);
-                	$string1 = '';
-                	foreach ($array1 as $value1) {
-                	    $value1 = pg_escape_string($value1);
-                		if (empty($string1)) {
-                			$string1 = '"' .$value1 .'"';
-                		} else {
-                		    $string1 .= ', "' .$value1 .'"';
-                		} // if
-                	} // foreach
-                	// enclose array in curly braces
-                	$update .= "$item='{" .$string1 ."}', ";
+                    if (!empty($value)) {
+                    	// assume a one-dimensional array
+                    	$array1  = explode(',', $value);
+                    	$string1 = '';
+                    	foreach ($array1 as $value1) {
+                    	    $value1 = pg_escape_string($value1);
+                    		if (empty($string1)) {
+                    			$string1 = '"' .$value1 .'"';
+                    		} else {
+                    		    $string1 .= ', "' .$value1 .'"';
+                    		} // if
+                    	} // foreach
+                    	// enclose array in curly braces
+                    	$update .= "$item='{" .$string1 ."}', ";
+                    } // if
                 } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     $update .= "$item=$value,";
@@ -1156,7 +1162,7 @@ class pgsql
                                         'size' => 12);
         $colspecs['double']     = array('name' => 'DOUBLE PRECISION',
                                         'type' => 'float',
-                                        'size' => 20);
+                                        'size' => 22);
         $colspecs['integer']    = array('name' => 'INTEGER',
                                         'type' => 'integer',
                                         'minvalue' => -2147483648,
@@ -1179,7 +1185,7 @@ class pgsql
                                         'type' => 'numeric');
         $colspecs['real']       = array('name' => 'REAL',
                                         'type' => 'float',
-                                        'size' => 21);
+                                        'size' => 22);
         $colspecs['smallint']   = array('name' => 'SMALLINT',
                                         'type' => 'integer',
                                         'minvalue' => -32768,

@@ -7,11 +7,13 @@
 class Default_Table
 {
     // member variables
+    var $access_count;                  // count of accesses since instantiation
     var $allow_empty_where = false;     // switch to allow an empty $where string in STD.LIST2.INC
     var $audit_logging = false;         // yes/no switch
     var $checkPrimaryKey = false;       // yes/no switch
     var $child_relations = array();     // child relationship specifications (optional)
     var $css_files = array();           // optional CSS file names
+    var $custom_processing_object;      // name of object containing code for custom processing
     var $dbms_engine;                   // database engine (mysql, postgresql, oracle, etc)
     var $dbname;                        // database name
     var $dirname;                       // directory name of current script
@@ -26,6 +28,7 @@ class Default_Table
     var $field_access;                  // see setFieldAccess()
     var $ignore_empty_fields = false;   // YES/NO switch (see getInitialData() method)
     var $initial_values;                // from MNU_INITIAL_VALUES_USER/ROLE
+    var $initiated_from_controller = false;     // source of object instantiation
     var $inner_table;                   // used in an outer-link-inner relationship
     var $instruction;                   // instruction to be passed to previous script
     var $is_link_table = FALSE;         // used in method _sqlAssembleWhere (many-link-many relationship)
@@ -120,12 +123,18 @@ class Default_Table
     {
         $errors = array();
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         // retrieve all records which match criteria in $where
         $fieldarray = $this->getData_raw($where);
         $errors = array_merge($errors, $this->errors);
 
         // now delete them one at a time
         foreach ($fieldarray as $rowdata) {
+            $rowdata = $this->_cm_pre_cascadeDelete($rowdata);
             $rowdata = $this->deleteRecord($rowdata);
             foreach ($this->errors as $error) {
                 $errors[] = "$this->tablename - $error";
@@ -137,6 +146,8 @@ class Default_Table
             return false;
         } // if
 
+        unset($GLOBALS['classdir']);
+
         return true;
 
     } // cascadeDelete
@@ -146,6 +157,11 @@ class Default_Table
     // Parent record is being deleted, so nullify foreign keys in associated records in this table.
     {
         $errors = array();
+
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
 
         // retrieve all records which match criteria in $where
         $fieldarray = $this->getData_raw($where);
@@ -164,6 +180,8 @@ class Default_Table
             $this->errors = $errors;
             return false;
         } // if
+
+        unset($GLOBALS['classdir']);
 
         return true;
 
@@ -292,6 +310,11 @@ class Default_Table
     {
         $this->errors = array();   // initialise
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         if (is_string($fieldarray)) {
             // convert from string to array
             $fieldarray = where2array($fieldarray, false, false);
@@ -309,20 +332,8 @@ class Default_Table
         } // if
 
         if (empty($this->errors)) {
-            // get field specifications for this database table
-            $fieldspec = $this->fieldspec;
-
-            // remove any non-database fields from input array
-            foreach ($fieldarray as $field => $fieldvalue) {
-                // check that $field exists in $fieldspec array
-                if (!array_key_exists($field, $fieldspec)) {
-                    // it does not (like the SUBMIT button, for example), so remove it
-                    unset($fieldarray[$field]);
-                } // if
-            } // foreach
-
-            $where = array2where($fieldarray, $this->getPkeyNames(), $this);
             // obtain copy of original record from database
+            $where = array2where($fieldarray, $this->getPkeyNames(), $this);
             $originaldata = $this->_dml_ReadBeforeUpdate($where);
             if ($this->numrows == 0) {
                 return $fieldarray;  // there is nothing to delete
@@ -361,6 +372,8 @@ class Default_Table
             $fieldarray = $this->_cm_post_deleteRecord($fieldarray);
         } // if
 
+        unset($GLOBALS['classdir']);
+
         return $fieldarray;
 
     } // deleteRecord
@@ -375,6 +388,11 @@ class Default_Table
             return;
         } // if
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         // process contents of $child_relations array
         foreach ($this->child_relations as $reldata) {
             $tblchild = $reldata['child'];
@@ -386,7 +404,8 @@ class Default_Table
                     $update_array = array();
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            // 'Name of child field missing in relationship with $tblchild'
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild));
                             break;
                         } // if
                         if (empty($where)) {
@@ -399,7 +418,10 @@ class Default_Table
 
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -422,7 +444,8 @@ class Default_Table
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
                         if (strlen($fldchild) < 1) {
-                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
+                            // 'Name of child field missing in relationship with $tblchild'
+                            $this->errors[] = getLanguageText('sys0110', strtoupper($tblchild));
                             break;
                         } // if
                         if (empty($where)) {
@@ -434,7 +457,10 @@ class Default_Table
 
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -457,9 +483,12 @@ class Default_Table
                 case 'RES':
                     break;
                 default:
-                    $this->errors[] = getLanguageText('sys0010', $reldata['type']); // 'Unknown relation type: $type'
+                    // 'Unknown relation type: $type'
+                    $this->errors[] = getLanguageText('sys0010', $reldata['type']);
             } // switch
         } // foreach
+
+        unset($GLOBALS['classdir']);
 
         return;
 
@@ -514,8 +543,15 @@ class Default_Table
     {
         $this->errors = array();
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         // call custom method for specific processig
         $msg = $this->_cm_deleteSelection($selection);
+
+        unset($GLOBALS['classdir']);
 
         return $msg;
 
@@ -525,7 +561,12 @@ class Default_Table
     function eraseRecord ($fieldarray)
     // delete the record, and ALL its children, specified in $fieldarray.
     {
-        $this->errors = array();   // initialise
+        $this->errors = array();
+
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
 
         if (is_string($fieldarray)) {
             // convert from string to array
@@ -574,6 +615,8 @@ class Default_Table
             $fieldarray = $this->_cm_post_eraseRecord($fieldarray);
         } // if
 
+        unset($GLOBALS['classdir']);
+
         return $fieldarray;
 
     } // eraseRecord
@@ -587,6 +630,11 @@ class Default_Table
 
         if (empty($this->child_relations)) {
             return;
+        } // if
+
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
         } // if
 
         // process contents of $child_relations array
@@ -616,7 +664,10 @@ class Default_Table
 
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -649,7 +700,10 @@ class Default_Table
 
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -677,6 +731,8 @@ class Default_Table
             } // if
 
         } // foreach
+
+        unset($GLOBALS['classdir']);
 
         return;
 
@@ -1290,6 +1346,12 @@ class Default_Table
         } // foreach
 
         // perform custom processing (such as obtaining lookup lists)
+        if (is_object($this->custom_processing_object)) {
+        	if (method_exists($this->custom_processing_object, '_cm_getExtraData')) {
+        		$fieldarray[$key] = $this->custom_processing_object->_cm_getExtraData($where, $fieldarray[$key]);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
         $fieldarray[$key] = $this->_cm_getExtraData($where, $fieldarray[$key]);
 
         // change current table configuraton (optional)
@@ -1297,13 +1359,6 @@ class Default_Table
 
         // store updated $fieldarray within this object
         $this->fieldarray = $fieldarray;
-
-//        if ($this->dbname != 'workflow' and $GLOBALS['mode'] == 'update') {
-//            // rebuild $where to ensure it contains pkey fields only
-//            $where = array2where ($fieldarray[$key], $this->getPkeyNames());
-//            // find out if this task/context is a workitem within a workflow instance
-//            $this->_examineWorkflowInstance($where);
-//        } // if
 
         if (count($fieldarray) > 1) {
             // return all rows as an indexed array
@@ -1356,6 +1411,10 @@ class Default_Table
     function getFieldSpec_original ()
     // set the specifications for this database table.
     {
+        if (!empty($this->audit_logging)) {
+        	$save_audit_logging = $this->audit_logging;
+        } // if
+
         $fieldspec              = array();
         $this->primary_key      = array();
         $this->unique_keys      = array();
@@ -1367,6 +1426,9 @@ class Default_Table
         if ($this->getTableName() != 'default') {
             // include table specifications generated by Data Dictionary
             require ($this->dirname .'/' .$this->getTableName() .'.dict.inc');
+            if (!empty($save_audit_logging)) {
+            	$this->audit_logging = $save_audit_logging;
+            } // if
         } // if
 
         return $fieldspec;
@@ -1433,7 +1495,9 @@ class Default_Table
                             $save_cwd = getcwd();
                             // switch to other directory so that any includes() within the class
                             // are relative to that directory and not the current directory
-                            chdir('../' .$reldata['subsys_dir'] .'/');
+                            $dir = dirname($this->dirname);                          // path to current subsystem directory
+                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';  // switch to other subsystem directory
+                            chdir($dir);
                         } else {
                             $save_cwd = NULL;
                         } // if
@@ -1516,6 +1580,13 @@ class Default_Table
         	} // if
         } // foreach
 
+        if (is_object($this->custom_processing_object)) {
+        	if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
+        		$fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+
         // perform any custom processing (optional)
         $fieldarray = $this->_cm_getInitialData($fieldarray);
         if ($this->errors) {
@@ -1544,6 +1615,8 @@ class Default_Table
                 // do not insert any missing fields
                 $this->ignore_empty_fields = false;
             } else {
+                // shift all field names to lower case
+                $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
                 // insert any missing fields from $fieldspec
                 foreach ($this->fieldspec as $fieldname => $spec) {
                     if (!isset($spec['nondb'])) {
@@ -1934,18 +2007,26 @@ class Default_Table
     } // getWhere
 
     // ****************************************************************************
-    function initialise ($where)
+    function initialise ($where=null)
     // perform any initialisation for the current task.
     {
         $this->pageno = null;
         $this->where  = null;
 
-        // obtain any initial values from MNU_INITIAL_VALUE_ROLE/USER table
-        $this->initial_values = $this->_getInitialValues();
+        $this->_getCustomProcessingObject();
 
-        $pattern_id = getPatternId();
-        if (eregi('^list', $pattern_id)) {
-        	$this->sql_where = $this->_getInitialWhere($this->sql_where);
+        if (eregi('^(mnu_initial_value_)', $this->tablename)) {
+        	// do not look for initial values for the initial values tables
+        } else {
+            if ($this->initiated_from_controller) {
+                // obtain any initial values from MNU_INITIAL_VALUE_ROLE/USER table
+                $this->initial_values = $this->_getInitialValues();
+
+                $pattern_id = getPatternId();
+                if (eregi('^list', $pattern_id)) {
+                	$this->sql_where = $this->_getInitialWhere($this->sql_where);
+                } // if
+            } // if
         } // if
 
         if (!empty($this->sql_where)) {
@@ -2301,6 +2382,11 @@ class Default_Table
     {
         $this->errors = array();   // initialise
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         if (!empty($fieldarray)) {
             reset($fieldarray);   // fix for version 4.4.1
             if (!is_string(key($fieldarray))) {
@@ -2331,9 +2417,21 @@ class Default_Table
         } // if
 
         // redo any custom initialisation
+        if (is_object($this->custom_processing_object)) {
+        	if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
+        		$fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
         $fieldarray = $this->_cm_getInitialData($fieldarray);
 
         // perform any custom pre-insert processing
+        if (is_object($this->custom_processing_object)) {
+        	if (method_exists($this->custom_processing_object, '_cm_pre_insertRecord')) {
+        		$fieldarray = $this->custom_processing_object->_cm_pre_insertRecord($fieldarray);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
         $fieldarray = $this->_cm_pre_insertRecord($fieldarray);
 
         if (empty($this->errors)) {
@@ -2351,6 +2449,12 @@ class Default_Table
                 // do not perform any custom validation
             } else {
                 // perform any custom pre-insert validation (1)
+                if (is_object($this->custom_processing_object)) {
+                	if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
+                		$insertarray = $this->custom_processing_object->_cm_commonValidation($insertarray, $fieldarray);
+                		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                	} // if
+                } // if
                 $insertarray = $this->_cm_commonValidation($insertarray, $fieldarray);
                 if (empty($this->errors)) {
                     // perform any custom pre-insert validation (2)
@@ -2401,6 +2505,12 @@ class Default_Table
                 // do not perform any custom processing
             } else {
                 // perform any custom post-insert processing
+                if (is_object($this->custom_processing_object)) {
+                	if (method_exists($this->custom_processing_object, '_cm_post_insertRecord')) {
+                		$fieldarray = $this->custom_processing_object->_cm_post_insertRecord($fieldarray);
+                		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                	} // if
+                } // if
                 $fieldarray = $this->_cm_post_insertRecord($fieldarray);
             } // if
         } // if
@@ -2414,6 +2524,8 @@ class Default_Table
         if (empty($this->errors)) {
             $this->numrows = $this->numrows +1;
         } // if
+
+        unset($GLOBALS['classdir']);
 
         return $fieldarray;
 
@@ -3125,6 +3237,7 @@ class Default_Table
         $this->sql_having      = null;
         $this->pageno          = null;
         $this->rows_per_page   = null;
+        $this->access_count    = null;
 
     } // sqlSelectInit
 
@@ -3270,17 +3383,21 @@ class Default_Table
                         case 'boolean':
                             break;
                         case 'date':
-                            if (isset($fieldspec['infinityisnull']) and $fieldvalue == '') {
-                                // empty date is shown in the database as infinity
-                                $fieldarray[$fieldname] = '9999-12-31';
+                            if (empty($fieldvalue)) {
+                            	if (isset($fieldspec['infinityisnull'])) {
+                                    // empty date is shown in the database as infinity
+                                    $fieldarray[$fieldname] = '9999-12-31';
+                                } // if
                             } else {
                                 // convert date from external to internal format
                                 $fieldarray[$fieldname] = $dateobj->getInternalDate($fieldvalue);
                             } // if
                             break;
                         case 'datetime':
-                            // convert date from external to internal format
-                            $fieldarray[$fieldname] = $dateobj->getInternalDateTime($fieldvalue);
+                            if (!empty($fieldvalue)) {
+                                // convert date from external to internal format
+                                $fieldarray[$fieldname] = $dateobj->getInternalDateTime($fieldvalue);
+                            } // if
                             break;
                         case 'time':
                             break;
@@ -3454,6 +3571,13 @@ class Default_Table
     {
         if (empty($fieldarray)) return $fieldarray;
 
+        $this->errors = array();
+
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         reset($fieldarray);
         if (!is_string(key($fieldarray))) {
             // input is indexed by row, so extract data for 1st row only
@@ -3462,8 +3586,6 @@ class Default_Table
 
         // shift all field names to lower case
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
-
-        $this->errors = array();
 
         // perform any custom pre-update processing
         $fieldarray = $this->_cm_pre_updateRecord($fieldarray);
@@ -3503,6 +3625,12 @@ class Default_Table
                 // do not perform any custom validation
             } else {
                 // perform any custom validation/processing before update
+                if (is_object($this->custom_processing_object)) {
+                	if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
+                		$updatearray = $this->custom_processing_object->_cm_commonValidation($updatearray, $originaldata);
+                		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                	} // if
+                } // if
                 $updatearray = $this->_cm_commonValidation($updatearray, $originaldata);
                 if (empty($this->errors)) {
                     $updatearray = $this->_cm_validateUpdate($updatearray, $originaldata);
@@ -3522,6 +3650,10 @@ class Default_Table
                     if (array_key_exists('autoupdate', $spec)) {
                         // not allowed to change during update
                         unset($updatearray[$field]);
+                    } // if
+                    if (array_key_exists('scale', $spec)) {
+                        // round to the correc number of decimal places
+                        $updatearray[$field] = round($updatearray[$field], $spec['scale']);
                     } // if
                 } // foreach
                 // find out how many fields have changed
@@ -3557,6 +3689,8 @@ class Default_Table
         // store updated $fieldarray within this object
         $this->fieldarray = $fieldarray;
 
+        unset($GLOBALS['classdir']);
+
         return $fieldarray;
 
     } // updateRecord
@@ -3567,10 +3701,17 @@ class Default_Table
     {
         $this->errors = array();
 
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+        	$GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
         $replace = trim($replace, ' ()');
 
         // call custom method for specific processing
         $msg = $this->_cm_updateSelection($selection, $replace);
+
+        unset($GLOBALS['classdir']);
 
         return $msg;
 
@@ -3629,7 +3770,10 @@ class Default_Table
                     $where = $this->_dml_adjustWhere($where);  // replace escape character if different
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -3663,7 +3807,10 @@ class Default_Table
                     $where = $this->_dml_adjustWhere($where);  // replace escape character if different
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -4274,6 +4421,17 @@ class Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
+    function _cm_pre_cascadeDelete ($fieldarray)
+    // perform custom processing before database record is deleted as part of a
+    // cascade delete.
+    {
+        // customisable code goes here
+
+        return $fieldarray;
+
+    } // _cm_pre_cascadeDelete
+
+    // ****************************************************************************
     function _cm_pre_deleteRecord ($rowdata)
     // perform custom processing before database record is deleted.
     // if anything is placed in $this->errors the deletion will be terminated.
@@ -4579,8 +4737,16 @@ class Default_Table
 
         $DML->fieldspec     = $this->fieldspec;
         $DML->audit_logging = $this->audit_logging;
-
         $DML->primary_key   = $this->getPkeyNames();
+
+        // remove any non-database fields from input array
+        foreach ($fieldarray as $field => $fieldvalue) {
+            // check that $field exists in $fieldspec array
+            if (!array_key_exists($field, $DML->fieldspec)) {
+                // it does not (like the SUBMIT button, for example), so remove it
+                unset($fieldarray[$field]);
+            } // if
+        } // foreach
 
         $DML->deleteRecord($this->dbname, $this->tablename, $fieldarray);
 
@@ -4627,7 +4793,7 @@ class Default_Table
             $count    = $this->numrows;
             $errors   = array();
             while ($row = $this->fetchRow($resource)) {
-            	$this->_dml_deleteRecord($row);
+            	$this->deleteRecord($row);
                 $errors = array_merge($this->getErrors(), $errors);
             } // while
             $this->errors = $errors;
@@ -4747,6 +4913,15 @@ class Default_Table
         $DML->unique_keys   = $this->unique_keys;
         $DML->audit_logging = $this->audit_logging;
 
+        // remove any non-database fields from input array
+        foreach ($fieldarray as $field => $fieldvalue) {
+            // check that $field exists in $fieldspec array
+            if (!array_key_exists($field, $DML->fieldspec)) {
+                // it does not (like the SUBMIT button, for example), so remove it
+                unset ($fieldarray[$field]);
+            } // if
+        } // foreach
+
         $array = $DML->insertRecord($this->dbname, $this->tablename, $fieldarray);
 
         $this->errors = array_merge($DML->getErrors(), $this->errors);
@@ -4811,6 +4986,15 @@ class Default_Table
         $DML->primary_key   = $this->getPkeyNames();
         $DML->unique_keys   = $this->unique_keys;
         $DML->audit_logging = $this->audit_logging;
+
+        // remove any non-database fields from input array
+        foreach ($fieldarray as $field => $fieldvalue) {
+            // check that $field exists in $fieldspec array
+            if (!array_key_exists($field, $DML->fieldspec)) {
+                // it does not (like the SUBMIT button, for example), so remove it
+                unset ($fieldarray[$field]);
+            } // if
+        } // foreach
 
         $DML->updateRecord($this->dbname, $this->tablename, $fieldarray, $oldarray, $where);
 
@@ -4990,6 +5174,26 @@ class Default_Table
         return;
 
     } // _examineWorkflowInstance
+
+    // ****************************************************************************
+    function _getCustomProcessingObject ()
+    // look for an optional file containing code for custom processing.
+    // this exists in the 'custom-processing' directory with a 'cp_' prefix.
+    {
+        $fname = dirname($this->dirname) .'/custom-processing/cp_' .get_class($this) .'.class.inc';
+        if (file_exists($fname)) {
+            $class_name = 'cp_' .get_class($this);
+            if (!class_exists($class_name)) {
+            	include($fname);
+            } // if
+            if (class_exists($class_name)) {
+                $this->custom_processing_object = new $class_name;
+            } // if
+        } // if
+
+        return;
+
+    } // _getCustomProcessingObject
 
     // ****************************************************************************
     function &_getDBMSengine ($engine, $dbname=null)
@@ -5438,7 +5642,10 @@ class Default_Table
                 if ($parent_table != $this->tablename) {
                     // instantiate an object for this table
                     if (array_key_exists('subsys_dir', $reldata)) {
-                        $dir = '../' .$reldata['subsys_dir'] .'/';
+                        // get path to current subsystem directory
+                        $dir = dirname($this->dirname);
+                        // switch to other subsystem directory
+                        $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                     } else {
                         $dir = NULL;
                     } // if
@@ -5533,6 +5740,15 @@ class Default_Table
         return $object_vars;
 
     } // __sleep
+
+    // ****************************************************************************
+    function __wakeup ()
+    // perform object initialisation after unserialization
+    {
+        // look for custom processing object
+        $this->_getCustomProcessingObject();
+
+    } // __wakeup
 
 // ****************************************************************************
 } // end class
