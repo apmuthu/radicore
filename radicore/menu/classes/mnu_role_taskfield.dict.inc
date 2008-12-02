@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on February 28, 2008, 4:22 pm
     
     // field specifications for table menu.mnu_role_taskfield
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -80,6 +80,7 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task_field',
+                                                    'parent_field' => 'field_desc',
                                                     'fields' => array('task_id' => 'task_id',
                                                                       'field_id' => 'field_id'));
     
@@ -88,6 +89,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

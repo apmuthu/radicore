@@ -11,11 +11,11 @@ $structure['outer']['fields'][] = array('task_desc' => 'Description');
 $structure['tables']['inner'] = 'mnu_task_field';
 
 $structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => 350);
+$structure['inner']['columns'][] = array('width' => 300);
 $structure['inner']['columns'][] = array('width' => '*');
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('field_id' => 'Field Id');
-$structure['inner']['fields'][] = array('null' => '');
+$structure['inner']['fields'][] = array('field_desc' => 'Description');
 
 ?>

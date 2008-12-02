@@ -23,6 +23,20 @@ class crs_student extends Default_Table
     } // crs_student
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (!array_key_exists('lesson_count', $this->fieldspec)) {
+        	$this->fieldspec['lesson_count']  = array('type' => 'numeric', 'blank_when_zero' => 'y', 'nondb' => 'y');
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
     function _cm_formatData ($fieldarray)
     // perform custom formatting before values are shown to the user.
     {
@@ -73,9 +87,13 @@ class crs_student extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        // set survey_id to next available number
+        // set id to next available number
         $count = $this->getCount("SELECT max(student_id) FROM $this->tablename");
         $fieldarray['student_id'] = $count + 1;
+
+//        $this->sql_select = "MAX(student_id) AS last_id";
+//        $rows=$this->getdata_raw();
+//        $count2 = $rows[0]['last_id'];
 
         $this->fieldspec['student_id']['noedit'] = 'y';
 
@@ -127,6 +145,17 @@ class crs_student extends Default_Table
                     $where = array2where($where_array);
                 } // if
             } // if
+        } // if
+
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // get count of lessons for this student
+            $this->sql_select .= ", (SELECT COUNT(lesson_id) FROM crs_student_lesson WHERE crs_student_lesson.student_id=crs_student.student_id ) AS lesson_count";
         } // if
 
         return $where;

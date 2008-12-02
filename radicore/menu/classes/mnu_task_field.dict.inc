@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on February 27, 2008, 6:31 pm
     
     // field specifications for table menu.mnu_task_field
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -13,6 +13,12 @@
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'uppercase' => 'y');
+    
+    $fieldspec['field_desc']                = array('type' => 'string',
+                                                    'size' => 255,
+                                                    'control' => 'multiline',
+                                                    'cols' => 75,
+                                                    'rows' => 3);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -75,6 +81,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

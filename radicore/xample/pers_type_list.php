@@ -4,7 +4,6 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-//DebugBreak();
 $table_id = 'x_pers_type';                  // table name
 $screen   = 'pers_type.list.screen.inc';    // file identifying screen structure
 

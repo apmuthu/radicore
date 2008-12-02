@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_initial_value_role.class.inc';
 class mnu_initial_value_role_s01 extends mnu_initial_value_role
@@ -22,24 +22,14 @@ class mnu_initial_value_role_s01 extends mnu_initial_value_role
     } // _cm_getOrderBy
 
     // ****************************************************************************
-    function _cm_getOrderBy_Out ($orderby)
-    // Adjust name of orderby item before it is added to XML output.
-    {
-        // customisable code goes here
-
-        return $orderby;
-
-    } // _cm_getOrderBy_Out
-
-    // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $this->sql_select = 'mnu_task_field.task_id, mnu_task_field.field_id, mnu_role.role_id, '
-                           ."CASE WHEN mnu_initial_value_role.initial_value IS NULL THEN '' ELSE mnu_initial_value_role.initial_value END AS initial_value";
+        $this->sql_select = 'mnu_task_field.task_id, mnu_task_field.field_id, mnu_role.role_id, mnu_initial_value_role.is_noedit'
+                           .", CASE WHEN mnu_initial_value_role.initial_value IS NULL THEN '' ELSE mnu_initial_value_role.initial_value END AS initial_value";
         $this->sql_from   = 'mnu_task_field '
                            .'CROSS JOIN mnu_role '
                            .'LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task_field.task_id AND mnu_initial_value_role.field_id=mnu_task_field.field_id AND mnu_initial_value_role.role_id=mnu_role.role_id)';
@@ -62,13 +52,15 @@ class mnu_initial_value_role_s01 extends mnu_initial_value_role
         	// this record is redundant, so remove it
             $where = array2where($rowdata, $this->getPkeyNames());
 
-            $query = "SELECT count(*) FROM $this->tablename WHERE $where";
-            $count = $this->getCount($query);
+            if (!empty($where)) {
+            	$query = "SELECT count(*) FROM $this->tablename WHERE $where";
+                $count = $this->getCount($query);
 
-            if ($count > 0) {
-                // record does currently exist, so delete it
-                $rowdata = $this->deleteRecord($rowdata);
-                if (!empty($this->errors)) return $rowdata;
+                if ($count > 0) {
+                    // record does currently exist, so delete it
+                    $rowdata = $this->deleteRecord($rowdata);
+                    if (!empty($this->errors)) return $rowdata;
+                } // if
             } // if
         } // if
 

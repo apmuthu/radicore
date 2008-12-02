@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -239,13 +239,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = isPkeyComplete($fieldarray, $dbobject->getPkeyNames());
     if (empty($errors)) {
         // set $where to primary key of current record
-        $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
+        $pkeynames = $dbobject->getPkeyNamesAdjusted();
+        $where = array2where($fieldarray, $pkeynames, $dbobject);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
         $errors = childForm($_POST, array('dbobject' => $dbobject));
     } else {
-        $mode = 'insert';
         $dbobject->setFieldArray($fieldarray);
     } // if
     if (empty($errors)) {
@@ -253,9 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $count = $dbobject->getCount($where);
         if ($count == 0) {
             // record does not exist, so create it
+            $mode = 'insert';
             $fieldarray = $dbobject->insertRecord($fieldarray);
         } else {
             // record does exist, so update it
+            $mode = 'update';
             $fieldarray = $dbobject->updateRecord($fieldarray);
         } // if
         if ($dbobject->errors) {
@@ -274,7 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];
                 if ($curitem == $lastitem) {
                     // we are on the last item, so return to previous script
-                    scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
+                    scriptPrevious($errors, $messages, $mode, $dbobject->getInstruction());
                 } // if
                 if (empty($dbobject->scrollarray)) {
                     // pick next item from the database

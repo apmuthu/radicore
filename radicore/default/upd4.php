@@ -5,7 +5,7 @@
 // This uses the updateMultiple() method.
 //*****************************************************************************
 
-$table_id = '#tablename#';          // table name
+$table_id = '#tablename#';       // table name
 
 // customise the SQL SELECT statement
 $sql_select  = null;
@@ -14,6 +14,6 @@ $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
 
-require_once 'std.update4.inc';     // activate page controller
+require 'std.update4.inc';      // activate page controller
 
 ?>

@@ -41,10 +41,10 @@ if ($_SERVER['SERVER_NAME'] == 'localhost' or $_SERVER['REMOTE_ADDR'] == '80.177
 <tr><td><a href="../index.html">Home page</a></td>
     <td>&lt;- Click here for my home page</td>
 <tr><td><hr /></td></tr>
-<tr><td><a href="logon.php">Logon</a></td>
+<tr><td><a href="logon.php?csxslt=off">Logon</a></td>
     <td>&lt;- Click here for the logon screen</td>
 </tr>
-<tr><td><a href="menu/logon.php?csxslt=on">Logon (csxslt)</a></td>
+<tr><td><a href="logon.php?csxslt=on">Logon (csxslt)</a></td>
     <td>&lt;- Click here for the logon screen (with client-side XSL transformations)</td>
 </tr>
 <tr><td><hr /></td></tr>

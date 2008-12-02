@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_arc extends Default_Table
@@ -251,6 +251,30 @@ class wf_arc extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        $pattern_id = getPatternId();
+        if ($pattern_id == 'add2') {
+            $where_array = where2array($where);
+         	// remove fields included from $selection instead of $where
+            if (isset($fieldarray['transition_id'])) {
+            	unset($fieldarray['transition_id']);
+            } // if
+            if (isset($fieldarray['place_id'])) {
+            	unset($fieldarray['place_id']);
+            } // if
+            if (isset($fieldarray['direction'])) {
+            	unset($fieldarray['direction']);
+            } // if
+            $where = array2where($where_array);
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)

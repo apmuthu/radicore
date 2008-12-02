@@ -1,5 +1,5 @@
 <?php
-    // file created on October 24, 2006, 11:18 am
+    // file created on January 10, 2008, 5:35 pm
     
     // field specifications for table xample.x_tree_level
     $fieldspec['tree_type_id']              = array('type' => 'string',
@@ -64,6 +64,11 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'x_tree_level_alt',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('tree_type_id' => 'tree_type_id',
+                                                                      'tree_level_id' => 'tree_level_id'));
+    
     $this->child_relations[]                = array('child' => 'x_tree_node',
                                                     'type' => 'RES',
                                                     'fields' => array('tree_type_id' => 'tree_type_id',
@@ -72,6 +77,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'x_tree_type',
                                                     'parent_field' => 'tree_type_desc',
+                                                    'alt_language_table' => 'x_tree_type_alt',
+                                                    'alt_language_cols' => 'tree_type_desc',
                                                     'fields' => array('tree_type_id' => 'tree_type_id'));
     
     // determines if database updates are recorded in an audit log 
@@ -79,6 +86,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'x_tree_level.tree_level_seq';
+    
+    // alternative language options 
+    $this->alt_language_table               = 'x_tree_level_alt';
+    $this->alt_language_cols                = 'tree_level_desc';
     
     // finished
 ?>

@@ -6,6 +6,7 @@ $structure['tables']['inner'] = '#inner_table#';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 $structure['outer']['fields'][] = array('fieldname' => 'Label');
 

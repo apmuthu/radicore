@@ -1,1 +1,1 @@
-Try user_id= 'mgr', password='password'
+Try user_id= 'demo', password='demo'

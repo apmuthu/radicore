@@ -1,5 +1,5 @@
 <?php
-    // file created on August 7, 2007, 1:15 pm
+    // file created on July 16, 2008, 1:03 am
     
     // field specifications for table xample.x_person_addr
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -107,6 +107,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'person_id, address_no';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

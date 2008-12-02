@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Update the contents of a database table without any dialog with the user.
+// Add a database record without any dialog with the user.
 // *****************************************************************************
 
 $table_id = '#tablename#';      // table name
@@ -12,6 +12,6 @@ $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
 
-require_once 'std.add4.inc';    // activate page controller
+require 'std.add4.inc';         // activate page controller
 
 ?>

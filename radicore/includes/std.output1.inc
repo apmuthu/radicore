@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output1.inc
@@ -25,6 +25,10 @@ if (!empty($selection) AND !isset($return_from)) {
     // $selection takes precedence over $where
     $where     = $selection;
     $selection = null;
+} else {
+    if (!empty($where)) {
+    	$search = $where;
+    } // if
 } // if
 
 // create a class instance of the main database table
@@ -76,13 +80,27 @@ if ($dbobject->getNumRows() <= 0) {
 // transform output to CSV format and download to client browser
 $output = $dbobject->outputCSV($resource);
 
-header("Content-type: text/comma-separated-values");
-header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-header("Content-Disposition: attachment; filename=" .$table_id .'.csv');
-header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-header('Pragma: public');
-echo $output;
+if (!isset($GLOBALS['batch'])) {
+	header("Content-type: text/comma-separated-values");
+    header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+    header("Content-Disposition: attachment; filename=" .$table_id .'.csv');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    header('Pragma: public');
+} // if
 
-unset($_SESSION[getSelf()]);
-exit;
+if (!isset($csvout)) {
+	echo $output;
+	unset($_SESSION['pages'][getSelf()]);
+    exit;
+} else {
+    if (!$handle = fopen($csvout, 'w')) {
+        die("Cannot open file $csvout");
+    } // if
+    if (!$result = fwrite($handle, $output)) {
+        die("Cannot write to file $csvout");
+    } // if
+    fclose($handle);
+    echo strlen($output) .' bytes written to file ' .$csvout;
+} // if
+
 ?>

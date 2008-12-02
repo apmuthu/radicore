@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -109,6 +109,9 @@ if ($dbobject->getNumRows() < 1) {
 
 // get any extra data and merge with $fieldarray
 $fieldarray = $dbobject->getExtraData($fieldarray);
+if ($dbobject->errors) {
+	$errors[$dbobject->getClassName()] = $dbobject->errors;
+} // if
 
 // set variables to be included in XML output
 $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
@@ -122,7 +125,8 @@ $script_vars['dbobject']  = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
 // rebuild selection using primary key of retrieved row
-$where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
+$pkeynames = $dbobject->getPkeyNamesAdjusted();
+$where = array2where($fieldarray, $pkeynames, $dbobject);
 
 if (!empty($_POST)) {
     if (isset($_POST['copy'])) {

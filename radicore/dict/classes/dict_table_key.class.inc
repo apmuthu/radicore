@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table_key extends Default_Table
@@ -184,7 +184,7 @@ class dict_table_key extends Default_Table
 
         static $relobj;
         if (!is_object($relobj)) {
-            require_once 'classes/dict_related_column.class.inc';
+            //require_once 'classes/dict_related_column.class.inc';
             $relobj =& singleton::getInstance('dict_related_column');
         } // if
 
@@ -262,10 +262,10 @@ class dict_table_key extends Default_Table
             return $fieldarray;
         } // if
 
-        require_once 'classes/dict_relationship.class.inc';
+        //require_once 'classes/dict_relationship.class.inc';
         $relobj =& singleton::getInstance('dict_relationship');
 
-        require_once 'classes/dict_related_column.class.inc';
+        //require_once 'classes/dict_related_column.class.inc';
         $relcolobj =& singleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this table then this new column must be added.
@@ -308,7 +308,7 @@ class dict_table_key extends Default_Table
             return $fieldarray;
         } // if
 
-        require_once 'classes/dict_related_column.class.inc';
+        //require_once 'classes/dict_related_column.class.inc';
         $relobj =& singleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this updated column then they must also be updated.

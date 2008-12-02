@@ -30,6 +30,6 @@ $inner_sql_having   = null;
 $inner_sql_orderby  = null;
 $inner_search_table = null;
 
-require_once 'std.multi4.inc';                      // activate page controller
+require 'std.multi4.inc';                           // activate page controller
 
 ?>

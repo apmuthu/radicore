@@ -46,7 +46,7 @@ $structure['main']['fields'][11] = array('col_key' => 'Key?', 'colspan' => 5);
 $structure['main']['fields'][12] = array('col_default' => 'Default', 'colspan' => 5);
 $structure['main']['fields'][13] = array('col_auto_increment' => 'Auto Increment?', 'colspan' => 5);
 $structure['main']['fields'][14] = array('col_attributes' => 'Attributes', 'colspan' => 5);
-$structure['main']['fields'][15] = array('custom_validation' => 'Custom Validaton', 'colspan' => 5);
+$structure['main']['fields'][15] = array('custom_validation' => 'Custom Validation', 'colspan' => 5);
 
 $structure['main']['fields'][16][] = array('label' => 'Unsigned?');
 $structure['main']['fields'][16][] = array('field' => 'col_unsigned');

@@ -27,14 +27,14 @@ class crs_schedule_s04 extends crs_schedule
     {
         if (empty($rowdata)) {
             // find out if this student is in a class, or is an individual
-            require_once 'classes/crs_student.class.inc';
+            //require_once 'classes/crs_student.class.inc';
             $dbobject =& singleton::getInstance('crs_student');
             $dbobject->sql_select = 'class_id';
             $data = $dbobject->getData($where);
             if (!is_null($data[0]['class_id'])) {
                 $class_id = $data[0]['class_id'];
                 unset($dbobject);
-                require_once 'classes/crs_schedule_s03.class.inc';
+                //require_once 'classes/crs_schedule_s03.class.inc';
                 $dbobject =& singleton::getInstance('crs_schedule_s03');
                 $rowdata = $dbobject->getData("class_id='$class_id'");
                 $this->numrows = count($rowdata);
@@ -67,7 +67,7 @@ class crs_schedule_s04 extends crs_schedule
         } // if
 
         // get schedule details
-        require_once 'classes/crs_schedule_hdr.class.inc';
+        //require_once 'classes/crs_schedule_hdr.class.inc';
         $dbobject =& singleton::getInstance('crs_schedule_hdr');
         $dbobject->sql_select = 'schedule_id,start_time,end_time,last_day_no';
         if (isset($_SESSION['crs_schedule_id'])) {

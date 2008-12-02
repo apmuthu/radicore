@@ -4,7 +4,7 @@
 //*****************************************************************************
 
 // column headings for LIST view
-$style['hdg']['font'] = array('family' => 'Times',      // Courier, Arial, Times
+$style['hdg']['font'] = array('family' => 'Times',      // Courier, Helvetica, Times
                               'style' => 'B',           // blank=Regular, B=Bold, I=Italic, U=Underline
                               'size' => 12,             // size in points
                               'height' => 7,            // line height
@@ -16,7 +16,7 @@ $style['hdg']['textcolour'] = array(255,255,255);       // colour for foreground
 $style['hdg']['drawcolour'] = array(128,0,0);           // colour for line drawing
 
 // main body for LIST view
-$style['body']['font'] = array('family' => 'Times',     // Courier, Arial, Times
+$style['body']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 12,            // size in points
                                'height' => 6,           // line height
@@ -27,7 +27,7 @@ $style['body']['textcolour'] = array(0,0,0);            // colour for foreground
 $style['body']['drawcolour'] = array(128,0,0);          // colour for line drawing
 
 // page title for any view
-$style['title']['font'] = array('family' => 'Times',    // Courier, Arial, Times
+$style['title']['font'] = array('family' => 'Times',    // Courier, Helvetica, Times
                                 'style' => 'B',         // blank=Regular, B=Bold, I=Italic, U=Underline
                                 'size' => 12,           // size in points
                                 'height' => 6,          // line height
@@ -38,7 +38,7 @@ $style['title']['fillcolour'] = array(112,219,147);     // colour for background
 $style['title']['textcolour'] = array(0,0,0);           // colour for foreground
 $style['title']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
-$style['title1']['font'] = array('family' => 'Arial',    // Courier, Arial, Times
+$style['title1']['font'] = array('family' => 'Helvetica',    // Courier, Helvetica, Times
                                  'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                  'size' => 16,           // size in points
                                  'height' => 8,          // line height
@@ -48,7 +48,7 @@ $style['title1']['fillcolour'] = array(122,103,238);     // colour for backgroun
 $style['title1']['textcolour'] = array(255,255,255);     // colour for foreground
 $style['title1']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
-$style['title2']['font'] = array('family' => 'Arial',    // Courier, Arial, Times
+$style['title2']['font'] = array('family' => 'Helvetica',    // Courier, Helvetica, Times
                                  'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                  'size' => 10,           // size in points
                                  'height' => 4,          // line height
@@ -59,7 +59,7 @@ $style['title2']['textcolour'] = array(0,0,0);           // colour for foregroun
 $style['title2']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
 // field labels for DETAIL view
-$style['label']['font'] = array('family' => 'Times',    // Courier, Arial, Times
+$style['label']['font'] = array('family' => 'Times',    // Courier, Helvetica, Times
                                 'style' => 'BI',        // blank=Regular, B=Bold, I=Italic, U=Underline
                                 'size' => 12,           // size in points
                                 'height' => 6,          // line height
@@ -71,7 +71,7 @@ $style['label']['textcolour'] = array(0,0,0);           // colour for foreground
 $style['label']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
 // field data for DETAIL view
-$style['data']['font'] = array('family' => 'Times',     // Courier, Arial, Times
+$style['data']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 12,            // size in points
                                'height' => 6,           // line height
@@ -82,7 +82,7 @@ $style['data']['textcolour'] = array(0,0,0);            // colour for foreground
 $style['data']['drawcolour'] = array(0,0,0);            // colour for line drawing
 
 // page FOOTER for all views
-$style['foot']['font'] = array('family' => 'Times',     // Courier, Arial, Times
+$style['foot']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 10,            // size in points
                                'height' => 5,           // line height
@@ -100,13 +100,24 @@ $style['textaligncenter']['font'] = array('align' => 'center'); // text alignmen
 $style['noborder']['drawcolour'] = array(255,255,255);          // border = white
 
 // barcode styles
-$style['barcode1']['type'] = 'I25';         // I25, C128A, C128B, C128C, C39
-$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right
-$style['barcode1']['xres'] = 2;             // 1,2,3
-$style['barcode1']['fontsize'] = 5;         // 1,2,3,4,5
+$style['barcode1']['type'] = 'I25';         // I25, C128A, C128B, C128C, C39, C39+, C39E, C39E+, EAN13, UPCA, POSTNET, CODABAR
+$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right, X=Stretch Barcode
+$style['barcode1']['xres'] = 3;             // 1,2,3 (small,medium,large)
+$style['barcode1']['fontsize'] = 5;         // 1,2,3,4,5 (small,small+,medium,medium+,large)
+//$style['barcode1']['bgcolor'] = array(255,0,0);     // red
+//$style['barcode1']['fgcolor'] = array(0,0,255);     // blue
+//$style['barcode1']['xres'] = 0.4;
+//$style['barcode1']['padding'] = 1;
+//$style['barcode1']['border'] = true;
+//$style['barcode1']['text'] = true;
+//$style['barcode1']['position'] = 'S';
+//$style['barcode1']['stretchtext'] = 4;
+//$style['barcode1']['font'] = 'Helvetica';
+//$style['barcode1']['fontsize'] = 10;
+//$style['barcode1']['fontstyle'] = 'BI';
 
 // custom styles
-$style['invoice1']['font'] = array('family' => 'Arial', // Courier, Arial, Times
+$style['invoice1']['font'] = array('family' => 'Helvetica', // Courier, Helvetica, Times
                                'style' => 'B',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 20,            // size in points
                                'height' => 8,           // line height
@@ -117,7 +128,7 @@ $style['invoice1']['fillcolour'] = array(255,255,255);  // colour for background
 $style['invoice1']['textcolour'] = array(0,0,0);        // colour for foreground
 $style['invoice1']['drawcolour'] = array(0,0,0);        // colour for line drawing
 
-$style['total1']['font'] = array('family' => 'Arial',   // Courier, Arial, Times
+$style['total1']['font'] = array('family' => 'Helvetica',   // Courier, Helvetica, Times
                                'style' => 'B',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 16,            // size in points
                                'height' => 8,           // line height
@@ -128,7 +139,7 @@ $style['total1']['fillcolour'] = array(255,255,255);    // colour for background
 $style['total1']['textcolour'] = array(0,0,0);          // colour for foreground
 $style['total1']['drawcolour'] = array(0,0,0);          // colour for line drawing
 
-$style['total2']['font'] = array('family' => 'Arial',   // Courier, Arial, Times
+$style['total2']['font'] = array('family' => 'Helvetica',   // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 9,             // size in points
                                'height' => 8,           // line height
@@ -139,7 +150,7 @@ $style['total2']['fillcolour'] = array(255,255,255);    // colour for background
 $style['total2']['textcolour'] = array(0,0,0);          // colour for foreground
 $style['total2']['drawcolour'] = array(0,0,0);          // colour for line drawing
 
-$style['small']['font'] = array('family' => 'Arial',    // Courier, Arial, Times
+$style['small']['font'] = array('family' => 'Helvetica',    // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 9,             // size in points
                                'height' => 7,           // line height
@@ -150,7 +161,7 @@ $style['small']['fillcolour'] = array(255,255,255);     // colour for background
 $style['small']['textcolour'] = array(0,0,0);           // colour for foreground
 $style['small']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
-$style['address']['font'] = array('family' => 'Arial',  // Courier, Arial, Times
+$style['address']['font'] = array('family' => 'Helvetica',  // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 9,             // size in points
                                'height' => 4,           // line height
@@ -161,7 +172,7 @@ $style['address']['fillcolour'] = array(255,255,255);   // colour for background
 $style['address']['textcolour'] = array(0,0,0);         // colour for foreground
 $style['address']['drawcolour'] = array(0,0,0);         // colour for line drawing
 
-$style['address2']['font'] = array('family' => 'Arial',     // Courier, Arial, Times
+$style['address2']['font'] = array('family' => 'Helvetica',     // Courier, Helvetica, Times
                                  'style' => '',             // blank=Regular, B=Bold, I=Italic, U=Underline
                                  'size' => 10,              // size in points
                                  'height' => 6,             // line height
@@ -172,7 +183,7 @@ $style['address2']['textcolour'] = array(0,0,0);            // colour for foregr
 $style['address2']['drawcolour'] = array(0,0,0);            // colour for line drawing
 
 
-$style['order_lines']['font'] = array('family' => 'Arial',  // Courier, Arial, Times
+$style['order_lines']['font'] = array('family' => 'Helvetica',  // Courier, Helvetica, Times
                                'style' => '',               // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 9,                 // size in points
                                'height' => 6,               // line height

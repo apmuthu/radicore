@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This is my universal error handler.
@@ -156,7 +156,8 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         $search = array('<br>', '<p>', '</p>', '<h2>', '</h2>');
         $mailstring = str_replace($search, '', "$errorstring $history");
         // Send the error to the administrator by email
-        @error_log("$mailstring $result", 1, $_SERVER['SERVER_ADMIN']);
+        $headers = "From: {$_SERVER['HTTP_HOST']}\r\n";
+        @error_log("$mailstring $result", 1, $_SERVER['SERVER_ADMIN'], $headers);
     } // if
 
     //echo "<h2>This application has encountered an unrecoverable error</h2>\n";
@@ -170,7 +171,13 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     $errorstring .= "\n"; // except the last one
 
     // add message to log file
-    $logfile = '../errorlog.html';
+    if (dirname($_SERVER['SCRIPT_FILENAME']) == $_SERVER['DOCUMENT_ROOT']) {
+        // this is the highest directory, so use it
+    	$logfile = 'errorlog.html';
+    } else {
+        // write into parent directory
+        $logfile = '../errorlog.html';
+    } // if
     error_log("$errorstring $history $result", 3, $logfile);
 
     // rollback any incomplete transaction
@@ -189,7 +196,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     $GLOBALS['transaction_has_started'] = FALSE;
 
-    if (isset($logon_user_id)) {
+    if (isset($logon_user_id) AND $logon_user_id != 'INTERNET') {
         // log the current user off
         if (!class_exists('logon')) {
         	require_once 'classes/logon.class.inc';

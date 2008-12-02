@@ -21,6 +21,6 @@ $structure['inner']['fields'][] = array('lesson_id' => 'Id');
 $structure['inner']['fields'][] = array('lesson_name' => 'Lesson');
 $structure['inner']['fields'][] = array('year' => 'Year');
 $structure['inner']['fields'][] = array('class_count' => 'Classes');
-$structure['inner']['fields'][] = array('student_count' => 'Students', 'nosort' => 'y');
+$structure['inner']['fields'][] = array('student_count' => 'Students');
 
 ?>

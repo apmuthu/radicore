@@ -5,6 +5,7 @@ TRUNCATE TABLE mnu_account;
 TRUNCATE TABLE mnu_control;
 TRUNCATE TABLE mnu_initial_value_role;
 TRUNCATE TABLE mnu_initial_value_user;
+TRUNCATE TABLE mnu_language;
 TRUNCATE TABLE mnu_menu;
 TRUNCATE TABLE mnu_nav_button;
 TRUNCATE TABLE mnu_pattern;

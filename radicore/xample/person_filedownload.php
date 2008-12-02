@@ -1,6 +1,7 @@
 <?php
 //*****************************************************************************
-// Access a database record and allow a file to be dowloaded.
+// This will allow the user to download a file to the server.
+// The filename is obtained from a database record.
 //*****************************************************************************
 
 $table_id = "x_person_s01";                 // table name

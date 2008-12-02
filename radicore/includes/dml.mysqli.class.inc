@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -162,8 +162,9 @@ class mysql
     // establish a connection to the database
     {
         global $dbhost, $dbusername, $dbuserpass, $dbprefix;
+        global $ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher;
 
-        if (!empty($dbprefix)) {
+        if (!empty($dbname) AND !empty($dbprefix)) {
 			 if (!eregi('^(' .$dbprefix .')', $dbname)) {
     			// prefix may be different on different servers
                 $dbname = $dbprefix .$dbname;
@@ -174,10 +175,20 @@ class mysql
         $this->query  = '';
         $this->dbname = $dbname;
 
-        static $dbconn;
+        $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
-            $dbconn = mysqli_connect($dbhost, $dbusername, $dbuserpass);
+            $dbconn = mysqli_init();
+            if (!empty($ssl_key)) {
+                $result = mysqli_ssl_set($dbconn, $ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher);
+            	$result = mysqli_real_connect($dbconn, $dbhost, $dbusername, $dbuserpass, null, null, null, MYSQLI_CLIENT_SSL);
+            } else {
+                $result = mysqli_real_connect($dbconn, $dbhost, $dbusername, $dbuserpass);
+            } // if
+            if (!$result) {
+            	trigger_error($this, E_USER_ERROR);
+            } // if
+            //$dbconn = mysqli_connect($dbhost, $dbusername, $dbuserpass);
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
                 // use UTF8 character set for this connection
@@ -190,8 +201,6 @@ class mysql
                 $this->host_info   = mysqli_get_host_info($dbconn);
                 $this->server_info = mysqli_get_server_info($dbconn);
                 if (version_compare($this->server_info, '4.1', '>=')) {
-                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES'";
-                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES,ONLY_FULL_GROUP_BY'";
                     $this->query = "SET SESSION sql_mode=CONCAT('ANSI_QUOTES,',@@sql_mode)";
                     $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
                 } // if
@@ -316,8 +325,12 @@ class mysql
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
-            $where = $this->adjustWhere($where);
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
+            if (empty($where)) {
+            	$this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename LIMIT 1";
+            } else {
+                $where = $this->adjustWhere($where);
+                $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
+            } // if
         } // if
 
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -376,6 +389,9 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -383,12 +399,12 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "\n" ."GROUP BY $this->sql_groupby";
             if (eregi("WITH ROLLUP", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
@@ -398,14 +414,14 @@ class mysql
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
+            $having_str = "\n" ."HAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
@@ -440,13 +456,13 @@ class mysql
 
             // set the limit and offset values to retrieve the specified page number
             if ($rows_per_page > 0) {
-                $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+                $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
             } else {
                 $limit_str = '';
             } // if
 
             // build the query string and run it
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
             $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
             $result2    = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
@@ -487,7 +503,7 @@ class mysql
     } // getData
 
     // ****************************************************************************
-    function getData_serial ($dbname, $tablename, $where)
+    function getData_serial ($dbname, $tablename, $where, $rdc_limit=null, $rdc_offset=null)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
@@ -517,6 +533,9 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -524,12 +543,12 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = "WHERE $where";
+            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "\n" ."GROUP BY $this->sql_groupby";
             if (eregi(" WITH ROLLUP", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
@@ -539,26 +558,28 @@ class mysql
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
+            $having_str = "\n" ."HAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
 
-        if ($rows_per_page > 0) {
-            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        	$limit_str = "\n" .'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
+        } elseif ($rows_per_page > 0) {
+            $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
+        $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $this->numrows = mysqli_num_rows($result);
@@ -1043,12 +1064,16 @@ class mysql
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
-                if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
+                if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
-                    $update .= "$item=$value,";
+                    if (strlen($value) == 0) {
+                    	$update .= "$item=NULL,";
+                    } else {
+                        $update .= "$item=$value,";
+                    } // if
                 } else {
                     // change to the new value
                     $update .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
@@ -1401,7 +1426,7 @@ class mysql
     } // ddl_showColumns
 
     // ****************************************************************************
-    function ddl_showDatabases ()
+    function ddl_showDatabases ($dbprefix=null)
     // obtain a list of existing database names.
     {
         // connect to database
@@ -1410,7 +1435,11 @@ class mysql
         $array = array();
 
         // build the query string and run it
-        $this->query = 'SHOW DATABASES';
+        if (empty($dbprefix)) {
+        	$this->query = 'SHOW DATABASES';
+        } else {
+            $this->query = "SHOW DATABASES LIKE '$dbprefix%'";
+        } // if
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);

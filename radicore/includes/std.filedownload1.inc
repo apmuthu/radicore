@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // Author: Kyle Brost <http://www.softelephant.com>
 // *****************************************************************************
 
@@ -43,6 +43,8 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 // return a single selection only
 $dbobject->setRowsPerPage(1);
+// perform any initialisation
+$where = $dbobject->initialise($where);
 
 // get data from the database
 $fieldarray = $dbobject->initialiseFileDownload($where);
@@ -101,6 +103,6 @@ while (!feof($handle)) {
 } // while
 fclose($handle);
 
-unset($_SESSION[getSelf()]);
+unset($_SESSION['pages'][getSelf()]);
 exit;
 ?>

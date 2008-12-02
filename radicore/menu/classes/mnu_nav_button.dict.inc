@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:42 pm
     
     // field specifications for table menu.mnu_nav_button
     $fieldspec['task_id_snr']               = array('type' => 'string',
@@ -27,6 +27,7 @@
                                                     'required' => 'y');
     
     $fieldspec['context_preselect']         = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -86,6 +87,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'sort_seq';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

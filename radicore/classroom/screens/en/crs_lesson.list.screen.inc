@@ -17,6 +17,6 @@ $structure['main']['fields'][] = array('lesson_name' => 'Name');
 $structure['main']['fields'][] = array('year' => 'Year');
 $structure['main']['fields'][] = array('teacher_id' => 'Teacher');
 $structure['main']['fields'][] = array('class_count' => 'Classes');
-$structure['main']['fields'][] = array('student_count' => 'Students', 'nosort' => 'y');
+$structure['main']['fields'][] = array('student_count' => 'Students');
 
 ?>

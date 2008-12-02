@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update3.inc
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $errors = $dbobject->commit();
             if (empty($errors)) {
                 // update was OK - return to previous screen
-                scriptPrevious(null, null, 'OK', $dbobject->getInstruction());
+                scriptPrevious(null, $msg, 'OK', $dbobject->getInstruction());
             } // if
         } else {
             $dbobject->rollback();
@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } // if
 } // if
 
-if (!empty($msg)) {
+if (!empty($msg) AND !is_array($msg)) {
 	$messages[] = $msg;
 } // if
 

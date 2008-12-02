@@ -1,5 +1,5 @@
 <?php
-    // file created on September 18, 2007, 4:45 pm
+    // file created on September 18, 2008, 9:35 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -94,6 +94,21 @@
                                                     'size' => 50,
                                                     'subtype' => 'email');
     
+    $fieldspec['external_id']               = array('type' => 'string',
+                                                    'size' => 255);
+    
+    $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
+    
+    $fieldspec['party_id']                  = array('type' => 'integer',
+                                                    'size' => 11,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 4294967295);
+    
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
@@ -148,6 +163,10 @@
                                                     'parent_field' => 'account_name',
                                                     'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
     
+    $this->parent_relations[]               = array('parent' => 'mnu_language',
+                                                    'parent_field' => 'language_name',
+                                                    'fields' => array('language_code' => 'language_id'));
+    
     $this->parent_relations[]               = array('parent' => 'mnu_role',
                                                     'parent_field' => 'role_desc',
                                                     'fields' => array('role_id' => 'role_id'));
@@ -156,7 +175,11 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'user_name';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

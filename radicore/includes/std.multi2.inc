@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -71,7 +71,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->errors);
     } // if
@@ -102,13 +103,16 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
+    if (!empty($task_selection)) {
+        $dbinner->setSqlWhere($task_selection);
+    } // if
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->errors);
     } // if
@@ -142,8 +146,11 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
         $dbinner->wf_context     = $dbouter->wf_context;
         $errors = $dbinner->commit();
         if ($errors) {
-        	$dbobject->rollback();
+        	$dbinner->rollback();
         } else {
+            if ($dbinner->messages) {
+            	$messages = array_merge($messages, $dbinner->messages);
+            } // if
             $messages[] = getLanguageText('sys0091'); // 'Update successful'
         } // if
         if (isset($_POST['submitnext'])) {
@@ -218,6 +225,7 @@ if (!empty($return_from) AND !empty($popup_object)) {
         } else {
             // multiple entries requested, so disable SUBMIT button
             unset($act_buttons['submit']);
+            unset($act_buttons['submitnext']);
             if ($dbouter->errors) {
             	$errors[$dbouter->getClassName()] = $dbouter->errors;
             } // if
@@ -266,7 +274,8 @@ if (isset($search)) {
 } // if
 
 // get primary key of row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
@@ -299,6 +308,7 @@ if (count($outer_data) > 0) {
         if ($dbinner->getNumRows() == 0) {
             $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
             unset($act_buttons['submit']);
+            unset($act_buttons['submitnext']);
         } // if
 
         // get any additional data for current record
@@ -330,8 +340,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

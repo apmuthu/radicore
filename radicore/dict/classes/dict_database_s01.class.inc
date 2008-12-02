@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s01 extends dict_dataBase
@@ -61,11 +61,11 @@ class dict_dataBase_s01 extends dict_dataBase
         	return $fieldarray;
         } // if
 
-        // get list of existing database names
-        $array  = $this->_ddl_showDatabases();
-        $array2 = array();
-
         global $dbprefix;
+
+        // get list of existing database names
+        $array  = $this->_ddl_showDatabases($dbprefix);
+        $array2 = array();
 
         // filter out those databases that already exist in DICT database
         $i = 0;
@@ -102,11 +102,7 @@ class dict_dataBase_s01 extends dict_dataBase
     // perform custom processing after database record is inserted.
     {
         // import tables from database just processed
-        static $tableobj;
-        if (!is_object($tableobj)) {
-            //require_once 'classes/dict_table_s01.class.inc';
-            $tableobj =& singleton::getInstance('dict_table_s01');
-        } // if
+        $tableobj =& singleton::getInstance('dict_table_s01');
 
         $array = $tableobj->getInitialDataMultiple($fieldarray);
         $array = $tableobj->insertMultiple($array);
@@ -119,8 +115,8 @@ class dict_dataBase_s01 extends dict_dataBase
 
         if (empty($this->errors)) {
         	$next['task_id'] = 'dict_table(list)2';
-            $next['where']   = array2where($fieldarray, $this->primary_key);
-            $_SESSION['script_sequence'][] = $next;
+            $next['where']   = array2where($fieldarray, $this->getPkeyNames());
+            append2ScriptSequence($next);
         } // if
 
         return $fieldarray;

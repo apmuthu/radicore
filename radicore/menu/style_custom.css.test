@@ -1,0 +1,37 @@
+div.header {
+  text-align: left;
+  background-image: url(../images/sample-background.jpg);
+  background-position: 0px /*2px*/;  <!-- IE will implement this -->
+  background-repeat: repeat-x;
+  border-top: 2px solid black;
+  border-bottom: 2px solid maroon;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+div.header p {
+  padding: 0;
+  margin: 0;
+  background-image: url(../images/sample-logo.jpg);
+  background-repeat: no-repeat;
+  height: 50px;
+}
+form {
+  padding-top: 0;
+  margin-top: 5px
+}
+
+/* custom classes */
+div.red {
+  background: red;
+  color: white;
+}
+.overdue {
+  background: red;
+  color: yellow;
+  font-weight: bold;
+}
+div.todo_user .overdue {
+  background: transparent;
+  color: red;
+  font-weight: bold;
+}

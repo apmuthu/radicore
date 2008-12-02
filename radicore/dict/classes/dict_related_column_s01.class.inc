@@ -1,14 +1,14 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_related_column.class.inc';
 class dict_related_column_s01 extends dict_related_column
 {
 
     // ****************************************************************************
-    // this subclass is used to import existing column names for a selected table
+    // this subclass is used in: dict_related_column_multi2.php
     // ****************************************************************************
 
     // ****************************************************************************

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete1.inc
@@ -119,14 +119,23 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName(
     $dbobject->setPageNo($_GET['item']);
 } // if
 
-// get data from the database
-$fieldarray = $dbobject->getData($where);
-if ($dbobject->errors) {
-    // some sort of error - return to previous script
-    scriptprevious($dbobject->getErrors(), $messages);
-} // if
-if ($dbobject->getNumRows() < 1) {
-    scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+if (empty($errors)) {
+    // get data from the database
+    $fieldarray = $dbobject->getData($where);
+    if ($dbobject->errors) {
+        if ($dbobject->numrows > 1) {
+            // multiple rows, so display error message with this screen
+            $errors[$dbobject->getClassName()] = $dbobject->errors;
+        	unset($act_buttons['submit']);
+        } else {
+            // single row, so return to previous script before displaying error message
+            $messages = array_merge($messages, $dbobject->getMessages());
+            scriptprevious($dbobject->errors, $messages);
+        } // if
+    } // if
+    if ($dbobject->getNumRows() < 1) {
+        scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    } // if
 } // if
 
 // set scrolling variables to be included in XML output
@@ -143,6 +152,10 @@ if (empty($errors)) {
     } // if
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
+} // if
+
+if (!empty($dbobject->messages)) {
+    $messages = array_merge($messages, $dbobject->messages);
 } // if
 
 if ($errors) {

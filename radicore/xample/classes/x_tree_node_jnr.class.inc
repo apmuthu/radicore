@@ -25,58 +25,6 @@ class x_tree_node_jnr extends x_tree_node
     } // _cm_deleteSelection
 
     // ****************************************************************************
-    function _cm_getNodeData ($expanded, $where, $wherearray = null)
-    // retrieve requested node data from the database.
-    // $expanded may be a list of nodes to be expanded, or 'ALL' nodes.
-    // $where may contain specific selection criteria as a string.
-    // $wherearray is $where but converted into an array.
-    {
-        //DebugBreak();
-        $this->sql_select  = 'x_tree_node.node_id, x_tree_node.node_desc, x_tree_level.tree_level_seq, COUNT(child.node_id) AS child_count';
-        $this->sql_from    = 'x_tree_node '
-                           . 'LEFT JOIN x_tree_level ON (x_tree_level.tree_type_id=x_tree_node.tree_type_id AND x_tree_level.tree_level_id=x_tree_node.tree_level_id)'
-                           . 'LEFT JOIN x_tree_node AS child ON (x_tree_node.node_id=child.node_id_snr)';
-        $this->sql_where   = '';
-        $this->sql_groupby = 'x_tree_node.node_id, x_tree_node.node_desc, x_tree_node.tree_level_id, x_tree_level.tree_level_seq';
-        $this->sql_having  = '';
-        $this->sql_orderby = 'x_tree_node.tree_level_id, x_tree_node.node_id';
-
-        if (array_key_exists('tree_type_id', $wherearray)) {
-            // look for root nodes within this tree_type
-            $wherearray['tree_level_seq'] = 1;
-            $where = array2where($wherearray);
-        } // if
-
-        $data_raw = $this->getData($where);
-
-        foreach ($data_raw as $row => $rowdata) {
-            // append data for current node to output array
-            $fieldarray[] = $rowdata;
-            $node_id = $rowdata['node_id'];
-            if ($rowdata['child_count'] > 0) {
-                // child nodes exist, but do we expand them?
-                if ($expanded == 'ALL' or array_key_exists($node_id, $expanded)) {
-                    // tell system this row has been expanded
-                    $fieldarray[count($fieldarray)-1]['expanded'] = 'y';
-                    // this replaces 'ALL' with a list of actual nodes
-                    $this->expanded[$node_id] = true;
-                    // get the child nodes belonging to this parent node
-                    $childdata = $this->getNodeData($expanded, "node_id_snr='$node_id'");
-                    // add in child data after the parent
-                    $fieldarray = array_merge($fieldarray, $childdata);
-                } else {
-                    unset($this->expanded[$node_id]);
-                } // if
-            } // if
-        } // foreach
-
-        unset($data_raw);
-
-        return $fieldarray;
-
-    } // _cm_getNodeData
-
-    // ****************************************************************************
     function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.

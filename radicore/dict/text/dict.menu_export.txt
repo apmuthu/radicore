@@ -1,4 +1,4 @@
-// file created on July 17, 2007, 1:36 pm
+// file created on September 19, 2008, 11:15 am
     
 // menu details for subsystem DICT
 $array['Columns']                                 = 'Columns';
@@ -84,6 +84,8 @@ $array['Update']                                  = 'Update';
 // column details for subsystem DICT
 $array['align_hv']                                = 'align_hv';
 $array['align_lr']                                = 'align_lr';
+$array['alt_language_cols']                       = 'alt_language_cols';
+$array['alt_language_table']                      = 'alt_language_table';
 $array['audit_logging']                           = 'audit_logging';
 $array['auto_insert']                             = 'auto_insert';
 $array['auto_update']                             = 'auto_update';

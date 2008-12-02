@@ -1,6 +1,4 @@
 
-use `menu`;
-
 REPLACE INTO `mnu_task` (`button_text` ,`created_date` ,`created_user` ,`is_disabled` ,`keep_data` ,`log_sql_query` ,`pattern_id` ,`script_id` ,`subsys_id` ,`task_desc` ,`task_id` ,`task_type` ,`use_https`) VALUES
 ('Generate SQL' ,'2007-06-23 13:39:36' ,'AJM' ,'N' ,'N' ,'N' ,'UPD4' ,'audit_tbl(upd4).php' ,'AUDIT' ,'Generate SQL' ,'audit_tbl(upd4)' ,'PROC' ,'N');
 

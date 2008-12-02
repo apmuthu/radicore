@@ -1,4 +1,3 @@
-use `menu`;
 
 REPLACE INTO `mnu_task` (`button_text` ,`created_date` ,`created_user` ,`is_disabled` ,`keep_data` ,`log_sql_query` ,`order_by` ,`pattern_id` ,`script_id` ,`subsys_id` ,`task_desc` ,`task_id` ,`task_type` ,`use_https`) VALUES
 ('Expired Workitems' ,'2007-08-05 16:15:54' ,'AJM' ,'N' ,'Y' ,'N' ,'case_id,workitem_id' ,'LIST1' ,'workitem.list(expired).php' ,'WORKFLOW' ,'List Expired Workitems' ,'wf_workitem(list)expired' ,'PROC' ,'N');

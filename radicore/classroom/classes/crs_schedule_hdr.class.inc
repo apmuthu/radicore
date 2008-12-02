@@ -27,7 +27,7 @@ class crs_schedule_hdr extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        // set schedule_id to next available number
+        // set id to next available number
         $count = $this->getCount("SELECT max(schedule_id) FROM $this->tablename");
         $fieldarray['schedule_id'] = $count + 1;
 

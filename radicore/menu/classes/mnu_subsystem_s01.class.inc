@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -18,74 +18,9 @@ class mnu_subsystem_s01 extends mnu_subsystem
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        // (1) create file 'text/<subsys>.menu_export.txt'
+        // custom code goes here
 
-        // create object for retrieving task details
-        $taskobj =& singleton::getInstance('mnu_task');
-
-        // create object for retrieving dictionary details
-        $dictobj =& singleton::getInstance('dict_column');
-
-        // process each subsystem separately
-        foreach ($rowdata as $row => $tabledata) {
-
-			$subsys_id   = $tabledata['subsys_id'];
-            $subsys_dir  = $tabledata['subsys_dir'];
-
-			$this->text_out = '// file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
-
-            // process menu descriptions
-        	$taskobj->sql_select = 'menu_id, task_id_jnr, mnu_menu.button_text';
-        	$taskobj->sql_from   = 'mnu_task RIGHT JOIN mnu_menu ON (mnu_task.task_id=mnu_menu.menu_id)';
-        	$taskobj->sql_orderby = 'mnu_menu.button_text';
-            $data = $taskobj->getData("subsys_id='$subsys_id'");
-            $this->_createMenuDesc($data, $subsys_id);
-
-			// process task descriptions
-        	$taskobj->sql_select = 'task_id, task_desc';
-        	$taskobj->sql_from   = 'mnu_task';
-        	$taskobj->sql_orderby = 'task_id';
-            $data = $taskobj->getData("subsys_id='$subsys_id' AND task_type='proc'");
-			$this->_createTaskDesc($data, $subsys_id);
-
-			// process navigation buttons
-        	$taskobj->sql_select = 'task_id_snr, task_id_jnr, mnu_nav_button.button_text';
-        	$taskobj->sql_from   = 'mnu_task RIGHT JOIN mnu_nav_button ON (mnu_task.task_id=mnu_nav_button.task_id_jnr)';
-        	$taskobj->sql_orderby = 'mnu_nav_button.button_text';
-            $data = $taskobj->getData("subsys_id='$subsys_id'");
-			$this->_createNavDesc($data, $subsys_id);
-
-			// process field (column) names
-        	$dictobj->sql_select = 'column_id, column_desc';
-        	$dictobj->sql_from   = 'dict_column LEFT JOIN dict_database ON (dict_database.database_id=dict_column.database_id)';
-        	$dictobj->sql_orderby = 'dict_column.column_id';
-            $data = $dictobj->getData("subsys_id='$subsys_id'");
-			$this->_createFieldDesc($data, $subsys_id);
-
-			$this->text_out .= '// finished' ."\r\n";
-
-            // write completed text file to disk
-            $this->_writeTextFile ($this->text_out, $subsys_id, "$subsys_dir/text", 'txt');
-            $this->text_out = '';
-
-            // (2) create file '/help/<task_id>.help.txt'
-
-            // process help text
-        	$taskobj->sql_select = 'mnu_task.task_id, help_text';
-        	$taskobj->sql_from   = 'mnu_task RIGHT JOIN help_text ON (mnu_task.task_id=help_text.task_id)';
-        	$taskobj->sql_orderby = 'mnu_task.task_id';
-            $data = $taskobj->getData("subsys_id='$subsys_id'");
-			$this->_createHelpText($data, $subsys_dir);
-
-			// (3) create file 'sql/<subsys>.menu_export.sql'
-
-			// export details from menu database to an SQL file
-			$this->_exportSQL($subsys_id, $subsys_dir);
-
-        } // foreach
-
-		// return an empty array as there is no database update
-        return array();
+        return $rowdata;
 
     } // _cm_post_getData
 
@@ -107,6 +42,80 @@ class mnu_subsystem_s01 extends mnu_subsystem
         return $where;
 
     } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($rowdata)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        // (1) create file 'text/<subsys>.menu_export.txt'
+
+        // create object for retrieving task details
+        $taskobj =& singleton::getInstance('mnu_task');
+
+        // create object for retrieving dictionary details
+        $dictobj =& singleton::getInstance('dict_column');
+
+		$subsys_id   = $rowdata['subsys_id'];
+        $subsys_dir  = $rowdata['subsys_dir'];
+
+		$this->text_out = '// file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
+
+        // process menu descriptions
+    	$taskobj->sql_select = 'menu_id, task_id_jnr, mnu_menu.button_text';
+    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN mnu_menu ON (mnu_task.task_id=mnu_menu.menu_id)';
+    	$taskobj->sql_orderby = 'mnu_menu.button_text';
+        $data = $taskobj->getData("subsys_id='$subsys_id'");
+        $this->_createMenuDesc($data, $subsys_id);
+
+		// process task descriptions
+    	$taskobj->sql_select = 'task_id, task_desc';
+    	$taskobj->sql_from   = 'mnu_task';
+    	$taskobj->sql_orderby = 'task_id';
+        $data = $taskobj->getData("subsys_id='$subsys_id' AND task_type='PROC'");
+		$this->_createTaskDesc($data, $subsys_id);
+
+		// process navigation buttons
+    	$taskobj->sql_select = 'task_id_snr, task_id_jnr, mnu_nav_button.button_text';
+    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN mnu_nav_button ON (mnu_task.task_id=mnu_nav_button.task_id_jnr)';
+    	$taskobj->sql_orderby = 'mnu_nav_button.button_text';
+        $data = $taskobj->getData("subsys_id='$subsys_id'");
+		$this->_createNavDesc($data, $subsys_id);
+
+		// process field (column) names
+    	$dictobj->sql_select = 'column_id, column_desc';
+    	$dictobj->sql_from   = 'dict_column LEFT JOIN dict_database ON (dict_database.database_id=dict_column.database_id)';
+    	$dictobj->sql_orderby = 'dict_column.column_id';
+        $data = $dictobj->getData("subsys_id='$subsys_id'");
+		$this->_createFieldDesc($data, $subsys_id);
+
+		$this->text_out .= '// finished' ."\r\n";
+
+        // write completed text file to disk
+        $this->_writeTextFile ($this->text_out, $subsys_id, "$subsys_dir/text", 'txt');
+        $this->text_out = '';
+
+        // (2) create file '/help/<task_id>.help.txt'
+
+        // process help text
+    	$taskobj->sql_select = 'mnu_task.task_id, help_text';
+    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN help_text ON (mnu_task.task_id=help_text.task_id)';
+    	$taskobj->sql_orderby = 'mnu_task.task_id';
+        $data = $taskobj->getData("subsys_id='$subsys_id'");
+		$this->_createHelpText($data, $subsys_dir);
+
+		// (3) create file 'sql/<subsys>.menu_export.sql'
+
+		// export details from menu database to an SQL file
+		$this->_exportSQL($subsys_id, $subsys_dir);
+
+        // do not display update count as there is none
+        $this->display_count = false;
+
+		// return an empty array as there is no database update
+        return array();
+
+    } // _cm_pre_updateRecord
 
     // ****************************************************************************
     function _createFieldDesc ($field_array, $subsys_id)
@@ -138,8 +147,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createHelpText ($help_array, $subsys_dir)
     // put each task's help text into a separate file.
     {
-        $mnu_control =& singleton::getInstance('mnu_control');
-        $language_dir = $mnu_control->getControlData('default_language');
+        $language_dir = $_SESSION['default_language'];
 
         foreach ($help_array as $help) {
 
@@ -235,6 +243,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $taskobj =& singleton::getInstance('mnu_task');
 
         if ($subsys_id == 'MENU') {
+            // export contents of MNU_language
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_language';
+        	$taskobj->sql_orderby = 'language_id';
+            $data = $taskobj->getData_raw(null);
+            $output = $this->_exportSqlData('mnu_language', $data, $output);
+
             // export contents of MNU_pattern
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_pattern';
@@ -380,6 +395,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_orderby = 'user_id, seq_no';
             $data = $taskobj->getData_raw();
             $output = $this->_exportSqlData('mnu_todo', $data, $output);
+
 			// export contents of MNU_CONTROL where record_id='SYSTEM'
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_control';
@@ -418,29 +434,28 @@ class mnu_subsystem_s01 extends mnu_subsystem
         } // if
 
         // get field names from first row
-        $output .= 'REPLACE INTO `' .$table_id .'` (';
+        $replace_string .= 'REPLACE INTO `' .$table_id .'` (';
         foreach ($data[0] as $fieldname => $fieldvalue) {
-        	$output .= "`$fieldname`, ";
+        	$replace_string .= "`$fieldname`, ";
         } // foreach
-        $output = substr_replace($output, null, -2); // drop trailing comma separator
-        $output .= ') VALUES ' ."\r\n";
+        $replace_string = substr_replace($replace_string, null, -2); // drop trailing comma separator
+        $replace_string .= ') VALUES ';
 
         // output values from each row
         foreach ($data as $row => $rowdata) {
-            $output .= '(';
+            $value_string = '';
             foreach ($rowdata as $fieldname => $fieldvalue) {
                 if (strlen($fieldvalue) == 0) {
-                	$output .= "NULL, ";
+                	$value_string .= "NULL, ";
                 } else {
-                    $output .= "'" .addslashes($fieldvalue) ."', ";
+                    $value_string .= "'" .addslashes($fieldvalue) ."', ";
                 } // if
             } // foreach
-            $output = substr_replace($output, null, -2); // drop trailing comma separator
-            $output .= '),' ."\r\n";
+            $value_string = substr_replace($value_string, null, -2); // drop trailing comma separator
+            $output .= $replace_string .'(' .$value_string .');' ."\r\n";
         } // foreach
-        $output = substr_replace($output, ';', -3); // replace trailing comma with semicolon
 
-        $output .= "\r\n\r\n";
+        $output .= "\r\n";
 
         return $output;
 

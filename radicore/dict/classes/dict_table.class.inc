@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table extends Default_Table
@@ -30,7 +30,13 @@ class dict_table extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if ($GLOBALS['mode'] != 'search') {
+        if ($GLOBALS['mode'] == 'search') {
+            if (empty($where)) {
+            	// use ordinary textbox in a search screen
+                unset($this->fieldspec['alt_language_table']['control']);
+            } // if
+            unset($this->fieldspec['alt_language_cols']['noedit']);
+        } else {
 			// do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
 		} // if
@@ -85,10 +91,19 @@ class dict_table extends Default_Table
         } // if
 
         if (!array_key_exists('database_id', $this->lookup_data)) {
-            // get contents of foreign table DATABASE and add as a LOOKUP list
+            // get contents of foreign table and add as a LOOKUP list
             $dbobject =& singleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
+        } // if
+
+        if (!array_key_exists('table_id', $this->lookup_data)) {
+            if (!empty($fieldarray['database_id'])) {
+            	// get contents of foreign table and add as a LOOKUP list
+                $dbobject =& singleton::getInstance('dict_table');
+                $array    = $dbobject->getValRep('table_id', "database_id='{$fieldarray['database_id']}'");
+                $this->lookup_data['table_id'] = $array;
+            } // if
         } // if
 
 		return $fieldarray;
@@ -116,7 +131,7 @@ class dict_table extends Default_Table
             $this->sql_ordery_seq = 'asc';
             $this->sql_from       = 'dict_table '
                                   . 'LEFT JOIN dict_column ON (dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id) ';
-            $this->sql_having     = 'count(dict_column.table_id) > 0';
+            $this->sql_having     = 'column_count > 0';
             $this->sql_groupby    = 'dict_table.table_id, table_desc';
             $data = $this->getData($where);
 
@@ -165,16 +180,152 @@ class dict_table extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+        } // if
+
+        if (!eregi(' AS column_count', $this->sql_select)) {
+        	$this->sql_select .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id GROUP BY dict_table.table_id) AS column_count';
+        } // if
+        if (!eregi(' AS rel_count', $this->sql_select)) {
+            $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_table.table_id) AS rel_count';
+        } // if
+
         $pattern_id = getPatternId();
 
         if (eregi('^popup', $pattern_id)) {
-            $this->sql_having  = 'count(dict_column.table_id) > 0';
-        	$this->sql_groupby = 'dict_table.database_id, dict_table.table_id, dict_table.table_desc';
+            $this->sql_having  = 'column_count > 0';
         } // if
 
         return $where;
 
     } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_validateUpdate ($fieldarray, $originaldata)
+    // perform custom validation before update.
+    {
+        if (empty($fieldarray['alt_language_table'])) {
+        	$fieldarray['alt_language_cols'] = null;
+        } else {
+            if ($fieldarray['alt_language_table'] == $fieldarray['table_id']) {
+            	// "Alternate Language Table must not be the same as this table"
+            	$this->errors['alt_language_table'] = getLanguageText('e0050');
+            	return $fieldarray;
+            } // if
+
+            $database_id  = $fieldarray['database_id'];
+            $table_id     = $fieldarray['table_id'];
+            $table_id_alt = $fieldarray['alt_language_table'];
+
+            $dbobject =& singleton::getInstance('dict_table');
+            $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt'");
+            if (empty($data)) {
+            	// "This table does not exist"
+            	$this->errors['alt_language_table'] = getLanguageText('e0051');
+            	return $fieldarray;
+            } // if
+
+            // obtain primary key of this table
+            $this_primary_key = array();
+            $dbobject =& singleton::getInstance('dict_table_key');
+            $dbobject->sql_orderby = 'seq_in_index';
+            $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
+            foreach ($data as $rownum => $rowdata) {
+            	$this_primary_key[] = $rowdata['column_id'];
+            } // foreach
+
+            // obtain primary key of alternate table
+            $alt_primary_key = array();
+            $dbobject =& singleton::getInstance('dict_table_key');
+            $dbobject->sql_orderby = 'seq_in_index';
+            $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt' AND key_name='PRIMARY'");
+            foreach ($data as $rownum => $rowdata) {
+            	$alt_primary_key[] = $rowdata['column_id'];
+            } // foreach
+            if (end($alt_primary_key) != 'language_id') {
+            	// "Primary key of alternate language table must end in 'language_id'"
+            	$this->errors['alt_language_table'] = getLanguageText('e0052');
+            	return $fieldarray;
+            } // if
+
+            // compare the two primary keys
+            if (count($alt_primary_key) != count($this_primary_key)+1) {
+                // "Primary key of language table has wrong number of columns"
+            	$this->errors['alt_language_table'] = getLanguageText('e0053');
+            	return $fieldarray;
+            } // if
+            foreach ($this_primary_key as $colnum => $colname) {
+            	if ($colname != $alt_primary_key[$colnum]) {
+            	    // "Primary keys of the two tables do not match"
+            		$this->errors['alt_language_table'] = getLanguageText('e0054');
+            		break;
+            	} // if
+            } // foreach
+
+            $colspecs = $this->_ddl_getColumnSpecs();
+
+            // obtain field list from this table
+            $this_fieldarray = array();
+            $dbobject =& singleton::getInstance('dict_column');
+            $dbobject->sql_orderby = 'column_seq';
+            $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id'");
+            foreach ($data as $rownum => $rowdata) {
+                if ($rowdata['auto_insert'] == 'Y' OR $rowdata['auto_update'] == 'Y') {
+                	// value inserted automatically, so ignore this entry
+                	$x = true;
+                } elseif (in_array($rowdata['column_id'], $this_primary_key)) {
+                    // part of primary key, so ignore this entry
+                    $x = true;
+                } else {
+                    $col_type = $rowdata['col_type'];
+                    if ($colspecs[$col_type]['type'] == 'string') {
+                    	$this_fieldarray[] = $rowdata['column_id'];
+                    } // if
+                } // if
+            } // foreach
+
+            // obtain field list from alternate table
+            $alt_fieldarray = array();
+            $dbobject =& singleton::getInstance('dict_column');
+            $dbobject->sql_orderby = 'column_seq';
+            $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt'");
+            foreach ($data as $rownum => $rowdata) {
+                if ($rowdata['auto_insert'] == 'Y' OR $rowdata['auto_update'] == 'Y') {
+                	// value inserted automatically, so ignore this entry
+                	$x = true;
+                } elseif (in_array($rowdata['column_id'], $alt_primary_key)) {
+                    // part of primary key, so ignore this entry
+                    $x = true;
+                } elseif (!in_array($rowdata['column_id'], $this_fieldarray)) {
+                    // not in this table, so ignore this entry
+                    $x = true;
+                } else {
+                    $col_type = $rowdata['col_type'];
+                    if ($colspecs[$col_type]['type'] == 'string') {
+                    	$alt_fieldarray[] = $rowdata['column_id'];
+                    } // if
+                } // if
+            } // foreach
+
+            if (empty($alt_fieldarray)) {
+            	// "There are no columns which are common in these two tables"
+            	$this->errors['alt_language_table'] = getLanguageText('e0055');
+            } else {
+                $fieldarray['alt_language_cols'] = implode(',', $alt_fieldarray);
+            } // if
+
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_validateUpdate
 
 // ****************************************************************************
 } // end class

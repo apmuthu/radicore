@@ -19,7 +19,7 @@ class x_tree_level_s02 extends x_tree_level
         // remove any tablename which qualifies a fieldname
         $where = unqualifyWhere($where);
 
-        // convert 'node_id_snr=' to 'node_id=;
+        // convert 'node_id_snr=' to 'node_id='
         $where = str_replace('node_id_snr=', 'node_id=', $where);
 
         // find out if $selection is for TREE_NODE table
@@ -58,7 +58,7 @@ class x_tree_level_s02 extends x_tree_level
             unset($dbobject);
         } // if
 
-        $fieldarray = where2array($where);
+        //$fieldarray = where2array($where);
 
         return $fieldarray;
 

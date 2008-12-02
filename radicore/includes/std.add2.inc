@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add2.inc
@@ -20,18 +20,17 @@ $mode = 'insert';
 initSession();
 
 if (!empty($selection) AND !isset($return_from)) {
-    if (!empty($use_selection_not_where)) {
-        // ignore $where and use $selection
-    	$where = $selection;
-    } // if
+    // $selection takes precedence over $where
+    //$where     = $selection;
+    //$selection = null;
     if (empty($where)) {
     	// only use $selection if $where is empty
         $where = $selection;
+        $selection = null;
     } // if
-    $selection = null;
 } // if
 
-if (isset($_POST['quit'])) {
+if (isset($_POST['quit']) OR isset($_GET['quit'])) {
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
 } // if
@@ -58,8 +57,16 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
+    // remove any fields which are auto_increment
+    $where_array = where2array($where);
+    foreach ($where_array as $fieldname => $fieldvalue) {
+    	if (array_key_exists('auto_increment', $dbobject->fieldspec[$fieldname])) {
+    		unset($where_array[$fieldname]);
+    	} // if
+    } // foreach
+    $where = array2where($where_array);
     // get initial data for a new record
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     if (empty($dbobject->errors)) {
     	$fieldarray = $dbobject->getInitialData($where);
     } // if
@@ -82,12 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (empty($where)) {
         scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
     } // if
-} // if
-
-// get any extra data and merge with $fieldarray
-$fieldarray = $dbobject->getExtraData($fieldarray);
-if ($dbobject->errors) {
-	$errors[$dbobject->getClassName()] = $dbobject->errors;
+    // get any extra data and merge with $fieldarray
+    $fieldarray = $dbobject->getExtraData($fieldarray);
+    if ($dbobject->errors) {
+    	$errors[$dbobject->getClassName()] = $dbobject->errors;
+    	scriptPrevious($dbobject->errors, $messages);
+    } // if
 } // if
 
 // look for entered data
@@ -105,15 +112,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $fieldarray = array_update_associative($fieldarray, $_POST);
-        // ensure that changes are stored inside relevant object
-        $dbobject->setFieldArray($fieldarray);
-        // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject));
+        // get any extra data and merge with $fieldarray
+        $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        } else {
+            // look for an action which is another script
+            $errors = childForm($_POST, array('dbobject' => $dbobject));
+            if ($errors) {
+            	$errors[$dbobject->getClassName()] = $errors;
+            } // if
+        } // if
 		if (empty($errors)) {
-            $dbobject->startTransaction();
+		    $dbobject->startTransaction();
             // add this data to the database
             $fieldarray = $dbobject->insertRecord($fieldarray);
-            $messages   = array_merge($messages, $dbobject->getMessages());
+            if (!empty($dbobject->messages)) {
+                $messages = array_merge($messages, $dbobject->messages);
+            } // if
             if ($dbobject->errors) {
 				$errors[$dbobject->getClassName()] = $dbobject->errors;
 			} // if
@@ -126,6 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $fieldarray = $dbobject->getInitialData($where);
                         // get any extra data and merge with $fieldarray
                         $fieldarray = $dbobject->getExtraData($fieldarray);
+                        if (!empty($dbobject->messages)) {
+                            $messages = array_merge($messages, $dbobject->messages);
+                        } // if
                         if (isset($_SESSION['script_sequence'])) {
                             $script_vars['dbobject'] = serialize($dbobject);
                             // do other tasks before returning to this one
@@ -135,8 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         // update was OK - return to previous screen
                         $selection = array2where($fieldarray, $dbobject->getPkeyNames());
                         $prev_script = getPreviousScript();
-                        $prev_task   = $_SESSION[$prev_script]['task_id'];
-                        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+                        $prev_task   = getPreviousTask($prev_script);
+                        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
                         scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
                     } // if
                 } // if
@@ -151,6 +170,10 @@ if (isset($_SESSION['data'][$table_id])) {
     // saved data exists, so allow a PASTE button
     $prepend = array('paste' => 'paste');
     $act_buttons = array_merge($prepend, $act_buttons);
+} // if
+
+if (!empty($dbobject->messages)) {
+    $messages = array_merge($messages, $dbobject->messages);
 } // if
 
 // save these variables for later in the same session

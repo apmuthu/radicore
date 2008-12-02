@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.search1.inc
@@ -47,7 +47,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->initiated_from_controller = true;
     // get any initial values
     $where = $dbobject->initialise($where);
-    $fieldarray = where2array($where);
+    $fieldarray = $dbobject->fieldarray;
 } // if
 
 if (isset($_POST['clear'])) {
@@ -131,6 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         } else {
                             switch ($spec['type']) {
                             	case 'date':
+                            	    if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $value, $regs )) {
+                                        $operator = $regs[0];
+                                        $value = ltrim($value, $operator);
+                                    } // if
                             	    // if this is a complete and valid date then replace it
                                     if ($internaldate = $dateobj->getInternalDate($value)) {
                                         // value is a valid date
@@ -140,6 +144,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     } // if
                             		break;
                             	case 'time':
+                            	    if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $value, $regs )) {
+                                        $operator = $regs[0];
+                                        $value = ltrim($value, $operator);
+                                    } // if
                                     // if this is a complete and valid time replace it
                                     if ($internaltime = $dateobj->getInternalTime($value)) {
                                         $value = $internaltime;
@@ -180,11 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                             $value = ltrim($value, $operator);
                                         } // if
                                     } // if
-                                    $locale = localeconv();
-                                    // remove thousands separator before using in an sql SELECT statement
-                                    $value = str_replace($locale['thousands_sep'], '', $value);
-                                    // convert user's decimal point to '.'
-                                    $value = str_replace($locale['decimal_point'], '.', $value);
+                                    // replace foreign decimal point and thousands separator
+                                    $value = number_unformat($value);
                                     if (eregi('float|real',$spec['type'])) {
                                     	$value = sprintf('%f', $value);
                                     	// remove trailing zeroes after any decimal point
@@ -275,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // send search criteria back to the previous script
                 $prev_script = getPreviousScript();
                 $prev_task   = getPreviousTask($prev_script);
-                $_SESSION[$prev_script][$prev_task]['search'] = $where;
+                $_SESSION['pages'][$prev_script][$prev_task]['search'] = $where;
                 scriptPrevious(null, null, 'search');
             } else {
                 foreach ($errors as $key => $value) {

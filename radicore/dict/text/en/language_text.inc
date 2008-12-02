@@ -56,16 +56,27 @@ $array['e0047'] = "";
 $array['e0048'] = "";
 $array['e0049'] = "";
 
-$array['e0050'] = "";
-$array['e0051'] = "";
-$array['e0052'] = "";
-$array['e0053'] = "";
-$array['e0054'] = "";
-$array['e0055'] = "";
+$array['e0050'] = "Alternate Language Table must not be the same as this table";
+$array['e0051'] = "This table does not exist";
+$array['e0052'] = "Primary key of alternate language table must end in 'language_id'";
+$array['e0053'] = "Primary key of alternate language table has wrong number of columns";
+$array['e0054'] = "Primary keys of the two tables do not match";
+$array['e0055'] = "There are no columns which are common in these two tables";
 $array['e0056'] = "";
 $array['e0057'] = "";
 $array['e0058'] = "";
 $array['e0059'] = "";
+
+$array['e0060'] = "";
+$array['e0061'] = "";
+$array['e0062'] = "";
+$array['e0063'] = "";
+$array['e0064'] = "";
+$array['e0065'] = "";
+$array['e0066'] = "";
+$array['e0067'] = "";
+$array['e0068'] = "";
+$array['e0069'] = "";
 
 // text entries used in dict_table_s04.class.inc
 $array['t0001'] = "Add1, Delete1, Enquire1, Search, Update1, Audit";
@@ -100,6 +111,7 @@ $array['t0027'] = "Tree Structure for %1\$s";
 $array['t0028'] = "";
 $array['t0029'] = "";
 
+$array['batch']             = 'batch';
 $array['by']                = 'by';
 $array['DEFAULT']           = 'DEFAULT';
 $array['Link']              = 'Link';

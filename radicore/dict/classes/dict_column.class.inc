@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -259,9 +259,9 @@ class dict_column extends Default_Table
         $this->lookup_data['col_type'] = $col_types;
 
         if ($fieldarray['col_type'] == 'boolean') {
-            $fieldarray['is_boolean'] = $this->fieldspec['is_boolean']['true'];
+            $fieldarray['is_boolean'] = 'Y';
         } else {
-            $fieldarray['is_boolean']    = $this->fieldspec['is_boolean']['false'];
+            $fieldarray['is_boolean']    = 'N';
             $fieldarray['boolean_true']  = null;
             $fieldarray['boolean_false'] = null;
         } // if
@@ -307,6 +307,12 @@ class dict_column extends Default_Table
             	} else {
             	    // default to 'radio group'
             	    $fieldarray['control'] = 'radio';
+            	} // if
+            	if (empty($fieldarray['boolean_true'])) {
+            		$fieldarray['boolean_true'] = 'Y';
+            	} // if
+            	if (empty($fieldarray['boolean_false'])) {
+            		$fieldarray['boolean_false'] = 'N';
             	} // if
             } // if
         } // if
@@ -1010,10 +1016,6 @@ class dict_column extends Default_Table
                 // 'Cannot be greater than ' .$fieldarray['col_maxvalue']
                 $this->errors['user_maxvalue'] = getLanguageText('e0017', $fieldarray['col_maxvalue']);
             } // if
-        } // if
-
-        if ($fieldarray['col_type'] == 'boolean') {
-            $fieldarray['is_boolean'] = $this->fieldspec['is_boolean']['true'];
         } // if
 
         return $fieldarray;

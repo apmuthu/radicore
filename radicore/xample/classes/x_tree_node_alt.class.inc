@@ -1,0 +1,66 @@
+<?php
+// *****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// *****************************************************************************
+require_once 'std.table.class.inc';
+class x_tree_node_alt extends Default_Table
+{
+    // ****************************************************************************
+    function x_tree_node_alt ()
+    {
+        // save directory name of current script
+        $this->dirname   = dirname(__file__);
+
+        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbname      = 'xample';
+        $this->tablename   = 'x_tree_node_alt';
+
+        // call this method to get original field specifications
+        // (note that they may be modified at runtime)
+        $this->fieldspec = $this->getFieldSpec_original();
+
+    } // x_tree_node_alt
+
+    // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (!array_key_exists('language_id', $this->lookup_data)) {
+            // get options for language_code
+            //$array = getLanguageArray('languages');
+            $dbobject =& singleton::getInstance('mnu_language');
+            $array = $dbobject->getValRep('language_id');
+            $array = array_change_key_case($array, CASE_LOWER);
+            $this->lookup_data['language_id'] = $array;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        $pattern_id = getPatternId();
+        if ($pattern_id == 'add2') {
+            $where_array = where2array($where);
+         	// remove fields included from $selection instead of $where
+            if (isset($fieldarray['language_id'])) {
+            	unset($fieldarray['language_id']);
+            } // if
+            $where = array2where($where_array);
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
+
+// ****************************************************************************
+} // end class
+// ****************************************************************************
+
+?>

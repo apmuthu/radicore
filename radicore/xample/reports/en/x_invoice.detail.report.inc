@@ -56,20 +56,20 @@ $structure['title'][] = array('text' => 'INVOICE NO.',
 
 $structure['title'][] = array('text' => '123 4567 89',
                               'width' => 40,
-                              'height' => 9,
+                              'height' => 7,
                               'style' => 'small',
                               'x' => 95.5,
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%invoice_date',
                               'width' => 25,
-                              'height' => 9,
+                              'height' => 7,
                               'style' => 'small',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%invoice_no',
                               'width' => 29.5,
-                              'height' => 9,
+                              'height' => 7,
                               'style' => 'small',
                               'border' => 'y',
                               'newline' => 'y');
@@ -77,14 +77,14 @@ $structure['title'][] = array('text' => '%%invoice_no',
 // start new line for INVOICE and SHIPPING addresses
 $structure['title'][] = array('text' => 'INVOICE TO:',
                               'width' => 94.5,
-                              'height' => 8,
+                              'height' => 7,
                               'y_relative' => 1,
                               'border' => 'y',
                               'align' => 'left');
 
 $structure['title'][] = array('text' => 'SHIP TO:',
                               'width' => 94.5,
-                              'height' => 8,
+                              'height' => 7,
                               'border' => 'y',
                               'align' => 'r1ght',
                               'newline' => 'y');
@@ -121,7 +121,7 @@ $structure['title'][] = array('text' => '',
 // start first heading line
 $structure['title'][] = array('text' => 'P.O. NUMBER',
                               'width' => 30,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'y_relative' => 1,
                               'border' => 'y');
@@ -129,28 +129,28 @@ $structure['title'][] = array('text' => 'P.O. NUMBER',
 $structure['title'][] = array('text' => 'TERMS',
                               'width' => 32,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'SHIP DATE',
                               'width' => 30.5,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'CARRIER',
                               'width' => 46.5,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'CUSTOMER CONTACT',
                               'width' => 47,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y',
                               'newline' => 'y');
@@ -158,35 +158,35 @@ $structure['title'][] = array('text' => 'CUSTOMER CONTACT',
 // fill in details below first heading line
 $structure['title'][] = array('text' => '%%purchase_order_id',
                               'width' => 30,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%payment_terms',
                               'width' => 32,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%ship_date',
                               'width' => 30.5,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%carrier_id',
                               'width' => 46.5,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => '%%cust_contact',
                               'width' => 47,
                               'marginleft' => 1,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y',
                               'newline' => 'y');
@@ -194,7 +194,7 @@ $structure['title'][] = array('text' => '%%cust_contact',
 // sample barcode
 $structure['title'][] = array('text' => 'Barcode->',
                               'width' => 20,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'y_relative' => 1,
                               'border' => 'y');
@@ -207,7 +207,7 @@ $structure['title'][] = array('barcode' => '%%barcode',
 
 $structure['title'][] = array('text' => '<-Barcode',
                               'width' => 20,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y',
                               'newline' => 'y');
@@ -215,45 +215,48 @@ $structure['title'][] = array('text' => '<-Barcode',
 // start second heading line
 $structure['title'][] = array('text' => 'QUANTITY',
                               'width' => 20,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'y_relative' => 1,
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'ITEM',
                               'width' => 30,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'DESCRIPTION',
                               'width' => 75,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'PRICE',
                               'width' => 25,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'AMOUNT',
                               'width' => 25,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 $structure['title'][] = array('text' => 'VAT%',
                               'width' => 15,
-                              'height' => 8,
+                              'height' => 7,
                               'style' => 'textaligncenter',
                               'border' => 'y');
 
 // identify output for 1st additional zone
 $structure['multi1']['fields'][1][] = array('field' => 'quantity', 'width' => 20, 'align' => 'center');
 $structure['multi1']['fields'][1][] = array('field' => 'product_name', 'width' => 30);
+
 $structure['multi1']['fields'][1][] = array('field' => 'product_desc', 'width' => 75);
+//$structure['multi1']['fields'][1][] = array('field' => 'picture', 'width' => 75, 'notext' => 'y');
+
 $structure['multi1']['fields'][1][] = array('field' => 'product_price', 'width' => 25, 'align' => 'right');
 $structure['multi1']['fields'][1][] = array('field' => 'extended_price', 'width' => 25, 'align' => 'right');
 $structure['multi1']['fields'][1][] = array('field' => 'vat_percent', 'width' => 15, 'align' => 'center');
@@ -267,7 +270,12 @@ $structure['multi2']['fields'][1][] = array('label' => '', 'width' => 25);
 $structure['multi2']['fields'][1][] = array('label' => '', 'width' => 15);
 
 // identify output for 3rd additional zone (3 lines)
-$structure['multi3']['fields'][1][] = array('label' => 'VAT%', 'width' => 30, 'style' => 'total2', 'align' => 'center', 'y_minimum' => 220, 'y' => 220);
+$structure['multi3']['fields'][1][] = array('label' => 'VAT%',
+                                            'width' => 30,
+                                            'style' => 'total2',
+                                            'align' => 'center',
+                                            'y_minimum' => 220,
+                                            'y' => 220);
 $structure['multi3']['fields'][1][] = array('label' => 'VAT AMOUNT', 'width' => 32.5, 'style' => 'total2', 'align' => 'center');
 $structure['multi3']['fields'][1][] = array('label' => 'VAT%', 'width' => 30, 'style' => 'total2', 'align' => 'center');
 $structure['multi3']['fields'][1][] = array('label' => 'VAT AMOUNT', 'width' => 32.5, 'style' => 'total2', 'align' => 'center');
@@ -292,11 +300,28 @@ $structure['multi3']['fields'][3][] = array('field' => 'inv_total', 'width' => 3
 //$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222222', 'width' => 40, 'align' => 'center', 'height' => 8);
 //$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223', 'width' => 40, 'align' => 'center', 'height' => 8);
 
-$structure['multi4']['fields'][1][] = array('label' => 'Phone #', 'width' => 40, 'align' => 'center', 'height' => 8, 'y_relative' => 1);
-$structure['multi4']['fields'][1][] = array('barcode' => 'barcode', 'barcode_style' => 'barcode1', 'width' => 80, 'height' => 25);
-$structure['multi4']['fields'][1][] = array('label' => 'Fax #', 'width' => 40, 'align' => 'center', 'height' => 8);
-$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222222', 'width' => 40, 'align' => 'center', 'height' => 8);
-$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223', 'width' => 40, 'align' => 'center', 'height' => 8, 'marginleft' => 80);
+$structure['multi4']['fields'][1][] = array('label' => 'Phone #',
+                                            'width' => 40,
+                                            'align' => 'center',
+                                            'height' => 8,
+                                            'y_relative' => 1);
+$structure['multi4']['fields'][1][] = array('barcode' => 'barcode',
+                                            'barcode_style' => 'barcode1',
+                                            'width' => 80,
+                                            'height' => 25);
+$structure['multi4']['fields'][1][] = array('label' => 'Fax #',
+                                            'width' => 40,
+                                            'align' => 'center',
+                                            'height' => 8);
+$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222222',
+                                            'width' => 40,
+                                            'align' => 'center',
+                                            'height' => 8);
+$structure['multi4']['fields'][2][] = array('label' => '+44 (0) 1234 222223',
+                                            'width' => 40,
+                                            'align' => 'center',
+                                            'height' => 8,
+                                            'marginleft' => 80);
 
 // define contents of page footer
 //$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');

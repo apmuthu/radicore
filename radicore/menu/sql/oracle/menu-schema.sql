@@ -78,7 +78,8 @@ CREATE TABLE mnu_initial_value_role (
   role_id varchar2(16) NOT NULL,
   task_id varchar2(80) NOT NULL,
   field_id varchar2(40) NOT NULL,
-  initial_value varchar2(40),
+  initial_value varchar2(255),
+  is_noedit char(1) default 'N',
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -98,7 +99,8 @@ CREATE TABLE mnu_initial_value_user (
   user_id varchar2(16) NOT NULL,
   task_id varchar2(80) NOT NULL,
   field_id varchar2(40) NOT NULL,
-  initial_value varchar2(40),
+  initial_value varchar2(255),
+  is_noedit char(1) default 'N',
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -109,6 +111,23 @@ CREATE INDEX  mnu_initial_value_user_idx1 ON  mnu_initial_value_user (task_id);
 
 REVOKE ALL ON mnu_initial_value_user FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_initial_value_user TO PUBLIC;
+
+-- 
+-- Table structure for table mnu_language
+-- 
+
+CREATE TABLE mnu_language (
+  language_id varchar(5) default 'EN' NOT NULL,
+  language_name varchar(40) default 'English' NOT NULL,
+  created_date timestamp default '2000-01-01 00:00:00' NOT NULL,
+  created_user varchar(16) default 'UNKNOWN',
+  revised_date timestamp default NULL,
+  revised_user varchar(16) default NULL,
+  PRIMARY KEY  (language_id)
+);
+
+REVOKE ALL ON mnu_language FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_language TO PUBLIC;
 
 -- 
 -- Table structure for table mnu_menu
@@ -178,7 +197,8 @@ CREATE TABLE mnu_role (
   role_id varchar2(16) NOT NULL,
   role_desc varchar2(30) NOT NULL,
   start_task_id varchar2(80),
-  global_access char(1),
+  global_access char(1) default 'N',
+  is_external_auth_off char(1) default 'N',
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -261,12 +281,13 @@ CREATE TABLE mnu_task (
   initial_passthru varchar2(40),
   selection_fixed varchar2(255),
   selection_temp varchar2(255),
-  settings varchar2(40),
+  settings varchar2(255),
   order_by varchar2(255),
   keep_data char(1),
   log_sql_query char(1),
   screen_refresh number(5),
   use_https char(1),
+  max_execution_time number(5),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -288,6 +309,7 @@ CREATE TABLE mnu_task_field (
   field_id varchar2(40) NOT NULL,
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  field_desc varchar2(255),
   revised_date timestamp,
   revised_user varchar2(16),
   PRIMARY KEY  (task_id,field_id)
@@ -331,6 +353,7 @@ CREATE TABLE mnu_user (
   user_name varchar2(30) NOT NULL,
   user_password varchar2(40) NOT NULL,
   role_id varchar2(16) NOT NULL,
+  rdcaccount_id number(10),
   pswd_chg_date date,
   pswd_chg_time char(8),
   pswd_count number(6),
@@ -343,6 +366,9 @@ CREATE TABLE mnu_user (
   end_date date,
   ip_address varchar2(16),
   email_addr varchar2(50),
+  exernal_id varchar2(255),
+  is_external_auth_off char(1) default 'N',
+  party_id number(10),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,

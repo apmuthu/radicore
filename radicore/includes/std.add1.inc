@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -46,7 +46,7 @@ if (isset($script_vars['dbobject'])) {
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
     // get initial data for a new record
-    $where = $dbobject->initialise ($where);
+    $where = $dbobject->initialise ($where, $selection);
     if (empty($dbobject->errors)) {
         $fieldarray = $dbobject->getInitialData($where);
     } // if
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 } // if
 
 // get any extra data and merge with $fieldarray
-$fieldarray = $dbobject->getExtraData($fieldarray);
+$fieldarray = $dbobject->getExtraData($fieldarray, $where);
 if ($dbobject->errors) {
 	$errors[$dbobject->getClassName()] = $dbobject->errors;
 } // if
@@ -116,10 +116,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         } // if
                     } else {
                         // update was OK - return to previous screen
-                        $selection = array2where($fieldarray, $dbobject->getPkeyNames());
+                        $selection = array2where($fieldarray, $dbobject->getPkeyNamesAdjusted());
                         $prev_script = getPreviousScript();
-                        $prev_task   = $_SESSION[$prev_script]['task_id'];
-                        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+                        $prev_task   = getPreviousTask($prev_script);
+                        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
                         scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
                     } // if
                 } // if

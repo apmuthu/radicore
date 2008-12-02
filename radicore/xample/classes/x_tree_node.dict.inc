@@ -1,5 +1,5 @@
 <?php
-    // file created on October 24, 2006, 11:18 am
+    // file created on January 10, 2008, 5:34 pm
     
     // field specifications for table xample.x_tree_node
     $fieldspec['node_id']                   = array('type' => 'integer',
@@ -79,19 +79,29 @@
                                                     'type' => 'RES',
                                                     'fields' => array('node_id' => 'node_id_snr'));
     
+    $this->child_relations[]                = array('child' => 'x_tree_node_alt',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('node_id' => 'node_id'));
+    
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'x_tree_level',
                                                     'parent_field' => 'tree_level_seq, tree_level_desc',
+                                                    'alt_language_table' => 'x_tree_level_alt',
+                                                    'alt_language_cols' => 'tree_level_desc',
                                                     'fields' => array('tree_type_id' => 'tree_type_id',
                                                                       'tree_level_id' => 'tree_level_id'));
     
     $this->parent_relations[]               = array('parent' => 'x_tree_node',
                                                     'alias' => 'x_tree_node_snr',
                                                     'parent_field' => 'node_desc AS node_desc_snr',
+                                                    'alt_language_table' => 'x_tree_node_alt',
+                                                    'alt_language_cols' => 'node_desc',
                                                     'fields' => array('node_id_snr' => 'node_id'));
     
     $this->parent_relations[]               = array('parent' => 'x_tree_type',
                                                     'parent_field' => 'tree_type_desc',
+                                                    'alt_language_table' => 'x_tree_type_alt',
+                                                    'alt_language_cols' => 'tree_type_desc',
                                                     'fields' => array('tree_type_id' => 'tree_type_id'));
     
     // determines if database updates are recorded in an audit log 
@@ -99,6 +109,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'tree_level_id, node_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = 'x_tree_node_alt';
+    $this->alt_language_cols                = 'node_desc';
     
     // finished
 ?>

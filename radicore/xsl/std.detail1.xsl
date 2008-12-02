@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -35,101 +35,87 @@
   <xsl:call-template name="head" />
 
   <body>
-    <xsl:for-each select="/root/javascript/body[@*]">
-      <!-- add javascript events to the <body> tag -->
-      <xsl:copy-of select="@*" />
-    </xsl:for-each>
+    <xsl:attribute name="class">
+      <xsl:value-of select="/root/params/script_short" />
+    </xsl:attribute>
 
-  <xsl:if test="/root/header">
-    <div class="header">
-      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-head" />
 
-  <form method="post" action="{$script}">
-
-    <div>
-      <xsl:attribute name="class">
-        <xsl:choose>
-          <xsl:when test="$mode='logon'">logon</xsl:when>
-          <xsl:when test="$mode='recover'">recover</xsl:when>
-          <xsl:otherwise>universe</xsl:otherwise>
-        </xsl:choose>
-      </xsl:attribute>
-
-      <!-- create help button -->
-      <xsl:call-template name="help" />
-
-      <xsl:if test="not($mode='logon') and not($mode='recover')">
-        <!-- create menu buttons -->
-        <xsl:call-template name="menubar" />
-      </xsl:if>
-
-      <div class="body">
-
-        <h1><xsl:value-of select="$title"/></h1>
-
-        <!-- create navigation buttons -->
-        <xsl:call-template name="navbar_detail" />
-
-        <div class="main">
-
-          <!-- insert dummy table for use by optional javascript functions -->
-          <xsl:if test="/root/javascript/tbody">
+    <form method="post" action="{$script}">
+  
+      <div>
+        <xsl:attribute name="class">
+          <xsl:choose>
+            <xsl:when test="$mode='logon'">logon</xsl:when>
+            <xsl:when test="$mode='recover'">recover</xsl:when>
+            <xsl:otherwise>universe</xsl:otherwise>
+          </xsl:choose>
+        </xsl:attribute>
+  
+        <!-- create help button -->
+        <xsl:call-template name="help" />
+  
+        <xsl:if test="not($mode='logon') and not($mode='recover')">
+          <!-- create menu buttons -->
+          <xsl:call-template name="menubar" />
+        </xsl:if>
+  
+        <div class="body">
+  
+          <h1><xsl:value-of select="$title"/></h1>
+  
+          <!-- create navigation buttons -->
+          <xsl:call-template name="navbar_detail" />
+  
+          <div class="main">
+  
+            <!-- insert dummy table for use by optional javascript functions -->
+            <xsl:if test="/root/javascript/tbody">
+              <table>
+                <tbody>
+                  <xsl:for-each select="/root/javascript/tbody[@*]">
+                    <!-- add javascript events to the <tbody> tag -->
+                    <xsl:copy-of select="@*" />
+                  </xsl:for-each>
+                </tbody>
+              </table>
+            </xsl:if>
+  
+            <!-- table contains a row for each database field -->
             <table>
-              <tbody>
-                <xsl:for-each select="/root/javascript/tbody[@*]">
-                  <!-- add javascript events to the <tbody> tag -->
-                  <xsl:copy-of select="@*" />
-                </xsl:for-each>
-              </tbody>
+  
+              <!-- process the first row in the MAIN table of the XML file -->
+              <xsl:for-each select="/root/*[name()=$main][1]">
+  
+                <!-- display all the fields in the current record -->
+                <xsl:call-template name="display_vertical">
+                  <xsl:with-param name="zone" select="'main'"/>
+                  <xsl:with-param name="noedit" select="string(/root/params/main_noedit)"/>
+                </xsl:call-template>
+  
+              </xsl:for-each>
+  
             </table>
-          </xsl:if>
-
-          <!-- table contains a row for each database field -->
-          <table>
-
-            <!-- process the first row in the MAIN table of the XML file -->
-            <xsl:for-each select="/root/*[name()=$main][1]">
-
-              <!-- display all the fields in the current record -->
-              <xsl:call-template name="display_vertical">
-                <xsl:with-param name="zone" select="'main'"/>
-              </xsl:call-template>
-
-            </xsl:for-each>
-
-          </table>
+          </div>
+  
+          <!-- look for optional messages -->
+          <xsl:call-template name="message"/>
+  
+          <!-- insert the scrolling links for MAIN table -->
+          <xsl:call-template name="scrolling" >
+            <xsl:with-param name="object" select="$main"/>
+          </xsl:call-template>
+  
+          <!-- create standard action buttons -->
+          <xsl:call-template name="actbar"/>
+  
         </div>
-
-        <!-- look for optional messages -->
-        <xsl:call-template name="message"/>
-
-        <!-- insert the scrolling links for MAIN table -->
-        <xsl:call-template name="scrolling" >
-          <xsl:with-param name="object" select="$main"/>
-        </xsl:call-template>
-
-        <!-- create standard action buttons -->
-        <xsl:call-template name="actbar"/>
-
+  
       </div>
+  
+    </form>
 
-    </div>
-
-  </form>
-
-  <xsl:if test="/root/params/version">
-    <div class="version">
-      <xsl:value-of select="/root/params/version" />
-    </div>
-  </xsl:if>
-
-  <xsl:if test="/root/footer">
-    <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes" />
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-foot" />
 
   </body>
   </html>

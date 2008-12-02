@@ -49,40 +49,28 @@ class crs_class extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_post_getData ($rowdata, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-        if (count($rowdata) == 0) {
-            return $rowdata;
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // get count of students in this class
+            $this->sql_select .= ", (SELECT COUNT(student_id) FROM crs_student WHERE crs_student.class_id=crs_class.class_id ) AS student_count";
+            // get count of lessons for this class
+            $this->sql_select .= ", (SELECT COUNT(lesson_id) FROM crs_class_lesson WHERE crs_class_lesson.class_id=crs_class.class_id ) AS lesson_count";
         } // if
 
-        require_once 'classes/crs_student.class.inc';
-        $obj_student =& singleton::getInstance('crs_student');
+        return $where;
 
-        require_once 'classes/crs_class_lesson.class.inc';
-        $obj_class_lesson =& singleton::getInstance('crs_class_lesson');
-
-        foreach ($rowdata as $rownum => $row) {
-            if (isset($row['class_id'])) {
-                $class_id = $row['class_id'];
-
-                $count = $obj_student->getCount("class_id='$class_id'");
-                if ($count > 0) {
-                    $rowdata[$rownum]['student_count'] = $count;
-                } // if
-
-                $count = $obj_class_lesson->getCount("class_id='$class_id'");
-                if ($count > 0) {
-                     $rowdata[$rownum]['lesson_count'] = $count;
-                } // if
-            } // if
-        } // foreach
-
-        return $rowdata;
-
-    } // _cm_post_getData
+    } // _cm_pre_getData
 
 // ****************************************************************************
 } // end class

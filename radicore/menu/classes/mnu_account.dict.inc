@@ -1,5 +1,5 @@
 <?php
-    // file created on September 17, 2007, 9:56 am
+    // file created on January 30, 2008, 2:35 pm
     
     // field specifications for table menu.mnu_account
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
@@ -89,6 +89,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'rdcaccount_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output3.inc
@@ -18,8 +18,6 @@ require_once 'include.general.inc';
 // identify output mode
 $mode = 'pdf-detail';
 
-//ini_set('max_execution_time', 60);
-
 // load session variables
 initSession();
 
@@ -27,6 +25,8 @@ if (!empty($selection) AND !isset($return_from)) {
     // $selection takes precedence over $where
     $where     = $selection;
     $selection = null;
+} else {
+    $search = $where;
 } // if
 
 // create a class instance of the main database table
@@ -87,12 +87,12 @@ $errors   = $dbobject->errors;
 $prev_script = getPreviousScript($task_id);
 $prev_task   = getPreviousTask($prev_script);
 // tell previous script that we are returning
-$_SESSION[$prev_script][$prev_task]['return_from'] = 'pdf';
+$_SESSION['pages'][$prev_script][$prev_task]['return_from'] = 'pdf';
 
 if (!eregi('(D|I)', $destination) OR !empty($errors)) {
 	scriptPrevious($errors, $messages);
 } else {
-    unset($_SESSION[getSelf()]);  // delete current script from session array
+    unset($_SESSION['pages'][getSelf()]);  // delete current script from session array
 } // if
 
 exit;

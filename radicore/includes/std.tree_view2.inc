@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -141,7 +141,8 @@ $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
 $scrolling[$dbouter->getClassName()]['where']    = $where;
 
 // get primary key of row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 // look for optional instructions from previous script
 if (!empty($instruction)) {

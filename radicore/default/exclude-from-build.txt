@@ -3,6 +3,8 @@ add1.php
 add2.php
 add3.php
 add4.php
+add5.php
+batch.php
 del1.php
 del2.php
 del3.php
@@ -25,6 +27,7 @@ multi4.php
 output1.php
 output2.php
 output3.php
+output4.php
 popup1.php
 popup2.php
 popup3.php
@@ -44,6 +47,7 @@ alias.class.inc
 default.class.inc
 output2.report.inc
 output3.report.inc
+add5.screen.inc
 del4.screen.inc
 detail1.screen.inc
 erase1.screen.inc

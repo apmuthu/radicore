@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.fileupload1.inc
@@ -144,6 +144,9 @@ if (!empty($_FILES) and empty($errors)) {
     if (empty($errors)) {
         if (move_uploaded_file($_FILES['userfile']['tmp_name'], $uploadfile)) {
             $messages[] = getLanguageText('sys0126', $uploadfile); // "File uploaded into $uploadfile";
+            if (!eregi('^WIN', PHP_OS)) {
+            	$result = chmod($uploadfile, 0664);
+            } // if
             if (!empty($fileobject->resize_array)) {
                 foreach ($fileobject->resize_array as $key => $spec) {
                     $destination = $spec['directory'];
@@ -155,7 +158,7 @@ if (!empty($_FILES) and empty($errors)) {
         	// send selection back to the previous script
             $prev_script = getPreviousScript();
             $prev_task   = getPreviousTask($prev_script);
-            $_SESSION[$prev_script][$prev_task]['selection'] = "$uploadfile";
+            $_SESSION['pages'][$prev_script][$prev_task]['selection'] = "$uploadfile";
             scriptPrevious(null, $messages, 'choose');
         } else {
         	$errors[] = getLanguageText('sys0127'); // "Failed to copy file into specified folder";

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -368,8 +368,13 @@ class mnu_user extends Default_Table
         } // if
 
         if (!array_key_exists('language_code', $this->lookup_data)) {
-            // get array of language codes
-            $array = getLanguageArray('languages');
+            // get array of all supported language codes
+            $dbobject =& singleton::getInstance('mnu_language');
+            $array = $dbobject->getValRep('language_id');
+            if (!empty($_SESSION['default_language'])) {
+                // remove default language as an option in this screen
+            	unset($array[strtoupper($_SESSION['default_language'])]);
+            } // if
             $this->lookup_data['language_code'] = $array;
         } // if
 
@@ -431,6 +436,18 @@ class mnu_user extends Default_Table
             $pattern_id = getPatternId();
             if (eregi('upd1|enq1', $pattern_id)) {
             	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
+            } // if
+        } else {
+            if ($GLOBALS['mode'] == 'search') {
+                $where_array = where2array($where, false, false);
+                $prev_script = getPreviousScript();
+                $pattern_id  = getPatternId($prev_script);
+                if ($pattern_id == 'MULTI3') {
+                    if (isset($where_array['mnu_user.user_id'])) {
+                    	unset($where_array['mnu_user.user_id']);
+                    	$where = array2where($where_array);
+                    } // if
+                } // if
             } // if
         } // if
 

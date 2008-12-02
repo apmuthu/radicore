@@ -1,0 +1,233 @@
+<?php
+
+// Each text string may include parameter substitution - refer to SPRINTF() function
+
+$array['e0001'] = "(FR)(FR)Start Date cannot be later than End Date";
+$array['e0002'] = "(FR)End Date cannot be earlier than Start Date";
+$array['e0003'] = "(FR)This is the lowest level - no children allowed";
+$array['e0004'] = "(FR)Cannot be empty";
+$array['e0005'] = "(FR)Value too large (%1\$s)";
+$array['e0006'] = "(FR)Must be an integer";
+$array['e0007'] = "(FR)Must be greater than 0";
+$array['e0008'] = "(FR)Must not be greater than %1\$s";
+$array['e0009'] = "(FR)Value has already been used";
+
+$array['e0010'] = "(FR)Could not locate first PERS_ADDR record";
+$array['e0011'] = "(FR)Start Date cannot be later than End Date of first address";
+$array['e0012'] = "(FR)Could not locate last PERS_ADDR record";
+$array['e0013'] = "(FR)End Date cannot be earlier than Start Date of last address";
+$array['e0014'] = "(FR)Could not locate next PERS_ADDR record";
+$array['e0015'] = "(FR)End Date must be earlier than End Date of next entry";
+$array['e0016'] = "(FR)Could not locate previous PERS_ADDR record";
+$array['e0017'] = "(FR)Start Date must be later than Start Date of previous entry";
+$array['e0018'] = "(FR)Cannot change start date of first address.";
+$array['e0019'] = "(FR)Cannot change end date of last address.";
+
+$array['e0020'] = "(FR)Invalid format for a postcode.";
+$array['e0021'] = "(FR)Invalid format for a telephone number.";
+$array['e0022'] = "(FR)Invalid format for a fax number.";
+$array['e0023'] = "(FR)Could not locate PERSON record.";
+$array['e0024'] = "(FR)You have not selected an address for deletion.";
+$array['e0025'] = "(FR)Only the last address can be deleted.";
+$array['e0026'] = "(FR)";
+$array['e0027'] = "(FR)";
+$array['e0028'] = "(FR)";
+$array['e0029'] = "(FR)";
+
+$array['e0030'] = "(FR)";
+$array['e0031'] = "(FR)";
+$array['e0032'] = "(FR)";
+$array['e0033'] = "(FR)";
+$array['e0034'] = "(FR)";
+$array['e0035'] = "(FR)";
+$array['e0036'] = "(FR)";
+$array['e0037'] = "(FR)";
+$array['e0038'] = "(FR)";
+$array['e0039'] = "(FR)";
+
+// these entries are used by 'sample.validation.class.inc'
+$array['sample001'] = "(FR)Invalid format for a postcode.";
+$array['sample002'] = "(FR)Invalid format for a telephone number.";
+$array['sample003'] = "(FR)Invalid format for a fax number.";
+
+// menu details for subsystem XAMPLE
+$array['Auto-Increment']                = '(FR)Auto-Increment';
+$array['Option']                        = '(FR)Option';
+$array['Person']                        = '(FR)Person';
+$array['Person Type']                   = '(FR)Person Type';
+$array['Tree Type']                     = '(FR)Tree Type';
+
+// task details for subsystem XAMPLE
+$array['test_autoinsert(add)']                    = '(FR)Test Auto Insert';
+$array['x_option_alt(add2)']                      = '(FR)Add Option (Alternative Languages)';
+$array['x_option_alt(del1)']                      = '(FR)Delete Option (Alternative Languages)';
+$array['x_option_alt(enq1)']                      = '(FR)Enquire Option (Alternative Languages)';
+$array['x_option_alt(list2)']                     = '(FR)Maintain Alternative Languages for OPTION';
+$array['x_option_alt(search)']                    = '(FR)Search Option (Alternative Languages)';
+$array['x_option_alt(upd1)']                      = '(FR)Update Option (Alternative Languages)';
+$array['x_option(add)']                           = '(FR)Add Option';
+$array['x_option(del)']                           = '(FR)Delete Option';
+$array['x_option(enq)']                           = '(FR)Enquire Option';
+$array['x_option(list)']                          = '(FR)List Option';
+$array['x_option(list)a']                         = '(FR)List Option for a selected Person';
+$array['x_option(popup)']                         = '(FR)Choose Options';
+$array['x_option(search)']                        = '(FR)Search Option';
+$array['x_option(upd)']                           = '(FR)Update Option';
+$array['x_pers_opt_xref(add)']                    = '(FR)Add Person(s) to selected Option';
+$array['x_pers_opt_xref(add)a']                   = '(FR)Add Option(s) to selected Person';
+$array['x_pers_opt_xref(del)']                    = '(FR)Delete from Person/Option cross-reference';
+$array['x_pers_opt_xref(link)a']                  = '(FR)Link Option(s) to selected Person';
+$array['x_pers_opt_xref(link)b']                  = '(FR)Link Person(s) to selected Option';
+$array['x_pers_type_alt(add2)']                   = '(FR)Add Person Type (Alternative Languages)';
+$array['x_pers_type_alt(del1)']                   = '(FR)Delete Person Type (Alternative Languages)';
+$array['x_pers_type_alt(enq1)']                   = '(FR)Enquire Person Type (Alternative Languages)';
+$array['x_pers_type_alt(list2)']                  = '(FR)Maintain Alternative Languages for PERSON TYPE';
+$array['x_pers_type_alt(search)']                 = '(FR)Search Person Type (Alternative Languages)';
+$array['x_pers_type_alt(upd1)']                   = '(FR)Update Person Type (Alternative Languages)';
+$array['x_pers_type(add)']                        = '(FR)Add Person Type';
+$array['x_pers_type(del)']                        = '(FR)Delete Person Type';
+$array['x_pers_type(enq)']                        = '(FR)Enquire Person Type';
+$array['x_pers_type(list)']                       = '(FR)List Person Type';
+$array['x_pers_type(search)']                     = '(FR)Search Person Type';
+$array['x_pers_type(upd)']                        = '(FR)Update Person Type';
+$array['x_person_addr(add)']                      = '(FR)Add Person Address';
+$array['x_person_addr(del)']                      = '(FR)Delete Person Address';
+$array['x_person_addr(enq)']                      = '(FR)Enquire Person Address';
+$array['x_person_addr(list)']                     = '(FR)List Person Address';
+$array['x_person_addr(upd)']                      = '(FR)Update Person Address';
+$array['x_person(add)']                           = '(FR)Add Person';
+$array['x_person(csv)']                           = '(FR)Output Person data to CSV file';
+$array['x_person(del)']                           = '(FR)Delete Person';
+$array['x_person(del)2']                          = '(FR)Delete Person (without user dialog)';
+$array['x_person(enq)']                           = '(FR)Enquire Person';
+$array['x_person(filedownload)']                  = '(FR)Download Person Picture';
+$array['x_person(filepicker)']                    = '(FR)Choose Person Picture';
+$array['x_person(fileupload)']                    = '(FR)Upload Person Picture';
+$array['x_person(list)']                          = '(FR)List Person';
+$array['x_person(list)a']                         = '(FR)List Person for a selected Person Type';
+$array['x_person(list)b']                         = '(FR)List Person for a selected Option';
+$array['x_person(output4)']                       = '(FR)Output Person data to CSV file';
+$array['x_person(pdf)']                           = '(FR)Output person records to PDF file (List view)';
+$array['x_person(pdf)2']                          = '(FR)Output person records to PDF file (Detail view)';
+$array['x_person(pdf)3']                          = '(FR)Sample Invoice print';
+$array['x_person(popup)']                         = '(FR)Choose Person';
+$array['x_person(search)']                        = '(FR)Search Person';
+$array['x_person(upd)']                           = '(FR)Update Person';
+$array['x_person(upd)js']                         = '(FR)Update Person (with javascript)';
+$array['x_person(upd)js2']                        = '(FR)Update Person (with javascript)';
+$array['x_tree_level_alt(add2)']                  = '(FR)Add Tree Level (Alternative Languages)';
+$array['x_tree_level_alt(del1)']                  = '(FR)Delete Tree Level (Alternative Languages)';
+$array['x_tree_level_alt(enq1)']                  = '(FR)Enquire Tree Level (Alternative Languages)';
+$array['x_tree_level_alt(list2)']                 = '(FR)Maintain Alternative Languages for TREE_LEVEL';
+$array['x_tree_level_alt(search)']                = '(FR)Search Tree Level (Alternative Languages)';
+$array['x_tree_level_alt(upd1)']                  = '(FR)Update Tree Level (Alternative Languages)';
+$array['x_tree_level(add)']                       = '(FR)Add Tree Level';
+$array['x_tree_level(del)']                       = '(FR)Delete Tree Level';
+$array['x_tree_level(enq)']                       = '(FR)Enquire Tree Level';
+$array['x_tree_level(list)']                      = '(FR)List Tree Level';
+$array['x_tree_level(multi)']                     = '(FR)Update Level Sequence Number';
+$array['x_tree_level(search)']                    = '(FR)Search Tree Level';
+$array['x_tree_level(upd)']                       = '(FR)Update Tree Level';
+$array['x_tree_node_alt(add2)']                   = '(FR)Add Tree Node (Alternative Languages)';
+$array['x_tree_node_alt(del1)']                   = '(FR)Delete Tree Node (Alternative Languages)';
+$array['x_tree_node_alt(enq1)']                   = '(FR)Enquire Tree Node (Alternative Languages)';
+$array['x_tree_node_alt(list2)']                  = '(FR)Maintain Alternative Languages for TREE_NODE';
+$array['x_tree_node_alt(search)']                 = '(FR)Search Tree Node (Alternative Languages)';
+$array['x_tree_node_alt(upd1)']                   = '(FR)Update Tree Node (Alternative Languages)';
+$array['x_tree_node_jnr(add)']                    = '(FR)Link Child Nodes to a Parent Node';
+$array['x_tree_node_jnr(del)']                    = '(FR)Unlink Child Nodes from Parent Node';
+$array['x_tree_node_jnr(list)']                   = '(FR)List Child Nodes for a selected Parent';
+$array['x_tree_node_jnr(popup)']                  = '(FR)Choose Orphan Nodes';
+$array['x_tree_node_snr(list)']                   = '(FR)List Parentage for a selected Node';
+$array['x_tree_node(add)']                        = '(FR)Add Tree Node';
+$array['x_tree_node(del)']                        = '(FR)Delete Tree Node';
+$array['x_tree_node(enq)']                        = '(FR)Enquire Tree Node';
+$array['x_tree_node(list)']                       = '(FR)List Tree Node';
+$array['x_tree_node(search)']                     = '(FR)Search Tree Node';
+$array['x_tree_node(upd)']                        = '(FR)Update Tree Node';
+$array['x_tree_structure(list)']                  = '(FR)List Structure for a selected Tree Type';
+$array['x_tree_structure(popup)']                 = '(FR)Choose Node from a Tree Structure';
+$array['x_tree_type_alt(add2)']                   = '(FR)Add Tree Type (Alternative Languages)';
+$array['x_tree_type_alt(del1)']                   = '(FR)Delete Tree Type (Alternative Languages)';
+$array['x_tree_type_alt(enq1)']                   = '(FR)Enquire Tree Type (Alternative Languages)';
+$array['x_tree_type_alt(list2)']                  = '(FR)Maintain Alternative Languages for TREE_TYPE';
+$array['x_tree_type_alt(search)']                 = '(FR)Search Tree Type (Alternative Languages)';
+$array['x_tree_type_alt(upd1)']                   = '(FR)Update Tree Type (Alternative Languages)';
+$array['x_tree_type(add)']                        = '(FR)Add Tree Type';
+$array['x_tree_type(del)']                        = '(FR)Delete Tree Type';
+$array['x_tree_type(enq)']                        = '(FR)Enquire Tree Type';
+$array['x_tree_type(list)']                       = '(FR)List Tree Type';
+$array['x_tree_type(search)']                     = '(FR)Search Tree Type';
+$array['x_tree_type(upd)']                        = '(FR)Update Tree Type';
+
+// navigation button details for subsystem XAMPLE
+$array['Child Nodes']                   = '(FR)Child Nodes';
+$array['Link Children']                 = '(FR)Link Children';
+$array['List Addresses']                = '(FR)List Addresses';
+$array['List Options']                  = '(FR)List Options';
+$array['List Person']                   = '(FR)List Person';
+$array['Maintain Options']              = '(FR)Maintain Options';
+$array['Maintain Person']               = '(FR)Maintain Person';
+$array['Nodes']                         = '(FR)Nodes';
+$array['Parent Nodes']                  = '(FR)Parent Nodes';
+$array['Tree Level']                    = '(FR)Tree Level';
+$array['Tree Structure']                = '(FR)Tree Structure';
+$array['Unlink Child']                  = '(FR)Unlink Child';
+$array['Update Seq Number']             = '(FR)Update Seq Number';
+
+// field names for subsystem XXX
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+$array['']     = '(FR)';
+
+// field labels for subsystem XAMPLE
+$array['Address Line 1']    = '(FR)Address Line 1';
+$array['Address Line 2']    = '(FR)Address Line 2';
+$array['Address Line 3']    = '(FR)Address Line 3';
+$array['Address No']        = '(FR)Address No';
+$array['County']            = '(FR)County';
+$array['E-mail']            = '(FR)E-mail';
+$array['External Code']     = '(FR)External Code';
+$array['FAX No']            = '(FR)FAX No';
+$array['File Name']         = '(FR)File Name';
+$array['First Name']        = '(FR)First Name';
+$array['Image']             = '(FR)Image';
+$array['Initials']          = '(FR)Initials';
+$array['Last Address No']   = '(FR)Last Address No';
+$array['Last Name']         = '(FR)Last Name';
+$array['Level Description'] = '(FR)Level Description';
+$array['Level']             = '(FR)Level';
+$array['Nat. Ins. No.']     = '(FR)Nat. Ins. No.';
+$array['Node Description']  = '(FR)Node Description';
+$array['Node Id']           = '(FR)Node Id';
+$array['Node']              = '(FR)Node';
+$array['Option']            = '(FR)Option';
+$array['Organisation']      = '(FR)Organisation';
+$array['Parent Node']       = '(FR)Parent Node';
+$array['Parent']            = '(FR)Parent';
+$array['Person Type']       = '(FR)Person Type';
+$array['Person']            = '(FR)Person';
+$array['Picture']           = '(FR)Picture';
+$array['Postcode']          = '(FR)Postcode';
+$array['Seq']               = '(FR)Seq';
+$array['Star Sign']         = '(FR)Star Sign';
+$array['Telephone No']      = '(FR)Telephone No';
+$array['Town']              = '(FR)Town';
+$array['Tree Level Id']     = '(FR)Tree Level Id';
+$array['Tree Level Seq']    = '(FR)Tree Level Seq';
+$array['Tree Level']        = '(FR)Tree Level';
+$array['Tree Type']         = '(FR)Tree Type';
+$array['Value 1']           = '(FR)Value 1';
+$array['Value 2']           = '(FR)Value 2';
+$array['#']                 = '(FR)#';
+
+return $array;
+
+?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update5.inc
@@ -49,7 +49,7 @@ if ($dbobject->errors) {
 
 // get data created in initialise()
 $fieldarray = $dbobject->getFieldArray();
-if (count($fieldarray) < 1) {
+if (empty($fieldarray)) {
     $batch_errors = scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
     return $batch_errors;
 } // if

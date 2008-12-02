@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -34,71 +34,56 @@
   <xsl:call-template name="head" />
 
   <body>
-    <xsl:for-each select="/root/javascript/body[@*]">
-      <!-- add javascript events to the <body> tag -->
-      <xsl:copy-of select="@*" />
-    </xsl:for-each>
+    <xsl:attribute name="class">
+      <xsl:value-of select="/root/params/script_short" />
+    </xsl:attribute>
+    
+    <xsl:call-template name="body-head" />
 
-  <xsl:if test="/root/header">
-    <div class="header">
-      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
-
-  <form enctype="multipart/form-data" method="post" action="{$script}">
-
-    <div class="universe">
-
-      <!-- create help button -->
-      <xsl:call-template name="help" />
-
-      <!-- create menu buttons -->
-      <xsl:call-template name="menubar" />
-
-      <div class="body">
-
-        <h1><xsl:value-of select="$title"/></h1>
-
-        <!-- create navigation buttons -->
-        <xsl:call-template name="navbar_detail" />
-
-        <div class="main">
-          <div class="uploadbg">
-            <div class="upload">
-              <!-- create standard action buttons -->
-              <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
-
-              <p><xsl:value-of select="/root/file/msg1" /> <input name="userfile" type="file" /></p>
-              <p><xsl:value-of select="/root/file/msg2" /></p>
-              <p><xsl:value-of select="/root/file/msg3" /></p>
-
+    <form enctype="multipart/form-data" method="post" action="{$script}">
+  
+      <div class="universe">
+  
+        <!-- create help button -->
+        <xsl:call-template name="help" />
+  
+        <!-- create menu buttons -->
+        <xsl:call-template name="menubar" />
+  
+        <div class="body">
+  
+          <h1><xsl:value-of select="$title"/></h1>
+  
+          <!-- create navigation buttons -->
+          <xsl:call-template name="navbar_detail" />
+  
+          <div class="main">
+            <div class="uploadbg">
+              <div class="upload">
+                <!-- create standard action buttons -->
+                <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
+  
+                <p><xsl:value-of select="/root/file/msg1" /> <input name="userfile" type="file" /></p>
+                <p><xsl:value-of select="/root/file/msg2" /></p>
+                <p><xsl:value-of select="/root/file/msg3" /></p>
+  
+              </div>
             </div>
           </div>
+  
+          <!-- look for optional messages -->
+          <xsl:call-template name="message"/>
+  
+          <!-- create standard action buttons -->
+          <xsl:call-template name="actbar"/>
+  
         </div>
-
-        <!-- look for optional messages -->
-        <xsl:call-template name="message"/>
-
-        <!-- create standard action buttons -->
-        <xsl:call-template name="actbar"/>
-
+  
       </div>
+  
+    </form>
 
-    </div>
-
-  </form>
-
-  <xsl:if test="/root/params/version">
-    <div class="version">
-      <xsl:value-of select="/root/params/version" />
-    </div>
-  </xsl:if>
-
-  <xsl:if test="/root/footer">
-    <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-foot" />
 
   </body>
   </html>

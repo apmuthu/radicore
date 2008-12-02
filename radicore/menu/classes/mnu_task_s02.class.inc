@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_task.class.inc';
 class mnu_task_s02 extends mnu_task
@@ -16,12 +16,13 @@ class mnu_task_s02 extends mnu_task
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         $this->fieldspec['task_desc']['noedit'] = 'y';
         $this->fieldspec['new_task_id']     = array('type' => 'string',
                                                     'size' => $this->fieldspec['task_id']['size'],
                                                     'required' => 'y',
-                                                    'lowercase' => 'y');
+                                                    'lowercase' => 'y',
+                                                    'nondb' => 'y');
+        // ensure this field appears in the HTML output
         $fieldarray['new_task_id']          = null;
 
         // this button causes confusion, so remove it
@@ -55,7 +56,10 @@ class mnu_task_s02 extends mnu_task
                 unset($childobj);
                 // instantiate an object for this table
                 if (array_key_exists('subsys_dir', $reldata)) {
-                    $dir = "../" .$reldata['subsys_dir'] ."/";
+                    // get path to current subsystem directory
+                    $dir = dirname($this->dirname);
+                    // switch to other subsystem directory
+                    $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
                 } else {
                     $dir = NULL;
                 } // if
@@ -73,7 +77,7 @@ class mnu_task_s02 extends mnu_task
 
         // now update the parent MNU_TASK record
         unset($childobj);
-        require_once 'classes/mnu_task.class.inc';
+        //require_once 'classes/mnu_task.class.inc';
         $childobj =& singleton::getInstance('mnu_task');
         $msg[] = $childobj->updateSelection("task_id='$old_task_id'", "task_id='$new_task_id'");
         unset($childobj);

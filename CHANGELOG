@@ -1,5 +1,151 @@
 ﻿RADICORE for PHP - news
 
+2008-12-02, version 1.42.0
+- made it possible to connect to a remote MySQL database using SSL encryption. This is only possible when using the 'improved' mysqli extension for version 4.1 and above.
+- fixed bug in 'std.pdf.class.inc' in order to allow an image to appear in the 'multi*' area.
+- modified 'insertOrUpdate() method within 'std.table.class.inc' so that the input array is checked to see if the full primary key has been specified. If it has not then a lookup cannot be performed and the record will be inserted. This is to deal with auto_increment columns.
+- modified the 'getColumnNames()' method within 'std.table.class.inc' so that it calls custom method '_cm_getColumNames()'. This will allow both the list of column names (defined within $this->fieldpsec) and their initial values to be customised.
+- fixed bug in 'logon.class.inc' which caused the wrong error message to be displayed if the login is via email address and the address does not exist in the MNU_USER table.
+- updated the processing of radio groups to allow individual entries to be given their own CSS style. See FAQ117.
+- updated 'std.batch.inc' so that it will use the INCLUDE_PATH from the local {.}htaccess{.txt} file instead of the 'batch.ini' file. You will need to copy the updated version from the 'radicore/default' directory.
+- modified list of patterns to include 'BATCH' for tasks which are to be run in the background. You will need to run script 'radicore\menu\sql\menu.menu_export(2008-11-21).sql' in order to update your copy of the MENU database.
+- updated directory structure to include 'radicore/logs' for the output from background tasks. You will need to create this directory and change its permissions so that it can be written to by the application.
+- created task 'batch_log(filepicker)' to read the contents of the 'radicore/logs' directory. Clicking on a file name will download/display its contents.
+- updated 'std.filepicker1.inc' to include a call to the 'filePickerSelect()' method after a selection has been made in case some further processing is necessary.
+- updated 'std.filedownload1.inc' to include a call to the 'initialise()' method to perform any processing before the 'initialiseFileDownload()' method is called.
+- added task 'file(search)' to be used as the search function for the 'filepicker' pattern.
+- added task 'file(delete)' as a navigation button in 'batch_log(filepicker)', to allow selected entries to be deleted.
+- updated 'std.filepicker1.inc' to include optional 'size' and 'date' column, and to allow sortng on these columns.
+
+
+2008-11-01, version 1.41.0
+- fixed bug in 'initSession()' function within file 'include.session.inc' which lost the value of a task's pattern_id in the session data.
+- updated 'std.add2.inc' so that if 'getExtraData()' produces an error it will return immediately to the previous task.
+- fixed bug in 'std.validation.class.inc' which failed to pick up a custom validation class in the subsystem's 'classes' directory.
+- fixed bug in 'std.datevalidation.class.inc' which failed to deal correctly with dates which were input in the format 'dd/mm/yyyy'.
+- added option on Menu Control Data to allow login via email address instead of user_id.
+- upgraded TCPDF library to version 4.0.029 (after overcoming some new bugs in TCPDF which the author won't recognise as bugs).
+- modified the pagination and scrolling functionality to allow 'google style' which shows (Page 1 2 3 4 5 6 7 8 9 10 of 99) instead of (Page 5 of 99). My thanks to Ian Katz for contributing this code.
+- modified the 'help' template inside 'std.buttons.xsl' so that all help screens use the same session name as the application screens. This will ensure that the user's language will be taken into account when finding text to be displayed.
+- modified 'std.pdf.class.inc' to accept 'notext' => 'y' on images so that the image will be displayed on its own without the file name.
+- fixed bug in 'radicore/default/screens/en/output4.screen.inc' which had 'party' as the table name instead of '#tablename#'.
+
+2008-10-01, version 1.40.0
+- fixed bug in 'qualifySelect()' of 'std.table.class.inc' so that it will not try to qualify any element in the select list which starts with 'function(SELECT ...)' as well as '(SELECT ...)'.
+- added 'sqlSelectDefault()' method to 'std.table.class.inc' so that the components of an object's sql SELECT statement can be set to their default values before being modified.
+- modified 'std.datevalidation.class.inc' and 'config.inc' to allow dates to be displayed in the format 'dd.mm.yyyy' and 'dd/mm/yy'.
+- modified 'Generate SQL' function in AUDIT system to replace chr(10) with '\n' and chr(13) with '\r' in field values.
+- modified the 'filepicker' pattern so that if a 'fileupload' task is activated then the uploaded file will automatically be passed back to the user as the selected file without any further action.
+- modified 'std.help.inc' so that it includes both the taskid and description in the screen title.
+- added the ability to authenticate the logon screen via an LDAP server, in addition to the existing RADIUS server.
+- updated MNU_TASK table to include a new column to hold max_execution_time, to allow a script to run for longer than the limit defined in the PHP.INI file. You will need to run script radicore\menu\sql\mysql\alter_table(2008-09-19).sql to update the structure of the MENU database.
+- made it possible to force a page break in a PDF report with the code "$this->pdf->AddPage();"
+- fixed bug in 'getForeignData()' which dealt incorrectly with a field list containing multiple fields, some of which were aliased.
+
+2008-09-01, version 1.39.0
+- modified 'std.table.class.inc' so that if the 'getData()' or 'getData_serial()' methods need to check that the primary key has been supplied they will also accept a candidate key.
+- fixed bug in 'dml.*.class.inc' which caused the value zero in an integer field to be treated as empty, thus causing an error if a field had the 'required' property set. The test has been changed from 'if (empty($value)) to 'if (strlen($value) > 0)'.
+- modified 'std.table.class.inc' so that the 'initialise()' method saves the contents of $where in $this->where. This will allow $where in an ADD1 pattern to be passed to a popup form.
+- fixed bug in 'isPkeyComplete()' where the primary key was not supplied but because the table had additional unique keys no error was raised even though none of these keys was supplied.
+- modified 'std.table.class.inc' so that the '_cm_initialiseFilePicker()' method accepts an argument which is the $where string converted into an associative array.
+
+2008-08-01, version 1.38.0
+- modified 'setColumnAttributes()' and 'std.data_field.xsl' so that the 'nodisplay' attribute can be set for fields which occur in multi-field rows for a single occurrence (eg: the 'outer' entity in a 'list2' pattern). 
+- modified 'std.add1.inc' so that $selection will be made available as a second argument for the '_cm_initialise()' method if it is required.
+- modified 'icon' template within 'std.data_field.xsl' so that width and height are only output when they are non-zero.
+- fixed bug in 'dict_table_s02.class.inc' which failed to deal correctly with multiple candidate keys.
+- modified the 'actbar' template within 'std.buttons.xsl' so that the script time is not included in the HTML output if it is not included in the XML document. This can be achieved by adding the line "$GLOBALS['no_script_time'] = true;" in the subsystem's 'include.subsystem.inc' file.
+- upgraded TCPDF library to version 4.0.008.
+- modified popup processing so that _cm_popupCall() can set $this->errors and change the value in $popupname.
+
+2008-07-01, version 1.37.0
+- modified template 'scripting_events' within 'std.data_field.xsl' to include the 'id' attribute.
+- modified 'validateField()' method within 'std.validation.class.inc' so that if a field's size (obtained using strlen()) is greater than $fieldspec['size'] then it will test for multi-byte characters using mb_strlen() before failing.
+- fixed bug in 'audit_tbl_s02.class.inc' which incorrectly determined that a database change where all the previous values were NULL was an insert. However, if the list of field names does not include all the primary key fields it is in fact an update.
+- fixed bug in 'filterWhere1Where2()' of 'include.general.inc' which caused a WHERE clause of 'EXISTS (SELECT ...)' to be accidentally filtered out in some circumstances.
+- fixed bug in 'splitNameOperatorValue()' which failed to recognise a 'MATCH(...) AGAINST(...)' condition which contained the 'IN BOOLEAN MODE' option.
+- modified 'std.fileupload1.inc' so that it sets the file permissions to 664 after it has been uploaded instead of relying on the default permissions which are sometimes random and unpredictable.
+- modified 'table_export.php' in DICT subsystem to set the file permissions to 664 after creating the '*.class.inc' and '*.dict.inc' files.
+- added function 'rangeFromTo()' which combines '<whatever>_from' and '<whatever>_to' values into the '<whatever>' field as "BETWEEN '<whatever>_from' AND '<whatever>_to'".
+- added function 'unqualifyFieldArray()' which removes table names from field names in the input array.
+- fixed bug in 'extractTableNames()' of 'include.general.inc' which failed to deal correctly with the first tablename in the FROM string being prefixed with a database name.
+- modified 'filterWhere1Where2()' so that if field name exists in both $where1 and $where2 is not removed from $where2 unless it has the same operator.
+- fixed bug in 'initial_value_user_s01.class.inc' and 'initial_value_role_s01.class.inc' which failed to deal with empty input.
+- modified 'mnu_task' screen to make 'initial_passthru' a popup instead of a text box.
+- fixed bug in 'dict_related_column_multi2.php' which allowed the alias names for the two tables to be more than one word.
+- fixed bug in 'std.data_field.xsl' which prevented multiple selections from appearing in the $_POST array.
+- modified 'std.multi3.inc' so that it now has a 'submit+next' button.
+- added new transaction pattern 'OUTPUT4' which will allow columns to be selected before they are output to the CSV file.
+- modified 'std.search1.inc' so that if a value is input with an operator such as '<', '<=', '>' and '>=' then the operator will be preserved when returning to the search screen.
+- updated the MENU database so that the 'initial_value' field on the 'mnu_initial_value_role' and 'mnu_initial_value_user' tables is increased from 40 to 255 characters. You will need to run script radicore\menu\sql\mysql\alter_table(2008-06-24).sql in order to implement this change.
+- modified 'dict.column.class.inc' so that when a column is changed from CHAR(1) to BOOLEAN then 'boolean_true' is set to 'Y' and 'boolean_false' is set to 'N'. These are initial values which may be changed later.
+
+2008-05-01, version 1.36.0
+- switched license from GPL (GNU General Public License) to AGPL (GNU Affero General Public License) to include 'remote network interaction' in the definition of 'sharing' (ie: non-private usage).
+- modified 'std.data_field.xsl' so that the select box will not be shown for any row that has the 'noselect' attribute set. This can be achieved by adding the pseudo-column 'rdc_rowspecs' with the value "array('noselect' => 'y')" to the row in question.
+- modified 'std.table.class.inc' so that it deals with 'allow_empty_where=true' passed down in the 'settings' field from the 'Update Task' screen.
+- modified 'std.table.class.inc' so that if an object's 'allow_empty_where' property is set it will also ignore the 'checkPrimaryKey' property.
+- modified 'logon.class.inc' so that if radius authentication is turned on the user is not prompted to change his menu password.
+- modified 'std.list1.inc' so that 'getExtraData()' method is called after 'getData()' instead of 'initialise()'.
+- fixed bug in 'validateSortItem()' which failed to remove trailing 'asc' or 'desc' from field name before testing it against the field list of the current object.
+- fixed bug in 'getFieldAlias3()' function within 'include.general.inc' so that if an expression contains more than one '.. AS ..' it deals with the last one, not the first.
+- modified 'std.data_field.xsl' so that when processing a MULTI2, MULTI3 or MULTI4 pattern it is possible to set the 'outer' or 'inner' zones to 'noedit' with the statements "$this-xsl_params['outer_noedit'] = 'y'" and "$this-xsl_params['inner_noedit'] = 'y'". This can be reversed using the "unset()" statement.
+- added '_cm_getWhere()' method to 'std.table.class.inc' to allow $where string to be modified before it is passed to the next task.
+- modified 'std.update1.inc' so that if $dbobject->errors is set after the call to $dbobject->getData() then all the fields in the data area are set to 'noedit'.
+- modified 'std.search1.inc' to allow date fields to be preceded by operators such as '<', '<=', '>' and '>='.
+- the file 'std.multi3.xsl' is now redundant as it is a duplicate of 'std.list3.xsl'.
+
+2008-04-01, version 1.35.0
+- fixed bug in the 'validateField()' method inside 'std.validation.class.inc' which translated a field name using the contents of the 'language_text.inc' file, then used the translated name as the key to the $errors array insead of using it in the body of the message.
+- fixed bug in the 'qualifySelect()' function within 'std.general.inc' so that fields within a 'function(...)' statement are also qualified, but fields within a subselect are not.
+- modified the 'filterWhere()' method inside 'include.general.inc' so that all field names are converted to lowercase before being compared with the contents of the $fieldspec array.
+- modified the 'getInitialData()' method inside 'std.table.class.inc' so that if a field is currently empty but it has a default value defined, then the default value will be used as the field's initial value (unless it has a datatype of date and/or time).
+- modified the '_sqlProcessJoin()' method inside 'std.table.class.inc' so that if a field being added to the select string has an alias name which is already being used, that alias name will be appended with an 'x' to make it unique.
+- modified LIST2, LIST3, MULTI2, MULTI3 and MULTI4 controllers so that the $where string passed to the 'initialise()' method of the inner objects is the original string, not the one filtered by the outer object. 
+- fixed bug in ADD2 pattern which caused $selection to be used instead of $where. However, $selection will be made available as a second argument for the '_cm_initialise()' method if it is required.
+- modified XSL files so that each <body> element in the HTML output will include a CSS class name which is based on the script name (but without the '.php' extension, and with parentheses changed to underscores). This will allow custom CSS styles to be set for individual scripts.
+- added pattern ADD5 which will allow multiple database rows to be created from a single input screen. You will need to import script radicore\menu\sql\menu.menu_export(2008-03-28).sql to update your copy of the MENU database.
+- added '_cm_setParentData()' method to 'std.table.class.inc' to allow changes made in a parent object to be made available to the child object in the ADD5 pattern.
+- added functions 'setColumnAttributes()' and 'unsetColumnAttributes()' to 'include.general.inc' to allow columns in a horizontal display to be hidden or unhidden.
+- added functions 'getColumnHeadings()' and 'setColumnHeadings()' to 'include.general.inc' to allow column headings in a horizontal display to be modified.
+- added the ability to specify that all the fields in a particular row in a multi-row update area, such as in a MULTI2 pattern, should be set to 'noedit'. This can be achieved by adding the pseudo-column 'rdc_rowspecs' with the value "array('noedit' => 'y')" to the row in question.
+
+2008-03-01, version 1.34.0
+- made it possible to include '../menu/logon.php' from another script in order to allow additional logon screens for different purposes. Each logon can have its own footer.txt and CSS entries.
+- modified LIST2, LIST3, MULTI2, MULTI3 and MULTI4 controllers so that the contents of 'Selection (fixed)' from the MNU_TASK table is made available in $this->sql_where for all middle and inner entities. This is because the value may get filtered out when the $where string is extracted from the previous entity.
+- modified the '_sqlAssembleWhere()' method in 'std.table.class.inc' so that if the WHERE string contains a reference to a name which appears as an alias name in the select list (i.e: 'name AS alias') it will be moved to the HAVING string, thus avoiding an SQL error. This makes the solution in FAQ 85 obsolete.
+- modified the mechanism by which primary keys are extracted from one object for passing to another object, either within the same task or a different (child) task. By default only the fields which are part of the primary key will be included in the $where string, but this list can be altered at runtime within the _cm_getPkeyNames() method.
+- modified the mechanism by which the $where string which is passed down from the previous object, either within the same task or a different (parent) task, is filtered during the initialise() method. By default any field which does not exist in the $fieldspec array will be filtered out, but additional fields can be added to the list within the _cm_filterWhere() method.
+- fixed bug in dict_database(import) which failed to deal correctly with a non-null value in $GLOBALS['dbprefix'].
+- added the ability to change the hyperlinks above the menu bar from text to images. Refer to http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq99 for details.
+- added 'Search' navigation buttons to the various 'mnu_initial_value_role/user' tasks. Please run script radicore\menu\sql\menu.menu_export(2008-02-07).sql to import these changes.
+- modified structure of USER and TASK_FIELD tables in the MENU database. You will need to run script radicore\menu\sql\mysql\alter_table(2008-02-27).sql to modify your existing database.
+
+2008-02-01, version 1.33.0
+- modified MENU database to include a new LANGUAGE table which will help when providing application data in multiple languages. This is documented in http://www.tonymarston.net/php-mysql/internationalisation2.html. You will need to run the following scripts:
+-- radicore\menu\sql\mysql\alter_table(2008-01-03).sql to modify the database structure.
+-- radicore\menu\sql\menu.menu_export(2008-01-03).sql to modify the contents of the MENU database.
+- modified DICT database to add new columns to DICT_TABLE table. You will need to run the following script:
+-- radicore\dict\sql\mysql\alter_table(2008-01-04).sql
+- updated 'dict_table_s02.class.inc' so that the dictionary export facility will include alternative language details in the '<table>.dict.inc' file.
+- updated 'std.table.class.inc' to include 'getLanguageEntries()' which ensures that each alternative language table contains a default entry for each supported language.
+- updated 'std.list2.inc' so that when the inner table is the same as the alternative language table of the outer table it will call 'getLanguageEntries()' automatically.
+- updated 'std.table.class.inc' so that when 'insertRecord()' is used on a table which has an alternative language table it will automatically call 'getLanguageEntries()' to create default entries on the alternative language table for all the supported languages.
+- modified the XAMPLE subsystem to demonstrate how the alternative language feature works. You will need to install that subsystem before you can view it.
+- modified tables 'initial_value_role' and 'initial_value_user' in the MENU database to include a new 'is_noedit' column. If this is set to TRUE then the field will be set to NOEDIT so that the value cannot be changed.
+- modified 'std.table.class.inc' so that the '_getDBMSengine()' method will allow connections to multiple database servers, as documented in http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq92.
+- modified the logon process to include the option of additional authorisation via a RADIUS server. Please refer to http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq93 for details.
+- modified PDF List View so that additional lines can be printed both before and after the current database record, as documented in http://www.tonymarston.net/php-mysql/output-to-pdf.html#example.list.view.line.breaks
+- modified the logon screen to accept user_id and user_password via the URL, thus removing the need for dialog with the user.
+
+2008-01-01, version 1.32.0
+- modified 'std.data_field.xsl' to allow the option lists for dropdowns and radio groups to have a separate set of values for each row in a MULTI2 or MULTI3 form.
+- modified 'std.data_field.xsl' so that if a text field contains a non-breaking space it will be output as a non-breaking space in the HTML output. This is because when '&nbsp;' is added to the XML document it becomes '&amp;nbsp;' which causes the HTML output to display '&nbsp;' instead of ' '. The string '&amp;nbsp;' is therefore replaced with '&#160' during the XSL transformation.
+- fixed bug in 'extractQualifiedFieldNames()' - used in 'qualifyOrderby()' - which failed to deal with 'CASE ... END AS alias' correctly.
+- fixed bug in 'resizeImage()' function to use forward slashes instead of back slashes in path names so that it will work on *nix systems.
+- fixed bug in task 'wk_workflow(validate)' which caused the SQL query to fail by qualifying a column in the ORDER BY clause with the wrong table name. 
+- fixed bug in 'include.sesson.inc', 'include.xml.php4.inc' and 'include.xml.php5.inc' which failed to deal with "$_SERVER['HTTPS']=off" when using IIS.
+
 2007-12-02, version 1.31.0
 - modified 'audit_tbl_s01.class.inc' to prevent it from using addslashes() twice with WHERE clauses containing 'name LIKE 'foobar%' as this is now handled differently within each DBMS object.
 - fixed bug in 'dml.pgsql.class.inc' which failed to deal correctly with an empty field of type 'varray' when inserting or updating.
@@ -98,7 +244,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - changed the Output2 and Output3 patterns so that the call to _cm_post_output() is surrounded by startTransaction() and commit()/rollback() to allow a database update to take place after the PDF document has been produced.
 - created task 'audit_tbl(upd4)' and added it as a navigation button on 'audit_dtl(list)2' in order to generate an SQL query which will reproduce the database change that is currently being displayed. The query string will be appended to a file called 'audit_export.sql' which will be written to the 'radicore\audit\sql' directory. This can be useful when changes made in one database need to be replicated in another database. The details of this new task can be imported into your current MENU database by running script 'radicore\audit\sql\audit.menu_export(2007-06-23).sql' which was created using this facility.
 
-
 2007-05-01, version 1.24.0
 - changed 'std.session.inc' so that the argument 'csxslt=on' in the URL (which turns on client-side XSL transformations) will propagate itself via a cookie instead of being repeated in all subsequent URLs. This is because a session abort will cause this setting in the URL to be lost, which means that the session would restart without that setting in effect.
 - amended 'std.table.class.inc' so that the _dml_ReadBeforeUpdate() method will use an additional argument called $this->reuse_previous_select. This is boolean and set to FALSE by default, but can be set to TRUE within the _cm_pre_updateRecord() method. This will allow _dml_ReadBeforeUpdate() to reuse the previous SELECT statement instead of the default 'SELECT * FROM $this->table WHERE pkey=X' in those cases where a field obtained from another table via a JOIN is retrieved and made available for update. Although this other field cannot be updated in the standard updateRecord() mechanism, a change in values can be detected in the _cm_post_updateRecord() method where code can be inserted to update the other table.
@@ -109,7 +254,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - added new pattern 'Update 5' which will take an collection of records and perform either an INSERT or an UPDATE on each record depending on whether it currently exists or not.
 - added custom method '_cm_getPkeyNames()' to 'std.table.class.inc' so that the list of primary key fields can be adjusted before the selection string is constructed and passed to a child form when a navigation button is pressed. 
 - added custom method '_cm_validateSearch() to 'std.table.class.inc' which will be called before any input to a search screen is passed back to the previous form, thus allowing any custom validation (or other processing) to be performed.
-
 
 2007-03-30, version 1.23.0
 - fixed bug in 'std.list2.inc' and 'std.list3.inc' which failed to deal correctly with a selection returned from a popup form.
@@ -130,7 +274,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - modified all XSL stylesheets to improve performance using ideas identified in http://www.radicore.org/forum/index.php?t=msg&th=95&goto=701#msg_701
 - updated 'std.validation.class.inc' so that it will retrieve translated field (column) names from the 'language_text.inc' file when constructing error messages. The task 'mnu_subsystem(export)' will include a list of column names when building file '<subsystem>.menu_export.txt'. This is in response to the request at http://www.radicore.org/forum/index.php?t=msg&th=203
 
-
 2007-03-03, version 1.22.0
 - fixed bug in 'dict_table_generate(b)' which failed to create a valid (sub)class file for a table alias. See http://www.radicore.org/forum/index.php?t=msg&th=179 for details.
 - fixed bug in 'std.list2.inc' which combined values from $selection and $where, causing the resulting SELECT statement to find no records. See http://www.radicore.org/forum/index.php?t=msg&th=182 for details.
@@ -146,7 +289,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - updated 'dict_table_generate(b)' so that for the LIST2 pattern there is the option of selecting the outer entity from a different database to that of the inner entity.
 - updated 'std.table.class.inc' so that if a search screen contains the 'curr_or_hist' field without a value it will have an initial value of 'C' (current).
 
-
 2007-02-05, version 1.21.0
 - fixed bug in 'include.session.inc' when using the COPY button on forms which contain dates. These have to be converted from 'dd Mmm YYYY' to 'yyyy-mm-dd' so that when the PASTE button is used they can be converted back to 'dd Mmm yyyy' correctly.
 - fixed bug in 'std.link1.inc' which caused popups in 'inner' area not to function properly.
@@ -158,7 +300,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - updated 'include.general.inc' to automatically add 'menu', 'audit' and 'workflow' directories to include_path, thus removing the need to have them specified in the htaccess file.
 - updated 'config.inc' to include $GLOBALS['use_https'] which, if set to TRUE, will cause all pages to use the secure HTTPS protocol instead of the default HTTP.
 - updated 'std.table.class.inc' so that it can deal with subqueries of type 'EXISTS (SELECT...)' and 'NOT EXISTS (SELECT...)' in $this->sql_search. 
-
 
 2007-01-15, version 1.20.0
 - updated 'dml.*.class.inc' to avoid 'object to string' conversion errors.
@@ -242,7 +383,6 @@ The 'mnu_initial_value_role' table will only be read if nothing is found on 'mnu
 - added function getPatternId() to file 'include.session.inc' to return the pattern_id of the selected script.
 - added task 'mnu_subsystem(build)' which will build the directory structure for a new subsystem. You will need to import radicore/menu/sql/menu.menu_export.sql to see this task.
 - added task 'dict_table(generate)a' and 'dict_table(generate)b' which will generate the component scripts and screen structure scripts for selected tables and transaction patterns. You will need to import radicore/dict/sql/dict.menu_export.sql to see these tasks.
-
 
 2006-09-18, version 1.16.0
 - updated popup processing to allow a MULTI4 pattern to have popup controls in both the single occurrence of the OUTER entity and the multiple occurrences of the INNER entity.

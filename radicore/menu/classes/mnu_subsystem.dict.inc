@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:57 pm
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',
@@ -74,6 +74,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'subsys_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

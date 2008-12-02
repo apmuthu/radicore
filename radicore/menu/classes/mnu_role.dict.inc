@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on September 18, 2008, 9:33 pm
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -21,7 +21,13 @@
                                                     'foreign_field' => 'start_task_desc');
     
     $fieldspec['global_access']             = array('type' => 'boolean',
-                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
+    
+    $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -101,6 +107,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'role_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete4.inc
@@ -68,7 +68,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->errors);
     } // if
@@ -126,12 +127,11 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->errors);
     } // if
 } // if
-
 
 if (isset($scrolling)) {
     // retrieve values from scrolling array
@@ -232,7 +232,8 @@ if (isset($_GET['page'])) {
 $dbinner->setFieldArray($outer_data);
 
 // get primary key of row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
@@ -252,9 +253,6 @@ if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
 } // if
 
-// $where may have been changed in database object
-//$where = $dbinner->getWhere();
-
 // check for only one row being found in POPUP mode
 if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
     if (isset($settings['choose_single_row'])) {
@@ -262,8 +260,8 @@ if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $selection = array2where($inner_data, $dbinner->getPkeyNames(), $dbinner);
         // send primary key back to the previous script
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-        $previous = $_SESSION[$PHP_SELF]['previous'];
-        $_SESSION[$previous]['selection'] = $selection;
+        $previous = $_SESSION['pages'][$PHP_SELF]['previous'];
+        $_SESSION['pages'][$previous]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -286,9 +284,10 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

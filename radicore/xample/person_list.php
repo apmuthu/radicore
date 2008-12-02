@@ -8,7 +8,7 @@ $table_id = 'x_person';            	   // table name
 $screen   = 'person.list.screen.inc';  // file identifying screen structure
 
 // customise the SQL SELECT statement
-$sql_select  = 'person_id, first_name, last_name, star_sign';
+$sql_select  = 'person_id, first_name, last_name, star_sign, pers_type_id';
 $sql_from    = null;
 $sql_where   = null;
 $sql_groupby = null;

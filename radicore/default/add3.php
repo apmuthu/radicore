@@ -11,7 +11,7 @@ $table_id = '#tablename#';      // table name
 // this screen is used to select occurrences from ONE(b)
 $popup_task = '#popup_task#';
 
-require_once 'std.add3.inc';    // activate page controller
+require 'std.add3.inc';         // activate page controller
 
 ?>
 

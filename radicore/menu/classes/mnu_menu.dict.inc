@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:39 pm
     
     // field specifications for table menu.mnu_menu
     $fieldspec['menu_id']                   = array('type' => 'string',
@@ -80,6 +80,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'sort_seq';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

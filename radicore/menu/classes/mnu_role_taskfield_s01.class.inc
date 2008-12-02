@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_role_taskfield.class.inc';
 class mnu_role_taskfield_s01 extends mnu_role_taskfield
@@ -17,8 +17,8 @@ class mnu_role_taskfield_s01 extends mnu_role_taskfield
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $this->sql_select = 'mnu_task_field.task_id, mnu_task_field.field_id, mnu_role.role_id, '
-                           ."CASE WHEN mnu_role_taskfield.access_type IS NULL THEN 'FULL' ELSE mnu_role_taskfield.access_type END AS access_type";
+        $this->sql_select = 'mnu_task_field.task_id, mnu_task_field.field_id, mnu_role.role_id, mnu_task_field.field_desc'
+                           .", CASE WHEN mnu_role_taskfield.access_type IS NULL THEN 'FULL' ELSE mnu_role_taskfield.access_type END AS access_type";
         $this->sql_from   = 'mnu_task_field '
                            .'CROSS JOIN mnu_role '
                            .'LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task_field.task_id AND mnu_role_taskfield.field_id=mnu_task_field.field_id AND mnu_role_taskfield.role_id=mnu_role.role_id)';

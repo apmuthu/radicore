@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -29,8 +29,22 @@ if (isset($_POST['choosenull'])) {
     // send NULL selection back to the previous script
     $prev_script = getPreviousScript();
     $prev_task   = getPreviousTask($prev_script);
-    $_SESSION[$prev_script][$prev_task]['selection'] = '';
+    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = '';
     scriptPrevious(null, null, 'choose');
+} // if
+
+if (!empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose') {
+    	// send uploaded file back to the previous script
+        $prev_script = getPreviousScript();
+        $prev_task   = getPreviousTask($prev_script);
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+        scriptPrevious(null, null, 'choose');
+    } else {
+        // $selection takes precedence over $where
+        $where     = $selection;
+        $selection = null;
+    } // if
 } // if
 
 // define action buttons
@@ -47,12 +61,13 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
     $fileobject->initiated_from_controller = true;
+    $fileobject->sql_search_table = &$sql_search_table;
     // do not create hyperlinks for column labels
-    $fileobject->xsl_params['nosort'] = 'y';
+    //$fileobject->xsl_params['nosort'] = 'y';
     // do not display the 'show nn' hyperlinks
     $fileobject->xsl_params['noshow'] = 'y';
     // perform any initialisation
-    $fileobject->initialiseFilePicker();
+    $fileobject->initialiseFilePicker($where);
     if ($fileobject->errors) {
     	scriptPrevious($fileobject->errors);
     } // if
@@ -67,7 +82,9 @@ if (isset($_GET['select'])) {
     } else {
         $filename = $_GET['select'];
     } // if
-    $_SESSION[$prev_script][$prev_task]['selection'] = $filename;
+    // tell the fileobject that something has been selected
+    $filename = $fileobject->filePickerSelect($filename);
+    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $filename;
     scriptPrevious(null, null, 'choose');
 } // if
 
@@ -80,7 +97,7 @@ $subdir   = $fileobject->picker_subdir;
 $filemask = $fileobject->picker_filetypes;
 $errors = array();
 
-$fileobject->xsl_params['image_directory'] = $subdir;
+$fileobject->xsl_params['file_directory'] = $subdir;
 if (!empty($fileobject->image_width)) {
 	$fileobject->xsl_params['image_width'] = $fileobject->image_width;
 } // if
@@ -97,31 +114,90 @@ if (isset($_POST['reset'])) {
 if (!empty($search)) {
 	$search_array = where2array($search);
 	if (!empty($search_array['filename'])) {
-	    // replace SQL 'any characters' with regex equivalent
-		$search_array['filename'] = str_replace('%', '.*', $search_array['filename']);
+	    $pattern = $search_array['filename'];
+	    if (substr_count($pattern, '%') > 1) {
+	        // replace SQL 'any characters' with regex equivalent
+		    $pattern = str_replace('%', '.*', $pattern);
+	    } elseif (substr($pattern, -1, 1) == '%') {
+	        // last character is SQL wild card, so set to 'begins with'
+	    	$pattern = '^' .$pattern;
+	    } elseif (substr($pattern, 0, 1) == '%') {
+	        // first character is SQL wild card, so set to 'ends with'
+	        $pattern = $pattern .'$';
+	    } // if
+		$pattern = str_replace('%', '', $pattern);
 	} // if
-	$fileobject->search = $search_array['filename'];
+	$fileobject->search = $pattern;
 } elseif (!empty($fileobject->search)) {
-    $search_array['filename'] = $fileobject->search;
+    $pattern = $fileobject->search;
 } // if
 
 $this_dir = @opendir($subdir);
 $file_list = array();
+$rownum    = 0;
+
+// these arrays are used for sorting
+$filename = array();
+$filedate = array();
+$filesize = array();
+
 while (false !== ($file = readdir($this_dir))) {
     // only files of right type are appended to array
     if (eregi($filemask, $file, $regs)) {
-        if (!empty($search_array['filename'])) {
-            if (eregi($search_array['filename'], $file)) {
-            	$file_list[] = $file;  // display filename without the directory name
+        if (!empty($pattern)) {
+            if (eregi($pattern, $file)) {
+            	$file_list[$rownum]['file'] = $file;  // display filename without the directory name
             } // if
         } else {
-            $file_list[] = $file;  // display filename without the directory name
+            $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+        } // if
+        if (array_key_exists($rownum, $file_list)) {
+            $file_list[$rownum]['date'] = date('Y-m-d h:i:s', filemtime("$subdir/$file"));
+            $file_list[$rownum]['size'] = filesize("$subdir/$file");
+            // set up arrays for sorting
+            $filename[$rownum] = strtolower($file);
+            $filedate[$rownum] = $file_list[$rownum]['date'];
+            $filesize[$rownum] = $file_list[$rownum]['size'];
+            $rownum++;
         } // if
     } // if
 } // endwhile
 
 closedir($this_dir);
-sort($file_list);
+
+if (count($file_list) == 0) {
+    $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
+    if (strtolower($return_action) == 'search') {
+        if (isset($return_from)) {
+            // go back to script which generated this profile
+            scriptNext($return_from, $where);
+        } // if
+    } // if
+} // if
+
+if (isset($_GET['orderby'])) {
+	$fileobject->setOrderBy($_GET['orderby']);
+} // if
+$orderby = $fileobject->getOrderBy();
+if (!eregi('file|size|date', $orderby)) {
+	$orderby = 'file';
+	$fileobject->setOrderBy($orderby);
+} // if
+$orderby_seq = $fileobject->getOrderBySeq();
+// set sequence to be used by array_multisort
+if (empty($orderby_seq) OR $orderby_seq == 'asc') {
+ 	$multisort_seq = SORT_ASC;
+} else {
+    $multisort_seq = SORT_DESC;
+} // if
+
+if ($orderby == 'file') {
+	array_multisort($filename, $multisort_seq, $file_list);
+} elseif ($orderby == 'size') {
+	array_multisort($filesize, $multisort_seq, $file_list);
+} else {
+    array_multisort($filedate, $multisort_seq, $file_list);
+} // if
 
 // set pagination data
 $limit     = 100;
@@ -140,6 +216,9 @@ $file_list = array_slice($file_list, $offset, $limit);
 $fileobject->setFieldArray($file_list);
 
 $pagination['main']['numrows']  = $num_rows;
+if ($last_page == 0) {
+	$curr_page = 0;
+} // if
 $pagination['main']['curpage']  = $curr_page;
 $pagination['main']['lastpage'] = $last_page;
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -180,7 +180,7 @@ class pgsql
         $this->query  = '';
         $this->dbname = $PGSQL_dbname;
 
-        static $dbconn;
+        $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
             $string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname ";
@@ -344,8 +344,12 @@ class pgsql
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
-            $where = $this->adjustWhere($where);
-            $this->query = "SELECT count(*) FROM $tablename WHERE $where";
+            if (empty($where)) {
+            	$this->query = "SELECT count(*) FROM $tablename";
+            } else {
+                $where = $this->adjustWhere($where);
+                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
+            } // if
         } // if
 
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -514,7 +518,7 @@ class pgsql
     } // getData
 
     // ****************************************************************************
-    function getData_serial ($schema, $tablename, $where)
+    function getData_serial ($schema, $tablename, $where, $rdc_limit=null, $rdc_offset=null)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
@@ -579,7 +583,9 @@ class pgsql
             $sort_str = '';
         } // if
 
-        if ($rows_per_page > 0) {
+        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        	$limit_str = 'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
+        } elseif ($rows_per_page > 0) {
             $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
@@ -1040,7 +1046,7 @@ class pgsql
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
-                if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
+                if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } elseif (eregi('set|array|varray', $fieldspec[$item]['type'])) {
@@ -1061,7 +1067,11 @@ class pgsql
                     } // if
                 } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
-                    $update .= "$item=$value,";
+                    if (strlen($value) == 0) {
+                    	$update .= "$item=NULL,";
+                    } else {
+                        $update .= "$item=$value,";
+                    } // if
                 } else {
                     // change to the new value
                     $update .= "$item='" .pg_escape_string($value) ."', ";

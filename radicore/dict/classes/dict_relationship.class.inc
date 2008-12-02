@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_relationship extends Default_Table
@@ -50,7 +50,22 @@ class dict_relationship extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
+        if (!empty($fieldarray['table_alias_snr'])) {
+            $count = preg_match_all('/\w+/', $fieldarray['table_alias_snr'], $regs);
+            if ($count > 1) {
+                // "This field can only contain a single word"
+            	$this->errors['table_alias_snr'] = getLanguageText('e0039');
+            } // if
+        } // if
+
+        if (!empty($fieldarray['table_alias_jnr'])) {
+            $count = preg_match_all('/\w+/', $fieldarray['table_alias_jnr'], $regs);
+            if ($count > 1) {
+                // "This field can only contain a single word"
+            	$this->errors['table_alias_jnr'] = getLanguageText('e0039');
+            } // if
+        } // if
+
         if (empty($fieldarray['relation_desc'])) {
         	if (!empty($fieldarray['table_id_snr']) and !empty($fieldarray['table_id_jnr'])) {
         		$fieldarray['relation_desc'] = 'Links ' .strtoupper($fieldarray['table_id_snr']) .' to ' .strtoupper($fieldarray['table_id_jnr']);
@@ -156,7 +171,6 @@ class dict_relationship extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         if (isset($fieldarray['database_id'])) {
             // current values are to be used for the SNR (parent)
             $fieldarray['database_id_snr'] = $fieldarray['database_id'];
@@ -228,6 +242,30 @@ class dict_relationship extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialise ($where)
+    // perform any initialisation for the current task.
+    {
+        $pattern_id = getPatternId();
+        if ($pattern_id == 'add2') {
+            $where_array = where2array($where);
+         	// remove fields included from $selection instead of $where
+            if (isset($where_array['database_id_jnr'])) {
+            	unset($where_array['database_id_jnr']);
+            } // if
+            if (isset($where_array['table_id_jnr'])) {
+            	unset($where_array['table_id_jnr']);
+            } // if
+            if (isset($where_array['seq_no'])) {
+            	unset($where_array['seq_no']);
+            } // if
+            $where = array2where($where_array);
+        } // if
+
+        return $where;
+
+    } // _cm_initialise
 
     // ****************************************************************************
     function _cm_ListView_total ()
@@ -390,7 +428,7 @@ class dict_relationship extends Default_Table
         $where = array2where($fieldarray, $this->getPkeyNames());
 
         // create initial records on DICT_RELATED_COLUMN table
-        require_once 'classes/dict_related_column.class.inc';
+        //require_once 'classes/dict_related_column.class.inc';
         $relobj =& singleton::getInstance('dict_related_column');
 
         $outarray = $relobj->getInitialDataMultiple($fieldarray);
@@ -405,7 +443,7 @@ class dict_relationship extends Default_Table
         $next['where']   = $where;
 
         // this is processed by scriptnext() and scriptprevious()
-        $_SESSION['script_sequence'][] = $next;
+        append2ScriptSequence($next);
 
         return $fieldarray;
 

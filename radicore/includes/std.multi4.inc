@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi4.inc
@@ -67,7 +67,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->errors);
     } // if
@@ -98,13 +99,16 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
+    if (!empty($task_selection)) {
+        $dbinner->setSqlWhere($task_selection);
+    } // if
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->errors);
     } // if
@@ -116,11 +120,12 @@ if (!empty($_POST)) {
     $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
     $outer_data = array_update_associative($outer_data, $outer_post);
     $dbouter->setFieldArray($outer_data);
-
+    // repeat for the inner entity
     $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
     $inner_data = array_update_indexed($inner_data, $inner_post);
     $dbinner->setFieldArray($inner_data);
-
+    // make any changes in outer available to the inner entity
+    $inner_data = $dbinner->setParentData($outer_data);
     // look for an action which is another script
     $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
 } // if
@@ -189,6 +194,8 @@ if (!empty($return_from) AND !empty($popup_object)) {
         if ($dbouter->errors) {
         	$errors[$dbouter->getClassName()] = $dbouter->errors;
         } // if
+        // make any changes in outer available to the inner entity
+        $inner_data = $dbinner->setParentData($outer_data);
     } // if
 } else {
     if (isset($scrolling)) {
@@ -271,7 +278,8 @@ if (isset($_GET['page'])) {
 } // if
 
 // get primary key of row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
@@ -326,8 +334,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

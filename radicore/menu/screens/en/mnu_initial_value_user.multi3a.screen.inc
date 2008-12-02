@@ -1,14 +1,19 @@
 <?php
-$structure['xsl_file'] = 'std.multi3.xsl';
+$structure['xsl_file'] = 'std.list3.xsl';
 
 $structure['tables']['outer'] = 'mnu_task';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => 100);
 $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
-$structure['outer']['fields'][] = array('task_desc' => 'Task');
+$structure['outer']['fields'][1][] = array('label' => 'Task Id');
+$structure['outer']['fields'][1][] = array('field' => 'task_id');
+$structure['outer']['fields'][1][] = array('label' => 'Name');
+$structure['outer']['fields'][1][] = array('field' => 'task_desc');
 
 $structure['tables']['middle'] = 'mnu_user';
 
@@ -23,14 +28,17 @@ $structure['tables']['inner'] = 'mnu_initial_value_user';
 
 // identify the column specs - may use 'width' or 'class'
 //$structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => 300);
-$structure['inner']['columns'][] = array('width' => 350);
+$structure['inner']['columns'][] = array('width' => '20%');
 $structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => 200);
+$structure['inner']['columns'][] = array('width' => 60);
 
 // identify the field names and their screen labels
 //$structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('field_id' => 'Field Id');
-$structure['inner']['fields'][] = array('initial_value' => 'Initial Value');
-$structure['inner']['fields'][] = array('' => '');
+$structure['inner']['fields'][] = array('field_desc' => 'Description');
+$structure['inner']['fields'][] = array('initial_value' => 'Initial Value', 'size' => 30);
+$structure['inner']['fields'][] = array('is_noedit' => 'No Edit?');
+
 
 ?>

@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -55,6 +55,8 @@
       </xsl:otherwise>
     </xsl:choose>
 
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+
     <xsl:for-each select="/root/javascript/head">
       <xsl:choose>
         <xsl:when test="@type='file'">
@@ -69,6 +71,39 @@
     </xsl:for-each>
 
   </head>
+
+</xsl:template>
+
+<xsl:template name="body-head">
+
+  <xsl:for-each select="/root/javascript/body[@*]">
+    <!-- add javascript events to the <body> tag -->
+    <xsl:copy-of select="@*" />
+  </xsl:for-each>
+
+  <div class="header">
+    <p>
+      <xsl:if test="/root/header">
+        <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
+      </xsl:if>
+    </p>
+  </div>
+
+</xsl:template>
+
+<xsl:template name="body-foot">
+
+  <xsl:if test="/root/params/version">
+    <div class="version">
+      <xsl:value-of select="/root/params/version" />
+    </div>
+  </xsl:if>
+
+  <xsl:if test="/root/footer">
+    <div class="footer">
+      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+    </div>
+  </xsl:if>
 
 </xsl:template>
 

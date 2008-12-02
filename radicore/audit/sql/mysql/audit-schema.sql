@@ -11,9 +11,6 @@
 -- Database: `audit`
 -- 
 
-CREATE DATABASE audit ;
-USE audit ;
-
 -- --------------------------------------------------------
 
 -- 

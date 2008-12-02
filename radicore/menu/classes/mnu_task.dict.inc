@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on September 19, 2008, 10:12 am
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -52,7 +52,10 @@
     
     $fieldspec['initial_passthru']          = array('type' => 'string',
                                                     'size' => 40,
-                                                    'lowercase' => 'y');
+                                                    'lowercase' => 'y',
+                                                    'control' => 'popup',
+                                                    'task_id' => 'mnu_task(popup1)a',
+                                                    'foreign_field' => 'task_desc_passthru');
     
     $fieldspec['selection_fixed']           = array('type' => 'string',
                                                     'size' => 255);
@@ -61,7 +64,7 @@
                                                     'size' => 255);
     
     $fieldspec['settings']                  = array('type' => 'string',
-                                                    'size' => 40);
+                                                    'size' => 255);
     
     $fieldspec['order_by']                  = array('type' => 'string',
                                                     'size' => 255,
@@ -92,6 +95,11 @@
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'boolean');
+    
+    $fieldspec['max_execution_time']        = array('type' => 'integer',
+                                                    'size' => 5,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 65535);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -214,6 +222,8 @@
                                                     'fields' => array('subsys_id' => 'subsys_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'alias' => 'mnu_task_passthru',
+                                                    'parent_field' => 'task_desc AS task_desc_passthru',
                                                     'fields' => array('initial_passthru' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 
@@ -221,6 +231,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'task_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

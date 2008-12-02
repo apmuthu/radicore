@@ -9,13 +9,12 @@
 // The user is brought here immediately after logging on.
 //*****************************************************************************
 
-//DebugBreak();
-require_once 'include.general.inc';
-
 $xsl_file = 'menu.xsl';       // xsl file for transformation
 
 // identify mode for XSL file
 $mode = 'read';
+
+require_once 'include.general.inc';
 
 // load session variables
 initSession();
@@ -39,7 +38,7 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'mnu_todo') {
 
 // get any 'to do' items for the current user
 $today = getTimeStamp('date');
-$db_todo->sql_select  = 'mnu_todo.user_id, item_desc, due_date';
+$db_todo->sql_select  = 'mnu_todo.user_id, item_desc, due_date, is_complete';
 $db_todo->setRowsPerPage(10);
 $db_todo->sql_where = "is_complete='N' AND due_date - INTERVAL visibility DAY <= '$today'";
 $todo_data = $db_todo->getData("user_id='{$_SESSION['logon_user_id']}'");
@@ -136,7 +135,7 @@ $pagination['workitem_user']['lastpage'] = $dbworkitem_user->getLastPage();
 // save this in session data
 $script_vars['pagination'] = $pagination;
 $PHP_SELF = getSelf();
-$_SESSION[$PHP_SELF][$task_id] = $script_vars;
+$_SESSION['pages'][$PHP_SELF][$task_id] = $script_vars;
 
 // ****************************************************************************
 

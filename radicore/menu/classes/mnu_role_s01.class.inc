@@ -1,13 +1,14 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_role.class.inc';
 class mnu_role_s01 extends mnu_role
 {
     // ****************************************************************************
-    // this class is for use by script: mnu_role_taskitem_multi(a).php
+    // this class is for use by script: mnu_role_taskfield(multi3)a.php
+    //                             and: mnu_initial_value_role(multi3)a.php
     // ****************************************************************************
 
     // ****************************************************************************
@@ -17,20 +18,8 @@ class mnu_role_s01 extends mnu_role
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        // look for a particular substring in $this->sql_from
-//        $pos = strpos($this->sql_from, 'LEFT JOIN mnu_role_task');
-//        if ($pos !== false) {
-//            // remove old string
-//            $this->sql_from = substr($this->sql_from, 0, $pos-1);
-//        } // if
-//
-//        // insert substring with current task_id
-//        $task_id = $where_array['task_id'];
-//
-//        // include only those roles which are authorised to access this task
-//        $this->sql_from .= ' LEFT JOIN mnu_role_task '
-//                         . 'ON (mnu_role_task.role_id=mnu_role.role_id '
-//                         . "AND mnu_role_task.task_id='$task_id') ";
+        // $where must be empty
+        $where = null;
 
         return $where;
 

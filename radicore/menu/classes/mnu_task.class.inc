@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
@@ -30,7 +30,6 @@ class mnu_task extends Default_Table
     function checkSelection ($task_id)
     // validate a selection from the menu screen or a navigation button.
     {
-        //DebugBreak();
         // obtain security class from logon screen
         $role_id = $_SESSION['role_id'];
 
@@ -39,8 +38,8 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, '
-                           .'CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 1 ELSE 0 END AS access_allowed';
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time'
+                           .", CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 'Y' ELSE 'N' END AS access_allowed";
         $this->sql_from   = 'mnu_task '
                           . 'LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
                           . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
@@ -71,7 +70,7 @@ class mnu_task extends Default_Table
             } // if
         } // if
 
-        if (strtoupper($fieldarray['task_type']) <> 'MENU') {
+        if (eregi('PROC|BATC', $fieldarray['task_type'])) {
             // this script must exist as a file
             if (!empty($_SERVER['HTTPS'])) {
                 // use one or the other of these, whichever is available
@@ -104,8 +103,10 @@ class mnu_task extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] == 'search') {
+            // make this a text box for the search screen
+            unset($this->fieldspec['initial_passthru']['control']);
+
             $prev_script = getPreviousScript();
             $pattern_id  = getPatternId($prev_script);
             if ($pattern_id == 'LINK1') {
@@ -167,7 +168,6 @@ class mnu_task extends Default_Table
     function _cm_commonValidation ($fieldarray, $orignaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        //DebugBreak();
         switch (strtoupper($fieldarray['task_type'])) {
             case 'MENU':
                 // menus always have these values
@@ -186,6 +186,23 @@ class mnu_task extends Default_Table
             default:
                 // "Unknown value in TASK_TYPE"
                 $this->errors[] = getLanguageText('e0017', $fieldarray['task_type']);
+                break;
+        } // switch
+
+        switch (strtoupper($fieldarray['pattern_id'])) {
+            case 'BATCH':
+                // these fields are not allowed
+                $fieldarray['initial_passthru']   = null;
+                $fieldarray['use_https']          = null;
+                $fieldarray['keep_data']          = null;
+                $fieldarray['screen_refresh']     = null;
+                $fieldarray['max_execution_time'] = null;
+                $fieldarray['order_by']           = null;
+                $fieldarray['selection_fixed']    = null;
+                $fieldarray['selection_temp']     = null;
+                break;
+            default:
+                break;
         } // switch
 
         if (!empty($fieldarray['initial_passthru'])) {
@@ -211,6 +228,7 @@ class mnu_task extends Default_Table
         // remove leading/trailing spaces, and replace embedded spaces with underscores
         $fieldarray['task_id'] = str_replace(' ', '_', trim($fieldarray['task_id']));
         if (isset($fieldarray['new_task_id'])) {
+            // do the same for the new task_id on the 'rename' screen
         	$fieldarray['new_task_id'] = str_replace(' ', '_', trim($fieldarray['new_task_id']));
         } // if
 
@@ -444,7 +462,6 @@ class mnu_task extends Default_Table
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-        //DebugBreak();
         if (strtoupper($fieldarray['task_type']) == 'MENU') {
             // menus always have these values
             $fieldarray['pattern_id'] = 'MENU';
@@ -483,8 +500,8 @@ class mnu_task extends Default_Table
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
-        // valid characters are numbers, letters, and '_#$()'
-        if (ereg('[^0-9a-zA-Z_#$()]', $fieldarray['task_id'], $regs)) {
+        // valid characters are numbers, letters, and '-_#$()'
+        if (ereg('[^0-9a-zA-Z-_#$()]', $fieldarray['task_id'], $regs)) {
             // "Contains invalid character ($regs[0])"
             $this->errors['task_id'] = getLanguageText('e0022', $regs[0]);
         } // if

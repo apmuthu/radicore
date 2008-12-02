@@ -1,5 +1,5 @@
 <?php
-    // file created on October 9, 2006, 10:31 am
+    // file created on January 10, 2008, 5:35 pm
     
     // field specifications for table xample.x_pers_opt_xref
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -55,6 +55,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'x_option',
                                                     'parent_field' => 'option_desc',
+                                                    'alt_language_table' => 'x_option_alt',
+                                                    'alt_language_cols' => 'option_desc',
                                                     'fields' => array('option_id' => 'option_id'));
     
     $this->parent_relations[]               = array('parent' => 'x_person',
@@ -66,6 +68,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'option_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -28,10 +28,13 @@ $mode = 'update';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-	// $selection takes precedence over $where
+if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
+    // $selection takes precedence over $where
     $where     = $selection;
     $selection = null;
+    $new_selection = true;
+} else{
+    $new_selection = false;
 } // if
 
 if (isset($_POST['quit'])) {
@@ -154,9 +157,14 @@ if (!empty($return_from) AND !empty($popup_object)) {
     } // if
 } else {
     if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        if ($new_selection === true) {
+        	// selection has changed, so use new value in $where
+        	$dbouter->setPageNo(1);
+        } else {
+            // retrieve values from scrolling array
+            $where = $scrolling[$dbouter->getClassName()]['where'];
+            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        } // if
     } // if
 
     if (empty($where)) {
@@ -214,7 +222,8 @@ if (isset($search)) {
 } // if
 
 // get primary key of current row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 // ensure that column names are qualified in the 'where' clause
 $link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec());
@@ -269,8 +278,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dblink->getOrderBy_Out();
-$orderby_seq = $dblink->getOrderBySeq();
+$orderby     = $dblink->getOrderBy();
+$orderby_seq = $dblink->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

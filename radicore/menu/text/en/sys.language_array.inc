@@ -181,6 +181,9 @@ $array['languages'] = array('af' => 'Afrikaans [af]',
                    		    'yi' => 'Yiddish [yi]',
                    		    'zu' => 'Zulu [zu]' );
 
+$array['selected']  = array('Y' => 'Selected',
+                            'N' => 'No');
+
 return $array;
 
 ?>

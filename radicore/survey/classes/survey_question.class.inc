@@ -68,7 +68,7 @@ class survey_question extends Default_Table
             $dbobject->sql_select = "prompt_desc";
             $dbobject->sql_from   = "question_prompt "
                                   . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
-            $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());
+            $where2 = filterWhere($where, $dbobject->getPkeynames(), $dbobject->getTableName());
             $data_array = $dbobject->getData($where2);
             unset($dbobject);
             $prompt_list = '';

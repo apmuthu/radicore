@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // are we using PHP 5, or something earlier?
@@ -21,7 +21,8 @@ class PDF extends TCPDF
     var $filename = '';             // filename (if destination = D or F)
     var $last_height;               // last line height
     var $line_width = .2;           // width for line drawing (borders, boxes, etc)
-    var $new_page = false;          // set to TRUE when a new pae has been started
+    var $new_page = false;          // set to TRUE when a new page has been started
+    var $new_page_fill;             // set to TRUE when a new page has been started
     var $printable_width;           // width of printable area (without margins)
     var $structure = array();       // report structure
     var $style = array();           // array of print styles
@@ -37,94 +38,35 @@ class PDF extends TCPDF
     function PDF ($structure)
     // validate contents of $report structure file
     {
-        // read report structure from external file
-        if (empty($structure)) {
-            // 'Report structure has not been defined'
-            trigger_error(getLanguageText('sys0160'), E_USER_ERROR);
-        } // if
-
-        // validate report structure details
-        if (isset($structure['pdf']['orientation'])) {
-        	$orientation = $structure['pdf']['orientation'];
-        } else {
-            // orientation has not been defined in $report
-            trigger_error(getLanguageText('sys0161', $report), E_USER_ERROR);
-        } // if
-
-        if (isset($structure['pdf']['units'])) {
-        	$units = $structure['pdf']['units'];
-        } else {
-            // units have not been defined in $report
-            trigger_error(getLanguageText('sys0162', $report), E_USER_ERROR);
-        } // if
-
-        if (isset($structure['pdf']['format'])) {
-        	$format = $structure['pdf']['format'];
-        } else {
-            // format has not been defined in $report
-            trigger_error(getLanguageText('sys0163', $report), E_USER_ERROR);
-        } // if
-
-        if (isset($structure['pdf']['name'])) {
-        	$this->filename = $structure['pdf']['name'];
-        } else {
-            $this->filename = 'doc.pdf';
-        } // if
-
-        if (isset($structure['pdf']['destination'])) {
-        	$this->destination = $structure['pdf']['destination'];
-        } else {
-            $this->destination = 'I';
-        } // if
-
-        if (isset($structure['main']['line']['width'])) {
-            $this->line_width = $structure['main']['line']['width'];
-        } else {
-        	$this->line_width = .2;
-        } // if
-
-        $this->structure = $structure;
-        $this->units     = $units;
-
         if (file_exists('pdf.styles.inc')) {
             // load file of print styles
-        	include 'pdf.styles.inc';
+        	require_once 'pdf.styles.inc';
         	$this->style = $style;
         } // if
 
-        // load default style
-        $this->style['default']['font'] = array('family' => 'Arial',    // Courier, Arial, Times
-                                                'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
-                                                'size' => 11,           // size in points
-                                                'height' => 5,          // line height
-                                                'draw' => .2,           // width of drawn lines
-                                                'align' => 'left');     // text alignment
-
-        $this->style['default']['fillcolour'] = array(255,255,255);     // colour for background
-        $this->style['default']['textcolour'] = array(0,0,0);           // colour for foreground
-        $this->style['default']['drawcolour'] = array(0,0,0);           // colour for line drawing
-
-        // now call constructor in parent class
-        if (version_compare(phpversion(), '5.0.0', '<')) {
-            parent::TCPDF($orientation, $units, $format);
-        } else {
-            // PHP 5 uses different code
-            parent::__construct($orientation, $units, $format);
-        } // if
-
-        $this->printable_width = $this->w - ($this->lMargin + $this->rMargin);
+        $this->validateStructure ($structure);
 
         return;
 
     } // PDF
 
     // ****************************************************************************
-    function Cell ($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=0, $link='')
+    function AddPage ($orientation=null, $format=null)
+    // start a new page.
+    {
+        $save_last_height = $this->last_height;
+        parent::AddPage ($orientation, $format);
+        $this->last_height = $save_last_height;
+
+    } // addPage
+
+    // ****************************************************************************
+    function Cell ($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=0, $link='', $stretch=0)
     // this is a wrapper for the parent method
     {
         $align = strtoupper(substr($align, 0, 1));
 
-        parent::Cell ($w, $h, $txt, $border, $ln, $align, $fill, $link);
+        parent::Cell ($w, $h, $txt, $border, $ln, $align, $fill, $link, $stretch);
 
     } // Cell
 
@@ -149,11 +91,18 @@ class PDF extends TCPDF
         $fieldspec = $object->fieldspec;
 
         $first_body_line = true;
+        $border = 1;
+        $fill = 1;
 
         // add each row to the document in a separate page
         while ($fieldarray = $object->fetchRow($resource)) {
             if ($object->errors) {
                 return;
+            } // if
+            if (empty($object->report_structure)) {
+                // reload report structure is the customer's language
+            	$object->report_structure = getReportSructure($GLOBALS['report']);
+            	$this->validateStructure($object->report_structure);
             } // if
             // perform any formatting on retrieved data
             $style_array = array();
@@ -208,7 +157,12 @@ class PDF extends TCPDF
                     } // if
 
                     if (array_key_exists($fieldname, $fieldspec)) {
-                		$cellspec['fieldspec']  = $fieldspec[$fieldname];
+                		$cellspec['fieldspec'] = $fieldspec[$fieldname];
+                	} // if
+
+                	if (array_key_exists('notext', $columndata)) {
+                	    // carry this specification change across
+                		$cellspec['fieldspec']['notext'] = 'y';
                 	} // if
 
                 	if (isset($this->structure['columns'][1]['width'])) {
@@ -223,7 +177,7 @@ class PDF extends TCPDF
 
                 	$print_array[1] = $cellspec;
 
-                	$result = $this->printRow($print_array, __FUNCTION__);
+                	$result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
 
                 } else {
                     // there is a separate entry for each label or field in the current line
@@ -255,6 +209,11 @@ class PDF extends TCPDF
                 	        if (array_key_exists($fieldname, $fieldspec)) {
                         		$cellspec['fieldspec'] = $fieldspec[$fieldname];
                         	} // if
+                        	if (array_key_exists('notext', $cellspec)) {
+                        	    // carry this specification change across
+                        		$cellspec['fieldspec']['notext'] = 'y';
+                        		unset($cellspec['notext']);
+                        	} // if
 
                         } elseif (array_key_exists('barcode', $cellspec)) {
                             $cellspec['default_style'] = $this->structure['label']['style'];
@@ -270,7 +229,7 @@ class PDF extends TCPDF
 
                     } // foreach
 
-                    $result = $this->printRow($print_array, __FUNCTION__);
+                    $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
 
                 } // if
             } // foreach
@@ -302,6 +261,11 @@ class PDF extends TCPDF
 
         $fieldspec = $object->fieldspec;
 
+        $border = 1;
+        $fill   = 1;
+
+        $nbsp = chr(194).chr(160); // non-breaking space
+
         // process each row, which may produce multiple lines of output
         foreach ($newdata as $rownum => $fieldarray) {
             $style_array = array();
@@ -320,6 +284,8 @@ class PDF extends TCPDF
                         $cellspec['default_style'] = $this->structure['data']['style'];
                         if (array_key_exists($cellspec['field'], $fieldarray)) {
                         	$cellspec['text'] = $fieldarray[$cellspec['field']];
+                        	// replace HTML non-breaking space with a blank character
+                        	$cellspec['text'] = str_replace('&nbsp;', $nbsp, $cellspec['text']);
                         } else {
                             $cellspec['text'] = '';
                         } // if
@@ -327,6 +293,10 @@ class PDF extends TCPDF
                             // include field specifications
                             $cellspec['fieldspec'] = $fieldspec[$cellspec['field']];
                         } // if
+                        if (array_key_exists('notext', $cellspec)) {
+                    	    // carry this specification change across
+                    		$cellspec['fieldspec']['notext'] = 'y';
+                    	} // if
 
                     } elseif (array_key_exists('barcode', $cellspec)) {
                         $cellspec['default_style'] = $this->structure['label']['style'];
@@ -348,7 +318,7 @@ class PDF extends TCPDF
                 } // foreach
 
                 // now print this row of cells
-                $result = $this->printRow($print_array, __FUNCTION__);
+                $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
 
             } // foreach
         } // foreach
@@ -614,7 +584,7 @@ class PDF extends TCPDF
             	        switch (strtolower($attributes['type'])) {
                 	    	case 'pageno':
                 	    		// Print 'Page n of n'
-                                $text = getLanguageText('Page') .' ' .$this->PageNo() .' ' .getLanguageText('of') ." {nb}";
+                                $text = getLanguageText('Page') .' ' .$this->PageNo() .' ' .getLanguageText('of') .' ' .$this->AliasNbPages;
                 	    		break;
                 	    	case 'date':
                 	    	    // get date in user-defined format
@@ -665,7 +635,7 @@ class PDF extends TCPDF
         } // foreach
 
         // position pointer at bottom of deepest cell in current line
-        $this->Ln(($max_depth));
+        $this->Ln($max_depth);
 
         return;
 
@@ -684,7 +654,7 @@ class PDF extends TCPDF
             $this->print_footer = true;
         } // if
 
-        //$this->AddPage();
+        $this->setY($this->h);  // force first line to overflow current page and start a new one
 
         // set print style for main body
         if (!isset($this->structure['body']['style'])) {
@@ -695,32 +665,39 @@ class PDF extends TCPDF
         $fill = 0;
         $started = false;
 
+        $previous_row = array();                     // initialise previous row
+        $fieldarray = $object->fetchRow($resource);  // read first row
         // add each row to the document
-        while ($fieldarray = $object->fetchRow($resource)) {
-            if ($object->errors) {
-                return;
-            } // if
+        do {
+            if ($object->errors) return;
+
             // perform any formatting on retrieved data
             $style_array = array();
             $fieldarray = $object->formatData($fieldarray, $style_array);
             $this->fieldarray = $fieldarray;  // make this data accessible to Header() method
-            if ($started == false) {
-            	$started = true;
-            	$this->AddPage();  // do just before output of first record
+
+            // find out if any rows need to be printed before this one
+            $extra_rows = $object->_cm_ListView_pre_print ($previous_row, $fieldarray);
+
+            // append current row then print them all
+            if (!empty($fieldarray)) {
+            	$extra_rows[] = $fieldarray;
             } // if
-
-            // assemble a row of details
-            $print_array = array();
-            foreach ($this->structure['body']['fields'] as $column => $columndata) {
-
-                $print_array[] = $this->listView_assemble_row($column, $columndata, $fieldarray, $style_array);
-
+            foreach ($extra_rows as $rowdata) {
+                // assemble a row of details
+                $print_array = array();
+                foreach ($this->structure['body']['fields'] as $column => $columndata) {
+                    $print_array[] = $this->listView_assemble_row($column, $columndata, $rowdata, $style_array);
+                } // foreach
+                // now print this row
+                $result = $this->printRow($print_array, __FUNCTION__, 'LR', $fill);
+                $fill = !$fill;     // toggle between ON and OFF
             } // foreach
 
-            $result = $this->printRow($print_array, __FUNCTION__, 'LR', $fill);  // print this row
-            $fill = !$fill;     // toggle between ON and OFF
+            $previous_row = $fieldarray;
+            $fieldarray = $object->fetchRow($resource);
 
-        } // while
+        } while (!empty($previous_row));
 
         // look for a line of totals to be printed (optional)
         $fieldarray = $object->_cm_ListView_total();
@@ -735,7 +712,9 @@ class PDF extends TCPDF
 
             } // foreach
 
-            $result = $this->printRow($print_array, __FUNCTION__, 'LRT', 1);  // print this row
+            $border = 1;
+            $fill =1;
+            $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);  // print this row
 
         } // if
 
@@ -797,7 +776,7 @@ class PDF extends TCPDF
         $X = $this->getX();
         $Y = $this->getY();
 
-        parent::MultiCell ($width, $height, $text, $border, $align, $fill);
+        $cells = parent::MultiCell ($width, $height, $text, $border, $align, $fill);
 
         $line_count = ($this->getY() - $Y) / $height;
 
@@ -836,18 +815,8 @@ class PDF extends TCPDF
     function printBarcode ($celldata)
     // print a barcode
     {
-        define("BCS_BORDER", 1);
-        define("BCS_TRANSPARENT", 2);
-        define("BCS_ALIGN_CENTER", 4);
-        define("BCS_ALIGN_LEFT", 8);
-        define("BCS_ALIGN_RIGHT", 16);
-        define("BCS_IMAGE_JPEG", 32);
-        define("BCS_IMAGE_PNG", 64);
-        define("BCS_DRAW_TEXT", 128);
-        define("BCS_STRETCH_TEXT", 256);
-        define("BCS_REVERSE_COLOR", 512);
-
         if (isset($celldata['barcode_style'])) {
+            // merge with contents of entry in pdf.styles.inc
         	$celldata = array_merge($this->style[$celldata['barcode_style']], $celldata);
         } // if
 
@@ -856,16 +825,8 @@ class PDF extends TCPDF
         } else {
             $celldata['type']     = strtoupper($celldata['type']);
         } // if
-        if (!isset($celldata['style'])) {
-        	$celldata['style']    = '';
-        } else {
-            $celldata['style']    = strtoupper($celldata['style']);
-        } // if
-        if (!isset($celldata['fontsize'])) {
-        	$celldata['fontsize'] = 5;
-        } // if
         if (!isset($celldata['xres'])) {
-        	$celldata['xres']     = 2;
+        	$celldata['xres']     = 0.4;
         } // if
         if (!isset($celldata['width'])) {
         	$celldata['width']    = 80;
@@ -874,52 +835,141 @@ class PDF extends TCPDF
         	$celldata['height']   = 25;
         } // if
 
-        $X = $this->getX();
-        $Y = $this->getY();
+        if (isset($celldata['fgcolor'])) {
+        	$style['fgcolor'] = $celldata['fgcolor'];
+        } else {
+        	$style['fgcolor'] = array(0,0,0);  // default is black
+        } // if
+        if (isset($celldata['bgcolor'])) {
+        	$style['bgcolor'] = $celldata['bgcolor'];
+        } else {
+        	$style['bgcolor'] = false;         // default is transparent
+        } // if
+        if (isset($celldata['padding'])) {
+        	$style['padding'] = $celldata['padding'];
+        } else {
+        	$style['padding'] = 1;
+        } // if
+        if (isset($celldata['position'])) {
+        	$style['position'] = $celldata['position'];
+        } else {
+        	$style['position'] = 'C';
+        } // if
+        if (isset($celldata['border'])) {
+        	$style['border'] = true;
+        } // if
+        if (isset($celldata['text'])) {
+            $style['text'] = true;
+            // font settings for text
+            if (isset($celldata['font'])) {
+                $style['font'] = $celldata['font'];
+            } else {
+            	$style['font'] = 'courier';
+            	$style['fontstyle'] = 'B';
+            } // if
+            if (isset($celldata['fontstyle'])) {
+                $style['fontstyle'] = $celldata['fontstyle'];
+            } // if
+            if (isset($celldata['fontsize'])) {
+            	$style['fontsize'] = $celldata['fontsize'];
+            } else {
+            	$style['fontsize'] = 8;
+            } // if
+            if (isset($celldata['stretchtext'])) {
+            	$style['stretchtext'] = $celldata['stretchtext'];
+            } else {
+            	$style['stretchtext'] = 0;  // no character spacing
+            } // if
+        } // if
 
         // make image 1 unit smaller than cell it will appear in to provide a small border
     	$celldata['width']  = $celldata['width'] -1;
     	$celldata['height'] = $celldata['height'] -1;
 
-    	// set up style details
-    	if (empty($celldata['style'])) {
-			$style  = BCS_IMAGE_PNG;
-			$style |= BCS_ALIGN_CENTER;
-			$style |= BCS_TRANSPARENT;
-    	} else {
-    	    $style  = BCS_IMAGE_PNG;
-			if (eregi('B', $celldata['style'])) $style |= BCS_BORDER;
-		    if (eregi('D', $celldata['style'])) $style |= BCS_DRAW_TEXT;
-			if (eregi('S', $celldata['style'])) $style |= BCS_STRETCH_TEXT;
+    	$X = $this->getX();
+        $Y = $this->getY();
+
+        // set up style details
+    	if (!empty($celldata['style'])) {
+			if (eregi('B', $celldata['style'])) $style['border'] = true;
+		    if (eregi('D', $celldata['style'])) $style['text'] = true;
 			if (eregi('N', $celldata['style'])) {
-			    $style |= BCS_REVERSE_COLOR;
+			    // negative, so reverse the colours
+			    $style['fgcolor'] = array(255,255,255);  // white
+			    $style['bgcolor'] = array(0,0,0);        // black
 			} else {
-			    $style |= BCS_TRANSPARENT;
+			    $style['fgcolor'] = array(0,0,0);        // black
+			    $style['bgcolor'] = false;               // transparent
 			} // if
-			// only one of these (L,C,R) is relevant
-			if (!eregi('L|C|R', $celldata['style'])) {
-			    $style |= BCS_ALIGN_CENTER;  // default
-			} elseif (eregi('L', $celldata['style'])) {
-			    $style |= BCS_ALIGN_LEFT;
-			} elseif (eregi('C', $celldata['style'])) {
-			    $style |= BCS_ALIGN_CENTER;
-			} elseif (eregi('R', $celldata['style'])) {
-			    $style |= BCS_ALIGN_RIGHT;
+			// image position = L/C/R/X (Left, Center, Right, Stretch Image)
+			if (eregi('L|C|R', $celldata['style'], $regs)) {
+			    $style['position'] = $regs[0];
+			} else {
+			    $style['position'] = 'C';    // default is center
+			} // if
+			if (eregi('X', $celldata['style'], $regs)) {
+			    $style['position'] = 'S';
+			} // if
+			if (eregi('S', $celldata['style'], $regs)) {
+			    $style['stretchtext'] = 4;
+			} // if
+			// convert 'old' values to 'new'
+			switch ($celldata['xres']) {
+				case 1:     // small
+					$celldata['xres'] = 0.3;
+					break;
+				case 2:     // medium
+					$celldata['xres'] = 0.4;
+					break;
+				default:    // large
+				    $celldata['xres'] = 0.5;
+					break;
+			} // switch
+			if ($style['text']) {
+			    $style['font'] = 'courier';
+			    $style['fontstyle'] = 'B';
+				switch ($style['fontsize']) {
+    				case 1:     // small
+    				    $style['fontsize'] = 6;
+    					break;
+    				case 2:     // small+
+    				    $style['fontsize'] = 7;
+    					break;
+    				case 3:     // medium
+    				    $style['fontsize'] = 8;
+    					break;
+    				case 4:     // medium+
+    				    $style['fontsize'] = 9;
+    					break;
+    				default:    // large
+    				    $style['fontsize'] = 10;
+    					break;
+    			} // switch
 			} // if
     	} // if
 
-    	// write a barcode into the current cell
-    	$this->writeBarcode($this->getX()+0.5, $this->getY()+0.5,
-    	                    $celldata['width'], $celldata['height'],
-    	                    $celldata['type'], $style, $celldata['fontsize'],
-    	                    $celldata['xres'], $celldata['barcode']);
+    	$align = 'T';  // put pointer at top left of barcode image
+
+    	$this->write1DBarcode($celldata['barcode'],
+    	                      $celldata['type'],
+    	                      $X+0.5, $Y+0.5, // offset to give 0.5 unit border all the way around
+    	                      $celldata['width'], $celldata['height'],
+    	                      $celldata['xres'],
+    	                      $style,
+    	                      $align);
+
+    	// reset Y to last known position
+    	$this->setY($Y);
+
+    	// set X to start plus column width
+    	//$this->setX($X + $celldata['width'] +1);
 
         return;
 
     } // printBarcode
 
     // ****************************************************************************
-    function printCell ($celldata, $line_no, $last_line, $border, $fill=1)
+    function printCell ($celldata, $line_no, $last_line, $border, $fill=1, $height_diff=0)
     // print a line from this cell using the contents of $celldata
     {
         // set print style for current cell
@@ -957,12 +1007,13 @@ class PDF extends TCPDF
         } // if
 
         if (isset($fieldspec['subtype']) and $fieldspec['subtype'] == 'image') {
+            $imagename   = $celldata['text'];
         	$imagewidth  = $this->Pixels2Units($fieldspec['imagewidth']);
             $imageheight = $this->Pixels2Units($fieldspec['imageheight']);
             if ($line_no == 0) {
-                if (strlen($text) > 0) {
+                if (strlen($imagename) > 0) {
                 	// output image on first line only
-                    $this->Image($text, $this->getX()+0.5, $this->getY()+0.5, $imagewidth, $imageheight);
+                    $this->Image($imagename, $this->getX()+0.5, $this->getY()+0.5, $imagewidth, $imageheight);
                 } // if
         	} // if
 
@@ -1010,6 +1061,11 @@ class PDF extends TCPDF
 	        } // if
 	    } // if
 
+	    if ($height_diff <> 0) {
+    	    // last line is shorter than normal, so adjust its height
+    	    $height = $height * $height_diff;
+        } // if
+
         $X = $this->getX();
         $Y = $this->getY();
         if (isset($celldata['barcode'])) {
@@ -1033,15 +1089,20 @@ class PDF extends TCPDF
             	} // if
             } // if
             if (!$this->error) {
-                $this->setX($this->getX() + $celldata['width']);
+                $this->setX($X + $celldata['width']);
             } // if
         } else {
-            // output a line of text in the current cell
-            $this->Cell($cell_width, $height, $text, $mod_border, 0, $align, $fill);
+            if (array_key_exists('notext', $celldata['fieldspec'])) {
+            	// write a line without any text
+            	$this->Cell($cell_width, $height, '', $mod_border, 0, $align, $fill);
+            } else {
+                // output a line of text in the current cell
+                $this->Cell($cell_width, $height, $text, $mod_border, 0, $align, $fill);
+            } // if
         } // if
 
-        if ($line_no == 0) {
-            if ($border == 1 OR eregi('T', $border) OR $this->new_page) {
+        if ($line_no == 0 OR $this->new_page) {
+            if ($border == 1 OR eregi('T', $border)) {
             	// draw line along top border of 1st cell in 1st line, or 1st line of new page
             	$this->Line($X, $Y, $X + $cell_width, $Y);
             } // if
@@ -1049,7 +1110,7 @@ class PDF extends TCPDF
 
         $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
 
-        if ($line_no == $last_line OR $lines_left < 2) {
+        if ($line_no >= $last_line OR $lines_left < 2) {
             if ($border == 1 OR eregi('B', $border)) {
             	// draw line along bottom border of last cell
             	$Y = $Y + ($height);
@@ -1097,7 +1158,7 @@ class PDF extends TCPDF
                 	switch (strtolower($attributes['type'])) {
             	    	case 'pageno':
             	    		// Print 'Page n of n'
-                            $text = getLanguageText('Page') .' ' .$this->PageNo() .' ' .getLanguageText('of') ." {nb}";
+                            $text = getLanguageText('Page') .' ' .$this->PageNo() .' ' .getLanguageText('of') .' ' .$this->AliasNbPages;
             	    		break;
             	    	case 'date':
             	    	    // get date in user-defined format
@@ -1179,8 +1240,9 @@ class PDF extends TCPDF
     } // printFooter
 
     // ****************************************************************************
-    function printRow ($print_array, $function, $border=1, $fill=1)
+    function printRow ($print_array, $function, $border, &$fill)
     // print a row containing one or more cells of data.
+    // NOTE: $fill is passed BY REFERENCE as it may be changed.
     // NOTE: $function contains the name of the calling function.
     {
         $max_lines = 1;
@@ -1193,11 +1255,12 @@ class PDF extends TCPDF
         	$print_array[$cellno] = $celldata;  // required for PHP4
         	if (isset($celldata['imageheight'])) {
         		if (!eregi('multi$', $function)) {
-    	            // include barcode size in $line_count
+    	            // include image size in $line_count
         	    	$line_count = $celldata['imageheight'] / $this->last_height;
     	    	} else {
-    	    	    // keep barcode size independent of $line_count
+    	    	    // keep image size independent of $line_count
     	    	    $image_height = $celldata['imageheight'] / $this->last_height;
+    	    	    $line_count = $celldata['imageheight'] / $this->last_height;
         	    } // if
         	} elseif (isset($celldata['barcode'])) {
         	    if (isset($celldata['height'])) {
@@ -1233,7 +1296,7 @@ class PDF extends TCPDF
         if (isset($set_Y_minimum)) {
         	if ($this->getY() > $set_Y_minimum) {
         	    // too far down current page, so start a new page
-        		$this->addPage();
+        	    $this->addPage();
         	} // if
         } // if
         if (isset($set_Y)) {
@@ -1246,19 +1309,31 @@ class PDF extends TCPDF
         $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
         if ($max_lines > $lines_left OR $image_height > $lines_left) {
             if ($max_lines < 3) {
-            	$this->AddPage();  // start a new page
+                $this->AddPage();  // start a new page
             } // if
         } // if
 
         for ($i = 0; $i < $max_lines; $i++) {
-            // print one line from each cell before advancing to next line
-            foreach ($print_array as $cellno => $celldata) {
-                $this->printCell($celldata, $i, $max_lines-1, $border, $fill);
-            } // foreach
+            $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
+            if ($lines_left < 1) {
+                $this->AddPage();
+            } // if
+            if ($this->new_page_fill == true) {
+            	$fill = 0;
+            	$this->new_page_fill = false;
+            } // if
             if ($i+1 > $max_lines) {
             	// this is the last line, but what is its depth?
-            	$remainder = $max_lines - $i;
-            	$this->last_height = $this->last_height * $remainder;
+            	$height_diff = $max_lines - $i;
+            } else {
+                $height_diff = 0;
+            } // if
+            // print one line from each cell before advancing to next line
+            foreach ($print_array as $cellno => $celldata) {
+                $this->printCell($celldata, $i, $max_lines-1, $border, $fill, $height_diff);
+            } // foreach
+            if ($height_diff <> 0) {
+            	$this->last_height = $this->last_height * $height_diff;
             } // if
             $this->Ln($this->last_height);  // line break
             $this->new_page = false;
@@ -1267,6 +1342,36 @@ class PDF extends TCPDF
         return;
 
     } // printRow
+
+    // ****************************************************************************
+    function setFooter ()
+    // override the method in the parent class (which is corrupt!)
+    {
+        $this->InFooter = true;
+        if ($this->print_footer) {
+            $lasth = $this->lasth;
+            $this->_out("q");
+            $this->Footer();
+            $this->_out("Q");
+            $this->lasth = $lasth;
+        } // if
+        $this->InFooter = false;
+
+    } // setFooter
+
+    // ****************************************************************************
+    function setHeader ()
+    // override the method in the parent class (which is corrupt!)
+    {
+        if ($this->print_header) {
+            $lasth = $this->lasth;
+            $this->_out("q");
+            $this->Header();
+            $this->_out("Q");
+            $this->lasth = $lasth;
+        } // if
+
+    } // setHeader
 
     // ****************************************************************************
     function setPrintStyle ($style)
@@ -1318,6 +1423,85 @@ class PDF extends TCPDF
         return $height;
 
     } // setPrintStyle
+
+    // ****************************************************************************
+    function validateStructure ($structure)
+    // check that the report structure is valid.
+    {
+        // read report structure from external file
+        if (empty($structure)) {
+            // 'Report structure has not been defined'
+            trigger_error(getLanguageText('sys0160'), E_USER_ERROR);
+        } // if
+
+        // validate report structure details
+        if (isset($structure['pdf']['orientation'])) {
+        	$orientation = $structure['pdf']['orientation'];
+        } else {
+            // orientation has not been defined in $report
+            trigger_error(getLanguageText('sys0161', $report), E_USER_ERROR);
+        } // if
+
+        if (isset($structure['pdf']['units'])) {
+        	$units = $structure['pdf']['units'];
+        } else {
+            // units have not been defined in $report
+            trigger_error(getLanguageText('sys0162', $report), E_USER_ERROR);
+        } // if
+
+        if (isset($structure['pdf']['format'])) {
+        	$format = $structure['pdf']['format'];
+        } else {
+            // format has not been defined in $report
+            trigger_error(getLanguageText('sys0163', $report), E_USER_ERROR);
+        } // if
+
+        if (!empty($structure['pdf']['name'])) {
+        	$this->filename = $structure['pdf']['name'];
+        } else {
+            $this->filename = 'doc.pdf';
+        } // if
+
+        if (isset($structure['pdf']['destination'])) {
+        	$this->destination = $structure['pdf']['destination'];
+        } else {
+            $this->destination = 'I';
+        } // if
+
+        if (isset($structure['main']['line']['width'])) {
+            $this->line_width = $structure['main']['line']['width'];
+        } else {
+        	$this->line_width = .2;
+        } // if
+
+        $this->structure = $structure;
+        $this->units     = $units;
+
+        // load default style
+        $this->style['default']['font'] = array('family' => 'Helvetica',    // Courier, Helvetica, Times
+                                                'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
+                                                'size' => 11,           // size in points
+                                                'height' => 5,          // line height
+                                                'draw' => .2,           // width of drawn lines
+                                                'align' => 'left');     // text alignment
+
+        $this->style['default']['fillcolour'] = array(255,255,255);     // colour for background
+        $this->style['default']['textcolour'] = array(0,0,0);           // colour for foreground
+        $this->style['default']['drawcolour'] = array(0,0,0);           // colour for line drawing
+
+        // now call constructor in parent class
+        if (version_compare(phpversion(), '5.0.0', '<')) {
+            parent::TCPDF($orientation, $units, $format);
+        } else {
+            // PHP 5 uses different code
+            parent::__construct($orientation, $units, $format);
+        } // if
+
+        $this->printable_width = $this->w - ($this->lMargin + $this->rMargin);
+
+        return;
+
+    } // validateStructure
 
 // ****************************************************************************
 } // end class

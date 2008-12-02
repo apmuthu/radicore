@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:46 pm
     
     // field specifications for table menu.mnu_pattern
     $fieldspec['pattern_id']                = array('type' => 'string',
@@ -19,18 +19,21 @@
                                                     'rows' => 5);
     
     $fieldspec['visible_screen']            = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['context_preselect']         = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['keep_data']                 = array('type' => 'boolean',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -83,6 +86,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'pattern_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

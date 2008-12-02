@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -23,7 +23,7 @@ if (isset($act_buttons['choose'])) {
     	// send selection back to the previous script
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -47,9 +47,7 @@ if (isset($_POST['quit'])) {
 
 // define action buttons
 $act_buttons['reset'] = 'reset';
-if (isset($act_buttons['choose'])) {
-    $act_buttons['quit'] = 'cancel';
-} // if
+$act_buttons['quit']  = 'close';
 if (array_key_exists('select_one', $settings)) {
 	if (!is_True($settings['select_one'])) {
 	    // this option is not valid with multiple selections
@@ -82,8 +80,6 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // perform any initialisation
     $where = $dbobject->initialise($where);
-    // get any data for lookup lists
-    $null = $dbobject->getExtraData($where);
 } // if
 
 // the 'choose' button should only be used in popup screens
@@ -137,12 +133,12 @@ if ($dbobject->errors) {
 	$prev_script = getPreviousScript();
     $prev_task   = getPreviousTask($prev_script);
     // send selection back to the previous script
-    $_SESSION[$prev_script][$prev_task]['selection'] = 'NULL=NULL';
+    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = 'NULL=NULL';
     scriptPrevious($dbobject->errors);
+} else {
+    // get any data for lookup lists
+    $fieldarray = $dbobject->getExtraData($fieldarray, $where);
 } // if
-
-// $where may have been changed in database object
-$where = $dbobject->getWhere();
 
 if ($dbobject->getNumRows() == 0) {
     $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
@@ -167,7 +163,7 @@ if ($dbobject->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $pkey_array = $dbobject->getPkeyArray($fieldarray, $prev_task);
         $selection = array2where($pkey_array);
         // send selection back to the previous script
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -187,8 +183,8 @@ $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbobject->getOrderBy_Out();
-$orderby_seq = $dbobject->getOrderBySeq();
+$orderby     = $dbobject->getOrderBy();
+$orderby_seq = $dbobject->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

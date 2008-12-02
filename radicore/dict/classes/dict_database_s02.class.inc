@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s02 extends dict_dataBase
@@ -10,78 +10,6 @@ class dict_dataBase_s02 extends dict_dataBase
     // This class is used to export all the details of an application database
     // from the dictionary to an SQL file so that they may be reloaded later.
     // ****************************************************************************
-    function _cm_post_getData ($rowdata, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
-    {
-        // create object for retrieving table details
-        require_once 'classes/dict_table.class.inc';
-        $tableobj =& singleton::getInstance('dict_table');
-
-        // process each database separately
-        foreach ($rowdata as $row => $database_data) {
-
-            $database_id = $database_data['database_id'];
-            $subsys_dir  = $database_data['subsys_dir'];
-            if (empty($subsys_dir)) {
-                $subsys_dir = '*undefined*';
-            } // if
-            unset($database_data['subsys_dir']);
-
-			$output = '-- file created on ' .date('F j, Y, g:i a') ."\r\n\r\n";
-
-			$output = $this->_exportSqlData('dict_database', $database_data, $output);
-
-            // export contents of DICT_TABLE for this database
-        	$tableobj->sql_select = '*';
-        	$tableobj->sql_from   = 'dict_table';
-        	$tableobj->sql_orderby = 'table_id';
-            $table_data = $tableobj->getData_raw("database_id='$database_id'");
-
-            // process each table one at a time
-            foreach ($table_data as $row => $data) {
-                $table_id = $data['table_id'];
-            	$output = $this->_exportSqlData('dict_table', $data, $output);
-
-            	// export contents of DICT_TABLE_KEY for this database table
-            	$tableobj->sql_select = '*';
-            	$tableobj->sql_from   = 'dict_table_key';
-            	$tableobj->sql_orderby = 'table_id,key_name,seq_in_index';
-                $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
-                $output = $this->_exportSqlData('dict_table_key', $data, $output);
-
-                // export contents of DICT_COLUMN for this database
-            	$tableobj->sql_select = '*';
-            	$tableobj->sql_from   = 'dict_column';
-            	$tableobj->sql_orderby = 'table_id,column_seq';
-                $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
-                $output = $this->_exportSqlData('dict_column', $data, $output);
-
-                // export contents of DICT_RELATIONSHIP for this database
-            	$tableobj->sql_select = '*';
-            	$tableobj->sql_from   = 'dict_relationship';
-
-            	$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
-            	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
-            	$output = $this->_extractRelationships ($tableobj, $where, $output);
-
-            	$where = "database_id_snr!='$database_id' AND database_id_jnr='$database_id' AND table_id_jnr='$table_id'";
-            	$tableobj->sql_orderby = 'database_id_snr,table_id_snr,seq_no';
-            	$output = $this->_extractRelationships ($tableobj, $where, $output);
-
-            } // foreach
-
-            $output .= "-- finished\r\n";
-
-            // write completed text file to disk
-            $this->_writeTextFile ($output, $database_id, "$subsys_dir/sql");
-
-        } // foreach
-
-		// return an empty array as there is no database update
-        return array();
-
-    } // _cm_post_getData
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
@@ -104,6 +32,77 @@ class dict_dataBase_s02 extends dict_dataBase
     } // _cm_pre_getData
 
     // ****************************************************************************
+    function _cm_pre_updateRecord ($rowdata)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        // create object for retrieving table details
+        $tableobj =& singleton::getInstance('dict_table');
+
+        $database_id = $rowdata['database_id'];
+        $subsys_dir  = $rowdata['subsys_dir'];
+        if (empty($subsys_dir)) {
+            $subsys_dir = '*undefined*';
+        } // if
+        unset($rowdata['subsys_dir']);
+
+		$output = '-- file created on ' .date('F j, Y, g:i a') ."\r\n\r\n";
+
+		$output = $this->_exportSqlData('dict_database', $rowdata, $output);
+
+        // export contents of DICT_TABLE for this database
+    	$tableobj->sql_select = '*';
+    	$tableobj->sql_from   = 'dict_table';
+    	$tableobj->sql_orderby = 'table_id';
+        $table_data = $tableobj->getData_raw("database_id='$database_id'");
+
+        // process each table one at a time
+        foreach ($table_data as $row => $data) {
+            $table_id = $data['table_id'];
+        	$output = $this->_exportSqlData('dict_table', $data, $output);
+
+        	// export contents of DICT_TABLE_KEY for this database table
+        	$tableobj->sql_select = '*';
+        	$tableobj->sql_from   = 'dict_table_key';
+        	$tableobj->sql_orderby = 'table_id,key_name,seq_in_index';
+            $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
+            $output = $this->_exportSqlData('dict_table_key', $data, $output);
+
+            // export contents of DICT_COLUMN for this database
+        	$tableobj->sql_select = '*';
+        	$tableobj->sql_from   = 'dict_column';
+        	$tableobj->sql_orderby = 'table_id,column_seq';
+            $data = $tableobj->getData_raw("database_id='$database_id' AND table_id='$table_id'");
+            $output = $this->_exportSqlData('dict_column', $data, $output);
+
+            // export contents of DICT_RELATIONSHIP for this database
+        	$tableobj->sql_select = '*';
+        	$tableobj->sql_from   = 'dict_relationship';
+
+        	$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
+        	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
+        	$output = $this->_extractRelationships ($tableobj, $where, $output);
+
+        	$where = "database_id_snr!='$database_id' AND database_id_jnr='$database_id' AND table_id_jnr='$table_id'";
+        	$tableobj->sql_orderby = 'database_id_snr,table_id_snr,seq_no';
+        	$output = $this->_extractRelationships ($tableobj, $where, $output);
+
+        } // foreach
+
+        $output .= "-- finished\r\n";
+
+        // write completed text file to disk
+        $this->_writeTextFile ($output, $database_id, "$subsys_dir/sql");
+
+        // do not display update count as there is none
+        $this->display_count = false;
+
+		// return an empty array as there is no database update
+        return array();
+
+    } // _cm_pre_updateRecord
+
+    // ****************************************************************************
     function _exportSqlData ($table_id, $data, $output)
     // output the contents of the $data array to the $output string for $table_id
     {
@@ -117,34 +116,32 @@ class dict_dataBase_s02 extends dict_dataBase
         } // if
 
         // get field names from first row
-        $output .= 'REPLACE INTO `' .$table_id .'` (';
+        $replace_string = 'REPLACE INTO `' .$table_id .'` (';
         foreach ($data[0] as $fieldname => $fieldvalue) {
-        	$output .= "`$fieldname`, ";
+        	$replace_string .= "`$fieldname`, ";
         } // foreach
-        $output = substr_replace($output, null, -2); // drop trailing comma separator
-        $output .= ') VALUES ' ."\r\n";
+        $replace_string = substr_replace($replace_string, null, -2); // drop trailing comma separator
+        $replace_string .= ') VALUES ';
 
         // output values from each row
         foreach ($data as $row => $rowdata) {
-            $output .= '(';
+            $value_string = '';
             foreach ($rowdata as $fieldname => $fieldvalue) {
                 if (strlen($fieldvalue) == 0) {
-                	$output .= "NULL, ";
+                	$value_string .= "NULL, ";
                 } else {
-                    $output .= "'" .addslashes($fieldvalue) ."', ";
+                    $value_string .= "'" .addslashes($fieldvalue) ."', ";
                 } // if
             } // foreach
-            $output = substr_replace($output, null, -2); // drop trailing comma separator
-            $output .= '),' ."\r\n";
+            $value_string = substr_replace($value_string, null, -2); // drop trailing comma separator
+            $output .= $replace_string .'(' .$value_string .');' ."\r\n";
         } // foreach
-        $output = substr_replace($output, ';', -3); // replace trailing comma with semicolon
 
-        $output .= "\r\n\r\n";
+        $output .= "\r\n";
 
         return $output;
 
     } // _exportSqlData
-
 
     // ****************************************************************************
     function _extractRelationships ($tableobj, $where, $output)

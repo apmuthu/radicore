@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update1.inc
@@ -64,7 +64,7 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {
         scriptPrevious($dbobject->errors);
     } // if
@@ -110,17 +110,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
         // get data from the database
         $fieldarray = $dbobject->getData($where);
+        $dbobject->validateUpdate($fieldarray);
         if ($dbobject->errors) {
             if ($dbobject->numrows > 1) {
                 // multiple rows, so display error message with this screen
                 $errors[$dbobject->getClassName()] = $dbobject->errors;
             	unset($act_buttons['submit']);
                 unset($act_buttons['submitnext']);
+                // switch the whole zone into 'noedit' mode
+                $dbobject->xsl_params['main_noedit'] = 'y';
             } else {
                 // single row, so return to previous script before displaying error message
                 $messages = array_merge($messages, $dbobject->getMessages());
                 scriptprevious($dbobject->errors, $messages);
             } // if
+        } else {
+            // no errors, so turn off the 'noedit' switch
+            unset($dbobject->xsl_params['main_noedit']);
         } // if
         if ($dbobject->getNumRows() < 1) {
             scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
@@ -140,9 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         // rebuild selection criteria using primary key of 1st occurrence
         $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
     } // if
-
-    $messages = array_merge($messages, $dbobject->getMessages());
-
 } // if
 
 // look for entered data
@@ -178,10 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (!empty($errors)) {
                 $dbobject->rollback();
             } else {
-                if (empty($messages)) {
-                    if ($dbobject->numrows > 0) {
-                    	$messages[] = getLanguageText('sys0092'); // 'Record updated OK'
-                    } // if
+                if ($dbobject->numrows > 0) {
+                	$messages[] = getLanguageText('sys0092'); // 'Record updated OK'
                 } // if
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
                     // update was OK, no more items, so return to previous screen
@@ -231,6 +232,10 @@ if (isset($_SESSION['data'][$dbobject->tablename])) {
     // saved data exists, so allow a PASTE button
     $prepend = array('paste' => 'paste');
     $act_buttons = array_merge($prepend, $act_buttons);
+} // if
+
+if (!empty($dbobject->messages)) {
+    $messages = array_merge($messages, $dbobject->messages);
 } // if
 
 // save these variables for later in the same session

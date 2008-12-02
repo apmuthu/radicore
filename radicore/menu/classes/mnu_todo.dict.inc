@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 3:01 pm
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -121,6 +121,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'user_id, due_date, seq_no';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

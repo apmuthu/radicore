@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:50 pm
     
     // field specifications for table menu.mnu_role_task
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -69,6 +69,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

@@ -41,7 +41,7 @@ class crs_schedule extends Default_Table
             $this->fieldspec['lesson_id']['noedit'] = 'y';
         } // if
 
-        // display ehese times as 'hh:mm' and not 'hh:mm@ss'
+        // display these times as 'hh:mm' and not 'hh:mm@ss'
         $this->fieldspec['start_time']['size'] = 5;
         $this->fieldspec['end_time']['size']   = 5;
 
@@ -128,13 +128,11 @@ class crs_schedule extends Default_Table
 
         // ****************************************************************************
         // check student numbers against room capacity
-        //require_once 'classes/crs_room.class.inc';
         $roomOBJ =& singleton::getInstance('crs_room');
         $roomOBJ->sql_select = 'room_capacity';
         $data = $roomOBJ->getData("room_id='$room_id'");
         $room_capacity = $data[0]['room_capacity'];
 
-        //require_once 'classes/crs_class_lesson.class.inc';
         $class_lessonOBJ =& singleton::getInstance('crs_class_lesson');
         $class_lessonOBJ->sql_select  = 'crs_class_lesson.lesson_id, count(student_id) as count';
         $class_lessonOBJ->sql_from    = 'crs_class_lesson '
@@ -147,7 +145,6 @@ class crs_schedule extends Default_Table
             $count1 = 0;
         } // if
 
-        //require_once 'classes/crs_student_lesson.class.inc';
         $student_lessonOBJ =& singleton::getInstance('crs_student_lesson');
         $count2 = $student_lessonOBJ->getCount("lesson_id='$lesson_id'");
 
@@ -160,7 +157,6 @@ class crs_schedule extends Default_Table
         // ****************************************************************************
 
         // check if other scheduled lessons could conflict with this one
-        //require_once 'classes/crs_conflict.class.inc';
         $conflictOBJ =& singleton::getInstance('crs_conflict');
         $conflictOBJ->sql_orderby = 'lesson_id2';
         $conflictOBJ->sql_groupby = 'lesson_id2';

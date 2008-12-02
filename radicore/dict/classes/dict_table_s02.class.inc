@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
@@ -55,12 +55,12 @@ class dict_table_s02 extends dict_table
     			$this->_createFieldSpecs($data);
 
                 // process primary key details
-                $keyobj->sql_orderby = 'seq_in_index';
+                $keyobj->sql_orderby = 'key_name, seq_in_index';
                 $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
                 $this->_createPKeySpecs($data);
 
                 // process candidate key details
-                $keyobj->sql_orderby = 'seq_in_index';
+                $keyobj->sql_orderby = 'key_name, seq_in_index';
                 $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name<>'PRIMARY' AND is_unique='Y'");
                 $this->_createUKeySpecs($data);
 
@@ -99,6 +99,18 @@ class dict_table_s02 extends dict_table
                 $entry = '    $this->default_orderby';
                 $entry = str_pad($entry, 44);
                 $entry .= "= '".$tabledata['default_orderby'] ."';\n";
+                $this->text_out .= $entry;
+                $this->text_out .= "    \n";
+
+                // alternative language options
+                $this->text_out .= '    // alternative language options ' ."\n";
+                $entry = '    $this->alt_language_table';
+                $entry = str_pad($entry, 44);
+                $entry .= "= '".$tabledata['alt_language_table'] ."';\n";
+                $this->text_out .= $entry;
+                $entry = '    $this->alt_language_cols';
+                $entry = str_pad($entry, 44);
+                $entry .= "= '".$tabledata['alt_language_cols'] ."';\n";
                 $this->text_out .= $entry;
                 $this->text_out .= "    \n";
 
@@ -142,15 +154,22 @@ class dict_table_s02 extends dict_table
     } // _cm_pre_getData
 
     // ****************************************************************************
+    function _cm_pre_updateMultiple ($rows)
+    // perform custom processing before multiple database records are updated.
+    {
+        // customisable code goes here
+        $this->display_count = false;
+
+        return $rows;
+
+    } // _cm_pre_updateMultiple
+
+    // ****************************************************************************
     function _createChildRelations ($rel_array)
     // format the contents of $rel_array into the $child_relations array.
     {
         // create an object to obtain column data
-        static $colobj;
-        if (!is_object($colobj)) {
-            require_once 'classes/dict_related_column.class.inc';
-            $colobj =& singleton::getInstance('dict_related_column');
-        } // if
+        $colobj =& singleton::getInstance('dict_related_column');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
@@ -164,7 +183,13 @@ class dict_table_s02 extends dict_table
             $this->text_out .= $entry;
         } else {
             foreach ($rel_array as $row => $rowdata) {
-            	// start entry for primary key
+                $db_id_snr  = $rowdata['database_id_snr'];
+                $tbl_id_snr = $rowdata['table_id_snr'];
+                $db_id_jnr  = $rowdata['database_id_jnr'];
+                $tbl_id_jnr = $rowdata['table_id_jnr'];
+                $seq_no     = $rowdata['seq_no'];
+
+            	// start entry for this relationship
                 $entry = $indent .'$this->child_relations[]';
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('child' => '{$rowdata['table_id_jnr']}',";
@@ -179,17 +204,11 @@ class dict_table_s02 extends dict_table
                 if (!empty($rowdata['orderby'])) {
                     $entry .= "\n$indent2'orderby' => '{$rowdata['orderby']}',";
                 } // if
-                $entry .= "\n$indent2'fields' => array(";
 
                 // insert column details for this relationship
-                $db_id_snr  = $rowdata['database_id_snr'];
-                $tbl_id_snr = $rowdata['table_id_snr'];
-                $db_id_jnr  = $rowdata['database_id_jnr'];
-                $tbl_id_jnr = $rowdata['table_id_jnr'];
-                $seq_no     = $rowdata['seq_no'];
+                $entry .= "\n$indent2'fields' => array(";
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
-
                 foreach ($data as $row => $coldata) {
                 	if ($row > 0) {
                         // entries after the first are on a separate line
@@ -266,11 +285,20 @@ class dict_table_s02 extends dict_table
 	            if (strlen($column['col_scale']) > 0) {
 	                $entry .= ",\n$indent2'scale' => " .$column['col_scale'];
 	            } // if
-	            if ($column['col_zerofill_bwz'] == 'ZF') {
-	                $entry .= ",\n$indent2'zerofill' => 'y'";
-	            } // if
-	            if ($column['col_zerofill_bwz'] == 'BWZ') {
-	                $entry .= ",\n$indent2'blank_when_zero' => 'y'";
+	            if (!empty($column['col_zerofill_bwz'])) {
+	            	switch ($column['col_zerofill_bwz']) {
+	            		case 'ZF':
+	            			$entry .= ",\n$indent2'zerofill' => 'y'";
+	            			break;
+	            		case 'BWZ':
+	            			$entry .= ",\n$indent2'blank_when_zero' => 'y'";
+	            			break;
+	            		case 'STZ':
+	            			$entry .= ",\n$indent2'strip_trailing_zero' => 'y'";
+	            			break;
+	            		default:
+	            			break;
+	            	} // switch
 	            } // if
 	            if (is_True($column['col_auto_increment'])) {
 	                $entry .= ",\n$indent2'auto_increment' => 'y'";
@@ -402,11 +430,9 @@ class dict_table_s02 extends dict_table
     // format the contents of $rel_array into the $parent_relations array.
     {
         // create an object to obtain column data
-        static $colobj;
-        if (!is_object($colobj)) {
-            //require_once 'classes/dict_related_column.class.inc';
-            $colobj =& singleton::getInstance('dict_Related_Column');
-        } // if
+        $colobj =& singleton::getInstance('dict_related_column');
+        // create an object to obtain table data
+        $tblobj =& singleton::getInstance('dict_table');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
@@ -420,7 +446,13 @@ class dict_table_s02 extends dict_table
             $this->text_out .= $entry;
         } else {
             foreach ($rel_array as $row => $rowdata) {
-            	// start entry for primary key
+                $db_id_snr  = $rowdata['database_id_snr'];
+                $tbl_id_snr = $rowdata['table_id_snr'];
+                $db_id_jnr  = $rowdata['database_id_jnr'];
+                $tbl_id_jnr = $rowdata['table_id_jnr'];
+                $seq_no     = $rowdata['seq_no'];
+
+            	// start entry for this relationship
                 $entry = $indent .'$this->parent_relations[]';
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('parent' => '{$rowdata['table_id_snr']}',";
@@ -438,17 +470,21 @@ class dict_table_s02 extends dict_table
                         $entry .= "\n$indent2'parent_field' => '{$rowdata['parent_field']}',";
                     } // if
                 } // if
-                $entry .= "\n$indent2'fields' => array(";
+
+                // look for alternative language table
+                $data = $tblobj->getData("database_id='$db_id_snr' AND table_id='$tbl_id_snr'");
+                if (!empty($data)) {
+                	$data = $data[0];
+                	if (!empty($data['alt_language_table'])) {
+                		$entry .= "\n$indent2'alt_language_table' => '" .$data['alt_language_table'] ."',";
+                		$entry .= "\n$indent2'alt_language_cols' => '" .$data['alt_language_cols'] ."',";
+                	} // if
+                } // if
 
                 // insert column details for this relationship
-                $db_id_snr  = $rowdata['database_id_snr'];
-                $tbl_id_snr = $rowdata['table_id_snr'];
-                $db_id_jnr  = $rowdata['database_id_jnr'];
-                $tbl_id_jnr = $rowdata['table_id_jnr'];
-                $seq_no     = $rowdata['seq_no'];
+                $entry .= "\n$indent2'fields' => array(";
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
-
                 foreach ($data as $row => $coldata) {
                 	if ($row > 0) {
                         // entries after the first are on a separate line
@@ -529,6 +565,8 @@ class dict_table_s02 extends dict_table
                         } // if
                         unset($key_array[$row]);
                     } else {
+                        $entry .= ");\n$indent\n";
+       	                $this->text_out .= $entry;
                         break;
                     } // if
                 } // foreach
@@ -573,6 +611,9 @@ class dict_table_s02 extends dict_table
 	                $this->errors[] = getLanguageText('sys0055', $fname); // "Cannot write to file $fname";
 	            } // if
 	            fclose($fp);
+	            if (!eregi('^WIN', PHP_OS)) {
+                	chmod($fname, 0664);
+                } // if
 	            $this->messages[] = getLanguageText('sys0093', $fname); // "Exported to $fname";
 	        } // if
 		} // if
@@ -597,6 +638,9 @@ class dict_table_s02 extends dict_table
                 $this->errors[] = getLanguageText('sys0055', $fname); // "Cannot write to file $fname";
             } // if
             fclose($fp);
+            if (!eregi('^WIN', PHP_OS)) {
+            	chmod($fname, 0664);
+            } // if
             $this->messages[] = getLanguageText('sys0093', $fname); // "Exported to $fname";
         } // if
 

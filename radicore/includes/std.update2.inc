@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update2.inc
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (basename($return_from) <> $popup_task) {
         // have not been to popup screen yet, so go there now
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
-        $script_vars = $_SESSION[$PHP_SELF][$task_id];
+        $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
         $fieldarray  = array();
         $settings    = null;
         // may need to adjust contents of $where or $settings

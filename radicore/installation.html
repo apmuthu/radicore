@@ -16,6 +16,7 @@
     - dict
     - images
     - includes
+    - logs
     - menu
     - product
     - survey
@@ -77,6 +78,7 @@ Note that the contents of .htaccess will be ignored by Apache unless the correct
 	<li>RADICORE - for the <code>errorlog.html</code> file.</li>
   <li>CLASSES - for all <code>&lt;table&gt;.class.inc</code> and <code>&lt;table&gt;.dict.inc</code> files.</li>
 	<li>HELP/EN - for all <code>&lt;script_id&gt;.help.txt</code> files.</li>
+  <li>LOGS - for all output from background tasks.</li>
 	<li>SQL - for all <code>&lt;subsystem&gt;.dict_export.sql</code> and <code>&lt;subsystem&gt;.menu_export.sql</code> files.</li>
 	<li>TEXT - for all <code>&lt;subsystem&gt;.menu_export.txt</code> files.</li>
 	<li>XSL - for all <code>&lt;script_id&gt;.xml</code> files.</li>
@@ -109,6 +111,7 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
   <li>The tables used by each subsystem must be created in separate databases, as shown in the various <code>&lt;subsystem&gt;-schema.sql</code> scripts. It is not possible to create all the tables in a single database. After connecting to the MySQL server the application will use the <a href="http://www.php.net/manual/en/function.mysql-select-db.php">mysql_select_db()</a> function to identify the current database.</li>
 	<li>MySQL is case-insensitive by default, but some non-Windows operating systems can reverse this behaviour. In order to avoid any potential problems you should therefore ensure that the <code>lower_case_table_names</code> variable is set to 1. Please refer to <a href="http://dev.mysql.com/doc/refman/4.1/en/name-case-sensitivity.html">Identifier Case Sensitivity</a> for details.</li>
   <li>In order to allow the use of database names with '-' (hyphen) instead of '_' (underscore) you must use the configuration option <code>sql_mode='ANSI_QUOTES'</code> so that database names can be enclosed in double quotes (the SQL standard) as well as backticks (specific to MySQL). Please refer to <a href="http://dev.mysql.com/doc/refman/4.1/en/sql-mode.html">Selecting SQL Modes</a> for details. If your version of MySQL is before 4.1 then you must go info MySQL Administrator->Startup Variables->Advanced and ensure that <code>Use ANSI SQL</code> is checked ON. If your version of MySQL is 4.1 or later this option will be set programmatically.</li>
+  <li>Although with MySQL it is possible to use a mix of different collations (character encoding) on different columns, this is not a good idea in practice as it requires more complex SQL statements when comparing columns with different collations. It is therefore best to use the same character set for all columns, with UTF-8 being the most flexible.</li>
 	</ul>
 </li>
 
@@ -150,6 +153,7 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
 <li>The only file you need to amend should be CONFIG.INC (in the INCLUDES directory) to specify the username and password for your database. You can rename CONFIG.INC.DEFAULT to CONFIG.INC to provide a starting version.
 <p>If you are using MySQL on a shared server you may need to set <code>$GLOBALS['dbprefix']</code> to your account name. If your databases do not have a prefix then this should be set to null.</p>
 <p>If you wish to use the HTTPS protocol with a secure server then please read <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq58">FAQ 58</a>.</p>
+<p>If you wish to access different databases on different servers then please read <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq92">FAQ 92</a>.</p>
 </li>
 
 <li>Each subsystem may contain a file called <code>include.subsystem.inc</code> which can be used to make global environmental changes during the processing of scripts within that subsystem. Please refer to <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq86">FAQ 86</a> for details.</li>

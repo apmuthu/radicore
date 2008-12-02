@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
@@ -25,14 +25,52 @@ class date_class {
         	$this->date_format = $GLOBALS['date_format'];
         } // if
 
-        if (!eregi('^(dmy|mdy|ymd)$', $this->date_format)) {
-            $this->date_format = 'dmy';
-        } // if
-
     } // date_class
 
     // ****************************************************************************
     // accessor functions
+    // ****************************************************************************
+    function formatDate ($dd, $mm, $ccyy)
+    // convert a date into the format required by the user
+    {
+        $format     = strtolower($this->date_format);
+        $monthalpha = $this->monthalpha;
+
+        switch ($format) {
+        	case 'dmy':
+        	    $mm     = (int)$mm;
+        		$output = "$dd $monthalpha[$mm] $ccyy";
+        		break;
+
+        	case 'mdy':
+        	    $mm     = (int)$mm;
+        		$output = "$monthalpha[$mm] $dd $ccyy";
+        		break;
+
+        	case 'dd/mm/yyyy':
+        		$output = "$dd/$mm/$ccyy";
+        		break;
+
+        	case 'dd.mm.yyyy':
+        		$output = "$dd.$mm.$ccyy";
+        		break;
+
+        	case 'dd/mm/yy':
+        	    $yy = substr($ccyy, 2);
+        		$output = "$dd/$mm/$yy";
+        		break;
+
+        	case 'ymd':
+        	default:
+        	    $mm     = (int)$mm;
+        	    $output = "$ccyy $monthalpha[$mm] $dd";
+        		break;
+        } // switch
+
+        return $output;
+
+    } // formatDate
+
     // ****************************************************************************
     function getInternalDate ($input)
     // convert date from external format (as input by user)
@@ -45,7 +83,7 @@ class date_class {
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([0-9]{0,4}$)';     // 0 to 4 digits
         if (ereg($pattern, $input, $regs)) {
-            if (eregi('^(dmy)$', $this->date_format)) {
+            if (eregi('^(dmy|dd/mm/yyyy|dd\.mm\.yyyy|dd/mm/yy)$', $this->date_format)) {
                 $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
             } else { // assume 'mdy'
                 $result = $this->verifyDate($regs[3], $regs[1], $regs[5]);
@@ -264,7 +302,11 @@ class date_class {
         } elseif (strlen($year) == 1) {
             $year = '200' . $year;
         } elseif (strlen($year) == 2) {
-            $year = '20' . $year;
+            if ($year > 50) {
+            	$year = '19' . $year;
+            } else {
+                $year = '20' . $year;
+            } // if
         } elseif (strlen($year) == 3) {
             $year = '2' . $year;
         } // if
@@ -331,14 +373,15 @@ class date_class {
                     $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
                     return false;
                 } else {
-                    $monthnum = (int)$regs[2];
-                    if (eregi('^(dmy)$', $this->date_format)) {
-                        $this->externaldate = "$regs[3] $monthalpha[$monthnum] $regs[1]";
-                    } elseif (eregi('^(mdy)$', $this->date_format)) {
-                        $this->externaldate = "$monthalpha[$monthnum] $regs[3] $regs[1]";
-                    } else { // assume 'ymd'
-                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[3]";
-                    } // if
+                    $this->externaldate = $this->formatDate($regs[3], $regs[2], $regs[1]);
+//                    $monthnum = (int)$regs[2];
+//                    if (eregi('^(dmy)$', $this->date_format)) {
+//                        $this->externaldate = "$regs[3] $monthalpha[$monthnum] $regs[1]";
+//                    } elseif (eregi('^(mdy)$', $this->date_format)) {
+//                        $this->externaldate = "$monthalpha[$monthnum] $regs[3] $regs[1]";
+//                    } else { // assume 'ymd'
+//                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[3]";
+//                    } // if
                     return $this->externaldate;
                 } // if
             } // if
@@ -379,14 +422,15 @@ class date_class {
                     $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
                     return false;
                 } else {
-                    $monthnum = (int)$regs[3];
-                    if (eregi('^(dmy)$', $this->date_format)) {
-                        $this->externaldate = "$regs[5] $monthalpha[$monthnum] $regs[1]";
-                    } elseif (eregi('^(mdy)$', $this->date_format)) {
-                        $this->externaldate = "$monthalpha[$monthnum] $regs[5] $regs[1]";
-                    } else { // assume 'ymd'
-                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[5]";
-                    } // if
+                    $this->externaldate = $this->formatDate($regs[5], $regs[3], $regs[1]);
+//                    $monthnum = (int)$regs[3];
+//                    if (eregi('^(dmy)$', $this->date_format)) {
+//                        $this->externaldate = "$regs[5] $monthalpha[$monthnum] $regs[1]";
+//                    } elseif (eregi('^(mdy)$', $this->date_format)) {
+//                        $this->externaldate = "$monthalpha[$monthnum] $regs[5] $regs[1]";
+//                    } else { // assume 'ymd'
+//                        $this->externaldate = "$regs[1] $monthalpha[$monthnum] $regs[5]";
+//                    } // if
                     return $this->externaldate;
                 } // if
             } // if

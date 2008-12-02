@@ -1,24 +1,21 @@
 -- phpMyAdmin SQL Dump
--- version 2.10.0.2
+-- version 2.11.3
 -- http://www.phpmyadmin.net
--- 
+--
 -- Host: localhost
--- Generation Time: Mar 06, 2007 at 11:46 AM
+-- Generation Time: Jan 07, 2008 at 02:16 PM
 -- Server version: 4.1.22
--- PHP Version: 4.4.6
+-- PHP Version: 4.4.7
 
--- 
+--
 -- Database: `dict`
--- 
-
-CREATE DATABASE dict ;
-USE dict ;
+--
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_column`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_column` (
   `database_id` varchar(64) NOT NULL default '',
@@ -79,9 +76,9 @@ CREATE TABLE IF NOT EXISTS `dict_column` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_database`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_database` (
   `database_id` varchar(64) NOT NULL default '',
@@ -97,9 +94,9 @@ CREATE TABLE IF NOT EXISTS `dict_database` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_related_column`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_related_column` (
   `database_id_snr` varchar(64) NOT NULL default '',
@@ -119,9 +116,9 @@ CREATE TABLE IF NOT EXISTS `dict_related_column` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_relationship`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_relationship` (
   `database_id_snr` varchar(64) NOT NULL default '',
@@ -146,9 +143,9 @@ CREATE TABLE IF NOT EXISTS `dict_relationship` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_table`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_table` (
   `database_id` varchar(64) NOT NULL default '',
@@ -157,6 +154,8 @@ CREATE TABLE IF NOT EXISTS `dict_table` (
   `tbl_comment` text,
   `audit_logging` char(1) NOT NULL default 'Y',
   `default_orderby` varchar(64) default NULL,
+  `alt_language_table` varchar(64) default NULL,
+  `alt_language_cols` text,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -166,9 +165,9 @@ CREATE TABLE IF NOT EXISTS `dict_table` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `dict_table_key`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `dict_table_key` (
   `database_id` varchar(64) NOT NULL default '',

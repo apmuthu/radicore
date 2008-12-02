@@ -119,35 +119,32 @@ class x_tree_level_s01 extends x_tree_level
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        // peform standard processing in the parent class
-        $where = parent::_cm_pre_getData($where, $where_array, $fieldarray);
-
-        // convert modified string back into an associative array
-        $where_array = where2array($where);
-
         // unset rows_per_page for maintenance screen
         $this->rows_per_page = 0;
 
         // allow this field to be edited
         unset($this->fieldspec['tree_level_seq']['noedit']);
 
+        // these fields must be display only
+        $this->fieldspec['tree_level_id']['noedit']   = 'y';
+        $this->fieldspec['tree_level_desc']['noedit'] = 'y';
+
         // selection criteria must be limited to 'tree_type'
         $where = "tree_type_id ='{$where_array['tree_type_id']}'";
 
-        // include details of current junior level (if there is one)
-        $this->sql_select = 'x_tree_level.tree_type_id,'
-                          . 'x_tree_level.tree_level_id,'
-                          . 'x_tree_level.tree_level_seq,'
-                          . 'x_tree_level.tree_level_desc,'
-                          . 't2.tree_level_id as tree_level_id_jnr,'
-                          . 't2.tree_level_seq as tree_level_seq_jnr';
-        $this->sql_from = 'x_tree_level '
-                        . 'LEFT JOIN x_tree_level AS t2 ON (t2.tree_type_id = x_tree_level.tree_type_id AND t2.tree_level_seq = (x_tree_level.tree_level_seq +1))';
-        $this->sql_where = '';
-
-        // these ields must be display only
-        $this->fieldspec['tree_level_id']['noedit']   = 'y';
-        $this->fieldspec['tree_level_desc']['noedit'] = 'y';
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // include details of current junior level (if there is one)
+            $this->sql_select .= ', t2.tree_level_id as tree_level_id_jnr'
+                               . ', t2.tree_level_seq as tree_level_seq_jnr';
+            $this->sql_from   .= ' LEFT JOIN x_tree_level AS t2 ON (t2.tree_type_id = x_tree_level.tree_type_id AND t2.tree_level_seq = (x_tree_level.tree_level_seq +1))';
+            $this->sql_where = '';
+        } // if
 
         return $where;
 

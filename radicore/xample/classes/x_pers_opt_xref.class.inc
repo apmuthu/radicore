@@ -100,6 +100,32 @@ class x_pers_opt_xref extends Default_Table
 
     } // _cm_post_updateLinkData
 
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        // customisable code goes here
+
+//        if (empty($this->sql_from)) {
+//            // construct default SELECT and FROM clauses using parent relations
+//            $this->sql_select  = null;
+//            $this->sql_from    = null;
+//            $this->sql_groupby = null;
+//            $this->sql_having  = null;
+//            $where_str = $this->_sqlAssembleWhere($where, $where_array);
+//            $this->sql_select .= ', pers_type_desc';
+//            $this->sql_from   .= ' LEFT JOIN x_pers_type ON (x_pers_type.pers_type_id=x_person.pers_type_id)';
+//            $where_array['pers_type_id'] = 'DOLLY';
+//            $where = array2where($where_array);
+//        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

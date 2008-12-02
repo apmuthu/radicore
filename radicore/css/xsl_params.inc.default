@@ -1,0 +1,26 @@
+<?php
+
+// identify icons to use above menu bar in hyperlinks
+$xsl_params['icon']['logged-in-as'] = '/images/user.png';
+$xsl_params['icon']['help']         = '/images/help.png';
+$xsl_params['icon']['logout']       = '/images/logout.png';
+$xsl_params['icon']['logout-all']   = '/images/logout-all.png';
+$xsl_params['icon']['print']        = '/images/print.png';
+$xsl_params['icon']['noprint']      = '/images/noprint.png';
+$xsl_params['icon']['new-session']  = '/images/new-session.png';
+$xsl_params['icon']['recover-pswd'] = '/images/recover-pswd.png';
+
+// set display size of these icons (in pixels)
+$xsl_params['icon']['size'] = 20;
+
+// identify icon to use on home page
+$xsl_params['icon']['home']         = '/images/home.png';
+
+// remove text entries to remove corresponding hyperlinks
+//unset($xsl_params['text']['logout-all']);
+//unset($xsl_params['text']['recover-pswd']);
+//unset($xsl_params['text']['new-session']);
+//unset($xsl_params['text']['print']);
+//unset($xsl_params['text']['noprint']);
+
+?>

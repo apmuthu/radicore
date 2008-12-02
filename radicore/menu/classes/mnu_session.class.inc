@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_session extends Default_Table
@@ -18,7 +18,7 @@ class mnu_session extends Default_Table
         $this->tablename   = 'mnu_session';
         $this->dbname      = 'menu';
 
-                // call this method to get original field specifications
+        // call this method to get original field specifications
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
@@ -46,6 +46,10 @@ class mnu_session extends Default_Table
                                                     'required' => 'y');
 
         $this->fieldspec = $fieldspec;
+
+//        if (empty($this->css_files)) {
+//        	$this->css_files[] = 'alternate.css';
+//        } // if
 
         return $fieldarray;
 
@@ -104,7 +108,7 @@ class mnu_session extends Default_Table
         // perform standard validation
         $fieldarray = $this->_validateUpdate($fieldarray);
         if ($this->errors) {
-        	return $fieldarray;
+        	return;
         } // if
 
         // store these values in the $_SESSION array
@@ -115,23 +119,19 @@ class mnu_session extends Default_Table
             // remove any tasks that have been placed in the queue
             unset($_SESSION['script_sequence']);
             // delete current scripts from memory
-        	foreach ($_SESSION as $key => $value) {
-        		if (substr($key, 0, 1) == '/') {
-        		    // value starts with '/', so it's a script name
-        		    switch (basename($key)) {
-        		    	case 'logon.php':
-        		    	    break;
-        		    	case 'menu.php':
-        		    	    break;
-        		    	case basename($_SERVER['PHP_SELF']):
-        		    	    break;
+        	foreach ($_SESSION['pages'] as $key => $value) {
+    		    switch (basename($key)) {
+    		    	case 'logon.php':
+    		    	case 'menu.php':
+    		    	case basename($_SERVER['PHP_SELF']):
+    		    	    // do not delete
+    		    	    break;
 
-        		    	default:
-        		    	    unset($_SESSION[$key]);
-        		    		break;
-        		    } // switch
-
-        		} // if
+    		    	default:
+    		    	    // delete
+    		    	    unset($_SESSION['pages'][$key]);
+    		    		break;
+    		    } // switch
         	} // foreach
         } // if
 
@@ -139,7 +139,7 @@ class mnu_session extends Default_Table
         $_SESSION['css_file'] = $fieldarray['css_file'];
         setcookie("theme", $fieldarray['css_file'], time()+7776000, '/');
 
-        return $fieldarray;
+        return;
 
     } // _cm_updateSelection
 

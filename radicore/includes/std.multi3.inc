@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi3.inc
@@ -42,9 +42,10 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['reset']  = 'reset';
-$act_buttons['submit'] = 'submit';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['reset']      = 'reset';
+$act_buttons['submit']     = 'submit';
+$act_buttons['submitnext'] = 'submitnext';
+$act_buttons['quit']       = 'cancel';
 
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
@@ -72,7 +73,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->errors);
     } // if
@@ -103,13 +105,18 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle->sql_where   = &$middle_sql_where;
     $dbmiddle->sql_groupby = &$middle_sql_groupby;
     $dbmiddle->sql_having  = &$middle_sql_having;
+    if (!empty($task_selection)) {
+        $dbmiddle->setSqlWhere($task_selection);
+    } // if
     if (!empty($middle_sql_orderby)) {
         $dbmiddle->setDefaultOrderby($middle_sql_orderby);
+    } elseif (!empty($task_orderby)) {
+        $dbmiddle->setDefaultOrderby($task_orderby);
     } // if
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
     // perform any initialisation
-    $null = $dbmiddle->initialise($where);
+    $null = $dbmiddle->initialise($original_where);
     if ($dbmiddle->errors) {
         scriptPrevious($dbmiddle->errors);
     } // if
@@ -133,13 +140,16 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
+    if (!empty($task_selection)) {
+        $dbinner->setSqlWhere($task_selection);
+    } // if
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->errors);
     } // if
@@ -156,7 +166,7 @@ if (!empty($_POST)) {
 } // if
 
 // look for entered data
-if (isset($_POST['submit'])) {
+if (isset($_POST['submit']) OR isset($_POST['submitnext'])) {
     // update database with changes in POST array
     $dbinner->startTransaction();
     $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
@@ -172,6 +182,19 @@ if (isset($_POST['submit'])) {
         $errors = $dbinner->commit();
         if (empty($errors)) {
             $messages[] = getLanguageText('sys0091'); // 'Update successful'
+        } // if
+        if (isset($_POST['submitnext'])) {
+            $curitem  = $scrolling[$dbmiddle->getClassName()]['curitem'];
+            $lastitem = $scrolling[$dbmiddle->getClassName()]['lastitem'];
+            if ($curitem < $lastitem) {
+                // skip to the next item
+                $curitem++;
+                $scrolling[$dbmiddle->getClassName()]['curitem'] = $curitem;
+                $dbmiddle->setPageNo($curitem);
+                $where = $scrolling[$dbouter->getClassName()]['where'];
+                $fieldarray = $dbmiddle->getData($where);
+                $scrolling[$dbmiddle->getClassName()]['lastitem'] = $dbmiddle->getLastPage();
+            } // if
         } // if
     } // if
 } // if
@@ -240,7 +263,8 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName(
 $dbmiddle->setFieldArray($outer_data);
 
 // get primary key of 1st row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
@@ -270,7 +294,8 @@ if ($dbmiddle->errors) {
 } // if
 
 // get primary key of row retrieved from middle entity
-$middle_where = array2where($middle_data, $dbmiddle->getPkeyNames(), $dbmiddle);
+$pkeynames = $dbmiddle->getPkeyNamesAdjusted();
+$middle_where = array2where($middle_data, $pkeynames, $dbmiddle);
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -365,8 +390,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

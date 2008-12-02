@@ -1,0 +1,3 @@
+This will display a record from the LANGUAGE table and allow it to be deleted.
+
+Refer to <a href="%root%/mnu_language(del1).html">Delete Language</a> for full details.

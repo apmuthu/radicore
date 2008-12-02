@@ -14,7 +14,7 @@ $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('class_id' => 'Id');
 $structure['main']['fields'][] = array('class_name' => 'Name');
 $structure['main']['fields'][] = array('year' => 'Year');
-$structure['main']['fields'][] = array('lesson_count' => 'Lessons', 'nosort' => 'y');
-$structure['main']['fields'][] = array('student_count' => 'Students', 'nosort' => 'y');
+$structure['main']['fields'][] = array('lesson_count' => 'Lessons');
+$structure['main']['fields'][] = array('student_count' => 'Students');
 
 ?>

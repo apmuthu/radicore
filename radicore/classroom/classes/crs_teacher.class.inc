@@ -61,7 +61,7 @@ class crs_teacher extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        // set survey_id to next available number
+        // set id to next available number
         $count = $this->getCount("SELECT max(teacher_id) FROM $this->tablename");
         $fieldarray['teacher_id'] = $count + 1;
 

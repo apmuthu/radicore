@@ -7,7 +7,7 @@
 
 $table_id = '#tablename#';       	// table name
 
-require_once 'std.delete2.inc';     // activate page controller
+require 'std.delete2.inc';          // activate page controller
 
 ?>
 

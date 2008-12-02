@@ -2,8 +2,8 @@
 
 // Each text string may include parameter substitution - refer to SPRINTF() function
 
-$array['e0000'] = "Security violation.";
-$array['e0001'] = "This user has been disabled.";
+$array['e0000'] = "";
+$array['e0001'] = "";
 $array['e0002'] = "You must change your password.";
 $array['e0003'] = "Retry count exceeded.";
 $array['e0004'] = "Invalid value for field_id (%1\$s).";
@@ -44,8 +44,8 @@ $array['e0034'] = "Only a single-level directory is allowed";
 $array['e0035'] = "Directory name does not exist";
 $array['e0036'] = "Start Date cannot be later than End Date";
 $array['e0037'] = "End Date cannot be earlier than Start Date";
-$array['e0038'] = "This user has an end date which is in the past";
-$array['e0039'] = "This user has a start date which is in the future";
+$array['e0038'] = "";
+$array['e0039'] = "";
 
 $array['e0040'] = "Your password will expire in %1\$s days";
 $array['e0041'] = "Your password will expire in %1\$s logons";
@@ -72,13 +72,24 @@ $array['e0059'] = "";
 $array['e0060'] = "Repeat Unit is invalid without Repeat Interval";
 $array['e0061'] = "Repeat Unit is required with Repeat Interval";
 $array['e0062'] = "Context is invalid without Task";
-$array['e0063'] = "";
-$array['e0064'] = "";;
+$array['e0063'] = "This function is not valid if PATTERN_ID='BATCH'";
+$array['e0064'] = "";
 $array['e0065'] = "";
 $array['e0066'] = "";
 $array['e0067'] = "";
 $array['e0068'] = "";
 $array['e0069'] = "";
+
+$array['e0070'] = "";
+$array['e0071'] = "";
+$array['e0072'] = "";
+$array['e0073'] = "";
+$array['e0074'] = "";;
+$array['e0075'] = "";
+$array['e0076'] = "";
+$array['e0077'] = "";
+$array['e0078'] = "";
+$array['e0079'] = "";
 
 // menu details for subsystem MENU
 $array['Applications']                            = 'Applications';
@@ -97,7 +108,15 @@ $array['ToDo']                                    = 'ToDo';
 $array['User']                                    = 'User';
 $array['Workflow']                                = 'Workflow';
 
+// task details for subsystem MISC
+$array['date(current)']                           = 'Select Records with Current Dates';
+$array['date(future)']                            = 'Select Records with Future Dates';
+$array['date(historic)']                          = 'Select Records with Historic Dates';
+$array['file(search)']                            = 'Search File Name';
+
 // task details for subsystem MENU
+$array['batch_log(filedownload)']                 = 'Download Batch Log File';
+$array['batch_log(filepicker)']                   = 'Show Batch Log File';
 $array['logon']                                   = 'Logon screen';
 $array['menu']                                    = 'Home Page';
 $array['mnu_account(add1)']                       = 'Add Hosting Account';
@@ -112,6 +131,12 @@ $array['mnu_initial_value_role(multi3)a']         = 'Maintain Initial Value (Rol
 $array['mnu_initial_value_role(multi3)b']         = 'Maintain Initial Value by Role';
 $array['mnu_initial_value_user(multi3)a']         = 'Maintain Initial Value (User) by Task';
 $array['mnu_initial_value_user(multi3)b']         = 'Maintain Initial Value by User';
+$array['mnu_language(add1)']                      = 'Add Supported Languages';
+$array['mnu_language(del1)']                      = 'Delete Supported Languages';
+$array['mnu_language(enq1)']                      = 'Enquire Supported Languages';
+$array['mnu_language(list1)']                     = 'List Supported Languages';
+$array['mnu_language(search)']                    = 'Search Supported Languages';
+$array['mnu_language(upd1)']                      = 'Update Supported Languages';
 $array['mnu_menu(add3)']                          = 'Add Menu Items';
 $array['mnu_menu(add3)a']                         = 'Add Menu Items';
 $array['mnu_menu(del2)']                          = 'Delete Menu Items';
@@ -163,7 +188,10 @@ $array['mnu_subsystem(upd4)build']                = 'Build Subsystem Directory';
 $array['mnu_subsystem(upd4)export']               = 'Export Subsystem';
 $array['mnu_task_field(add2)']                    = 'Add Task Field';
 $array['mnu_task_field(del1)']                    = 'Delete Task Field';
+$array['mnu_task_field(enq1)']                    = 'Enquire Task Field';
 $array['mnu_task_field(list2)']                   = 'List Task Field';
+$array['mnu_task_field(search)']                  = 'Search Task Field';
+$array['mnu_task_field(upd1)']                    = 'Update Task Field';
 $array['mnu_task(add1)']                          = 'Add Task';
 $array['mnu_task(del1)']                          = 'Delete Task';
 $array['mnu_task(enq1)']                          = 'Enquire Task';
@@ -200,10 +228,6 @@ $array['mnu_user(upd1)']                          = 'Update User';
 $array['mnu_user(upd1)a']                         = 'Change User Password';
 $array['mnu_user(upd1)b']                         = 'Reset User Password';
 $array['mnu_user(upd1)c']                         = 'Retrieve User Password';
-
-$array['date(current)']                           = 'Select Records with Current Dates';
-$array['date(future)']                            = 'Select Records with Future Dates';
-$array['date(historic)']                          = 'Select Records with Historic Dates';
 
 // navigation button details for subsystem MENU
 $array['Change Password']               = 'Change Password';

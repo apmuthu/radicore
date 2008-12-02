@@ -1,23 +1,21 @@
 -- phpMyAdmin SQL Dump
--- version 2.7.0
+-- version 2.11.3
 -- http://www.phpmyadmin.net
--- 
+--
 -- Host: localhost
--- Generation Time: Sep 21, 2006 at 10:12 AM
--- Server version: 4.0.25
--- PHP Version: 4.4.4
--- 
--- Database: `xample`
--- 
+-- Generation Time: Jan 10, 2008 at 05:30 PM
+-- Server version: 4.1.22
+-- PHP Version: 4.4.7
 
-CREATE DATABASE `xample`;
-USE `xample`;
+--
+-- Database: `xample`
+--
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `x_option`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_option` (
   `option_id` varchar(8) NOT NULL default '',
@@ -31,42 +29,26 @@ CREATE TABLE IF NOT EXISTS `x_option` (
 
 -- --------------------------------------------------------
 
--- 
--- Table structure for table `x_pers_opt_xref`
--- 
+--
+-- Table structure for table `x_option_alt`
+--
 
-CREATE TABLE IF NOT EXISTS `x_pers_opt_xref` (
-  `person_id` varchar(8) NOT NULL default '',
+CREATE TABLE IF NOT EXISTS `x_option_alt` (
   `option_id` varchar(8) NOT NULL default '',
+  `language_id` varchar(5) NOT NULL default '',
+  `option_desc` varchar(40) NOT NULL default '',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
-  PRIMARY KEY  (`person_id`,`option_id`),
-  KEY `option_id` (`option_id`)
+  PRIMARY KEY  (`option_id`,`language_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
 
--- 
--- Table structure for table `x_pers_type`
--- 
-
-CREATE TABLE IF NOT EXISTS `x_pers_type` (
-  `pers_type_id` varchar(6) NOT NULL default '',
-  `pers_type_desc` varchar(40) NOT NULL default '',
-  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
-  `revised_date` datetime default NULL,
-  `revised_user` varchar(16) default NULL,
-  PRIMARY KEY  (`pers_type_id`)
-) TYPE=MyISAM;
-
--- --------------------------------------------------------
-
--- 
+--
 -- Table structure for table `x_person`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_person` (
   `person_id` varchar(8) NOT NULL default '',
@@ -76,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `x_person` (
   `first_name` varchar(20) NOT NULL default '',
   `last_name` varchar(30) NOT NULL default '',
   `initials` varchar(6) default NULL,
-  `star_sign` char(3) NOT NULL default '',
+  `star_sign` varchar(3) NOT NULL default '',
   `email_addr` varchar(50) default NULL,
   `value1` smallint(5) unsigned default NULL,
   `value2` decimal(10,2) unsigned default NULL,
@@ -97,9 +79,9 @@ CREATE TABLE IF NOT EXISTS `x_person` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `x_person_addr`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_person_addr` (
   `person_id` varchar(8) NOT NULL default '',
@@ -123,9 +105,59 @@ CREATE TABLE IF NOT EXISTS `x_person_addr` (
 
 -- --------------------------------------------------------
 
--- 
+--
+-- Table structure for table `x_pers_opt_xref`
+--
+
+CREATE TABLE IF NOT EXISTS `x_pers_opt_xref` (
+  `person_id` varchar(8) NOT NULL default '',
+  `option_id` varchar(8) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`person_id`,`option_id`),
+  KEY `option_id` (`option_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `x_pers_type`
+--
+
+CREATE TABLE IF NOT EXISTS `x_pers_type` (
+  `pers_type_id` varchar(6) NOT NULL default '',
+  `pers_type_desc` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`pers_type_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `x_pers_type_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `x_pers_type_alt` (
+  `pers_type_id` varchar(6) NOT NULL default '',
+  `language_id` varchar(5) NOT NULL default '',
+  `pers_type_desc` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`pers_type_id`,`language_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `x_tree_level`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_tree_level` (
   `tree_type_id` varchar(8) NOT NULL default '',
@@ -141,9 +173,27 @@ CREATE TABLE IF NOT EXISTS `x_tree_level` (
 
 -- --------------------------------------------------------
 
--- 
+--
+-- Table structure for table `x_tree_level_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `x_tree_level_alt` (
+  `tree_type_id` varchar(8) NOT NULL default '',
+  `tree_level_id` tinyint(3) unsigned NOT NULL default '0',
+  `language_id` varchar(5) NOT NULL default '',
+  `tree_level_desc` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`tree_type_id`,`tree_level_id`,`language_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `x_tree_node`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_tree_node` (
   `node_id` smallint(5) unsigned NOT NULL default '0',
@@ -163,9 +213,26 @@ CREATE TABLE IF NOT EXISTS `x_tree_node` (
 
 -- --------------------------------------------------------
 
--- 
+--
+-- Table structure for table `x_tree_node_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `x_tree_node_alt` (
+  `node_id` smallint(5) unsigned NOT NULL default '0',
+  `language_id` varchar(5) NOT NULL default '',
+  `node_desc` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`node_id`,`language_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `x_tree_type`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `x_tree_type` (
   `tree_type_id` varchar(8) NOT NULL default '',
@@ -175,4 +242,21 @@ CREATE TABLE IF NOT EXISTS `x_tree_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`tree_type_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `x_tree_type_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `x_tree_type_alt` (
+  `tree_type_id` varchar(8) NOT NULL default '',
+  `language_id` varchar(5) NOT NULL default '',
+  `tree_type_desc` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`tree_type_id`,`language_id`)
 ) TYPE=MyISAM;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_role extends Default_Table
@@ -95,7 +95,7 @@ class mnu_role extends Default_Table
     {
         //DebugBreak();
         if (isset($fieldarray['start_task_id'])) {
-            require_once 'classes/mnu_task.class.inc';
+            //require_once 'classes/mnu_task.class.inc';
             $dbobject =& singleton::getInstance('mnu_task');
             $dbobject->sql_select = 'task_type';
             $foreign_data = $dbobject->getData("task_id='{$fieldarray['start_task_id']}'");
@@ -211,6 +211,27 @@ class mnu_role extends Default_Table
         return $fieldarray;
 
     } // _cm_post_fetchRow
+
+    // ****************************************************************************
+    function _cm_post_insertRecord ($rowdata)
+    // perform custom processing after database record has been inserted.
+    {
+        // add standard entries to MNU_ROLE_TASK
+        $role_id = $rowdata['role_id'];
+        $access[] = array('role_id' => $role_id, 'task_id' => 'menu');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_user(upd1)a');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_user(upd1)b');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_user(upd1)c');
+
+        $dbobject =& singleton::getInstance('mnu_role_task');
+        $access = $dbobject->insertMultiple($access);
+        if ($dbobject->errors) {
+        	$this->errors = array_merge($this->errors, $dbobject->errors);
+        } // if
+
+        return $rowdata;
+
+    } // _cm_post_insertRecord
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)

@@ -263,6 +263,18 @@ div.workitem_user h2 {
 div.workitem_user p {
 }
 
+/* IMG */
+img {
+  margin: 0;
+  padding:0;
+}
+img.bottom {
+}
+img.middle {
+}
+img.top {
+}
+
 /* HTML controls */
 .dropdown {
 }

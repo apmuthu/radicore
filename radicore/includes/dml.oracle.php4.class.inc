@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -225,7 +225,7 @@ class oracle
         $this->errors = array();
         $this->query  = '';
 
-        static $dbconn;
+        $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
             $dbconn = ocipLogon($dbusername, $dbuserpass, $dbhost, 'UTF8');
@@ -403,8 +403,12 @@ class oracle
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
-            $where = $this->adjustWhere($where);
-            $this->query = "SELECT count(*) FROM $tablename WHERE $where";
+            if (empty($where)) {
+            	$this->query = "SELECT count(*) FROM $tablename";
+            } else {
+                $where = $this->adjustWhere($where);
+                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
+            } // if
         } // if
 
         $this->stmt = ociParse($this->dbconnect, $this->query);
@@ -632,7 +636,7 @@ class oracle
     } // getData
 
     // ****************************************************************************
-    function getData_serial ($schema, $tablename, $where)
+    function getData_serial ($schema, $tablename, $where, $rdc_limit=null, $rdc_offset=null)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
@@ -704,7 +708,13 @@ class oracle
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
-        if ($rows_per_page > 0) {
+        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        	$min_rows = $rdc_limit;
+        	$max_rows = $min_rows + $rdc_offset;
+        	$this->query = 'select * from ( select a.*, rownum as rnum from ( '
+                         . $this->query
+                         . ") a where rownum <= $max_rows ) where rnum >= $min_rows";
+        } elseif ($rows_per_page > 0) {
             // insert code for pagination
             $min_rows = (($pageno - 1) * $rows_per_page) +1;
             $max_rows = ($min_rows + $rows_per_page) -1;
@@ -1228,7 +1238,11 @@ class oracle
                     $update .= "$item=NULL,";
                 } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
-                    $update .= "$item=$value,";
+                    if (strlen($value) == 0) {
+                    	$update .= "$item=NULL,";
+                    } else {
+                        $update .= "$item=$value,";
+                    } // if
                 } else {
                     // change to the new value
                     $update .= "$item='" .$this->adjustData($value) ."', ";

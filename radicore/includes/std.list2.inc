@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -24,7 +24,7 @@ if (isset($act_buttons['choose'])) {
     	// send selection back to the previous script
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -88,7 +88,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->getErrors(), $messages);
     } // if
@@ -118,13 +119,16 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
+    if (!empty($task_selection)) {
+        $dbinner->setSqlWhere($task_selection);
+    } // if
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
     if ($dbouter->errors) {
         scriptPrevious($dbinner->getErrors(), $messages);
     } // if
@@ -158,7 +162,8 @@ if (empty($where)) {
             $dbouter->setSqlSearch($search);
         } // if
     } else {
-        scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
+        // 'No parent has been selected yet.'
+        scriptPrevious(getLanguageText('sys0082'));
     } // if
 } // if
 
@@ -188,11 +193,18 @@ if ($dbouter->errors) {
 
 $messages = array_merge($messages, $dbouter->getMessages());
 if ($dbouter->getNumRows() < 1) {
+    if (strtolower($return_action) == 'search') {
+        if (isset($return_from)) {
+            $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
+            // go back to script which generated this profile
+            scriptNext($return_from, $where);
+        } // if
+    } // if
     if (isset($return_from) AND !empty($return_action) AND !empty($where)) {
     	// send selection back to the previous script
         $prev_script = getPreviousScript();
-        $prev_task   = $_SESSION[$prev_script]['task_id'];
-        $_SESSION[$prev_script][$prev_task]['selection'] = $where;
+        $prev_task   = getPreviousTask($prev_script);
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $where;
         scriptPrevious(null, null, 'choose');
     } // if
     if (count($page_stack) > 2) {
@@ -244,7 +256,8 @@ if (isset($instruction)) {
 } // if
 
 // get primary key of current row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$inner_where = array2where($outer_data, $pkeynames, $dbouter);
 
 // load in current data from $outer in case it is needed
 $dbinner->setFieldArray($outer_data);
@@ -256,12 +269,18 @@ if (isset($_GET['page'])) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbinner->reset($where);
+    $dbinner->reset($inner_where);
 } // if
 
 // get data from the database
 if (!empty($outer_data)) {
-	$inner_data = $dbinner->getData($where);
+	$inner_data = $dbinner->getData($inner_where);
+
+	if ($dbinner->tablename == $dbouter->alt_language_table) {
+	    // ensure that default entries exist for all supported languages
+    	$inner_data = $dbinner->getLanguageEntries($inner_data, $outer_data, $dbouter->alt_language_cols);
+    } // if
+
 } // if
 if ($dbinner->errors) {
     $errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -285,6 +304,13 @@ if ($dbinner->getNumRows() == 0) {
 // get any additional data for current record
 $inner_data = $dbinner->getExtraData($inner_data);
 
+if ($dbinner->errors) {
+    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+} // if
+if ($dbinner->messages) {
+    $messages = array_merge($messages, $dbinner->getMessages());
+} // if
+
 if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
 } // if
@@ -298,7 +324,7 @@ if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $pkey_array = $dbinner->getPkeyArray($fieldarray, $prev_task);
         $selection = array2where($pkey_array);
         // send selection back to the previous script
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -316,8 +342,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

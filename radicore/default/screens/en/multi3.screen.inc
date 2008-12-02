@@ -1,10 +1,11 @@
 <?php
-$structure['xsl_file'] = 'std.multi3.xsl';
+$structure['xsl_file'] = 'std.list3.xsl';
 
 $structure['tables']['outer'] = '#outer_table#';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('fieldname' => 'Label');
@@ -13,6 +14,7 @@ $structure['tables']['middle'] = '#middle_table#';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['middle']['columns'][] = array('width' => '25%');
+$structure['middle']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['middle']['fields'][] = array('fieldname' => 'Label');

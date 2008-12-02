@@ -1,5 +1,5 @@
 <?php
-    // file created on October 24, 2006, 11:18 am
+    // file created on January 10, 2008, 5:34 pm
     
     // field specifications for table xample.x_tree_type
     $fieldspec['tree_type_id']              = array('type' => 'string',
@@ -55,6 +55,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('tree_type_id' => 'tree_type_id'));
     
+    $this->child_relations[]                = array('child' => 'x_tree_type_alt',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('tree_type_id' => 'tree_type_id'));
+    
     // parent relationship details 
     $this->parent_relations                 = array();
     
@@ -63,6 +67,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'x_tree_type.tree_type_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = 'x_tree_type_alt';
+    $this->alt_language_cols                = 'tree_type_desc';
     
     // finished
 ?>

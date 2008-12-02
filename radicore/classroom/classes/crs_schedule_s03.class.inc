@@ -53,7 +53,7 @@ class crs_schedule_s03 extends crs_schedule
         } // if
 
         // get schedule details
-        require_once 'classes/crs_schedule_hdr.class.inc';
+        //require_once 'classes/crs_schedule_hdr.class.inc';
         $dbobject =& singleton::getInstance('crs_schedule_hdr');
         $dbobject->sql_select = 'schedule_id,start_time,end_time,last_day_no';
         if (isset($_SESSION['crs_schedule_id'])) {

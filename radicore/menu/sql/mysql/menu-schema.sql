@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 2.11.0
+-- version 2.11.9
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 17, 2007 at 06:03 PM
+-- Generation Time: Sep 19, 2008 at 10:08 AM
 -- Server version: 4.1.22
--- PHP Version: 4.4.7
+-- PHP Version: 4.4.8
 
 --
 -- Database: `menu`
@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS `help_text` (
   `task_id` varchar(80) NOT NULL default '',
   `help_text` text,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`task_id`)
 ) TYPE=MyISAM;
 
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `mnu_account` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`rdcaccount_id`)
-) TYPE=MyISAM;
+) TYPE=MyISAM  AUTO_INCREMENT=5 ;
 
 -- --------------------------------------------------------
 
@@ -55,9 +55,9 @@ CREATE TABLE IF NOT EXISTS `mnu_control` (
   `field_id` varchar(32) NOT NULL default '',
   `field_value` varchar(255) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`record_id`,`field_id`)
 ) TYPE=MyISAM;
 
@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_role` (
   `role_id` varchar(16) NOT NULL default '',
   `task_id` varchar(80) NOT NULL default '',
   `field_id` varchar(40) NOT NULL default '',
-  `initial_value` varchar(40) default NULL,
+  `initial_value` varchar(255) default NULL,
+  `is_noedit` char(1) default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -90,13 +91,30 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_user` (
   `user_id` varchar(16) NOT NULL default '',
   `task_id` varchar(80) NOT NULL default '',
   `field_id` varchar(40) NOT NULL default '',
-  `initial_value` varchar(40) default NULL,
+  `initial_value` varchar(255) default NULL,
+  `is_noedit` char(1) default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`user_id`,`task_id`,`field_id`),
   KEY `task_id` (`task_id`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mnu_language`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_language` (
+  `language_id` varchar(5) NOT NULL default 'EN',
+  `language_name` varchar(40) NOT NULL default 'English',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`language_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
@@ -111,9 +129,9 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
   `sort_seq` tinyint(3) unsigned zerofill NOT NULL default '000',
   `button_text` varchar(40) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`menu_id`,`task_id_jnr`)
 ) TYPE=MyISAM;
 
@@ -128,11 +146,11 @@ CREATE TABLE IF NOT EXISTS `mnu_nav_button` (
   `task_id_jnr` varchar(80) NOT NULL default '',
   `sort_seq` tinyint(3) unsigned zerofill NOT NULL default '000',
   `button_text` varchar(40) default NULL,
-  `context_preselect` char(1) default NULL,
+  `context_preselect` char(1) default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`task_id_snr`,`task_id_jnr`)
 ) TYPE=MyISAM;
 
@@ -146,13 +164,13 @@ CREATE TABLE IF NOT EXISTS `mnu_pattern` (
   `pattern_id` varchar(16) NOT NULL default '',
   `pattern_desc` varchar(60) NOT NULL default '',
   `pattern_long_desc` text,
-  `visible_screen` char(1) default NULL,
-  `context_preselect` char(1) default NULL,
-  `keep_data` char(1) default NULL,
+  `visible_screen` char(1) default 'N',
+  `context_preselect` char(1) default 'N',
+  `keep_data` char(1) default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`pattern_id`)
 ) TYPE=MyISAM;
 
@@ -166,11 +184,12 @@ CREATE TABLE IF NOT EXISTS `mnu_role` (
   `role_id` varchar(16) NOT NULL default '',
   `role_desc` varchar(30) NOT NULL default '',
   `start_task_id` varchar(80) NOT NULL default '',
-  `global_access` char(1) default NULL,
+  `global_access` char(1) default 'N',
+  `is_external_auth_off` char(1) default 'N',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`role_id`)
 ) TYPE=MyISAM;
 
@@ -184,9 +203,9 @@ CREATE TABLE IF NOT EXISTS `mnu_role_task` (
   `role_id` varchar(16) NOT NULL default '',
   `task_id` varchar(80) NOT NULL default '',
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`role_id`,`task_id`)
 ) TYPE=MyISAM;
 
@@ -202,12 +221,11 @@ CREATE TABLE IF NOT EXISTS `mnu_role_taskfield` (
   `field_id` varchar(40) NOT NULL default '',
   `access_type` varchar(4) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`role_id`,`task_id`,`field_id`),
-  KEY `task_id` (`task_id`),
-  KEY `task_id_2` (`task_id`)
+  KEY `task_id` (`task_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
@@ -222,9 +240,9 @@ CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
   `subsys_dir` varchar(255) default NULL,
   `task_prefix` varchar(8) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`subsys_id`)
 ) TYPE=MyISAM;
 
@@ -240,22 +258,23 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
   `button_text` varchar(80) default NULL,
   `task_type` varchar(4) default NULL,
   `script_id` varchar(80) default NULL,
-  `is_disabled` char(1) default NULL,
+  `is_disabled` char(1) default 'N',
   `pattern_id` varchar(16) default NULL,
   `subsys_id` varchar(16) default NULL,
   `initial_passthru` varchar(40) default NULL,
   `selection_fixed` varchar(255) default NULL,
   `selection_temp` varchar(255) default NULL,
-  `settings` varchar(40) default NULL,
+  `settings` varchar(255) default NULL,
   `order_by` varchar(255) default NULL,
-  `keep_data` char(1) default NULL,
-  `log_sql_query` char(1) default NULL,
+  `keep_data` char(1) default 'N',
+  `log_sql_query` char(1) default 'N',
   `screen_refresh` smallint(5) unsigned default NULL,
-  `use_https` char(1) default NULL,
+  `use_https` char(1) default 'N',
+  `max_execution_time` smallint(5) unsigned default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`task_id`),
   KEY `subsys_id` (`subsys_id`),
   KEY `pattern_id` (`pattern_id`)
@@ -270,10 +289,11 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
 CREATE TABLE IF NOT EXISTS `mnu_task_field` (
   `task_id` varchar(80) NOT NULL default '',
   `field_id` varchar(40) NOT NULL default '',
+  `field_desc` varchar(255) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`task_id`,`field_id`)
 ) TYPE=MyISAM;
 
@@ -296,9 +316,9 @@ CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `task_id` varchar(80) default NULL,
   `task_context` varchar(255) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
-  `created_user` varchar(50) NOT NULL default 'UNKNOWN',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
-  `revised_user` varchar(50) default NULL,
+  `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`user_id`,`seq_no`)
 ) TYPE=MyISAM COMMENT='List of "To Do" items';
 
@@ -326,6 +346,9 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `end_date` date default '9999-12-31',
   `ip_address` varchar(16) default NULL,
   `email_addr` varchar(50) default NULL,
+  `external_id` varchar(255) default NULL,
+  `is_external_auth_off` char(1) default 'N',
+  `party_id` int(11) unsigned default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,

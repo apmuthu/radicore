@@ -44,6 +44,32 @@ class crs_class_lesson extends Default_Table
 
     } // _cm_popupCall
 
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // add extra fields to select list
+            $this->sql_select .= ', crs_class.year';
+            // get count of students in this class
+            $this->sql_select .= ", (SELECT COUNT(student_id) FROM crs_student WHERE crs_student.class_id=crs_class_lesson.class_id ) AS student_count";
+            // get count of lessons for this class
+            $this->sql_select .= ", (SELECT COUNT(lesson_id) FROM crs_class_lesson WHERE crs_class_lesson.class_id=crs_class_lesson.class_id ) AS lesson_count";
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

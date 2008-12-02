@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:36 pm
     
     // field specifications for table menu.mnu_control
     $fieldspec['record_id']                 = array('type' => 'string',
@@ -63,6 +63,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'record_id, field_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

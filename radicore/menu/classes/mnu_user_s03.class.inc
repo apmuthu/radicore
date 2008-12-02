@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s03 extends mnu_user
@@ -22,6 +22,7 @@ class mnu_user_s03 extends mnu_user
         $this->fieldspec['new_password1']['size'] = $this->fieldspec['user_password']['size'];
         $this->fieldspec['new_password1']['password'] = 'y';
         $this->fieldspec['new_password1']['required'] = 'y';
+        $this->fieldspec['new_password1']['nondb']    = 'y';
 
         // get user to repeat input to avoid mistakes
         $fieldarray['new_password2'] = '';
@@ -29,9 +30,10 @@ class mnu_user_s03 extends mnu_user
         $this->fieldspec['new_password2']['size'] = $this->fieldspec['user_password']['size'];
         $this->fieldspec['new_password2']['password'] = 'y';
         $this->fieldspec['new_password2']['required'] = 'y';
+        $this->fieldspec['new_password2']['nondb']    = 'y';
 
-        // blank out curent password
-        $fieldarray['user_password'] = '';
+        // blank out current password
+        //$fieldarray['user_password'] = '';
 
         // do nt allow changes to user_name
         $this->fieldspec['user_name']['noedit'] = 'y';
@@ -73,6 +75,18 @@ class mnu_user_s03 extends mnu_user
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    {
+        // blank out current password
+        $rows[0]['user_password'] = '';
+
+        return $rows;
+
+    } // _cm_post_getData
 
     // ****************************************************************************
     function _cm_post_updateRecord ($fieldarray, $old_data)

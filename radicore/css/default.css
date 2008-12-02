@@ -583,7 +583,7 @@ div.tree td .text {
 /* universe */
 div.universe {
   margin-top: 5px;
-  width: 750px;
+  width: 100%;
   text-align: center;
   margin-left: auto;
   margin-right: auto;
@@ -592,8 +592,7 @@ div.universe {
 /* version */
 div.version {
   clear: both;
-  margin: 0;
-  padding: 0;
+  margin-top: 0;
   text-align: center;
 }
 
@@ -639,6 +638,17 @@ div.workitem_user p {
   margin-bottom: 0pt;
   padding-top: 2pt;
   padding-bottom: 2pt;
+}
+
+/* IMG */
+img.bottom {
+  vertical-align: bottom;
+}
+img.middle {
+  vertical-align: middle;
+}
+img.top {
+  vertical-align: top;
 }
 
 /* HTML controls */
@@ -695,7 +705,9 @@ textarea {
   margin-right: auto;
 }
 .divider {
-  height: 6px;
+  height: 3px;
+  line-height: 3px;
+  background-color: gray;
 }
 .error {
   clear: left;
@@ -713,6 +725,9 @@ textarea {
 .left {
   text-align: left;
 }
+.no-underline {
+  text-decoration: none;
+}
 .nowrap {
   white-space: nowrap;
 }
@@ -725,7 +740,6 @@ textarea {
 .right {
   text-align: right;
 }
-
 /* for items which are due or overdue */
 .overdue {
   background: red;
@@ -736,6 +750,12 @@ textarea {
 .due {
   background: orange;
   color: green;
+  font-style: italic;
+  font-weight: normal;
+}
+.warning {
+  background: yellow;
+  color: red;
   font-style: italic;
   font-weight: normal;
 }

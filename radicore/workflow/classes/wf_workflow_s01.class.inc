@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'wf_workflow.class.inc';
 class wf_workflow_s01 extends wf_workflow
@@ -129,6 +129,7 @@ class wf_workflow_s01 extends wf_workflow
             $dbarc->sql_from    = "wf_place "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
             $dbarc->sql_groupby = "wf_place.workflow_id, wf_place.place_id, direction, arc_type";
+            $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND place_id='$place_id'");
             foreach ($arc_data as $arc) {
                 if ($arc['direction'] == 'IN') $inward_count++;
@@ -230,6 +231,7 @@ class wf_workflow_s01 extends wf_workflow
             $dbarc->sql_from    = "wf_transition "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_transition.workflow_id AND wf_arc.transition_id=wf_transition.transition_id) ";
             $dbarc->sql_groupby = "wf_transition.workflow_id, wf_transition.transition_id, direction, arc_type";
+            $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND transition_id='$transition_id'");
             foreach ($arc_data as $arc) {
                 if ($arc['direction'] == 'IN') {

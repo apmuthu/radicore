@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task_field extends Default_Table
@@ -23,6 +23,21 @@ class mnu_task_field extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // mnu_task_field
+
+    // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (eregi('list|search', $GLOBALS['mode'])) {
+        	unset($this->fieldspec['field_desc']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
 
 // ****************************************************************************
 } // end class

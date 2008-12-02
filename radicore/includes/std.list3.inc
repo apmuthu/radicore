@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -28,7 +28,7 @@ if (isset($act_buttons['choose'])) {
     	// send selection back to the previous script
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -90,7 +90,8 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $original_where = $where;
+    $where = $dbouter->initialise($original_where);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
@@ -120,12 +121,17 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle->sql_where   = &$middle_sql_where;
     $dbmiddle->sql_groupby = &$middle_sql_groupby;
     $dbmiddle->sql_having  = &$middle_sql_having;
+    if (!empty($task_selection)) {
+        $dbmiddle->setSqlWhere($task_selection);
+    } // if
     if (!empty($middle_sql_orderby)) {
         $dbmiddle->setDefaultOrderby($middle_sql_orderby);
+    } elseif (!empty($task_orderby)) {
+        $dbmiddle->setDefaultOrderby($task_orderby);
     } // if
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
-    $null = $dbmiddle->initialise($where);
+    $null = $dbmiddle->initialise($original_where);
 } // if
 
 // create a class instance for the INNER database table
@@ -148,12 +154,15 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby      = &$inner_sql_groupby;
     $dbinner->sql_having       = &$inner_sql_having;
     $dbinner->sql_search_table = &$inner_search_table;
+    if (!empty($task_selection)) {
+        $dbinner->setSqlWhere($task_selection);
+    } // if
     if (!empty($inner_sql_orderby)) {
         $dbinner->setDefaultOrderby($inner_sql_orderby);
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where);
 } // if
 
 // the 'choose' button should only be available in popup screens
@@ -230,7 +239,8 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 $outer_data = $dbouter->getExtraData($outer_data);
 
 // get primary key of current row retrieved from OUTER entity
-$where = array2where($outer_data, $dbouter->getPkeyNames(), $dbouter);
+$pkeynames = $dbouter->getPkeyNamesAdjusted();
+$where = array2where($outer_data, $pkeynames, $dbouter);
 
 // load in current data from $outer in case it is needed
 $dbmiddle->setFieldArray($outer_data);
@@ -263,7 +273,8 @@ if ($dbmiddle->getNumRows() == 0) {
 $middle_data = $dbmiddle->getExtraData($middle_data);
 
 // get primary key of current row retrieved from middle entity
-$middle_where = array2where($middle_data, $dbmiddle->getPkeyNames(), $dbmiddle);
+$pkeynames = $dbmiddle->getPkeyNamesAdjusted();
+$middle_where = array2where($middle_data, $pkeynames, $dbmiddle);
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -348,11 +359,12 @@ if (isset($_GET['action'])) {
 if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
     if (array_key_exists('choose_single_row', $settings)) {
         // convert primary key into SQL where format
-        $selection = array2where($inner_data, $dbinner->getPkeyNames(), $dbinner);
+        $pkeynames = $dbinner->getPkeyNamesAdjusted();
+        $selection = array2where($inner_data, $pkeynames, $dbinner);
         // send primary key back to the previous script
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
-        $_SESSION[$prev_script][$prev_task]['selection'] = $selection;
+        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
 } // if
@@ -371,8 +383,8 @@ $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 // get sort details
-$orderby     = $dbinner->getOrderBy_Out();
-$orderby_seq = $dbinner->getOrderBySeq();
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

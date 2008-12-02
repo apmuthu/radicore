@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -34,72 +34,68 @@
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
     <xsl:call-template name="head" />
   <body>
-    <xsl:for-each select="/root/javascript/body[@*]">
-      <!-- add javascript events to the <body> tag -->
-      <xsl:copy-of select="@*" />
-    </xsl:for-each>
+    <xsl:call-template name="body-head" />
 
-  <xsl:if test="/root/header">
-    <div class="header">
-      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
-
-  <form method="post" action="{$script}">
-
-    <div class="universe">
-
-      <!-- create help button -->
-      <xsl:call-template name="help" />
-
-      <!-- create menu buttons -->
-      <xsl:call-template name="menubar" />
-
-      <div class="body">
-
-        <h1><xsl:value-of select="$title"/></h1>
-
-        <!-- create navigation buttons -->
-        <xsl:call-template name="navbar_detail" />
-
-        <div class="todo_user">
-          <!-- include todo items for the current user -->
-          <xsl:call-template name="todo_user"/>
+    <form method="post" action="{$script}">
+  
+      <div class="universe">
+  
+        <!-- create help button -->
+        <xsl:call-template name="help" />
+  
+        <!-- create menu buttons -->
+        <xsl:call-template name="menubar" />
+  
+        <div class="body">
+  
+          <h1>
+            <!-- include optional icon -->
+            <xsl:if test="/root/params/icon/home">
+              <img class="middle" height="20">
+                <xsl:attribute name="src">
+                  <xsl:value-of select="concat($doc_root,/root/params/icon/home)"/>
+                </xsl:attribute>
+                <xsl:attribute name="alt">
+                  <xsl:value-of select="/root/params/text/home"/>
+                </xsl:attribute>
+              </img>
+              <xsl:text> </xsl:text>
+            </xsl:if>
+            <!-- end icon -->
+            <xsl:value-of select="$title"/>
+          </h1>
+  
+          <!-- create navigation buttons -->
+          <xsl:call-template name="navbar_detail" />
+  
+          <div class="todo_user">
+            <!-- include todo items for the current user -->
+            <xsl:call-template name="todo_user"/>
+          </div>
+  
+          <div class="workitem_role">
+            <!-- include workitems for the current role -->
+            <xsl:call-template name="workitem_role"/>
+          </div>
+  
+          <div class="workitem_user">
+            <!-- include workitems for the current user -->
+            <xsl:call-template name="workitem_user"/>
+          </div>
+  
+          <!-- look for optional messages -->
+          <xsl:call-template name="message"/>
+  
+          <!-- create standard action buttons -->
+          <xsl:call-template name="actbar"/>
+  
         </div>
-
-        <div class="workitem_role">
-          <!-- include workitems for the current role -->
-          <xsl:call-template name="workitem_role"/>
-        </div>
-
-        <div class="workitem_user">
-          <!-- include workitems for the current user -->
-          <xsl:call-template name="workitem_user"/>
-        </div>
-
-        <!-- look for optional messages -->
-        <xsl:call-template name="message"/>
-
-        <!-- create standard action buttons -->
-        <xsl:call-template name="actbar"/>
-
+  
       </div>
+  
+    </form>
 
-    </div>
-
-  </form>
-
-  <xsl:if test="/root/params/version">
-    <div class="version">
-      <xsl:value-of select="/root/params/version" />
-    </div>
-  </xsl:if>
-
-  <xsl:if test="/root/footer">
-    <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-foot" />
 
   </body>
   </html>

@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 12:02 pm
+    // file created on January 30, 2008, 2:34 pm
     
     // field specifications for table menu.help_text
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -62,6 +62,10 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'task_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
     
     // finished
 ?>

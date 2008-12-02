@@ -1,13 +1,14 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s03 extends dict_table
 {
     // ****************************************************************************
     // this class is used by script: table_generate_a.php
+    // to display the list of available transaction patterns
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
@@ -32,8 +33,10 @@ class dict_table_s03 extends dict_table
     {
         // create array of patterns that can be selected
         $include_array[] = 'add4';
+        $include_array[] = 'add5';
         $include_array[] = 'del3';
         $include_array[] = 'del4';
+        $include_array[] = 'batch';
         $include_array[] = 'erase1';
         $include_array[] = 'filedownload';
         $include_array[] = 'filepicker';
@@ -49,6 +52,7 @@ class dict_table_s03 extends dict_table
         $include_array[] = 'output1';
         $include_array[] = 'output2';
         $include_array[] = 'output3';
+        $include_array[] = 'output4';
         $include_array[] = 'popup1';
         $include_array[] = 'popup2';
         $include_array[] = 'popup3';
@@ -138,7 +142,7 @@ class dict_table_s03 extends dict_table
         // jump to next task when this one finishes
         $next['task_id'] = 'dict_table(generate)b';
         $next['where']   = "database_id='$database_id' AND table_id='$table_id' AND pattern_id='$pattern_id'";
-        $_SESSION['script_sequence'][] = $next;
+        append2ScriptSequence($next);
 
         $fieldarray = array();  // do not update anything
 

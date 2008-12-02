@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -20,7 +20,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 
     // get object name to use as node name in XML file
     if (eregi('filepicker|fileupload', getPatternId())) {
-    	$objectname = 'file';
+    	$objectname = getPatternId();
     } else {
         $objectname = $dbobject->getClassName();
     } // if
@@ -74,6 +74,13 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
             $value = $doc->createTextNode($rowdata);
             $value = $node->appendChild($value);
         } else {
+            // look for optional attributes just for this row
+            if (array_key_exists('rdc_rowspecs', $rowdata)) {
+            	foreach ($rowdata['rdc_rowspecs'] as $key => $value) {
+            		$node->setAttribute($key, $value);
+            	} // foreach
+                unset($rowdata['rdc_rowspecs']);
+            } // if
             $css_array = array();  // optional css class specifications
             // format data for output (this converts dates and numbers)
             $rowdata = $dbobject->formatData($rowdata, $css_array);
@@ -144,7 +151,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         		$lookup = getLanguageArray('boolean');
                             } // if
                             // ensure 'true' and 'false' are set to field specifications
-                            $lookup = fixTrueFalse($lookup, $spec);
+                            $lookup = fixTrueFalseArray($lookup, $spec);
                             // now put back into object's internal data
                         	$dbobject->lookup_data[$optionlist] = $lookup;
                         } // if
@@ -313,7 +320,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
     } // foreach
 
     // extract any lookup tables from the current object
-    $lookup = $dbobject->getLookupData();
+    list($lookup, $lookup_css) = $dbobject->getLookupData();
 
     static $lookup_items = array(); // list of items that have been loaded
 
@@ -362,7 +369,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 
         if (!empty($lookup)) {
             // insert LOOKUP arrays into XML document
-            addLookup2XMLdoc($lookup, $doc, $root);
+            addLookup2XMLdoc($lookup, $lookup_css, $doc, $root);
         } // if
     } // if
 
@@ -376,7 +383,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 } // addData2XMLdoc
 
 // ****************************************************************************
-function addLookup2XMLdoc ($lookup, $doc, $root)
+function addLookup2XMLdoc ($lookup, $lookup_css, $doc, $root)
 // add contents of lookup array to current XML document
 // there may be several lookup names each with its own option list
 {
@@ -392,6 +399,13 @@ function addLookup2XMLdoc ($lookup, $doc, $root)
             $child = $doc->createElement('option');
             $child = $occ->appendChild($child);
             $child->setAttribute('id', $id);
+
+            if (array_key_exists($lookupname, $lookup_css)) {
+            	if (array_key_exists($id, $lookup_css[$lookupname])) {
+            	    // set css 'class' attribute for this entry
+            	    $child->setAttribute('class', $lookup_css[$lookupname][$id]);
+            	} // if
+            } // if
 
             if (is_array($optvalue)) {
             	foreach ($optvalue as $key1 => $value1) {
@@ -419,7 +433,6 @@ function addLookup2XMLdoc ($lookup, $doc, $root)
 function addParams2XMLdoc ($doc, $root, $xsl_params)
 // add optional parameters to XML document
 {
-    global $language;       // for internationalisation
     global $mode;           // insert/update/read/delete
     global $orderby;
     global $orderby_seq;
@@ -428,15 +441,23 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     global $title;
     global $task_id;
 
-    if (!empty($_SERVER['HTTPS']) AND is_True($_SERVER['HTTPS'])) {
+    if (is_True($_SERVER['HTTPS'])) {
+        $protocol = 'HTTPS://';
         if (strlen($GLOBALS['https_server']) > 0) {
-        	$xsl_params['script'] = 'HTTPS://' .$GLOBALS['https_server'] .$_SERVER['PHP_SELF'];
+        	$xsl_params['script'] = $protocol .$GLOBALS['https_server'] .$_SERVER['PHP_SELF'];
         } else {
-            $xsl_params['script'] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+            $xsl_params['script'] = $protocol .$_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
         } // if
     } else {
-        $xsl_params['script'] = 'HTTP://' . $_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+        $protocol = 'HTTP://';
+        $xsl_params['script'] = $protocol . $_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
     } // if
+
+    $xsl_params['script_short'] = basename($_SERVER['PHP_SELF'], '.php');
+    // replace parentheses with underscores so that this can be used as a CSS class name
+    $xsl_params['script_short'] = str_replace(array('(', ')'),
+                                              array('_', '_'),
+                                              $xsl_params['script_short']);
 
     $xsl_params['session_name'] = session_name();
     //$xsl_params['session_id']   = session_id();
@@ -448,35 +469,44 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         fclose($handle);
     } // if
 
-    $xsl_params['language'] = $language;
+    $xsl_params['language'] = $GLOBALS['output_language'];
+
+    $xsl_params['pagination_width'] = $_SESSION['pagination_width'];
+    $xsl_params['scrolling_width']  = $_SESSION['scrolling_width'];
 
     // insert various pieces of text
-    $xsl_params['text']['page']  = getLanguageText('xsl_page');
-    $xsl_params['text']['item']  = getLanguageText('xsl_item');
-    $xsl_params['text']['of']    = getLanguageText('xsl_of');
-    $xsl_params['text']['first'] = getLanguageText('xsl_first');
-    $xsl_params['text']['last']  = getLanguageText('xsl_last');
-    $xsl_params['text']['prev']  = getLanguageText('xsl_prev');
-    $xsl_params['text']['next']  = getLanguageText('xsl_next');
-    $xsl_params['text']['show']  = getLanguageText('xsl_show');
+    $xsl_params['text']['logout-all']   = getLanguageText('xsl_logout_all');
+    $xsl_params['text']['recover-pswd'] = getLanguageText('xsl_recover_pswd');
+    $xsl_params['text']['new-session']  = getLanguageText('xsl_new_session');
+    $xsl_params['text']['print']        = getLanguageText('xsl_print');
+    $xsl_params['text']['noprint']      = getLanguageText('xsl_noprint');
+
+    if (file_exists('../css/xsl_params.inc')) {
+        // include overrides from optional file
+        include('../css/xsl_params.inc');
+    } // if
+
+    $xsl_params['text']['page']         = getLanguageText('xsl_page');
+    $xsl_params['text']['item']         = getLanguageText('xsl_item');
+    $xsl_params['text']['of']           = getLanguageText('xsl_of');
+    $xsl_params['text']['first']        = getLanguageText('xsl_first');
+    $xsl_params['text']['last']         = getLanguageText('xsl_last');
+    $xsl_params['text']['prev']         = getLanguageText('xsl_prev');
+    $xsl_params['text']['next']         = getLanguageText('xsl_next');
+    $xsl_params['text']['show']         = getLanguageText('xsl_show');
     $xsl_params['text']['select-all']   = getLanguageText('xsl_select_all');
     $xsl_params['text']['unselect-all'] = getLanguageText('xsl_unselect_all');
     $xsl_params['text']['logout']       = getLanguageText('xsl_logout');
-    $xsl_params['text']['logout-all']   = getLanguageText('xsl_logout_all');
-    $xsl_params['text']['new-session']  = getLanguageText('xsl_new_session');
     $xsl_params['text']['help']         = getLanguageText('xsl_help');
     $xsl_params['text']['page-created'] = getLanguageText('xsl_page_created');
     $xsl_params['text']['seconds']      = getLanguageText('xsl_seconds');
-    $xsl_params['text']['print']        = getLanguageText('xsl_print');
-    $xsl_params['text']['noprint']      = getLanguageText('xsl_noprint');
     if (is_true($_SESSION['XSLT_client_side'])) {
         $xsl_params['client-side'] = 'true';
     } // if
     if (isset($_SESSION['logon_user_name'])) {
-        $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
+    	$xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
         $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
     } // if
-    $xsl_params['text']['recover-pswd'] = getLanguageText('xsl_recover_pswd');
 
     if (isset($mode)) {
         $xsl_params['mode'] = $mode;
@@ -489,10 +519,10 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
 
     if (!empty($GLOBALS['http_server'])) {
     	$xsl_params['help_root'] = 'HTTP://' .$GLOBALS['http_server'] .$dir .dirname(getSelf());
-        $xsl_params['doc_root']  = 'HTTP://' .$GLOBALS['http_server'] .$dir;
+        $xsl_params['doc_root']  = $protocol .$GLOBALS['http_server'] .$dir;
     } else {
         $xsl_params['help_root'] = 'HTTP://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
-        $xsl_params['doc_root']  = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir;
+        $xsl_params['doc_root']  = $protocol .$_SERVER['HTTP_HOST'] .$dir;
     } // if
 
     // insert sort details
@@ -508,7 +538,11 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     } // if
     if (!empty($orderby)) {
         $xsl_params['orderby'] = $orderby;
-        $xsl_params['order']   = trim(strtolower($orderby_seq));
+        if (!empty($orderby_seq)) {
+        	$xsl_params['order'] = trim(strtolower($orderby_seq));
+        } else {
+            $xsl_params['order'] = 'asc';
+        } // if
     } // if
 
     if (isset($screen_refresh)) {
@@ -529,10 +563,15 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         } // foreach
     } // if
 
-    // calculate the function's elapsed time
-    list($usec, $sec) = explode(' ', microtime());
-    $script_end = (float) $sec + (float) $usec;
-    $xsl_params['script_time'] = round($script_end - $_SESSION['script_start'], 5);
+    if (isset($GLOBALS['no_script_time']) AND is_True($GLOBALS['no_script_time'])) {
+        // do not add script_time to XML output
+    } else {
+    	// calculate the function's elapsed time
+        list($usec, $sec) = explode(' ', microtime());
+        $script_end = (float) $sec + (float) $usec;
+        $elapsed = number_format($script_end - $_SESSION['script_start'], 5, '.', '');
+        $xsl_params['script_time'] = $elapsed;
+    } // if
     unset($_SESSION['script_start']);
 
     // now add each parameter to the XML document
@@ -698,7 +737,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
                 // convert string into an array
                 $rowdata = (array)$rowdata;
             } // if
-			if (is_array($rowdata[key($rowdata)])) {
+			if (!empty($rowdata) AND is_array($rowdata[key($rowdata)])) {
 	            // array within an array, so bring it up one level
 	            $array  = $rowdata[key($rowdata)];
 	            if (!is_string(key($array))) {
@@ -754,8 +793,15 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     } // if
 
     // look for optional HEADER.TXT
-    if (file_exists('header.txt')) {
-        $header = file_get_contents('header.txt');
+    if ($GLOBALS['mode'] == 'logon') {
+        // use file associated with this logon script
+        $script = basename($_SERVER['PHP_SELF'], '.php');
+    	$fname = $script .'_header.txt';
+    } else {
+        $fname = 'header.txt';
+    } // if
+    if (file_exists($fname)) {
+        $header = file_get_contents($fname);
         if (!empty($header)) {
             $occ = $xml_doc->createElement('header');
             $occ = $root->appendChild($occ);
@@ -766,7 +812,9 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 
     // look for optional FOOTER.TXT
     if ($GLOBALS['mode'] == 'logon') {
-    	$fname = 'logon_footer.txt';
+        // use file associated with this logon script
+    	$script = basename($_SERVER['PHP_SELF'], '.php');
+    	$fname = $script .'_footer.txt';
     } else {
         $fname = 'footer.txt';
     } // if
@@ -815,6 +863,71 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 } // buildXML
 
 // ****************************************************************************
+function createXMLdoc ($rows, $root_name='root', $root_attrs, $element_name='element')
+// create an XML document from rows of input data and return it as a string.
+{
+    $qualifiedName =& $root_attrs['qualifiedName'];
+    $publicId      =& $root_attrs['publicId'];
+    $systemId      =& $root_attrs['systemId'];
+
+    unset($root_attrs['qualifiedName']);
+    unset($root_attrs['publicId']);
+    unset($root_attrs['systemId']);
+
+    // create a new XML document
+    if (empty($qualifiedName)) {
+    	$xml_doc = new DomDocument('1.0');
+    } else {
+        $imp = new DOMImplementation;
+        $dtd = $imp->createDocumentType('labels', '', 'label.dtd');
+        $xml_doc = $imp->createDocument("", "", $dtd);
+    } // if
+
+    $xml_doc->encoding = 'UTF-8';
+    $xml_doc->standalone = false;
+
+    $root = $xml_doc->createElement($root_name);
+    $root = $xml_doc->appendChild($root);
+
+    foreach ($root_attrs as $attr_name => $attr_value) {
+    	$root->setAttribute($attr_name, $attr_value);
+    } // foreach
+
+    if (is_string(key($rows))) {
+        // this is an associative array containing a single row, so mae it row zero
+    	$temp[0] = $rows;
+    	$rows    = $temp;
+    	unset($temp);
+    } // if
+
+    foreach ($rows as $rownum => $rowdata) {
+    	// add element containing action buttons
+        $occ = $xml_doc->createElement($element_name);
+        $occ = $root->appendChild($occ);
+
+        foreach ($rowdata as $fieldname => $fieldvalue) {
+            // add each field to the xml document
+            $child = $xml_doc->createElement($fieldname);
+            $child = $occ->appendChild($child);
+
+            $fieldvalue = str_replace('&nbsp;', chr(160), $fieldvalue);
+
+            $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
+
+            $value = $xml_doc->createTextNode(trim($fieldvalue));
+            $value = $child->appendChild($value);
+        } // foreach
+    } // foreach
+
+    // get completed xml document
+    $xml_doc->formatOutput = true;
+    $xml_string = $xml_string = $xml_doc->saveXML();
+
+    return $xml_string;
+
+} // createXMLdoc
+
+// ****************************************************************************
 function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
 // extract name of XSL file from screen structure.
 {
@@ -833,7 +946,7 @@ function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
     $filename = './xsl/' .$xsl_file;
     if (!file_exists($filename)) {
         // no, so load from standard area
-        if (!empty($_SERVER['HTTPS'])) {
+        if (is_True($_SERVER['HTTPS'])) {
             // use one or the other of these, whichever is available
             if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
             	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
@@ -904,31 +1017,34 @@ function setCSSfiles ($doc, $root, $css_files)
 
     // if no custom stylesheet is specified use 'style_custom.css' in local directory
     if (empty($css_files)) {
-        if (!empty($_SERVER['HTTPS'])) {
-            if (strlen($GLOBALS['https_server']) > 0) {
-            	$css_files[] = 'HTTPS://' .$GLOBALS['https_server'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
-            } else {
-                $css_files[] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
-            } // if
-        } else {
-            $css_files[] = 'HTTP://' . $_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/style_custom.css';
-        } // if
+        $css_files[] = 'style_custom.css';
     } // if
 
-    // prepend the default stylesheet name from base directory
-    $dir = getParentDIR();
-    if (!empty($_SERVER['HTTPS'])) {
-        if (strlen($GLOBALS['https_server']) > 0) {
-        	$default_css = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
-        } else {
-            $default_css = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
+    foreach ($css_files as $filenum => $filename) {
+        if (dirname($filename) == '.') {
+            // prepend file name with directory name
+        	$css_files[$filenum] = dirname($_SERVER['PHP_SELF']) .'/' .$filename;
         } // if
-    } else {
-        $default_css = 'HTTP://' . $_SERVER['HTTP_HOST'] .$dir .'/css/' .$_SESSION['css_file'] .'.css';
-    } // if
+    } // foreach
+
+    // identify global CSS file and add it to the front of this array
+    $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'] .'.css';
     array_unshift($css_files, $default_css);
 
-    // add element containing action buttons
+    foreach ($css_files as $filenum => $filename) {
+        // prepend each file with protocol and domain name
+        if (is_True($_SERVER['HTTPS'])) {
+            if (strlen($GLOBALS['https_server']) > 0) {
+            	$css_files[$filenum] = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'] .$filename;
+            } else {
+                $css_files[$filenum] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$filename;
+            } // if
+        } else {
+            $css_files[$filenum] = 'HTTP://' . $_SERVER['HTTP_HOST'] .$filename;
+        } // if
+    } // if
+
+    // add element containing file names
     $occ = $doc->createElement('cssfiles');
     $occ = $root->appendChild($occ);
 
@@ -963,7 +1079,7 @@ function setJavaScript ($doc, $root, $javascript)
 
                 $url = $entry[key($entry)];
                 if (strtoupper(substr($url, 0, 4)) != 'HTTP') {
-            		if (!empty($_SERVER['HTTPS'])) {
+            		if (is_True($_SERVER['HTTPS'])) {
                         if (strlen($GLOBALS['https_server']) > 0) {
                         	$url = 'HTTPS://' .$GLOBALS['https_server'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
                         } else {
@@ -1154,14 +1270,19 @@ function setScreenStructure ($xml_doc, $root, $structure)
             $columns = $table->appendChild($columns);
             foreach ($structure[$zone]['columns'] as $row => $array) {
                 $array = array_change_key_case($array, CASE_LOWER);
-                $column = $xml_doc->createElement('column');
-                $column = $columns->appendChild($column);
-                foreach ($array as $attrname => $attrvalue) {
-                    $attrname = trim($attrname);
-                    if ($attrname != 'nosort') {
-                        $column->setAttribute($attrname, $attrvalue);
-                    } // if
-                } // foreach
+                // if 'nodisplay' attribute is set then do not output this column
+                if (!array_key_exists('nodisplay', $array)) {
+                    $column = $xml_doc->createElement('column');
+                    $column = $columns->appendChild($column);
+                    foreach ($array as $attrname => $attrvalue) {
+                        $attrname = trim($attrname);
+                        if ($attrname == 'nosort') {
+                            // ignore this attribute
+                        } else {
+                            $column->setAttribute($attrname, $attrvalue);
+                        } // if
+                    } // foreach
+                } // if
             } // foreach
         } // if
 
@@ -1180,46 +1301,49 @@ function setScreenStructure ($xml_doc, $root, $structure)
 
             	$rowdata = array_change_key_case($rowdata, CASE_LOWER);
 
-            	foreach ($rowdata as $fieldname => $fieldlabel) {
-            	    $fieldname = trim($fieldname);
-            	    if (empty($fieldname)) {
-            	    	$fieldname = 'null';
-            	    } // if
-                    if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
-                        // ignore 'nosort' entry
-                    } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
-                        // 'size=<numeric>' is an attribute of the previous field, whereas
-                        // 'size=<string>' is a new 'field=label' pair
-                        $cell->setAttribute($fieldname, $fieldlabel);
-                    } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
-                        foreach ($fieldlabel as $sttr => $attrvalue) {
-                    		// add this entry as an attribute to the current row
-                    	    $rowocc->setAttribute($sttr, $attrvalue);
-                    	} // foreach
-                    } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|class|display-empty)$/i', $fieldname, $regs)) {
-                        // write these out as attributes on the current cell
-                        $cell->setAttribute($regs[0], $fieldlabel);
-                    } else {
-                        $cell = $xml_doc->createElement('cell');
-                        $cell = $rowocc->appendChild($cell);
+            	// if 'nodisplay' attribute is set then do not output this column
+            	if (!array_key_exists('nodisplay', $rowdata)) {
+                	foreach ($rowdata as $fieldname => $fieldlabel) {
+                	    $fieldname = trim($fieldname);
+                	    if (empty($fieldname)) {
+                	    	$fieldname = 'null';
+                	    } // if
+                        if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
+                            // ignore 'nosort' entry
+                        } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
+                            // 'size=<numeric>' is an attribute of the previous field, whereas
+                            // 'size=<string>' is a new 'field=label' pair
+                            $cell->setAttribute($fieldname, $fieldlabel);
+                        } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
+                            foreach ($fieldlabel as $sttr => $attrvalue) {
+                        		// add this entry as an attribute to the current row
+                        	    $rowocc->setAttribute($sttr, $attrvalue);
+                        	} // foreach
+                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|class|display-empty)$/i', $fieldname, $regs)) {
+                            // write these out as attributes on the current cell
+                            $cell->setAttribute($regs[0], $fieldlabel);
+                        } else {
+                            $cell = $xml_doc->createElement('cell');
+                            $cell = $rowocc->appendChild($cell);
 
-                        // convert text into output language
-                        $fieldlabel = getLanguageText($fieldlabel);
+                            // convert text into output language
+                            $fieldlabel = getLanguageText($fieldlabel);
 
-                        $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
-                        $cell->setAttribute('label', $fieldlabel);
+                            $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
+                            $cell->setAttribute('label', $fieldlabel);
 
-                        if (array_key_exists('nosort', $rowdata)) {
-                        	$cell->setAttribute('nosort', 'y');
+                            if (array_key_exists('nosort', $rowdata)) {
+                            	$cell->setAttribute('nosort', 'y');
+                            } // if
+
+                            $cell = $xml_doc->createElement('cell');
+                            $cell = $rowocc->appendChild($cell);
+
+                            $cell->setAttribute('field', $fieldname);
+
                         } // if
-
-                        $cell = $xml_doc->createElement('cell');
-                        $cell = $rowocc->appendChild($cell);
-
-                        $cell->setAttribute('field', $fieldname);
-
-                    } // if
-                } // foreach
+                    } // foreach
+            	} // if
             } else {
                 // there is a separate entry for each cell in the current row
                 foreach ($rowdata as $cellno => $cellspec) {
@@ -1303,7 +1427,7 @@ function XSLclient ($xml_string)
     // disable any caching by the browser
     header('Expires: Mon, 14 Oct 2002 05:00:00 GMT'); // Date in the past
     header('Last-Modified: ' . gmdate("D, d M Y H:i:s") . ' GMT'); // always modified
-    if (isset($_SERVER['HTTPS']) or (isset($GLOBALS['use_https']) and $GLOBALS['use_https'] == true)) {
+    if (is_True($_SERVER['HTTPS']) or (isset($GLOBALS['use_https']) and $GLOBALS['use_https'] == true)) {
         // skip this next bit
     } else {
     	header('Cache-Control: no-store, no-cache, must-revalidate'); // HTTP 1.1
@@ -1367,10 +1491,10 @@ function XSLTransform ($xml_doc, $xsl_file)
     // calculate the function's elapsed time
     list($usec, $sec) = explode(' ', microtime());
     $xsl_end = (float) $sec + (float) $usec;
-    $xsl_time = round($xsl_end - $xsl_start, 5);
+    $xsl_elapsed = number_format($xsl_end - $xsl_start, 5, '.', '');
 
     // insert this value into the HTML output
-    $html = str_replace('$xsl$', $xsl_time, $html);
+    $html = str_replace('$xsl$', $xsl_elapsed, $html);
 
     echo $html;
 

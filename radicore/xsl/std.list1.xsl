@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -35,99 +35,84 @@
   <xsl:call-template name="head" />
 
   <body>
-    <xsl:for-each select="/root/javascript/body[@*]">
-      <!-- add javascript events to the <body> tag -->
-      <xsl:copy-of select="@*" />
-    </xsl:for-each>
+    <xsl:attribute name="class">
+      <xsl:value-of select="/root/params/script_short" />
+    </xsl:attribute>
+    
+    <xsl:call-template name="body-head" />
 
-  <xsl:if test="/root/header">
-    <div class="header">
-      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
-
-  <form method="post" action="{$script}">
-
-    <div class="universe">
-
-      <!-- create help button -->
-      <xsl:call-template name="help" />
-
-      <!-- create menu buttons -->
-      <xsl:call-template name="menubar" />
-
-      <div class="body">
-
-        <h1><xsl:value-of select="$title"/></h1>
-
-        <!-- create navigation buttons -->
-        <xsl:call-template name="navbar">
-          <xsl:with-param name="noshow"   select="//params/noshow"/>
-          <xsl:with-param name="noselect" select="//params/noselect"/>
-        </xsl:call-template>
-
-        <div class="main">
-
-          <!-- this is the actual data -->
-          <table>
-
-            <!-- set up column widths -->
-            <xsl:call-template name="column_group">
-              <xsl:with-param name="zone" select="'main'"/>
-            </xsl:call-template>
-
-            <thead>
-              <!-- set up column headings -->
-              <xsl:call-template name="column_headings">
-                <xsl:with-param name="zone"   select="'main'"/>
-                <xsl:with-param name="nosort" select="/root/params/nosort"/>
+    <form method="post" action="{$script}">
+  
+      <div class="universe">
+  
+        <!-- create help button -->
+        <xsl:call-template name="help" />
+  
+        <!-- create menu buttons -->
+        <xsl:call-template name="menubar" />
+  
+        <div class="body">
+  
+          <h1><xsl:value-of select="$title"/></h1>
+  
+          <!-- create navigation buttons -->
+          <xsl:call-template name="navbar">
+            <xsl:with-param name="noshow"   select="/root/params/noshow"/>
+            <xsl:with-param name="noselect" select="/root/params/noselect"/>
+          </xsl:call-template>
+  
+          <div class="main">
+  
+            <!-- this is the actual data -->
+            <table>
+  
+              <!-- set up column widths -->
+              <xsl:call-template name="column_group">
+                <xsl:with-param name="zone" select="'main'"/>
               </xsl:call-template>
-            </thead>
-
-            <tbody>
-              <!-- process each non-empty row in the MAIN table of the XML file -->
-              <xsl:for-each select="/root/*[name()=$main][count(*)&gt;0]">
-
-                <!-- display all the fields in the current row -->
-                <xsl:call-template name="display_horizontal">
-                  <xsl:with-param name="zone"    select="'main'"/>
-                  <xsl:with-param name="currocc" select="." />
+  
+              <thead>
+                <!-- set up column headings -->
+                <xsl:call-template name="column_headings">
+                  <xsl:with-param name="zone"   select="'main'"/>
+                  <xsl:with-param name="nosort" select="/root/params/nosort"/>
                 </xsl:call-template>
-
-              </xsl:for-each>
-            </tbody>
-
-          </table>
+              </thead>
+  
+              <tbody>
+                <!-- process each non-empty row in the MAIN table of the XML file -->
+                <xsl:for-each select="/root/*[name()=$main][count(*)&gt;0]">
+  
+                  <!-- display all the fields in the current row -->
+                  <xsl:call-template name="display_horizontal">
+                    <xsl:with-param name="zone"    select="'main'"/>
+                    <xsl:with-param name="currocc" select="." />
+                  </xsl:call-template>
+  
+                </xsl:for-each>
+              </tbody>
+  
+            </table>
+          </div>
+  
+          <!-- look for optional messages -->
+          <xsl:call-template name="message"/>
+  
+          <!-- insert the page navigation links -->
+          <xsl:call-template name="pagination" >
+            <xsl:with-param name="object" select="'main'"/>
+          </xsl:call-template>
+  
+          <!-- create standard action buttons -->
+          <xsl:call-template name="actbar"/>
+  
         </div>
-
-        <!-- look for optional messages -->
-        <xsl:call-template name="message"/>
-
-        <!-- insert the page navigation links -->
-        <xsl:call-template name="pagination" >
-          <xsl:with-param name="object" select="'main'"/>
-        </xsl:call-template>
-
-        <!-- create standard action buttons -->
-        <xsl:call-template name="actbar"/>
-
+  
       </div>
+  
+    </form>
 
-    </div>
-
-  </form>
-
-  <xsl:if test="/root/params/version">
-    <div class="version">
-      <xsl:value-of select="/root/params/version" />
-    </div>
-  </xsl:if>
-
-  <xsl:if test="/root/footer">
-    <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-foot" />
 
   </body>
   </html>

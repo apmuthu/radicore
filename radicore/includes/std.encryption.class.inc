@@ -1,7 +1,7 @@
 <?php
 // ******************************************************************************
 // A reversible password encryption routine by:
-// Copyright 2003-2007 by A J Marston <http://www.tonymarston.net>
+// Copyright 2003-2008 by A J Marston <http://www.tonymarston.net>
 // Distributed under the GNU General Public Licence
 // Modification: May 2007, M. Kolar <http://mkolar.org>:
 // No need for repeating the first character of scramble strings at the end;

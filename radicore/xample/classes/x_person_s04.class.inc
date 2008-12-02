@@ -49,6 +49,7 @@ class x_person_s04 extends x_person
         	    $this->total_price     = $this->total_price + $row['extended_price'];
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
+        	    $row['picture']        = 'pictures/female1.jpg';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 5;
@@ -59,6 +60,7 @@ class x_person_s04 extends x_person
         	    $this->total_price     = $this->total_price + $row['extended_price'];
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
+        	    $row['picture']        = 'pictures/female2.jpg';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 25;
@@ -69,6 +71,7 @@ class x_person_s04 extends x_person
         	    $this->total_price     = $this->total_price + $row['extended_price'];
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
+        	    $row['picture']        = 'pictures/female1.jpg';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 25;
@@ -79,6 +82,7 @@ class x_person_s04 extends x_person
         	    $this->total_price     = $this->total_price + $row['extended_price'];
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
+        	    $row['picture']        = 'pictures/female2.jpg';
         	    $outarray[] = $row;
 
         	    if (empty($outarray)) {

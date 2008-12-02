@@ -7,6 +7,8 @@
 $table_id = 'x_person';                     // table id
 $screen   = 'person.filepicker.screen.inc'; // file identifying screen structure
 
+$sql_search_table = 'mnu_file';
+
 // activate page controller
 require 'std.filepicker1.inc';
 

@@ -158,6 +158,32 @@ class x_person extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        // customisable code goes here
+
+//        if (empty($this->sql_from)) {
+//            // construct default SELECT and FROM clauses using parent relations
+//            $this->sql_from    = null;
+//            $this->sql_groupby = null;
+//            $this->sql_having  = null;
+//            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+//        } // if
+
+        $pattern_id = getPatternId();
+        if (eregi('output', $pattern_id) AND !empty($GLOBALS['sql_orderby'])) {
+        	$this->sql_orderby = $GLOBALS['sql_orderby'];
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
+    // ****************************************************************************
     function _cm_getValRep ($item='', $where)
     // get Value/Representation list as an associative array.
     {
@@ -191,7 +217,7 @@ class x_person extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialiseFilePicker ()
+    function _cm_initialiseFilePicker ($fieldarray)
     // perform any initialisation before displaying the File Picker screen.
     {
         // identify the subdirectory which contains the files
@@ -200,7 +226,7 @@ class x_person extends Default_Table
         // identify the file types that may be picked
         $this->picker_filetypes   = array('bmp', 'jpg', 'png', 'gif');
 
-        return;
+        return $fieldarray;
 
     } // _cm_initialiseFilePicker
 
@@ -218,6 +244,36 @@ class x_person extends Default_Table
     } // _cm_initialiseFileUpload
 
     // ****************************************************************************
+    function _cm_ListView_pre_print ($prev_row, $curr_row)
+    // allow extra rows to be created in List View
+    {
+        $rows = array();
+
+//        if (!empty($prev_row)) {
+//        	$rows[0]['pers_type_desc'] = 'after ' .$prev_row['person_id'];
+//        } // if
+//        if (!empty($curr_row)) {
+//            $rows[1]['pers_type_desc'] = 'before ' .$curr_row['person_id'];
+//        } // if
+
+        return $rows;
+
+    } // _cm_ListView_pre_print
+
+    // ****************************************************************************
+    function _cm_ListView_total ()
+    // pass back any data to be printed on last line of PDF report (list view).
+    {
+        $array = array();
+
+        $array['pers_type_desc'] = 'Count:';
+        $array['value2'] = $this->count;
+
+        return $array;
+
+    } // _cm_ListView_total
+
+    // ****************************************************************************
     function _cm_output_multi ($name, $fieldarray)
     // get extra data to pass to PDF class.
     {
@@ -232,9 +288,9 @@ class x_person extends Default_Table
         	case 'multi2':
                 // retrieve associated data from PERSON_ADDR table
                 $object =& singleton::getInstance('x_person_addr');
-                $person_id  = $fieldarray['person_id'];
+                $where = array2where($fieldarray, $this->getPkeyNames());
                 $object->sql_orderby = 'address_no asc';
-                $outarray = $object->getData("person_id='$person_id'");
+                $outarray = $object->getData($where);
                 if (empty($outarray)) {
                     // print an empty line
                     $outarray[] = array('dummy' => '');
@@ -343,6 +399,15 @@ class x_person extends Default_Table
         if ($GLOBALS['mode'] == 'pdf-detail') {
         	$fieldarray['barcode'] = '0123456789';
         } // if
+
+        if ($GLOBALS['mode'] == 'pdf-list') {
+            // accumulate totals for PDF report
+            $this->count ++;
+        } // if
+
+//        if ($fieldarray['last_name'] == 'Lucan') {
+//            $this->pdf->AddPage();
+//        } // if
 
         return $fieldarray;
 

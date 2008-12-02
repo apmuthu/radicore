@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2007 by A J Marston <http://www.tonymarston.net>
+// Copyright 2003-2008 by A J Marston <http://www.tonymarston.net>
 // Licensed to Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
@@ -10,10 +10,17 @@
 // to access the remainder of the system.
 // *****************************************************************************
 
-$table_id = 'logon';                // table name
-$title    = 'System Logon';         // form title
-$xsl_file = 'logon.xsl';            // xsl file for transformation
-$screen   = 'logon.screen.inc';     // file identifying screen structure
+$table_id = 'logon';               // table name
+$title    = 'System Logon';        // form title
+$screen   = 'logon.screen.inc';    // file identifying screen structure
+
+if (!isset($radius_auth_off) AND !isset($external_auth_off)) {
+	$external_auth_off=false;      // do not turn External Authentication off
+} // if
+
+// identify mode for xsl file
+$mode    = 'logon';
+$task_id = 'logon';
 
 require 'include.general.inc';
 require "classes/$table_id.class.inc";
@@ -33,8 +40,8 @@ session_start();
 
 $PHP_SELF = getSelf();
 
-if (isset($_SESSION[$PHP_SELF])) {
-    $logon_data = $_SESSION[$PHP_SELF];
+if (isset($_SESSION['pages'][$PHP_SELF])) {
+    $logon_data = $_SESSION['pages'][$PHP_SELF];
 } // if
 if (isset($_SESSION['messages'])) {
     $messages_bf = (array)$_SESSION['messages'];
@@ -45,6 +52,19 @@ if (isset($_SESSION['logon_retries'])) {
 if (isset($_SESSION['user_id'])) {
     $_POST['user_id']       = $_SESSION['user_id'];
     $_POST['user_password'] = $_SESSION['user_password'];
+} // if
+if ((isset($_GET['user_id']) OR isset($_GET['email_addr'])) AND isset($_GET['user_password'])) {
+    // allow logon credentials to be supplied in the URL
+    if (isset($_GET['user_id'])) {
+    	$_POST['user_id']    = $_GET['user_id'];
+    	$_SESSION['user_id'] = $_GET['user_id'];
+    } // if
+    if (isset($_GET['email_addr'])) {
+    	$_POST['email_addr']    = $_GET['email_addr'];
+    	$_SESSION['email_addr'] = $_GET['email_addr'];
+    } // if
+    $_POST['user_password'] = $_GET['user_password'];
+    $_SESSION['logon_retries'] = 0;
 } // if
 if (isset($_SESSION['XSLT_client_side'])) {
 	$XSLT_client_side = $_SESSION['XSLT_client_side'];
@@ -65,15 +85,6 @@ if (count($_SESSION) <= 1) {
     $_POST = array();
 } // if
 
-if (isset($_SESSION['default_language'])) {
-    $default_language    = $_SESSION['default_language'];
-} else {
-    // get default language from control table
-    require_once 'classes/mnu_control.class.inc';
-    $mnu_control = new mnu_control;
-    $default_language    = $mnu_control->getControlData('default_language');
-} // if
-
 if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
     // script will be restarted using HTTPS protocol, so do not clear session data
 } else{
@@ -85,15 +96,10 @@ if (isset($messages_bf)) {
     $_SESSION['messages'] = $messages_bf;  // put this message back
 } // if
 
-// identify mode for xsl file
-$mode    = 'logon';
-$task_id = 'logon';
-
 // initialise a new session
 initSession();
 
-$_SESSION['default_language'] = $default_language;
-$_SESSION[getSelf()]['pattern_id'] = 'logon';
+$_SESSION['pages'][$PHP_SELF]['pattern_id'] = 'logon';
 
 // define action buttons
 $act_buttons['submit'] = 'login';
@@ -127,7 +133,7 @@ $dbobject = new $table_id;
 if (!empty($_POST)) {
     // attempt to log on using this data
     $dbobject->startTransaction();
-    $result = $dbobject->user_logon($_POST);
+    $result = $dbobject->user_logon($_POST, $external_auth_off);
 	if (!empty($result)) {
 		// errors are keyed by object name
 	    $errors[$dbobject->getClassName()] = $result;
@@ -139,7 +145,6 @@ if (!empty($_POST)) {
         // logon is OK - go to next screen
         $fieldarray = $dbobject->getFieldArray();
         $messages   = $dbobject->getMessages();
-        $_SESSION['start_task_id']  = $fieldarray[0]['start_task_id'];
         $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
         scriptNext('menu', null, null, $task_array);
     } // if

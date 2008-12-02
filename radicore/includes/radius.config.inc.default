@@ -1,0 +1,18 @@
+<?php
+// *****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// *****************************************************************************
+
+// This file contains connection details for the RADIUS server
+
+// up to 10 servers may be specified, either IP addresses or domain names
+$radserver[] = '??';
+
+$radport       = 1812;
+$shared_secret = '??';
+$timeout       = 3;
+$max_tries     = 3;
+$auth_type     = 'pap';  // pap, chap, mschapv1, mschapv2
+
+?>

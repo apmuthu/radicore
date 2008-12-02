@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_logon_errors extends Default_Table
@@ -47,25 +47,15 @@ class audit_logon_errors extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //DebugBreak();
         if (empty($this->sql_search)) return $where;
 
         // convert from string to an associative array
         $fieldarray = where2array($this->sql_search);
 
-        // merge the '_from' and '_to' fields into a single field
-        if (isset($fieldarray['date_from'])) {
-            if (isset($fieldarray['date_to'])) {
-                $fieldarray['timestamp'] = "BETWEEN '{$fieldarray['date_from']}' AND '{$fieldarray['date_to']}'";
-            } else {
-                $fieldarray['timestamp'] = $fieldarray['date_from'];
-            } // if
+        // deal with values which have ranges
+        if (!empty($fieldarray['date_from']) OR !empty($fieldarray['date_to'])) {
+        	$fieldarray['err_timestamp'] = rangeFromTo($fieldarray['date_from'], $fieldarray['date_to'], true);
             unset($fieldarray['date_from']);
-            unset($fieldarray['date_to']);
-        } // if
-
-        if (isset($fieldarray['date_to'])) {
-            $fieldarray['timestamp'] = $fieldarray['date_to'];
             unset($fieldarray['date_to']);
         } // if
 

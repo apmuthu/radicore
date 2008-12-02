@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_tbl.class.inc';
 class audit_tbl_s02 extends audit_tbl
@@ -12,16 +12,29 @@ class audit_tbl_s02 extends audit_tbl
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_post_getData ($rows, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        $rowdata = $rows[0];
+        $this->sql_select  = 'audit_tbl.*';
+        $this->sql_from    = 'audit_tbl';
 
+        return $where;
+
+    } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($rowdata)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        $where = array2where($rowdata, $this->getPkeyNames());
         $pkey_array = where2array($rowdata['pkey']);
 
         // construct components of SQL string
-        $output = "\nuse `" .$rowdata['base_name'] ."`;\n\n";
+        $output = "\nUSE `" .$rowdata['base_name'] ."`;\n\n";
 
         $dbobject =& singleton::getInstance('audit_fld');
         $field_data = $dbobject->getData_raw($where);
@@ -43,8 +56,21 @@ class audit_tbl_s02 extends audit_tbl
 
         if (count($field_data) > 0) {
         	if (count($field_data) == $old_null_count) {
-            	$mode = 'insert';
+        	    // previous values are all empty, so this could either be an INSERT or an UPDATE,
+            	$mode = null;
+            	// if the list of field names does not include the primary key the this is an UPDATE
+            	foreach ($pkey_array as $keyname => $keyvalue) {
+            		foreach ($field_data as $key => $value) {
+            			if ($value['field_id'] == $keyname) {
+            				$mode = 'insert';
+            				break;
+            			} // if
+            		} // foreach
+            		if (!empty($mode)) break;
+            	} // foreach
+            	if (empty($mode)) $mode = 'update';
             } elseif (count($field_data) == $new_null_count) {
+                // new values are all empty, so this a DELETE
             	$mode = 'delete';
             } else {
                 $mode = 'update';
@@ -63,6 +89,8 @@ class audit_tbl_s02 extends audit_tbl
         				$value_string .= "NULL ,";
         			} else {
         			    $value_string .= "'" .addslashes($value) ."' ,";
+        			    $value_string = str_replace(chr(10), '\n', $value_string);
+        	            $value_string = str_replace(chr(13), '\r', $value_string);
         			} // if
         		} // foreach
         		$name_string  = rtrim($name_string, ', ');
@@ -80,6 +108,8 @@ class audit_tbl_s02 extends audit_tbl
         				$replace_string .= 'NULL';
         			} else {
         			    $replace_string .= "'" .addslashes($value) ."'";
+        			    $replace_string = str_replace(chr(10), '\n', $replace_string);
+        	            $replace_string = str_replace(chr(13), '\r', $replace_string);
         			} // if
         			$replace_string .= " ,";
         		} // foreach
@@ -106,25 +136,13 @@ class audit_tbl_s02 extends audit_tbl
             $this->messages[] = getLanguageText('sys0093', $fname); // 'Data exported to $fname'
         } // if
 
-        $rows[0] = $rowdata;
+        // do not display update count as there is none
+        $this->display_count = false;
+
         // return an empty array as there is no database update
         return array();
 
-    } // _cm_post_getData
-
-    // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
-    // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
-    {
-        $this->sql_select  = 'audit_tbl.*';
-        $this->sql_from    = 'audit_tbl';
-
-        return $where;
-
-    } // _cm_pre_getData
+    } // _cm_pre_updateRecord
 
 // ****************************************************************************
 } // end class

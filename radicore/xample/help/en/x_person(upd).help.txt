@@ -1,3 +1,2 @@
 This will display the contents of a record from the PERSON table and allow it to be updated. 
-
 For a description of screens of type UPDATE 1 <a href="%root%/php-mysql/dialog-types.html#update1">click here</a>.

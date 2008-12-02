@@ -17,6 +17,8 @@ $structure['main']['fields'][] = array('table_desc' => 'description', 'colspan' 
 $structure['main']['fields'][] = array('tbl_comment' => 'Comments', 'colspan' => 3);
 $structure['main']['fields'][] = array('audit_logging' => 'Audit Logging?', 'colspan' => 3);
 $structure['main']['fields'][] = array('default_orderby' => 'Default Sort Seq', 'colspan' => 3);
+$structure['main']['fields'][] = array('alt_language_table' => 'Alternative Language Table', 'colspan' => 3);
+$structure['main']['fields'][] = array('alt_language_cols' => 'Alternative Language Columns', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 3);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 3);

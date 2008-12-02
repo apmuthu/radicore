@@ -5,6 +5,7 @@ $structure['tables']['outer'] = '#outer_table#';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('fieldname' => 'Label');

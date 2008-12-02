@@ -32,10 +32,11 @@ this will return an array composed of a 4 item array for each language the os su
 //
 //*************************************************
 // This version modified by A J Marston, July 2005
+//             and again by A J Marston, July 2008
 //*************************************************
-function get_languages()
+function get_languages($input)
 {
-	// get the languages (now moved to file 'sys.language_array.inc'
+	// get the languages (now moved to file 'sys.language_array.inc')
 	$a_languages = getLanguageArray('languages');
 	$index = '';
 	$complete = '';
@@ -44,9 +45,9 @@ function get_languages()
 	$user_languages = array();
 
 	// check to see if language is set
-	if (isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+	if (!empty($input)) {
 		// explode languages into array
-		$languages = strtolower( $_SERVER["HTTP_ACCEPT_LANGUAGE"] );
+		$languages = strtolower($input);
 		$languages = explode( ",", $languages );
 		foreach ($languages as $language_list) {
 			// pull out the language, place languages into array of full and primary string structure:
@@ -57,18 +58,6 @@ function get_languages()
 			// place this array into main $user_languages array
 			$user_languages[] = $temp_array;
 		} // foreach
-
-		//start going through each one
-//		for ($i = 0; $i < count( $user_languages ); $i++ ) {
-//			foreach ($a_languages as $index => $complete) {
-//				if ($index == $user_languages[$i][0]) {
-//					// extract complete language, like english (canada)
-//					$user_languages[$i][2] = $complete;
-//					// extract working language, like english
-//					$user_languages[$i][3] = substr( $complete, 0, strcspn( $complete, ' (' ) );
-//				} // if
-//			} // foreach
-//		} // for
 		// extract language details from array
 		foreach ($user_languages as $key => $user_language) {
 		    if (array_key_exists($user_language[0], $a_languages)) {
@@ -92,5 +81,56 @@ function get_languages()
 	return $user_languages;
 
 } // get_languages
+
+function rdc_setLocale ($language_string)
+// set the locale according to the language string.
+{
+    $locale_array = array();
+
+    if (preg_match('#\w+#', $language_string, $regs)) {
+        // language is first word
+        $language = $regs[0];
+    } // if
+    if (preg_match('#\((.+?)\)#', $language_string, $regs)) {
+        // country name is enclosed in '(' and ')'
+        $country_name = trim($regs[0], '()');
+        $locale_array[] = $country_name;
+        $locale_array[] = $language ."_$country_name";
+        $locale_array[] = $language ."_$country_name.1252";
+        $locale_array[] = $language ."_$country_name.UTF-8";
+        $locale_array[] = $language ."_$country_name.ISO-8859-1";
+        $locale_array[] = $language ." ($country_name)";
+        $locale_array[] = $language ." ($country_name).1252";
+        $locale_array[] = $language ." ($country_name).UTF-8";
+        $locale_array[] = $language ." ($country_name).ISO-8859-1";
+    } // if
+    $locale_array[] = $language;
+
+    if (preg_match('#\[(.+?)\]#', $language_string, $regs)) {
+        // country code is enclosed in '[' and ']'
+        $country_code = trim($regs[0], '[]');
+        $locale_array[] = $country_code;
+        $locale_array[] = $country_code.'.UTF-8';
+        $locale_array[] = $country_code.'.1252';
+        $locale_array[] = $country_code.'.ISO-8859-1';
+        if (strlen($country_code) == 2) {
+            // change 'xx' into 'xx_XX'
+            if ($country_code == 'en') {
+            	$country_code .= '_GB';  // instead of 'en_EN'
+            } else {
+                $country_code .= '_' .strtoupper($country_code);
+            } // if
+        	$locale_array[] = $country_code;
+            $locale_array[] = $country_code.'.UTF-8';
+            $locale_array[] = $country_code.'.1252';
+            $locale_array[] = $country_code.'.ISO-8859-1';
+        } // if
+    } // if
+
+    $locale = setLocale(LC_ALL, $locale_array);
+
+    return $locale;
+
+} // rdc_setLocale
 
 ?>

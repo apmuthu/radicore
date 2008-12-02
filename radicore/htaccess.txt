@@ -16,4 +16,5 @@ php_value session.use_trans_sid 1
 php_value session.gc_maxlifetime 3600
 php_value arg_separator.output "&amp;"
 php_value url_rewriter.tags "a=href,area=href,frame=src,input=src,fieldset="
+php_value memory_limit 24M
 

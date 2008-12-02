@@ -6,8 +6,8 @@
 // This uses the insetOrUpdate() method.
 //*****************************************************************************
 
-$table_id = '#tablename#';          // table name
+$table_id = '#tablename#';      // table name
 
-require_once 'std.update5.inc';     // activate page controller
+require 'std.update5.inc';      // activate page controller
 
 ?>

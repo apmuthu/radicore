@@ -23,6 +23,24 @@ class crs_lesson extends Default_Table
     } // crs_lesson
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (!array_key_exists('student_count', $this->fieldspec)) {
+        	$this->fieldspec['student_count']  = array('type' => 'numeric', 'blank_when_zero' => 'y', 'nondb' => 'y');
+        } // if
+
+        if (!array_key_exists('class_count', $this->fieldspec)) {
+        	$this->fieldspec['class_count']  = array('type' => 'numeric', 'blank_when_zero' => 'y', 'nondb' => 'y');
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -51,7 +69,7 @@ class crs_lesson extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        // set survey_id to next available number
+        // set id to next available number
         $count = $this->getCount("SELECT max(lesson_id) FROM $this->tablename");
         $fieldarray['lesson_id'] = $count + 1;
 
@@ -65,7 +83,6 @@ class crs_lesson extends Default_Table
     function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
-        //DebugBreak();
         $array = array();
 
         if ($item == 'lesson_id') {
@@ -89,63 +106,33 @@ class crs_lesson extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_post_getData ($rowdata, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
     {
-        //DebugBreak();
-        if (count($rowdata) == 0) {
-            return $rowdata;
+        if (empty($this->sql_select)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_select  = null;
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // get count of students in this class
+            $this->sql_select .= ", (SELECT COUNT(student_id) FROM crs_student_lesson WHERE crs_student_lesson.lesson_id=crs_lesson.lesson_id ) AS student_count";
+            // get count of classes for this lesson
+            $this->sql_select .= ", (SELECT COUNT(class_id) FROM crs_class_lesson WHERE crs_class_lesson.lesson_id=crs_lesson.lesson_id ) AS class_count";
         } // if
 
-        //require_once 'crs_class_lesson.class.inc';
-        //$objectCL =& singleton::getInstance('crs_Class_Lesson');
-        //$objectCL->sql_select  = 'crs_class_lesson.lesson_id, count(student_id) as count';
-        //$objectCL->sql_from    = 'crs_class_lesson '
-        //                        .'LEFT JOIN crs_student ON (crs_student.class_id=crs_class_lesson.class_id)';
-        //$objectCL->sql_groupby = 'crs_class_lesson.lesson_id';
+        return $where;
 
-        require_once 'classes/crs_student_lesson.class.inc';
-        $objectSL =& singleton::getInstance('crs_student_lesson');
-
-        foreach ($rowdata as $rownum => $row) {
-            if (isset($row['lesson_id'])) {
-                $lesson_id  = $row['lesson_id'];
-                //$data = $objectCL->getData("lesson_id='$lesson_id'");
-                //if (isset($data[0]['count'])) {
-                //    $count1 = $data[0]['count'];
-                //} else {
-                    $count1 = 0;
-                //} // if
-
-                $count2 = $objectSL->getCount("lesson_id='$lesson_id'");
-                $count3 = $count1+$count2;
-                if ($count3 == 0) $count3 = null;
-                $rowdata[$rownum]['student_count'] = $count3;
-
-                if (isset($row['teacher_id']) and !isset($row['teacher_name'])) {
-                    $teacher_id = $row['teacher_id'];
-                    if (isset($this->lookup_data['teacher_id'])) {
-                        $rowdata[$rownum]['teacher_name'] = $this->lookup_data['teacher_id'][$teacher_id];
-                    } else {
-                        require_once 'classes/crs_teacher.class.inc';
-                        $objectT =& singleton::getInstance('crs_teacher');
-                        $data = $objectT->getData("teacher_id='$teacher_id'");
-                        $rowdata[$rownum]['teacher_name'] = $data[0]['teacher_name'];
-                    } // if
-                } // if
-            } // if
-        } // foreach
-
-        return $rowdata;
-
-    } // _cm_post_getData
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-        //DebugBreak();
         if (empty($fieldarray['lesson_short_name'])) {
             // extract everything up to the first comma or dash
             list($short_name) = split('[,-]', $fieldarray['lesson_name']);
@@ -161,7 +148,6 @@ class crs_lesson extends Default_Table
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        //DebugBreak();
         if (empty($fieldarray['lesson_short_name'])) {
             // extract everything up to the first comma or dash
             list($short_name) = split('[,-]', $fieldarray['lesson_name']);

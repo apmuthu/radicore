@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require 'std.pdf.class.inc';
 class PDF_list extends PDF
@@ -61,7 +61,11 @@ class PDF_list extends PDF
 
         } // foreach
 
-        $result = $this->printRow($print_array, 1, 1);  // print this row
+        $border = 1;
+        $fill   = 1;
+        $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);  // print this row
+
+        $this->new_page_fill = true;
 
         return;
 

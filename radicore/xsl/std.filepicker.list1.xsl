@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -24,18 +24,19 @@
 <xsl:include href="std.head.xsl"/>
 <xsl:include href="std.pagination.xsl"/>
 
-<!-- get the name of the MAIN table -->
+<!-- get the name of the MAIN table, and other variables -->
 <xsl:variable name="main" select="/root/structure/main/@id"/>
-<xsl:variable name="numrows" select="count(/root/*[name()=$main])"/>
+<xsl:variable name="numrows" select="count(/root/filepicker/file)"/>
   
-<xsl:variable name="image_directory" select="/root/params/image_directory" />
+<!-- image width and height may be defined in one of two places -->
+<xsl:variable name="file_directory" select="/root/params/file_directory" />
 <xsl:variable name="image_width">
   <xsl:choose>
     <xsl:when test="/root/params/image_width">
       <xsl:value-of select="/root/params/image_width" />  
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="//root/structure/main/row/cell/@imagewidth" />
+      <xsl:value-of select="/root/structure/main/row/cell/@imagewidth" />
     </xsl:otherwise>
   </xsl:choose>
 </xsl:variable>
@@ -45,7 +46,7 @@
       <xsl:value-of select="/root/params/image_height" />  
     </xsl:when>
     <xsl:otherwise>
-      <xsl:value-of select="//root/structure/main/row/cell/@imageheight" />
+      <xsl:value-of select="/root/structure/main/row/cell/@imageheight" />
     </xsl:otherwise>
   </xsl:choose>
 </xsl:variable>
@@ -57,100 +58,87 @@
   <xsl:call-template name="head" />
 
   <body>
-    <xsl:for-each select="/root/javascript/body[@*]">
-      <!-- add javascript events to the <body> tag -->
-      <xsl:copy-of select="@*" />
-    </xsl:for-each>
+    <xsl:attribute name="class">
+      <xsl:value-of select="/root/params/script_short" />
+    </xsl:attribute>
+    
+    <xsl:call-template name="body-head" />
 
-  <xsl:if test="/root/header">
-    <div class="header">
-      <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
-
-  <form method="post" action="{$script}">
-
-    <div class="universe">
-
-      <!-- create help button -->
-      <xsl:call-template name="help" />
-
-      <!-- create menu buttons -->
-      <xsl:call-template name="menubar" />
-
-      <div class="body">
-
-        <h1><xsl:value-of select="$title"/></h1>
-
-        <!-- create navigation buttons -->
-        <xsl:call-template name="navbar">
-          <xsl:with-param name="noshow"   select="/root/params/noshow"/>
-          <xsl:with-param name="noselect" select="/root/params/noselect"/>
-        </xsl:call-template>
-
-        <div class="main">
-          <!-- this is the actual data -->
-          <table>
-
-            <!-- set up column widths -->
-            <xsl:call-template name="column_group">
-              <xsl:with-param name="zone" select="'main'"/>
-              <xsl:with-param name="count" select="'2'"/>
-            </xsl:call-template>
-
-            <thead>
-              <!-- set up column headings -->
-              <xsl:call-template name="column_headings">
-                <xsl:with-param name="zone"   select="'main'"/>
-                <xsl:with-param name="count"  select="'2'"/>
-                <xsl:with-param name="nosort" select="/root/params/nosort"/>
+    <form method="post" action="{$script}">
+  
+      <div class="universe">
+  
+        <!-- create help button -->
+        <xsl:call-template name="help" />
+  
+        <!-- create menu buttons -->
+        <xsl:call-template name="menubar" />
+  
+        <div class="body">
+  
+          <h1><xsl:value-of select="$title"/></h1>
+  
+          <!-- create navigation buttons -->
+          <xsl:call-template name="navbar">
+            <xsl:with-param name="noshow"   select="/root/params/noshow"/>
+            <xsl:with-param name="noselect" select="/root/params/noselect"/>
+          </xsl:call-template>
+  
+          <div class="main">
+            <!-- this is the actual data -->
+            <table>
+  
+              <!-- set up column widths -->
+              <xsl:call-template name="column_group">
+                <xsl:with-param name="zone" select="'main'"/>
+                <xsl:with-param name="count" select="'2'"/>
               </xsl:call-template>
-            </thead>
-
-            <tbody>
-              <!-- process each odd-numbered row in the MAIN table of the XML file -->
-              <!-- (even-numbered entries are automatically appended) -->
-              <xsl:for-each select="/root/*[name()=$main][position()mod 2=1]">
-
-                <!-- display all the fields in the current row -->
-                <xsl:call-template name="display_file">
-                  <xsl:with-param name="zone" select="'main'"/>
+  
+              <thead>
+                <!-- set up column headings -->
+                <xsl:call-template name="column_headings">
+                  <xsl:with-param name="zone"   select="'main'"/>
+                  <xsl:with-param name="count"  select="'2'"/>
+                  <xsl:with-param name="nosort" select="/root/params/nosort"/>
                 </xsl:call-template>
-
-              </xsl:for-each>
-            </tbody>
-
-          </table>
+              </thead>
+  
+              <tbody>
+                <!-- process each non-empty row in the MAIN table of the XML file -->
+                <!-- (note: odd and even numbered rows are processed differently) -->
+                <xsl:for-each select="/root/filepicker[count(*)&gt;0]">
+  
+                  <!-- display all the fields in the current row -->
+                  <xsl:call-template name="display_row">
+                    <xsl:with-param name="zone" select="'main'"/>
+                    <xsl:with-param name="currocc" select="." />
+                    <xsl:with-param name="position" select="position()" />
+                  </xsl:call-template>
+  
+                </xsl:for-each>
+              </tbody>
+  
+            </table>
+          </div>
+  
+          <!-- look for optional messages -->
+          <xsl:call-template name="message"/>
+  
+          <!-- insert the page navigation links -->
+          <xsl:call-template name="pagination" >
+            <xsl:with-param name="object" select="'main'"/>
+          </xsl:call-template>
+  
+          <!-- create standard action buttons -->
+          <xsl:call-template name="actbar" />
+  
         </div>
-
-        <!-- look for optional messages -->
-        <xsl:call-template name="message"/>
-
-        <!-- insert the page navigation links -->
-        <xsl:call-template name="pagination" >
-          <xsl:with-param name="object" select="'main'"/>
-        </xsl:call-template>
-
-        <!-- create standard action buttons -->
-        <xsl:call-template name="actbar" />
-
+  
       </div>
+  
+    </form>
 
-    </div>
-
-  </form>
-
-  <xsl:if test="/root/params/version">
-    <div class="version">
-      <xsl:value-of select="/root/params/version" />
-    </div>
-  </xsl:if>
-
-  <xsl:if test="/root/footer">
-    <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
-    </div>
-  </xsl:if>
+    <xsl:call-template name="body-foot" />
 
   </body>
   </html>
@@ -159,59 +147,142 @@
 
 
 
-<xsl:template name="display_file">
-  <xsl:param name="item"/>
-
-  <!-- set the row class to 'odd' or 'even' to determine the colour -->
-  <tr>
-    <xsl:attribute name="class">
+<xsl:template name="display_row">
+  <xsl:param name="zone"/>
+  <xsl:param name="currocc"/>   <!-- current occurrence -->
+  <xsl:param name="position"/>
+  
+  <xsl:if test="$position mod 2=1">  <!-- only process odd numbered rows -->
+    
+    <!-- set the row class to 'odd' or 'even' to determine the colour -->
+    <tr>
+      <xsl:attribute name="class">
+        <xsl:choose>
+          <xsl:when test="position()mod 2">odd</xsl:when>
+          <xsl:otherwise>even</xsl:otherwise>
+        </xsl:choose>
+      </xsl:attribute>
+  
+      <!-- step through the fields defined in the STRUCTURE element (odd numbered rows) -->
+      <xsl:for-each select="/root/structure/main/row/cell[@field]">
+        
+        <!-- get fieldname from the FIELD attribute -->
+        <xsl:variable name="fieldname" select="string(@field)" />
+        <!-- get value for this fieldname -->
+        <xsl:variable name="fieldvalue">
+          <xsl:choose>
+            <xsl:when test="$fieldname='image'">
+              <!-- replace 'image' value with 'file' value -->
+              <xsl:value-of select="$currocc/*[name()='file']" />
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select="$currocc/*[name()=$fieldname]" />
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        
+        <xsl:call-template name="display_file">
+          <xsl:with-param name="fieldname"  select="$fieldname" />
+          <xsl:with-param name="fieldvalue" select="$fieldvalue" />
+          <xsl:with-param name="position"   select="$position" /> 
+        </xsl:call-template>
+        
+      </xsl:for-each>
+  
+      <!-- these table cells contain the data for 'even' numbered entries -->
       <xsl:choose>
-        <xsl:when test="position()mod 2">odd</xsl:when>
-        <xsl:otherwise>even</xsl:otherwise>
+  
+        <!-- look for a sibling with same name as current node -->
+        <xsl:when test="count(following-sibling::*[name()=name(current())])">
+          
+          <!-- extract following sibling into its own variable -->
+          <xsl:variable name="next" select="following-sibling::*[name()=name(current())][1]" />
+          
+          <xsl:for-each select="/root/structure/main/row/cell[@field]">
+            
+            <!-- get fieldname from the FIELD attribute -->
+            <xsl:variable name="fieldname" select="string(@field)" />
+            <!-- get value for this fieldname -->
+            <xsl:variable name="fieldvalue">
+              <xsl:choose>
+                <xsl:when test="$fieldname='image'">
+                  <!-- replace 'image' value with 'file' value -->
+                  <xsl:value-of select="$next/*[name()='file']" />
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:value-of select="$next/*[name()=$fieldname]" />
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:variable>
+            
+            <xsl:call-template name="display_file">
+              <xsl:with-param name="fieldname"  select="$fieldname" />
+              <xsl:with-param name="fieldvalue" select="$fieldvalue" />
+              <xsl:with-param name="position"   select="$position+1" /> 
+            </xsl:call-template>
+            
+          </xsl:for-each>
+          
+        </xsl:when>
+  
+        <!-- there is nothing to follow, so create empty cells -->
+        <xsl:otherwise>
+          <xsl:for-each select="/root/structure/main/row/cell[@field]">
+            <td></td>
+          </xsl:for-each>
+        </xsl:otherwise>
+  
       </xsl:choose>
-    </xsl:attribute>
+    </tr>
+  </xsl:if>
 
-    <!-- these table cells contain the data for 'odd' numbered entries -->
-    <td>
-      <a href="{$script}?{$session}&amp;select={node()}"><b><xsl:value-of select="node()" /></b></a>
-    </td>
-    <td>
-      <xsl:call-template name="icon">
-        <xsl:with-param name="icon" select="node()" />
-        <xsl:with-param name="height" select="$image_height" />
-        <xsl:with-param name="width" select="$image_width" />
-        <xsl:with-param name="directory" select="$image_directory" />
-      </xsl:call-template>
-    </td>
-
-    <!-- these table cells contain the data for 'even' numbered entries -->
+</xsl:template>  <!-- display_row -->
+  
+<xsl:template name="display_file">
+  <xsl:param name="fieldname"/>
+  <xsl:param name="fieldvalue"/>
+  <xsl:param name="position"/>
+  
+  <td>
     <xsl:choose>
-
-      <!-- look for a sibling with same name as current node -->
-      <xsl:when test="count(following-sibling::*[name()=name(current())])">
-        <td>
-          <a href="{$script}?{$session}&amp;select={following-sibling::*}"><b><xsl:value-of select="following-sibling::*" /></b></a>
-        </td>
-        <td>
-          <xsl:call-template name="icon">
-            <xsl:with-param name="icon" select="following-sibling::*" />
-            <xsl:with-param name="height" select="$image_height" />
-            <xsl:with-param name="width" select="$image_width" />
-            <xsl:with-param name="directory" select="$image_directory" />
-          </xsl:call-template>
-        </td>
+      <xsl:when test="$fieldname='selectbox'">
+        <xsl:call-template name="selectbox">
+          <xsl:with-param name="path" select="'filepicker'"/>
+          <xsl:with-param name="position" select="$position"/>
+        </xsl:call-template>
       </xsl:when>
-
-      <!-- there is nothing to follow, so create empty cells -->
+      
+      <xsl:when test="$fieldname='file'">
+        <xsl:variable name="link">
+          <xsl:choose>
+            <xsl:when test="/root/params/hyperlink_direct">
+              <!-- link directly to the file -->
+              <xsl:value-of select="concat($file_directory, '/', $fieldvalue)" />
+            </xsl:when>
+            <xsl:otherwise>
+              <!-- link to the download task -->
+              <xsl:value-of select="concat($script, '?', $session, '&amp;select=', $fieldvalue)" />
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <a href="{$link}"><b><xsl:value-of select="$fieldvalue" /></b></a>
+      </xsl:when>
+      
+      <xsl:when test="$fieldname='image'">
+        <xsl:call-template name="icon">
+          <xsl:with-param name="icon" select="$fieldvalue" />
+          <xsl:with-param name="height" select="$image_height" />
+          <xsl:with-param name="width" select="$image_width" />
+          <xsl:with-param name="directory" select="$file_directory" />
+        </xsl:call-template>
+      </xsl:when>
+      
       <xsl:otherwise>
-        <td></td>
-        <td></td>
+        <xsl:value-of select="$fieldvalue"/>
       </xsl:otherwise>
-
     </xsl:choose>
+  </td>
 
-  </tr>
-
-</xsl:template>
+</xsl:template>  <!-- display_file -->
 
 </xsl:stylesheet>

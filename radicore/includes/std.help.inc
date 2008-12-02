@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -25,15 +25,17 @@ $mode = 'read';
 // load session variables
 initSession();
 
-$title = getLanguageText('sys0099', $help_id); // "Help text for '$help_id'"
+$help_desc = getLanguageText($help_id);
+
+$title = getLanguageText('sys0099', $help_id, $help_desc); // "Help text for '$help_id'"
 
 if (!isset($root)) {
     // not set, so use default value
     $root = 'HTTP://' . $_SERVER['HTTP_HOST'];
 } // if
 
-if (isset($GLOBALS['language'])) {
-	$lang = $GLOBALS['language'];
+if (isset($_SESSION['user_language'])) {
+	$lang = $_SESSION['user_language'];
 } else {
     $lang = NULL;
 } // if

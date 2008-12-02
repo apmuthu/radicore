@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_related_column extends Default_Table
@@ -69,7 +69,6 @@ class dict_related_column extends Default_Table
         } // if
 
         // obtain names of primary key columns from parent table
-        require_once 'classes/dict_table_key.class.inc';
         $keyobj =& singleton::getInstance('dict_table_key');
         $where = "database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'";
         $keyobj->setOrderBy('seq_in_index');
@@ -96,10 +95,8 @@ class dict_related_column extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        //DebugBreak();
         if (!empty($rowdata)) {
             // get column names for junior (child) table
-            require_once 'classes/dict_column.class.inc';
             $columnobj =& singleton::getInstance('dict_column');
             $where2 = "database_id='{$rowdata[0]['database_id_jnr']}'";
             $where2 .= " AND table_id='{$rowdata[0]['table_id_jnr']}'";

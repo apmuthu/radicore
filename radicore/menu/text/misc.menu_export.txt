@@ -1,4 +1,4 @@
-// file created on July 12, 2007, 6:55 pm
+// file created on November 27, 2008, 1:48 pm
     
 // menu details for subsystem MISC
 
@@ -6,10 +6,15 @@
 $array['date(current)']                           = 'Select Records with Current Dates';
 $array['date(future)']                            = 'Select Records with Future Dates';
 $array['date(historic)']                          = 'Select Records with Historic Dates';
+$array['file(delete)']                            = 'Delete File Name';
+$array['file(search)']                            = 'Search File Name';
 
 // navigation button details for subsystem MISC
 $array['Current']                                 = 'Current';
+$array['Delete']                                  = 'Delete';
+$array['Future']                                  = 'Future';
 $array['Historic']                                = 'Historic';
+$array['Search']                                  = 'Search';
 
 // column details for subsystem MISC
 

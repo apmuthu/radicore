@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_tbl extends Default_Table
@@ -91,7 +91,6 @@ class audit_tbl extends Default_Table
     function auditUpdateSelection ($dbname, $tablename, $fieldspec, $selection, $replace)
     // add a record to the audit trail for an UPDATE of a selection of records.
     {
-        //DebugBreak();
         $oldarray = where2array($selection);
 
         // turn $replace string into an array of 'item=value' pairs
@@ -115,12 +114,11 @@ class audit_tbl extends Default_Table
     function auditWrite ($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray)
     // add a record to the audit trail for an INSERT, UPDATE or DELETE.
     {
-        //DebugBreak();
         $this->errors = array();
 
         if (!isset($_SESSION['session_number'])) {
             // first time only, get details from audit_ssn
-            require_once 'classes/audit_ssn.class.inc';
+            //require_once 'classes/audit_ssn.class.inc';
             $ssn_obj =& singleton::getInstance('audit_ssn');
             $ssn_data = $ssn_obj->insertRecord(array());
             if ($ssn_obj->errors) {
@@ -134,7 +132,7 @@ class audit_tbl extends Default_Table
 
         if (empty($this->trn_array)) {
             // first time only, get details from audit_trn
-            require_once 'classes/audit_trn.class.inc';
+            //require_once 'classes/audit_trn.class.inc';
             $trn_obj =& singleton::getInstance('audit_trn');
             $this->trn_array = $trn_obj->insertRecord($ssn_data);
             if ($trn_obj->errors) {
@@ -226,7 +224,7 @@ class audit_tbl extends Default_Table
         } // foreach
 
         // add all these records to the database
-        require_once 'classes/audit_fld.class.inc';
+        //require_once 'classes/audit_fld.class.inc';
         $fld_obj =& singleton::getInstance('audit_fld');
 
         $fieldarray = $fld_obj->insertMultiple($fieldarray);
@@ -308,9 +306,11 @@ class audit_tbl extends Default_Table
         if (!empty($where)) {
             // do not override previous settings
         } else {
-            if ($GLOBALS['return_from'] == 'audit_dtl(search)' AND $GLOBALS['return_action'] == 'quit') {
-                // no current selection, and search was cancelled, so quit instead of retrieving all occurrences
-            	scriptPrevious();
+            if (isset($GLOBALS['return_from']) AND isset($GLOBALS['return_action'])) {
+            	if ($GLOBALS['return_from'] == 'audit_dtl(search)' AND $GLOBALS['return_action'] == 'quit') {
+                    // no current selection, and search was cancelled, so quit instead of retrieving all occurrences
+                	scriptPrevious();
+                } // if
             } // if
         	if ($GLOBALS['mode'] == 'search') {
         	    if (isset($_SESSION['search'][$this->tablename])) {
@@ -334,7 +334,6 @@ class audit_tbl extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //DebugBreak();
         if ($GLOBALS['mode'] == 'list') {
             // do not bother checking for complete primary key
             $this->checkPrimaryKey = FALSE;
@@ -348,50 +347,16 @@ class audit_tbl extends Default_Table
         //$array1 = where2indexedArray($this->sql_search);   // convert string into indexed array
         //$fieldarray = indexed2assoc($array1);              // convert indexed array to associative
 
-        // merge the '_from' and '_to' fields into a single field
-        if (isset($fieldarray['date_from'])) {
-            $fieldarray['date_from'] = stripOperators($fieldarray['date_from']);
-            if (isset($fieldarray['date_to'])) {
-                $fieldarray['date_to'] = stripOperators($fieldarray['date_to']);
-                if ($fieldarray['date_from'] == $fieldarray['date_to']) {
-                    // values are the same, so use '='
-                	$fieldarray['trn_date'] = $fieldarray['date_from'];
-                } else {
-                    $fieldarray['trn_date'] = "BETWEEN '{$fieldarray['date_from']}' AND '{$fieldarray['date_to']}'";
-                } // if
-            } else {
-                $fieldarray['trn_date'] = ">= '{$fieldarray['date_from']}'";
-            } // if
+        // deal with values which have ranges
+        if (!empty($fieldarray['date_from']) OR !empty($fieldarray['date_to'])) {
+            $fieldarray['trn_date'] = rangeFromTo($fieldarray['date_from'], $fieldarray['date_to'], true);
             unset($fieldarray['date_from']);
             unset($fieldarray['date_to']);
         } // if
 
-        if (isset($fieldarray['date_to'])) {
-            $fieldarray['date_to'] = stripOperators($fieldarray['date_to']);
-            $fieldarray['trn_date'] = "<= '{$fieldarray['date_to']}'";
-            unset($fieldarray['date_to']);
-        } // if
-
-        if (isset($fieldarray['time_from'])) {
-            $fieldarray['time_from'] = stripOperators($fieldarray['time_from']);
-            if (isset($fieldarray['time_to'])) {
-                $fieldarray['time_to'] = stripOperators($fieldarray['time_to']);
-                if ($fieldarray['time_from'] == $fieldarray['time_to']) {
-                    // values are the same, so use '='
-                	$fieldarray['trn_time'] = $fieldarray['time_from'];
-                } else {
-                    $fieldarray['trn_time'] = "BETWEEN '{$fieldarray['time_from']}' AND '{$fieldarray['time_to']}'";
-                } // if
-            } else {
-                $fieldarray['trn_time'] = ">= '{$fieldarray['time_from']}'";
-            } // if
+        if (!empty($fieldarray['time_from']) OR !empty($fieldarray['time_to'])) {
+        	$fieldarray['trn_time'] = rangeFromTo($fieldarray['time_from'], $fieldarray['time_to']);
             unset($fieldarray['time_from']);
-            unset($fieldarray['time_to']);
-        } // if
-
-        if (isset($fieldarray['time_to'])) {
-            $fieldarray['time_to'] = stripOperators($fieldarray['time_to']);
-            $fieldarray['trn_time'] = "<= '{$fieldarray['time_to']}'";
             unset($fieldarray['time_to']);
         } // if
 

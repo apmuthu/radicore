@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -39,7 +39,6 @@ class dict_table_s04 extends dict_table
         	// remove PATTERN_ID from $where
             $this->pattern_id = strtolower(stripOperators($fieldarray['pattern_id']));
             unset($fieldarray['pattern_id']);
-            //$where = array2where($fieldarray);
         } // if
 
         $this->fieldspec['task_id']         = array('type' => 'string',
@@ -235,7 +234,7 @@ class dict_table_s04 extends dict_table
 
         // compile list of possible child forms
         switch ($this->pattern_id) {
-        	case 'list1':
+            case 'list1':
         		$fieldarray['child_forms'] = getLanguageText('t0001');  // 'Add1, Delete1, Enquire1, Search, Update1, Audit';
         		break;
 
@@ -292,6 +291,7 @@ class dict_table_s04 extends dict_table
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
             	break;
 
+        	case 'add5':
         	case 'multi4':
         	    $fieldarray['inner_table_alias'] = '';   // ensure this field is displayed
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
@@ -343,6 +343,7 @@ class dict_table_s04 extends dict_table
         	    // there is nothing after 2nd '#', so this is a table name
         		$tablename = trim($match, '#');
         		switch ($fieldarray['pattern_id']) {
+        		    case 'add5':
         		    case 'del4':
         			case 'list2':
         			case 'list3':
@@ -385,7 +386,7 @@ class dict_table_s04 extends dict_table
         	    if ($regs[0] == 'screen') {
         	    	$fieldarray['screen_file'] = $match;
                     $this->screen_file_long    = $match;
-        	    } else {
+        	    } elseif ($regs[0] == 'report') {
         	        $fieldarray['report_file'] = $match;
                     $this->report_file_long    = $match;
         	    } // if
@@ -836,8 +837,14 @@ class dict_table_s04 extends dict_table
 				case 'add2':
 				case 'add3':
 				case 'add4':
+				case 'add5':
 				    $task_data['task_desc']   = getLanguageText('Add') .' ' .$fieldarray['table_desc'];
 					$task_data['button_text'] = getLanguageText('New');
+        			break;
+
+				case 'batch':
+				    $task_data['task_desc']   = getLanguageText('Update') .' ' .$fieldarray['table_desc'] .' (' .getLanguageText('batch') .')';
+					$task_data['button_text'] = getLanguageText('Update') .' (' .getLanguageText('batch') .')';
         			break;
 
 				case 'del1':
@@ -900,6 +907,7 @@ class dict_table_s04 extends dict_table
 					break;
 
 				case 'output1':
+				case 'output4':
 					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
@@ -974,6 +982,7 @@ class dict_table_s04 extends dict_table
     				case 'add2':
     				case 'add3':
     				case 'add4':
+    				case 'add5':
     					$nav_data['button_text']       = getLanguageText('New');
             			$nav_data['context_preselect'] = 'N';
     					break;

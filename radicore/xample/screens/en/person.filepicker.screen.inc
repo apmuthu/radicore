@@ -8,7 +8,8 @@ $structure['main']['columns'][] = array('width' => '10%');
 
 $structure['main']['fields'][] = array('file' => 'File Name');
 $structure['main']['fields'][] = array('image' => 'Image',
+                                       //'imageheight' => 95,
                                        'imagewidth' => 75,
-                                       'imageheight' => 95);
+                                       'nosort' => 'y');
 
 ?>

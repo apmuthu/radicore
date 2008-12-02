@@ -31,7 +31,8 @@ $array['col_unsigned']          = array('N' => 'No',
                                         'Y' => 'UNSIGNED');
 
 $array['col_zerofill_bwz']      = array('ZF'  => 'ZEROFILL',
-                                        'BWZ' => 'BLANK WHEN ZERO');
+                                        'BWZ' => 'BLANK WHEN ZERO',
+                                        'STZ' => 'STRIP TRAILING ZERO');
 
 $array['control']               = array('dropdown'   => 'DROPDOWN LIST',
                                         'multidrop'  => 'MULTI-DROPDOWN',

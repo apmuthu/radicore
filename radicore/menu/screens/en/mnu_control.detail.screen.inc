@@ -13,13 +13,14 @@ $structure['main']['columns'][] = array('width' => '10%');
 $structure['main']['columns'][] = array('width' => '10%');
 
 $structure['main']['fields'][1] = array('default_language' => 'Default Language', 'colspan' => 7);
+$structure['main']['fields'][2] = array('login_type' => 'Login Type', 'colspan' => 7);
 
-$structure['main']['fields'][2][] = array('label' => 'Password Change', 'rowspan' => 2);
-$structure['main']['fields'][2][] = array('field' => 'pswd_change', 'rowspan' => 2, 'colspan' => 3);
-$structure['main']['fields'][2][] = array('label' => 'Password Count', 'colspan' => 2);
-$structure['main']['fields'][2][] = array('field' => 'pswd_count', 'colspan' => 2);
-$structure['main']['fields'][3][] = array('label' => 'Password Days', 'colspan' => 2);
-$structure['main']['fields'][3][] = array('field' => 'pswd_days', 'colspan' => 2);
+$structure['main']['fields'][3][] = array('label' => 'Password Change', 'rowspan' => 2);
+$structure['main']['fields'][3][] = array('field' => 'pswd_change', 'rowspan' => 2, 'colspan' => 3);
+$structure['main']['fields'][3][] = array('label' => 'Password Count', 'colspan' => 2);
+$structure['main']['fields'][3][] = array('field' => 'pswd_count', 'colspan' => 2);
+$structure['main']['fields'][4][] = array('label' => 'Password Days', 'colspan' => 2);
+$structure['main']['fields'][4][] = array('field' => 'pswd_days', 'colspan' => 2);
 
 $structure['main']['fields'][5][] = array('label' => 'Password Retries');
 $structure['main']['fields'][5][] = array('field' => 'pswd_retries', 'colspan' => 1);
@@ -40,6 +41,14 @@ $structure['main']['fields'][9][] = array('label' => 'Password Encryption?');
 $structure['main']['fields'][9][] = array('field' => 'pswd_encrypt', 'colspan' => 3);
 $structure['main']['fields'][9][] = array('label' => 'Hide Passwords?', 'colspan' => 2);
 $structure['main']['fields'][9][] = array('field' => 'pswd_hidden', 'colspan' => 2);
+
+$structure['main']['fields'][10][] = array('label' => 'Authentication?');
+$structure['main']['fields'][10][] = array('field' => 'authentication', 'colspan' => 7);
+
+$structure['main']['fields'][11][] = array('label' => 'Pagination Width');
+$structure['main']['fields'][11][] = array('field' => 'pagination_width');
+$structure['main']['fields'][11][] = array('label' => 'Scrolling Width', 'colspan' => 2);
+$structure['main']['fields'][11][] = array('field' => 'scrolling_width', 'colspan' => 5);
 
 $structure['main']['fields'][12][] = array('label' => 'Shutdown Start');
 $structure['main']['fields'][12][] = array('field' => 'shutdown_start', 'colspan' => 1);

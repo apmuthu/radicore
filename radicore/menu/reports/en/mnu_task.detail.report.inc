@@ -19,8 +19,8 @@ $structure['title'][] = array('text' => '- Contents of MNU_TASK table -',
                               'border' => 'y');
 
 // set column widths
-$structure['columns'][] = array('width' => 40, 'align' => 'right');
-$structure['columns'][] = array('width' => 150, 'align' => 'left');
+$structure['columns'][] = array('width' => 50, 'align' => 'right');
+$structure['columns'][] = array('width' => 140, 'align' => 'left');
 
 // identify labels and data to be output
 
@@ -43,6 +43,7 @@ $structure['body']['fields'][] = array('log_sql_query' => 'Log SQL Query?');
 $structure['body']['fields'][] = array('is_disabled' => 'Disabled?');
 $structure['body']['fields'][] = array('screen_refresh' => 'Screen Refresh');
 $structure['body']['fields'][] = array('use_https' => 'Use HTTPS?');
+$structure['body']['fields'][] = array('max_execution_time' => 'Max Execution Time');
 
 $structure['body']['fields'][] = array('created_date' => 'Created Date');
 $structure['body']['fields'][] = array('created_user' => 'Created By');

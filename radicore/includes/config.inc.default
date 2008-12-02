@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains database access details and the standard connection function
@@ -46,6 +46,30 @@ if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) { 
     $GLOBALS['https_server_suffix'] = '';
 } // if
 
+// this demonstrates the multi-server option (see FAQ92)
+if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
+    global $servers;
+    // server 0
+//    $servers[0]['dbhost']     = '192.168.1.64';
+//    $servers[0]['dbengine']   = 'pgsql';
+//    $servers[0]['dbusername'] = '****';
+//    $servers[0]['dbuserpass'] = '****';
+//    $servers[0]['dbprefix']   = '';
+//    $servers[0]['dbnames']    = 'xample,classroom,survey';
+//    $servers[0]['ssl_key']    = '';
+//    $servers[0]['ssl_cert']   = '';
+//    $servers[0]['ssl_ca']     = '';
+//    $servers[0]['ssl_capath'] = '';
+//    $servers[0]['ssl_cipher'] = '';
+    // server 1
+//    $servers[1]['dbhost']     = 'localhost';
+//    $servers[1]['dbengine']   = 'mysql';
+//    $servers[1]['dbusername'] = 'tony';
+//    $servers[1]['dbuserpass'] = 'tony';
+//    $servers[1]['dbprefix']   = '';
+//    $servers[1]['dbnames']    = '*';
+} // if
+
 // set this to true if you want all XSL transformations to be done by the client
 // (NOTE: only valid if supported by your client browser)
 $GLOBALS['XSLT_client_side'] = false;
@@ -57,11 +81,17 @@ $GLOBALS['log_sql_query'] = false;
 $GLOBALS['log_xml_document'] = false;
 
 // set date format - choose one of the following
-$GLOBALS['date_format'] = 'dmy';
-//$GLOBALS['date_format'] = 'mdy';
-//$GLOBALS['date_format'] = 'ymd';
+$GLOBALS['date_format'] = 'dmy';         //  '21 Jan 2001'
+//$GLOBALS['date_format'] = 'mdy';         // 'Jan 21 2001'
+//$GLOBALS['date_format'] = 'ymd';         // '2001, Jan 21'
+//$GLOBALS['date_format'] = 'dd.mm.yyyy';  // '21.06.2001'
+//$GLOBALS['date_format'] = 'dd/mm/yyyy';  // '21/06/2001'
+//$GLOBALS['date_format'] = 'dd/mm/yy';    // '21/06/01'
 
 // use HTTPS for all web pages
 $GLOBALS['use_https'] = false;
+
+// use to access files in the 'classes/custom-processing/<project>/' folder
+//$GLOBALS['project_code'] = 'unknown';
 
 ?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -36,7 +36,7 @@ class mnu_control extends Default_Table
     {
         switch (strtoupper($field_id)) {
             case 'PSWD_ENCRYPT':
-        	    $where = "record_id='SYSTEM' and field_id='PSWD_ENCRYPT'";
+        	    $where = "record_id='SYSTEM' AND field_id='PSWD_ENCRYPT'";
                 $data = $this->getData_raw($where);
 
                 if (is_True($data[0]['field_value'])) {
@@ -47,7 +47,7 @@ class mnu_control extends Default_Table
         		break;
 
         	case 'PSWD_HIDDEN':
-        	    $where = "record_id='SYSTEM' and field_id='PSWD_HIDDEN'";
+        	    $where = "record_id='SYSTEM' AND field_id='PSWD_HIDDEN'";
                 $data = $this->getData_raw($where);
 
                 if (is_True($data[0]['field_value'])) {
@@ -58,27 +58,26 @@ class mnu_control extends Default_Table
         		break;
 
         	case 'PSWD_FORMAT';
-        	    $where = "record_id='SYSTEM' and field_id LIKE 'PSWD_FORMAT%'";
+        	    $where = "record_id='SYSTEM' AND field_id LIKE 'PSWD_FORMAT%'";
                 $rowdata = $this->getData_raw($where);
-
                 // turn multiple rows into a single associative array
-                $fieldarray = array();
-                foreach ($rowdata as $row => $data) {
-                    $fieldarray[strtolower($data['field_id'])] = $data['field_value'];
+                $data = array();
+                foreach ($rowdata as $row) {
+                    $data[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
 
-                return $fieldarray;
+                return $data;
         	    break;
 
         	case 'PSWD_RETRIES';
-        	    $where = "record_id='SYSTEM' and field_id='PSWD_RETRIES'";
+        	    $where = "record_id='SYSTEM' AND field_id='PSWD_RETRIES'";
                 $data = $this->getData_raw($where);
 
                 return $data[0]['field_value'];
         	    break;
 
         	case 'PSWD_CHANGE';
-        	    $where = "record_id='SYSTEM' and field_id='PSWD_CHANGE'";
+        	    $where = "record_id='SYSTEM' AND field_id='PSWD_CHANGE'";
                 $data = $this->getData_raw($where);
 
                 switch ($data[0]['field_value']) {
@@ -88,7 +87,7 @@ class mnu_control extends Default_Table
 
                     case 'AD';
                         // check the number of days since password was last changed
-                        $where = "record_id='SYSTEM' and field_id='PSWD_DAYS'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
                         $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         // compare with date in passed data
@@ -100,7 +99,7 @@ class mnu_control extends Default_Table
 
                     case 'AL':
                         // check the number of times this user has logged in
-                        $where = "record_id='SYSTEM' and field_id='PSWD_COUNT'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
                         $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         // compare with count in passed data
@@ -118,7 +117,7 @@ class mnu_control extends Default_Table
 
         	case 'PSWD_EXPIRES';
         	    // identify if/when the current password will expire
-        	    $where = "record_id='SYSTEM' and field_id='PSWD_CHANGE'";
+        	    $where = "record_id='SYSTEM' AND field_id='PSWD_CHANGE'";
                 $data = $this->getData_raw($where);
 
                 switch ($data[0]['field_value']) {
@@ -128,12 +127,12 @@ class mnu_control extends Default_Table
 
                     case 'AD';
                         // identify the number of days warning period
-                        $where = "record_id='SYSTEM' and field_id='PSWD_WARNING'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
                         $data = $this->getData_raw($where);
                         $limit = $data[0]['field_value'];
 
                         // check the number of days since password was last changed
-                        $where = "record_id='SYSTEM' and field_id='PSWD_DAYS'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
                         $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         // compare date in passed data with todays date
@@ -150,12 +149,12 @@ class mnu_control extends Default_Table
 
                     case 'AL':
                         // identify the number of logons warning period
-                        $where = "record_id='SYSTEM' and field_id='PSWD_WARNING'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
                         $data = $this->getData_raw($where);
                         $limit = $data[0]['field_value'];
 
                         // check the number of times this user has logged in
-                        $where = "record_id='SYSTEM' and field_id='PSWD_COUNT'";
+                        $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
                         $data = $this->getData_raw($where);
                         $count = $data[0]['field_value'];
                         // compare with count in passed data
@@ -177,15 +176,58 @@ class mnu_control extends Default_Table
         	    break;
 
         	case 'DEFAULT_LANGUAGE':
-                $where = "record_id='SYSTEM' and field_id='DEFAULT_LANGUAGE'";
+                $where = "record_id='SYSTEM' AND field_id='DEFAULT_LANGUAGE'";
                 $data = $this->getData_raw($where);
 
-                return $data[0]['field_value'];
+                $result = $data[0]['field_value'];
+                if (empty($result)) {
+                	$result = 'en';
+                } // if
+
+                return strtolower($result);
+                break;
+
+        	case 'LOGIN_TYPE':
+                $where = "record_id='SYSTEM' AND field_id='LOGIN_TYPE'";
+                $data = $this->getData_raw($where);
+
+                $result = $data[0]['field_value'];
+                if (empty($result)) {
+                	$result = 'USER';
+                } // if
+
+                return $result;
+                break;
+
+        	case 'AUTHENTICATION':
+                $where = "record_id='SYSTEM' AND field_id LIKE 'AUTHENTICATION%'";
+                $rowdata = $this->getData_raw($where);
+                // turn multiple rows into a single associative array
+                $data = array();
+                foreach ($rowdata as $row) {
+                	$data[strtolower($row['field_id'])] = $row['field_value'];
+                } // foreach
+
+                return $data;
+                break;
+
+        	case 'PAGINATION':
+                $where = "record_id='SYSTEM' AND field_id IN ('PAGINATION_WIDTH','SCROLLING_WIDTH')";
+                $rowdata = $this->getData_raw($where);
+                // turn multiple rows into a single associative array
+                $data = array();
+                foreach ($rowdata as $row) {
+                	$data[strtolower($row['field_id'])] = $row['field_value'];
+                } // foreach
+
+                return $data;
                 break;
 
         	case 'SHUTDOWN':
-                $where = "record_id='SYSTEM' and field_id LIKE 'SHUTDOWN%'";
+                $where = "record_id='SYSTEM' AND field_id LIKE 'SHUTDOWN%'";
                 $rowdata = $this->getData_raw($where);
+                // turn multiple rows into a single associative array
+                $data = array();
                 foreach ($rowdata as $row) {
                 	$data[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
@@ -213,6 +255,14 @@ class mnu_control extends Default_Table
                                                     'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'language_code');
+
+        // login type
+        $fieldspec['login_type']            = array('type' => 'string',
+                                                    'size' => 5,
+                                                    'required' => 'y',
+                                                    'uppercase' => 'y',
+                                                    'control' => 'radiogroup',
+                                                    'optionlist' => 'login_type');
 
         // how often must the user change his password?
         $fieldspec['pswd_change']           = array('type' => 'string',
@@ -262,6 +312,24 @@ class mnu_control extends Default_Table
         $fieldspec['pswd_hidden']           = array('type' => 'boolean',
                                                     'true' => 'Y',
                                                     'false' => 'N');
+
+        // are logons to be authenticated internally, or with an external server?
+        $fieldspec['authentication']        = array('type' => 'string',
+                                                    'size' => 2,
+                                                    'required' => 'y',
+                                                    'uppercase' => 'y',
+                                                    'control' => 'radiogroup',
+                                                    'optionlist' => 'authentication');
+
+        // define width for 'google-style' pagination
+        $fieldspec['pagination_width']      = array('type' => 'integer',
+                                                    'size' => 1,
+                                                    'unsigned' => 'y',
+                                                    'maxvalue' => 9);
+        $fieldspec['scrolling_width']       = array('type' => 'integer',
+                                                    'size' => 1,
+                                                    'unsigned' => 'y',
+                                                    'maxvalue' => 9);
 
         // define lockout times between which system is unavailable
         $fieldspec['shutdown_start']        = array('type' => 'time',
@@ -452,15 +520,28 @@ class mnu_control extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if (!array_key_exists('pswd_change', $this->lookup_data)) {
-            // get options for pswd_change and insert in LOOKUP data
+            // get options for dropdown/radiogroup and insert in LOOKUP data
             $array = $this->getValRep('pswd_change');
             $this->lookup_data['pswd_change'] = $array;
         } // if
 
         if (!array_key_exists('language_code', $this->lookup_data)) {
-            // get options for language_code
+            // get options for dropdown/radiogroup and insert in LOOKUP data
             $array = getLanguageArray('languages');
             $this->lookup_data['language_code'] = $array;
+        } // if
+
+        if (!array_key_exists('authentication', $this->lookup_data)) {
+            // get options for dropdown/radiogroup and insert in LOOKUP data
+            $array = getLanguageArray('authentication');
+            $this->lookup_data['authentication'] = $array;
+            //$this->lookup_css['authentication']['INTERNAL'] = 'green';
+        } // if
+
+        if (!array_key_exists('login_type', $this->lookup_data)) {
+            // get options for dropdown/radiogroup and insert in LOOKUP data
+            $array = getLanguageArray('login_type');
+            $this->lookup_data['login_type'] = $array;
         } // if
 
         return $fieldarray;
@@ -590,32 +671,37 @@ class mnu_control extends Default_Table
         if (!empty($this->errors)) {
             // replace any empty fields with their default values
             $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
-            return false;
+            return;
         } // if
 
         // these fields are identifiers, and should not be written out
         unset($updatearray['record_id']);
         unset($updatearray['field_id']);
 
+        // switch to correct directory for retrieving message text
+        $GLOBALS['classdir'] = getcwd();
+
         // perform any custom validation/processing before update
         $updatearray = $this->_cm_commonValidation($updatearray, $this->save_fieldarray);
         if (!empty($this->errors)) {
             // replace any empty fields with their new values
             $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
-            return false;
+            return;
         } // if
 
-        // if 'pswd_encrypt' has changed then check that the passwords can be changed
-        if ($fieldarray['pswd_encrypt'] <> $this->save_fieldarray['pswd_encrypt']) {
-            // open up a dialog with the user class
-            $dbobject =& singleton::getInstance('mnu_user');
-            // encrypt or decrypt all user passwords as required
-            $errors = $dbobject->checkPasswords($fieldarray['pswd_encrypt']);
-            if ($dbobject->errors) {
-                $this->errors['pswd_encrypt'] = $dbobject->errors['user_password'];
-                unset($dbobject->errors['user_password']);
-            	$this->errors = array_merge($this->errors, $dbobject->errors);
-            	return;
+        if (isset($fieldarray['pswd_encrypt'])) {
+        	// if 'pswd_encrypt' has changed then check that the passwords can be changed
+            if ($fieldarray['pswd_encrypt'] <> $this->save_fieldarray['pswd_encrypt']) {
+                // open up a dialog with the user class
+                $dbobject =& singleton::getInstance('mnu_user');
+                // encrypt or decrypt all user passwords as required
+                $errors = $dbobject->checkPasswords($fieldarray['pswd_encrypt']);
+                if ($dbobject->errors) {
+                    $this->errors['pswd_encrypt'] = $dbobject->errors['user_password'];
+                    unset($dbobject->errors['user_password']);
+                	$this->errors = array_merge($this->errors, $dbobject->errors);
+                	return;
+                } // if
             } // if
         } // if
 
@@ -659,7 +745,10 @@ class mnu_control extends Default_Table
             $rownum = $rownum + 1;
         } // foreach
 
-        return true;
+        $_SESSION['pagination_width'] = $fieldarray['pagination_width'];
+        $_SESSION['scrolling_width']  = $fieldarray['scrolling_width'];
+
+        return getLanguageText('sys0091');  // "Update successful"
 
     } // _cm_updateSelection
 

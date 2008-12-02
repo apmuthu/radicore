@@ -50,10 +50,11 @@ class crs_schedule_s05 extends crs_schedule
                               . 'LEFT JOIN crs_student_lesson ON (crs_schedule.lesson_id=crs_student_lesson.lesson_id) '
                               . 'LEFT JOIN crs_room ON (crs_room.room_id=crs_schedule.room_id) ';
             $this->sql_where  = "is_valid='" .$this->fieldspec['is_valid']['true'] ."'";
+            $this->sql_groupby = 'crs_schedule.lesson_id';
         } // if
 
         // get schedule details
-        require_once 'classes/crs_schedule_hdr.class.inc';
+        //require_once 'classes/crs_schedule_hdr.class.inc';
         $dbobject =& singleton::getInstance('crs_schedule_hdr');
         $dbobject->sql_select = 'schedule_id,start_time,end_time,last_day_no';
         if (isset($_SESSION['crs_schedule_id'])) {

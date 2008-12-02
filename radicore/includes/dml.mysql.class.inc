@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2007 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -165,14 +165,14 @@ class mysql
     {
         global $dbhost, $dbusername, $dbuserpass, $dbprefix;
 
-        if (!empty($dbprefix)) {
+        if (!empty($dbname) AND !empty($dbprefix)) {
             if (!eregi('^(' .$dbprefix .')', $dbname)) {
     			// prefix may be different on different servers
                 $dbname = $dbprefix .$dbname;
             } // if
         } // if
 
-        static $dbconn;
+        $dbconn = $this->dbconnect;
 
         $this->errors = array();
         $this->query  = '';
@@ -187,8 +187,6 @@ class mysql
                     $this->query = "SET names 'UTF8'";          // use UTF8 character set for this connection
                     $result = mysql_query($this->query, $dbconn) or trigger_error($this, E_USER_ERROR);
                     logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
-                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES,ONLY_FULL_GROUP_BY'";
-                    //$this->query = "SET SESSION sql_mode='ANSI_QUOTES'";
                     $this->query = "SET SESSION sql_mode=CONCAT('ANSI_QUOTES,',@@sql_mode)";
                     $result = mysql_query($this->query, $dbconn) or trigger_error($this, E_USER_ERROR);
                     logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
@@ -205,7 +203,7 @@ class mysql
 
         if (!$dbconn) {
             return FALSE;
-        } //
+        } // if
 
         if ($dbname) {
             if (!mysql_select_db($dbname, $dbconn)) {
@@ -320,8 +318,12 @@ class mysql
             $this->query = $where;
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
-            $where = $this->adjustWhere($where);
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
+            if (empty($where)) {
+            	$this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename LIMIT 1";
+            } else {
+                $where = $this->adjustWhere($where);
+                $this->query = "SELECT SQL_CALC_FOUND_ROWS * FROM $tablename WHERE $where LIMIT 1";
+            } // if
         } // if
 
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
@@ -380,6 +382,9 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -387,12 +392,12 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "\n" ."GROUP BY $this->sql_groupby";
             if (eregi(" WITH ROLLUP", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
@@ -402,14 +407,14 @@ class mysql
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
+            $having_str = "\n" ."HAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
@@ -444,13 +449,13 @@ class mysql
 
             // set the limit and offset values to retrieve the specified page number
             if ($rows_per_page > 0) {
-                $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+                $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
             } else {
                 $limit_str = '';
             } // if
 
             // build the query string and run it
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
             $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
             $result2    = mysql_query('SELECT FOUND_ROWS()', $this->dbconnect) or trigger_error($this, E_USER_ERROR);
@@ -491,7 +496,7 @@ class mysql
     } // getData
 
     // ****************************************************************************
-    function getData_serial ($dbname, $tablename, $where)
+    function getData_serial ($dbname, $tablename, $where, $rdc_limit=null, $rdc_offset=null)
     // Get data from a database table using optional 'where' criteria.
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
@@ -521,6 +526,9 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -528,12 +536,12 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = "WHERE $where";
+            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "\n" ."GROUP BY $this->sql_groupby";
             if (eregi(" WITH ROLLUP", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
@@ -543,26 +551,28 @@ class mysql
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
+            $having_str = "\n" ."HAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
 
-        if ($rows_per_page > 0) {
-            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        	$limit_str = "\n" .'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
+        } elseif ($rows_per_page > 0) {
+            $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
+        $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         $this->numrows = mysql_num_rows($result);
@@ -1040,12 +1050,16 @@ class mysql
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
-                if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
+                if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
                 } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
-                    $update .= "$item=$value,";
+                    if (strlen($value) == 0) {
+                    	$update .= "$item=NULL,";
+                    } else {
+                        $update .= "$item=$value,";
+                    } // if
                 } else {
                     // change to the new value
                     $update .= "$item='" .mysql_real_escape_string($value, $this->dbconnect) ."', ";
@@ -1396,7 +1410,7 @@ class mysql
     } // ddl_showColumns
 
     // ****************************************************************************
-    function ddl_showDatabases ()
+    function ddl_showDatabases ($dbprefix=null)
     // obtain a list of existing database names.
     {
         // connect to database
@@ -1405,7 +1419,11 @@ class mysql
         $array = array();
 
         // build the query string and run it
-        $this->query = 'SHOW DATABASES';
+        if (empty($dbprefix)) {
+        	$this->query = 'SHOW DATABASES';
+        } else {
+            $this->query = "SHOW DATABASES LIKE '$dbprefix%'";
+        } // if
         $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
 
         $count = mysql_num_rows($result);

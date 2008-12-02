@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_task.class.inc';
 class mnu_task_snr extends mnu_task
@@ -17,16 +17,19 @@ class mnu_task_snr extends mnu_task
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
         switch (basename($_SERVER['PHP_SELF'])) {
-            case 'mnu_nav_button_list.php':
-            case 'mnu_nav_button_multi.php':
-            case 'mnu_nav_button_link.php':
+            case 'mnu_nav_button(list2).php':
+            case 'mnu_nav_button(multi2).php':
+            case 'mnu_nav_button(link1).php':
                 if ($rowdata[0]['task_type'] != 'PROC') {
                     $this->errors = getLanguageText('e0021'); // "This function is only valid if TASK_TYPE='PROC'";
                 } // if
+                if ($rowdata[0]['pattern_id'] == 'BATCH') {
+                    $this->errors = getLanguageText('e0063'); // "This function is not valid if PATTERN_ID='BATCH'";
+                } // if
                 break;
-            case 'mnu_menu_list.php':
-            case 'mnu_menu_multi.php':
-            case 'mnu_menu_link.php':
+            case 'mnu_menu(list2).php':
+            case 'mnu_menu(multi2).php':
+            case 'mnu_menu(link1).php':
                 if ($rowdata[0]['task_type'] != 'MENU') {
                     $this->errors = getLanguageText('e0024'); // "This function is only valid if TASK_TYPE='MENU'";
                 } // if
