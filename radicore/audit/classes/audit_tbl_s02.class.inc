@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_tbl.class.inc';
 class audit_tbl_s02 extends audit_tbl
@@ -137,7 +137,7 @@ class audit_tbl_s02 extends audit_tbl
         } // if
 
         // do not display update count as there is none
-        $this->display_count = false;
+        $this->no_display_count = true;
 
         // return an empty array as there is no database update
         return array();

@@ -115,9 +115,25 @@ class x_person_addr extends Default_Table
             } // if
         } // if
 
+        //$this->messages[] = "test message 1";     // array
+        //$this->messages = "test message 2";       // string
+
         return $fieldarray;
 
     } // _cm_getInitialData
+
+    // ****************************************************************************
+    function _cm_initialise ($where, &$selection, $search)
+    // perform any initialisation for the current task.
+    // NOTE: $selection is only available for ADD2 tasks.
+    {
+        // customisable code goes here
+
+        //$where .= " AND x_person_addr.start_date>'2000-01-01'";
+
+        return $where;
+
+    } // _cm_initialise
 
     // ****************************************************************************
     function _cm_post_deleteRecord ($fieldarray)
@@ -224,26 +240,53 @@ class x_person_addr extends Default_Table
     function _cm_post_updateRecord ($fieldarray, $old_data)
     // perform custom processing after database is updated.
     {
-        // get last address number for this person
-        $where = array2where($fieldarray, array('person_id'));
-        $query = "SELECT MAX(address_no) FROM $this->tablename WHERE $where";
-        $last_address_no = $this->getCount($query);
+        if (is_True($this->skip_validation)) {
+        	// skip the next bit
+        } else {
+            // get last address number for this person
+            $where = array2where($fieldarray, array('person_id'));
+            $query = "SELECT MAX(address_no) FROM $this->tablename WHERE $where";
+            $last_address_no = $this->getCount($query);
 
-        if ($fieldarray['address_no'] > 1) {
-            // update end_date on previous address
-            $fieldarray = $this->_updatePrevAddress($fieldarray);
-            if ($this->errors) return $fieldarray;
-        } // if
+            if ($fieldarray['address_no'] > 1) {
+                // update end_date on previous address
+                $fieldarray = $this->_updatePrevAddress($fieldarray);
+                if ($this->errors) return $fieldarray;
+            } // if
 
-        if ($fieldarray['address_no'] < $last_address_no) {
-            // update start_date on next address
-            $fieldarray = $this->_updateNextAddress($fieldarray);
-            if ($this->errors) return $fieldarray;
+            if ($fieldarray['address_no'] < $last_address_no) {
+                // update start_date on next address
+                $fieldarray = $this->_updateNextAddress($fieldarray);
+                if ($this->errors) return $fieldarray;
+            } // if
         } // if
 
         return $fieldarray;
 
     } // _cm_post_updateRecord
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        // customisable code goes here
+
+        if (empty($this->sql_from)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+        } // if
+
+        //$where = "x_person_addr.postcode LIKE '%' AND $where";
+
+        return $where;
+
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_validateDelete ($fieldarray, $parent_table)

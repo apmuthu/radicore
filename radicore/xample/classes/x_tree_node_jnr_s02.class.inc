@@ -9,7 +9,7 @@ class x_tree_node_jnr_s02 extends x_tree_node
     // ****************************************************************************
     // This subtype is for script: tree_node_jnr_list.php
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
         // remove 'tree_level_id' from search criteria

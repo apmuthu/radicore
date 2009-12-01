@@ -1,5 +1,5 @@
 <?php
-    // file created on January 10, 2008, 5:35 pm
+    // file created on May 31, 2009, 3:37 pm
     
     // field specifications for table xample.x_pers_opt_xref
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -72,6 +72,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

@@ -1,5 +1,5 @@
 <?php
-    // file created on December 12, 2006, 6:01 pm
+    // file created on September 29, 2009, 2:21 pm
     
     // field specifications for table audit.audit_logon_errors
     $fieldspec['id']                        = array('type' => 'integer',
@@ -23,12 +23,15 @@
     
     $fieldspec['user_id']                   = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y');
     
     $fieldspec['user_password']             = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y');
+    
+    $fieldspec['email_addr']                = array('type' => 'string',
+                                                    'size' => 50,
+                                                    'lowercase' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('id');
@@ -47,6 +50,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'err_timestamp desc';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

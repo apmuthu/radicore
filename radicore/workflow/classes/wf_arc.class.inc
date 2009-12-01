@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_arc extends Default_Table
@@ -146,14 +146,14 @@ class wf_arc extends Default_Table
         // check for valid combinations of DIRECTION and ARC_TYPE
         switch ($fieldarray['direction']) {
             case 'IN':
-                if (!eregi('SEQ|OR-SPLIT-I|AND-JOIN', $arc_type, $regs)) {
+                if (!preg_match('/(SEQ|OR-SPLIT-I|AND-JOIN)/i', $arc_type, $regs)) {
                     // "ARC_TYPE is invalid for this DIRECTION"
                     $this->errors['arc_type'] = getLanguageText('e0003');
                     return $fieldarray;
                 } // if
                 break;
             case 'OUT':
-                if (!eregi('SEQ|AND-SPLIT|OR-SPLIT-E|OR-JOIN', $arc_type, $regs)) {
+                if (!preg_match('/(SEQ|AND-SPLIT|OR-SPLIT-E|OR-JOIN)/i', $arc_type, $regs)) {
                     // "ARC_TYPE is invalid for this DIRECTION"
                     $this->errors['arc_type'] = getLanguageText('e0003');
                     return $fieldarray;
@@ -253,11 +253,21 @@ class wf_arc extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
         $pattern_id = getPatternId();
-        if ($pattern_id == 'add2') {
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
+        if (preg_match('/(add2)/i', $pattern_id)) {
             $where_array = where2array($where);
          	// remove fields included from $selection instead of $where
             if (isset($fieldarray['transition_id'])) {

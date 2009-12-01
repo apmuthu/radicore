@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
@@ -33,6 +33,7 @@ class dict_table_s02 extends dict_table
 			$database_id = $tabledata['database_id'];
             $table_id    = $tabledata['table_id'];
             $subsys_dir  = $tabledata['subsys_dir'];
+            $subsys_id   = $tabledata['subsys_id'];
 
             $count = $columnobj->getCount("database_id='$database_id' AND table_id='$table_id'");
             if ($count == 0) {
@@ -42,6 +43,9 @@ class dict_table_s02 extends dict_table
 
     			// write initial class file to disk
                 $this->_writeClassFile ($database_id, $table_id, $subsys_dir);
+                if ($this->errors) {
+                	return array();
+                } // if
 
                 $this->text_out = '    // file created on ' .date('F j, Y, g:i a') ."\n    \n";
 
@@ -65,22 +69,22 @@ class dict_table_s02 extends dict_table
                 $this->_createUKeySpecs($data);
 
                 // process child relationships
-                $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
+                $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
-                                     . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
                 $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
-                $this->_createChildRelations($data);
+                $this->_createChildRelations($data, $subsys_id);
 
                 // process parent relationships
-                $relobj->sql_select  = 'dict_relationship.*,subsys_dir';
+                $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
-                                     . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_snr, table_id_snr';
                 $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
-                $this->_createParentRelations($data);
+                $this->_createParentRelations($data, $subsys_id);
 
                 // audit logging
                 $this->text_out .= '    // determines if database updates are recorded in an audit log ' ."\n";
@@ -114,10 +118,25 @@ class dict_table_s02 extends dict_table
                 $this->text_out .= $entry;
                 $this->text_out .= "    \n";
 
+                // start_date/end_date alias names
+                $this->text_out .= '    // alias names ' ."\n";
+                $entry = '    $this->nameof_start_date';
+                $entry = str_pad($entry, 44);
+                $entry .= "= '".$tabledata['nameof_start_date'] ."';\n";
+                $this->text_out .= $entry;
+                $entry = '    $this->nameof_end_date';
+                $entry = str_pad($entry, 44);
+                $entry .= "= '".$tabledata['nameof_end_date'] ."';\n";
+                $this->text_out .= $entry;
+                $this->text_out .= "    \n";
+
                 $this->text_out .= '    // finished' ."\n";
 
                 // write completed dict file to disk
                 $this->_writeDictFile ($table_id, $subsys_dir);
+                if ($this->errors) {
+                	return array();
+                } // if
             } // if
 
         } // foreach
@@ -145,7 +164,7 @@ class dict_table_s02 extends dict_table
             $this->sql_from   = 'dict_table '
                               . 'LEFT JOIN dict_database '
                               . 'ON (dict_database.database_id=dict_table.database_id) '
-                              . 'LEFT JOIN ' .$dbprefix .'menu.mnu_subsystem '
+                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem '
                               . 'ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
         } // if
 
@@ -157,15 +176,15 @@ class dict_table_s02 extends dict_table
     function _cm_pre_updateMultiple ($rows)
     // perform custom processing before multiple database records are updated.
     {
-        // customisable code goes here
-        $this->display_count = false;
+        // do no display record count
+        $this->no_display_count = true;
 
         return $rows;
 
     } // _cm_pre_updateMultiple
 
     // ****************************************************************************
-    function _createChildRelations ($rel_array)
+    function _createChildRelations ($rel_array, $subsys_id)
     // format the contents of $rel_array into the $child_relations array.
     {
         // create an object to obtain column data
@@ -194,8 +213,14 @@ class dict_table_s02 extends dict_table
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('child' => '{$rowdata['table_id_jnr']}',";
                 if ($rowdata['database_id_snr'] != $rowdata['database_id_jnr']) {
-                    $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_jnr']}',";
-                    $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                    if ($rowdata['subsys_id'] != $subsys_id) {
+                    	if (empty($rowdata['subsys_dir'])) {
+                            // "SUBSYS_DIR is missing for database '?'"
+                        	$this->errors[] = getLanguageText('e0049', $rowdata['database_id_jnr']);
+                        } // if
+                        $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_jnr']}',";
+                        $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                    } // if
                 } // if
                 if (strlen($rowdata['table_alias_jnr']) > 0) {
                     $entry .= "\n$indent2'alias' => '{$rowdata['table_alias_jnr']}',";
@@ -258,7 +283,7 @@ class dict_table_s02 extends dict_table
 	                $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
 	            } // if
 
-	            if (eregi('boolean', $type)) {
+	            if (preg_match('/boolean/i', $type)) {
 	                // size is irrelevant for boolean fields
 	            } else {
 	                if (strlen($column['user_size']) > 0) {
@@ -342,7 +367,7 @@ class dict_table_s02 extends dict_table
 	                $entry .= ",\n$indent2'infinityisnull' => 'y'";
 	            } // if
 
-	            if (eregi('boolean', $type)) {
+	            if (preg_match('/boolean/i', $type)) {
 	                // these are for boolean fields
 	                if (strlen($column['boolean_true']) > 0) {
 	                    $entry .= ",\n$indent2'true' => '" .$column['boolean_true'] ."'";
@@ -426,7 +451,7 @@ class dict_table_s02 extends dict_table
     } // _createFieldSpecs
 
     // ****************************************************************************
-    function _createParentRelations ($rel_array)
+    function _createParentRelations ($rel_array, $subsys_id)
     // format the contents of $rel_array into the $parent_relations array.
     {
         // create an object to obtain column data
@@ -457,8 +482,14 @@ class dict_table_s02 extends dict_table
                 $entry = str_pad($entry, 44);
                 $entry .= "= array('parent' => '{$rowdata['table_id_snr']}',";
                 if ($rowdata['database_id_snr'] != $rowdata['database_id_jnr']) {
-                    $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_snr']}',";
-                    $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                    if ($rowdata['subsys_id'] != $subsys_id) {
+                        if (empty($rowdata['subsys_dir'])) {
+                            // "SUBSYS_DIR is missing for database '?'"
+                        	$this->errors[] = getLanguageText('e0049', $rowdata['database_id_snr']);
+                        } // if
+                        $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_snr']}',";
+                        $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                    } // if
                 } // if
                 if (strlen($rowdata['table_alias_snr']) > 0) {
                     $entry .= "\n$indent2'alias' => '{$rowdata['table_alias_snr']}',";
@@ -611,7 +642,7 @@ class dict_table_s02 extends dict_table
 	                $this->errors[] = getLanguageText('sys0055', $fname); // "Cannot write to file $fname";
 	            } // if
 	            fclose($fp);
-	            if (!eregi('^WIN', PHP_OS)) {
+	            if (!preg_match('/^WIN/i', PHP_OS)) {
                 	chmod($fname, 0664);
                 } // if
 	            $this->messages[] = getLanguageText('sys0093', $fname); // "Exported to $fname";
@@ -638,7 +669,7 @@ class dict_table_s02 extends dict_table
                 $this->errors[] = getLanguageText('sys0055', $fname); // "Cannot write to file $fname";
             } // if
             fclose($fp);
-            if (!eregi('^WIN', PHP_OS)) {
+            if (!preg_match('/^WIN/i', PHP_OS)) {
             	chmod($fname, 0664);
             } // if
             $this->messages[] = getLanguageText('sys0093', $fname); // "Exported to $fname";

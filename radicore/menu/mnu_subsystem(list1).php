@@ -11,7 +11,8 @@ $screen   = 'mnu_subsystem.list1.screen.inc';   // file identifying screen struc
 $sql_select = 'mnu_subsystem.subsys_id, subsys_desc, count(task_id) as count';
 $sql_from   = 'mnu_subsystem LEFT JOIN mnu_task ON (mnu_task.subsys_id=mnu_subsystem.subsys_id) ';
 $sql_where  = NULL;
-$sql_groupby = 'mnu_subsystem.subsys_id, subsys_desc';
+//$sql_groupby = 'mnu_subsystem.subsys_id, subsys_desc';
+$sql_groupby = 'mnu_subsystem.subsys_id';
 
 // set default sort sequence
 $sql_orderby = NULL;

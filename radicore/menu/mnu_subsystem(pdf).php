@@ -11,7 +11,8 @@ $report   = 'mnu_subsystem.list.report.inc';   // file identifying report struct
 $sql_select  = 'mnu_subsystem.subsys_id, subsys_desc, subsys_dir, task_prefix, count(task_id) as count';
 $sql_from    = 'mnu_subsystem LEFT JOIN mnu_task ON (mnu_task.subsys_id=mnu_subsystem.subsys_id) ';
 $sql_where   = null;
-$sql_groupby = 'mnu_subsystem.subsys_id, subsys_desc, subsys_dir, task_prefix';
+//$sql_groupby = 'mnu_subsystem.subsys_id, subsys_desc, subsys_dir, task_prefix';
+$sql_groupby = 'mnu_subsystem.subsys_id';
 $sql_having  = null;
 $sql_orderby = null;
 

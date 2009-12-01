@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_session extends Default_Table
@@ -66,7 +66,7 @@ class mnu_session extends Default_Table
         $dir = @opendir('../css');
         while (false !== ($file = readdir($dir))) {
             // only files of .css are appended to array
-            if (eregi('css', $file, $regs)) {
+            if (preg_match('/css/i', $file, $regs)) {
                 $file = basename($file, '.css');
                 $array[$file] = $file;
             } // if

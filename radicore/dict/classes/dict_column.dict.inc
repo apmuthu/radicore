@@ -1,5 +1,5 @@
 <?php
-    // file created on November 19, 2007, 6:07 pm
+    // file created on June 26, 2009, 7:21 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -16,7 +16,7 @@
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'dict_table(popup)',
+                                                    'task_id' => 'dict_table(popup1)',
                                                     'foreign_field' => 'table_desc');
     
     $fieldspec['column_id']                 = array('type' => 'string',
@@ -354,6 +354,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'database_id, table_id, column_seq';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

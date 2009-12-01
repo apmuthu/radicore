@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -22,11 +22,13 @@ $mode = 'read';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+$original_where     = $where;
+$original_selection = $selection;
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
@@ -62,11 +64,12 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_where   = &$inner_sql_where;
     $dbinner->sql_groupby = &$inner_sql_groupby;
     $dbinner->sql_having  = &$inner_sql_having;
+    $null = $dbinner->initialise($original_where, $original_selection);
 } // if
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbinner);
+    $messages = chooseButton($_POST, $dbinner, 'dbinner');
 } // if
 
 // create a class instance for the outer database table
@@ -94,7 +97,7 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($original_where, $original_selection);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);

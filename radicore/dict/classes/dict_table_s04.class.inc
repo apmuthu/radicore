@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -182,9 +182,20 @@ class dict_table_s04 extends dict_table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         // reduce multiple selections to a single selection
         $array = where2array($where);
         $where = array2where($array);

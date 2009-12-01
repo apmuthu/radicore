@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add3.inc
@@ -27,9 +27,11 @@ $dbobject = new $table_id;
 $dbobject->initiated_from_controller = true;
 
 // perform initialisation, check workflow, etc
+//$where = $dbobject->initialise($where, $selection);
 $where = $dbobject->initialise($where);
 if ($dbobject->errors) {
-    $batch_errors = scriptPrevious($dbobject->errors);
+    $messages = array_merge($messages, $dbobject->getMessages());
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
     return $batch_errors;
 } // if
 
@@ -72,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $dbobject->startTransaction();
 
     foreach ($array2 as $row) {
-        // convert row data into an array
+        // convert row string into an array
         $array3 = where2array($row, false, false);
         // merge into a single array
         $fieldarray = array_merge($array1, $array3);
@@ -87,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // reduce array to primary key for error message
             $where2 = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
             $errors[] = getLanguageText('sys0084', $where2); // "Cannot insert where $where2"
-            $errors = array_merge($errors, $dbobject->errors);
+            $errors = array_merge($errors, $dbobject->getErrors());
         } // if
     } // foreach
 

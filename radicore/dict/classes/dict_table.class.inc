@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table extends Default_Table
@@ -36,6 +36,9 @@ class dict_table extends Default_Table
                 unset($this->fieldspec['alt_language_table']['control']);
             } // if
             unset($this->fieldspec['alt_language_cols']['noedit']);
+            // change these fields from popup to text box
+            unset($this->fieldspec['nameof_start_date']['control']);
+            unset($this->fieldspec['nameof_end_date']['control']);
         } else {
 			// do not replace database id with textual description
 		    unset($this->fieldspec['database_id']['control']);
@@ -44,6 +47,54 @@ class dict_table extends Default_Table
         return $fieldarray;
 
     } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_commonValidation ($fieldarray, $originaldata)
+    // perform validation that is common to INSERT and UPDATE.
+    {
+        if (!empty($fieldarray['nameof_start_date']) OR !empty($fieldarray['nameof_end_date'])) {
+        	if ($fieldarray['nameof_start_date'] == $fieldarray['nameof_end_date']) {
+        	    // alias names cannot be the same
+        		$this->errors['nameof_start_date'] = getLanguageText('e0060');
+        		$this->errors['nameof_end_date']   = getLanguageText('e0061');
+        		return $fieldarray;
+        	} // if
+
+            $dbobject =& singleton::getInstance('dict_column');
+            $dbobject->sql_select = 'database_id, table_id, column_id, col_type';
+
+            if (!empty($fieldarray['nameof_start_date'])) {
+                if (preg_match('/^(start_date|end_date)$/i', $fieldarray['nameof_start_date'])) {
+                    // Alias name cannot be either START_DATE or END_DATE
+                    $this->errors['nameof_start_date'] = getLanguageText('e0062');
+                } else {
+                    $data = $dbobject->getData_raw("database_id='{$fieldarray['database_id']}' AND table_id='{$fieldarray['table_id']}' AND column_id='{$fieldarray['nameof_start_date']}'");
+                    $type =& $data[0]['col_type'];
+                    if (!preg_match('/^(date|datetime)$/i', $type)) {
+                        // Alias name must be of type DATE or DATETIME
+                    	$this->errors['nameof_start_date'] = getLanguageText('e0063');
+                    } // if
+                } // if
+            } // if
+
+            if (!empty($fieldarray['nameof_end_date'])) {
+                if (preg_match('/^(start_date|end_date)$/i', $fieldarray['nameof_end_date'])) {
+                    // Alias name cannot be either START_DATE or END_DATE
+                    $this->errors['nameof_end_date'] = getLanguageText('e0062');
+                } else {
+                    $data = $dbobject->getData_raw("database_id='{$fieldarray['database_id']}' AND table_id='{$fieldarray['table_id']}' AND column_id='{$fieldarray['nameof_end_date']}'");
+                    $type =& $data[0]['col_type'];
+                    if (!preg_match('/^(date|datetime)$/i', $type)) {
+                        // Alias name must be of type DATE or DATETIME
+                    	$this->errors['nameof_end_date'] = getLanguageText('e0063');
+                    } // if
+                } // if
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_commonValidation
 
     // ***************************************************************************
     function _cm_getDatabaseLock ()
@@ -84,6 +135,9 @@ class dict_table extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        $database_id = $fieldarray['database_id'];
+        $table_id    = $fieldarray['table_id'];
+
         if (!array_key_exists('audit_logging', $this->lookup_data)) {
             // get arrays to put into LOOKUP_DATA
             $array = $this->getValRep('audit_logging');
@@ -101,9 +155,17 @@ class dict_table extends Default_Table
             if (!empty($fieldarray['database_id'])) {
             	// get contents of foreign table and add as a LOOKUP list
                 $dbobject =& singleton::getInstance('dict_table');
-                $array    = $dbobject->getValRep('table_id', "database_id='{$fieldarray['database_id']}'");
+                $array    = $dbobject->getValRep('table_id', "database_id='$database_id'");
                 $this->lookup_data['table_id'] = $array;
             } // if
+        } // if
+
+        if (!array_key_exists('nameof_start_date', $this->lookup_data)) {
+            // get contents of DICT_COLMN table and add as a LOOKUP list
+            $dbobject =& singleton::getInstance('dict_column');
+            $array    = $dbobject->getValRep('column_id', "database_id='$database_id' AND table_id='$table_id'");
+            $this->lookup_data['nameof_start_date'] = $array;
+            $this->lookup_data['nameof_end_date'] = $array;
         } // if
 
 		return $fieldarray;
@@ -126,13 +188,15 @@ class dict_table extends Default_Table
 
         if ($item == 'table_id') {
             // get data from the database, ignoring any tables which have no entries on DICT_COLUMN
-            $this->sql_select     = 'dict_table.table_id, table_desc, count(dict_column.table_id) as column_count';
-            $this->sql_orderby    = 'dict_table.table_id';
+            $this->sql_select     = 'table_id, table_desc';
+            //$this->sql_select    .= ', count(dict_column.table_id) as column_count';
+            $this->sql_select    .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_table.table_id) AS column_count';
+            $this->sql_orderby    = 'table_id';
             $this->sql_ordery_seq = 'asc';
-            $this->sql_from       = 'dict_table '
-                                  . 'LEFT JOIN dict_column ON (dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id) ';
+            $this->sql_from       = 'dict_table ';
+            //                      . 'LEFT JOIN dict_column ON (dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id) ';
             $this->sql_having     = 'column_count > 0';
-            $this->sql_groupby    = 'dict_table.table_id, table_desc';
+            $this->sql_groupby    = '';
             $data = $this->getData($where);
 
             // convert each row into 'id=id' in the output array
@@ -146,6 +210,18 @@ class dict_table extends Default_Table
         return $array;
 
     } // _cm_getValRep
+
+    // ****************************************************************************
+    function _cm_initialise ($where, &$selection, $search)
+    // perform any initialisation for the current task.
+    // NOTE: $selection is passed by reference as it may be amended.
+    // NOTE: $search    is only available for OUTPUT tasks.
+    {
+        // customisable code goes here
+
+        return $where;
+
+    } // _cm_initialise
 
     // ****************************************************************************
     function _cm_ListView_total ()
@@ -190,16 +266,16 @@ class dict_table extends Default_Table
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
         } // if
 
-        if (!eregi(' AS column_count', $this->sql_select)) {
+        if (!preg_match('/ AS column_count/i', $this->sql_select)) {
         	$this->sql_select .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id GROUP BY dict_table.table_id) AS column_count';
         } // if
-        if (!eregi(' AS rel_count', $this->sql_select)) {
+        if (!preg_match('/ AS rel_count/i', $this->sql_select)) {
             $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_table.table_id) AS rel_count';
         } // if
 
         $pattern_id = getPatternId();
 
-        if (eregi('^popup', $pattern_id)) {
+        if (preg_match('/^(popup)/i', $pattern_id)) {
             $this->sql_having  = 'column_count > 0';
         } // if
 
@@ -318,7 +394,7 @@ class dict_table extends Default_Table
             	// "There are no columns which are common in these two tables"
             	$this->errors['alt_language_table'] = getLanguageText('e0055');
             } else {
-                $fieldarray['alt_language_cols'] = implode(',', $alt_fieldarray);
+                $fieldarray['alt_language_cols'] = implode(', ', $alt_fieldarray);
             } // if
 
         } // if

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -10,11 +10,12 @@
 
 // This will allow one (or more) database record(s) to be updated, or inserted if
 // it/they do not currently exist.
-// The primary key of the selected record is passed down in $where.
+// The primary key(s) of the selected record(s) are passed down in $where.
 // NOTE: scrolling is done via the setScrollArray() and getScrollItem() methods.
 
-// NOTE: the CLEAR button is optional, and is set in the previous script. This
-// also causes the RETRIEVE and DELETE buttons to appear.
+// NOTE: the RESET button will drop current changes and reset the page to its
+// original contents.
+// The DELETE button will only appear if the current record exists.
 
 require_once 'include.general.inc';
 
@@ -24,10 +25,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+$original_where     = $where;
+$original_selection = $selection;
 if (!empty($selection) AND !isset($return_from)) {
 	// $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
 } // if
 
 if (isset($_POST['quit'])) {
@@ -38,7 +41,9 @@ if (isset($_POST['quit'])) {
 // define action buttons
 $act_buttons['submit']     = 'submit';
 $act_buttons['submitnext'] = 'submitnext';
+$act_buttons['reset']      = 'reset';
 $act_buttons['quit']       = 'cancel';
+unset($act_buttons['clear']);
 
 // create a class instance for the MAIN database table
 require_once "classes/$table_id.class.inc";
@@ -72,63 +77,19 @@ if (isset($script_vars['dbobject'])) {
     // scroll through one item at a time
     $dbobject->setRowsPerPage(1);
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($original_where, $original_selection);
     // save $where in $scrollarray
     $scrolling[$dbobject->getClassName()]['where'] = $where;
     // get object to set scroll array internally
     $where  = $dbobject->setScrollArray($where);
     if ($dbobject->errors) {
-    	scriptprevious($dbobject->errors);
+    	scriptprevious($dbobject->getErrors());
     } // if
 } // if
 
-if (isset($_POST['clear'])) {
-    // clear current selection
-    $where      = null;
-    $selection  = null;
-    // clear internal scrollarray
-    $dbobject->clearScrollArray();
-    // clear internal fieldarray
-    $dbobject->setFieldArray(null);
-    // initialise scroll array
-    $scrolling[$dbobject->getClassName()]['where']    = null;
-    $scrolling[$dbobject->getClassName()]['curitem']  = 0;
-    $scrolling[$dbobject->getClassName()]['lastitem'] = 0;
-    $mode = 'insert';
-    // include a RETRIEVE button
-    $act_buttons = array_merge(array('retrieve' => 'retrieve'), $act_buttons);
-} // if
-
-if (isset($_POST['retrieve'])) {
-    // set $where to primary key of current record (check for profile characters)
-    $where = array2where($_POST, $dbobject->getPkeyNames(), $dbobject);
-    // get data from the database
-    $fieldarray = $dbobject->getData($where);
-    if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->errors;
-    } // if
-    if (!$errors) {
-        if ($dbobject->getNumRows() < 1) {
-            // get initial data for a new record
-            $fieldarray = $dbobject->getInitialData($where);
-            $errors[]   = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
-        } else {
-            // get extra data for lookup lists
-            $fieldarray = $dbobject->getExtraData($fieldarray);
-            if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
-            } // if
-            // set new scrolling values
-            $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
-            $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-            $scrolling[$dbobject->getClassName()]['where']    = $where;
-        } // if
-    } // if
-    if ($errors) {
-        // include a RETRIEVE button for another attempt
-        $act_buttons = array_merge(array('retrieve' => 'retrieve'), $act_buttons);
-        $mode = 'insert';
-    } // if
+if (isset($_POST['reset'])) {
+    // ignore current changes and reset to prior state
+    unset($_POST);
 } // if
 
 if (isset($_POST['delete'])) {
@@ -136,7 +97,7 @@ if (isset($_POST['delete'])) {
     $dbobject->startTransaction();
     $fieldarray = $dbobject->deleteRecord($fieldarray);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->errors;
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
     } // if
     if ($errors) {
         $dbobject->rollback();
@@ -177,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
         } // if
     } else {
@@ -194,14 +155,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getData($where);
         if ($dbobject->errors) {
             if (empty($dbobject->scrollarray) OR count($dbobject->scrollarray) == 1) {
-                $errors = $dbobject->errors;
+                $errors = $dbobject->getErrors();
 //                foreach ($errors as $key => $value) {
 //                    $errors[$where] = $value;
 //                    unset($errors[$key]);
 //                } // foreach
             	scriptPrevious($errors);
             } else {
-        	    $errors[$dbobject->getClassName()] = $dbobject->errors;
+        	    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
         } // if
 
@@ -231,7 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
 // look for entered data
 //if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+//if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if (!empty($_POST)) {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
     $fieldarray = array_update_associative($fieldarray, $_POST);
@@ -262,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } // if
         if ($dbobject->errors) {
 			// errors are keyed by object name
-		    $errors[$dbobject->getClassName()] = $dbobject->errors;
+		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
 		} // if
         if ($errors) {
             $dbobject->rollback();
@@ -303,19 +265,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } // if
 } // if
 
-if (!$errors) {
+if (empty($errors)) {
     if ($dbobject->getNumRows() < 1) {
         // get initial data for a new record
         $fieldarray = $dbobject->getInitialData($where);
         if ($dbobject->errors) {
-            scriptPrevious($dbobject->errors, $messages);
+            scriptPrevious($dbobject->getErrors(), $messages);
         } // if
     } // if
 
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->errors;
+    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         // remove the SUBMIT button
         unset($act_buttons['submit']);
     } // if
@@ -327,11 +289,15 @@ $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
-if (!$errors) {
+//if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+if (!empty($_POST) AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
+
+if (empty($errors)) {
     if ($dbobject->getNumRows() > 0) {
-        if (array_key_exists('clear', $act_buttons)) {
-            $act_buttons = array_merge(array('delete' => 'delete'), $act_buttons);
-        } // if
+        $act_buttons = array_merge(array('delete' => 'delete'), $act_buttons);
     } // if
 } // if
 

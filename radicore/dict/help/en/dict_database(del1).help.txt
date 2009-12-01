@@ -1,0 +1,3 @@
+This will enable a record on the DICT_DATABASE table to be deleted.
+
+Refer to <a href="%root%/dict_database(del1).html">Delete Database</a> for full details.

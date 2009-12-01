@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -21,8 +21,8 @@ initSession();
 
 if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
     // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
     $new_selection = true;
 } else{
     $new_selection = false;
@@ -63,7 +63,7 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
@@ -97,7 +97,7 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName(
 // get data from the database
 $fieldarray = $dbobject->getData($where);
 
-if ($dbobject->getErrors()) {
+if ($dbobject->errors) {
     // some sort of error - return to previous script
     scriptprevious($dbobject->getErrors(), $messages);
 } // if
@@ -110,7 +110,7 @@ if ($dbobject->getNumRows() < 1) {
 // get any extra data and merge with $fieldarray
 $fieldarray = $dbobject->getExtraData($fieldarray);
 if ($dbobject->errors) {
-	$errors[$dbobject->getClassName()] = $dbobject->errors;
+	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
 } // if
 
 // set variables to be included in XML output

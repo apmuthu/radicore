@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Started on 2006-12-08 11:39:27
+-- Started on 2009-09-29 14:29:27
 
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = off;
@@ -53,8 +53,9 @@ CREATE TABLE audit_logon_errors (
     id integer NOT NULL,
     err_timestamp timestamp without time zone NOT NULL,
     ip_address character varying(16) NOT NULL,
-    user_id character varying(16) NOT NULL,
-    user_password character varying(16) NOT NULL
+    user_id character varying(16) NULL,
+    user_password character varying(16) NOT NULL,
+    email_addr character varying(50)
 );
 
 

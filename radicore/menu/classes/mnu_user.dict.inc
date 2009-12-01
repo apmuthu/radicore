@@ -1,5 +1,5 @@
 <?php
-    // file created on September 18, 2008, 9:35 pm
+    // file created on November 15, 2009, 5:26 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -22,7 +22,6 @@
     $fieldspec['role_id']                   = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
-                                                    'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'role_id');
     
@@ -92,6 +91,7 @@
     
     $fieldspec['email_addr']                = array('type' => 'string',
                                                     'size' => 50,
+                                                    'lowercase' => 'y',
                                                     'subtype' => 'email');
     
     $fieldspec['external_id']               = array('type' => 'string',
@@ -108,6 +108,11 @@
                                                     'size' => 11,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295);
+    
+    $fieldspec['user_timezone']             = array('type' => 'string',
+                                                    'size' => 40,
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'user_timezone');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -152,6 +157,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_user_ip_address',
+                                                    'type' => 'RES',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
     $this->child_relations[]                = array('child' => 'wf_workitem',
                                                     'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
@@ -180,6 +189,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

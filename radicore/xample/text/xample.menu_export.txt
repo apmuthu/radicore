@@ -1,4 +1,4 @@
-// file created on November 27, 2008, 3:12 pm
+// file created on August 19, 2009, 11:24 pm
     
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                          = 'Auto-Increment';
@@ -42,9 +42,13 @@ $array['x_pers_type(list)']                       = 'List Person Type';
 $array['x_pers_type(search)']                     = 'Search Person Type';
 $array['x_pers_type(upd)']                        = 'Update Person Type';
 $array['x_person_addr(add)']                      = 'Add Person Address';
+$array['x_person_addr(add2)']                     = 'Add Person Address';
 $array['x_person_addr(del)']                      = 'Delete Person Address';
+$array['x_person_addr(del1)']                     = 'Delete Person Address';
 $array['x_person_addr(enq)']                      = 'Enquire Person Address';
 $array['x_person_addr(list)']                     = 'List Person Address';
+$array['x_person_addr(multi2)']                   = 'Maintain Person Address';
+$array['x_person_addr(search)']                   = 'Search Person Address';
 $array['x_person_addr(upd)']                      = 'Update Person Address';
 $array['x_person(add)']                           = 'Add Person';
 $array['x_person(csv)']                           = 'Output Person data to CSV file';
@@ -124,6 +128,7 @@ $array['List Options']                            = 'List Options';
 $array['List Person']                             = 'List Person';
 $array['Maintain Options']                        = 'Maintain Options';
 $array['Maintain Person']                         = 'Maintain Person';
+$array['Maintain Person Address']                 = 'Maintain Person Address';
 $array['New']                                     = 'New';
 $array['Nodes']                                   = 'Nodes';
 $array['Output to CSV (1)']                       = 'Output to CSV (1)';

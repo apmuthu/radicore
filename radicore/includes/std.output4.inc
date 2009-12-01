@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output4.inc
@@ -21,13 +21,13 @@ $mode = 'csv';      // identify output mode
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} else {
-    $search = $where;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    if (empty($where)) {
+//    	// only use $selection if $where is empty
+//        $where = $selection;
+//        $selection = null;
+//    } // if
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -65,13 +65,13 @@ if (isset($script_vars['dbobject'])) {
     } // if
 
     // perform any initialisation
-    $where = $dbobject->initialise($where);
-    if (empty($dbobject->errors)) {
-    	// get any data for lookup lists
-        $null = $dbobject->getExtraData($where);
-    } else {
-    	scriptPrevious($dbobject->errors);
+    $where = $dbobject->initialise($where, $selection, $search);
+    if ($dbobject->errors) {
+       	scriptPrevious($dbobject->getErrors());
     } // if
+
+    // get any data for lookup lists
+    $null = $dbobject->getExtraData($where);
 
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -104,17 +104,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
     } // if
 
-    // transform output to CSV format and download to client browser
-    $output = $dbobject->outputCSV($resource, $_POST);
-    $errors = $dbobject->errors;
-    $messages = $dbobject->messages;
+    if (empty($csvout)) {
+        // set default value
+    	$csvout = $table_id .'.csv';
+    } // if
 
-    header("Content-type: text/comma-separated-values");
-    header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-    header("Content-Disposition: attachment; filename=" .$table_id .'.csv');
-    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    header('Pragma: public');
-    echo $output;
+    // transform output to CSV format
+    $output = $dbobject->outputCSV($resource, $_POST);
+    $errors = $dbobject->getErrors();
+    $messages = $dbobject->getMessages();
+
+    if (!empty($output)) {
+    	// download to client browser
+        header("Content-type: text/comma-separated-values");
+        header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+        header("Content-Disposition: attachment; filename=" .$csvout);
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Pragma: public');
+        echo $output;
+    } // if
     //unset($_SESSION['pages'][getSelf()]);
     //scriptPrevious($errors, $messages);
     exit;

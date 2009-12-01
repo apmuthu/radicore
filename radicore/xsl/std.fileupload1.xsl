@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -25,7 +25,7 @@
 
 <xsl:variable name="numrows">1</xsl:variable>
 
-<xsl:variable name="max_file_size" select="/root/file/maxfilesize"/>
+<xsl:variable name="max_file_size" select="/root/fileupload/maxfilesize"/>
 
 <xsl:template match="/">
 
@@ -61,11 +61,11 @@
             <div class="uploadbg">
               <div class="upload">
                 <!-- create standard action buttons -->
-                <p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>
+                <!--<p><input name ="MAX_FILE_SIZE" type="hidden" value="{$max_file_size}" /></p>-->
   
-                <p><xsl:value-of select="/root/file/msg1" /> <input name="userfile" type="file" /></p>
-                <p><xsl:value-of select="/root/file/msg2" /></p>
-                <p><xsl:value-of select="/root/file/msg3" /></p>
+                <p><xsl:value-of select="/root/fileupload/msg1" /> <input name="userfile" type="file" size="40" /></p>
+                <p><xsl:value-of select="/root/fileupload/msg2" /></p>
+                <p><xsl:value-of select="/root/fileupload/msg3" /></p>
   
               </div>
             </div>

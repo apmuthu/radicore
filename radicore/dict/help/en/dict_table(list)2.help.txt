@@ -1,3 +1,0 @@
-This will list records on the DICT_TABLE table for a selected DATABASE.
-
-Refer to <a href="%root%/dict_table(list)2.html">List Table by Database</a> for full details.

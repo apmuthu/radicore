@@ -1,47 +1,53 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
 
+if (file_exists('include.subsystem.inc')) {
+    // process optional includes from current subsystem directory
+	include('include.subsystem.inc');
+} // if
+
 // modify INCLUDE_PATH
 $include_path = ini_get('include_path');
-if (preg_match('/F:\\\Apache2\\\HTDOCS\\\INCLUDES/i',$include_path, $regs)) {
-    // this applies to my home PC only - remove directory and append it later
-	$include_std = PATH_SEPARATOR .$regs[0];
-	$include_path = str_replace($include_std, '', $include_path);
-} // if
 $include_path .= PATH_SEPARATOR .'../menu';
 $include_path .= PATH_SEPARATOR .'../audit';
 $include_path .= PATH_SEPARATOR .'../workflow';
-if (isset($include_std)) {
-	$include_path .= $include_std;
-} // if
 ini_set('include_path', $include_path);
 
-unset($include_path, $include_std, $regs);
+unset($include_path);
 
-require_once 'config.inc';
+$transaction_has_started = false;
+if (!isset($use_HTTPS)) {
+	$use_HTTPS = false;
+} // if
+
+// try to find a copy of CONFIG.INC
+if (@fopen('config.inc', 'r', true)) {
+    // found in current include_path
+	require_once 'config.inc';
+} else if (@fopen('../../INCLUDES/config.inc', 'r')) {
+    // found in a higher directory
+    require_once '../../INCLUDES/config.inc';
+} else {
+    // not found, so this should error
+    require_once 'config.inc';
+} // if
+
 require_once 'error.inc';
 require_once 'language_detection.inc';
 
 // are we using PHP 5, or something earlier?
 if (version_compare(phpversion(), '5.0.0', '<')) {
-    require 'std.singleton.php4.inc';
-    require 'include.xml.php4.inc';
-    // these do not exist in PHP 4, so define them manually
-    define('E_STRICT', 2048);
-    define('E_RECOVERABLE_ERROR', 4096);
+    require_once 'std.singleton.php4.inc';
+    require_once 'include.xml.php4.inc';
 } else {
     // PHP 5 uses different code
-    require 'std.singleton.php5.inc';
-    require 'include.xml.php5.inc';
-    if (version_compare(phpversion(), '5.2.0', '<')) {
-        // this does not exist in PHP 5.0 and 5.1, so define it manually
-        define('E_RECOVERABLE_ERROR', 4096);
-    } // if
+    require_once 'std.singleton.php5.inc';
+    require_once 'include.xml.php5.inc';
 } // if
 
 if (ini_get('precision') < 15) {
@@ -49,22 +55,25 @@ if (ini_get('precision') < 15) {
 } // if
 unset($precision);
 
-$transaction_has_started = false;
-$use_HTTPS = false;
+if (extension_loaded('mbstring')) {
+	ini_set('mbstring.internal_encoding', 'UTF-8');
+} // if
 
 // ****************************************************************************
 if (!function_exists('addPreviousSearchButton')) {
 	function addPreviousSearchButton ($buttons_in)
     // add 'previous search' button to current array of buttons
     {
+        $done = false;  // add 'previous search' button only once
         foreach ($buttons_in as $button_data) {
             // copy from input to output area
             $buttons_out[] = $button_data;
-            if (ereg('SRCH', $button_data['pattern_id'], $regs)) {
-                // found task_id containing '(search)', so add an extra button
+            if (preg_match('/SRCH/i', $button_data['pattern_id'], $regs) AND !$done) {
+                // found task_id with pattern 'search', so add an extra button
                 $buttons_out[] = array('task_id' => 'previous_search',
                                        'button_text' => 'Previous Search',
                                        'context_preselect' => 'N');
+                $done = true;
             } // if
         } // foreach
 
@@ -152,7 +161,7 @@ if (!function_exists('append2ScriptSequence')) {
     function append2ScriptSequence ($next)
     // append details of next task to $_SESSION['script_sequence']
     {
-        if (eregi('INTERNET|BATCH', $_SESSION['logon_user_id'])) {
+        if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])) {
         	return;
         } // if
 
@@ -305,9 +314,17 @@ if (!function_exists('array2where')) {
                     // check fieldspec for upper/lower case
                     if (array_key_exists($fieldname, $fieldspec)) {
                     	if (array_key_exists('uppercase', $fieldspec[$fieldname_unq])) {
-                    		$fieldvalue = strtoupper($fieldvalue);
+                    	    if (function_exists('mb_strtoupper')) {
+                    	    	$fieldvalue = mb_strtoupper($fieldvalue);
+                    	    } else {
+                        		$fieldvalue = strtoupper($fieldvalue);
+                    	    } // if
                     	} elseif (array_key_exists('lowercase', $fieldspec[$fieldname_unq])) {
-                    	    $fieldvalue = strtolower($fieldvalue);
+                    	    if (function_exists('mb_strtolower')) {
+                        	    $fieldvalue = strtolower($fieldvalue);
+                    	    } else {
+                        	    $fieldvalue = strtolower($fieldvalue);
+                    	    } // if
                     	} // if
                     } // if
                     // combine into <name operator value>
@@ -316,7 +333,7 @@ if (!function_exists('array2where')) {
                     	$operator   = '=';
                     	$fieldvalue = "'" .addslashes($fieldvalue) ."'";
                     } else {
-                        $operators = "/^(<>|<=|<|>=|>|!=|=|LIKE |IS NOT |IS |NOT IN[ ]* |IN[ ]* |BETWEEN )/i";
+                        $operators = "/^(<>|<=|<|>=|>|!=|=|NOT LIKE |LIKE |IS NOT |IS |NOT IN[ ]* |IN[ ]* |BETWEEN )/i";
                         // does $fieldvalue start with a valid operator?
                         if (!preg_match($operators, ltrim($fieldvalue), $regs)) {
                             // no, so assume operator is '='
@@ -428,7 +445,7 @@ if (!function_exists('array2where2')) {
         $where = trim(str_replace($search, '', $where));
 
         // remove any leading 'AND ' or 'OR '
-        if (eregi('^(AND |OR )', $where, $regs)) {
+        if (preg_match('/^(AND |OR )/i', $where, $regs)) {
         	$where = substr($where, strlen($regs[0]));
         } // if
 
@@ -546,6 +563,7 @@ if (!function_exists('convertEncoding')) {
                 if (!$from_encoding) {
                     // not supplied, so find out what it is
                     $from_encoding = mb_detect_encoding($string);
+                    //$check         = mb_check_encoding($string, $to_encoding);
                 } // if
                 if ($from_encoding != $to_encoding) {
                     $string = mb_convert_encoding($string, $to_encoding, $from_encoding);
@@ -566,6 +584,116 @@ if (!function_exists('convertEncoding')) {
     } // convertEncoding
 } // if
 
+// ****************************************************************************
+if (!function_exists('convertTZ')) {
+    function convertTZ ($datetime, $tz_in, $tz_out)
+    // convert datetime from one time zone to another
+    {
+        if (empty($datetime) OR empty($tz_in) OR empty($tz_out)) {
+        	return $datetime;  // no conversion possible
+        } // if
+        if ($tz_in == $tz_out) {
+        	return $datetime;  // no conversion necessary
+        } // if
+
+        if (version_compare(phpversion(), '5.2.0', '>=')) {
+            // define datetime in input time zone
+            $timezone1 = new DateTimeZone($tz_in);
+            $dateobj = new DateTime($datetime, $timezone1);
+            $result1 = date_format($dateobj, "Y-m-d H:i:s e T");
+            // switch to output time zone
+            $timezone2 = new DateTimeZone($tz_out);
+            $dateobj->setTimezone($timezone2);
+            $result2 = date_format($dateobj, "Y-m-d H:i:s e T");
+            // strip off timezone details
+            $result = substr($result2, 0, 19);
+        } else {
+            $timestamp = strtotime($datetime);
+            $offset    = 0;
+//            if ($tz_in == 'America/Los_Angeles') {
+//                $offset = 28800;
+//            } else {
+//                $offset = -28800;
+//            } // if
+//            $result = strftime('%Y-%m-%d %H:%M:%S', $timestamp+$offset);
+            $result = $timestamp;
+        } // if
+
+        return $result;
+
+    } // convertTZ
+} // if
+
+// ****************************************************************************
+if (!function_exists('convertTZdate')) {
+    function convertTZdate ($date, $time, $tz_in, $tz_out)
+    // convert datetime from one time zone to another
+    {
+        if (empty($date) OR empty($tz_in) OR empty($tz_out)) {
+            return $date;  // no conversion possible
+        } // if
+        if ($tz_in == $tz_out) {
+            return $date;  // no conversion necessary
+        } // if
+
+        if (empty($time)) {
+            $time = date('H:i:s');  // default to current server time
+        } // if
+
+        $datetime = "$date $time";
+
+        $datetime = convertTZ($datetime, $tz_in, $tz_out);
+
+        $result = substr($datetime, 0, 10);
+
+        return $result;
+
+    } // convertTZdate
+} // if
+
+// ****************************************************************************
+if (!function_exists('convertTZtime')) {
+    function convertTZtime ($date, $time, $tz_in, $tz_out)
+    // convert datetime from one time zone to another
+    {
+        if (empty($time) OR empty($tz_in) OR empty($tz_out)) {
+            return $time;  // no conversion possible
+        } // if
+        if ($tz_in == $tz_out) {
+            return $time;  // no conversion necessary
+        } // if
+
+        if (empty($date)) {
+            $date = date('Y-m-d');  // default to current server date
+        } // if
+
+        $datetime = "$date $time";
+
+        $datetime = convertTZ($datetime, $tz_in, $tz_out);
+
+        $result = substr($datetime, 11, 8);
+
+        return $result;
+
+    } // convertTZtime
+} // if
+
+// ****************************************************************************
+if (!function_exists('checkFileExists')) {
+    function checkFileExists ($fname)
+    // check that file $fname exists on current include_path, and abort if it doesn't.
+    {
+        if (!fopen($fname, 'r', true)) {
+            $message = getLanguageText('sys0076', $fname);
+            trigger_error($message, E_USER_ERROR);
+        } // if
+
+        return true;
+
+    } // checkFileExists
+} // if
+
+// ****************************************************************************
 if (!function_exists('convertCurrencyInput')) {
     function convertCurrencyInput ($value, $currency, $home_currency, $exchange_rate)
     // deal with value which may be input in either home or foreign currency.
@@ -593,10 +721,17 @@ if (!function_exists('convertCurrencyInput')) {
 
 // ****************************************************************************
 if (!function_exists('currentOrHistoric')) {
-    function currentOrHistoric ($string, $start_date='start_date', $end_date='end_date')
+    function currentOrHistoric ($string, $start_date, $end_date)
     // convert the string 'current/historic/future' into a date range.
     // NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
     {
+        if (empty($start_date)) {
+        	$start_date = 'start_date';
+        } // if
+        if (empty($end_date)) {
+        	$end_date = 'end_date';
+        } // if
+
         // convert search string into an indexed array
         $search = where2array($string, false, false);
 
@@ -607,8 +742,8 @@ if (!function_exists('currentOrHistoric')) {
             switch ($search1['curr_or_hist']) {
                 case 'C':
                     // search for records with CURRENT dates
-                    $search[$start_date] = "<='$date 00:00:00'";
-                    $search[$end_date]   = ">='$date 23:59:59'";
+                    $search[$start_date] = "<='$date 23:59:59'";
+                    $search[$end_date]   = ">='$date 00:00:00'";
                     break;
                 case 'H':
                     // search for records with HISTORIC dates
@@ -668,8 +803,12 @@ if (!function_exists('extractFieldNamesAssoc')) {
         	return array();
         } // if
 
-        // split input string into an array of separate elements
-        $elements = extractSelectList($sql_select);
+        if (is_array($sql_select)) {
+        	$elements = $sql_select;
+        } else {
+            // split input string into an array of separate elements
+            $elements = extractSelectList($sql_select);
+        } // if
 
         $field_array = array();
         foreach ($elements as $element) {
@@ -711,7 +850,7 @@ if (!function_exists('extractOperatorValue')) {
     function extractOperatorValue ($input)
     // turn string from "='value'" or "=value" to "value"
     {
-        if (preg_match('/^(<=|>=|!=|=|<|>|LIKE )/i', ltrim($input), $regs)) {
+        if (preg_match('/^(<=|>=|!=|=|<|>|NOT LIKE |LIKE |NOT IN |IN )/i', ltrim($input), $regs)) {
             $operator = $regs[0];
             $output = substr($input, strlen($operator));
             $output = trim($output);
@@ -761,7 +900,7 @@ if (!function_exists('extractSelectList')) {
         		$string .= $element;
         	} elseif ($element == ')') {
         	    $count --;
-        	    $string .= $element;
+        	    $string .= $element .' ';  // insert ' ' after ')'
         	} elseif ($element == ',') {
         	    if ($count > 0) {
         	    	$string .= $element;
@@ -771,7 +910,7 @@ if (!function_exists('extractSelectList')) {
         	        $string = '';
         	    } // if
         	} else {
-        	    $string .= $element;
+        	    $string .= trim($element);
         	} // if
         } // foreach
 
@@ -873,7 +1012,7 @@ if (!function_exists('extractTableNames')) {
                  . '|'                                        // or
                  . '(?<= join )[ ]*\w+\.\w+'                  // JOIN db.table
                  . '|'                                        // or
-                 . '(?<= join )[ ]*\w+ AS \w+'                // JOIN table AS alias
+                 . '(?<= join )[ ]*\w+[ ]+AS[ ]+\w+'          // JOIN table AS alias
                  . '|'                                        // or
                  . '(?<= join )[ ]*\w+'                       // JOIN table
                  . '/i';                                      // end delimiter, case insensitive
@@ -936,7 +1075,11 @@ if (!function_exists('extractValue')) {
                 } // if
             } else {
                 // no end delimiter found, so use whole string
-                $endpos = strlen($where);
+                if (function_exists('mb_strlen')) {
+                	$endpos = mb_strlen($where);
+                } else {
+                    $endpos = strlen($where);
+                } // if
             } // if
 
         } elseif ($delimiter == '(') {
@@ -971,7 +1114,11 @@ if (!function_exists('extractValue')) {
                 $endpos = $regs[0][1];
             } else {
                 // no end delimiter found, so use whole string
-                $endpos = strlen($where);
+                if (function_exists('mb_strlen')) {
+                	$endpos = mb_strlen($where);
+                } else {
+                    $endpos = strlen($where);
+                } // if
             } // if
         } // if
 
@@ -987,6 +1134,7 @@ if (!function_exists('extractValue')) {
             	} // while
             } // if
         } // if
+
         // remove $fieldvalue from the front of the string
         $where = substr($where, strlen($fieldvalue));
 
@@ -1196,7 +1344,7 @@ if (!function_exists('filterWhere')) {
                         OR (array_key_exists($fieldname, $fieldlist) AND !isset($fieldlist[$fieldname]['nondb']))) {
                             // field is valid, so copy to output array
                             if ($last_separator) {
-                        	    if (eregi('^(OR|AND)', $last_separator)) {
+                        	    if (preg_match('/^(OR|AND)/i', $last_separator)) {
                         	        if ($start_condition) {
                         	        	// cannot have AND/OR at the start of a conditional statement
                         	        } else {
@@ -1209,7 +1357,7 @@ if (!function_exists('filterWhere')) {
                             $array_out[] = $fieldname .$operator .$fieldvalue;
                             $start_condition = false;
                         } else {
-                            if (eregi('^(OR|AND)', $last_separator)) {
+                            if (preg_match('/^(OR|AND)/i', $last_separator)) {
                             	// field has been dropped, so this separator is no longer valid
                             	$last_separator = null;
                             } // if
@@ -1310,7 +1458,7 @@ if (!function_exists('filterWhere1Where2')) {
                 } // if
                 if ($ignore == true) {
                 	// do not copy to $array_out
-                	if (eregi('^(OR|AND)', $last_separator)) {
+                	if (preg_match('/^(OR|AND)/i', $last_separator)) {
                     	// field is not wanted, so this separator is no longer valid
                     	$last_separator = null;
                     } // if
@@ -1394,7 +1542,7 @@ if (!function_exists('fixTrueFalseString')) {
 
 // ****************************************************************************
 if (!function_exists('formatCurrency')) {
-    function formatCurrency ($amount, $exchange_rate, $language)
+    function formatCurrency ($amount, $exchange_rate, $language='en')
     // format number from home currency to foreign currency.
     {
         $amount = $amount * $exchange_rate;
@@ -1417,7 +1565,7 @@ if (!function_exists('formatCurrency')) {
 
 // ****************************************************************************
 if (!function_exists('formatNumber')) {
-    function formatNumber ($input, $decimal_places=2)
+    function formatNumber ($input, $decimal_places=2, $strip_trailing_zero=false)
     // format number according to current locale settings.
     {
         if (empty($input)) return;
@@ -1431,6 +1579,17 @@ if (!function_exists('formatNumber')) {
         } // if
 
         $output = number_format($input, $decimal_places, $decimal_point, $thousands_sep);
+
+        if (is_True($strip_trailing_zero)) {
+            $output = rtrim($output, '0');
+            if (substr($output, -1, 1) == $decimal_point) {
+                // last character is a decimal point, so it needs a trailing zero
+                $output .= '0';
+            } // if
+            if (empty($output)) {
+                $output = '0'.$decimal_point.'0';
+            } // if
+        } // if
 
         return $output;
 
@@ -1466,6 +1625,42 @@ if (!function_exists('formatTelephoneNumber')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('getBrowserLanguage')) {
+    function getBrowserLanguage ($directory)
+    // find a subdirectory which corresponds with a language defined in the browser.
+    {
+        $found = array();
+        if (is_dir($directory)) {
+            // build an array of subdirectory names for specified $directory
+            $dir = dir($directory);
+            while (false !== ($entry = $dir->read())) {
+                if ($entry == '.' or $entry == '..') {
+                    // ignore
+                } else {
+                    if (is_dir("$directory/$entry")) {
+                	   $found[] = $entry;
+                    } // if
+                } // if
+            } // if
+            $dir->close();
+        } // if
+
+        if (!empty($found)) {
+            if (isset($_SESSION['user_language_array'])) {
+            	// scan $user_language_array looking for a matching entry
+            	$found_lang = matchBrowserLanguage ($_SESSION['user_language_array'], $found);
+            	if (!empty($found_lang)) {
+            		return $found_lang;
+            	} // if
+            } // if
+        } // if
+
+        return FALSE;
+
+    } // getBrowserLanguage
+} // if
+
+// ****************************************************************************
 if (!function_exists('getChanges')) {
     function getChanges ($newarray, $oldarray)
     // compare two arrays of 'name=value' pairs and remove items from $newarray
@@ -1490,6 +1685,8 @@ if (!function_exists('getChanges')) {
 if (!function_exists('getColumnHeadings')) {
     function getColumnHeadings ()
     // get column headings from horizontal section of current screen structure.
+    //
+    // DEPRECATED - USE replaceScreenHeadings() INSTEAD
     {
         global $screen_structure;
 
@@ -1506,6 +1703,32 @@ if (!function_exists('getColumnHeadings')) {
         return $headings;
 
     } // getColumnHeadings
+} // if
+
+// ****************************************************************************
+if (!function_exists('getContentType')) {
+    function getContentType ($filename)
+    // determine the mime-type for the specified file
+    {
+        if (function_exists('finfo_file')) {
+        	$magic = ini_get('mime_magic.magicfile');
+        	if ($finfo = finfo_open(FILEINFO_MIME, $magic)) {
+        		$content_type = finfo_file($finfo, $filename);
+        	    finfo_close($finfo);
+        	} else {
+        	    $content_type = "application/octet-stream";
+        	} // if
+        } elseif (function_exists ('mime_content_type')) {
+            // this requires <mime_magic.magicfile = "/path/to/magic.mime"> directive in php.ini file
+            $content_type = mime_content_type($file);
+            //logstuff("content_type: " .$content_type, __FUNCTION__, __LINE__);
+        } else {
+            $content_type = "application/octet-stream";
+        } // if
+
+        return $content_type;
+
+    } // getContentType
 } // if
 
 // ****************************************************************************
@@ -1611,6 +1834,28 @@ if (!function_exists('getLanguageArray')) {
     {
         static $array1;
         static $array2;
+        static $language;
+
+        // if language has changed then reload contents of both arrays
+        if (!empty($GLOBALS['party_language'])) {
+            if ($GLOBALS['party_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $GLOBALS['party_language'];
+            } // if
+        } elseif (!empty($_SESSION['user_language'])) {
+            if ($_SESSION['user_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $_SESSION['user_language'];
+            } // if
+        } elseif (!empty($_SESSION['default_language'])) {
+            if ($_SESSION['default_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $_SESSION['default_language'];
+            } // if
+        } // if
 
         if (!empty($GLOBALS['classdir'])) {
             if (substr($GLOBALS['classdir'], -4, 4) == '.inc') {
@@ -1618,7 +1863,7 @@ if (!function_exists('getLanguageArray')) {
             	$GLOBALS['classdir'] = dirname(dirname($GLOBALS['classdir']));
             } // if
             // compare directories of current class and current script
-        	if ($GLOBALS['classdir'] != $_SERVER['SCRIPT_FILENAME']) {
+        	if ($GLOBALS['classdir'] != getcwd()) {
         	    // change to directory of current class to obtain error message
         		chdir($GLOBALS['classdir']);
         	} // if
@@ -1626,35 +1871,27 @@ if (!function_exists('getLanguageArray')) {
 
         if (!is_array($array1)) {
             $array1 = array();
-            // get name of current directory
-            $dir = basename(getcwd());  // may be class directory or script directory
-            if ($dir == 'menu') {
-                $dir = './text';
-            } else {
-            	$dir = '../menu/text';
+            // find file in a language subdirectory
+            $fname = getLanguageFile('sys.language_array.inc', '../menu/text');
+            $array1 = require $fname;  // import contents of disk file
+            if (empty($array1)) {
+            	// 'File $fname is empty'
+                //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                trigger_error("File $fname is empty", E_USER_ERROR);
             } // if
-            // include standard text from menu subdirectory
-            $subdir = getLanguageSubDir ($dir);
-            $fname = "$subdir/sys.language_array.inc";
-            if (!file_exists($fname)) {
-                // filename does not exist
-            	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
-            } // if
-            $array1 = require $fname;
-            unset ($array);
+            unset($array);
         } // if
 
         if (!is_array($array2)) {
             $array2 = array();
-            // include application text from current directory
-            $subdir = getLanguageSubDir ('./text');
-            $fname = "$subdir/language_array.inc";
-            if (!file_exists($fname)) {
-                // filename does not exist
-            	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
+            // find file in a language subdirectory
+            $fname = getLanguageFile('language_array.inc', './text');
+            $array2 = require $fname;  // import contents of disk file
+            if (empty($array2)) {
+            	// 'File $fname is empty'
+                trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
             } // if
-            $array2 = require $fname;
-            unset ($array);
+            unset($array);
         } // if
 
         // perform lookup for specified $id ($array2 first, then $array1)
@@ -1685,6 +1922,7 @@ if (!function_exists('getLanguageArray')) {
         $cwd = getcwd();
         if (DIRECTORY_SEPARATOR == '\\') {
          	$cwd = str_replace('\\', '/', $cwd);
+         	$_SERVER['SCRIPT_FILENAME'] = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
         } // if
         if ($cwd != dirname($_SERVER['SCRIPT_FILENAME'])) {
     	    // change back to working directory of the current script
@@ -1698,64 +1936,48 @@ if (!function_exists('getLanguageArray')) {
 } // if
 
 // ****************************************************************************
-if (!function_exists('getLanguageSubDir')) {
-    function getLanguageSubDir ($path)
-    // get subdirectory which corresponds with user's language code.
-    // Whatever is found is set in $GLOBALS['output_language'] to be used during XSL transformation
+if (!function_exists('getLanguageFile')) {
+    function getLanguageFile ($filename, $directory, $ignore_if_not_found=false)
+    // look for '$directory/$language/$filename' where $language is variable.
     {
-        // if user has specified a language then use it
-        if (isset($GLOBALS['party_language'])) {
-            $party_language = strtolower($GLOBALS['party_language']);
-            $fname = $path .'/' .$party_language;
-            if (file_exists($fname)) {
-                $GLOBALS['output_language'] = $party_language;
+        $language_array = array();
+
+        if (!empty($GLOBALS['party_language'])) {
+        	// change hyphen to underscore before file system lookup
+            $language_array[] = str_replace('-', '_', strtolower($GLOBALS['party_language']));
+        } // if
+
+        $browser_language = getBrowserLanguage($directory);
+        if (!empty($browser_language)) {
+        	$language_array[] = $browser_language;
+        } // if
+
+        // last possible entries are the application default, then 'English'
+        if (!empty($_SESSION['default_language'])) {
+        	$language_array[] = $_SESSION['default_language'];
+        } // if
+        $language_array[] = 'en';
+
+        // search directories in priority order and stop when the file is found
+        foreach ($language_array as $language) {
+        	$fname = "$directory/$language/$filename";
+        	if (file_exists($fname)) {
+        	    break;
+        	} // if
+        } // foreach
+
+        if (!file_exists($fname)) {
+            if (is_True($ignore_if_not_found)) {
+                return false;
             } else {
-                $fname = $path .'/' .$_SESSION['default_language'];
-                if (file_exists($fname)) {
-                    $GLOBALS['output_language'] = $_SESSION['default_language'];
-                } else {
-                    $fname = $path .'/en';
-                    $GLOBALS['output_language'] = 'en';
-                } // if
-            } // if
-        	return $fname;
-        } // if
-
-        $found = array();
-        if (is_dir($path)) {
-            // build an array of subdirectory names for specified $path
-            $dir = dir($path);
-            while (false !== ($entry = $dir->read())) {
-                if ($entry == '.' or $entry == '..') {
-                    // ignore
-                } else {
-                    if (is_dir("$path/$entry")) {
-                	   $found[] = $entry;
-                    } // if
-                } // if
-            } // if
-            $dir->close();
-        } // if
-
-        if (!empty($found)) {
-            if (isset($_SESSION['user_language_array'])) {
-            	// scan $user_language_array looking for a matching entry
-            	$found_lang = matchBrowserLanguage ($_SESSION['user_language_array'], $found);
-            	if (!empty($found_lang)) {
-            		return "$path/$found_lang";
-            	} // if
+            	// 'File $fname cannot be found'
+                trigger_error(getLanguageText('sys0056', $fname), E_USER_ERROR);
             } // if
         } // if
 
-        if (isset($_SESSION['default_language'])) {
-        	// none found, so use the default language
-            return $path .'/' .$_SESSION['default_language'];
-        } else {
-            // no default language specified, so use English
-            return $path .'/en';
-        } // if
+        return $fname;
 
-    } // getLanguageSubDir
+    } // getLanguageFile
 } // if
 
 // ****************************************************************************
@@ -1765,6 +1987,28 @@ if (!function_exists('getLanguageText')) {
     {
         static $array1;
         static $array2;
+        static $language;
+
+        // if language has changed then reload contents of both arrays
+        if (!empty($GLOBALS['party_language'])) {
+            if ($GLOBALS['party_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $GLOBALS['party_language'];
+            } // if
+        } elseif (!empty($_SESSION['user_language'])) {
+            if ($_SESSION['user_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $_SESSION['user_language'];
+            } // if
+        } elseif (!empty($_SESSION['default_language'])) {
+            if ($_SESSION['default_language'] != $language) {
+            	$array1 = false;
+            	$array2 = false;
+            	$language = $_SESSION['default_language'];
+            } // if
+        } // if
 
         if (!empty($GLOBALS['classdir'])) {
             if (substr($GLOBALS['classdir'], -4, 4) == '.inc') {
@@ -1772,7 +2016,7 @@ if (!function_exists('getLanguageText')) {
             	$GLOBALS['classdir'] = dirname(dirname($GLOBALS['classdir']));
             } // if
             // compare directories of current class and current script
-        	if ($GLOBALS['classdir'] != $_SERVER['SCRIPT_FILENAME']) {
+        	if ($GLOBALS['classdir'] != getcwd()) {
         	    // change to directory of current class to obtain error message
         		chdir($GLOBALS['classdir']);
         		$array2 = false;  // cause this to be reloaded
@@ -1781,35 +2025,31 @@ if (!function_exists('getLanguageText')) {
 
         if (!is_array($array1)) {
             $array1 = array();
-            // get name of current directory
-            $dir = basename(getcwd());  // may be class directory or script directory
-            if ($dir == 'menu') {
-                $dir = './text';
-            } else {
-            	$dir = '../menu/text';
+            // find file in a language subdirectory
+            $fname = getLanguageFile('sys.language_text.inc', '../menu/text');
+            $array1 = require $fname;  // import contents of disk file
+            if (empty($array1)) {
+            	// 'File $fname is empty'
+                //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                trigger_error("File $fname is empty", E_USER_ERROR);
             } // if
-            // include standard text from menu subdirectory
-            $subdir = getLanguageSubDir($dir);
-            $fname = "$subdir/sys.language_text.inc";
-            if (!file_exists($fname)) {
-                // filename does not exist
-            	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
-            } // if
-            $array1 = require $fname;
-            unset ($array);
+            unset($array);
+            // extract identity of language subdirectory
+            $language = basename(dirname($fname));
+            // use this language in the XSL transformation
+        	$GLOBALS['output_language'] = $language;
         } // if
 
         if (!is_array($array2)) {
             $array2 = array();
-            // include application text from current directory
-            $subdir = getLanguageSubDir ('./text');
-            $fname = "$subdir/language_text.inc";
-            if (!file_exists($fname)) {
-                // filename does not exist
-            	trigger_error(getLanguageText('sys0057', $fname), E_USER_ERROR);
+            // find file in a language subdirectory
+            $fname = getLanguageFile('language_text.inc', './text');
+            $array2 = require $fname;  // import contents of disk file
+            if (empty($array2)) {
+            	// 'File $fname is empty'
+                trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
             } // if
-            $array2 = require $fname;
-            unset ($array);
+            unset($array);
         } // if
 
         // perform lookup for specified $id ($array2 first, then $array1)
@@ -1835,6 +2075,7 @@ if (!function_exists('getLanguageText')) {
         $cwd = getcwd();
         if (DIRECTORY_SEPARATOR == '\\') {
          	$cwd = str_replace('\\', '/', $cwd);
+         	$_SERVER['SCRIPT_FILENAME'] = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME']);
         } // if
         if ($cwd != dirname($_SERVER['SCRIPT_FILENAME'])) {
     	    // change back to working directory of the current script
@@ -1876,10 +2117,10 @@ if (!function_exists('getParentDIR')) {
 // ****************************************************************************
 if (!function_exists('getPatternId')) {
     function getPatternId ($script_id=null)
-    // get the pattern_id of the specified script.
+    // get the pattern_id of the specified script (default is current script).
     {
         if (isset($_SESSION['logon_user_id'])) {
-        	if (eregi('INTERNET|BATCH', $_SESSION['logon_user_id'])) {
+        	if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])) {
             	return $_SESSION['logon_user_id'];
             } // if
         } // if
@@ -1888,11 +2129,11 @@ if (!function_exists('getPatternId')) {
             $script_id = getSelf();
         } // if
 
-        if (!eregi('\.php', $script_id)) {
+        if (!preg_match('/\.php/i', $script_id)) {
         	// does not end in '.php', so it is a task_id
         	$dbobject =& singleton::getInstance('mnu_task');
         	$data = $dbobject->getData("task_id='$script_id'");
-        	$dbobject = NULL;
+        	unset($dbobject);
         	if (empty($data)) {
         		return false;
         	} else {
@@ -1900,15 +2141,33 @@ if (!function_exists('getPatternId')) {
         	} // if
         } // if
 
-        if ($GLOBALS['mode'] == 'batch') {
+        if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'batch') {
         	$pattern_id = 'batch';
         } else {
-            $pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
+            if (!empty($_SESSION) AND !empty($_SESSION['pages'])) {
+            	$pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
+            } else {
+                $pattern_id = 'unknown';
+            } // if
         } // if
 
         return $pattern_id;
 
     } // getPatternId
+} // if
+
+// ****************************************************************************
+if (!function_exists('getPdfColumnHeadings')) {
+    function getPdfColumnHeadings ()
+    // get column headings from horizontal section of current report structure.
+    {
+        global $report_structure;
+
+        $headings = $report_structure['body']['fields'];
+
+        return $headings;
+
+    } // getPdfColumnHeadings
 } // if
 
 // ****************************************************************************
@@ -1932,28 +2191,48 @@ if (!function_exists('getPostArray')) {
 } // if
 
 // ****************************************************************************
-if (!function_exists('getReportSructure')) {
-    function getReportSructure ($report)
-    // load the structure details for this report.
+if (!function_exists('getFileStructure')) {
+    function getFileStructure ($filename, $directory)
+    // load the contents of the $structure variable from a disk file.
     {
-        // get subdirectory which matches user's language code
-        $subdir = getLanguageSubDir ('./reports');
-
-        $file = "$subdir/$report";  // look in subirectory for this screen name
-        if (!file_exists($file)) {
-            // 'File $file cannot be found'
-            trigger_error(getLanguageText('sys0056', $file), E_USER_ERROR);
+        if (!empty($GLOBALS['project_code'])) {
+        	// see if a customised version of this file exists for this project
+        	$custom_dir = $directory .'/custom-processing/' .$GLOBALS['project_code'];
+        	$fname = getLanguageFile('cp_'.$filename, $custom_dir, true);
         } // if
 
-        require $file;              // import contents of disk file
+        if (empty($fname)) {
+        	// locate file in subdirectory which matches user's language code
+            $fname = getLanguageFile($filename, $directory);
+        } // if
+
+        require $fname;              // import contents of disk file
         if (empty($structure)) {
-        	// 'File $file is empty'
-            trigger_error(getLanguageText('sys0124', $file), E_USER_ERROR);
+        	// 'File $fname is empty'
+            trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
         } // if
 
         return $structure;
 
-    } // getReportSructure
+    } // getFileStructure
+} // if
+
+// ****************************************************************************
+if (!function_exists('getHelpText')) {
+    function getHelpText ($filename, $directory)
+    // load the contents of the $array variable from a disk file.
+    {
+        // locate file in subdirectory which matches user's language code
+        $fname = getLanguageFile($filename, $directory, true);
+
+        if (file_exists($fname)) {
+    	    $contents = file_get_contents($fname);
+    	    return $contents;
+    	} // if
+
+        return FALSE;
+
+    } // getHelpText
 } // if
 
 // ****************************************************************************
@@ -1980,21 +2259,28 @@ if (!function_exists('getShutDownStatus')) {
 
         $dbobject =& singleton::getInstance('mnu_control');
         $shutdown_data = $dbobject->getControlData('shutdown');
-        $dbobject = NULL;
+        unset($dbobject);
 
         $time = getTimeStamp('time');
         $dow  = date('l', time()); // get day of week (full name)
         $fieldname = 'shutdown_' .strtolower($dow);
 
         if (is_True($shutdown_data[$fieldname])) {
-        	// there is a shutdown scheduled for this day...
+        	// converts times from server timezone to client timezone
+    	    $shutdown_start = getTimeStamp('date').' '.$shutdown_data['shutdown_start'];
+    	    $shutdown_end   = getTimeStamp('date').' '.$shutdown_data['shutdown_end'];
+    	    if (!empty($_SESSION['timezone_server']) AND !empty($_SESSION['timezone_client'])) {
+    	    	$shutdown_start = convertTZ($shutdown_start, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+    	    	$shutdown_end   = convertTZ($shutdown_end,   $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+    	    } // if
+    	    // there is a shutdown scheduled for this day...
         	if ($shutdown_data['shutdown_warning'] <= $time AND $shutdown_data['shutdown_start'] >= $time) {
         	    // System will be shutting down between X and Y
-        		$messages[] = getLanguageText('sys0140', substr($shutdown_data['shutdown_start'], 0, 5), substr($shutdown_data['shutdown_end'], 0, 5));
+        		$messages[] = getLanguageText('sys0140', substr($shutdown_start, 11, 5), substr($shutdown_end, 11, 5));
         	} // if
             if ($shutdown_data['shutdown_start'] <= $time AND $shutdown_data['shutdown_end'] >= $time) {
         	    // System has been shut down. It will be available at X
-        		$errors[] = getLanguageText('sys0141', substr($shutdown_data['shutdown_end'], 0, 5));
+        		$errors[] = getLanguageText('sys0141', substr($shutdown_end, 11, 5));
         	} // if
         } // if
 
@@ -2193,7 +2479,7 @@ if (!function_exists('indexed2assoc')) {
 
 // ****************************************************************************
 if (!function_exists('isPkeyComplete')) {
-    function isPkeyComplete ($where, $pkey, $candidate_keys=null)
+    function isPkeyComplete ($where, $pkey, $candidate_keys=null, $object=null)
     // check that $where contains all fields for the primary key.
     {
         if (is_string($where)) {
@@ -2218,6 +2504,14 @@ if (!function_exists('isPkeyComplete')) {
             $fieldarray = indexed2assoc($fieldarray);
         } // if
 
+        $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
+
+        if (is_object($object)) {
+        	$tablename = $object->tablename;
+        } else {
+            $tablename = null;
+        } // if
+
         $errors = array();
 
         $yes_count = 0;
@@ -2230,10 +2524,19 @@ if (!function_exists('isPkeyComplete')) {
                 } else {
                     $errors[$fieldname] = getLanguageText('sys0017'); // 'Must not use wildcard character (%) in primary key'
                 } // if
+            } elseif (!empty($tablename) AND array_key_exists("$tablename.$fieldname", $fieldarray)) {
+                // try with table name as the prefix
+                if (strpos($fieldarray["$tablename.$fieldname"], '%') === false) {
+                    // field is valid, so continue
+                    $yes_count ++;
+                } else {
+                    $errors[$fieldname] = getLanguageText('sys0017'); // 'Must not use wildcard character (%) in primary key'
+                } // if
             } // if
         } // foreach
 
         if ($yes_count == count($pkey)) {
+            // all components of this primary key have been supplied
             return $errors;
         } // if
 
@@ -2312,6 +2615,41 @@ if (!function_exists('isPrimaryObject')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('joinWhereByRow')) {
+    function joinWhereByRow ($input)
+    // convert indexed array of WHERE strings into a single string with each
+    // array element separated by ' OR '.
+    // EXAMPLE: 3 entries results in "(...) OR (...) OR (...)" .
+    // (this is the opposite of splitWhereByRow)
+    {
+        if (!is_array($input)) {
+        	return FALSE;  // this is not an array
+        } // if
+
+        if (!is_int(key($input))) {
+        	return FALSE;  // this is not an indexed array
+        } // if
+
+        if (count($input) == 1) {
+        	$output = $input[key($input)];
+        } else {
+            // more than 1 row, so separate each one with ' OR '
+            $output = '';
+            foreach ($input as $rownum => $string) {
+                if (empty($output)) {
+                	$output = "($string)";
+                } else {
+                    $output .= " OR ($string)";
+                } // if
+            } // foreach
+        } // if
+
+        return $output;
+
+    } // joinWhereByRow
+} // if
+
+// ****************************************************************************
 if (!function_exists('is_True')) {
     function is_True ($value)
     // test if a value is TRUE or FALSE
@@ -2335,7 +2673,7 @@ if (!function_exists('logStuff')) {
     {
         if ($_SERVER['REMOTE_ADDR'] == '80.177.120.119') {
             // this is my IP address, so continue
-        } elseif (eregi('^(localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
+        } elseif (preg_match('/^(localhost|desktop|laptop/i)$', $_SERVER['SERVER_NAME'])) {
             // this is one my PCs, so continue
         } else {
         	return;
@@ -2395,16 +2733,18 @@ if (!function_exists('matchBrowserLanguage')) {
     // match browser language with an entry in $language_array
     {
         foreach ($browser_array as $browser_language) {
-        	// look for full language abbreviation (after replacing dash with underscore)
+        	// look for full language abbreviation (after replacing hyphen with underscore)
         	$test_language = str_replace('-', '_', strtolower($browser_language[0]));
         	foreach ($language_array as $supported_language) {
+        	    $supported_language = str_replace('-', '_', $supported_language);
         		if ($test_language == strtolower($supported_language)) {
         			return $test_language;
         		} // if
         	} // foreach
-        	// look for primary language (after replacing dash with underscore)
+        	// look for primary language (after replacing hyphen with underscore)
         	$test_language = str_replace('-', '_', strtolower($browser_language[1]));
         	foreach ($language_array as $supported_language) {
+        	    $supported_language = str_replace('-', '_', $supported_language);
         		if ($test_language == strtolower($supported_language)) {
         			return $test_language;
         		} // if
@@ -2651,7 +2991,7 @@ if (!function_exists('qualifyField')) {
                                 	// class exists, so inspect it
                                 	$dbobject =& singleton::getInstance($array_tablename, null, false);
                                 	$table_fieldspec = $dbobject->fieldspec;
-                                	$dbobject = NULL;
+                                	unset($dbobject);
                 			    } else {
                 			        $table_fieldspec = array();
                 			    } // if
@@ -2947,13 +3287,13 @@ if (!function_exists('qualifyWhere')) {
                         $array2 = qualifyField ($array1, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, $having_array);
                         if (empty($array2)) {
                             // nothing to add
-                            if (eregi('^(OR|AND)', $last_separator)) {
+                            if (preg_match('/^(OR|AND)/i', $last_separator)) {
                                 $last_separator = null;  // this is now invalid
                             } // if
                         } else {
                         	// put modified details back into $fieldarray
                         	if ($last_separator) {
-                        	    if (eregi('^(OR|AND)', $last_separator)) {
+                        	    if (preg_match('/^(OR|AND)/i', $last_separator)) {
                         	        if ($start_condition) {
                         	        	// cannot have AND/OR at the start of a conditional statement
                         	        } else {
@@ -2989,19 +3329,26 @@ if (!function_exists('qualifyWhere')) {
 if (!function_exists('rangeFromTo')) {
     function rangeFromTo (&$from, &$to, $is_date=false)
     // if FROM and TO values exist then set FIELD to 'BETWEEN $from AND $to'.
+    // IS_DATE is TRUE for date fields, FALSE for other fields
     {
         $field = null;
 
         if (!empty($from)) {
             $from = stripOperators($from);
+            if (substr($from, -1) == '%') {
+            	$from = substr($from, 0, -1);  // remove trailing '%'
+            } // if
             if (!empty($to)) {
                 $to = stripOperators($to);
-                if ($from == $to) {
-                    // values are the same, so use '='
-                	$field = $from;
+                if (substr($to, -1) == '%') {
+                	$to = substr($to, 0, -1);  // remove trailing '%'
+                } // if
+                if ($is_date) {
+                	$field = "BETWEEN '$from 00:00:00' AND '$to 23:59:59'";
                 } else {
-                    if ($is_date) {
-                    	$field = "BETWEEN '$from 00:00:00' AND '$to 23:59:59'";
+                    if ($from == $to) {
+                        // values are the same, so use '='
+                	    $field = $from;
                     } else {
                         $field = "BETWEEN '$from' AND '$to'";
                     } // if
@@ -3038,21 +3385,28 @@ if (!function_exists('removeDuplicateFromSelect')) {
     // if $name exists in $sql_select then remove it
     {
         foreach ($select_array as $ix => $element) {
-            // find out if this element contains an alias
-            list($original, $alias) = getFieldAlias3($element);
-        	if ($original != $alias) {
-                $target = $alias;
+            if ($name == $element) {
+                unset($select_array[$ix]);  // match found, so remove this entry
             } else {
-                $namearray = explode('.', $element);
-                if (!empty($namearray[1])) {
-                    $target = $namearray[1];
-                } else {
-                    $target = $element;
-                } // if
-        	} // if
-        	if ($target == $name) {
-                // remove previous entry which uses this name
-            	unset($select_array[$ix]);
+                // find out if this element contains an alias
+                list($original, $alias) = getFieldAlias3($element);
+            	if ($original != $alias) {
+                    if ($name == $alias) {
+                    	unset($select_array[$ix]);  // match found, so remove this entry
+                    } // if
+            	} else {
+                    $namearray = explode('.', $element);
+                    if (!empty($namearray[1])) {
+                        // name is in format 'table.field', so lose the 'table'
+                        $target = $namearray[1];
+                    } else {
+                        $target = $element;
+                    } // if
+                	if ($target == $name) {
+                        // remove previous entry which uses this name
+                    	unset($select_array[$ix]);
+                    } // if
+            	} // if
             } // if
         } // foreach
 
@@ -3078,6 +3432,106 @@ if (!function_exists('removeTableSuffix')) {
         return $tablename;
 
     } // removeTableSuffix
+} // if
+
+// ****************************************************************************
+if (!function_exists('replaceReportHeadings')) {
+    function replaceReportHeadings ($replace_array)
+    // replace column headings in horizontal section of current report structure.
+    // $replace_array is associative in format 'field => label'
+    {
+        global $report_structure;
+
+        if (array_key_exists('fields', $report_structure['body'])) {
+            $headings = $report_structure['body']['fields'];
+        } else{
+            return FALSE;
+        } // if
+
+        foreach ($headings as $col => $column) {
+            foreach ($column as $fieldname => $label) {
+                if (array_key_exists($fieldname, $replace_array)) {
+                    $headings[$col][$fieldname] = $replace_array[$fieldname];
+                } // if
+            } // foreach
+        } // foreach
+
+        $report_structure['body']['fields'] = $headings;
+
+        return TRUE;
+
+    } // replaceReportHeadings
+} // if
+
+// ****************************************************************************
+if (!function_exists('replaceScreenColumns')) {
+    function replaceScreenColumns ($replace_array)
+    // replace column name & heading in horizontal section of current screen structure.
+    // $replace_array is associative in format 'field = array(field => label)'
+    {
+        global $screen_structure;
+
+        if (is_array($screen_structure)) {
+        	if (array_key_exists('fields', $screen_structure['inner'])) {
+            	$zone = 'inner';
+            } elseif (array_key_exists('fields', $screen_structure['main'])) {
+                $zone = 'main';
+            } else {
+                return FALSE;
+            } // if
+        } else {
+            return FALSE;
+        } // if
+
+        $headings = $screen_structure[$zone]['fields'];
+
+        foreach ($headings as $col => $column) {
+            foreach ($column as $fieldname => $label) {
+                if (array_key_exists($fieldname, $replace_array)) {
+                    // replace old column details with the new one
+                    $headings[$col] = $replace_array[$fieldname];
+                } // if
+            } // foreach
+        } // foreach
+
+        $screen_structure[$zone]['fields'] = $headings;
+
+        return TRUE;
+
+    } // replaceScreenColumns
+} // if
+
+// ****************************************************************************
+if (!function_exists('replaceScreenHeadings')) {
+    function replaceScreenHeadings ($replace_array)
+    // replace column headings in horizontal section of current screen structure.
+    // $replace_array is associative in format 'field => label'
+    {
+        global $screen_structure;
+
+        if (array_key_exists('fields', $screen_structure['inner'])) {
+        	$zone = 'inner';
+        } elseif (array_key_exists('fields', $screen_structure['main'])) {
+            $zone = 'main';
+        } else {
+            return FALSE;
+        } // if
+
+        $headings = $screen_structure[$zone]['fields'];
+
+        foreach ($headings as $col => $column) {
+            foreach ($column as $fieldname => $label) {
+                if (array_key_exists($fieldname, $replace_array)) {
+                    $headings[$col][$fieldname] = $replace_array[$fieldname];
+                } // if
+            } // foreach
+        } // foreach
+
+        $screen_structure[$zone]['fields'] = $headings;
+
+        return TRUE;
+
+    } // replaceScreenHeadings
 } // if
 
 // ****************************************************************************
@@ -3229,7 +3683,7 @@ if (!function_exists('resizeImage')) {
      	if ($result) {
      	    // "File uploaded into $destination";
      	    $msg = getLanguageText('sys0126', $destination ." ($width x $height)");
-     	    if (!eregi('^WIN', PHP_OS)) {
+     	    if (!preg_match('/^WIN/i', PHP_OS)) {
             	$result = chmod($uploadfile, 0664);
             } // if
     	} else {
@@ -3281,6 +3735,9 @@ if (!function_exists('saveLocaleFormat')) {
 
         $GLOBALS['localeconv']['decimal_point'] = $localeconv['decimal_point'];
         $GLOBALS['localeconv']['thousands_sep'] = $localeconv['thousands_sep'];
+        $GLOBALS['localeconv']['p_cs_precedes'] = $localeconv['p_cs_precedes'];
+        $GLOBALS['localeconv']['n_cs_precedes'] = $localeconv['n_cs_precedes'];
+        //$GLOBALS['localeconv']['currency_symbol'] = $localeconv['currency_symbol'];
 
         // set to locale where decimal point is '.' (as used internally)
         $internal_locale = rdc_setLocale("English (United Kingdom) [en_GB]");
@@ -3298,6 +3755,7 @@ if (!function_exists('selection2where')) {
     // $select identifies which row(s) have been selected.
     {
         if (is_array($select)) {
+            $where_array = array();
             // for each row that has been selected...
             foreach ($select as $rownum => $on) {
                 // add associated pkey string into 'where' clause
@@ -3310,13 +3768,11 @@ if (!function_exists('selection2where')) {
                         $where2 .= " AND $fieldname='$fieldvalue'";
                     } // if
                 } // foreach
-                if (empty($where)) {
-                    $where = "($where2)";
-                } else {
-                    // details for multiple rows are separated by OR
-                    $where .= " OR ($where2)";
-                } // if
+                // put into an indexed array
+                $where_array[] = $where2;
             } // foreach
+            // convert indexed array into a string
+            $where = joinWhereByRow($where_array);
         } else {
             // $select is a string containing a single selection
             $where = null;
@@ -3342,37 +3798,39 @@ if (!function_exists('setColumnAttributes')) {
     {
         global $screen_structure;
 
-        foreach ($screen_structure[$zone]['fields'] as $col => $col_data) {
-        	$field = key($col_data);
-        	if (is_int($field)) {
-                // this is an array of fields
-                foreach ($col_data as $col2 => $col_data2) {
-                	$type  = key($col_data2);
-                	if ($type == 'field') {
-                		$field = $col_data2[$type];
-                    	foreach ($input_data as $input_field => $input_array) {
-                    		if ($input_field == $field) {
-                    			foreach ($input_array as $attr_name => $attr_value) {
-                    			    // set the field to 'nodisplay' and the label is automatically blanked out
-                    			    $screen_structure[$zone]['fields'][$col][$col2][$attr_name] = $attr_value;
-                    				//$screen_structure[$zone]['columns'][$col2][$attr_name] = $attr_value;
-                    			} // foreach
-                    		} // if
-                    	} // foreach
-                	} // if
-                } // foreach
-        	} else {
-        	    // array is keyed by field name
-            	foreach ($input_data as $input_field => $input_array) {
-            		if ($input_field == $field) {
-            			foreach ($input_array as $attr_name => $attr_value) {
-            			    $screen_structure[$zone]['fields'][$col][$attr_name] = $attr_value;
-            				$screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
-            			} // foreach
-            		} // if
-            	} // foreach
-        	} // if
-        } // foreach
+        if (is_array($screen_structure)) {
+        	foreach ($screen_structure[$zone]['fields'] as $col => $col_data) {
+            	$field = key($col_data);
+            	if (is_int($field)) {
+                    // this is an array of fields
+                    foreach ($col_data as $col2 => $col_data2) {
+                    	$type  = key($col_data2);
+                    	if ($type == 'field') {
+                    		$field = $col_data2[$type];
+                        	foreach ($input_data as $input_field => $input_array) {
+                        		if ($input_field == $field) {
+                        			foreach ($input_array as $attr_name => $attr_value) {
+                        			    // set the field to 'nodisplay' and the label is automatically blanked out
+                        			    $screen_structure[$zone]['fields'][$col][$col2][$attr_name] = $attr_value;
+                        				//$screen_structure[$zone]['columns'][$col2][$attr_name] = $attr_value;
+                        			} // foreach
+                        		} // if
+                        	} // foreach
+                    	} // if
+                    } // foreach
+            	} else {
+            	    // array is keyed by field name
+                	foreach ($input_data as $input_field => $input_array) {
+                		if ($input_field == $field) {
+                			foreach ($input_array as $attr_name => $attr_value) {
+                			    $screen_structure[$zone]['fields'][$col][$attr_name] = $attr_value;
+                				$screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
+                			} // foreach
+                		} // if
+                	} // foreach
+            	} // if
+            } // foreach
+        } // if
 
         return true;
 
@@ -3384,6 +3842,8 @@ if (!function_exists('setColumnHeadings')) {
     function setColumnHeadings ($headings)
     // replace column headings in horizontal section of current screen structure.
     // (must have been first obtained using getColumnHeadings() method)
+    //
+    // DEPRECATED - USE replaceScreenHeadings() INSTEAD
     {
         global $screen_structure;
 
@@ -3423,7 +3883,7 @@ if (!function_exists('splitNameOperatorValue')) {
     // ($where is passed by reference so that it can be amended)
     {
         // construct list of possible operators between fieldname and fieldvalue
-        $operators = "/(<>|<=|<|>=|>|!=|=| LIKE | IS NOT | IS | NOT IN[ ]*\(| IN[ ]*\(| BETWEEN | NOT EXISTS[ ]*\(| EXISTS[ ]*\(|MATCH[ ]*\()/i";
+        $operators = "/(<>|<=|<|>=|>|!=|=| NOT LIKE | LIKE | IS NOT | IS | NOT IN[ ]*\(| IN[ ]*\(| BETWEEN | NOT EXISTS[ ]*\(| EXISTS[ ]*\(|MATCH[ ]*\()/i";
 
         $where = ltrim($where);
         if (preg_match('/^[a-z]/i', $where, $regs)) {
@@ -3435,14 +3895,14 @@ if (!function_exists('splitNameOperatorValue')) {
             $operator = $regs[0][0];    // found an operator
             $startpos = $regs[0][1];    // start position of this operator
 
-            if (eregi('^(NOT IN|IN|NOT EXISTS|EXISTS)', ltrim($operator))) {
+            if (preg_match('/^(NOT IN|IN|NOT EXISTS|EXISTS)/i', ltrim($operator))) {
                 if (substr($operator, -1, 1) == '(') {
                     // strip trailing '('
                 	$operator = substr($operator, 0, strlen($operator)-1);
                 } // if
             } // if
 
-            if (eregi('^MATCH', $operator)) {
+            if (preg_match('/^MATCH/i', $operator)) {
             	// format = "match(field1, field2, ...) against('string' [in boolean mode])"
             	// note that this terminates on the first ')'
             	$count = preg_match("/AGAINST\('.+'.+[^\)]\)/i", $where, $regs, PREG_OFFSET_CAPTURE);
@@ -3465,9 +3925,9 @@ if (!function_exists('splitNameOperatorValue')) {
             } // if
 
             // are we dealing with an operator of BETWEEN?
-            if (eregi('BETWEEN', trim($operator))) {
-                // yes, so inclcude the following " AND 'x'"
-                if (eregi(' AND ', $where)) {
+            if (preg_match('/BETWEEN/i', trim($operator))) {
+                // yes, so include the following " AND 'x'"
+                if (preg_match('/ AND /i', $where)) {
                     $where = ltrim($where, ' ANDand');      // remove separator
                     $fieldvalue2 = extractValue($where);    // find second value
                     $fieldvalue .= ' AND ' .$fieldvalue2;   // recombine
@@ -3530,6 +3990,8 @@ if (!function_exists('splitNameOperatorValue')) {
 if (!function_exists('splitWhereByRow')) {
     function splitWhereByRow ($input)
     // convert $input into an array with ' OR ' being used to create a new row.
+    // EXAMPLE: "(...) OR (...) OR (...)" results in 3 entries.
+    // (this is the opposite of joinWhereByRow)
     {
         if (is_array($input)) {
         	$array1 = $input;
@@ -3541,7 +4003,7 @@ if (!function_exists('splitWhereByRow')) {
         $array2  = array();
         $string = '';
         foreach ($array1 as $key => $value) {
-        	if (eregi('^(\) OR \()$', $value, $regs)) {
+        	if (preg_match('/^(\) OR \()$/i', $value, $regs)) {
                 // add current string as a separate entry to output array
                 $array2[] = trim($string, '() ');
                 $string  = '';
@@ -3611,7 +4073,7 @@ if (!function_exists('stripOperators_ex')) {
     function stripOperators_ex ($input)
     // turn string from "='value'" or "=value" to "value"
     {
-        if (preg_match('/^(<=|>=|!=|=|<|>|LIKE )/i', ltrim($input), $operator)) {
+        if (preg_match('/^(<=|>=|!=|=|<|>|NO LIKE |LIKE )/i', ltrim($input), $operator)) {
             $output = substr($input, strlen($operator[0]));
             $output = trim($output);
 
@@ -3664,7 +4126,7 @@ if (!function_exists('unqualifyOrderBy')) {
     {
         if (empty($string)) return;
 
-        // split into substrings spearated by comma or space
+        // split into substrings separated by comma or space
         $array = preg_split('(( )|(,))', $string, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $newstring = '';
@@ -3768,7 +4230,7 @@ if (!function_exists('validateSortItem')) {
     function validateSortItem ($zone, $sortfield, $dbobject, $structure=array())
     // check that the sort field actually exists in the current screen or dbobject.
     // this stops a naughty user from manually altering the URL to point to
-    // a field name that does not exist, thus causing an error.
+    // a field name that does not exist, thus causing an SQL error.
     {
         $sortfield = strtolower(unqualifyOrderBy($sortfield));
 
@@ -3794,7 +4256,7 @@ if (!function_exists('validateSortItem')) {
                 $test_field = $field;
             } // if
             // ignore field if 'nondb' option (not in database) is set
-            if (array_key_exists($test_field, $fieldspec) and !isset($fieldspec[$test_field]['nondb'])) {
+            if (array_key_exists($test_field, $fieldspec) AND !isset($fieldspec[$test_field]['nondb'])) {
                 // field exists in this table, so qualify the name
                 $array2[] = $dbobject->getTableName() .'.' .$field;
             } else {
@@ -3845,6 +4307,63 @@ if (!function_exists('validateSortItem')) {
         return $output;
 
     } // validateSortItem
+} // if
+
+// ****************************************************************************
+if (!function_exists('validateSortItem2')) {
+    function validateSortItem2 ($sortfield, $sql_select, $fieldspec)
+    // check that the sort field actually exists in the $sql_select string,
+    // otherwise it may cause an error.
+    {
+        $select_array = extractFieldNamesAssoc ($sql_select);
+
+        // create a 2nd array with unqualified names
+        $select_array_unq = array();
+        foreach ($select_array as $key => $value) {
+        	if ($substring = strrchr($value, '.')) {
+                // now remove the tablename and put amended entry back
+                $value = ltrim($substring, '.');
+            } // if
+            $select_array_unq[$value] = $value;
+        } // foreach
+
+        $array1 = explode(",", $sortfield);     // convert input string to array of field names
+        $array2 = array();                      // array of valid field names
+
+        // look for fields which exist within the current table
+        foreach ($array1 as $field) {
+            $field = trim($field);
+            // strip off any trailing 'asc' or 'desc' before testing field name
+            $pattern = '/( asc| ascending| desc| descending)$/i';
+            if (preg_match($pattern, $field, $regs)) {
+                $test_field = substr_replace($field, '', -strlen($regs[0]));
+            } else {
+                $test_field = $field;
+            } // if
+            if (array_key_exists($test_field, $select_array)) {
+            	$array2[] = $field;  // this is valid
+            } elseif (array_key_exists($test_field, $select_array_unq)) {
+            	$array2[] = $field;  // this is valid
+            } else {
+                if (array_key_exists($test_field, $fieldspec) AND !isset($fieldspec[$test_field]['nondb'])) {
+                	$array2[] = $field;  // this is valid
+            	} elseif ($substring = strrchr($test_field, '.')) {
+                    // remove table name from front of field name
+                    $test_field_unq = ltrim($substring, '.');
+                    if (array_key_exists($test_field_unq, $select_array_unq)) {
+                    	$array2[] = $field;  // this is valid
+                    } elseif (array_key_exists($test_field_unq, $fieldspec) AND !isset($fieldspec[$test_field_unq]['nondb'])) {
+                    	$array2[] = $field;  // this is valid
+                    } // if
+            	} // if
+            } // if
+        } // foreach
+
+        $output = implode(",", $array2);    // convert from array to string
+
+        return $output;
+
+    } // validateSortItem2
 } // if
 
 // ****************************************************************************
@@ -3934,11 +4453,6 @@ if (isset($_SERVER['SERVER_PROTOCOL'])) {
 } else {
     // this is being run in batch/cli mode, not from a web server
     $protocol = '';
-} // if
-
-if (file_exists('include.subsystem.inc')) {
-    // process optional includes from current subsystem directory
-	include('include.subsystem.inc');
 } // if
 
 $handler = setSessionHandler();

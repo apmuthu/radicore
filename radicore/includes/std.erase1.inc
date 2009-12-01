@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.erase1.inc
@@ -21,11 +21,11 @@ $mode = 'delete';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -62,7 +62,7 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('main', $orderby, $dbobject, $screen_structure);
@@ -118,7 +118,7 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName(
 
 // get data from the database
 $fieldarray = $dbobject->getData($where);
-if ($dbobject->getErrors()) {
+if ($dbobject->errors) {
     // some sort of error - return to previous script
     scriptprevious($dbobject->getErrors(), $messages);
 } // if

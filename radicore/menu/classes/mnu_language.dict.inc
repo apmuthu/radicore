@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:38 pm
+    // file created on August 25, 2009, 10:46 am
     
     // field specifications for table menu.mnu_language
     $fieldspec['language_id']               = array('type' => 'string',
@@ -50,9 +50,81 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'email_text_alt',
+                                                    'dbname' => 'invoice',
+                                                    'subsys_dir' => 'invoice',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_user',
                                                     'type' => 'RES',
                                                     'fields' => array('language_id' => 'language_code'));
+    
+    $this->child_relations[]                = array('child' => 'item_adjustment_type_alt',
+                                                    'dbname' => 'order',
+                                                    'subsys_dir' => 'order',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'order_adjustment_type_alt',
+                                                    'dbname' => 'order',
+                                                    'subsys_dir' => 'order',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'order_item_status_type_alt',
+                                                    'dbname' => 'order',
+                                                    'subsys_dir' => 'order',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'order_status_type_alt',
+                                                    'dbname' => 'order',
+                                                    'subsys_dir' => 'order',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'sale_type',
+                                                    'dbname' => 'order',
+                                                    'subsys_dir' => 'order',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_code'));
+    
+    $this->child_relations[]                = array('child' => 'geographic_area_alt',
+                                                    'dbname' => 'party',
+                                                    'subsys_dir' => 'party',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'party',
+                                                    'dbname' => 'party',
+                                                    'subsys_dir' => 'party',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_code'));
+    
+    $this->child_relations[]                = array('child' => 'product_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_category_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_feature_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_feature_category_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
     
     // parent relationship details 
     $this->parent_relations                 = array();
@@ -66,6 +138,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

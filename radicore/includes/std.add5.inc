@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add5.inc
@@ -9,7 +9,7 @@
 // type = add5
 
 // This will display data from 2 tables in a ONE-to-MANY relationship.
-// (also known as a PARENT-CHILD or OUTER-INNER retaltionship).
+// (also known as a PARENT-CHILD or OUTER-INNER relationship).
 // It will start by reading the OUTER entity using the primary key passed down
 // from the previous screen, then show a number of blank occurrences of INNER.
 // On SUBMIT all occurrences of INNER will be added to the database.
@@ -22,13 +22,15 @@ $mode = 'insert';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-	if (empty($where)) {
-    	// only use $selection if $where is empty
-        $where = $selection;
-        $selection = null;
-    } // if
-} // if
+$original_where     = $where;
+$original_selection = $selection;
+//if (!empty($selection) AND !isset($return_from)) {
+//	if (empty($where)) {
+//    	// only use $selection if $where is empty
+//        $where = $selection;
+//        $selection = null;
+//    } // if
+//} // if
 
 if (isset($_POST['quit'])) {
     // clear this script from session details and return to previous page
@@ -66,9 +68,9 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where, $selection);
+    $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->errors);
+        scriptPrevious($dbouter->getErrors());
     } // if
 } // if
 
@@ -87,9 +89,9 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->xsl_params['noshow']   = 'y'; // turn off page size selection
     $dbinner->xsl_params['noselect'] = 'y'; // turn off row selection
     // perform any initialisation
-    $null = $dbinner->initialise($where);
+    $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->errors);
+        scriptPrevious($dbinner->getErrors());
     } // if
 } // if
 
@@ -115,12 +117,12 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
     $outer_data = $dbouter->updateRecord($outer_data);
     if ($dbouter->errors) {
         // errors are keyed by object name
-        $errors[$dbouter->getClassName()] = $dbouter->errors;
+        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
     } else {
         $inner_data = $dbinner->insertMultiple($inner_data);
         if ($dbinner->errors) {
             // errors are keyed by object name
-            $errors[$dbinner->getClassName()] = $dbinner->errors;
+            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
     } // if
     if ($errors) {
@@ -156,7 +158,7 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
             // merge previous saved variables with selection from popup form
             $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, $popup_offset);
             if ($dbouter->errors) {
-            	$errors[$dbouter->getClassName()] = $dbouter->errors;
+            	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
             // make any changes in outer available to the inner entity
             $inner_data = $dbinner->setParentData($outer_data);
@@ -166,7 +168,7 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
         $outer_data = $dbouter->getData($where);
         if ($dbouter->errors) {
             // some sort of error
-            scriptprevious($dbouter->errors, $messages);
+            scriptprevious($dbouter->getErrors(), $messages);
         } // if
         if ($dbouter->getNumRows() < 1) {
             scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
@@ -175,7 +177,7 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
         // get any additional data for the current record
         $outer_data = $dbouter->getExtraData($outer_data);
         if ($dbouter->errors) {
-        	$errors[$dbouter->getClassName()] = $dbouter->errors;
+        	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
 
         // save these variables for later in the same session in case INNER performs a scriptNext()
@@ -197,7 +199,7 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
                 $dbinner->numrows = count($inner_data);
             } // if
             if ($dbinner->errors) {
-                $errors[$dbinner->getClassName()] = $dbinner->errors;
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
 
             if ($dbinner->getNumRows() == 0) {
@@ -208,12 +210,12 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
             // get any additional data for current record
             $inner_data = $dbinner->getExtraData($inner_data);
             if ($dbinner->errors) {
-            	$errors[$dbinner->getClassName()] = $dbinner->errors;
+            	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
 
         if ($dbinner->errors) {
-        	$errors[$dbinner->getClassName()] = $dbinner->errors;
+        	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
     } // if
 } // if
@@ -223,6 +225,11 @@ $script_vars['where']     = unqualifyWhere($where);
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

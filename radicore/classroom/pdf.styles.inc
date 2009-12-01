@@ -7,7 +7,7 @@
 $style['hdg']['font'] = array('family' => 'Times',      // Courier, Helvetica, Times
                               'style' => 'B',           // blank=Regular, B=Bold, I=Italic, U=Underline
                               'size' => 12,             // size in points
-                              'height' => 7,            // line height
+                              'height' => 7,            // line height in units
                               'draw' => .4,             // width of drawn lines
                               'align' => 'center');     // text alignment (left, right, center)
 
@@ -19,7 +19,7 @@ $style['hdg']['drawcolour'] = array(128,0,0);           // colour for line drawi
 $style['body']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 12,            // size in points
-                               'height' => 6,           // line height
+                               'height' => 6,           // line height in units
                                'draw' => .3);           // width of drawn lines
 
 $style['body']['fillcolour'] = array(224,235,255);      // colour for background
@@ -30,7 +30,7 @@ $style['body']['drawcolour'] = array(128,0,0);          // colour for line drawi
 $style['title']['font'] = array('family' => 'Times',    // Courier, Helvetica, Times
                                 'style' => 'B',         // blank=Regular, B=Bold, I=Italic, U=Underline
                                 'size' => 12,           // size in points
-                                'height' => 6,          // line height
+                                'height' => 6,          // line height in units
                                 'draw' => .3,           // width of drawn lines
                                 'align' => 'center');   // text alignment (left, right, center)
 
@@ -41,7 +41,7 @@ $style['title']['drawcolour'] = array(0,0,0);           // colour for line drawi
 $style['title1']['font'] = array('family' => 'Helvetica',// Courier, Helvetica, Times
                                  'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                  'size' => 16,           // size in points
-                                 'height' => 8,          // line height
+                                 'height' => 8,          // line height in units
                                  'draw' => .5);          // width of drawn lines
 
 $style['title1']['fillcolour'] = array(122,103,238);     // colour for background
@@ -51,7 +51,7 @@ $style['title1']['drawcolour'] = array(0,0,0);           // colour for line draw
 $style['title2']['font'] = array('family' => 'Helvetica',// Courier, Helvetica, Times
                                  'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                  'size' => 10,           // size in points
-                                 'height' => 4,          // line height
+                                 'height' => 4,          // line height in units
                                  'draw' => .2);          // width of drawn lines
 
 $style['title2']['fillcolour'] = array(210,180,140);     // colour for background
@@ -62,7 +62,7 @@ $style['title2']['drawcolour'] = array(0,0,0);           // colour for line draw
 $style['label']['font'] = array('family' => 'Times',    // Courier, Helvetica, Times
                                 'style' => 'BI',        // blank=Regular, B=Bold, I=Italic, U=Underline
                                 'size' => 12,           // size in points
-                                'height' => 6,          // line height
+                                'height' => 6,          // line height in units
                                 'draw' => .3,           // width of drawn lines
                                 'align' => 'right');    // text alignment (left, right, center)
 
@@ -74,7 +74,7 @@ $style['label']['drawcolour'] = array(0,0,0);           // colour for line drawi
 $style['data']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 12,            // size in points
-                               'height' => 6,           // line height
+                               'height' => 6,           // line height in units
                                'draw' => .3);           // width of drawn lines
 
 $style['data']['fillcolour'] = array(255,255,255);      // colour for background
@@ -85,13 +85,13 @@ $style['data']['drawcolour'] = array(0,0,0);            // colour for line drawi
 $style['foot']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 10,            // size in points
-                               'height' => 5,           // line height
+                               'height' => 5,           // line height in units
                                'draw' => .2,            // width of drawn lines
                                'align' => 'center');    // text alignment (left, right, center)
 
 $style['foot']['fillcolour'] = array(255,255,255);      // colour for background
 $style['foot']['textcolour'] = array(0,0,0);            // colour for foreground
-$style['foot']['drawcolour'] = array(255,255,255);      // colour for line drawing
+$style['foot']['drawcolour'] = array(0,0,0);            // colour for line drawing
 
 // allow text alignment within a cell to be changed
 $style['textalignleft']['font'] = array('align' => 'left');     // text alignment = left

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -28,11 +28,11 @@ if (isset($act_buttons['choose'])) {
     } // if
 } // if
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
@@ -79,12 +79,12 @@ if (isset($script_vars['dbobject'])) {
         $dbobject->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
 } // if
 
 // the 'choose' button should only be used in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbobject);
+    $messages = chooseButton($_POST, $dbobject, 'dbobject');
 } // if
 
 if (!empty($_POST)) {
@@ -134,10 +134,13 @@ if ($dbobject->errors) {
     $prev_task   = getPreviousTask($prev_script);
     // send selection back to the previous script
     $_SESSION['pages'][$prev_script][$prev_task]['selection'] = 'NULL=NULL';
-    scriptPrevious($dbobject->errors);
+    scriptPrevious($dbobject->getErrors());
 } else {
     // get any data for lookup lists
     $fieldarray = $dbobject->getExtraData($fieldarray, $where);
+    if (!empty($dbobject->errors)) {
+    	$errors = array_merge($errors, $dbobject->getErrors());
+    } // if
 } // if
 
 if ($dbobject->getNumRows() == 0) {
@@ -166,6 +169,10 @@ if ($dbobject->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
         scriptPrevious(null, null, 'choose');
     } // if
+} // if
+
+if (!empty($dbobject->messages)) {
+	$messages = array_merge($messages, $dbobject->getMessages);
 } // if
 
 if (isset($_GET['action'])) {

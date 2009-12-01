@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class Default_Table
@@ -19,10 +19,14 @@ class Default_Table
     var $dbms_engine;                   // database engine (mysql, postgresql, oracle, etc)
     var $dbname;                        // database name
     var $dirname;                       // directory name of current script
-    var $display_count = true;          // yes/no switch to display count after multiple inserts or updates
 
     var $download_filename;             // file to be downloaded
     var $download_mode;                 // 'inline' or null
+
+    var $delete_count;                  // count of records deleted
+    var $insert_count;                  // count of records inserted
+    var $update_count;                  // count of records updated
+    var $unchange_count;                // count of records unchanged
 
     var $errors = array();              // array of errors
     var $expanded;                      // list of tree nodes which have been expanded
@@ -41,11 +45,20 @@ class Default_Table
     var $lookup_data = array();         // array of lookup data (for dropdowns, radio groups)
     var $lookup_css = array();          // optional css classes for $lookup_data
     var $messages = array();            // array of messages
+    var $nameof_end_date;               // alias for 'end_date'
+    var $nameof_start_date;             // alias for 'start_date'
+    var $no_controller_msg = false;     // prevent page controller from creating a message concerning this object
+    var $no_csv_header = false;         // turns off creation of header row in CSV output file
+    var $no_display_count = false;      // yes/no switch to display count after multiple inserts or updates
+    var $no_duplicate_error = false;    // if TRUE do not create an error when inserting a duplicate
     var $numrows;                       // number of rows retrieved
     var $outer_table;                   // used in an outer-link-inner relationship
     var $pageno;                        // requested page number
     var $parent_relations = array();    // parent relationship specifications (optional)
+
     var $pdf;                           // object for PDF processing
+    var $pdf_filename;                  //
+    var $pdf_destination;               // I=Inline (browser), D=Download (browser), F=Filename (on server), S=String
 
     var $picker_subdir;                 // subdirectory for the File Picker
     var $picker_filetypes = array();    // array of file types
@@ -59,7 +72,7 @@ class Default_Table
     var $row_locks_supp;                // supplemental lock type
     var $scrollarray;                   // array for internal scrolling
     var $scrollindex;                   // index to current item in scrollarray
-    var $selectall = false;             // TRUE or FALSE (refer to setAction() method)
+    var $select_string;                 // identifies which entries have been selected
     var $skip_getdata = false;          // YES/NO switch
     var $skip_validation = false;       // YES/NO switch
     var $tablename;                     // table name (internal)
@@ -74,7 +87,7 @@ class Default_Table
     var $wf_context;                    // workitem context
     var $wf_workitem_id;                // workflow workitem id
 
-    var $xsl_params = array();          // optional parameters to be pased to XSL transformation
+    var $xsl_params = array();          // optional parameters to be passed to XSL transformation
 
     // the following are used to construct SQL queries
     var $default_orderby = null;        // default for table, may be overridden by $sql_orderby
@@ -82,6 +95,7 @@ class Default_Table
     var $sql_from;
     var $sql_groupby;
     var $sql_having;
+    var $sql_no_foreign_db = false;     // if TRUE _sqlProcessJoin() method will skip tables in other databases
     var $sql_orderby;                   // sort field
     var $sql_orderby_seq;               // 'asc' or 'desc'
     var $sql_orderby_table;             // tablename qualifier for optional sort criteria
@@ -89,6 +103,7 @@ class Default_Table
     var $sql_search_orig;               // original search criteria (unmodified)
     var $sql_search_table;              // tablename qualifier for optional search criteria
     var $sql_select;                    // fields to be selected
+    var $sql_selection;                 // selection passed down from previous task
     var $sql_where;                     // additional selection criteria
     var $where;                         // passed from parent form
 
@@ -220,7 +235,10 @@ class Default_Table
 
         foreach ($fieldarray as $field => $value) {
             if (array_key_exists($field, $fieldspec)) {
-                if (array_key_exists('noedit', $fieldspec[$field])) {
+                if ($field == 'curr_or_hist') {
+                    // reset to 'current' dates (the default)
+                	$fieldarray[$field] = 'C';
+                } elseif (array_key_exists('noedit', $fieldspec[$field])) {
                     // field is not editable, so leave it alone
                 } else {
                     // field is editable, so remove current value
@@ -279,10 +297,37 @@ class Default_Table
     } // commit
 
     // ****************************************************************************
+    function convertTimeZone ($fieldarray)
+    // convert any datetime fields from client timezone to server timezone.
+    {
+        if (empty($_SESSION['timezone_server']) OR empty($_SESSION['timezone_client'])) {
+        	return $fieldarray;  // nothing to do
+        } // if
+
+        foreach ($this->fieldspec as $field => $spec) {
+        	if (preg_match('/(datetime|timestamp)/i', $spec['type'])) {
+        		$fieldarray[$field] = convertTZ($fieldarray[$field],
+        		                                $_SESSION['timezone_client'],
+        		                                $_SESSION['timezone_server']);
+        	} // if
+        } // foreach
+
+        return $fieldarray;
+
+    } // convertTimeZone
+
+    // ****************************************************************************
     function currentOrHistoric ($string, $start_date='start_date', $end_date='end_date')
     // convert the string 'current/historic/future' into a date range.
     // NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
     {
+        if (empty($start_date)) {
+        	$start_date = 'start_date';
+        } // if
+        if (empty($end_date)) {
+        	$end_date = 'end_date';
+        } // if
+
         // convert search string into an indexed array
         $search = where2array($string, false, false);
 
@@ -294,20 +339,20 @@ class Default_Table
             if (!array_key_exists($start_date, $this->fieldspec) OR !array_key_exists($end_date, $this->fieldspec)) {
                 $search1['curr_or_hist'] = 'invalid';
             } else {
-                $date = date('Y-m-d');
+                $today = date('Y-m-d');
                 switch ($search1['curr_or_hist']) {
                     case 'C':
                         // search for records with CURRENT dates
-                        $search[$start_date] = "<='$date 00:00:00'";
-                        $search[$end_date]   = ">='$date 23:59:59'";
+                        $search[$start_date] = "<='$today 23:59:59'";
+                        $search[$end_date]   = ">='$today 00:00:00'";
                         break;
                     case 'H':
                         // search for records with HISTORIC dates
-                        $search[$end_date] = "<'$date 00:00:00'";
+                        $search[$end_date] = "<'$today 00:00:00'";
                         break;
                     case 'F':
                         // search for records with FUTURE dates
-                        $search[$start_date] = ">'$date 23:59:59'";
+                        $search[$start_date] = ">'$today 23:59:59'";
                     default:
                         ;
                 } // switch
@@ -327,8 +372,8 @@ class Default_Table
     // delete multiple records using data in $fieldarray.
     {
         $errors = array();
-        $this->display_count = true;
-        $count               = 0;
+        $this->no_display_count = false;
+        $count                  = 0;
 
         if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
         	// check to see if this task is a pending workitem
@@ -349,7 +394,9 @@ class Default_Table
             } // if
         } // foreach
 
-        if (is_True($this->display_count)) {
+        if (is_True($this->no_display_count)) {
+            // do not display record count
+        } else {
             // '$count records were deleted from $tablename'
             $this->messages[] = getLanguageText('sys0004', $count, strtoupper($this->tablename));
         } // if
@@ -417,6 +464,12 @@ class Default_Table
 
         if (empty($this->errors)) {
             // perform any custom pre-delete processing
+            if (is_object($this->custom_processing_object)) {
+            	if (method_exists($this->custom_processing_object, '_cm_pre_deleteRecord')) {
+            		$fieldarray = $this->custom_processing_object->_cm_pre_deleteRecord($fieldarray);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
+            } // if
             $fieldarray = $this->_cm_pre_deleteRecord($fieldarray);
         } // if
 
@@ -432,6 +485,12 @@ class Default_Table
 
         if (empty($this->errors)) {
             // perform any custom post-delete processing
+            if (is_object($this->custom_processing_object)) {
+            	if (method_exists($this->custom_processing_object, '_cm_post_deleteRecord')) {
+            		$fieldarray = $this->custom_processing_object->_cm_post_deleteRecord($fieldarray);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
+            } // if
             $fieldarray = $this->_cm_post_deleteRecord($fieldarray);
         } // if
 
@@ -492,6 +551,7 @@ class Default_Table
                         require_once $dir ."classes/$tblchild.class.inc";
                     } // if
                     $childobject = new $tblchild;
+                    $childobject->audit_logging = $this->audit_logging;
                     // now use this object to delete child records
                     if (!$childobject->cascadeNullify($update_array, $where)) {
                         $this->errors = array_merge($childobject->getErrors(), $this->errors);
@@ -531,6 +591,7 @@ class Default_Table
                         require_once $dir ."classes/$tblchild.class.inc";
                     } // if
                     $childobject = new $tblchild;
+                    $childobject->audit_logging = $this->audit_logging;
                     // check for 'order by' clause
                     if (isset($reldata['orderby'])) {
                         $childobject->default_orderby = $reldata['orderby'];
@@ -815,8 +876,20 @@ class Default_Table
         $row = $DML->fetchRow($this->dbname, $resource);
 
         if ($row) {
-        	// perform any custom post-retrieve processing
-            $row = $this->_cm_post_fetchRow($row);
+            // perform any custom post-retrieve processing
+            if (is_object($this->custom_processing_object)) {
+                if (method_exists($this->custom_processing_object, '_cm_post_fetchRow')) {
+            		$row = $this->custom_processing_object->_cm_post_fetchRow($row);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
+            } // if
+            if ($row) {
+            	$row = $this->_cm_post_fetchRow($row);
+            } // if
+            if (empty($row)) {
+                // this row has been cancelled, so read another one
+            	$row = $this->fetchRow($resource);
+            } // if
         } // if
 
         return $row;
@@ -892,7 +965,27 @@ class Default_Table
 
                 switch (strtolower($fieldspec['type'])) {
                     case 'string':
-                        // do nothing
+                        if (isset($fieldspec['control']) AND $fieldspec['control'] == 'multidrop') {
+                        	list($operator, $value) = extractOperatorValue($fieldvalue);
+                        	if (trim($operator) == 'IN') {
+                        		// turn this string into an array
+                                $value = trim($value, '()');
+                                $array = explode(',', $value);
+                                foreach ($array as $key => $entry) {
+                                	if (substr($entry, 0, 1) == "'") {
+                                		// remove leading quote
+                                		$entry = substr($entry, 1);
+                                	} // if
+                                	if (substr($entry, -1, 1) == "'") {
+                                		// remove leading quote
+                                		$entry = substr($entry, 0, strlen($entry)-1);
+                                	} // if
+                                	$array[$key] = $entry;
+                                } // foreach
+                                $fieldvalue = $array;
+                                $operator   = '=';
+                        	} // if
+                        } // if
                         break;
                     case 'set':
                     case 'array':
@@ -961,6 +1054,9 @@ class Default_Table
                             $fieldvalue = '';
                         } else {
                             if (!empty($fieldvalue)) {
+                                if (isset($_SESSION['timezone_server'])) {
+                                	$fieldvalue = convertTZ($fieldvalue, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+                                } // if
                                 // strip off portion which follows last ' '
                                 $time = strrchr($fieldvalue, ' ');
                                 $date = substr($fieldvalue, 0, strlen($fieldvalue)-strlen($time));
@@ -1014,25 +1110,26 @@ class Default_Table
                                $fieldvalue = ''; // value is zero, so display blank
                            } // if
                        } else {
-                           // formast number according to current locale settings
-                           $fieldvalue = formatNumber($fieldvalue, $decimal_places);
-                           if (isset($fieldspec['strip_trailing_zero'])) {
-                           	   $fieldvalue = rtrim($fieldvalue, '0');
-                               if (substr($fieldvalue, -1, 1) == '.') {
-                                   // last character is a decimal point, so it needs a trailing zero
-                                   $fieldvalue .= '0';
-                               } // if
-                               if (empty($fieldvalue)) {
-                                   $fieldvalue = '0.0';
-                               } // if
-                           } // if
+                           // format number according to current locale settings
+                           $strip_trailing_zero =& $fieldspec['strip_trailing_zero'];
+                           $fieldvalue = formatNumber($fieldvalue, $decimal_places, $strip_trailing_zero);
+//                           if (isset($fieldspec['strip_trailing_zero'])) {
+//                           	   $fieldvalue = rtrim($fieldvalue, '0');
+//                               if (substr($fieldvalue, -1, 1) == '.') {
+//                                   // last character is a decimal point, so it needs a trailing zero
+//                                   $fieldvalue .= '0';
+//                               } // if
+//                               if (empty($fieldvalue)) {
+//                                   $fieldvalue = '0.0';
+//                               } // if
+//                           } // if
                        } // if
                        break;
                     default:
                         ;
                 } // switch
 
-                if (eregi('^(csv|pdf)', strtolower($GLOBALS['mode']))) {
+                if (preg_match('/^(csv|pdf)/i', strtolower($GLOBALS['mode']))) {
                 	if (isset($fieldspec['optionlist'])) {
                 	    if (!empty($fieldvalue)) {
                 	    	// convert value into corresponding entry(s) from optionlist
@@ -1061,7 +1158,7 @@ class Default_Table
 
                 if (isset($fieldspec['password'])) {
                     if (isset($fieldspec['hash'])) {
-                        if (ereg('sha1|md5', $fieldspec['hash'])) {
+                        if (preg_match('/(sha1|md5)/i', $fieldspec['hash'])) {
                             // for this hash type do not output anything
                             $fieldvalue = '';
                         } // if
@@ -1188,6 +1285,7 @@ class Default_Table
     // this is formatted before being displayed to the user.
     {
         $this->errors = array();    // initialise
+        $data_raw     = array();
 
 //        if (!empty($this->sql_where)) {
 //            // remove anything in $this->sql_where which is duplicated in $where
@@ -1220,45 +1318,20 @@ class Default_Table
         } // if
 
         // perform any custom pre-retrieve processing
-        $where = $this->_cm_pre_getData($where, $where_array, $fieldarray);
-        if ($this->errors) return;
-
         if (is_object($this->custom_processing_object)) {
-            // perform any additional custom pre-retrieve processing
-        	if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
         		$where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $fieldarray);
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
+        if ($this->errors) return;
+        $where = $this->_cm_pre_getData($where, $where_array, $fieldarray);
         if ($this->errors) return;
 
         if ($this->where != $where) {
             // $where has been modified, so update $where_array
             $this->where = $where;
             $where_array = where2array($where, $this->pageno);
-        } // if
-
-        if (isset($this->fieldspec['rdcaccount_id'])) {
-        	// this table is split by account, so account_id must be supplied in WHERE string
-        	if (!isset($where_array['rdcaccount_id'])) {
-        	    $account_id =& $_SESSION['rdcaccount_id'];
-        	    if (empty($account_id) AND eregi('mnu_user|mnu_account', $this->tablename)) {
-        	    	// no account id supplied, so read everything on these tables only
-        	    } else {
-        	        if (empty($account_id)) {
-        	            $account_id_string = "rdcaccount_id='1'";
-        	        } else {
-        	        	$account_id_string = "rdcaccount_id IN ('1', '$account_id')";
-        	        } // if
-            		if (empty($this->sql_where)) {
-            			$this->sql_where = $account_id_string;
-            		} else {
-            		    if (substr_count($this->sql_where, $account_id_string) == 0) {
-            		    	$this->sql_where .= " AND $account_id_string";
-            		    } // if
-            		} // if
-        	    } // if
-        	} // if
         } // if
 
         if ($this->checkPrimaryKey AND !$this->allow_empty_where) {
@@ -1270,14 +1343,20 @@ class Default_Table
                 $where_array2 = $where_array;
             } // if
             // check that full primary key (or candidate key) has been supplied
-            $this->errors = isPkeyComplete($where_array2, $this->getPkeyNames(), $this->unique_keys);
+            $this->errors = isPkeyComplete($where_array2, $this->getPkeyNames(), $this->unique_keys, $this);
             if ($this->errors) return;
             $this->checkPrimaryKey = false;
         } // if
 
         if ($this->skip_getdata) {
             // use data already loaded in
-            $data_raw = $this->fieldarray;
+            if (is_int(key($this->fieldarray))) {
+                // already indexed by row
+            	$data_raw = $this->fieldarray;
+            } else {
+                // associative array, so make it row zero
+                $data_raw[0] = $this->fieldarray;
+            } // if
             $this->numrows = count($data_raw);
             if (empty($this->scrollarray)) {
                 // set record/page counts from contents of $this->fieldarray
@@ -1306,6 +1385,37 @@ class Default_Table
             $data_raw = $this->_dml_getData($where_str);
         } // if
 
+        if (!empty($this->select_string)) {
+            $select_array = splitWhereByRow($this->select_string);
+            foreach ($select_array as $index => $string) {
+                $array1 = where2array($string);     // convert string to array
+                $select_array[$index] = $array1;    // replace string with array
+            } // foreach
+            // now compare each row of data with $select_array
+            foreach ($data_raw as $rownum => $rowdata) {
+                if (empty($select_array)) {
+                	break;
+                } // if
+                foreach ($select_array as $select_row => $select_array2) {
+                    $found = true;
+                    foreach ($select_array2 as $select_name => $select_value) {
+                        if (array_key_exists($select_name, $rowdata) AND $rowdata[$select_name] == $select_value) {
+                        	// leave TRUE setting
+                        } else {
+                            $found = false;
+                            break;
+                        } // if
+                    } // foreach
+                    if ($found == true) {
+                        // data matches selection, so mark this row as 'selected'
+                    	$data_raw[$rownum]['selected'] = true;
+                    	unset($select_array[$select_row]);
+                    	break;
+                    } // if
+                } // foreach
+            } // foreach
+        } // if
+
         if ($GLOBALS['mode'] != 'insert') {
         	// clear 'nodisplay' option which may have been by previous iteration
             foreach ($this->fieldspec as $field => $spec) {
@@ -1323,8 +1433,7 @@ class Default_Table
 
             // perform any custom post-retrieve processing
             if (is_object($this->custom_processing_object)) {
-                // perform any additional custom pre-retrieve processing
-            	if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
+                if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
             		$data_raw = $this->custom_processing_object->_cm_post_getData($data_raw, $where);
             		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
             	} // if
@@ -1336,10 +1445,6 @@ class Default_Table
         // perform any formatting on the raw data
         $this->fieldarray = array();
         foreach ($data_raw as $rowdata) {
-//            if ($this->selectall) {
-//                // switch has been set (see setAction() method), so mark this row as 'selected'
-//                $rowdata['selected'] = true;
-//            } // if
             $this->fieldarray[] = $rowdata;
         } // foreach
 
@@ -1361,13 +1466,13 @@ class Default_Table
         	// this table is split by account, so account_id must be supplied in WHERE string
         	if (!isset($where_array['rdcaccount_id'])) {
         	    $account_id =& $_SESSION['rdcaccount_id'];
-        	    if (empty($account_id) AND eregi('mnu_user|mnu_account', $this->tablename)) {
+        	    if (empty($account_id) AND preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
         	    	// no account id supplied, so read everything on these tables only
         	    } else {
-        	        if (empty($account_id)) {
-        	            $account_id_string = "rdcaccount_id='1'";
+        	        if (empty($account_id) OR $account_id == 1) {
+        	            $account_id_string = "$this->tablename.rdcaccount_id='1'";
         	        } else {
-        	        	$account_id_string = "rdcaccount_id IN ('1', '$account_id')";
+        	        	$account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
         	        } // if
             		if (empty($this->sql_where)) {
             			$this->sql_where = $account_id_string;
@@ -1390,7 +1495,7 @@ class Default_Table
 
         if (!empty($this->sql_search)) {
             // turn 'current/historic/future' into a range of dates
-            $this->sql_search = $this->currentOrHistoric($this->sql_search);
+            $this->sql_search = $this->currentOrHistoric($this->sql_search, $this->nameof_start_date, $this->nameof_end_date);
             if (!empty($this->sql_search)) {
             	if (empty($where)) {
                     $where = $this->sql_search;
@@ -1400,7 +1505,7 @@ class Default_Table
             } // if
         } // if
 
-        $data_raw = $this->_dml_getData($where);
+        $data_raw = $this->_dml_getData($where, TRUE);
 
         return $data_raw;
 
@@ -1426,16 +1531,14 @@ class Default_Table
         } // if
 
         // perform any custom pre-retrieve processing
-        $where = $this->_cm_pre_getData($where, $where_array);
-        if ($this->errors) return;
-
         if (is_object($this->custom_processing_object)) {
-            // perform any additional custom pre-retrieve processing
-        	if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
         		$where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $this->fieldarray);
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
+        if ($this->errors) return;
+        $where = $this->_cm_pre_getData($where, $where_array);
         if ($this->errors) return;
 
         if ($this->where != $where) {
@@ -1487,12 +1590,15 @@ class Default_Table
     function getErrors ()
     // return array of error messages
     {
-        if (!is_array($this->errors)) {
+        $errors = $this->errors;
+        $this->errors = array();
+
+        if (!is_array($errors)) {
             // convert string into an array
-            $this->errors = (array)$this->errors;
+            $errors = (array)$errors;
         } // if
 
-        return $this->errors;
+        return $errors;
 
     } // getErrors
 
@@ -1538,10 +1644,14 @@ class Default_Table
             //$where = array2where($fieldarray[$key]);
         } // if
 
-        // retrieve data from foreign (parent) tables for each row
-        foreach ($fieldarray as $rownum => $rowdata) {
-        	$fieldarray[$rownum] = $this->getForeignData($rowdata);
-        } // foreach
+//        if ($GLOBALS['mode'] == 'search') {
+//        	// ignore this next bit
+//        } else {
+            // retrieve data from foreign (parent) tables for each row
+            foreach ($fieldarray as $rownum => $rowdata) {
+            	$fieldarray[$rownum] = $this->getForeignData($rowdata);
+            } // foreach
+//        } // if
 
         // perform custom processing (such as obtaining lookup lists)
         if (is_object($this->custom_processing_object)) {
@@ -1569,7 +1679,7 @@ class Default_Table
             // return all rows as an indexed array
             return $fieldarray;
         } else {
-            // return only row as an associative array
+            // return only one row as an associative array
             return $fieldarray[0];
         } // if
 
@@ -1631,6 +1741,8 @@ class Default_Table
         $this->default_orderby    = '';
         $this->alt_language_table = '';
         $this->alt_language_cols  = '';
+        $this->nameof_start_date  = '';
+        $this->nameof_end_date    = '';
 
         if ($this->getTableName() != 'default') {
             // include table specifications generated by Data Dictionary
@@ -1671,7 +1783,6 @@ class Default_Table
                     // parent field is already there, so do nothing
                 } else {
                     // construct WHERE clause to read from parent table
-                    //$where = '';
                     $where_array = array();
                     foreach ($reldata['fields'] as $fldchild => $fldparent) {
                         if (strlen($fldchild) < 1) {
@@ -1681,22 +1792,15 @@ class Default_Table
                         } // if
                         if (!isset($fieldarray[$fldchild]) or strlen($fieldarray[$fldchild]) == 0) {
                             // foreign key field is missing, so stop further processing
-                            //$where = '';
                             $where_array = array();
                             break;
                         } // if
-                        if (eregi('^(IS NULL|IS NOT NULL)$', trim($fieldarray[$fldchild]))) {
+                        if (preg_match('/^(IS NULL|IS NOT NULL)$/i', trim($fieldarray[$fldchild]))) {
                         	// does not contain a proper value, so do not attempt to read
                         	$fieldarray[$fldchild] = null;
-                        	//$where = '';
                         	$where_array = array();
                         	break;
                         } // if
-                        //if (empty($where)) {
-                        //    $where = "$fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
-                        //} else {
-                        //    $where .= " AND $fldparent='" .addslashes($fieldarray[$fldchild]) ."'";
-                        //} // if
                         $where_array[$fldparent] = $fieldarray[$fldchild];
                     } // foreach
                     if (empty($where_array)) {
@@ -1731,13 +1835,16 @@ class Default_Table
                         if (count($parent_data) > 0) {
                             // copy specified parent field(s) into $fieldarray
                             foreach ($parent_fields as $ix => $parent_field) {
-                                if (array_key_exists($parent_field, $parent_data[0])) {
-                                	$fieldarray[$parent_field] = $parent_data[0][$parent_field];
-                                } else {
-                                    // original name not found, so look for an alias
-                                    list($original, $alias) = getFieldAlias3($alias_array[$ix]);
-                                    if ($original != $alias) {
-                                    	$fieldarray[$parent_field] = $parent_data[0][$original];
+                                if (empty($fieldarray[$parent_field])) {
+                                    // field is currently empty, so replace it with parent value
+                                	if (array_key_exists($parent_field, $parent_data[0])) {
+                                    	$fieldarray[$parent_field] = $parent_data[0][$parent_field];
+                                    } else {
+                                        // original name not found, so look for an alias
+                                        list($original, $alias) = getFieldAlias3($alias_array[$ix]);
+                                        if ($original != $alias) {
+                                        	$fieldarray[$parent_field] = $parent_data[0][$original];
+                                        } // if
                                     } // if
                                 } // if
                             } // foreach
@@ -1779,7 +1886,7 @@ class Default_Table
                 // convert 'where' string to an associative array
                 $fieldarray = where2array($where);
                 foreach ($fieldarray as $fieldname => $fieldvalue) {
-                    if (eregi('^(IS NULL|IS NOT NULL|NOT IN|IN[ ]?\()', trim($fieldvalue))) {
+                    if (preg_match('/^(IS NULL|IS NOT NULL|NOT IN|IN[ ]?\()/i', trim($fieldvalue))) {
                         // not a valid value, so remove it
                     	unset($fieldarray[$fieldname]);
                     } elseif (array_key_exists($fieldname, $this->fieldspec)) {
@@ -1804,21 +1911,27 @@ class Default_Table
             } // foreach
         } // if
 
+        // perform any custom processing (optional)
         if (is_object($this->custom_processing_object)) {
         	if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
         		$fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
-
-        // perform any custom processing (optional)
         $fieldarray = $this->_cm_getInitialData($fieldarray);
         if ($this->errors) {
             return $fieldarray;
         } // if
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
-        	if ($_SESSION['rdcaccount_id'] > 1) {
+            if (empty($_SESSION['rdcaccount_id'])) {
+                if (preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
+                	// do nothing on this table
+                } else {
+                    // use the 'sharing' id
+                	$fieldarray['rdcaccount_id'] = 1;
+                } // if
+            } else {
         	    // always use this user's account_id
         	    $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
         	} // if
@@ -1847,8 +1960,8 @@ class Default_Table
                         // this is a non-database field, so ignore it
                     } else {
                         if (empty($fieldarray[$fieldname])) {
-                            if (!empty($spec['default']) AND !eregi('date|time|datetime', $spec['type'])) {
-                                if (array_key_exists('autoinsert', $spec) OR array_key_exists('autoupdate', $spec)) {
+                            if (!empty($spec['default']) AND !preg_match('/(date|time|datetime)/i', $spec['type'])) {
+                                if (array_key_exists('autoinsert', $spec) OR array_key_exists('autoupdate', $spec) OR $fieldname == 'rdcaccount_id') {
                                     // value will be inserted later
                                 	$fieldarray[$fieldname] = NULL;
                                 } else {
@@ -1960,9 +2073,13 @@ class Default_Table
         foreach ($language_array as $language_id => $language_code) {
         	$fieldarray = $parent_data;
         	$fieldarray['language_id'] = $language_id;
-            foreach ($fieldlist as $fieldname) {
-            	$fieldarray[$fieldname] = '(' .strtoupper($language_id) .') ' .$fieldarray[$fieldname];
-            } // foreach
+//            foreach ($fieldlist as $fieldname) {
+//                if (empty($fieldarray[$fieldname])) {
+//                	$fieldarray[$fieldname] = null;
+//                } else {
+//            	    $fieldarray[$fieldname] = '(' .strtoupper($language_id) .') ' .$fieldarray[$fieldname];
+//                } // if
+//            } // foreach
         	$new_data[] = $fieldarray;
         } // foreach
 
@@ -2099,7 +2216,7 @@ class Default_Table
             } // if
             // find out if any sort sequence has been specified on the first field
             list($first_field) = explode(',', $orderby);
-            if (eregi('( asc| ascending| desc| descending)$', $first_field, $regs)) {
+            if (preg_match('/( asc| ascending| desc| descending)$/i', $first_field, $regs)) {
             	$this->sql_orderby_seq = trim($regs[0]);
             } // if
         } // if
@@ -2145,7 +2262,7 @@ class Default_Table
         // get name(s) of field(s) which form the primary key
         $pkeynames = $this->getPkeyNames();
 
-        if (!empty($next_task) AND !eregi('^audit', $next_task['task_id'])) {
+        if (!empty($next_task) AND !preg_match('/^(audit)/i', $next_task['task_id'])) {
             // obtain any custom adjustments to this array
             $task_id    = $next_task['task_id'];
             $pattern_id = $next_task['pattern_id'];
@@ -2305,7 +2422,7 @@ class Default_Table
     {
         $where = mergeWhere($this->where, $this->sql_where);
 
-        if (!empty($next_task) AND !eregi('^audit', $next_task['task_id'])) {
+        if (!empty($next_task) AND !preg_match('/^(audit)/i', $next_task['task_id'])) {
             // obtain any custom adjustments to this string
             $task_id    = $next_task['task_id'];
             $pattern_id = $next_task['pattern_id'];
@@ -2317,11 +2434,13 @@ class Default_Table
     } // getWhere
 
     // ****************************************************************************
-    function initialise ($where=null, $selection=null)
+    function initialise ($where=null, $selection=null, $search=null)
     // perform any initialisation for the current task.
     {
         $this->pageno = null;
         $this->where  = null;
+
+        $pattern_id = getPatternId();
 
         if (isset($GLOBALS['settings'])) {
         	if (array_key_exists('allow_empty_where', $GLOBALS['settings'])) {
@@ -2331,21 +2450,31 @@ class Default_Table
 
         $this->_getCustomProcessingObject();
 
-        if (eregi('^(mnu_initial_value_)', $this->tablename)) {
+        if (preg_match('/^(mnu_initial_value_)/i', $this->tablename)) {
         	// do not look for initial values for the initial values tables
         } else {
             if ($this->initiated_from_controller) {
                 // obtain any initial values from MNU_INITIAL_VALUE_ROLE/USER table
                 $this->initial_values = $this->_getInitialValues();
 
-                $pattern_id = getPatternId();
-                if (eregi('^(list|output)', $pattern_id)) {
+                if (preg_match('/^(list|output)/i', $pattern_id)) {
                 	$this->sql_where = $this->_getInitialWhere($this->sql_where);
                 } // if
             } // if
         } // if
 
+        if (preg_match('/^(add|upd2)/i', $pattern_id)) {
+            // do not swap $selection with $where
+        } else {
+            if (empty($where) AND !empty($selection)) {
+                // $where is empty, so use $selection instead
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         if (!empty($this->sql_where)) {
+            // extra WHERE provided in component script
             if (empty($where)) {
             	$where = $this->sql_where;
             } else {
@@ -2354,17 +2483,33 @@ class Default_Table
         	//$this->sql_where = null;
         } // if
 
-        // perform any custom initialisation
+        $where2 = $where;  // save for comparison
+
+        // perform any custom initialisation (optional)
         if (is_object($this->custom_processing_object)) {
         	if (method_exists($this->custom_processing_object, '_cm_initialise')) {
-        		$where = $this->custom_processing_object->_cm_initialise($where, $selection);
+        		$where2 = $this->custom_processing_object->_cm_initialise($where2, $selection, $search);
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
-        // perform any custom initialisation
-        $where = $this->_cm_initialise($where, $selection);
+        $where2 = $this->_cm_initialise($where2, $selection, $search);
         if (!empty($this->errors)) {
-        	return $where;
+        	return $where2;
+        } // if
+
+        if ($where2 != $where) {
+            // this was changed in _cm_initialise(), so use the new version
+            $where = $where2;
+        } else {
+            if (preg_match('/^(add|upd2)/i', $pattern_id)) {
+            	// do not swap $selection with $where
+            } else {
+            	if (!empty($selection)) {
+            	    // $selection takes precedence over $where
+                	$where     = $selection;
+                	$selection = null;
+                } // if
+            } // if
         } // if
 
         // convert $where string to an array
@@ -2382,13 +2527,16 @@ class Default_Table
                     $this->fieldspec['rdcaccount_id']['noedit'] = 'y';
                 } // if
             } // if
-            if (isset($fieldarray['rdcaccount_id']) AND count($fieldarray) == 1) {
-                // 'rdcaccount_id' is the only value, so can we remove it?
-                if ($this->tablename == 'mnu_account') {
-                    // this is allowed on this table
-                } else {
-                	$where = null;
-                	$fieldarray = array();
+            if (count($fieldarray) == 1) {
+            	$fieldarray = unqualifyFieldArray($fieldarray);
+                if (isset($fieldarray['rdcaccount_id'])) {
+                    // 'rdcaccount_id' is the only value, so can we remove it?
+                    if ($this->tablename == 'mnu_account') {
+                        // this is allowed on this table
+                    } else {
+                    	$where = null;
+                    	$fieldarray = array();
+                    } // if
                 } // if
             } // if
         } // if
@@ -2398,7 +2546,7 @@ class Default_Table
             	if ($_SESSION['user_language'] != $_SESSION['default_language']) {
             	    if (!empty($this->alt_language_cols)) {
             	    	// cannot update text in base table which was obtained from alternative language table
-                        $fieldnames = explode(',', $this->alt_language_cols);
+                        $fieldnames = explode(', ', $this->alt_language_cols);
                         foreach ($fieldnames as $fieldname) {
                         	$this->fieldspec[$fieldname]['noedit'] = 'y';
                         } // foreach
@@ -2415,7 +2563,6 @@ class Default_Table
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
-        // change current table configuration (optional)
         $fieldarray2 = $this->_cm_changeConfig($where, $fieldarray);
         if ($fieldarray2 != $fieldarray) {
         	$where   = array2where($fieldarray2, $this->fieldspec);
@@ -2447,26 +2594,26 @@ class Default_Table
                 	// this is an index to a string such as 'EXISTS (...)', so delete it
                 	unset($fieldarray[$fieldname]);
                 } elseif (!empty($fieldvalue)) {
-                    if (eregi('^(LIKE )', ltrim($fieldvalue))) {
+                    if (preg_match('/^(LIKE )/i', ltrim($fieldvalue))) {
                         // ignore values starting with 'LIKE ' as they come from previous search
-                    } elseif (eregi('^(IS NULL|IS NOT NULL|NOT IN|IN[ ]?\()', trim($fieldvalue))) {
+                    } elseif (preg_match('/^(IS NULL|IS NOT NULL|NOT IN|IN[ ]?\(|NOT LIKE)/i', trim($fieldvalue))) {
                         // not a valid value, so remove it
                     	unset($fieldarray[$fieldname]);
                     } else {
                         if (array_key_exists('control', $this->fieldspec[$fieldname])) {
                         	// if 'control' is set then only operators of '=' are allowed
-                        	if (eregi('^=', trim($fieldvalue))) {
+                        	if (preg_match('/^=/', trim($fieldvalue))) {
                         	    $fieldarray[$fieldname] = stripOperators($fieldvalue);
                         	    $this->fieldspec[$fieldname]['noedit'] = 'y';
                         	} else {
                         	    unset($fieldarray[$fieldname]);
                         	} // if
-                        } elseif (eregi('^=', trim($fieldvalue))) {
+                        } elseif (preg_match('/^=/', trim($fieldvalue))) {
                             $fieldarray[$fieldname] = stripOperators($fieldvalue);
                             $this->fieldspec[$fieldname]['noedit'] = 'y';
                         } else {
                         	$this->fieldspec[$fieldname]['noedit'] = 'y';
-                            if (eregi('^(null)$', $fieldvalue)) {
+                            if (preg_match('/^(null)$/i', $fieldvalue)) {
                                 // replace 'null' (the string) with NULL (the value)
                                 $fieldarray[$fieldname] = null;
                             } // if
@@ -2480,16 +2627,36 @@ class Default_Table
                 if (isset($fieldspec['nosearch'])) {
                     $this->fieldspec[$fieldname]['nodisplay'] = 'y';
                 } // if
+                // remove 'required' property to make all fields optional
+                if (isset($fieldspec['required'])) {
+                	unset($this->fieldspec[$fieldname]['required']);
+                } // if
             } // foreach
 
             // look for start_date and end_date in $fieldspec
-            if (isset($this->fieldspec['start_date']) AND isset($this->fieldspec['end_date'])) {
+            if (!empty($this->nameof_start_date)) {
+            	$start_date = $this->nameof_start_date;
+            } else {
+                $start_date = 'start_date';
+            } // if
+            if (!empty($this->nameof_end_date)) {
+            	$end_date = $this->nameof_end_date;
+            } else {
+                $end_date = 'end_date';
+            } // if
+            if (isset($this->fieldspec[$start_date]) AND isset($this->fieldspec[$end_date])) {
                 $this->setCurrentOrHistoric();
             } // if
 
-            if (isset($_SESSION['search'][$this->tablename])) {
+            if (!empty($this->sql_search_table)) {
+            	$search_table = $this->sql_search_table;
+            } else {
+                $search_table = $this->tablename;
+            } // if
+
+            if (isset($_SESSION['search'][$search_table])) {
                 // retrieve previous search criteria and copy into this screen
-                $previous = $_SESSION['search'][$this->tablename];
+                $previous = $_SESSION['search'][$search_table];
                 // convert from string to associative array
                 $previous = where2array($previous, false, false);
                 // remove any field that does not belong in this table
@@ -2509,26 +2676,33 @@ class Default_Table
                     if (array_key_exists($field, $fieldarray)) {
                     	unset($previous[$field]);
                     } else {
-                        if (eregi('=|LIKE', $operator)) {
+                        if (preg_match('/(=|LIKE)/i', $operator)) {
                             $previous[$field] = $value;
                         } else {
                             $previous[$field] = $operator.$value;
                         } // if
                     } // if
                 } // foreach
+                // merge data into a single array
                 $fieldarray = array_merge($previous, $fieldarray);
+                // look to see if CURR_OR_HIST is defined
+                if (array_key_exists('curr_or_hist', $this->fieldspec)) {
+                	if (!isset($fieldarray['curr_or_hist'])) {
+                		$fieldarray['curr_or_hist'] = 'C';
+                	} // if
+                } // if
+            } // if
+
+            if (isset($this->fieldspec['curr_or_hist'])) {
+            	if (empty($fieldarray['curr_or_hist'])) {
+            		$fieldarray['curr_or_hist'] = 'C';  // default to CURRENT
+            	} // if
             } // if
 
             // save, then convert back into string
             $this->fieldarray = $fieldarray;
             $where = array2where($fieldarray);
 
-            if (isset($this->fieldspec['curr_or_hist'])) {
-            	if (empty($fieldarray['curr_or_hist'])) {
-            		$fieldarray['curr_or_hist'] = 'C';  // default to CURRENT
-            		$where = array2where($fieldarray);
-            	} // if
-            } // if
         } // if
 
         if (is_object($this->custom_processing_object)) {
@@ -2539,12 +2713,12 @@ class Default_Table
         } // if
         $this->javascript = $this->_cm_setJavaScript($this->javascript);
 
-        if (isset($GLOBALS['mode']) AND eregi('search|list|read', $GLOBALS['mode'])) {
+        if (isset($GLOBALS['mode']) AND preg_match('/(search|list|read)/i', $GLOBALS['mode'])) {
         	// ignore this next bit
         } else {
             if ($this->initiated_from_controller) {
             	if ($this->dbname != 'workflow') {
-                    if (is_string($where)) {
+                    if (is_string($where) AND !empty($where)) {
                         // find out if this task/context is a workitem within a workflow instance
                         $this->_examineWorkflowInstance($where);
                     } // if
@@ -2634,7 +2808,9 @@ class Default_Table
         } // foreach
         if (empty($string)) {
             // default is any file extension
-        	$string = '(\.[a-zA-Z0-9]+)$';
+        	$string = '^([^\.])'               // begins with anything but '.'
+        	        . '.*'                     // any number of characters
+        	        . '(\.[a-zA-Z0-9]+)$';     // ends with '.<anything>'
         } else {
             $string .= ')$';
         } // f
@@ -2677,9 +2853,9 @@ class Default_Table
     // insert multiple records using data in $fieldarray.
     {
         $this->errors = array();
-        $errors = array();
-        $this->display_count = true;
-        $count               = 0;
+        $errors       = array();
+        $this->no_display_count = false;
+        $count                  = 0;
 
         reset($fieldarray);   // fix for version 4.4.1
         if (is_string(key($fieldarray))) {
@@ -2705,11 +2881,11 @@ class Default_Table
                         $errors[$row] = $this->errors;
                     } else {
                         $count = $count + $this->numrows;
-                        if ($GLOBALS['mode'] == 'batch') {
-                        	if ($count % 100 == 0) {
-                        		echo "<p>$count records written</p>\n";
-                        	} // if
-                        } // if
+//                        if ($GLOBALS['mode'] == 'batch') {
+//                        	if ($count % 100 == 0) {
+//                        		echo "<p>$count records written</p>\n";
+//                        	} // if
+//                        } // if
                     } // if
                 } // if
             } // foreach
@@ -2717,7 +2893,9 @@ class Default_Table
             $this->errors  = $errors;
             $this->numrows = $count;
 
-            if (is_True($this->display_count)) {
+            if (is_True($this->no_display_count)) {
+                // do not display record count
+            } else {
                 // 'X records were inserted into tablename'
                 $this->messages[] = getLanguageText('sys0005', $count, strtoupper($this->tablename));
             } // if
@@ -2765,13 +2943,14 @@ class Default_Table
         // get array of fieldnames in the primary key
         $pkeynames = $this->getPkeyNames();
 
-        $insert_count = 0;
-        $update_count = 0;
+        $insert_count   = 0;
+        $update_count   = 0;
+        $unchange_count = 0;
 
         foreach ($fieldarray as $rownum => $rowdata) {
 
             // check if entire primary key has been supplied
-            $result = isPkeyComplete($rowdata, $this->getPkeyNames(), $this->unique_keys);
+            $result = isPkeyComplete($rowdata, $pkeynames, $this->unique_keys);
             if (!empty($result)) {
                 // not complete, so cannot perform lookup, record must be inserted
             	$count = 0;
@@ -2789,11 +2968,19 @@ class Default_Table
             } else {
                 // record already exists, so update it
                 $rowdata = $this->updateRecord($rowdata);
-                $update_count = $update_count + $this->numrows;
+                if ($this->numrows > 0) {
+                	$update_count++;
+                } else {
+                    $unchange_count++;
+                } // if
             } // if
 
             if ($this->errors) {
-                $errors[$rownum] = $this->errors;
+                if ($is_assoc) {
+                	$errors = $this->errors;
+                } else {
+                    $errors[$rownum] = $this->errors;
+                } // if
             } // if
 
         } // foreach
@@ -2803,7 +2990,10 @@ class Default_Table
         // "X records inserted, X records updated in <tablename>"
         $this->messages = getLanguageText('sys0098', $insert_count, $update_count, strtoupper($this->tablename));
 
-        $this->errors = $errors;
+        $this->insert_count   = $insert_count;
+        $this->update_count   = $update_count;
+        $this->unchange_count = $unchange_count;
+        $this->errors         = $errors;
 
         unset($GLOBALS['classdir']);
 
@@ -2819,7 +3009,8 @@ class Default_Table
     function insertRecord ($fieldarray)
     // insert a record using contents of $fieldarray.
     {
-        $this->errors = array();   // initialise
+        $this->errors  = array();   // initialise
+        $this->numrows = 0;
 
         if (getcwd() != dirname($this->dirname)) {
             // switch to correct directory for retrieving message text
@@ -2858,6 +3049,8 @@ class Default_Table
         if ($this->initiated_from_controller) {
             // deal with numbers in foreign formats
         	$fieldarray = $this->unFormatNumber($fieldarray);
+        	// deal with datetime in different timezones
+        	$fieldarray = $this->convertTimeZone($fieldarray);
         } // if
 
         // redo any custom initialisation
@@ -2905,6 +3098,12 @@ class Default_Table
                 $fieldarray = array_merge($fieldarray, $insertarray);
                 if (empty($this->errors)) {
                     // perform any custom pre-insert validation (2)
+                    if (is_object($this->custom_processing_object)) {
+                    	if (method_exists($this->custom_processing_object, '_cm_validateInsert')) {
+                    		$insertarray = $this->custom_processing_object->_cm_validateInsert($insertarray);
+                    		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                    	} // if
+                    } // if
                     $insertarray = $this->_cm_validateInsert($insertarray);
                 } // if
             } // if
@@ -2920,15 +3119,15 @@ class Default_Table
                     if (array_key_exists($field, $insertarray)) {
                     	if (array_key_exists('autoinsert', $spec)
                     	 OR array_key_exists('autoupdate', $spec)) {
-                            // not allowed to change during update
-                            unset($updatearray[$field]);
+                            // not allowed to specify during insert
+                            unset($insertarray[$field]);
                         } // if
                         if (!empty($insertarray[$field])) {
                         	if (array_key_exists('scale', $spec)) {
                                 // round to the correct number of decimal places
                                 $insertarray[$field] = number_format($insertarray[$field], $spec['scale'], '.', '');
                             } // if
-                            if (ereg('decimal|numeric|float|real|double', $spec['type'])) {
+                            if (preg_match('/(decimal|numeric|float|real|double)/i', $spec['type'])) {
                                 // remove thousands separator and ensure decimal point is '.'
                                 $insertarray[$field] = number_unformat($insertarray[$field], '.', ',');
                             } // if
@@ -2948,19 +3147,15 @@ class Default_Table
         $fieldarray = array_merge($fieldarray, $insertarray);
 
         if (empty($this->errors)) {
-            if ($this->skip_validation) {
-                // do not perform any custom processing
-            } else {
-                // perform any custom post-insert processing
-                if (is_object($this->custom_processing_object)) {
-                	if (method_exists($this->custom_processing_object, '_cm_post_insertRecord')) {
-                		$fieldarray = $this->custom_processing_object->_cm_post_insertRecord($fieldarray);
-                		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
-                	} // if
-                } // if
-                $fieldarray = $this->_cm_post_insertRecord($fieldarray);
+            // perform any custom post-insert processing
+            if (is_object($this->custom_processing_object)) {
+            	if (method_exists($this->custom_processing_object, '_cm_post_insertRecord')) {
+            		$fieldarray = $this->custom_processing_object->_cm_post_insertRecord($fieldarray);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
             } // if
-            if (!empty($this->alt_language_table)) {
+            $fieldarray = $this->_cm_post_insertRecord($fieldarray);
+            if ($this->numrows > 0 AND !empty($this->alt_language_table)) {
         	    // ensure that default entries exist for all supported languages
         	    $dbobject =& singleton::getInstance($this->alt_language_table);
         	    $data = array();
@@ -2978,10 +3173,6 @@ class Default_Table
         // store updated $fieldarray within this object
         $this->fieldarray = $fieldarray;
 
-        if (empty($this->errors) AND !empty($insertarray)) {
-            $this->numrows = $this->numrows +1;
-        } // if
-
         unset($GLOBALS['classdir']);
 
         return $fieldarray;
@@ -2993,12 +3184,37 @@ class Default_Table
     // read database resource and output all records to a CSV file.
     {
         $output = '';
+        $row_count = 0;
 
-        // allow output to be customised
-        $output = $this->_cm_pre_output($output);
+        global $csvout, $csvouth;
+        if (!isset($csvout)) {
+        	$csvout = get_class($this) .'.csv';
+        } // if
+
+        // allow filename to be customised
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_output')) {
+        		$csvout = $this->custom_processing_object->_cm_pre_output($csvout);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $csvout = $this->_cm_pre_output($csvout);
+
+        if (isset($csvout) and isset($GLOBALS['batch'])) {
+        	if (!$csvouth = fopen($csvout, 'w')) {
+                trigger_error("Cannot open file $csvout", E_USER_ERROR);
+            } // if
+        } // if
+
+        if (preg_match('/(\.txt)$/i', $GLOBALS['csvout'])) {
+        	$tab_delimited = true;
+        } else {
+            $tab_delimited = false;
+        } // if
 
         // fetch database rows one at a time
         while ($fieldarray = $this->fetchRow($resource)) {
+            $row_count++;
             if (!empty($post)) {
                 // this contains a list of field names which may have to be excluded
             	foreach ($post as $key => $value) {
@@ -3007,37 +3223,67 @@ class Default_Table
             		} // if
             	} // foreach
             } // if
-            if (empty($output)) {
+            if ($row_count == 1 AND !is_True($this->no_csv_header)) {
             	// first row, so output field names as labels
                 foreach ($fieldarray as $fieldname => $fieldvalue) {
                     $fieldname = getLanguageText($fieldname);
-                    $output .= '"' .$fieldname .'",';
+                    if ($tab_delimited) {
+                    	//$output .= $fieldname ."\t";
+                    	$output .= '"' .$fieldname .'"' ."\t";
+                    } else {
+                        $output .= '"' .addslashes($fieldname) .'",';
+                    } // if
                 } // foreach
-                // strip last ',' and append <newline>
+                // strip last ',' or "\t" and append <newline>
                 $output = substr($output, 0, strlen($output) - 1);
                 $output .= "\r\n";
+                if (isset($csvouth)) {
+                    if (!$result = fwrite($csvouth, $output)) {
+                        trigger_error("Cannot write to file $csvout", E_USER_ERROR);
+                    } // if
+                    $output = '';
+                } // if
             } // if
             // perform any data formatting
             $null = array();
             $fieldarray = $this->formatData($fieldarray, $null);
             // output each field as data
             foreach ($fieldarray as $fieldname => $fieldvalue) {
-                $output .= '"' .addslashes($fieldvalue) .'",';
+                // replace any tab characters which may be in the data
+                $fieldvalue = str_replace("\t", '  ', $fieldvalue);
+                if ($tab_delimited) {
+                	$output .= $fieldvalue ."\t";
+                	//$output .= '"' .$fieldvalue .'"' ."\t";
+                } else {
+                    $output .= '"' .addslashes($fieldvalue) .'",';
+                } // if
             } // foreach
-            // strip last ',' and append <newline>
+            // strip last ',' or "\t" and append <newline>
             $output = substr($output, 0, strlen($output) - 1);
             $output .= "\r\n";
+            if (isset($csvouth)) {
+            	if (!$result = fwrite($csvouth, $output)) {
+                    trigger_error("Cannot write to file $csvout", E_USER_ERROR);
+                } // if
+                $output = '';
+            } // if
         } // while
 
         // perform any post processing
-        $output = $this->_cm_post_output($output);
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_output')) {
+        		$output = $this->custom_processing_object->_cm_post_output($output, $csvout);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $output = $this->_cm_post_output($output, $csvout);
 
         return $output;
 
     } // outputCSV
 
     // ****************************************************************************
-    function outputPDF_DetailView ($resource, $structure)
+    function outputPDF_DetailView ($resource, &$structure)
     // read database resource and output all records to a PDF file in DETAIL view
     // using the layout defined in the $structure
     {
@@ -3047,39 +3293,57 @@ class Default_Table
 
         $this->pdf =& $pdf;  // save PDF object so that it can be referenced from within table object
 
-        $this->report_structure = $structure;
+        $this->report_structure =& $structure;
+        if (!empty($GLOBALS['pdfout'])) {
+        	$this->pdf_filename = $GLOBALS['pdfout'];
+        } else {
+            $this->pdf_filename = $pdf->filename;
+        } // if
+        $this->pdf_destination  = $pdf->destination;
 
         // allow filename to be customised
-        $pdf->filename = $this->_cm_pre_output($pdf->filename);
-        if (eregi('(F|D)', $structure['pdf']['destination'])) {
-        	if (empty($pdf->filename)) {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_output')) {
+        		$this->pdf_filename = $this->custom_processing_object->_cm_pre_output($this->pdf_filename);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $this->pdf_filename = $this->_cm_pre_output($this->pdf_filename);
+        if (preg_match('/(F|D)/i', $this->pdf_destination)) {
+        	if (empty($this->pdf_filename)) {
         	    // set default file name for PDF output
-        		$pdf->filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
+        		$this->pdf_filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
         	} // if
         } // if
 
         // format data using DETAIL view
         $pdf->detailView($this, $resource);
         if ($this->errors) {
-        	return $this->report_structure['pdf']['destination'];
+        	return $this->pdf_destination;
         } // if
 
-        $this->report_structure['pdf']['destination'] = strtoupper($this->report_structure['pdf']['destination']);
+        $this->pdf_destination = strtoupper($this->pdf_destination);
 
         // output the completed document
-        $string = $pdf->Output($pdf->filename, $this->report_structure['pdf']['destination']);
+        $string = $pdf->Output($this->pdf_filename, $this->pdf_destination);
         if ($pdf->error) {
         	$this->errors[] = 'PDF error: ' .$pdf->error;
         } // if
 
-        if (eregi('(F)', $this->report_structure['pdf']['destination'])) {
+        if (preg_match('/(F)/i', $this->pdf_destination)) {
             // "File x created"
-            $this->messages[] = getLanguageText('sys0135', $pdf->filename);
+            $this->messages[] = getLanguageText('sys0135', $this->pdf_filename);
         } // if
 
         // perform any post processing, which may involve a database update
         $this->startTransaction();
-        $string = $this->_cm_post_output($string);
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_output')) {
+        		$string = $this->custom_processing_object->_cm_post_output($string, $this->pdf_filename);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $string = $this->_cm_post_output($string, $this->pdf_filename);
         if (empty($this->errors)) {
             $this->errors = $this->commit();
         } // if
@@ -3087,12 +3351,15 @@ class Default_Table
         	$this->rollback();
         } // if
 
-        return $this->report_structure['pdf']['destination'];
+        // reset language it case it was changed
+        $GLOBALS['party_language'] = $_SESSION['user_language'];
+
+        return $this->pdf_destination;
 
     } // outputPDF_DetailView
 
     // ****************************************************************************
-    function outputPDF_ListView ($resource, $structure)
+    function outputPDF_ListView ($resource, &$structure)
     // read database resource and output all records to a PDF file in LIST view
     // using the layout defined in the $structure
     {
@@ -3102,42 +3369,60 @@ class Default_Table
 
         $this->pdf =& $pdf;  // save PDF object so that it can be referenced from within table object
 
-        $this->report_structure = $structure;
+        $this->report_structure =& $structure;
+        if (!empty($GLOBALS['pdfout'])) {
+        	$this->pdf_filename = $GLOBALS['pdfout'];
+        } else {
+            $this->pdf_filename = $pdf->filename;
+        } // if
+        $this->pdf_destination  = $pdf->destination;
 
         // allow filename to be customised
-        $pdf->filename = $this->_cm_pre_output($pdf->filename);
-        if (eregi('(F|D)', $structure['pdf']['destination'])) {
-        	if (empty($pdf->filename)) {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_output')) {
+        		$this->pdf_filename = $this->custom_processing_object->_cm_pre_output($this->pdf_filename);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $this->pdf_filename = $this->_cm_pre_output($this->pdf_filename);
+        if (preg_match('/(F|D)/i', $this->pdf_destination)) {
+        	if (empty($this->pdf_filename)) {
         	    // set default file name for PDF output
-        		$pdf->filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
+        		$this->pdf_filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
         	} // if
         } // if
 
         // format data using LIST view
         $pdf->listView($this, $resource);
         if ($this->errors) {
-        	return $this->report_structure['pdf']['destination'];
+        	return $this->pdf_destination;
         } // if
 
         // reset locale to user's language, not customer's language
         $locale = saveLocaleFormat($_SESSION['user_language_array'][0][2]);
 
-        $this->report_structure['pdf']['destination'] = strtoupper($this->report_structure['pdf']['destination']);
+        $this->pdf_destination = strtoupper($this->pdf_destination);
 
         // output the completed document
-        $string = $pdf->Output($pdf->filename, $this->report_structure['pdf']['destination']);
+        $string = $pdf->Output($this->pdf_filename, $this->pdf_destination);
         if ($pdf->error) {
         	$this->errors[] = 'PDF error: ' .$pdf->error;
         } // if
 
-        if (eregi('(F)', $this->report_structure['pdf']['destination'])) {
+        if (preg_match('/(F)/i', $this->pdf_destination)) {
             // "File x created"
-            $this->messages[] = getLanguageText('sys0135', $pdf->filename);
+            $this->messages[] = getLanguageText('sys0135', $this->pdf_filename);
         } // if
 
         // perform any post processing, which may involve a database update
         $this->startTransaction();
-        $string = $this->_cm_post_output($string);
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_output')) {
+        		$string = $this->custom_processing_object->_cm_post_output($string, $this->pdf_filename);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+        $string = $this->_cm_post_output($string, $this->pdf_filename);
         if (empty($this->errors)) {
             $this->errors = $this->commit();
         } // if
@@ -3145,7 +3430,7 @@ class Default_Table
         	$this->rollback();
         } // if
 
-        return $this->report_structure['pdf']['destination'];
+        return $this->pdf_destination;
 
     } // outputPDF_ListView
 
@@ -3260,6 +3545,12 @@ class Default_Table
                         unset($single_row[$spec['foreign_field']]);
                     } // if
                     // call custom method for specific processing
+                    if (is_object($this->custom_processing_object)) {
+                    	if (method_exists($this->custom_processing_object, '_cm_popupReturn')) {
+                    		$single_row = $this->custom_processing_object->_cm_popupReturn($single_row, $return_from, $select_array);
+                    		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                    	} // if
+                    } // if
                     $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array);
                     // look for any differences between the fieldname(s) returned by the popup
                     // and the fieldname(s) used in this table
@@ -3325,6 +3616,37 @@ class Default_Table
     } // popupReturn
 
     // ****************************************************************************
+    function post_fileUpload ($filename)
+    // perform processing after a file has been uploaded.
+    {
+        $this->errors = array();
+
+        $result = $this->_cm_post_fileUpload($filename);
+
+        return;
+
+    } // post_fileUpload
+
+    // ****************************************************************************
+    function post_search ($search, $selection)
+    // perform final processing before $search is returned to the calling program
+    {
+        $this->errors = array();
+
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_search')) {
+        		$search = $this->custom_processing_object->_cm_post_search($search, $selection);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
+
+        $search = $this->_cm_post_search($search, $selection);
+
+        return $search;
+
+    } // post_search
+
+    // ****************************************************************************
     function reInitialise ($fieldarray, $where)
     // re-initialise $fieldarray after previous insert
     {
@@ -3344,13 +3666,14 @@ class Default_Table
     // reset all screen settings before starting afresh.
     {
         $this->setSqlSearch(null);
+
         $this->setOrderBy(null);
         $this->setOrderBySeq(null);
 
-        $this->sql_having = null;
-
-        //$this->setPageNo(null);
+        $this->fieldarray = array();
         $where = $this->initialise($where);
+
+        $this->_cm_reset($where);
 
         return $where;
 
@@ -3374,6 +3697,38 @@ class Default_Table
     } // rollback
 
     // ****************************************************************************
+    function scriptNext ($task_id, $where=null, $selection=null, $task_array=array())
+    // suspend the current task before juming to a new task.
+    {
+        if ($GLOBALS['transaction_has_started'] == TRUE) {
+        	$errors = $this->commit;
+        	if ($errors) {
+        		$this->rollback;
+        		return false;
+        	} // if
+        } // if
+
+        scriptNext($task_id, $where, $selection, $task_array);
+
+    } // scriptNext
+
+    // ****************************************************************************
+    function scriptPrevious ($errors=null, $messages=NULL, $action=NULL, $instruction=NULL)
+    // go back to the previous script in the current hierarchy.
+    {
+        if ($GLOBALS['transaction_has_started'] == TRUE) {
+        	$errors = $this->commit;
+        	if ($errors) {
+        		$this->rollback;
+        		return false;
+        	} // if
+        } // if
+
+        scriptPevious($errors, $messages, $action, $instruction);
+
+    } // scriptPrevious
+
+    // ****************************************************************************
     function selectDB ($dbname)
     // select a different database via the current connection.
     {
@@ -3393,7 +3748,6 @@ class Default_Table
 
         switch (strtolower($action)){
             case 'selectall':
-                $this->selectall = true;
                 foreach ($this->fieldarray as $row => $data) {
                     if (!empty($data)) {
                     	$this->fieldarray[$row]['selected'] = true;
@@ -3401,7 +3755,6 @@ class Default_Table
                 } // foreach
                 break;
             case 'unselectall':
-                $this->selectall = false;
                 foreach ($this->fieldarray as $row => $data) {
                     if (!empty($data)) {
                         $this->fieldarray[$row]['selected'] = false;
@@ -3446,14 +3799,17 @@ class Default_Table
             $this->default_orderby_task = trim(strtolower($sql_orderby));
             // find out if any sort sequence has been specified on the first field
             list($first_field) = explode(',', $sql_orderby);
-            $pattern = '( asc| ascending| desc| descending)$';
-            if (eregi($pattern, $first_field, $regs)) {
+            //$pattern = '/( asc| ascending| desc| descending)$/i';
+            $pattern = '/( desc| descending)$/i';
+            if (preg_match($pattern, $first_field, $regs)) {
             	$this->sql_orderby_seq = trim($regs[0]);
             } else {
-                // none found, so default is 'ascending'
-                $this->sql_orderby_seq = 'asc';
+                // none found, so leave to default to 'ascending'
+                //$this->sql_orderby_seq = 'asc';
             } // if
         } // if
+
+        return;
 
     } // setDefaultOrderBy
 
@@ -3563,6 +3919,8 @@ class Default_Table
             unset($instruction['expand']);
         } // if
 
+        return;
+
     } // setInstruction
 
     // ****************************************************************************
@@ -3599,7 +3957,6 @@ class Default_Table
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
-        // change current table configuration (optional)
         $fieldarray = $this->_cm_changeConfig($where, $fieldarray);
 
         // perform custom processing (such as obtaining lookup lists)
@@ -3630,6 +3987,8 @@ class Default_Table
             } // if
         } // if
 
+        return;
+
     } // setOrderBy
 
     // ****************************************************************************
@@ -3638,6 +3997,8 @@ class Default_Table
     {
         $this->sql_orderby_seq = trim($sql_orderby_seq);
 
+        return;
+
     } // setOrderBySeq
 
     // ****************************************************************************
@@ -3645,6 +4006,11 @@ class Default_Table
     // this allows a particular page number to be selected (see getData)
     {
         $this->pageno = abs((int)$pageno);
+
+        // a new page has been selected, so clear what was selected on the previous page
+        $this->select_string = null;
+
+        return;
 
     } // setPageNo
 
@@ -3663,6 +4029,8 @@ class Default_Table
     // this allows the default value to be changed
     {
         $this->rows_per_page = abs((int)$rows_per_page);
+
+        return;
 
     } // setRowsPerPage
 
@@ -3709,10 +4077,12 @@ class Default_Table
     {
         $this->scrollindex = abs((int)$index);
 
+        return;
+
     } // setScrollIndex
 
     // ****************************************************************************
-    function setSqlSearch ($sql_search)
+    function setSqlSearch ($sql_search=null)
     // set additional criteria to be used in sql select
     {
         $this->sql_search      = $sql_search;
@@ -3721,8 +4091,21 @@ class Default_Table
         // this causes following variables to be reset
         $this->pageno     = 1;
         $this->sql_having = null;
-        //$this->sql_orderby     = NULL;
-        //$this->sql_orderby_seq = NULL;
+
+        // new selection criteria has been entered, so clear what was selected previously
+        $this->select_string = null;
+
+        return;
+
+    } // setSqlSearch
+
+    // ****************************************************************************
+    function setSqlGroupBy ($sql_groupby=null)
+    // set additional criteria to be used in sql select
+    {
+        $this->sql_groupby = trim($sql_groupby);
+
+        return;
 
     } // setSqlSearch
 
@@ -3735,6 +4118,8 @@ class Default_Table
         } else {
             $this->sql_where .= ' AND ' .$sql_where;
         } // if
+
+        return;
 
     } // setSqlWhere
 
@@ -3757,9 +4142,11 @@ class Default_Table
     // set components of the sql SELECT statement to their default values using
     // the contents of $this->parent_relations.
     {
+        $save_sql_no_foreign_db = $this->sql_no_foreign_db;
         $this->sqlSelectInit();
+        $this->sql_no_foreign_db = $save_sql_no_foreign_db;
 
-        $this->sql_from = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+    	$this->sql_from = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
 
         $this->access_count = 1;
 
@@ -3784,6 +4171,7 @@ class Default_Table
         $this->pageno           = null;
         $this->rows_per_page    = null;
         $this->access_count     = null;
+        $this->sql_no_foreign_db = false;
 
         return;
 
@@ -3938,13 +4326,19 @@ class Default_Table
                                 } // if
                             } else {
                                 // convert date from external to internal format
-                                $fieldarray[$fieldname] = $dateobj->getInternalDate($fieldvalue);
+                                if ($internaldate = $dateobj->getInternalDate($fieldvalue)) {
+                                    // value is a valid date
+                                    $fieldarray[$fieldname] = $internaldate;
+                                } // if
                             } // if
                             break;
                         case 'datetime':
                             if (!empty($fieldvalue)) {
                                 // convert date from external to internal format
-                                $fieldarray[$fieldname] = $dateobj->getInternalDateTime($fieldvalue);
+                                if ($internaldate = $dateobj->getInternalDateTime($fieldvalue)) {
+                                    // value is a valid date
+                                    $fieldarray[$fieldname] = $internaldate;
+                                } // if
                             } // if
                             break;
                         case 'time':
@@ -3976,7 +4370,7 @@ class Default_Table
         } // if
 
         foreach ($this->fieldspec as $field => $spec) {
-        	if (ereg('decimal|numeric|float|real|double|integer', $spec['type'])) {
+        	if (preg_match('(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
         		$fieldarray[$field] = number_unformat($fieldarray[$field]);
         	} // if
         } // foreach
@@ -4081,8 +4475,8 @@ class Default_Table
     {
         $this->errors  = array();
         $this->numrows = 0;
-        $this->display_count = true;
-        $count               = 0;
+        $this->no_display_count = false;
+        $count                  = 0;
 
         // transfer values from $postarray to $fieldarray
         // each fieldname in $postarray is an array of values
@@ -4103,8 +4497,6 @@ class Default_Table
         		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
         	} // if
         } // if
-
-        // perform custom processing before any database update
         $fieldarray = $this->_cm_pre_updateMultiple($fieldarray);
 
         if (empty($this->errors)) {
@@ -4125,7 +4517,9 @@ class Default_Table
             $this->numrows = $count;
         } // if
 
-        if (is_True($this->display_count)) {
+        if (is_True($this->no_display_count)) {
+            // do not display record count
+        } else {
         	// '$count records were updated in $tablename'
             $this->messages[] = getLanguageText('sys0006', $count, strtoupper($this->tablename));
         } // if
@@ -4138,7 +4532,6 @@ class Default_Table
             		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
             	} // if
             } // if
-            // perform custom processing after any database update
             $fieldarray = $this->_cm_post_updateMultiple($fieldarray);
         //} // if
 
@@ -4174,16 +4567,38 @@ class Default_Table
         if ($this->initiated_from_controller) {
             // deal with numbers in foreign formats
         	$fieldarray = $this->unFormatNumber($fieldarray);
+        	// deal with datetime in different timezones
+        	$fieldarray = $this->convertTimeZone($fieldarray);
         } // if
 
-        // perform any custom pre-update processing
-        if (is_object($this->custom_processing_object)) {
-        	if (method_exists($this->custom_processing_object, '_cm_pre_updateRecord')) {
-        		$fieldarray = $this->custom_processing_object->_cm_pre_updateRecord($fieldarray);
-        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
-        	} // if
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            if (empty($_SESSION['rdcaccount_id'])) {
+                if (preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
+                	// do nothing on this table
+                } else {
+                    // use the 'sharing' id
+                	$fieldarray['rdcaccount_id'] = 1;
+                } // if
+            } else {
+                if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                	// not allowed to update a shared record
+                	$this->errors['rdcaccount_id'] = getLanguageText('sys0189');
+                } // if
+            	// not allowed to change the record's account
+                $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
+            } // if
         } // if
-        $fieldarray = $this->_cm_pre_updateRecord($fieldarray);
+
+        if (empty($this->errors)) {
+            // perform any custom pre-update processing
+            if (is_object($this->custom_processing_object)) {
+            	if (method_exists($this->custom_processing_object, '_cm_pre_updateRecord')) {
+            		$fieldarray = $this->custom_processing_object->_cm_pre_updateRecord($fieldarray);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
+            } // if
+            $fieldarray = $this->_cm_pre_updateRecord($fieldarray);
+        } // if
 
         if (empty($this->errors)) {
             // perform standard declarative checks on input data
@@ -4220,7 +4635,7 @@ class Default_Table
             if ($this->skip_validation) {
                 // do not perform any custom validation
             } else {
-                // perform any custom validation/processing before update
+                // perform any custom pre-update validation (1)
                 if (is_object($this->custom_processing_object)) {
                 	if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
                 		$updatearray = $this->custom_processing_object->_cm_commonValidation($updatearray, $originaldata);
@@ -4229,6 +4644,13 @@ class Default_Table
                 } // if
                 $updatearray = $this->_cm_commonValidation($updatearray, $originaldata);
                 if (empty($this->errors)) {
+                    // perform any custom pre-update validation (2)
+                    if (is_object($this->custom_processing_object)) {
+                    	if (method_exists($this->custom_processing_object, '_cm_validateUpdate')) {
+                    		$updatearray = $this->custom_processing_object->_cm_validateUpdate($updatearray, $originaldata);
+                    		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+                    	} // if
+                    } // if
                     $updatearray = $this->_cm_validateUpdate($updatearray, $originaldata);
                 } // if
             } // if
@@ -4250,7 +4672,7 @@ class Default_Table
                                 // round to the correct number of decimal places
                                 $updatearray[$field] = number_format($updatearray[$field], $spec['scale'], '.', '');
                             } // if
-                            if (ereg('decimal|numeric|float|real|double', $spec['type'])) {
+                            if (preg_match('/(decimal|numeric|float|real|double)/i', $spec['type'])) {
                                 // remove thousands separator and ensure decimal point is '.'
                                 $updatearray[$field] = number_unformat($updatearray[$field], '.', ',');
                             } // if
@@ -4276,19 +4698,17 @@ class Default_Table
 
         // replace any fields excluded from $updatearray
         $fieldarray = array_merge($fieldarray, $updatearray);
+        //$fieldarray = array_merge($updatearray, $fieldarray);  // ** DO NOT USE THIS! **
 
         if (empty($this->errors)) {
-            //if (!empty($changes)) {
-                // perform any custom validation/processing after update
-                if (is_object($this->custom_processing_object)) {
-                	if (method_exists($this->custom_processing_object, '_cm_post_updateRecord')) {
-                		$fieldarray = $this->custom_processing_object->_cm_post_updateRecord($fieldarray, $originaldata);
-                		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
-                	} // if
-                } // if
-                // perform any custom post-update processing
-                $fieldarray = $this->_cm_post_updateRecord($fieldarray, $originaldata);
-            //} // if
+            // perform any custom post-update processing
+            if (is_object($this->custom_processing_object)) {
+            	if (method_exists($this->custom_processing_object, '_cm_post_updateRecord')) {
+            		$fieldarray = $this->custom_processing_object->_cm_post_updateRecord($fieldarray, $originaldata);
+            		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+            	} // if
+            } // if
+            $fieldarray = $this->_cm_post_updateRecord($fieldarray, $originaldata);
         } // if
 
         // turn this flag off
@@ -4357,7 +4777,22 @@ class Default_Table
             } // if
         } // if
 
-        // invoke custom method (may be empty)
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            if (!empty($_SESSION['rdcaccount_id'])) {
+                if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                	// not allowed to delete a shared record
+                	$this->errors['rdcaccount_id'] = getLanguageText('sys0188');
+                } // if
+            } // if
+        } // if
+
+        // invoke custom method(s) (may be empty)
+        if (is_object($this->custom_processing_object)) {
+        	if (method_exists($this->custom_processing_object, '_cm_validateDelete')) {
+        		$this->custom_processing_object->_cm_validateDelete($fieldarray, $parent_table);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
         $this->_cm_validateDelete($fieldarray, $parent_table);
 
         if (!empty($this->errors)) return $fieldarray;
@@ -4485,6 +4920,23 @@ class Default_Table
     // validate search screen input before it is passed back to the previous form.
     {
         $this->errors = array();
+
+        foreach ($this->fieldspec as $field => $spec) {
+        	if (isset($spec['required'])) {
+        	    $fieldarray[$field] = trim($fieldarray[$field]);
+        		if (empty($fieldarray[$field])) {
+            		// '$field cannot be blank'
+                    $this->errors[$field] = getLanguageText('sys0020', $field);
+            	} // if
+        	} // if
+        } // foreach
+
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_validateSearch')) {
+        		$fieldarray = $this->custom_processing_object->_cm_validateSearch($fieldarray);
+        		$this->errors = array_merge($this->errors, $this->custom_processing_object->errors);
+        	} // if
+        } // if
 
         $fieldarray = $this->_cm_validateSearch($fieldarray);
 
@@ -4832,11 +5284,23 @@ class Default_Table
     } // _cm_getWhere
 
     // ****************************************************************************
-    function _cm_initialise ($where, $selection)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
-    // NOTE: $selection is only available for ADD2 tasks.
+    // NOTE: $selection is passed by reference as it may be amended.
+    // NOTE: $search    is only available for OUTPUT tasks.
     {
         // customisable code goes here
+
+//        $pattern_id = getPatternId();
+//        if (preg_match('/^(add)/i', $pattern_id)) {
+//        	// ignore contents of selection
+//        	$selection = null;
+//        } else {
+//            if (!empty($selection)) {
+//            	$where     = $selection;
+//            	$selection = null;
+//            } // if
+//        } // if
 
         return $where;
 
@@ -4892,16 +5356,40 @@ class Default_Table
     } // _cm_ListView_header
 
     // ****************************************************************************
-    function _cm_ListView_pre_print ($prev_row, $curr_row)
+//    function _cm_ListView_pre_print ($prev_row, $curr_row)
+//    // allow extra rows to be created in List View
+//    {
+//        $rows = array();
+//
+//        // this is deprecated - use _cm_ListView_print_before() and _cm_ListView_print_after() instead
+//
+//        return $rows;
+//
+//    } // _cm_ListView_pre_print
+
+    // ****************************************************************************
+    function _cm_ListView_print_before ($prev_row, $curr_row)
     // allow extra rows to be created in List View
     {
-        $rows = array();
+        $output = array();
 
         // customisable code goes here
 
-        return $rows;
+        return $output;
 
-    } // _cm_ListView_pre_print
+    } // _cm_ListView_print_before
+
+    // ****************************************************************************
+    function _cm_ListView_print_after ($curr_row)
+    // allow extra rows to be created in List View
+    {
+        $output = array();
+
+        // customisable code goes here
+
+        return $output;
+
+    } // _cm_ListView_print_after
 
     // ****************************************************************************
     function _cm_ListView_total ()
@@ -5059,6 +5547,16 @@ class Default_Table
     } // _cm_post_fetchRow
 
     // ****************************************************************************
+    function _cm_post_fileUpload ($filename)
+    // perform processing after a file has been uploaded.
+    {
+        // custom processing goes here
+
+        return;
+
+    } // _cm_post_fileUpload
+
+    // ****************************************************************************
     function _cm_post_getData ($rows, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
@@ -5100,7 +5598,7 @@ class Default_Table
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _cm_post_output ($string)
+    function _cm_post_output ($string, $filename)
     // perform any processing required after the output operation
     {
         // customisable code goes here
@@ -5118,6 +5616,16 @@ class Default_Table
         return $fieldarray;
 
     } // _cm_post_popupReturn
+
+    // ****************************************************************************
+    function _cm_post_search ($search, $selection)
+    // perform any post-search processing.
+    {
+        // customisable code goes here
+
+        return $search;
+
+    } // _cm_post_search
 
     // ****************************************************************************
     function _cm_post_updateLinkdata ($rows, $postarray)
@@ -5237,12 +5745,13 @@ class Default_Table
     } // _cm_pre_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_output ($string)
-    // perform any processing required before the output operation
+    function _cm_pre_output ($filename)
+    // perform any processing required before the output operation.
+    // $filename is only available if the output is being sent to a disk file.
     {
         // customisable code goes here
 
-        return $string;
+        return $filename;
 
     } // _cm_pre_output
 
@@ -5285,6 +5794,16 @@ class Default_Table
         return $rowdata;
 
     } // _cm_pre_updateRecord
+
+    // ****************************************************************************
+    function _cm_reset ($where)
+    // perform custom processing after RESET button is pressed.
+    {
+        // customisable code goes here
+
+        return;
+
+    } // _cm_reset
 
     // ****************************************************************************
     function _cm_setJavaScript ($javascript)
@@ -5342,11 +5861,16 @@ class Default_Table
         	return;
         } // if
 
-        // this is the default code, which may be replaced if necessary
-        $count = $this->_dml_updateSelection($selection, $replace);
+        if (!is_string($selection) OR empty($replace)) {
+        	// this combination is not valid
+        	return;
+        } else {
+            // this is the default code, which may be replaced if necessary
+            $count = $this->_dml_updateSelection($selection, $replace);
 
-        // '$count records were updated in $tablename'
-        return getLanguageText('sys0006', $count, strtoupper($this->tablename));
+            // '$count records were updated in $tablename'
+            return getLanguageText('sys0006', $count, strtoupper($this->tablename));
+        } // if
 
     } // _cm_updateSelection
 
@@ -5580,7 +6104,7 @@ class Default_Table
     } // _dml_getCount
 
     // ****************************************************************************
-    function _dml_getData ($where)
+    function _dml_getData ($where, $raw=false)
     // Get data from the specified database table.
     // Results may be affected by $where and $pageno.
     {
@@ -5589,12 +6113,17 @@ class Default_Table
         $DML->fieldspec        = $this->fieldspec;
         $DML->pageno           = $this->pageno;
         $DML->rows_per_page    = $this->rows_per_page;
+        $DML->sql_select       = $this->sql_select;
         $DML->sql_from         = $this->sql_from;
         $DML->sql_groupby      = $this->sql_groupby;
         $DML->sql_having       = $this->sql_having;
         $DML->sql_orderby      = $this->getOrderBy();
+
+        if (!empty($DML->sql_orderby) AND $raw === true) {
+        	$DML->sql_orderby = validateSortItem2 ($DML->sql_orderby, $DML->sql_select, $DML->fieldspec);
+        } // if
+
         $DML->sql_orderby_seq  = $this->getOrderBySeq($DML->sql_orderby);
-        $DML->sql_select       = $this->sql_select;
         $DML->setRowLocks($this->row_locks);
 
         $array = $DML->getData($this->dbname, $this->tablename, $where);
@@ -5656,10 +6185,12 @@ class Default_Table
         $DML =& $this->_getDBMSengine($this->dbms_engine, $this->dbname);
 
         // use ORIGINAL, not CURRENT specifications for this database table
-        $DML->fieldspec     = $this->getFieldSpec_original();
-        $DML->primary_key   = $this->getPkeyNames();
-        $DML->unique_keys   = $this->unique_keys;
-        $DML->audit_logging = $this->audit_logging;
+        $DML->fieldspec          = $this->getFieldSpec_original();
+        // include other important variables
+        $DML->primary_key        = $this->getPkeyNames();
+        $DML->unique_keys        = $this->unique_keys;
+        $DML->audit_logging      = $this->audit_logging;
+        $DML->no_duplicate_error = $this->no_duplicate_error;
 
         // remove any non-database fields from input array
         foreach ($fieldarray as $field => $fieldvalue) {
@@ -5673,6 +6204,8 @@ class Default_Table
         $array = $DML->insertRecord($this->dbname, $this->tablename, $fieldarray);
 
         $this->errors = array_merge($DML->getErrors(), $this->errors);
+
+        $this->numrows = $DML->numrows;
 
         return $array;
 
@@ -5689,6 +6222,11 @@ class Default_Table
         $DML->pageno           = 1;
         $DML->rows_per_page    = 0;
         if (is_True($reuse_previous_select)) {
+            if (empty($this->sql_select)) {
+            	// has not been constructed yet, so do it now
+            	$where_array = where2array($where);
+            	$where = $this->_cm_pre_getData ($where, $where_array, $this->fieldarray);
+            } // if
             // use previous SELECT statement
         	$DML->sql_from         = $this->sql_from;
             $DML->sql_groupby      = $this->sql_groupby;
@@ -5740,7 +6278,7 @@ class Default_Table
             // check that $field exists in $fieldspec array
             if (!array_key_exists($field, $DML->fieldspec)) {
                 // it does not (like the SUBMIT button, for example), so remove it
-                unset ($fieldarray[$field]);
+                unset($fieldarray[$field]);
             } // if
         } // foreach
 
@@ -5811,6 +6349,10 @@ class Default_Table
         if (!empty($this->wf_context)) {
             // replace current context with saved workitem context
         	$context = $this->wf_context;
+        } // if
+
+        if (empty($context)) {
+        	return $this->errors;
         } // if
 
         // interface with the workflow engine
@@ -5932,21 +6474,59 @@ class Default_Table
     // look for an optional file containing code for custom processing.
     // this exists in the 'custom-processing' directory with a 'cp_' prefix.
     {
-        if (!isset($GLOBALS['project_code'])) {
+        if (empty($GLOBALS['project_code'])) {
         	return;  // identity of subfolder not defined, so exit
         } // if
 
         $dirname = dirname($this->dirname) ."/classes/custom-processing/{$GLOBALS['project_code']}/";
         $fname = $dirname .'cp_' .get_class($this) .'.class.inc';
         if (file_exists($fname)) {
+            // ** this code causes a hang in PHP 4 **
+            //$class_name = "custom-processing/{$GLOBALS['project_code']}/cp_" .get_class($this);
+            //$this->custom_processing_object =& singleton::getInstance($class_name);
+            // include reference to calling object in the custom object
+            //$this->custom_processing_object->calling_object =& $this;
+            // **
+
             $class_name = 'cp_' .get_class($this);
             if (!class_exists($class_name)) {
-            	include($fname);
+            	include_once($fname);
             } // if
             if (class_exists($class_name)) {
                 $this->custom_processing_object = new $class_name;
                 // include reference to calling object in the custom object
                 $this->custom_processing_object->calling_object =& $this;
+                // make object variables available in custom object
+                $this->custom_processing_object->dbname             =& $this->dbname;
+                $this->custom_processing_object->tablename          =& $this->tablename;
+                $this->custom_processing_object->fieldspec          =& $this->fieldspec;
+                $this->custom_processing_object->primary_key        =& $this->primary_key;
+                $this->custom_processing_object->unique_keys        =& $this->unique_keys;
+                $this->custom_processing_object->child_relations    =& $this->child_relations;
+                $this->custom_processing_object->parent_relations   =& $this->parent_relations;
+                $this->custom_processing_object->audit_logging      =& $this->audit_logging;
+                $this->custom_processing_object->default_orderby    =& $this->default_orderby;
+                $this->custom_processing_object->alt_language_table =& $this->alt_language_table;
+                $this->custom_processing_object->alt_language_cols  =& $this->alt_language_cols;
+                $this->custom_processing_object->nameof_start_date  =& $this->nameof_start_date;
+                $this->custom_processing_object->nameof_end_date    =& $this->nameof_end_date;
+                $this->custom_processing_object->sql_from           =& $this->sql_from;
+                $this->custom_processing_object->sql_groupby        =& $this->sql_groupby;
+                $this->custom_processing_object->sql_having         =& $this->sql_having;
+                $this->custom_processing_object->sql_no_foreign_db  =& $this->sql_no_foreign_db;
+                $this->custom_processing_object->sql_orderby        =& $this->sql_orderby;
+                $this->custom_processing_object->sql_orderby_seq    =& $this->sql_orderby_seq;
+                $this->custom_processing_object->sql_orderby_table  =& $this->sql_orderby_table;
+                $this->custom_processing_object->sql_search         =& $this->sql_search;
+                $this->custom_processing_object->sql_search_orig    =& $this->sql_search_orig;
+                $this->custom_processing_object->sql_search_table   =& $this->sql_search_table;
+                $this->custom_processing_object->sql_select         =& $this->sql_select;
+                $this->custom_processing_object->sql_where          =& $this->sql_where;
+                $this->custom_processing_object->initial_values     =& $this->initial_values;
+                $this->custom_processing_object->lookup_data        =& $this->lookup_data;
+                $this->custom_processing_object->rows_per_page      =& $this->rows_per_page;
+                $this->custom_processing_object->pageno             =& $this->pageno;
+                $this->custom_processing_object->initiated_from_controller =& $this->initiated_from_controller;
             } // if
         } // if
 
@@ -6035,7 +6615,7 @@ class Default_Table
         if (!class_exists($engine)) {
             // load class definition for this database engine
             if ($engine == 'mysql') {
-                if (function_exists('mysqli_connect')) {
+                if (extension_loaded('mysqli')) {
                     // use 'improved' mysql functions
                     require_once "dml.mysqli.class.inc";
                 } else {
@@ -6072,7 +6652,7 @@ class Default_Table
     {
         $fieldarray = array();
 
-        if (eregi('^(audit|workflow)$', $this->dbname)) {
+        if (preg_match('/^(audit|workflow)$/i', $this->dbname)) {
             // ignore this code for those databases
         	return $fieldarray;
         } // if
@@ -6167,6 +6747,29 @@ class Default_Table
         if (is_True($this->is_link_table)) {
             // this is for an outer-link-inner relationship
             $where = $this->_sqlAssembleWhereLink($where, $where_array);
+        } else {
+            if (isset($this->fieldspec['rdcaccount_id'])) {
+            	// this table is split by account, so account_id must be supplied in WHERE string
+            	if (empty($where_array['rdcaccount_id'])) {
+            	    $account_id =& $_SESSION['rdcaccount_id'];
+            	    if (empty($account_id) AND preg_match('/(mnu_user|mnu_account)/', $this->tablename)) {
+            	    	// no account id supplied, so read everything on these tables only
+            	    } else {
+            	        if (empty($account_id) OR $account_id == 1) {
+            	            $account_id_string = "$this->tablename.rdcaccount_id='1'";
+            	        } else {
+            	        	$account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
+            	        } // if
+                		if (empty($this->sql_search)) {
+                			$this->sql_search = $account_id_string;
+                		} else {
+                		    if (substr_count($this->sql_search, $account_id_string) == 0) {
+                		    	$this->sql_search .= " AND $account_id_string";
+                		    } // if
+                		} // if
+            	    } // if
+            	} // if
+            } // if
         } // if
 
         if ($this->checkPrimaryKey or empty($this->sql_from) or ($this->sql_from == $this->tablename)) {
@@ -6183,7 +6786,7 @@ class Default_Table
 
         if (!empty($this->sql_search)) {
             // turn 'current/historic/future' into a range of dates
-            $this->sql_search = currentOrHistoric($this->sql_search);
+            $this->sql_search = $this->currentOrHistoric($this->sql_search, $this->nameof_start_date, $this->nameof_end_date);
             // check that 'search' clause does not contain any fields that
             // are not in this table, otherwise it will cause an error
             if (empty($this->sql_from) OR $this->sql_from == $this->tablename) {
@@ -6450,7 +7053,8 @@ class Default_Table
         $sql_from .= ') ';
 
         if (!empty($reldata['alt_language_table'])) {
-        	if ($GLOBALS['party_language'] != $_SESSION['default_language']) {
+            $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
+        	if ($party_language != $_SESSION['default_language']) {
         	    // link to table which provides text in an alternative language
                 $pkey_array = $reldata['fields'];
                 $new_relation = array('parent' => $reldata['alt_language_table'],
@@ -6510,7 +7114,8 @@ class Default_Table
 
         $alt_language_relations = array();
         if (!empty($this->alt_language_table)) {
-            if ($GLOBALS['party_language'] != $_SESSION['default_language']) {
+            $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
+            if ($party_language != $_SESSION['default_language']) {
                 // add in a new relation for the alternative language table
                 $pkey_array = array();
                 foreach ($this->primary_key as $fieldname) {
@@ -6552,6 +7157,10 @@ class Default_Table
 
         // does this belong to another database/schema?
         if (isset($reldata['dbname'])) {
+            if (is_True($this->sql_no_foreign_db)) {
+                // do NOT join to tables in different database
+            	return $from;
+            } // if
             // enclose $dbname in quotes to deal with non-standard characters
             $dbname = '"' .$GLOBALS['dbprefix'] .$reldata['dbname'] .'"' .'.';
         } else {
@@ -6616,15 +7225,20 @@ class Default_Table
         // get list of alias names used in current SELECT list
         $select_aliases = extractAliasNames($select);
         if (!empty($select_aliases)) {
-        	// find out if this new field has an alias name
-        	list($fld_orig, $fld_alias) = getFieldAlias3($parent_field);
-            if ($fld_orig != $fld_alias) {
-            	while (in_array($fld_alias, $select_aliases)) {
-            	    // this alias name is already used, so append an 'x' to make it unique
-            		$fld_alias .= 'x';
-            	} // while
-            	$parent_field = $fld_orig .' AS ' .$fld_alias;
-            } // if
+        	// find out if any new field has an alias name
+        	$parent_field_array = extractSelectList($parent_field);
+        	foreach ($parent_field_array as $key => $field) {
+            	list($fld_orig, $fld_alias) = getFieldAlias3($field);
+                if ($fld_orig != $fld_alias) {
+                	while (in_array($fld_alias, $select_aliases)) {
+                	    // this alias name is already used, so append an 'x' to make it unique
+                		$fld_alias .= 'x';
+                	} // while
+                	$field = $fld_orig .' AS ' .$fld_alias;
+                	$parent_field_array[$key] = $field;
+                } // if
+            } // foreach
+            $parent_field = implode(', ', $parent_field_array);
         } // if
 
         // put parent field(s) from foreign table into SELECT area
@@ -6661,7 +7275,8 @@ class Default_Table
         $from .= ')';
 
         if (!empty($reldata['alt_language_table'])) {
-        	if ($GLOBALS['party_language'] != $_SESSION['default_language']) {
+            $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
+        	if ($party_language != $_SESSION['default_language']) {
         	    // add in a new relation for the alternative language table
                 $pkey_array = array();
                 foreach ($primary_key as $fieldname) {
@@ -6687,20 +7302,56 @@ class Default_Table
     } // _sqlProcessJoin
 
     // ****************************************************************************
-    function _sqlSelectAlternateLanguage ($sql_select, $reldata)
+    function _sqlSelectAlternateLanguage ($sql_select, $reldata, $subquery=false)
     // insert SELECT clause to obtain text from an alternative language table,
     // (or the orginal text if alternative text is not found).
+    // if $subquery=true it means $fldchild was obtained from a subquery and need
+    // not be qualified with a table name.
     {
+        // convert underscore to hyphen for database lookup
+        $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
+
+        list($this_table_orig, $this_table_alias) = getTableAlias3($reldata['this']);
+        if (empty($this_table_alias)) {
+            $this_table_orig = $reldata['this'];
+        	$this_table_alias = $this_table_orig;
+        } // if
+
         // extract all elements within current SELECT clause
         $select_array = extractSelectList($sql_select);
+
+        // look for names which have an alias
+        $select_alias = extractFieldNamesAssoc($select_array);
 
         // create an array of field names (and possible alias names) which are to be added
         $field_array = extractFieldNamesAssoc($reldata['parent_field']);
 
         // each field requires a separate sub-select
         foreach ($field_array as $field_alias => $field_name) {
+            if ($field_alias == $field_name) {
+            	// check for alias name in $sql_select
+            	$test = array_search($field_name, $select_alias);
+            	if (empty($test)) {
+            	    // try using with a qualified name
+            	    $test = array_search("$this_table_alias.$field_name", $select_alias);
+            	    if ($test == $select_alias[$test]) {
+            	        // this is not a different value, so it is not an alias
+            	    	$test = null;
+            	    } // if
+            	} // if
+        	    if (!empty($test)) {
+            		$field_alias = $test;
+            	} // if
+            } // if
+
             // remove any previous element which uses this name
-            $select_array = removeDuplicateFromSelect($select_array, $field_alias);
+            if ($this_table_orig == $this_table_alias) {
+            	$select_array = removeDuplicateFromSelect($select_array, $field_alias);
+            } elseif ($field_name != $field_alias) {
+            	$select_array = removeDuplicateFromSelect($select_array, $field_alias);
+            } else {
+                $select_array = removeDuplicateFromSelect($select_array, "$this_table_alias.$field_alias");
+            } // if
 
             // build new element for SELECT clause
             $string  = "\nCOALESCE((SELECT $field_name FROM ";
@@ -6709,10 +7360,33 @@ class Default_Table
             } // if
             $string .= "{$reldata['parent']} WHERE ";
             foreach ($reldata['fields'] as $fldchild => $fldparent) {
-                $string .= "{$reldata['parent']}.$fldparent={$reldata['this']}.$fldchild AND ";
+                if ($subquery == true) {
+                    // field obtained from a subquery, so do not qualify it
+                	$string .= "{$reldata['parent']}.$fldparent=$fldchild AND ";
+                } elseif (strpos($fldchild, '.') === false) {
+                    // qualify $fldchild with this tablename
+                	$string .= "{$reldata['parent']}.$fldparent=$this_table_alias.$fldchild AND ";
+                } else {
+                    // $fldchild is already qualified, so use it 'as is'
+                    $string .= "{$reldata['parent']}.$fldparent=$fldchild AND ";
+                } // if
             } // foreach
-            $string .= "{$reldata['parent']}.language_id='{$GLOBALS['party_language']}'";
-            $string .= "), {$reldata['this']}.$field_name";
+            $string .= "{$reldata['parent']}.language_id='$party_language'";
+            if ($subquery == true) {
+            	$string .= "), (SELECT $field_name FROM ";
+            	if (isset($reldata['dbname'])) {
+                	$string .= '"' .$GLOBALS['dbprefix'] .$reldata['dbname'] .'".';
+                } // if
+                $string .= "$this_table_orig WHERE ";
+                foreach ($reldata['fields'] as $fldchild => $fldparent) {
+                    $string .= "$this_table_orig.$fldparent=$fldchild AND ";
+                } // foreach
+                // remove final ' AND '
+                $string = substr($string, 0, -5);
+                $string .= ")";
+            } else {
+                $string .= "), $this_table_alias.$field_name";
+            } // if
             $string .= ") AS $field_alias";
 
             // append to current SELECT clause
@@ -6758,6 +7432,12 @@ class Default_Table
     function __sleep ()
     // perform object clean-up before serialization
     {
+        // this causes an endless loop
+//        if (is_object(($this->custom_processing_object))) {
+//        	$this->custom_processing_object_serial = serialize($this->custom_processing_object);
+//        	unset($this->custom_processing_object);
+//        } // if
+
         // get associative array of class variables
         $object_vars = get_object_vars($this);
 

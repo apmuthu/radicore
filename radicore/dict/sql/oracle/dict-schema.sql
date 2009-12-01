@@ -161,6 +161,8 @@ CREATE TABLE dict_table (
   default_orderby varchar2(64),
   alt_language_table varchar2(64),
   alt_language_cols varchar2(4000),
+  nameof_start_date varchar2(40),
+  nameof_end_date varchar2(40),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,

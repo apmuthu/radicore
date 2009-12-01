@@ -1,11 +1,17 @@
 -- phpMyAdmin SQL Dump
--- version 2.11.3
+-- version 2.11.9.4
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jan 07, 2008 at 02:16 PM
+-- Generation Time: Mar 08, 2009 at 11:35 AM
 -- Server version: 4.1.22
--- PHP Version: 4.4.7
+-- PHP Version: 4.4.8
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
 
 --
 -- Database: `dict`
@@ -156,6 +162,8 @@ CREATE TABLE IF NOT EXISTS `dict_table` (
   `default_orderby` varchar(64) default NULL,
   `alt_language_table` varchar(64) default NULL,
   `alt_language_cols` text,
+  `nameof_start_date` varchar(40) default NULL,
+  `nameof_end_date` varchar(40) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,

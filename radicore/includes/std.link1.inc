@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -30,8 +30,8 @@ initSession();
 
 if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
     // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
     $new_selection = true;
 } else{
     $new_selection = false;
@@ -73,9 +73,9 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($where);
+    $where = $dbouter->initialise($where, $selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->errors);
+        scriptPrevious($dbouter->getErrors());
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {

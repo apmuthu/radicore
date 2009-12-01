@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s01 extends dict_table
@@ -14,13 +14,15 @@ class dict_table_s01 extends dict_table
     // $fieldarray contains data from the initial $where clause.
     {
         // get list of existing table names
-        if (is_string(key($fieldarray))) {
-        	$dbname = $fieldarray['database_id'];
-        } else {
-            $dbname = $fieldarray[0]['database_id'];
+        if (!is_string(key($fieldarray))) {
+            $fieldarray = $fieldarray[0];
         } // if
+
+    	$dbname   = $fieldarray['database_id'];
+    	$dbprefix = dict_findDBPrefix($dbname);
+
         $fieldarray = array();
-        $array = $this->_ddl_showTables($dbname);
+        $array = $this->_ddl_showTables($dbprefix.$dbname);
 
         // filter out those that already exist in DICT database
         $i = 0;

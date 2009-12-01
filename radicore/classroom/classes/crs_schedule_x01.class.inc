@@ -50,9 +50,20 @@ class crs_schedule_x01 extends crs_schedule
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         if (!empty($where)) {
         	// store $where string in its component parts
             $where = $this->setScrollArray($where);

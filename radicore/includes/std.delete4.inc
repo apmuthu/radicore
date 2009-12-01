@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete4.inc
@@ -23,11 +23,13 @@ $mode = 'delete';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+$original_where     = $where;
+$original_selection = $selection;
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -68,10 +70,9 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $original_where = $where;
-    $where = $dbouter->initialise($original_where);
+    $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->errors);
+        scriptPrevious($dbouter->getErrors());
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -127,9 +128,9 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($original_where);
+    $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->errors);
+        scriptPrevious($dbinner->getErrors());
     } // if
 } // if
 
@@ -157,7 +158,9 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbouter->reset($where);
+    //$dbouter->reset($where);
+    $dbouter->setPageNo(1);
+    $dbouter->_cm_reset($where);
 } // if
 
 // get data for the outer table
@@ -271,6 +274,7 @@ if ($errors) {
     unset($act_buttons['submit']);
 } else {
     $messages[] = getLanguageText('sys0086'); // 'Press SUBMIT to confirm deletion.'
+    $messages   = array_unique($messages);
 } // if
 
 // get pagination details
@@ -284,6 +288,11 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // get sort details
 $orderby     = $dbinner->getOrderBy();

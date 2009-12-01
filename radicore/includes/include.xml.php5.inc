@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -19,7 +19,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
     global $screen_structure;
 
     // get object name to use as node name in XML file
-    if (eregi('filepicker|fileupload', getPatternId())) {
+    if (preg_match('/(filepicker|fileupload)/i', getPatternId())) {
     	$objectname = getPatternId();
     } else {
         $objectname = $dbobject->getClassName();
@@ -86,6 +86,10 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
             $rowdata = $dbobject->formatData($rowdata, $css_array);
             // add a child node for each field
             foreach ($rowdata as $fieldname => $fieldvalue) {
+                if (preg_match('/^[0-9]/', $fieldname)) {
+                    // this is not a valid field name, so flag it
+                    $fieldname = 'invalid_'.$fieldname;
+                } // if
                 $child = $doc->createElement($fieldname);
                 $child = $node->appendChild($child);
                 if (array_key_exists($fieldname, $css_array)) {
@@ -391,6 +395,10 @@ function addLookup2XMLdoc ($lookup, $lookup_css, $doc, $root)
     $node = $root->appendChild($node);
 
     foreach ($lookup as $lookupname => $optionlist) {
+        if (is_numeric($lookupname)) {
+            // "Lookup array contains a numeric key instead of a name"
+        	trigger_error(getLanguageText('sys0182'), E_USER_ERROR);
+        } // if
         // add node to contain this list of options
         $occ = $doc->createElement($lookupname);
         $occ = $node->appendChild($occ);
@@ -471,8 +479,12 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
 
     $xsl_params['language'] = $GLOBALS['output_language'];
 
-    $xsl_params['pagination_width'] = $_SESSION['pagination_width'];
-    $xsl_params['scrolling_width']  = $_SESSION['scrolling_width'];
+    if (isset($_SESSION['pagination_width'])) {
+    	$xsl_params['pagination_width'] = $_SESSION['pagination_width'];
+    } // if
+    if (isset($_SESSION['scrolling_width'])) {
+    	$xsl_params['scrolling_width']  = $_SESSION['scrolling_width'];
+    } // if
 
     // insert various pieces of text
     $xsl_params['text']['logout-all']   = getLanguageText('xsl_logout_all');
@@ -486,26 +498,31 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         include('../css/xsl_params.inc');
     } // if
 
-    $xsl_params['text']['page']         = getLanguageText('xsl_page');
-    $xsl_params['text']['item']         = getLanguageText('xsl_item');
-    $xsl_params['text']['of']           = getLanguageText('xsl_of');
-    $xsl_params['text']['first']        = getLanguageText('xsl_first');
-    $xsl_params['text']['last']         = getLanguageText('xsl_last');
-    $xsl_params['text']['prev']         = getLanguageText('xsl_prev');
-    $xsl_params['text']['next']         = getLanguageText('xsl_next');
-    $xsl_params['text']['show']         = getLanguageText('xsl_show');
-    $xsl_params['text']['select-all']   = getLanguageText('xsl_select_all');
-    $xsl_params['text']['unselect-all'] = getLanguageText('xsl_unselect_all');
-    $xsl_params['text']['logout']       = getLanguageText('xsl_logout');
-    $xsl_params['text']['help']         = getLanguageText('xsl_help');
-    $xsl_params['text']['page-created'] = getLanguageText('xsl_page_created');
-    $xsl_params['text']['seconds']      = getLanguageText('xsl_seconds');
-    if (is_true($_SESSION['XSLT_client_side'])) {
+    $xsl_params['text']['page']           = getLanguageText('xsl_page');
+    $xsl_params['text']['item']           = getLanguageText('xsl_item');
+    $xsl_params['text']['of']             = getLanguageText('xsl_of');
+    $xsl_params['text']['first']          = getLanguageText('xsl_first');
+    $xsl_params['text']['last']           = getLanguageText('xsl_last');
+    $xsl_params['text']['prev']           = getLanguageText('xsl_prev');
+    $xsl_params['text']['next']           = getLanguageText('xsl_next');
+    $xsl_params['text']['show']           = getLanguageText('xsl_show');
+    $xsl_params['text']['logout']         = getLanguageText('xsl_logout');
+    $xsl_params['text']['help']           = getLanguageText('xsl_help');
+    $xsl_params['text']['page-created']   = getLanguageText('xsl_page_created');
+    $xsl_params['text']['seconds']        = getLanguageText('xsl_seconds');
+    if (isset($_SESSION['XSLT_client_side']) AND is_true($_SESSION['XSLT_client_side'])) {
         $xsl_params['client-side'] = 'true';
     } // if
     if (isset($_SESSION['logon_user_name'])) {
     	$xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
         $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
+    } // if
+
+    $xsl_params['text']['select-all']     = getLanguageText('xsl_select_all');
+    $xsl_params['text']['unselect-all']   = getLanguageText('xsl_unselect_all');
+    $xsl_params['text']['selection-lock'] = getLanguageText('xsl_selection_lock');
+    if (isset($_SESSION['selection_lock']) AND is_True($_SESSION['selection_lock'])) {
+    	$xsl_params['selection_lock'] = 'true';
     } // if
 
     if (isset($mode)) {
@@ -526,14 +543,14 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     } // if
 
     // insert sort details
-    if (ereg(',', $orderby)) {
+    if (preg_match('/,/', $orderby)) {
         // convert from 'column,column' to just 'column'
-        list($column) = split(',', $orderby);
+        list($column) = preg_split('/,/', $orderby);
         $orderby = $column;
     } // if
-    if (ereg('\.', $orderby)) {
+    if (preg_match('/\./', $orderby)) {
         // convert from 'table.column' to just 'column'
-        list($table, $column) = split('\.', $orderby);
+        list($table, $column) = preg_split('/\./', $orderby);
         $orderby = $column;
     } // if
     if (!empty($orderby)) {
@@ -696,7 +713,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
                 // get navigation buttons from last $object
                 $dbnav =& singleton::getInstance('mnu_nav_button');
                 $nav_buttons = $dbnav->getNavButtons($task_id, $object);
-                if ($dbnav->getErrors()) {
+                if ($dbnav->errors) {
                     $errors = array_merge($errors, $dbnav->getErrors());
                 } // if
             } // if
@@ -966,7 +983,8 @@ function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
             $xsl_url = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
         } // if
         if (!file_exists($filename)) {
-            trigger_error("File $filename does not exist...", E_USER_ERROR);
+            // "File name 'X' does not exist"
+            trigger_error(getLanguageText('sys0057', $filename), E_USER_ERROR);
         } // if
     } // if
 
@@ -1420,9 +1438,11 @@ function setScrollbar ($xml_doc, $root, $scrolling)
 function XSLclient ($xml_string)
 // send the XML file to the client so that it can be transformed into HTML there
 {
+    $xml_string .= "\n";
+
     // set charset to display accented characters correctly
     header('content-type: application/xml; charset=UTF-8');
-    header('content-length: ' .strlen($xml_string));
+    //header('content-length: ' .strlen($xml_string));
 
     // disable any caching by the browser
     header('Expires: Mon, 14 Oct 2002 05:00:00 GMT'); // Date in the past

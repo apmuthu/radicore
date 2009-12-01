@@ -1,0 +1,3 @@
+This will display the contents of a record from the DICT_TABLE table and allow it to be updated.
+
+Refer to <a href="%root%/dict_table(upd1).html">Update Table</a> for full details.

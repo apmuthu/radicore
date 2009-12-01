@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output2.inc
@@ -21,13 +21,13 @@ $mode = 'pdf-list';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} else {
-    $search = $where;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    if (empty($where)) {
+//    	// only use $selection if $where is empty
+//        $where = $selection;
+//        $selection = null;
+//    } // if
+//} // if
 
 // create a class instance of the main database table
 require_once "classes/$table_id.class.inc";
@@ -46,13 +46,13 @@ if (!empty($sql_orderby)) {
 } // if
 
 // perform any initialisation
-$where = $dbobject->initialise($where);
-if (empty($dbobject->errors)) {
-	// get any data for lookup lists
-    $null = $dbobject->getExtraData($where);
-} else {
-	scriptPrevious($dbobject->errors);
+$where = $dbobject->initialise($where, $selection, $search);
+if ($dbobject->errors) {
+	scriptPrevious($dbobject->getErrors());
 } // if
+
+// get any data for lookup lists
+$null = $dbobject->getExtraData($where);
 
 // set sort order (if defined)
 if (!empty($orderby)) {
@@ -71,25 +71,30 @@ if (isset($search)) {
 // get data from the database
 $resource = $dbobject->getData_serial($where);
 if (!empty($dbobject->errors)) {
-	scriptPrevious($dbobject->errors);
+	scriptPrevious($dbobject->getErrors());
 } // if
 
 if ($dbobject->getNumRows() == 0) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
 
+if (empty($pdfout)) {
+    // set default value
+	$pdfout = $table_id .'.pdf';
+} // if
+
 // transform output to PDF format and deal with it as specified in $report
 $destination = $dbobject->outputPDF_ListView($resource, $report_structure);
 
-$messages = $dbobject->messages;
-$errors   = $dbobject->errors;
+$messages = $dbobject->getMessages();
+$errors   = $dbobject->getErrors();
 
 $prev_script = getPreviousScript($task_id);
 $prev_task   = getPreviousTask($prev_script);
 // tell previous script that we are returning
 $_SESSION['pages'][$prev_script][$prev_task]['return_from'] = 'pdf';
 
-if (!eregi('(D|I)', $destination) OR !empty($errors)) {
+if (!preg_match('/(D|I)/i', $destination) OR !empty($errors)) {
 	scriptPrevious($errors, $messages);
 } else {
     unset($_SESSION['pages'][getSelf()]);  // delete current script from session array

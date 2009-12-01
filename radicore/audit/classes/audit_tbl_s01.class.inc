@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_tbl.class.inc';
 class audit_tbl_s01 extends audit_tbl
@@ -13,9 +13,19 @@ class audit_tbl_s01 extends audit_tbl
     var $select_count;      //
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         // this is here to override the method in the parent class
         $array1 = where2indexedArray($where);   // convert string into indexed array
         $array2 = splitWhereByRow($array1);     // split into separate selections (rows)

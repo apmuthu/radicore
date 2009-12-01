@@ -31,7 +31,7 @@ class x_pers_opt_xref extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         //DebugBreak();
-        if (eregi('star_sign', $this->sql_select)) {
+        if (preg_match('/star_sign/i', $this->sql_select)) {
             // add star_sign to field list
             $this->fieldspec['star_sign']   = array('type' => 'string',
                                                     'noedit' => 'y',
@@ -50,7 +50,7 @@ class x_pers_opt_xref extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if (eregi('star_sign', $this->sql_select)) {
+        if (preg_match('/star_sign/i', $this->sql_select)) {
             if (!array_key_exists('star_sign', $this->lookup_data)) {
                 // get lookup list for star_sign
                 $dbobject =& singleton::getInstance('x_person');

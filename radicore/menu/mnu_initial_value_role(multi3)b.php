@@ -23,10 +23,11 @@ $outer_sql_having  = null;
 $outer_sql_orderby = null;
 $outer_sql_orderby_table = null;
 
-$middle_sql_select  = 'mnu_task.task_id,task_desc';
+$middle_sql_select  = 'mnu_task.task_id, task_desc';
 $middle_sql_from    = 'mnu_task LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id) ';
 $middle_sql_where   = 'mnu_task_field.task_id=mnu_task.task_id';
-$middle_sql_groupby = 'mnu_task.task_id, task_desc';
+//$middle_sql_groupby = 'mnu_task.task_id, task_desc';
+$middle_sql_groupby = 'mnu_task.task_id';
 $middle_sql_having  = null;
 $middle_sql_orderby = null;
 

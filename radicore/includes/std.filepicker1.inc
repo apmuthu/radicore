@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -22,7 +22,14 @@ initSession();
 if (isset($_POST['quit'])) {
     // the 'quit' button has been pressed, so ...
     // clear this script from session details and return to previous page
-    scriptPrevious(getLanguageText('sys0087'),null,'quit'); // 'Nothing selected from filepicker screen.'
+    $prev_pattern = getPreviousPattern();
+    if (preg_match('/^(menu|list)/i', $prev_pattern)) {
+    	$message = null;
+    } else {
+        // 'Nothing selected from filepicker screen.'
+        $message = getLanguageText('sys0087');
+    } // if
+    scriptPrevious($message, null,'quit');
 } // if
 
 if (isset($_POST['choosenull'])) {
@@ -67,9 +74,10 @@ if (isset($script_vars['fileobject'])) {
     // do not display the 'show nn' hyperlinks
     $fileobject->xsl_params['noshow'] = 'y';
     // perform any initialisation
+    $where = $fileobject->initialise($where, $selection);
     $fileobject->initialiseFilePicker($where);
     if ($fileobject->errors) {
-    	scriptPrevious($fileobject->errors);
+    	scriptPrevious($fileobject->getErrors());
     } // if
 } // if
 
@@ -106,9 +114,8 @@ if (!empty($fileobject->image_height)) {
 } // if
 
 if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
+    // re-initialise all settings to start afresh
     $fileobject->reset($where);
-    $fileobject->search = null;
 } // if
 
 if (!empty($search)) {
@@ -143,16 +150,16 @@ $filesize = array();
 
 while (false !== ($file = readdir($this_dir))) {
     // only files of right type are appended to array
-    if (eregi($filemask, $file, $regs)) {
+    if (preg_match('/'.$filemask.'/i', $file, $regs)) {
         if (!empty($pattern)) {
-            if (eregi($pattern, $file)) {
+            if (preg_match('/'.$pattern.'/i', $file)) {
             	$file_list[$rownum]['file'] = $file;  // display filename without the directory name
             } // if
         } else {
             $file_list[$rownum]['file'] = $file;  // display filename without the directory name
         } // if
         if (array_key_exists($rownum, $file_list)) {
-            $file_list[$rownum]['date'] = date('Y-m-d h:i:s', filemtime("$subdir/$file"));
+            $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
             $file_list[$rownum]['size'] = filesize("$subdir/$file");
             // set up arrays for sorting
             $filename[$rownum] = strtolower($file);
@@ -179,7 +186,7 @@ if (isset($_GET['orderby'])) {
 	$fileobject->setOrderBy($_GET['orderby']);
 } // if
 $orderby = $fileobject->getOrderBy();
-if (!eregi('file|size|date', $orderby)) {
+if (!preg_match('/(file|size|date)/i', $orderby)) {
 	$orderby = 'file';
 	$fileobject->setOrderBy($orderby);
 } // if
@@ -214,6 +221,10 @@ $offset = ($curr_page - 1) * $limit;
 // copy data into object's $fieldarray so that it can be displayed
 $file_list = array_slice($file_list, $offset, $limit);
 $fileobject->setFieldArray($file_list);
+
+if (isset($_GET['action'])) {
+    $fieldarray = $fileobject->setAction($_GET['action']);
+} // if
 
 $pagination['main']['numrows']  = $num_rows;
 if ($last_page == 0) {

@@ -23,7 +23,7 @@ class x_tree_level_s02 extends x_tree_level
         $where = str_replace('node_id_snr=', 'node_id=', $where);
 
         // find out if $selection is for TREE_NODE table
-        if (ereg('(node_id=)', $where)) {
+        if (preg_match('/(node_id=)/i', $where)) {
             // yes - convert to TREE_LEVEL table
             $dbobject =& singleton::getInstance('x_tree_node');
 

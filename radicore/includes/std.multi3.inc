@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi3.inc
@@ -30,10 +30,12 @@ $mode = 'update';
 // load session variables
 initSession();
 
+$original_where     = $where;
+$original_selection = $selection;
 if (!empty($selection) AND !isset($return_from)) {
 	// $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
 } // if
 
 if (isset($_POST['quit'])) {
@@ -73,10 +75,9 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $original_where = $where;
-    $where = $dbouter->initialise($original_where);
+    $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->errors);
+        scriptPrevious($dbouter->getErrors());
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -116,9 +117,9 @@ if (isset($script_vars['dbmiddle'])) {
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
     // perform any initialisation
-    $null = $dbmiddle->initialise($original_where);
+    $null = $dbmiddle->initialise($original_where, $original_selection);
     if ($dbmiddle->errors) {
-        scriptPrevious($dbmiddle->errors);
+        scriptPrevious($dbmiddle->getErrors());
     } // if
 } // if
 
@@ -149,9 +150,9 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($original_where);
+    $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->errors);
+        scriptPrevious($dbinner->getErrors());
     } // if
 } // if
 
@@ -173,7 +174,7 @@ if (isset($_POST['submit']) OR isset($_POST['submitnext'])) {
     if ($dbinner->errors) {
         $dbinner->rollback();
 		// errors are keyed by object name
-        $errors[$dbinner->getClassName()] = $dbinner->errors;
+        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
     } else {
         // update was OK
         $dbinner->wf_case_id     = $dbouter->wf_case_id;
@@ -223,7 +224,9 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbouter->reset($where);
+    //$dbouter->reset($where);
+    $dbouter->setPageNo(1);
+    $dbouter->_cm_reset($where);
 } // if
 
 // get data from the outer table
@@ -232,10 +235,10 @@ if ($dbouter->errors) {
     // some sort of error
     if ($dbouter->getLastPage() <= 1) {
         // only 1 entry requested, so return to previous script
-        scriptprevious($dbouter->errors, $messages);
+        scriptprevious($dbouter->getErrors(), $messages);
     } else {
         // multiple entries requested, so display error message
-        $errors[$dbouter->getClassName()] = $dbouter->errors;
+        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
     } // if
 } // if
 $messages = array_merge($messages, $dbouter->getMessages());
@@ -251,7 +254,7 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 // get any additional data for current record
 $outer_data = $dbouter->getExtraData($outer_data);
 if ($dbouter->errors) {
-	$errors[$dbouter->getClassName()] = $dbouter->errors;
+	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
 } // if
 
 if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
@@ -268,7 +271,9 @@ $where = array2where($outer_data, $pkeynames, $dbouter);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbmiddle->reset($where);
+    //$dbmiddle->reset($where);
+    $dbmiddle->setPageNo(1);
+    $dbmiddle->_cm_reset($where);
 } // if
 
 if (isset($search)) {
@@ -279,7 +284,7 @@ if (isset($search)) {
 $middle_data = $dbmiddle->getData($where);
 if ($dbmiddle->errors) {
     // errors are keyed by object name
-    $errors[$dbmiddle->getClassName()] = $dbmiddle->errors;
+    $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
 } // if
 if ($dbmiddle->getNumRows() < 1) {
     // scriptPrevious('Nothing retrieved from the database.');
@@ -290,7 +295,7 @@ if ($dbmiddle->getNumRows() < 1) {
 // get any additional data for current record
 $middle_data = $dbmiddle->getExtraData($middle_data);
 if ($dbmiddle->errors) {
-	$errors[$dbmiddle->getClassName()] = $dbmiddle->errors;
+	$errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
 } // if
 
 // get primary key of row retrieved from middle entity
@@ -353,7 +358,7 @@ if (count($middle_data) > 0) {
         // get data from the database
         $inner_data = $dbinner->getData($inner_where);
         if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->errors;
+            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
 
         if ($dbinner->getNumRows() == 0) {
@@ -367,7 +372,7 @@ if (count($middle_data) > 0) {
         // get any additional data for current record
         $inner_data = $dbinner->getExtraData($inner_data);
         if ($dbinner->errors) {
-        	$errors[$dbinner->getClassName()] = $dbinner->errors;
+        	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
     } // if
 } // if
@@ -388,6 +393,11 @@ $script_vars['dbmiddle']  = serialize($dbmiddle);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // get sort details
 $orderby     = $dbinner->getOrderBy();

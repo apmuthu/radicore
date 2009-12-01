@@ -19,6 +19,9 @@ $structure['main']['fields'][] = array('audit_logging' => 'Audit Logging?', 'col
 $structure['main']['fields'][] = array('default_orderby' => 'Default Sort Seq', 'colspan' => 3);
 $structure['main']['fields'][] = array('alt_language_table' => 'Alternative Language Table', 'colspan' => 3);
 $structure['main']['fields'][] = array('alt_language_cols' => 'Alternative Language Columns', 'colspan' => 3);
+$structure['main']['fields'][] = array('nameof_start_date' => 'Alias for START_DATE', 'colspan' => 3);
+$structure['main']['fields'][] = array('nameof_end_date' => 'Alias for END_DATE', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 3);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 3);

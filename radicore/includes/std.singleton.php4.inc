@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class singleton
@@ -26,17 +26,27 @@ class singleton
             $server = null;
         } // if
 
-        if (!empty($instances[$server.$class])) {
+        if (substr_count($class, '/')) {
+	        // strip leading directory names
+	        $pos = strrpos($class, '/');
+	    	$classname = substr($class, $pos+1);
+	    	$filename  = "classes/$class.class.inc";
+        } else {
+            $classname = $class;
+            $filename  = "classes/$class.class.inc";
+	    } // if
+
+        if (!empty($instances[$server.$classname])) {
         	// instance exists in array, so use it
-            $instance =& $instances[$server.$class];
+            $instance =& $instances[$server.$classname];
             if (method_exists($instance, 'sqlSelectInit')) {
                 // initialise all sql selection criteria
             	$instance->sqlSelectInit();
             } // if
         } else {
             // load the class file (if not already loaded)
-            if (!class_exists($class)) {
-            	switch ($class) {
+            if (!class_exists($classname)) {
+            	switch ($classname) {
                 	case 'date_class':
                 		require_once 'std.datevalidation.class.inc';
                 		break;
@@ -50,26 +60,25 @@ class singleton
                 		break;
 
                 	default:
-                	    require_once "classes/$class.class.inc";
-                	    if (substr_count($class, '/')) {
-                	        // strip leading directory names
-                	        $pos = strrpos($class, '/');
-                	    	$class = substr($class, $pos+1);
-                	    } // if
+                	    require_once $filename;
                 		break;
                 } // switch
             } // if
 
             // instance does not exist, so create it
-            $instances[$server.$class] = new $class($arg1);
-            $instance =& $instances[$server.$class];
+            $instances[$server.$classname] = new $classname($arg1);
+            $instance =& $instances[$server.$classname];
             if ($initialise === true) {
                 if (method_exists($instance, 'initialise')) {
                     // object has an 'initialise' method, so call it
                 	$null = $instance->initialise($arg1);
                 } // if
             } // if
+        } // if
 
+        if (method_exists($instance, 'sqlSelectInit')) {
+            // initialise all sql variables
+            $instance->sqlSelectInit();
         } // if
 
         return $instance;

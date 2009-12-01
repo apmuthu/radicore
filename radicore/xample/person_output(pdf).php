@@ -13,7 +13,7 @@ $sql_from    = null;
 $sql_where   = null;
 $sql_groupby = null;
 $sql_having  = null;
-$sql_orderby = 'last_name';
+//$sql_orderby = 'last_name asc';
 
 require 'std.output2.inc';      // activate page controller
 

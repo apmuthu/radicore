@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task_field extends Default_Table
@@ -30,7 +30,7 @@ class mnu_task_field extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if (eregi('list|search', $GLOBALS['mode'])) {
+        if (preg_match('/(list|search)/i', $GLOBALS['mode'])) {
         	unset($this->fieldspec['field_desc']['control']);
         } // if
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete3.inc
@@ -27,7 +27,7 @@ $dbobject = new $table_id;
 // indicate that this object was started from a page controller
 $dbobject->initiated_from_controller = true;
 // perform any initialisation
-$where = $dbobject->initialise ($where);
+$where = $dbobject->initialise ($where, $selection);
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // retrieve profile must have been set by previous screen

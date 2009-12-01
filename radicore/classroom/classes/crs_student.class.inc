@@ -138,7 +138,7 @@ class crs_student extends Default_Table
             $prev_script = getPreviousScript();
             if (basename($prev_script) == 'student_lesson_add(b).php') {
                 // not allowed to choose students belonging to a class
-                if (eregi('class_id IS NULL', $where)) {
+                if (preg_match('/class_id IS NULL/i', $where)) {
                     // already there, so do nothing
                 } else {
                     $where_array['class_id'] = 'IS NULL';

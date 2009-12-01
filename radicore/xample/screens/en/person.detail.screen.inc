@@ -43,7 +43,12 @@ $structure['main']['fields'][13][] = array('field' => 'start_date');
 $structure['main']['fields'][13][] = array('label' => 'End Date');
 $structure['main']['fields'][13][] = array('field' => 'end_date', 'colspan' => 3);
 
-$structure['main']['fields'][14] = array('curr_or_hist' => 'Current or Historic', 'colspan' => 5);
+$structure['main']['fields'][14][] = array('label' => 'Postcode');
+$structure['main']['fields'][14][] = array('field' => 'postcode');
+$structure['main']['fields'][14][] = array('label' => 'County');
+$structure['main']['fields'][14][] = array('field' => 'county', 'colspan' => 3);
+
+$structure['main']['fields'][15] = array('curr_or_hist' => 'Current or Historic', 'colspan' => 5);
 
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 5);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 5);

@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<methodCall>
+<methodName>menu.getPatternList</methodName>
+<params>
+ <param>
+  <value>
+   <struct>
+    <member>
+     <name>page_size</name>
+     <value>
+      <int>10</int>
+     </value>
+    </member>
+    <member>
+     <name>page_no</name>
+     <value>
+      <int>1</int>
+     </value>
+    </member>
+    <member>
+     <name>order</name>
+     <value>
+      <string>pattern_id</string>
+     </value>
+    </member>
+   </struct>
+  </value>
+ </param>
+</params>
+</methodCall>

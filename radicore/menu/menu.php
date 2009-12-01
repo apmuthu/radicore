@@ -19,6 +19,18 @@ require_once 'include.general.inc';
 // load session variables
 initSession();
 
+if (isset($_GET['motd']) AND is_True($_GET['motd'])) {
+    $today = getTimeStamp('date');
+    $role_id = $_SESSION['role_id'];
+    $motd =& singleton::getInstance('mnu_motd');
+    $where = "motd_id IS NOT NULL AND start_date<='$today' AND end_date>='$today' AND (role_id IS NULL OR role_id='$role_id')";
+    $count = $motd->getCount($where);
+    if ($count > 0) {
+    	// show the MOTD screen
+    	scriptNext('mnu_motd(show)', $where);
+    } // if
+} // if
+
 require_once 'classes/mnu_todo.class.inc';
 $db_todo = new mnu_todo;
 

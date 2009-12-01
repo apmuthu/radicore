@@ -1,0 +1,13 @@
+<?php
+// config.xmlrpc.inc
+
+// configuration details for XML-RPC web services
+
+// 'location' is used by the client to identify the address of the server
+$location = 'http://localhost/radicore/xmlrpc/server.php';
+
+// these are used by the server
+$server_options['encoding'] = 'utf-8';
+$userdata = array();
+
+?>

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -120,7 +120,7 @@ class validation_class
             } // if
         } // if
 
-        if (eregi('(set|array|varray)',$fieldspec['type'])) {
+        if (preg_match('/(set|array|varray)/i',$fieldspec['type'])) {
             // convert $fieldvalue array into a string with comma separator
             if (is_array($fieldvalue)) {
             	$fieldvalue = implode($fieldvalue, ',');
@@ -181,7 +181,7 @@ class validation_class
                     $this->errors[$fieldname] = getLanguageText('sys0020', $translated_fieldname);
                 } // if
             } // if
-            if (eregi('date|datetime|timestamp', $fieldspec['type'])) {
+            if (preg_match('/(date|datetime|timestamp)/i', $fieldspec['type'])) {
                 if (isset($fieldspec['infinityisnull'])) {
                     $fieldvalue = '9999-12-31';
                 } // if
@@ -199,31 +199,30 @@ class validation_class
 
         // field is not empty - check field size
         if (isset($fieldspec['size'])) {
-            if (ereg('set|array|varray', $fieldspec['type'])) {
+            if (preg_match('/(set|array|varray)/i', $fieldspec['type'])) {
                 // ignore size on 'array' datatypes
             } else {
                 $size = (double)$fieldspec['size'];
-                if (ereg('decimal|numeric|float|real|double', $fieldspec['type'])) {
+                if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
                     // remove thousands separator and ensure decimal point is '.'
                     $fieldvalue = number_unformat($fieldvalue, '.', ',');
                 } // if
-                if (ereg('float|real|double', $fieldspec['type'])) {
+                if (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
                 	if (strlen($fieldvalue) > $size) {
                 	    // reduce huge number to scientific notation
                 		$fieldvalue = sprintf('%e', $fieldvalue);
                 	} // if
                 } // if
                 if (strlen($fieldvalue) > $size) {
-                    if (function_exists('mb_detect_encoding')) {
+                    if (function_exists('mb_strlen')) {
                         $encoding = mb_detect_encoding($fieldvalue);
-                    } else {
-                        $encoding = 'ASCII';
-                    } // if
-                    if ($encoding != 'ASCII') {
                         if (mb_strlen($fieldvalue, $encoding) > $size) {
                         	// '$fieldname cannot be > $size characters
                             $this->errors[$fieldname] = getLanguageText('sys0021', $translated_fieldname, $size);
                         } // if
+                    } else {
+                        // '$fieldname cannot be > $size characters
+                        $this->errors[$fieldname] = getLanguageText('sys0021', $translated_fieldname, $size);
                     } // if
                 } // if
             } // if
@@ -262,10 +261,18 @@ class validation_class
             case 'string':
                 if (isset($fieldspec['uppercase'])) {
                     // value in this field must be uppercase
-                    $fieldvalue = strtoupper($fieldvalue);
+                    if (function_exists('mb_strtoupper')) {
+                    	$fieldvalue = mb_strtoupper($fieldvalue);
+                    } else {
+                        $fieldvalue = strtoupper($fieldvalue);
+                    } // if
                 } elseif (isset($fieldspec['lowercase'])) {
                     // value in this field must be lowercase
-                    $fieldvalue = strtolower($fieldvalue);
+                    if (function_exists('mb_strtolower')) {
+                        $fieldvalue = mb_strtolower($fieldvalue);
+                    } else {
+                        $fieldvalue = strtolower($fieldvalue);
+                    } // if
                 } // if
 
                 if (isset($fieldspec['subtype'])) {
@@ -547,9 +554,9 @@ class validation_class
                 if (is_float($number)) {
                     $number = number_format($number, 0, '', '');
                 } // if
-                $valuelen = strlen($value);
+                $valuelen  = strlen($value);
                 $numberlen = strlen($number);
-                if ($numberlen > $numberlen) {
+                if ($valuelen > $numberlen) {
                     // "Value has too many digits";
                     $this->errors[$field] = getLanguageText('sys0027');
                     return $number;
@@ -601,6 +608,9 @@ class validation_class
                 } else {
                     $updatearray[$field] = null;
                 } // if
+            } elseif (preg_match('/^rdc_/i', $field)) {
+                // allow this framework instruction to carry on through
+                $updatearray[$field] = $value;
             } // if
         } // foreach
 

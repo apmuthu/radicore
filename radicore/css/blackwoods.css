@@ -1,0 +1,732 @@
+body {
+  margin-top: 2pt;
+  background: white;
+  color: black;
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: small;
+  font-weight: normal;
+}
+
+/* miscellaneous */
+caption {
+  font-weight: bold;
+}
+
+h1 {
+  clear: left;
+  font-size: 150%;
+  font-weight: bold;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: left;
+  padding-left: 5px;
+  padding-bottom:2px;
+  color: white;
+  background: #576dd8;
+  border-top: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+}
+
+a {
+  color:#0055d5;
+}
+
+table {
+  margin: 0;
+}
+th {
+  text-align: center;
+  color: black;
+  background: #cceeff;
+}
+tr {
+}
+tr.even td {
+  text-align: left;
+  color: black;
+  background: #dddddd;
+}
+tr.odd td {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+td {
+  padding: 1px;
+  vertical-align: top;
+}
+
+/* actionbar */
+div.actionbar {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
+  background: #dddddd;
+  height: 24px;
+}
+div.actionbar .left {
+  float: left;
+}
+div.actionbar .right {
+  float: right;
+}
+div.actionbar p {
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+}
+
+/* body */
+div.body {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black; 
+  text-align: left;
+  padding: 1px;
+  background: white;
+}
+/* footer */
+div.footer {
+  clear: both;
+  margin-top: 1em;
+  text-align: center;
+}
+
+/* header */
+div.header {
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+/* help */
+div.help {
+  background: transparent;
+}
+div.help p {
+  margin-top: 0pt;
+  margin-bottom: 2pt;
+  text-align: right;
+}
+
+/* inner */
+div.inner {
+  border-bottom: 1px solid black;
+}
+div.inner table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.inner tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.inner td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+div.inner td.label {
+  padding-right: 5px;
+  padding-left: 5px;
+  text-align: right;
+  font-weight: bold;
+  font-style: italic;
+  color: white;
+  background: #aaaaaa;
+}
+
+/* link */
+div.link {
+  border-bottom: 1px solid black;
+}
+div.link table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.link tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.link td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+div.link td.label {
+  padding-right: 5px;
+  padding-left: 5px;
+  text-align: right;
+  font-weight: bold;
+  font-style: italic;
+  color: white;
+  background: #aaaaaa;
+}
+
+/* logon */
+div.logon {
+  background: #ffffff url(blackwoods/blackwoods_logo.gif) no-repeat;
+  padding-top:130px;
+  width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.loggedinas {
+  float: left;
+  padding-left:57px;
+}
+
+/* main */
+div.main {
+  border-bottom: 1px solid black;
+  background: transparent;
+}
+div.main table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.main tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.main td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+div.main td.label {
+  padding-right:3px;
+  text-align: right;
+  font-style: italic;
+  font-weight: bold;
+  color: white;
+  background: gray;
+}
+
+/* many */
+div.many {
+  border-bottom: 1px solid black;
+}
+div.many table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.many tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.many td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+div.many td.label {
+  text-align: right;
+  font-style: italic;
+  font-weight: bold;
+  color: white;
+  background: gray;
+}
+
+/* fileupload */
+div.uploadbg {
+  width: 100%;
+  height: 100%;
+  background: #cccccc;
+}
+div.upload {
+  width: 400px; 
+  margin-left: auto; 
+  margin-right: auto;
+  background: #dddddd;
+  padding: 20px;
+  border: 2px solid white;
+}
+
+/* menubar */
+#menubar {
+  width: 100%;
+  line-height: normal;
+  background: #dae0d2 url(blackwoods/bg.gif) repeat-x bottom;
+  float: left;
+}
+#menubar ul {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-right: 1px; 
+  margin: 0px; 
+  list-style-type: none;
+}
+#menubar li {
+  background: url(blackwoods/left.gif) no-repeat left top; 
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 4px; 
+  padding-right: 0px;
+  margin: 0px;
+  float: left;
+}
+#menubar a {
+  background: url(blackwoods/right.gif) no-repeat right top;
+  padding-top: 5px; 
+  padding-bottom: 4px; 
+  padding-left: 6px; 
+  padding-right: 10px; 
+  display: block; 
+  color: #765;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menubar a:hover {
+	color: black;
+}
+#menubar .inactive {
+	border-bottom: 1px solid black;
+}
+#menubar .active {
+  background-image: url(blackwoods/left_on.gif);
+  border-bottom: solid 1px white;
+}
+#menubar .active a {
+  background-image: url(blackwoods/right_on.gif);
+}
+#menubar p.filler {
+  display: inline;
+}
+
+/* menustack (aka 'breadcrumbs) */
+#menustack-outer {
+  clear: both;
+  margin-right: 2px;
+  background: #dae0d2 url(blackwoods/bg.gif) repeat-x bottom;
+  margin-top: -2.5pt;
+}
+#menustack {
+  clear: left;
+  width: 100%;
+  line-height: normal;
+  background-color: transparent;
+  padding-bottom: 2pt;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: solid 1pt black;
+}
+#menustack ul {
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+  padding-left: 5pt;
+  padding-right: 0pt;
+  margin: 0px;
+  list-style-type: none;
+}
+#menustack li {
+  padding: 0px; 
+  margin: 0px;
+  float: left; 
+  display: block;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menustack li a {
+  color:  #0055d5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menustack p {
+  padding: 0pt;
+  margin: 0pt;
+}
+
+/* middle */
+div.middle {
+  border-bottom: 1px solid black;
+}
+div.middle table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.middle tr {
+  height: 1em;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.middle td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+div.middle td.label {
+  text-align: right;
+  font-weight: bold;
+  font-style: italic;
+  color: white;
+  background: #aaaaaa;
+}
+
+/* errmsg */
+div.errmsg {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.errmsg p {
+  margin-top: 0pt;
+  margin-bottom: 1pt;
+  color: red;
+  background: #dddddd;
+}
+/* infomsg */
+div.infomsg {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.infomsg p {
+  margin-top: 0pt;
+  margin-bottom: 1pt;
+  color: green;
+  background: #dddddd;
+}
+
+/* navbar */
+div.navbar {
+  border-bottom: 1px solid #000000;
+  background: #dddddd;
+}
+div.navbar p.selection {
+  margin-top: 1px;
+  margin-bottom: 0px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-weight: bold;
+  text-align: left;
+  background: transparent;
+}
+div.navbar p.show {
+  float: right;
+  margin-top: 1px;
+  margin-bottom: 0px;
+  padding-top: 5px;
+  padding-bottom: 4px;
+  text-align: right;
+  background: transparent;
+}
+div.navbar p.show a {
+  font-weight: bold;
+}
+div.navbar p.withselection {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  text-align: left;
+  background: transparent;
+}
+div.navbar p.withoutselection {
+  margin-top: 1px;
+  margin-bottom: 0px;
+  text-align: left;
+  background: transparent;
+  border-bottom: 1px solid white;
+}
+
+/* outer */
+div.outer {
+  margin-top: 1px;
+  margin-bottom: 0px;
+  border-bottom: 1px solid black;
+  background: transparent;
+}
+div.outer table {
+  width: 100%;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  background: white;
+}
+div.outer tr {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  color: black;
+  background: #eeeeee;
+}
+div.outer td.label {
+  padding-right: 5px;
+  text-align: right;
+  font-style: italic;
+  font-weight: bold;
+  color: white;
+  background: gray;
+}
+div.outer td {
+  padding-left: 3px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* pagination */
+div.pagination {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.pagination p {
+}
+
+/* picker */
+div.picker-text {
+  float: left;
+}
+div.picker-image {
+  float: left;
+  margin-left: 2px;
+  margin-right: 5px;
+}
+div.picker-button {
+  float: left;
+  margin-left: 5px;
+}
+
+/* popup */
+div.popupbutton {
+  float: left;
+  margin-left: 10px;
+}
+div.popuptext {
+  float: left;
+}
+
+/* recover password */
+div.recover {
+  margin-top: 100px;
+  width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* scrolling */
+div.scrolling {
+  margin-top: 1pt;
+  margin-bottom: 1pt;
+  text-align: center;
+  background: #dddddd;
+}
+div.scrolling p {
+}
+
+/* scripttime */
+p.scripttime {
+  margin-top: 1pt;
+  margin-bottom: 0pt;
+  text-align: center;
+  color: black;
+  background: #dddddd;
+}
+
+/* timetable */
+table.timetable {
+  background: white;
+}
+tr.timetable {
+}
+tr.timetable td.timetable {
+  border: 1px solid #000000;
+  text-align: center;
+  font-weight: bold;
+}
+tr.timetable td.blank {
+  background: transparent;
+}
+
+/* ToDo list */
+div.todo_user {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.todo_user h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.todo_user p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 1pt;
+  padding-bottom: 1pt;
+}
+
+/* universe */
+div.universe {
+  background-image:url(blackwoods/logo.gif);
+  background-repeat:no-repeat;
+  padding-top:22px;
+  margin-top: 5px;
+  width: 750px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* version */
+div.version {
+  clear: both;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* workitem */
+div.workitem_role {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.workitem_role h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.workitem_role p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+}
+div.workitem_user {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.workitem_user h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.workitem_user p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+}
+
+/* HTML controls */
+input.submit {
+	margin-top:2px;
+	margin-bottom:2px;
+} 
+
+input.radio {
+  background-color: transparent;
+  color: black;
+}
+
+input.checkbox {
+  background-color: transparent;
+  color: black;
+} 
+
+input.text {
+  background-color: white;
+  color: black;
+} 
+
+input.password {
+  background-color: white;
+  color: black;
+} 
+
+select {
+  background-color: white;
+} 
+
+select option {
+  background-color: transparent;
+  color: black;
+} 
+
+textarea {
+  background-color: white;
+  color: black;
+}
+
+/* generic classes */
+.border0 {
+  border-width: 0px;
+}
+.center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.error {
+  clear: left;
+  font-style: italic;
+  font-weight: normal;
+  color: red;
+  background: transparent;
+}
+.invisible {
+  display: none;
+}
+.justify {
+  text-align: justify;
+}
+.left {
+  text-align: left;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.required {
+  font-size: 130%;
+  vertical-align: bottom;
+  color: red;
+  background: transparent;
+}
+.right {
+  text-align: right;
+}
+/* options for printing */
+@media print {
+	div.universe {
+    margin-top: 5px;
+    width: 100%;
+    text-align: left;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}

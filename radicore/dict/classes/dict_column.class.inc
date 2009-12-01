@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -58,17 +58,17 @@ class dict_column extends Default_Table
         $type     = $fieldarray['col_type'];
         $colspecs = $this->_cm_getColSpecs($type, $fieldarray);
 
-        if (eregi('^(enum|set)$', $type)) {
+        if (preg_match('/^(enum|set)$/i', $type)) {
             unset($this->fieldspec['col_values']['nodisplay']);
         } else {
             $this->fieldspec['col_values']['nodisplay'] = 'y';
         } // if
 
-        if (eregi('^(timestamp)$', $type)) {
+        if (preg_match('/^(timestamp)$/i', $type)) {
             $fieldarray['col_auto_increment'] = 'Y';
         } // if
 
-        if (eregi('^(array|varray)$', $type)) {
+        if (preg_match('/^(array|varray)$/i', $type)) {
             unset($this->fieldspec['col_array_type']['nodisplay']);
         } else {
             $this->fieldspec['col_array_type']['nodisplay'] = 'y';
@@ -289,7 +289,7 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['multi_rows'])) {
-            if (!eregi('(multiline|dropdown|multidrop)', $fieldarray['control'])) {
+            if (!preg_match('/(multiline|dropdown|multidrop)/i', $fieldarray['control'])) {
                 // "Invalid unless CONTROL = 'multi-line', 'dropdown' or 'dropdown-multi'"
                 $this->errors['multi_rows'] = getLanguageText('e0035');
             } // if
@@ -298,7 +298,7 @@ class dict_column extends Default_Table
         if (isset($fieldarray['col_type'])) {
             if ($fieldarray['col_type'] == 'boolean') {
             	if (isset($fieldarray['control'])) {
-            	    if (eregi('(dropdown|radio|checkbox)', $fieldarray['control'])) {
+            	    if (preg_match('/(dropdown|radio|checkbox)/i', $fieldarray['control'])) {
             	    	// this is valid
             	    } else {
             	        // "If TYPE = 'boolean' CONTROL can only be 'dropdown' or 'radiogroup' or 'checkbox'"
@@ -359,19 +359,19 @@ class dict_column extends Default_Table
         } // if
 
         if (isset($fieldarray['align_hv'])) {
-           if (!eregi('(radio|m_checkbox)', $fieldarray['control'])) {
+           if (!preg_match('/(radio|m_checkbox)/i', $fieldarray['control'])) {
                 // "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'"
                 $this->errors['align_hv'] = getLanguageText('e0007');
             } // if
         } // if
         if (isset($fieldarray['align_lr'])) {
-            if (eregi('(radio|checkbox|m_checkbox)', $fieldarray['control'])) {
+            if (preg_match('/(radio|checkbox|m_checkbox)/i', $fieldarray['control'])) {
                 // this is valid
             } else {
                 // "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'"
                 $this->errors['align_lr'] = getLanguageText('e0030');
             } // if
-            if (eregi('(radio|checkbox)', $fieldarray['control'])) {
+            if (preg_match('/(radio|checkbox)/i', $fieldarray['control'])) {
                 // skip the next bit
             } else {
                 if (empty($fieldarray['checkbox_label'])) {
@@ -392,7 +392,7 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['task_id'])) {
-            if (eregi('(popup|filepicker)', $fieldarray['control'])) {
+            if (preg_match('/(popup|filepicker)/i', $fieldarray['control'])) {
                 // this combination is valid
             } else {
                 // "Invalid unless CONTROL = 'popup' or 'filepicker'"
@@ -400,7 +400,7 @@ class dict_column extends Default_Table
             } // if
         } // if
         if (isset($fieldarray['optionlist'])) {
-            if (eregi('(dropdown|multidrop|radio|m_checkbox)', $fieldarray['control'])) {
+            if (preg_match('/(dropdown|multidrop|radio|m_checkbox)/i', $fieldarray['control'])) {
                 // this is valid
             } else {
                 // "Invalid unless CONTROL = 'dropdown', 'multidropdown', 'radio group' or 'multi-checkbox'"
@@ -835,7 +835,7 @@ class dict_column extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
         // customisable code goes here
@@ -872,7 +872,7 @@ class dict_column extends Default_Table
         //DebugBreak();
         switch ($popupname) {
             // replace $where string for this popup
-        	case 'dict_table(popup)':
+        	case 'dict_table(popup1)':
         		$where = "database_id='{$fieldarray['database_id']}'";
         		break;
         	default:
@@ -888,6 +888,34 @@ class dict_column extends Default_Table
         return $where;
 
     } // _cm_popupCall
+
+    // ****************************************************************************
+    function _cm_post_deleteRecord ($fieldarray)
+    // perform custom processing after database record has been deleted.
+    {
+        // find out if this column is named as an alias on DICT_TABLE entry
+        $dbobject =& singleton::getInstance('dict_table');
+        $data = $dbobject->getData("database_id='{$fieldarray['database_id']}' AND table_id='{$fieldarray['table_id']}'");
+        if ($data) {
+        	$data = $data[0];
+        	if ($fieldarray['column_id'] == $data['nameof_start_date']) {
+        	    // yes it is, so empty it
+        		$data['nameof_start_date'] = null;
+        		$data = $dbobject->updateRecord($data);
+        	} // if
+        	if ($fieldarray['column_id'] == $data['nameof_end_date']) {
+        	    // yes it is, so empty it
+        		$data['nameof_end_date'] = null;
+        		$data = $dbobject->updateRecord($data);
+        	} // if
+        	if ($dbobject->errors) {
+        		$this->errors = array_merge($this->errors, $dbobject->errors);
+        	} // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_post_deleteRecord
 
     // ****************************************************************************
     function _cm_post_fetchRow ($fieldarray)

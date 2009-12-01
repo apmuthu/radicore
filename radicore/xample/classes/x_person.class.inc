@@ -39,6 +39,9 @@ class x_person extends Default_Table
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['last_addr_no']['noedit']);
+            // include fields from PERSON_ADDR table
+            $this->fieldspec['county']      = array('type' => 'string', 'size' => 30);
+            $this->fieldspec['postcode']    = array('type' => 'string', 'size' => 10);
         } // if
 
         // if using the Oracle database then exclude field 'favourite_food'
@@ -125,6 +128,7 @@ class x_person extends Default_Table
             // get values for star_sign and insert into lookup array
             $array = $this->getValRep('star_sign');
             $this->lookup_data['star_sign'] = $array;
+            //$this->lookup_data[] = $array;  // cause a fatal error
         } // if
 
         if (!array_key_exists('favourite_food', $this->lookup_data)) {
@@ -158,6 +162,29 @@ class x_person extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
+    function _cm_initialise ($where, &$selection, $search)
+    // perform any initialisation for the current task.
+    // NOTE: $selection is passed by reference as it may be amended.
+    // NOTE: $search    is only available for OUTPUT tasks.
+    {
+        // customisable code goes here
+
+//        $pattern_id = getPatternId();
+//        if (preg_match('/^(add)/i', $pattern_id)) {
+//        	// ignore contents of selection
+//        	$selection = null;
+//        } else {
+//            if (!empty($selection)) {
+//            	$where     = $selection;
+//            	$selection = null;
+//            } // if
+//        } // if
+
+        return $where;
+
+    } // _cm_initialise
+
+    // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
@@ -166,22 +193,61 @@ class x_person extends Default_Table
     {
         // customisable code goes here
 
-//        if (empty($this->sql_from)) {
-//            // construct default SELECT and FROM clauses using parent relations
-//            $this->sql_from    = null;
-//            $this->sql_groupby = null;
-//            $this->sql_having  = null;
-//            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
-//        } // if
+        if (empty($this->sql_from)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // // include reference to additional tables
+//            $this->sql_from .= " LEFT JOIN x_person_addr"
+//                             . " ON (x_person_addr.person_id=x_person.person_id)";
+
+        } // if
 
         $pattern_id = getPatternId();
-        if (eregi('output', $pattern_id) AND !empty($GLOBALS['sql_orderby'])) {
+        if (preg_match('/output/i', $pattern_id) AND !empty($GLOBALS['sql_orderby'])) {
         	$this->sql_orderby = $GLOBALS['sql_orderby'];
+        } // if
+
+        if (!empty($this->sql_search)) {
+        	$search_array = where2array($this->sql_search);
+        	if (!empty($search_array['county'])) {
+        		$search_array[] = "AND EXISTS (SELECT county"
+        		                            ." FROM x_person_addr"
+        		                            ." WHERE x_person_addr.person_id=x_person.person_id"
+        		                              ." AND x_person_addr.county LIKE '{$search_array['county']}')";
+        	    unset($search_array['county']);
+        	} // if
+        	if (!empty($search_array['postcode'])) {
+        		$search_array[] = "AND EXISTS (SELECT postcode"
+        		                            ." FROM x_person_addr"
+        		                            ." WHERE x_person_addr.person_id=x_person.person_id"
+        		                              ." AND x_person_addr.postcode LIKE '{$search_array['postcode']}')";
+        	    unset($search_array['postcode']);
+        	} // if
+        	$this->sql_search = array2where($search_array);
         } // if
 
         return $where;
 
     } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_output ($filename)
+    // perform any processing required before the output operation
+    {
+//        if ($GLOBALS['mode'] == 'pdf-list') {
+//            // replace report headings
+//            $replace = array('initials' => 'ONE',
+//                             'star_sign' => 'TWO',
+//                             'pers_type_desc' => 'THREE');
+//            $result = replaceReportHeadings ($replace);
+//        } // if
+
+        return $filename;
+
+    } // _cm_pre_output
 
     // ****************************************************************************
     function _cm_getValRep ($item='', $where)
@@ -244,21 +310,53 @@ class x_person extends Default_Table
     } // _cm_initialiseFileUpload
 
     // ****************************************************************************
-    function _cm_ListView_pre_print ($prev_row, $curr_row)
-    // allow extra rows to be created in List View
-    {
-        $rows = array();
-
+//    function _cm_ListView_pre_print ($prev_row, $curr_row)
+//    // allow extra rows to be created in List View
+//    {
+//        $rows = array();
+//
 //        if (!empty($prev_row)) {
 //        	$rows[0]['pers_type_desc'] = 'after ' .$prev_row['person_id'];
 //        } // if
 //        if (!empty($curr_row)) {
 //            $rows[1]['pers_type_desc'] = 'before ' .$curr_row['person_id'];
 //        } // if
+//
+//        return $rows;
+//
+//    } // _cm_ListView_pre_print
 
-        return $rows;
+    // ****************************************************************************
+    function _cm_ListView_print_before ($prev_row, $curr_row)
+    // allow extra rows to be created in List View
+    {
+        $output = array();
 
-    } // _cm_ListView_pre_print
+//        if (!empty($prev_row)) {
+//            $lines_left = $this->pdf->getLinesRemaining();
+//            // row has changed
+//            if (substr($prev_row['last_name'], 0, 1) != substr($curr_row['last_name'], 0, 1)) {
+//            	$this->pdf->AddPage();
+//            } // if
+//        } // if
+//
+//        $output[0]['pers_type_desc'] = 'before ' .$curr_row['person_id'];
+
+        return $output;
+
+    } // _cm_ListView_print_before
+
+    // ****************************************************************************
+    function _cm_ListView_print_after ($curr_row)
+    // allow extra rows to be created in List View
+    {
+        $output = array();
+
+//       	$output[0]['pers_type_desc'] = 'after ' .$curr_row['person_id'];
+
+        return $output;
+
+    } // _cm_ListView_print_after
 
     // ****************************************************************************
     function _cm_ListView_total ()

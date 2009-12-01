@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add2.inc
@@ -19,16 +19,16 @@ $mode = 'insert';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    //$where     = $selection;
-    //$selection = null;
-    if (empty($where)) {
-    	// only use $selection if $where is empty
-        $where = $selection;
-        $selection = null;
-    } // if
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//    if (empty($where)) {
+//    	// only use $selection if $where is empty
+//        $where = $selection;
+//        $selection = null;
+//    } // if
+//} // if
 
 if (isset($_POST['quit']) OR isset($_GET['quit'])) {
     // cancel this screen, return to previous screen
@@ -71,7 +71,7 @@ if (isset($script_vars['dbobject'])) {
     	$fieldarray = $dbobject->getInitialData($where);
     } // if
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->errors, $messages);
+        scriptPrevious($dbobject->getErrors(), $dbobject->getMessages());
     } // if
 } // if
 
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
         } // if
     } // if
@@ -92,8 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
     if ($dbobject->errors) {
-    	$errors[$dbobject->getClassName()] = $dbobject->errors;
-    	scriptPrevious($dbobject->errors, $messages);
+    	scriptPrevious($dbobject->getErrors(), $dbobject->getMessages());
     } // if
 } // if
 
@@ -115,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } else {
             // look for an action which is another script
             $errors = childForm($_POST, array('dbobject' => $dbobject));
@@ -127,11 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		    $dbobject->startTransaction();
             // add this data to the database
             $fieldarray = $dbobject->insertRecord($fieldarray);
-            if (!empty($dbobject->messages)) {
-                $messages = array_merge($messages, $dbobject->messages);
-            } // if
             if ($dbobject->errors) {
-				$errors[$dbobject->getClassName()] = $dbobject->errors;
+				$errors[$dbobject->getClassName()] = $dbobject->getErrors();
 			} // if
             if (empty($errors)) {
                 $errors = $dbobject->commit();
@@ -142,9 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $fieldarray = $dbobject->getInitialData($where);
                         // get any extra data and merge with $fieldarray
                         $fieldarray = $dbobject->getExtraData($fieldarray);
-                        if (!empty($dbobject->messages)) {
-                            $messages = array_merge($messages, $dbobject->messages);
-                        } // if
                         if (isset($_SESSION['script_sequence'])) {
                             $script_vars['dbobject'] = serialize($dbobject);
                             // do other tasks before returning to this one
@@ -156,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $prev_script = getPreviousScript();
                         $prev_task   = getPreviousTask($prev_script);
                         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+                        $messages = array_merge($messages, $dbobject->getMessages());
                         scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
                     } // if
                 } // if
@@ -173,13 +167,18 @@ if (isset($_SESSION['data'][$table_id])) {
 } // if
 
 if (!empty($dbobject->messages)) {
-    $messages = array_merge($messages, $dbobject->messages);
+    $messages = array_merge($messages, $dbobject->getMessages());
 } // if
 
 // save these variables for later in the same session
 $script_vars['where']    = $where;
 $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

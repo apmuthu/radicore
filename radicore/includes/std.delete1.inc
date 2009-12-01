@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete1.inc
@@ -21,11 +21,11 @@ $mode = 'delete';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -63,9 +63,9 @@ if (isset($script_vars['dbobject'])) {
     // check that primary key is complete
     $dbobject->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->errors);
+        scriptPrevious($dbobject->getErrors());
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -125,12 +125,12 @@ if (empty($errors)) {
     if ($dbobject->errors) {
         if ($dbobject->numrows > 1) {
             // multiple rows, so display error message with this screen
-            $errors[$dbobject->getClassName()] = $dbobject->errors;
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
         	unset($act_buttons['submit']);
         } else {
             // single row, so return to previous script before displaying error message
             $messages = array_merge($messages, $dbobject->getMessages());
-            scriptprevious($dbobject->errors, $messages);
+            scriptprevious($dbobject->getErrors(), $messages);
         } // if
     } // if
     if ($dbobject->getNumRows() < 1) {
@@ -155,7 +155,7 @@ if (empty($errors)) {
 } // if
 
 if (!empty($dbobject->messages)) {
-    $messages = array_merge($messages, $dbobject->messages);
+    $messages = array_merge($messages, $dbobject->getMessages());
 } // if
 
 if ($errors) {
@@ -163,6 +163,7 @@ if ($errors) {
     unset($act_buttons['submit']);
 } else {
     $messages[] = getLanguageText('sys0086'); // 'Press SUBMIT to confirm deletion.'
+    $messages   = array_unique($messages);
 } // if
 
 // save these variables for later in the same session
@@ -170,6 +171,11 @@ $script_vars['where']     = $where;
 $script_vars['scrolling'] = $scrolling;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

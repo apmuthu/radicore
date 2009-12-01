@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -110,7 +110,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 		$this->_exportSQL($subsys_id, $subsys_dir);
 
         // do not display update count as there is none
-        $this->display_count = false;
+        $this->no_display_count = TRUE;
 
 		// return an empty array as there is no database update
         return array();
@@ -242,6 +242,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
         $taskobj =& singleton::getInstance('mnu_task');
 
+        // export contents of MNU_SUBSYSTEM for this subsystem
+    	$taskobj->sql_select = '*';
+    	$taskobj->sql_from   = 'mnu_subsystem';
+    	$taskobj->sql_orderby = 'subsys_id';
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
+        $output = $this->_exportSqlData('mnu_subsystem', $data, $output);
+
         if ($subsys_id == 'MENU') {
             // export contents of MNU_language
         	$taskobj->sql_select = '*';
@@ -263,16 +270,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$taskobj->sql_orderby = 'role_id';
             $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_role', $data, $output);
-		} // if
 
-        // export contents of MNU_SUBSYSTEM for this subsystem
-    	$taskobj->sql_select = '*';
-    	$taskobj->sql_from   = 'mnu_subsystem';
-    	$taskobj->sql_orderby = 'subsys_id';
-        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
-        $output = $this->_exportSqlData('mnu_subsystem', $data, $output);
-
-        if ($subsys_id != 'MENU') {
             // export contents of MNU_ROLE for entries used by this subsystem
         	$taskobj->sql_select = 'DISTINCT role_id';
         	$taskobj->sql_from   = 'mnu_role_task '
@@ -345,12 +343,12 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_initial_value_role', $data2, $output);
 
-            // export the contents of MNU_INITIAL_VALUE_USER for this task
-        	$taskobj->sql_select = 'mnu_initial_value_user.*';
-        	$taskobj->sql_from   = 'mnu_initial_value_user';
-        	$taskobj->sql_orderby = 'field_id,user_id';
+            // export the contents of MNU_TASK_IP_ADDRESS for this task
+        	$taskobj->sql_select = 'mnu_task_ip_address.*';
+        	$taskobj->sql_from   = 'mnu_task_ip_address';
+        	$taskobj->sql_orderby = 'task_id,ip_address';
             $data2 = $taskobj->getData_raw("task_id='$task_id'");
-            $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
+            $output = $this->_exportSqlData('mnu_task_ip_address', $data2, $output);
 
         } // foreach
 
@@ -389,19 +387,60 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $output = $this->_exportSqlData('help_text', $data, $output);
 
         if ($subsys_id == 'MENU') {
-            // export contents of MNU_TODO for all users
-        	$taskobj->sql_select = '*';
-        	$taskobj->sql_from   = 'mnu_todo';
-        	$taskobj->sql_orderby = 'user_id, seq_no';
-            $data = $taskobj->getData_raw();
-            $output = $this->_exportSqlData('mnu_todo', $data, $output);
-
 			// export contents of MNU_CONTROL where record_id='SYSTEM'
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_control';
         	$taskobj->sql_orderby = 'record_id, field_id';
             $data = $taskobj->getData_raw("record_id='SYSTEM'");
             $output = $this->_exportSqlData('mnu_control', $data, $output);
+
+            // export contents of MNU_ACCOUNT
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_account';
+        	$taskobj->sql_orderby = 'rdcaccount_id';
+            $data = $taskobj->getData_raw();
+            $output = $this->_exportSqlData('mnu_account', $data, $output);
+
+            // export contents of MNU_MOTD
+        	$taskobj->sql_select = '*';
+        	$taskobj->sql_from   = 'mnu_motd';
+        	$taskobj->sql_orderby = 'motd_id';
+            $data = $taskobj->getData_raw();
+            $output = $this->_exportSqlData('mnu_motd', $data, $output);
+
+            unset($taskobj);
+            $userobj =& singleton::getInstance('mnu_user');
+            $userobj->sql_select = '*';
+        	$userobj->sql_from   = '';
+        	$userobj->sql_orderby = 'task_id';
+            $data = $userobj->getData_raw();
+            foreach ($data as $user_data) {
+            	$output = $this->_exportSqlData('mnu_user', $user_data, $output);
+            	$user_id = $user_data['user_id'];
+
+            	// export the contents of MNU_INITIAL_VALUE_USER for this task
+            	$userobj->sql_select = 'mnu_initial_value_user.*';
+            	$userobj->sql_from   = 'mnu_initial_value_user';
+            	$userobj->sql_orderby = 'field_id,user_id';
+                $data2 = $userobj->getData_raw("task_id='$task_id'");
+                $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
+
+            	// export contents of MNU_TODO for this user
+            	$userobj->sql_select = '*';
+            	$userobj->sql_from   = 'mnu_todo';
+            	$userobj->sql_orderby = 'user_id, seq_no';
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $output = $this->_exportSqlData('mnu_todo', $data2, $output);
+
+                // export the contents of MNU_USER_IP_ADDRESS for this use
+            	$userobj->sql_select = 'mnu_task_ip_address.*';
+            	$userobj->sql_from   = 'mnu_task_ip_address';
+            	$userobj->sql_orderby = 'task_id,ip_address';
+                $data2 = $userobj->getData_raw("task_id='$task_id'");
+                $output = $this->_exportSqlData('mnu_task_ip_address', $data2, $output);
+
+            } // foreach
+
         } else {
             // export contents of MNU_CONTROL where record_id='<subsystem>'
         	$taskobj->sql_select = '*';

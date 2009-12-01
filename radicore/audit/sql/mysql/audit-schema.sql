@@ -1,21 +1,27 @@
 -- phpMyAdmin SQL Dump
--- version 2.10.0.2
+-- version 2.11.9.4
 -- http://www.phpmyadmin.net
--- 
+--
 -- Host: localhost
--- Generation Time: Mar 06, 2007 at 11:41 AM
+-- Generation Time: Sep 29, 2009 at 02:26 PM
 -- Server version: 4.1.22
--- PHP Version: 4.4.6
+-- PHP Version: 4.4.9
 
--- 
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+--
 -- Database: `audit`
--- 
+--
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `audit_fld`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `audit_fld` (
   `session_id` bigint(20) unsigned NOT NULL default '0',
@@ -30,24 +36,25 @@ CREATE TABLE IF NOT EXISTS `audit_fld` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `audit_logon_errors`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
   `id` int(11) NOT NULL auto_increment,
   `err_timestamp` datetime NOT NULL default '0000-00-00 00:00:00',
   `ip_address` varchar(16) NOT NULL default '0.0.0.0',
-  `user_id` varchar(16) NOT NULL default '',
+  `user_id` varchar(16) default NULL,
   `user_password` varchar(16) NOT NULL default '',
+  `email_addr` varchar(50) default NULL,
   PRIMARY KEY  (`id`)
-) TYPE=MyISAM  AUTO_INCREMENT=22 ;
+) TYPE=MyISAM ;
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `audit_ssn`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `audit_ssn` (
   `session_id` bigint(20) unsigned NOT NULL auto_increment,
@@ -55,13 +62,13 @@ CREATE TABLE IF NOT EXISTS `audit_ssn` (
   `ssn_date` date NOT NULL default '2000-01-01',
   `ssn_time` time NOT NULL default '00:00:00',
   PRIMARY KEY  (`session_id`)
-) TYPE=InnoDB COMMENT='Audit Trail Session data' AUTO_INCREMENT=1873 ;
+) TYPE=InnoDB COMMENT='Audit Trail Session data';
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `audit_tbl`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `audit_tbl` (
   `session_id` bigint(20) unsigned NOT NULL default '0',
@@ -76,9 +83,9 @@ CREATE TABLE IF NOT EXISTS `audit_tbl` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `audit_trn`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `audit_trn` (
   `session_id` bigint(20) unsigned NOT NULL default '0',
@@ -91,9 +98,9 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
 
 -- --------------------------------------------------------
 
--- 
+--
 -- Table structure for table `php_session`
--- 
+--
 
 CREATE TABLE IF NOT EXISTS `php_session` (
   `session_id` varchar(32) NOT NULL default '',

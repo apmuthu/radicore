@@ -7,7 +7,7 @@
 // This file contains database access details and the standard connection function
 $GLOBALS['dbms']   = 'mysql';      // database engine is MySQL
 //$GLOBALS['dbms']   = 'pgsql';      // database engine is PostgreSQL
-//$GLOBALS['dbms']   = 'oracle';     // database engine is PostgreSQL
+//$GLOBALS['dbms']   = 'oracle';     // database engine is Oracle
 
 if ($GLOBALS['dbms'] == "oracle") {
     $GLOBALS['dbhost'] = '//localhost/xe';
@@ -27,7 +27,7 @@ $GLOBALS['PGSQL_dbname'] = 'radicore';
 // NOTE: $dbprefix is for my web host (shared) where my databases are prefixed
 // with my account name to keep them separate from other accounts.
 
-if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {    // this is for my PC
+if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAME'])) {    // this is for my PC
     $GLOBALS['dbusername'] = '****';
     $GLOBALS['dbuserpass'] = '****';
     $GLOBALS['dbprefix']   = null;
@@ -47,7 +47,7 @@ if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) { 
 } // if
 
 // this demonstrates the multi-server option (see FAQ92)
-if (eregi('^(127.0.0.1|localhost|desktop|laptop)$', $_SERVER['SERVER_NAME'])) {
+if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAME'])) {
     global $servers;
     // server 0
 //    $servers[0]['dbhost']     = '192.168.1.64';
@@ -93,5 +93,8 @@ $GLOBALS['use_https'] = false;
 
 // use to access files in the 'classes/custom-processing/<project>/' folder
 //$GLOBALS['project_code'] = 'unknown';
+
+// converts datetime between client and server timezones (PHP version >= 5.2)
+//$GLOBALS['server_timezone'] = 'Europe/London';
 
 ?>

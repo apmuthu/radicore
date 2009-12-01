@@ -1,3 +1,0 @@
-This will display the contents of a record from the DICT_DATABASE table.
-
-Refer to <a href="%root%/dict_database(enq).html">Enquire Databases</a> for full details.

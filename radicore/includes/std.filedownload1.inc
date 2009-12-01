@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // Author: Kyle Brost <http://www.softelephant.com>
 // *****************************************************************************
 
@@ -21,11 +21,11 @@ $mode = 'update';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (empty($where)) {
     scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
@@ -44,11 +44,11 @@ $dbobject->sql_having  = &$sql_having;
 // return a single selection only
 $dbobject->setRowsPerPage(1);
 // perform any initialisation
-$where = $dbobject->initialise($where);
+$where = $dbobject->initialise($where, $selection);
 
 // get data from the database
 $fieldarray = $dbobject->initialiseFileDownload($where);
-if ($dbobject->getErrors()) {
+if ($dbobject->errors) {
     // some sort of error - return to previous script
     scriptPrevious($dbobject->getErrors(), $messages);
 } // if
@@ -81,20 +81,14 @@ if (!$handle)  {
 } // if
 
 // determine the mime-type for the specified file
-if (function_exists ('mime_content_type')) {
-    // this requires <mime_magic.magicfile = "/path/to/magic.mime"> directive in php.ini file
-    $content_type = mime_content_type($file);
-    //logstuff("content_type: " .$content_type, __FUNCTION__, __LINE__);
-} else {
-    $content_type = "application/octet-stream";
-} // if
+$content_type = getContentType($file);
 
 header("Content-type: " . $content_type);
 header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 if (isset($mode) and $mode == 'inline') {
-    header("Content-Disposition: filename=" . basename($file));
+    header("Content-Disposition: filename=\"" .basename($file) ."\"");
 } else {
-    header("Content-Disposition: attachment; filename=" . basename($file));
+    header("Content-Disposition: attachment; filename=\"" .basename($file) ."\"");
 } // if
 header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
 header('Pragma: public');

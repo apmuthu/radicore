@@ -39,9 +39,10 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON audit_fld TO PUBLIC;
 CREATE TABLE audit_logon_errors (
   id number(10) NOT NULL,
   err_timestamp timestamp NOT NULL,
-  ip_address varchar(16) NOT NULL,
-  user_id varchar2(16) NOT NULL,
+  ip_address varchar2(16) NOT NULL,
+  user_id varchar2(16),
   user_password varchar2(16) NOT NULL,
+  email_addr varchar2(50),
   PRIMARY KEY  (id)
 );
 CREATE SEQUENCE audit_logon_errors_seq;

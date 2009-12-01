@@ -36,6 +36,9 @@ this will return an array composed of a 4 item array for each language the os su
 //*************************************************
 function get_languages($input)
 {
+	// change underscore to hyphen
+    $input = str_replace('_', '-', strtolower($input));
+
 	// get the languages (now moved to file 'sys.language_array.inc')
 	$a_languages = getLanguageArray('languages');
 	$index = '';

@@ -1,5 +1,5 @@
 <?php
-    // file created on September 19, 2008, 10:12 am
+    // file created on November 15, 2009, 5:26 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -190,6 +190,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_task_ip_address',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_todo',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
@@ -235,6 +239,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

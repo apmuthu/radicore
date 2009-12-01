@@ -1,13 +1,15 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s01 extends dict_dataBase
 {
     // ****************************************************************************
     // this class is used to import existing database names
+    // ****************************************************************************
+
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
@@ -61,36 +63,27 @@ class dict_dataBase_s01 extends dict_dataBase
         	return $fieldarray;
         } // if
 
-        global $dbprefix;
+        global $servers;
 
-        // get list of existing database names
-        $array  = $this->_ddl_showDatabases($dbprefix);
-        $array2 = array();
+        $dbnames = array();
 
-        // filter out those databases that already exist in DICT database
-        $i = 0;
-        foreach ($array as $row => $dbname) {
-            $dbname = strtolower($dbname);
-            if (!empty($dbprefix)) {
-                // remove server prefix from dbname
-                if (eregi('^(' .$dbprefix .')', $dbname)) {
-                    $prefix_len = strlen($dbprefix);
-        			$dbname = substr($dbname, $prefix_len);
-                    $array[$row] = $dbname;
-                } // if
-            } // if
-        	$count = $this->getCount("database_id='$dbname'");
-            if ($count == 0) {
-                // store details of new database
-                $array2[$dbname] = $dbname;
-            } // if
-        } // foreach
+        if (!empty($servers)) {
+            // there are different databases on different servers
+        	foreach ($servers as $server) {
+        		$dbprefix = $server['dbprefix'];
+        		$dbnames = $this->_loadDatabases ($dbnames, $dbprefix);
+        	} // foreach
+        } else {
+            // all databases are within the same server
+            $dbprefix = $GLOBALS['dbprefix'];
+            $dbnames = $this->_loadDatabases ($dbnames, $dbprefix);
+        } // if
 
-        if (empty($array2)) {
+        if (empty($dbnames)) {
             // 'There are no new database schemas to import'
         	$this->errors[] = getLanguageText('e0025');
         } else {
-            $this->lookup_data['database_id'] = $array2;
+            $this->lookup_data['database_id'] = $dbnames;
         } // if
 
         return $fieldarray;
@@ -114,7 +107,7 @@ class dict_dataBase_s01 extends dict_dataBase
         } // if
 
         if (empty($this->errors)) {
-        	$next['task_id'] = 'dict_table(list)2';
+        	$next['task_id'] = 'dict_table(list2)';
             $next['where']   = array2where($fieldarray, $this->getPkeyNames());
             append2ScriptSequence($next);
         } // if
@@ -122,6 +115,36 @@ class dict_dataBase_s01 extends dict_dataBase
         return $fieldarray;
 
     } // _cm_post_insertRecord
+
+    // ****************************************************************************
+    function _loadDatabases ($dbnames, $dbprefix)
+    // find databases which have this $dbprefix and load their names into $dbnames.
+    {
+        // get list of existing database names
+        $array  = $this->_ddl_showDatabases($dbprefix);
+
+        // filter out those databases that already exist in DICT database
+        $i = 0;
+        $prefix_len = strlen($dbprefix);
+        foreach ($array as $row => $dbname) {
+            $dbname = strtolower($dbname);
+            if (!empty($dbprefix)) {
+                // remove server prefix from dbname
+                if (preg_match('/^(' .$dbprefix .')/i', $dbname)) {
+        			$dbname = substr($dbname, $prefix_len);
+                    $array[$row] = $dbname;
+                } // if
+            } // if
+        	$count = $this->getCount("database_id='$dbname'");
+            if ($count == 0) {
+                // store details of new database
+                $dbnames[$dbname] = $dbname;
+            } // if
+        } // foreach
+
+        return $dbnames;
+
+    } // _loadDatabases
 
 // ****************************************************************************
 } // end class

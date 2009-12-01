@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_relationship extends Default_Table
@@ -34,7 +34,7 @@ class dict_relationship extends Default_Table
         if ($mode == 'search') {
             // in SEARCH mode set control to POPUP
             $this->fieldspec['table_id_snr']['control']       = 'popup';
-            $this->fieldspec['table_id_snr']['task_id']       = 'dict_table(popup)snr';
+            $this->fieldspec['table_id_snr']['task_id']       = 'dict_table(popup1)snr';
             $this->fieldspec['table_id_snr']['foreign_field'] = 'table_id_snr';
             // remove NOEDIT switch
             unset($this->fieldspec['table_id_snr']['noedit']);
@@ -244,11 +244,21 @@ class dict_relationship extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
         $pattern_id = getPatternId();
-        if ($pattern_id == 'add2') {
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
+        if (preg_match('/(add2)/i', $pattern_id)) {
             $where_array = where2array($where);
          	// remove fields included from $selection instead of $where
             if (isset($where_array['database_id_jnr'])) {
@@ -329,13 +339,13 @@ class dict_relationship extends Default_Table
         //DebugBreak();
         switch ($popupname) {
             // replace $where string for this popup
-        	case 'dict_table(popup)':
+        	case 'dict_table(popup1)':
         		$where = "database_id='{$fieldarray['database_id_jnr']}'";
         		break;
-        	case 'dict_table(popup)snr':
+        	case 'dict_table(popup1)snr':
         		$where = "database_id='{$fieldarray['database_id_snr']}'";
         		break;
-        	case 'dict_column(popup)':
+        	case 'dict_column(popup1)':
         		$where = "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'";
         		break;
         	default:
@@ -362,19 +372,19 @@ class dict_relationship extends Default_Table
     {
         switch ($return_from) {
             // move returned value to the correct field
-            case 'dict_table(popup)':
+            case 'dict_table(popup1)':
 //                $fieldarray['database_id_jnr'] = $select_array['database_id'];
 //                $fieldarray['table_id_jnr']    = $select_array['table_id'];
 //                unset($select_array['database_id']);
 //                unset($select_array['table_id']);
                 break;
-            case 'dict_table(popup)snr':
+            case 'dict_table(popup1)snr':
 //                $fieldarray['database_id_snr'] = $select_array['database_id'];
 //                $fieldarray['table_id_snr']    = $select_array['table_id'];
 //                unset($select_array['database_id']);
 //                unset($select_array['table_id']);
                 break;
-            case 'dict_column(popup)':
+            case 'dict_column(popup1)':
 //                $fieldarray['parent_field'] = $select_array['column_id'];
 //                unset($select_array['database_id']);
 //                unset($select_array['table_id']);
@@ -439,7 +449,7 @@ class dict_relationship extends Default_Table
         } // if
 
         // switch to task to maintain related columns
-        $next['task_id'] = 'dict_related_column(multi)2';
+        $next['task_id'] = 'dict_related_column(multi4)';
         $next['where']   = $where;
 
         // this is processed by scriptnext() and scriptprevious()
@@ -478,12 +488,12 @@ class dict_relationship extends Default_Table
     } // _cm_pre_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_output ($string)
+    function _cm_pre_output ($filename)
     // perform any processing required before the output operation
     {
         // custom code goes here
 
-        return $string;
+        return $filename;
 
     } // _cm_pre_output
 

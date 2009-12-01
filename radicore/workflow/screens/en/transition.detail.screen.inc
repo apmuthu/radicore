@@ -13,7 +13,11 @@ $structure['main']['fields'][] = array('transition_name' => 'Transition Name');
 $structure['main']['fields'][] = array('transition_desc' => 'Description');
 $structure['main']['fields'][] = array('transition_trigger' => 'Trigger');
 $structure['main']['fields'][] = array('time_limit' => 'Time Limit');
-$structure['main']['fields'][] = array('task_id' => 'Task');
+
+$structure['main']['fields'][8][] = array('label' => 'Task');
+$structure['main']['fields'][8][] = array('field' => 'task_id',
+                                          'size' => 40);
+
 $structure['main']['fields'][] = array('role_id' => 'Role');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created By');

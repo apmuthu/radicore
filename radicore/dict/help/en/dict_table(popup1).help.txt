@@ -1,0 +1,5 @@
+This will list records on the DICT_TABLE table and allow one or more to be selected. 
+
+After selecting records please press the CHOOSE button. 
+
+Refer to <a href="%root%/dict_table(popup1).html">Choose Database Table</a> for full details.

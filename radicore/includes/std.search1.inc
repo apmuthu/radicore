@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.search1.inc
@@ -18,6 +18,12 @@ $mode = 'search';
 
 // load session variables
 initSession();
+
+//if (!empty($selection) AND !isset($return_from)) {
+//	// $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -43,9 +49,14 @@ if (isset($script_vars['dbobject'])) {
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
+    $dbobject->sql_search_table = &$sql_search_table;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
+    if (!empty($selection)) {
+    	$dbobject->sql_selection = $selection;
+    } // if
     // get any initial values
+    //$where = $dbobject->initialise($where, $selection);
     $where = $dbobject->initialise($where);
     $fieldarray = $dbobject->fieldarray;
 } // if
@@ -68,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if ($dbobject->errors) {
             	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
+            // get any data which may contain LOOKUP options
+            $fieldarray = $dbobject->getExtraData($fieldarray);
         } // if
     } else {
         // get any data which may contain LOOKUP options
@@ -103,9 +116,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!$errors) {
         if (isset($_POST['submit'])) {
             // initialise search criteria
-            $where = ''; // use empty string (''), not NULL
+            $search = ''; // use empty string (''), not NULL
+            // format data for internal use
+            $fieldarray = $dbobject->unFormatData($fieldarray);
             // perform any custom validation
             $fieldarray = $dbobject->validateSearch($fieldarray);
+            $errors = $dbobject->getErrors();
             // get current field specifications
             $fieldspec = $dbobject->getFieldSpec();
             // format POST data into SQL 'where' string
@@ -116,15 +132,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // it does not (like the SUBMIT button, for example), so ignore it
                     //unset($fieldarray[$field]);
                 } else {
+                    if ($field == 'curr_or_hist') {
+                    	if (!array_key_exists($field, $_POST)) {
+                    	    // not submitted, so ignore default value
+                    		$value = '';
+                    	} // if
+                    } // if
                     if (is_string($value)) {
                     	// strip leading/trailing spaces
                         $value = trim($value);
                     } // if
                     // deal with non-empty fields only
-                    if (strlen($value) > 0) {
+                    if ((is_string($value) AND strlen($value) > 0) OR (is_array($value) AND count($value) > 0)) {
                         $spec     = $fieldspec[$field];
                         $operator = '=';
-                        if (preg_match('/^(is not null|is null)$/i', $value, $regs )) {
+                        if (is_string($value) AND preg_match('/^(is not null|is null)$/i', $value, $regs )) {
                             $value = strtoupper($regs[0]);
                             $spec['type'] = 'string';
                             $operator = '';
@@ -140,7 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         // value is a valid date
                                         $value = $internaldate;
                                     } else {
-                                        $errors[$field] = getLanguageText('sys0040');  // this is not a valid date
+                                        //$errors[$field] = getLanguageText('sys0040');  // this is not a valid date
+                                        $errors[$field] = $dateobj->errors;
                                     } // if
                             		break;
                             	case 'time':
@@ -152,9 +175,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     if ($internaltime = $dateobj->getInternalTime($value)) {
                                         $value = $internaltime;
                                     } else {
-                                        $errors[$field] = getLanguageText('sys0041');  // this is not a valid TIME
+                                        //$errors[$field] = getLanguageText('sys0041');  // this is not a valid TIME
+                                        $errors[$field] = $dateobj->errors;
                                     } // if
                                     break;
+                            	case 'datetime':
+                            	case 'timestamp':
+                            	    if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $value, $regs )) {
+                                        $operator = $regs[0];
+                                        $value = ltrim($value, $operator);
+                                    } // if
+                                    // if this is a complete and valid date then replace it
+                                    if ($internaldatetime = $dateobj->getInternalDateTime($value)) {
+                                        // value is a valid date
+                                        $value = $internaldatetime;
+                                        if (!empty($_SESSION['timezone_server']) AND !empty($_SESSION['timezone_client'])) {
+                                	    	$value = convertTZ($value, $_SESSION['timezone_client'], $_SESSION['timezone_server']);
+                                	    } // if
+                                    } else {
+                                        //$errors[$field] = getLanguageText('sys0048');  // this is not a valid date/time
+                                        $errors[$field] = $dateobj->errors;
+                                    } // if
+                            	    break;
                                 case 'boolean':
                                     // result from radiogroup/checkbox may be varied, so convert to TRUE or FALSE
                                     // (where actual values are defined within $fieldspec)
@@ -190,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     } // if
                                     // replace foreign decimal point and thousands separator
                                     $value = number_unformat($value);
-                                    if (eregi('float|real',$spec['type'])) {
+                                    if (preg_match('/(float|real)/i',$spec['type'])) {
                                     	$value = sprintf('%f', $value);
                                     	// remove trailing zeroes after any decimal point
                                     	$value = rtrim($value,'0');
@@ -205,12 +247,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         $value = number_format($value, $decimal_places, '.', '');
                                     } // if
                             	    break;
-                            	default:
-                            	    if (substr_count($value, '%') > 0) {
+                            	default:  // type = 'string'
+                            	    if (is_string($value) AND substr_count($value, '%') > 0) {
                                     	$operator = 'LIKE';
-                                    } else {
+                            	    } else {
                                         if (isset($fieldspec[$field]['control'])) {
-                                        	$operator = '=';
+                                            if ($fieldspec[$field]['control'] == 'multidrop' AND is_array($value)) {
+                                                foreach ($value as $key => $entry) {
+                                                	$value[$key] = addslashes($entry);
+                                                } // foreach
+                                            	$value = "IN ('" .implode("','", $value) ."')";
+                            	                $operator = '';
+                                            } else {
+                                        	    $operator = '=';
+                                            } // if
                                         } else {
                                             $operator = 'LIKE';
                                             $value .= '%';  // append wildcard character by default
@@ -220,9 +270,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             } // switch
                         } // if
 
-                        $value = addslashes($value);
-                        if (!empty($where)) {
-                            $where .= ' AND ';
+                        //$value = addslashes($value);
+                        if (!empty($search)) {
+                            $search .= ' AND ';
                         } // if
 
                         switch ($spec['type']) {
@@ -230,16 +280,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 // ignore value 0 as this is same as NULL
                                 if ($value > 0) {
                                     // $value is index number, use exact match
-                                    $where .= "$field = $value";
+                                    $search .= "$field = $value";
                                 } else {
-                                    $where = rtrim($where, ' AND');
+                                    $search = rtrim($search, ' AND');
                                 } // if
                                 break;
                             case 'boolean':
                                 if (preg_match('/^(true|false)$/i', $value, $regs )) {
-                                    $where .= "$field=$value";
+                                    $search .= "$field=$value";
                                 } else {
-                                    $where .= "$field LIKE '$value'";
+                                    $search .= "$field LIKE '$value'";
                                 } // if
                                 break;
                             case 'numeric':
@@ -250,16 +300,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             case 'real':
                                 // include specified operator (which is variable)
                                 if ($operator == 'LIKE') {
-                                	$where .= "$field LIKE '$value'";
+                                	$search .= "$field LIKE '$value'";
                                 } else {
-                                    $where .= $field.$operator.$value;
+                                    $search .= $field.$operator.$value;
                                 } // if
                                 break;
                             default:
                                 if (!empty($operator)) {
-                                	$where .= "$field $operator '$value'";
+                                	$search .= "$field $operator '" .addslashes($value) ."'";
                                 } else {
-                                    $where .= "$field $value";
+                                    $search .= "$field $value";
                                 } // if
                                 break;
                         } // switch
@@ -268,20 +318,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 } // if
             } // foreach
             if (empty($errors)) {
-            	if (empty($where)) {
-                    if (isset($_SESSION['search'][$dbobject->tablename])) {
+                if (!empty($dbobject->sql_search_table)) {
+                	$search_table = $dbobject->sql_search_table;
+                } else {
+                    $search_table = $dbobject->tablename;
+                } // if
+                if (empty($search)) {
+                    if (isset($_SESSION['search'][$search_table])) {
                     	// clear saved search criteria
-                        unset($_SESSION['search'][$dbobject->tablename]);
+                        unset($_SESSION['search'][$search_table]);
                     } // if
                 } else {
                     // save this search criteria
-                    $_SESSION['search'][$dbobject->tablename] = $where;
+                    $_SESSION['search'][$search_table] = $search;
                 } // if
+                // perform any final processing
+                $search = $dbobject->post_search($search, $dbobject->sql_selection);
+                $errors = array_merge($errors, $dbobject->getErrors());
+            } // if
+            if (empty($errors)) {
                 // send search criteria back to the previous script
                 $prev_script = getPreviousScript();
                 $prev_task   = getPreviousTask($prev_script);
-                $_SESSION['pages'][$prev_script][$prev_task]['search'] = $where;
-                scriptPrevious(null, null, 'search');
+                $_SESSION['pages'][$prev_script][$prev_task]['search'] = $search;
+                scriptPrevious($errors, $messages, 'search');
             } else {
                 foreach ($errors as $key => $value) {
                 	if ($key != $dbobject->getClassName()) {

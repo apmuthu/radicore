@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -140,7 +140,12 @@
       <!-- create hyperlink to sort on this field -->
       <a href="{$script}?{$session}&amp;orderby={$fieldname}">
         <!-- this is the visible text for the hyperlink -->
-        <xsl:value-of select="$label"/>
+        <!--<xsl:value-of select="$label"/>-->
+        <xsl:call-template name="replace">
+          <xsl:with-param name="text" select="$label"/>
+          <xsl:with-param name="replace" select="'&amp;nbsp;'"/>
+          <xsl:with-param name="by" select="'&#160;'"/>
+        </xsl:call-template>
       </a>
       <!-- if sorted by this field insert ascending or descending image -->
       <xsl:if test="$orderby=$fieldname">
@@ -151,7 +156,13 @@
 
     <xsl:otherwise>
       <!-- no sorting allowed, so don't bother with the hyperlink -->
-      <xsl:value-of select="$label"/>
+      <!--<xsl:value-of select="$label"/>-->
+      <xsl:call-template name="replace">
+        <xsl:with-param name="text" select="$label"/>
+        <xsl:with-param name="replace" select="'&amp;nbsp;'"/>
+        <xsl:with-param name="by" select="'&#160;'"/>
+      </xsl:call-template>
+      
     </xsl:otherwise>
 
   </xsl:choose>

@@ -1,12 +1,12 @@
 <?php
-    // file created on October 9, 2006, 10:31 am
+    // file created on June 23, 2009, 6:54 pm
     
     // field specifications for table xample.test_autoincrement
     $fieldspec['id']                        = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'size' => 11,
                                                     'auto_increment' => 'y',
-                                                    'minvalue' => 0,
-                                                    'maxvalue' => 4294967295,
+                                                    'minvalue' => -9999999999,
+                                                    'maxvalue' => 9999999999,
                                                     'pkey' => 'y',
                                                     'required' => 'y');
     
@@ -29,10 +29,18 @@
     $this->parent_relations                 = array();
     
     // determines if database updates are recorded in an audit log 
-    $this->audit_logging                    = FALSE;
+    $this->audit_logging                    = TRUE;
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

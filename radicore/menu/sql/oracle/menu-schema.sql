@@ -149,6 +149,32 @@ REVOKE ALL ON mnu_menu FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_menu TO PUBLIC;
 
 -- 
+-- Table structure for table mnu_motd
+-- 
+
+CREATE TABLE MNU_MOTD
+(
+  MOTD_ID       NUMBER                          NOT NULL,
+  MOTD_SUBJECT  CHAR(80 BYTE)                   NOT NULL,
+  MOTD_MESSAGE  CLOB                            NOT NULL,
+  START_DATE    DATE                            DEFAULT '2001-01-01'          NOT NULL,
+  END_DATE      DATE                            DEFAULT '9999-12-31',
+  role_id       varchar2(16 byte),
+  CREATED_DATE  TIMESTAMP(6)                    DEFAULT '2001-01-01'          NOT NULL,
+  CREATED_USER  VARCHAR2(16 BYTE)               DEFAULT 'UNKNOWN'             NOT NULL,
+  REVISED_DATE  TIMESTAMP(6),
+  REVISED_USER  VARCHAR2(16 BYTE)
+);
+CREATE SEQUENCE mnu_motd_seq; 
+
+CREATE UNIQUE INDEX MNU_MOTD_PK ON MNU_MOTD (MOTD_ID);
+
+REVOKE ALL ON mnu_motd FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_motd TO PUBLIC;
+REVOKE ALL ON mnu_motd_seq FROM PUBLIC; 
+GRANT SELECT,ALTER ON mnu_motd_seq TO PUBLIC; 
+
+-- 
 -- Table structure for table mnu_nav_button
 -- 
 
@@ -307,9 +333,9 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task TO PUBLIC;
 CREATE TABLE mnu_task_field (
   task_id varchar2(80) NOT NULL,
   field_id varchar2(40) NOT NULL,
+  field_desc varchar2(255),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  field_desc varchar2(255),
   revised_date timestamp,
   revised_user varchar2(16),
   PRIMARY KEY  (task_id,field_id)
@@ -366,9 +392,10 @@ CREATE TABLE mnu_user (
   end_date date,
   ip_address varchar2(16),
   email_addr varchar2(50),
-  exernal_id varchar2(255),
+  external_id varchar2(255),
   is_external_auth_off char(1) default 'N',
   party_id number(10),
+  user_timezone varchar2(40),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,
@@ -381,3 +408,30 @@ CREATE INDEX  mnu_user_idx3 ON  mnu_user (rdcaccount_id);
 
 REVOKE ALL ON mnu_user FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_user TO PUBLIC;
+
+CREATE TABLE mnu_user_ip_address (
+  user_id varchar2(16) NOT NULL,
+  ip_address varchar2(40) NOT NULL,
+  created_date timestamp NOT NULL,
+  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  revised_date timestamp,
+  revised_user varchar2(16),
+  PRIMARY KEY  (user_id, ip_address)
+);
+
+REVOKE ALL ON mnu_user_ip_address FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_user_ip_address TO PUBLIC;
+
+CREATE TABLE mnu_task_ip_address (
+  task_id varchar2(80) NOT NULL,
+  ip_address varchar2(40) NOT NULL,
+  created_date timestamp NOT NULL,
+  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
+  revised_date timestamp,
+  revised_user varchar2(16),
+  PRIMARY KEY  (task_id, ip_address)
+);
+
+REVOKE ALL ON mnu_task_ip_address FROM PUBLIC;
+GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task_ip_address TO PUBLIC;
+

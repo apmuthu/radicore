@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -29,10 +29,12 @@ if (isset($act_buttons['choose'])) {
     } // if
 } // if
 
+$original_where     = $where;
+$original_selection = $selection;
 if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
     // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
     $new_selection = true;
 } else{
     $new_selection = false;
@@ -88,9 +90,11 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $original_where = $where;
-    $where = $dbouter->initialise($original_where);
+    $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
+        if (!empty($dbouter->messages)) {
+        	$messages = array_merge($messages, $dbouter->getMessages);
+        } // if
         scriptPrevious($dbouter->getErrors(), $messages);
     } // if
     // set sort order (if defined)
@@ -128,15 +132,18 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($original_where);
+    $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
+        if (!empty($dbinner->messages)) {
+        	$messages = array_merge($messages, $dbinner->getMessages);
+        } // if
         scriptPrevious($dbinner->getErrors(), $messages);
     } // if
 } // if
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbinner);
+    $messages = chooseButton($_POST, $dbinner, 'dbinner');
 } // if
 
 if (!empty($_POST)) {
@@ -174,11 +181,15 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbouter->reset($where);
+    //$dbouter->reset($where);
+    $dbouter->setPageNo(1);
+    $dbouter->_cm_reset($where);
 } // if
 
 // get data for the outer table
 $outer_data = $dbouter->getData($where);
+
+$messages = array_merge($messages, $dbouter->getMessages());
 
 if ($dbouter->errors) {
     // some sort of error
@@ -191,7 +202,6 @@ if ($dbouter->errors) {
     } // if
 } // if
 
-$messages = array_merge($messages, $dbouter->getMessages());
 if ($dbouter->getNumRows() < 1) {
     if (strtolower($return_action) == 'search') {
         if (isset($return_from)) {
@@ -282,9 +292,7 @@ if (!empty($outer_data)) {
     } // if
 
 } // if
-if ($dbinner->errors) {
-    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-} // if
+
 if ($dbinner->getNumRows() == 0) {
     // 'no entries found on $inner_table'
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table));

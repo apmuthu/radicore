@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_transition extends Default_Table
@@ -25,26 +25,19 @@ class wf_transition extends Default_Table
     } // wf_transition
 
     // ****************************************************************************
-    function _cm_getExtraData ($where, $fieldarray)
-    // Perform custom processing for the getExtraData method.
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if (!array_key_exists('transition_trigger', $this->lookup_data)) {
-            // get array for after_submit and put into LOOKUP_DATA
-            $array = $this->getValRep('transition_trigger');
-            $this->lookup_data['transition_trigger'] = $array;
-        } // if
-
-        if (!array_key_exists('role_id', $this->lookup_data)) {
-            $dbobject =& singleton::getInstance('mnu_role');
-            $role_array = $dbobject->getValRep('role_id');
-            $this->lookup_data['role_id'] = $role_array;
+        if ($GLOBALS['mode'] == 'search') {
+            $this->fieldspec['task_id']['allow_input'] = 'y';
+            $this->fieldspec['task_id']['foreign_field'] = 'task_id';
         } // if
 
         return $fieldarray;
 
-    } // _cm_getExtraData
+    } // _cm_changeConfig
 
     // ****************************************************************************
     function _cm_commonValidation ($fieldarray, $originaldata)
@@ -69,11 +62,32 @@ class wf_transition extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (!array_key_exists('transition_trigger', $this->lookup_data)) {
+            // get array for after_submit and put into LOOKUP_DATA
+            $array = $this->getValRep('transition_trigger');
+            $this->lookup_data['transition_trigger'] = $array;
+        } // if
+
+        if (!array_key_exists('role_id', $this->lookup_data)) {
+            $dbobject =& singleton::getInstance('mnu_role');
+            $role_array = $dbobject->getValRep('role_id');
+            $this->lookup_data['role_id'] = $role_array;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
+
+    // ****************************************************************************
     function _cm_getInitialData ($fieldarray)
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         if (isset($fieldarray['workflow_id'])) {
             // set transition_id to next available number for this workflow_id
             $workflow_id = $fieldarray['workflow_id'];
@@ -122,19 +136,21 @@ class wf_transition extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
-        //DebugBreak();
         switch ($popupname) {
-            case 'mnu_task(popup1)':
+            case 'mnu_task(popup1)a':
                 $where = null;
                 if ($GLOBALS['mode'] == 'search') {
                     // use input from current screen
                     if (!empty($_POST['start_task_id'])) {
                         $where = "task_id LIKE '{$_POST['start_task_id']}'";
+                    } elseif (!empty($fieldarray['task_id'])) {
+                        $where = "task_id LIKE '{$fieldarray['task_id']}'";
                     } // if
                 } // if
                 break;

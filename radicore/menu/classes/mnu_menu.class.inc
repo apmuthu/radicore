@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_menu extends Default_Table
@@ -45,6 +45,14 @@ class mnu_menu extends Default_Table
                           . "LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
         $this->sql_where  = "(mnu_role_task.role_id IS NOT NULL OR mnu_role.global_access='Y') "
                           . "AND (mnu_task.is_disabled='N')";
+
+        // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
+        $ip_address = $_SERVER['SERVER_ADDR'];
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_menu.task_id_jnr) = 0 THEN true"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_menu.task_id_jnr AND ip_address='$ip_address') = 1 THEN true"
+                                  ." ELSE false"
+                             ." END AS ip_address_valid";
+        $this->sql_having = "ip_address_valid=true";
 
         $dbmenu_data = $this->getData_raw("menu_id='$task_id'");
 
@@ -153,7 +161,7 @@ class mnu_menu extends Default_Table
     } // _cm_pre_updateLinkData
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.

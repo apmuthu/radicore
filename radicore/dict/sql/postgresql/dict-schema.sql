@@ -40,6 +40,7 @@ CREATE TABLE dict_column (
     column_desc character varying(255) DEFAULT ''::character varying NOT NULL,
     col_comment text,
     col_type character varying(20) DEFAULT ''::character varying NOT NULL,
+    col_type_native character varying(32),
     col_array_type character varying(20),
     col_values text,
     user_size bigint,
@@ -84,8 +85,7 @@ CREATE TABLE dict_column (
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,
-    revised_user character varying(16),
-    col_type_native character varying(32)
+    revised_user character varying(16)
 );
 
 
@@ -179,6 +179,8 @@ CREATE TABLE dict_table (
     default_orderby character varying(64),
     alt_language_table character varying(64),
     alt_language_cols character varying(4000),
+    nameof_start_date character varying(40),
+    nameof_end_date character varying(40),
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,

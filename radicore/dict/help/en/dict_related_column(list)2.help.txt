@@ -1,3 +1,0 @@
-This will list records on the DICT_RELATIONSHIP table for a selected DATABASE.
-
-Refer to <a href="%root%/dict_relationship(enq).html">Enquire Relationship</a> for full details.

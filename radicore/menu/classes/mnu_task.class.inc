@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
@@ -32,6 +32,7 @@ class mnu_task extends Default_Table
     {
         // obtain security class from logon screen
         $role_id = $_SESSION['role_id'];
+        $ip_address = $_SERVER['SERVER_ADDR'];
 
         // load options for SQL SELECT statement
         // NOTE that task access is affected by the following:
@@ -40,10 +41,15 @@ class mnu_task extends Default_Table
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
         $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time'
                            .", CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 'Y' ELSE 'N' END AS access_allowed";
-        $this->sql_from   = 'mnu_task '
-                          . 'LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id) '
-                          . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id') "
-                          . "LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
+        // - check that IP address is valid
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN true"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id' AND ip_address='$ip_address') = 1 THEN true"
+                                  ." ELSE false"
+                             ." END AS ip_address_valid";
+        $this->sql_from   = 'mnu_task'
+                         . ' LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id)'
+                         . " LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id')"
+                         . " LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
         $this->sql_where  = '';
 
         $this->errors = array();
@@ -68,13 +74,18 @@ class mnu_task extends Default_Table
                     return;
                 } // if
             } // if
+            if (!is_True($fieldarray['ip_address_valid'])) {
+                // 'This IP address is not valid'
+            	$this->errors[] = getLanguageText('sys0201', $ip_address);
+                return;
+            } // if
         } // if
 
-        if (eregi('PROC|BATC', $fieldarray['task_type'])) {
+        if (preg_match('/PROC/i', $fieldarray['task_type'])) {
             // this script must exist as a file
             if (!empty($_SERVER['HTTPS'])) {
                 // use one or the other of these, whichever is available
-                if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
+                if (!empty($_SERVER['PATH_TRANSLATED']) AND strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
                 	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
                 } else {
                     $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
@@ -233,7 +244,7 @@ class mnu_task extends Default_Table
         } // if
 
         if (is_True($fieldarray['keep_data'])) {
-        	if (!eregi('list1|popup1|tree1', $fieldarray['pattern_id'])) {
+        	if (!preg_match('/(list1|popup1|tree1)/i', $fieldarray['pattern_id'])) {
         	    // 'This setting is not valid for this pattern'
         		$this->errors['keep_data'] = getLanguageText('e0055');
         	} // if
@@ -290,7 +301,7 @@ class mnu_task extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -483,7 +494,7 @@ class mnu_task extends Default_Table
     } // _cm_pre_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_output ($string)
+    function _cm_pre_output ($filename)
     // perform any processing required before the output operation
     {
         if ($GLOBALS['mode'] == 'pdf-list') {
@@ -492,7 +503,7 @@ class mnu_task extends Default_Table
             unset($this->fieldspec['pattern_id']['optionlist']);
         } // if
 
-        return $string;
+        return $filename;
 
     } // _cm_pre_output
 
@@ -501,7 +512,7 @@ class mnu_task extends Default_Table
     // perform custom validation before insert.
     {
         // valid characters are numbers, letters, and '-_#$()'
-        if (ereg('[^0-9a-zA-Z-_#$()]', $fieldarray['task_id'], $regs)) {
+        if (preg_match('/[^0-9a-zA-Z-_#$()]/', $fieldarray['task_id'], $regs)) {
             // "Contains invalid character ($regs[0])"
             $this->errors['task_id'] = getLanguageText('e0022', $regs[0]);
         } // if

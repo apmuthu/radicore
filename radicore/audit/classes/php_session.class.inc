@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class php_session extends Default_Table
@@ -56,6 +56,9 @@ class php_session extends Default_Table
     function read ($session_id)
     // read any data for this session.
     {
+        // strip off any trailing characters
+        $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
+
         $fieldarray = $this->_dml_getData("session_id='" .addslashes($session_id) ."'");
 
         if (isset($fieldarray[0]['session_data'])) {
@@ -72,6 +75,9 @@ class php_session extends Default_Table
     function write ($session_id, $session_data)
     // write session data to the database.
     {
+        // strip off any trailing characters
+        $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
+
         if (!empty($this->fieldarray)) {
             if ($this->fieldarray['session_id'] != $session_id) {
                 // user is starting a new session with previous data
@@ -111,6 +117,9 @@ class php_session extends Default_Table
     function destroy ($session_id)
     // destroy the specified session.
     {
+        // strip off any trailing characters
+        $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
+
         $fieldarray['session_id'] = $session_id;
         $this->_dml_deleteRecord($fieldarray);
 

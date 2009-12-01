@@ -59,6 +59,7 @@ $array['Tree Type']                     = 'Tree Type';
 
 // task details for subsystem XAMPLE
 $array['test_autoinsert(add)']                    = 'Test Auto Insert';
+$array['x_fix-last-addr-no(batch)']               = 'Fix Last Address No (batch)';
 $array['x_option_alt(add2)']                      = 'Add Option (Alternative Languages)';
 $array['x_option_alt(del1)']                      = 'Delete Option (Alternative Languages)';
 $array['x_option_alt(enq1)']                      = 'Enquire Option (Alternative Languages)';
@@ -94,6 +95,7 @@ $array['x_person_addr(add)']                      = 'Add Person Address';
 $array['x_person_addr(del)']                      = 'Delete Person Address';
 $array['x_person_addr(enq)']                      = 'Enquire Person Address';
 $array['x_person_addr(list)']                     = 'List Person Address';
+$array['x_person_addr(search)']                   = 'Search Person Address';
 $array['x_person_addr(upd)']                      = 'Update Person Address';
 $array['x_person(add)']                           = 'Add Person';
 $array['x_person(csv)']                           = 'Output Person data to CSV file';

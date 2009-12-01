@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s05 extends mnu_user
@@ -39,9 +39,27 @@ class mnu_user_s05 extends mnu_user
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
+        // find out if user passwords are to be hidden or not
+    	$dbobject =& singleton::getInstance('mnu_control');
+        $this->pswd_hidden  = $dbobject->getControlData('pswd_hidden');
+        $this->pswd_encrypt = $dbobject->getControlData('pswd_encrypt');
+        $this->pswd_format  = $dbobject->getControlData('pswd_format');
+        unset($dbobject);
+
         // this is here to neutralise the method in the parent class
         $this->where = $where;
 
@@ -97,6 +115,16 @@ class mnu_user_s05 extends mnu_user
             $data = $this->formatData($data);
             $email_addr = $data['email_addr'];
             $password   = $data['user_password'];
+            if (is_True($this->pswd_encrypt)) {
+                // decrypt the password
+                $crypt_obj =& singleton::getInstance('encryption_class');
+                $key = $data['user_id'];
+                $password = $crypt_obj->decrypt($key, $password);
+                if ($crypt_obj->errors) {
+                	$this->errors['user_password'] = $crypt_obj->errors[0];
+                	return false;
+                } // if
+            } // if
             // "Here is your password for "
             $subject = getLanguageText('sys0153') .' ' .$_SERVER['HTTP_HOST'];
         	$body    = "Hi,\n\n" .$subject ."\n\n" . $password;

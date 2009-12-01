@@ -4,9 +4,14 @@ $structure['xsl_file'] = 'std.list2.xsl';
 $structure['tables']['outer'] = 'x_person';
 
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => 100);
+$structure['outer']['columns'][] = array('width' => 50);
 $structure['outer']['columns'][] = array('width' => '*');
 
-$structure['outer']['fields'][] = array('person_name' => 'Person');
+$structure['outer']['fields'][1][] = array('label' => 'Id');
+$structure['outer']['fields'][1][] = array('field' => 'person_id');
+$structure['outer']['fields'][1][] = array('label' => 'Name');
+$structure['outer']['fields'][1][] = array('field' => 'person_name');
 
 $structure['tables']['inner'] = 'x_person_addr';
 

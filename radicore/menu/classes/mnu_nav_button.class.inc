@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_nav_button extends Default_Table
@@ -65,6 +65,14 @@ class mnu_nav_button extends Default_Table
             $this->sql_where  = "(x.is_disabled='N') "
                               . 'AND (mnu_role_task.role_id IS NOT NULL)';
         } // if
+
+        // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
+        $ip_address = $_SERVER['SERVER_ADDR'];
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr) = 0 THEN true"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr AND ip_address='$ip_address') = 1 THEN true"
+                                  ." ELSE false"
+                             ." END AS ip_address_valid";
+        $this->sql_having = "ip_address_valid=true";
 
         $this->sql_orderby = 'mnu_nav_button.sort_seq';
 

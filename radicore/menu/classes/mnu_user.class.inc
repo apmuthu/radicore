@@ -1,12 +1,15 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
 {
-    var $count;         // record count for PDF output
+    var $count;             // record count for PDF output
+    var $pswd_hidden;       // is password field displayed or hidden?
+    var $pswd_encrypt;      // is password encrypted in the database?
+    var $pswd_format;       // password format
 
     // ****************************************************************************
     // class constructor
@@ -151,14 +154,6 @@ class mnu_user extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // find out if user passwords are to be hidden or not
-        static $pswd_hidden;
-        if (!is_bool($pswd_hidden)) {
-        	$dbobject =& singleton::getInstance('mnu_control');
-            $pswd_hidden = $dbobject->getControlData('pswd_hidden');
-            unset($dbobject);
-        } // if
-
         global $mode;
         if ($mode == 'search') {
             // remove certain 'noedit' flags
@@ -181,7 +176,7 @@ class mnu_user extends Default_Table
             $this->fieldspec['logon_time']['nodisplay']    = 'y';
             $this->fieldspec['ip_address']['nodisplay']    = 'y';
         } else {
-            if ($pswd_hidden) {
+            if ($this->pswd_hidden) {
             	// not insert mode, so cannot edit this field
                 $this->fieldspec['user_password']['nodisplay'] = 'y';
             } else {
@@ -194,6 +189,11 @@ class mnu_user extends Default_Table
         	$this->fieldspec['rdcaccount_id']['noedit'] = 'y';
         } // if
 
+        if (version_compare(phpversion(), '5.2.0', '<')) {
+            // not available in this version
+            $this->fieldspec['user_timezone']['nodisplay'] = 'y';
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -202,14 +202,11 @@ class mnu_user extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        $start_date = $fieldarray['start_date'];
-        $end_date   = $fieldarray['end_date'];
-
-        if ($start_date > $end_date) {
+        if ($fieldarray['start_date'] > $fieldarray['end_date']) {
             // 'Start Date cannot be later than End Date';
-            $this->errors['start_date'] = getLanguageText('e0036');
+            $this->errors['start_date'] = getLanguageText('sys0190');
             // 'End Date cannot be earlier than Start Date';
-            $this->errors['end_date']   = getLanguageText('e0037');
+            $this->errors['end_date']   = getLanguageText('sys0191');
         } // if
 
         global $mode;
@@ -223,52 +220,34 @@ class mnu_user extends Default_Table
             } // if
         } // if
 
-        // find out if user passwords are encrypted or not
-        $dbobject =& singleton::getInstance('mnu_control');
 
-        $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
-        $pswd_format  = $dbobject->getControlData('pswd_format');
-        unset($dbobject);
-
-        if ($GLOBALS['task_id'] != 'logon') {
-        	// use new_password1 (if it exists) else use user_password
-            if (isset($fieldarray['new_password1'])) {
-                // check that password has correct format
-                if ($error = $this->validatePassword ($fieldarray['new_password1'], $pswd_format)) {
-                    $this->errors['new_password1'] = $error;
-                    //$fieldarray['new_password1']   = null;
-                    //$fieldarray['new_password2']   = null;
-                    return $fieldarray;
-                } else {
-                    $fieldarray['user_password'] = $fieldarray['new_password1'];
-                } // if
-            } elseif (isset($fieldarray['user_password'])) {
-                // check that password has correct format
-                if ($error = $this->validatePassword ($fieldarray['user_password'], $pswd_format)) {
-                    $this->errors['user_password'] = $error;
-                    $fieldarray['user_password'] = null;
-                    return $fieldarray;
-                } // if
+    	// use new_password1 (if it exists) else use user_password
+        if (isset($fieldarray['new_password1'])) {
+            $password_name = 'new_password1';
+        } else {
+            $password_name = 'user_password';
+        } // if
+        if (isset($fieldarray[$password_name])) {
+            $password_value = $fieldarray[$password_name];
+            // check that password has correct format
+            if ($error = $this->validatePassword ($password_value, $this->pswd_format)) {
+                $this->errors[$password_name] = $error;
+                return $fieldarray;
             } // if
         } // if
 
         // if both 'user_id' and 'user_password' exist then encrypt the password
-        if (isset($fieldarray['user_id']) AND isset($fieldarray['user_password'])) {
-            // always encryptstring to ensure it has valid characters
+        if (!empty($fieldarray['user_id']) AND !empty($password_value)) {
+            // always encrypt string to ensure it has valid characters
             $crypt_obj =& singleton::getInstance('encryption_class');
-            $key = $fieldarray['user_id'];
-            $string = $fieldarray['user_password'];
-            $spec = $this->fieldspec['user_password'];
-            $encrypted_string = $crypt_obj->encrypt($key, $string, $spec['size']);
+            $key    = $fieldarray['user_id'];
+            $spec   = $this->fieldspec['user_password'];
+            $encrypted_string = $crypt_obj->encrypt($key, $password_value, $spec['size']);
             if ($crypt_obj->errors) {
-                if (isset($fieldarray['new_password1'])) {
-                	$this->errors['new_password1'] = $crypt_obj->errors[0];
-                } else {
-            	    $this->errors['user_password'] = $crypt_obj->errors[0];
-                } // if
+                $this->errors[$password_name] = $crypt_obj->errors[0];
                 return $fieldarray;
             } else {
-                if ($encrypt_flag) {
+                if (is_True($this->pswd_encrypt)) {
                     // replace string with encrypted version
                     $fieldarray['user_password'] = $encrypted_string;
                     // insert dummy field to say that password has been encrypted
@@ -286,26 +265,25 @@ class mnu_user extends Default_Table
         	} // if
 		} // if
 
+		if (!empty($fieldarray['user_timezone']) AND is_numeric($fieldarray['user_timezone'])) {
+		    // convert from index to value
+			$array = DateTimeZone::listIdentifiers();
+			$fieldarray['user_timezone'] = $array[$fieldarray['user_timezone']];
+		} // if
+
         return $fieldarray;
 
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
-        static $encrypt_flag = null;
-        if (!is_bool($encrypt_flag)) {
-        	$dbobject =& singleton::getInstance('mnu_control');
-            $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
-        } // if
-
-        if ((isset($fieldarray['pswd_is_encrypted']) and $fieldarray['pswd_is_encrypted']) or $encrypt_flag == true) {
-        	// decrypt the password (if it is encrypted)
-            if (!empty($fieldarray['user_id']) and !empty($fieldarray['user_password'])) {
-                // find out if user passwords are encrypted or not
-                if ($encrypt_flag) {
-                    //require_once 'std.encryption.class.inc';
+        if (is_True($this->pswd_encrypt)) {
+        	if ((isset($fieldarray['pswd_is_encrypted']) and $fieldarray['pswd_is_encrypted'])) {
+            	// decrypt the password
+                if (!empty($fieldarray['user_id']) and !empty($fieldarray['user_password'])) {
                     $crypt_obj =& singleton::getInstance('encryption_class');
                     $key = $fieldarray['user_id'];
                     $string = $fieldarray['user_password'];
@@ -313,10 +291,24 @@ class mnu_user extends Default_Table
                     if ($crypt_obj->errors) {
                     	$this->errors['user_password'] = $crypt_obj->errors[0];
                     } // if
-                    //$this->errors = array_merge($this->errors, $crypt_obj->errors);
                 } // if
+                unset($fieldarray['pswd_is_encrypted']);
             } // if
-            unset($fieldarray['pswd_is_encrypted']);
+        } // if
+
+        if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
+            $dateobj =& singleton::getInstance('date_class');
+            // combine 'date' and 'time' fields before performing timezone conversion
+            $date = $fieldarray['logon_date'];
+            $time = $fieldarray['logon_time'];
+            $fieldarray['logon_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            $fieldarray['logon_date'] = $dateobj->getExternalDate($fieldarray['logon_date']);
+            $fieldarray['logon_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            $date = $fieldarray['pswd_chg_date'];
+            $time = $fieldarray['pswd_chg_time'];
+            $fieldarray['pswd_chg_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            $fieldarray['pswd_chg_date'] = $dateobj->getExternalDate($fieldarray['pswd_chg_date']);
+            $fieldarray['pswd_chg_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
         } // if
 
         return $fieldarray;
@@ -385,6 +377,14 @@ class mnu_user extends Default_Table
             $this->lookup_data['rdcaccount_id'] = $array;
         } // if
 
+        if (version_compare(phpversion(), '5.2.0', '>=')) {
+            if (!array_key_exists('user_timezone', $this->lookup_data)) {
+                // get array of available timezones
+                $array = DateTimeZone::listIdentifiers();
+                $this->lookup_data['user_timezone'] = $array;
+            } // if
+        } // if
+
         return $fieldarray;
 
     } // _cm_getExtraData
@@ -396,6 +396,12 @@ class mnu_user extends Default_Table
     {
         if (empty($fieldarray['start_date'])) {
         	$fieldarray['start_date'] = getTimeStamp('date');
+        } // if
+
+        if (version_compare(phpversion(), '5.2.0', '>=')) {
+            if (empty($fieldarray['user_timezone'])) {
+            	$fieldarray['user_timezone'] = date_default_timezone_get();
+            } // if
         } // if
 
         return $fieldarray;
@@ -428,13 +434,23 @@ class mnu_user extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         // this may be called from the home page, so insert user's id
         if (empty($where)) {
-            $pattern_id = getPatternId();
-            if (eregi('upd1|enq1', $pattern_id)) {
+            if (preg_match('/(upd1|enq1)/i', $pattern_id)) {
             	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
             } // if
         } else {
@@ -442,7 +458,7 @@ class mnu_user extends Default_Table
                 $where_array = where2array($where, false, false);
                 $prev_script = getPreviousScript();
                 $pattern_id  = getPatternId($prev_script);
-                if ($pattern_id == 'MULTI3') {
+                if (preg_match('/multi3/i', $pattern_id)) {
                     if (isset($where_array['mnu_user.user_id'])) {
                     	unset($where_array['mnu_user.user_id']);
                     	$where = array2where($where_array);
@@ -450,6 +466,13 @@ class mnu_user extends Default_Table
                 } // if
             } // if
         } // if
+
+        // find out if user passwords are to be hidden or not
+    	$dbobject =& singleton::getInstance('mnu_control');
+        $this->pswd_hidden  = $dbobject->getControlData('pswd_hidden');
+        $this->pswd_encrypt = $dbobject->getControlData('pswd_encrypt');
+        $this->pswd_format  = $dbobject->getControlData('pswd_format');
+        unset($dbobject);
 
         return $where;
 
@@ -486,14 +509,7 @@ class mnu_user extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        static $encrypt_flag = null;
-
-        if (!is_bool($encrypt_flag)) {
-        	$dbobject =& singleton::getInstance('mnu_control');
-            $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
-        } // if
-
-        if ($encrypt_flag == true) {
+        if (is_True($this->pswd_encrypt)) {
         	foreach ($rows as $row => $rowdata) {
                 // insert dummy field to say that data is currently encrypted
             	$rows[$row]['pswd_is_encrypted'] = true;

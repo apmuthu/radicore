@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -315,7 +315,7 @@ class mnu_control extends Default_Table
 
         // are logons to be authenticated internally, or with an external server?
         $fieldspec['authentication']        = array('type' => 'string',
-                                                    'size' => 2,
+                                                    'size' => 8,
                                                     'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'radiogroup',
@@ -544,6 +544,13 @@ class mnu_control extends Default_Table
             $this->lookup_data['login_type'] = $array;
         } // if
 
+        if ($GLOBALS['task_id'] == 'mnu_control(upd3)') {
+        	if ($_SESSION['role_id'] != 'GLOBAL' ) {
+        		// set screen to READ ONLY (all fields are NOEDIT)
+                $GLOBALS['settings']['main_noedit'] = 'y';
+        	} // if
+        } // if
+
         return $fieldarray;
 
     } // _cm_getExtraData
@@ -567,9 +574,20 @@ class mnu_control extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         $where = "record_id='$this->record_id'";
 
         return $where;

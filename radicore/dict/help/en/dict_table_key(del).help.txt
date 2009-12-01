@@ -1,3 +1,0 @@
-This will display a record from the DICT_TABLE_KEY table and allow it to be deleted. 
-
-Refer to <a href="%root%/dict_table_key(del).html">Delete Key</a> for full details.

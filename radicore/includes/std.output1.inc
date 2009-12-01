@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output1.inc
@@ -21,15 +21,13 @@ $mode = 'csv';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} else {
-    if (!empty($where)) {
-    	$search = $where;
-    } // if
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    if (empty($where)) {
+//    	// only use $selection if $where is empty
+//        $where = $selection;
+//        $selection = null;
+//    } // if
+//} // if
 
 // create a class instance of the main database table
 require_once "classes/$table_id.class.inc";
@@ -48,13 +46,13 @@ if (!empty($sql_orderby)) {
 } // if
 
 // perform any initialisation
-$where = $dbobject->initialise($where);
-if (empty($dbobject->errors)) {
-	// get any data for lookup lists
-    $null = $dbobject->getExtraData($where);
-} else {
-	scriptPrevious($dbobject->errors);
+$where = $dbobject->initialise($where, $selection, $search);
+if ($dbobject->errors) {
+	scriptPrevious($dbobject->getErrors());
 } // if
+
+// get any data for lookup lists
+$null = $dbobject->getExtraData($where);
 
 // set sort order (if defined)
 if (!empty($orderby)) {
@@ -77,30 +75,41 @@ if ($dbobject->getNumRows() <= 0) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
 
+if (empty($csvout)) {
+    // set default value
+	$csvout = $table_id .'.csv';
+} // if
+
+//if (isset($csvout)) {
+//	if (!$csvouth = fopen($csvout, 'w')) {
+//        trigger_error("Cannot open file $csvout", E_USER_ERROR);
+//    } // if
+//} // if
+
 // transform output to CSV format and download to client browser
 $output = $dbobject->outputCSV($resource);
 
 if (!isset($GLOBALS['batch'])) {
 	header("Content-type: text/comma-separated-values");
     header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-    header("Content-Disposition: attachment; filename=" .$table_id .'.csv');
+    header("Content-Disposition: attachment; filename=" .$csvout);
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Pragma: public');
-} // if
-
-if (!isset($csvout)) {
-	echo $output;
+    echo $output;
 	unset($_SESSION['pages'][getSelf()]);
-    exit;
 } else {
-    if (!$handle = fopen($csvout, 'w')) {
-        die("Cannot open file $csvout");
+    if (!empty($output)) {
+    	if (!$result = fwrite($csvouth, $output)) {
+            trigger_error("Cannot write to file $csvout", E_USER_ERROR);
+        } // if
     } // if
-    if (!$result = fwrite($handle, $output)) {
-        die("Cannot write to file $csvout");
+    fclose($csvouth);
+    sleep(1);
+    $filesize = filesize($csvout);
+    echo $filesize .' bytes written to file ' .$csvout;
+    if (isset($settings['return']) AND is_True($settings['return'])) {
+    	scriptPrevious($dbobject->getErrors());
     } // if
-    fclose($handle);
-    echo strlen($output) .' bytes written to file ' .$csvout;
 } // if
 
 ?>

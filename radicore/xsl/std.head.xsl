@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -37,7 +37,7 @@
         <xsl:attribute name="content">
           <xsl:value-of select="/root/params/screen_refresh" />
           <xsl:text>;</xsl:text>
-          <xsl:value-of select="$script"/>
+          <xsl:value-of select="concat($script,'?',$session)"/>
         </xsl:attribute>
       </meta>
     </xsl:if>

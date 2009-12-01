@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -20,6 +20,7 @@ class pgsql
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
     var $lastpage;              // last available page number in current query
+    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
@@ -64,6 +65,91 @@ class pgsql
     } // pgsql
 
     // ****************************************************************************
+    function adjustGroupBy ($select_str, $group_str, $sort_str)
+    // ensure GROUP_BY contains every field in the SELECT string, plus every field
+    // in the ORDER_BY string.
+    {
+        if (preg_match('/WITH ROLLUP/i', $group_str, $regs)) {
+            // this is not recognised, so remove it
+        	$group_str = str_replace($regs[0], '', $group_str);
+        } // if
+
+        // turn $group_str into an array (delimiter is ',' followed by zero or more spaces)
+        $group_array = preg_split('/, */', $group_str);
+
+        list($field_alias, $field_orig) = extractFieldNamesIndexed ($select_str);
+        foreach ($field_alias as $ix => $fieldname) {
+        	if ($fieldname == $field_orig[$ix]) {
+        	    // $fieldname is not an alias for an expression, so include in $group_array
+        		if (!in_array($fieldname, $group_array)) {
+        			$group_array[] = $fieldname;
+        		} // if
+        	} // if
+        } // foreach
+
+        if (!empty($sort_str)) {
+        	// turn $sort_str into an array
+            $sort_array = preg_split('/, */', $sort_str);
+            foreach ($sort_array as $fieldname) {
+                $ix = array_search($fieldname, $field_alias);
+                if ($ix !== false) {
+                	// check that this is not an alias name
+                	if ($fieldname == $field_orig[$ix]) {
+                	    if (!in_array($fieldname, $group_array)) {
+                			$group_array[] = $fieldname;
+                		} // if
+                	} // if
+                } else {
+                	if (!in_array($fieldname, $group_array)) {
+            			$group_array[] = $fieldname;
+            		} // if
+                } // if
+            } // foreach
+        } //  if
+
+        // convert amended array back into a string
+        $group_str = implode(', ', $group_array);
+
+        return $group_str;
+
+    } // adjustGroupBy
+
+    // ****************************************************************************
+    function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str)
+    // make 'SELECT ... FROM ... WHERE ...' into a subquery so that the HAVING clause can
+    // become the WHERE clause of the outer query.
+    // This is because the HAVING clause cannot reference an expression by its alias name.
+    {
+        // put current query into a subqery
+        $subquery = "SELECT $select_str FROM $from_str $where_str $group_str";
+
+        // extract SELECT list (with alias names for any expressions)
+        list($select_alias, $select_orig) = extractFieldNamesIndexed ($select_str);
+
+        $select_str = '';
+        foreach ($select_alias as $fieldname) {
+            if ($substring = strrchr($fieldname, '.')) {
+        	    // now remove the tablename and put amended entry back into the array
+                $fieldname = ltrim($substring, '.');
+            } // if
+            if (empty($select_str)) {
+            	$select_str = "$fieldname";
+            } else {
+                $select_str .= ", $fieldname";
+            } // if
+        } // foreach
+
+        $from_str = "(\n    $subquery\n) AS x";
+        $where_str  = "WHERE $having_str";
+        $having_str = '';
+        $group_str  = '';
+        $sort_str   = unqualifyOrderBy($sort_str);
+
+        return array($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str);
+
+    } // adjustHaving
+
+    // ****************************************************************************
     function adjustWhere ($string_in)
     // certain MySQL expressions have to be converted as they are not valid, such as:
     // 'datefield - INTERVAL interval DAY' to 'datefield - interval'
@@ -83,22 +169,59 @@ class pgsql
             $string_out = $string_in;
         } // if
 
+//        $modified = false;
+//        $array = where2array($string_out, false, false);
+//        foreach ($array as $name => $value) {
+//            $value = ltrim($value);
+//        	if (preg_match('/^like /i', $value)) {
+//        	    $search  = array('\\\\\\\'', '\\\\');
+//        	    $replace = array('\\\'\\\'', '\\\\\\\\');
+//        	    if (preg_match('/'.$search[0].'/', $value) OR preg_match('/'.$search[1].'/', $value)) {
+//        	    	$array[$name] = str_replace($search, $replace, $value);
+//            		$modified = true;
+//        	    } // if
+//        	} // if
+//        } // foreach
+
         $modified = false;
-        $array = where2array($string_out, false, false);
-        foreach ($array as $name => $value) {
-            $value = ltrim($value);
-        	if (eregi('^like ', $value)) {
-        	    $search  = array('\\\\\\\'', '\\\\');
-        	    $replace = array('\\\'\\\'', '\\\\\\\\');
-        	    if (ereg($search[0], $value) OR ereg($search[1], $value)) {
-        	    	$array[$name] = str_replace($search, $replace, $value);
-            		$modified = true;
-        	    } // if
-        	} // if
+
+        $array = where2indexedArray($string_out);   // convert string into indexed array
+
+        $pattern = '/^('        // begins with
+                 . 'OR'         // 'OR'
+                 . '|'
+                 . '\) OR \('   // ') OR ('
+                 . '|'
+                 . 'AND \('     // 'AND ('
+                 . '|'
+                 . 'AND'        // 'AND'
+                 . '|'
+                 . '\) AND \('  // ') AND ('
+                 . '|'
+                 . '(\()+'      // one or more '('
+                 . '|'
+                 . '(\))+'      // one or more ')'
+                 . ')$/i';      // ends with, case insensitive
+        foreach ($array as $key => $value) {
+            if (preg_match($pattern, $value, $regs)) {
+            	// ignore this
+            } else {
+                list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
+                $fieldvalue = trim($fieldvalue);
+                if (preg_match('/^like /i', $fieldvalue)) {
+            	    $search  = array('\\\\\\\'', '\\\\');
+            	    $replace = array('\\\'\\\'', '\\\\\\\\');
+            	    if (preg_match('/'.$search[0].'/', $fieldvalue) OR preg_match('/'.$search[1].'/', $fieldvalue)) {
+            	    	$fieldvalue = str_replace($search, $replace, $fieldvalue);
+            	    	$array[$key] = $fieldname.$operator.$fieldvalue;
+                		$modified = true;
+            	    } // if
+            	} // if
+            } // if
         } // foreach
 
         if ($modified) {
-        	$string_out = array2where($array);
+        	$string_out = implode(' ', $array);
         } // if
 
         return $string_out;
@@ -339,7 +462,7 @@ class pgsql
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        if (eregi('^(select )', $where)) {
+        if (preg_match('/^(select )/i', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
@@ -357,7 +480,7 @@ class pgsql
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (eregi("group by ", $this->query) == true AND !eregi("\(SELECT .+group by.+\)", $this->query)) {
+        if (preg_match("/group by /", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/i", $this->query)) {
             $count = pg_num_rows($result);
         } else {
             $count = $query_data[0];
@@ -414,18 +537,23 @@ class pgsql
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
-            if (preg_match('/WITH ROLLUP/i', $group_str, $regs)) {
-                // this is not recognised, so remove it
-            	$group_str = str_replace($regs[0], '', $group_str);
-            } // if
+            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
         } // if
 
+        // incorporate optional sort order
+        if (!empty($this->sql_orderby)) {
+            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+        } else {
+            $sort_str = '';
+        } // if
+
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            //$having_str = "HAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
@@ -459,13 +587,6 @@ class pgsql
             $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
-        } // if
-
-        // incorporate optional sort order
-        if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
-        } else {
-            $sort_str = '';
         } // if
 
         $lock_str = null;
@@ -560,20 +681,10 @@ class pgsql
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY $this->sql_groupby";
-            if (preg_match('/WITH ROLLUP/i', $group_str, $regs)) {
-                // this is not recognised, so remove it
-            	$group_str = str_replace($regs[0], '', $group_str);
-            } // if
+            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
-        } // if
-
-        // incorporate optional HAVING parameters
-        if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
-        } else {
-            $having_str = NULL;
         } // if
 
         // incorporate optional sort order
@@ -581,6 +692,14 @@ class pgsql
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
+        } // if
+
+        // incorporate optional HAVING parameters
+        if (!empty($this->sql_having)) {
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            //$having_str = "HAVING $this->sql_having";
+        } else {
+            $having_str = NULL;
         } // if
 
         if (!empty($rdc_limit) AND !empty($rdc_offset)) {
@@ -619,7 +738,10 @@ class pgsql
             $string = $this->error_string;
             $this->error_string = null;
 		} elseif ($this->dbconnect) {
-            $string = 'PostgreSQL error: ' .pg_last_error($this->dbconnect);
+            $string = pg_last_error($this->dbconnect);
+            if (!empty($string)) {
+            	$string = 'PostgreSQL: ' .$string;
+            } // if
         } else {
             $conerr = getLanguageText('sys0001', $this->dbname); // 'Cannot connect to database'
             $string = $conerr .pg_last_error($this->dbconnect);
@@ -690,6 +812,8 @@ class pgsql
     {
         $this->errors = array();
 
+        $this->numrows = 0;  // record not inserted (yet)
+
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
@@ -741,10 +865,14 @@ class pgsql
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
-	            // set error message for each field within this key
-	            foreach ($this->primary_key as $fieldname) {
-	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
-	            } // foreach
+	            if (is_True($this->no_duplicate_error)) {
+	                // exit without setting an error
+	            } else {
+	            	// set error message for each field within this key
+    	            foreach ($this->primary_key as $fieldname) {
+    	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
+    	            } // foreach
+	            } // if
 	            return $fieldarray;
 	        } // if
 	        $primary_key = $where;
@@ -771,7 +899,7 @@ class pgsql
         $cols = '';
         $vals = '';
         foreach ($fieldarray as $item => $value) {
-            if (eregi('set|array|varray', $fieldspec[$item]['type'])) {
+            if (preg_match('/set|array|varray/i', $fieldspec[$item]['type'])) {
                 if (!empty($value)) {
                 	// assume a one-dimensional array
                 	$array1  = explode(',', $value);
@@ -823,6 +951,8 @@ class pgsql
             $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
+
+        $this->numrows = 1;  // record has been inserted
 
         return $fieldarray;
 
@@ -1049,7 +1179,7 @@ class pgsql
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
-                } elseif (eregi('set|array|varray', $fieldspec[$item]['type'])) {
+                } elseif (preg_match('/set|array|varray/i', $fieldspec[$item]['type'])) {
                     if (!empty($value)) {
                     	// assume a one-dimensional array
                     	$array1  = explode(',', $value);
@@ -1495,8 +1625,8 @@ class pgsql
     } // ddl_showColumns
 
     // ****************************************************************************
-    function ddl_showDatabases ()
-    // obtain a list of existing database (schema in PostgreSQL) names.
+    function ddl_showDatabases ($dbprefix=null)
+    // obtain a list of existing database ('schema' in PostgreSQL) names.
     {
         // connect to database
         $this->connect() or trigger_error($this, E_USER_ERROR);
@@ -1534,7 +1664,7 @@ class pgsql
         $array = array();
 
         // build the query string and run it
-        $this->query = "SELECT tablename AS table_name FROM pg_tables WHERE schemaname='" .$GLOBALS['dbprefix'] .$schema ."' ORDER BY tablename";
+        $this->query = "SELECT tablename AS table_name FROM pg_tables WHERE schemaname='$schema' ORDER BY tablename";
         //$this->query = "SELECT * FROM information_schema.tables WHERE table_schema='$schema' ORDER BY table_name";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 

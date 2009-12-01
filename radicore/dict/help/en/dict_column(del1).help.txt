@@ -1,0 +1,3 @@
+This will display a record from the DICT_COLUMN table and allow it to be deleted. 
+
+Refer to <a href="%root%/dict_column(del1).html">Delete Column</a> for full details.

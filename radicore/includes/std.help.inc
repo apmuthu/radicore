@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -42,14 +42,9 @@ if (isset($_SESSION['user_language'])) {
 
 $errors = array();
 
-// get subdirectory which matches user's language code
-$subdir = getLanguageSubDir ('./help');
-
-$help = "$subdir/$help_id.help.txt";  // look in subirectory for this file name
-if (file_exists($help)) {
-    $help_text = file_get_contents($help);
-} else {
-    $help_text = getLanguageText('sys0056', $help); // 'File $help cannot be found'
+$help_text = getHelpText("$help_id.help.txt", './help');
+if (empty($help_text)) {
+	$help_text = getLanguageText('sys0056', $help_id); // 'File $help cannot be found'
 } // if
 
 $search_array  = array("\n"    , "%root%", "%lang%");

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -12,6 +12,10 @@ class mysql
     var $host_info;             // host info (connection)
     var $server_info;           // server info (version number)
     var $charset;               // character set
+    var $character_set_client;
+    var $character_set_connection;
+    var $character_set_database;
+    var $character_set_server;
 
     var $audit_logging;         // yes/no switch
     var $dbname;                // database name
@@ -19,6 +23,7 @@ class mysql
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
     var $lastpage;              // last available page number in current query
+    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
@@ -70,19 +75,41 @@ class mysql
         $string_out = $string_in;
 
         $modified = false;
-        $array = where2array($string_out, false, false);
-        foreach ($array as $name => $value) {
-            $value = ltrim($value);
-        	if (eregi('^like ', $value)) {
-        	    if (ereg('\\\\', $value)) {
-        	    	$array[$name] = str_replace('\\\\', '\\\\\\\\', $value);
-            		$modified = true;
-        	    } // if
-        	} // if
+
+        $array = where2indexedArray($string_out);   // convert string into indexed array
+
+        $pattern = '/^('        // begins with
+                 . 'OR'         // 'OR'
+                 . '|'
+                 . '\) OR \('   // ') OR ('
+                 . '|'
+                 . 'AND \('     // 'AND ('
+                 . '|'
+                 . 'AND'        // 'AND'
+                 . '|'
+                 . '\) AND \('  // ') AND ('
+                 . '|'
+                 . '(\()+'      // one or more '('
+                 . '|'
+                 . '(\))+'      // one or more ')'
+                 . ')$/i';      // ends with, case insensitive
+        foreach ($array as $key => $value) {
+            if (preg_match($pattern, $value, $regs)) {
+            	// ignore this
+            } else {
+                list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
+                if (preg_match('/^like /i', $fieldvalue)) {
+            	    if (preg_match('/\\\\/', $fieldvalue)) {
+            	    	$fieldvalue = str_replace('\\\\', '\\\\\\\\', $fieldvalue);
+            	    	$array[$key] = $fieldname.$operator.$fieldvalue;
+                		$modified = true;
+            	    } // if
+            	} // if
+            } // if
         } // foreach
 
         if ($modified) {
-        	$string_out = array2where($array);
+        	$string_out = implode(' ', $array);
         } // if
 
         return $string_out;
@@ -165,7 +192,7 @@ class mysql
         global $ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher;
 
         if (!empty($dbname) AND !empty($dbprefix)) {
-			 if (!eregi('^(' .$dbprefix .')', $dbname)) {
+			 if (!preg_match('/^(' .$dbprefix .')/i', $dbname)) {
     			// prefix may be different on different servers
                 $dbname = $dbprefix .$dbname;
             } // if
@@ -180,15 +207,11 @@ class mysql
         if (!$dbconn) {
             $dbconn = mysqli_init();
             if (!empty($ssl_key)) {
-                $result = mysqli_ssl_set($dbconn, $ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher);
-            	$result = mysqli_real_connect($dbconn, $dbhost, $dbusername, $dbuserpass, null, null, null, MYSQLI_CLIENT_SSL);
+                $result = $dbconn->ssl_set($ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher) or trigger_error($this, E_USER_ERROR);
+                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass, null, null, null, MYSQLI_CLIENT_SSL) or trigger_error($this, E_USER_ERROR);
             } else {
-                $result = mysqli_real_connect($dbconn, $dbhost, $dbusername, $dbuserpass);
+                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass) or trigger_error($this, E_USER_ERROR);
             } // if
-            if (!$result) {
-            	trigger_error($this, E_USER_ERROR);
-            } // if
-            //$dbconn = mysqli_connect($dbhost, $dbusername, $dbuserpass);
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
                 // use UTF8 character set for this connection
@@ -200,6 +223,17 @@ class mysql
                 $this->client_info = mysqli_get_client_info();
                 $this->host_info   = mysqli_get_host_info($dbconn);
                 $this->server_info = mysqli_get_server_info($dbconn);
+
+                $this->query = "SHOW VARIABLES LIKE 'character_set%'";
+                $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+                while ($row = mysqli_fetch_assoc($result)) {
+                    if (isset($row['VARIABLE_VALUE'])) {
+                    	$this->$row['Variable_name'] = $row['VARIABLE_VALUE'];
+                    } else {
+                        $this->$row['Variable_name'] = $row['Value'];
+                    } // if
+                } // while
+
                 if (version_compare($this->server_info, '4.1', '>=')) {
                     $this->query = "SET SESSION sql_mode=CONCAT('ANSI_QUOTES,',@@sql_mode)";
                     $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -320,7 +354,7 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        if (eregi('^(select )', $where)) {
+        if (preg_match('/^(select )/i', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
@@ -335,14 +369,14 @@ class mysql
 
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
-        if (eregi("SQL_CALC_FOUND_ROWS ", $this->query) == true) {
+        if (preg_match("/SQL_CALC_FOUND_ROWS /i", $this->query) == true) {
         	$result     = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
             $found_rows = mysqli_fetch_row($result);
             $count      = $found_rows[0];
         } else {
             // if 'GROUP BY' was used then return the number of rows
             // (ignore GROUP BY if it is in a subselect)
-            if (eregi("group by ", $this->query) == true AND !eregi("\(.+group by.+\)", $this->query)) {
+            if (preg_match("/group by /i", $this->query) == true AND !preg_match("/\(.+group by.+\)/i", $this->query)) {
                 $count = mysqli_num_rows($result);
             } else {
                 $query_data = mysqli_fetch_row($result);
@@ -405,7 +439,7 @@ class mysql
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
             $group_str = "\n" ."GROUP BY $this->sql_groupby";
-            if (eregi("WITH ROLLUP", $this->sql_groupby)) {
+            if (preg_match("/ WITH ROLLUP/i", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
         } else {
@@ -549,7 +583,7 @@ class mysql
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
             $group_str = "\n" ."GROUP BY $this->sql_groupby";
-            if (eregi(" WITH ROLLUP", $this->sql_groupby)) {
+            if (preg_match("/ WITH ROLLUP/i", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
         } else {
@@ -606,9 +640,9 @@ class mysql
 
         // convert the 'enum' list into an array
         // 1st, extract everything between '(' and ')'
-        if (eregi("('.*')", $query_data[1], $enum)) {
+        if (preg_match("/('.*')/", $query_data[1], $enum)) {
             // 2nd, remove all single quotes
-            $enum = ereg_replace("'", "", $enum[1]);
+            $enum = str_replace("'", "", $enum[1]);
             // 3rd, insert dummy entry so that real entries start at 1
             $enum = ',' .$enum;
             // last, turn list into an indexed array
@@ -654,9 +688,10 @@ class mysql
             $string = $this->error_string;
             $this->error_string = null;
         } elseif ($this->dbconnect) {
-            $string = 'MySQL error: ' . mysqli_errno($this->dbconnect)
-                                      . ' - '
-                                      . mysqli_error($this->dbconnect);
+            $string = mysqli_error($this->dbconnect);
+            if (!empty($string)) {
+                $string = 'MySQL: ' .$string;
+            } // if
         } else {
             $conerr = mysqli_connect_error();
             if (empty($conerr)) {
@@ -676,8 +711,11 @@ class mysql
         if ($this->dbconnect) {
         	$string  = 'Host Info: ' .$this->host_info ;
             $string .= '<br>Server Version: ' .$this->server_info;
-            $string .= '<br>Client Info: ' .$this->client_info;
-            $string .= ', Client Encoding: ' .$this->charset;
+            $string .= '<br>Client Version: ' .$this->client_info;
+            $string .= ', Character sets - client: '     .$this->character_set_client
+                                     .', - connection: ' .$this->character_set_connection
+                                     .', - database: '   .$this->character_set_database
+                                     .', - server: '     .$this->character_set_server;
         } else {
             $string = '';
         } // if
@@ -726,6 +764,10 @@ class mysql
     function insertRecord ($dbname, $tablename, $fieldarray)
     // insert a record using the contents of $fieldarray.
     {
+        $this->errors = array();
+
+        $this->numrows = 0;  // record not inserted (yet)
+
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
@@ -779,10 +821,14 @@ class mysql
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
-	            // set error message for each field within this key
-	            foreach ($this->primary_key as $fieldname) {
-	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
-	            } // foreach
+	            if (is_True($this->no_duplicate_error)) {
+	                // exit without setting an error
+	            } else {
+	            	// set error message for each field within this key
+    	            foreach ($this->primary_key as $fieldname) {
+    	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
+    	            } // foreach
+	            } // if
 	            return $fieldarray;
 	        } // if
 	        $primary_key = $where;
@@ -835,6 +881,8 @@ class mysql
             $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
+
+        $this->numrows = 1;  // record has been inserted
 
         return $fieldarray;
 
@@ -1241,8 +1289,6 @@ class mysql
 
         $out_array = array();
 
-        $dbname = $GLOBALS['dbprefix'] .$dbname;
-
         // build the query string and run it
         $this->query = 'SHOW COLUMNS FROM "' .$tablename .'" FROM "' .$dbname .'"';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -1274,7 +1320,7 @@ class mysql
                 		break;
                 	case 'type':
                         unset($precision, $scale, $minvalue, $maxvalue);
-                        if (eregi('^(enum|set)', $value, $regs)) {
+                        if (preg_match('/^(enum|set)/i', $value, $regs)) {
                             $columnarray['col_type'] = $regs[0];
                             $pos1 = strpos($value, '(');
                             $value = substr($value, $pos1);
@@ -1290,10 +1336,10 @@ class mysql
                             $columnarray['col_maxsize'] = $size;
 
                             // look for 'unsigned' and 'zerofill' in $other
-                            if (eregi('unsigned', $other)) {
+                            if (preg_match('/unsigned/i', $other)) {
                                 $columnarray['col_unsigned'] = TRUE;
                             } // if
-                            if (eregi('zerofill', $other)) {
+                            if (preg_match('/zerofill/i', $other)) {
                                 $columnarray['col_zerofill_bwz'] = 'ZF';
                             } // if
 
@@ -1327,7 +1373,7 @@ class mysql
                                 } // if
                             } // if
                             if (isset($minvalue)) {
-                                if (eregi('unsigned', $other)) {
+                                if (preg_match('/unsigned/i', $other)) {
                                     $minvalue = 0;
                                 } // if
                                 $columnarray['col_minvalue'] = $minvalue;
@@ -1347,7 +1393,7 @@ class mysql
                                 } // if
                             } // if
                             if (isset($maxvalue)) {
-                                if (eregi('unsigned', $other)) {
+                                if (preg_match('/unsigned/i', $other)) {
                                     if ($specs['type']  == 'integer') {
                                         $maxvalue = ($specs['maxvalue'] * 2) +1;
                                         //$maxvalue = number_format(($specs['maxvalue'] * 2) +1, 0, '', '');
@@ -1358,13 +1404,13 @@ class mysql
 
                         } else {
                             // look for 'unsigned' and 'zerofill' after the type
-                            if (eregi('unsigned', $value, $regs)) {
+                            if (preg_match('/unsigned/i', $value, $regs)) {
                                 $value = str_replace($regs[0], '', $value);
                                 $value = trim($value);
                                 $columnarray['col_unsigned'] = TRUE;
                                 $columnarray['col_minvalue'] = 0;
                             } // if
-                            if (eregi('zerofill', $value, $regs)) {
+                            if (preg_match('/zerofill/i', $value, $regs)) {
                                 $value = str_replace($regs[0], '', $value);
                                 $value = trim($value);
                                 $columnarray['col_zerofill_bwz'] = 'ZF';
@@ -1402,7 +1448,7 @@ class mysql
                         } // if
                 		break;
                     case 'extra':
-                        if (eregi('auto_increment', $value)) {
+                        if (preg_match('/auto_increment/i', $value)) {
                             $columnarray['col_auto_increment'] = TRUE;
                         } // if;
                         break;
@@ -1466,8 +1512,6 @@ class mysql
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
-
-        $dbname = $GLOBALS['dbprefix'] .$dbname;
 
         // build the query string and run it
         $this->query = 'SHOW TABLES FROM "' .$dbname .'"';

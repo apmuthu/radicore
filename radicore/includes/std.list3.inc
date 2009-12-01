@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -33,10 +33,12 @@ if (isset($act_buttons['choose'])) {
     } // if
 } // if
 
+$original_where     = $where;
+$original_selection = $selection;
 if (!empty($selection) AND !isset($return_from)) {
     // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
+    //$where     = $selection;
+    //$selection = null;
     $new_selection = true;
 } else{
     $new_selection = false;
@@ -90,8 +92,7 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $original_where = $where;
-    $where = $dbouter->initialise($original_where);
+    $where = $dbouter->initialise($original_where, $original_selection);
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
@@ -131,7 +132,7 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // scroll through one item at a time
     $dbmiddle->setRowsPerPage(1);
-    $null = $dbmiddle->initialise($original_where);
+    $null = $dbmiddle->initialise($original_where, $original_selection);
 } // if
 
 // create a class instance for the INNER database table
@@ -162,12 +163,12 @@ if (isset($script_vars['dbinner'])) {
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
-    $null = $dbinner->initialise($original_where);
+    $null = $dbinner->initialise($original_where, $original_selection);
 } // if
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose'])) {
-    $messages = chooseButton($_POST, $dbinner);
+    $messages = chooseButton($_POST, $dbinner, 'dbinner');
 } // if
 
 if (!empty($_POST)) {
@@ -204,13 +205,15 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbouter->reset($where);
+    //$dbouter->reset($where);
+    $dbouter->setPageNo(1);
+    $dbouter->_cm_reset($where);
 } // if
 
 // get data from the outer table
 $outer_data = $dbouter->getData($where);
 
-if ($dbouter->getErrors()) {
+if ($dbouter->errors) {
     // some sort of error
     if ($dbouter->getLastPage() <= 1) {
         // only 1 entry requested, so return to previous script
@@ -252,7 +255,9 @@ if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName(
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbmiddle->reset($where);
+    //$dbmiddle->reset($where);
+    $dbmiddle->setPageNo(1);
+    $dbmiddle->_cm_reset($where);
 } // if
 
 // get data from the middle table

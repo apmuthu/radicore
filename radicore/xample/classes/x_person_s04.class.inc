@@ -181,6 +181,8 @@ class x_person_s04 extends x_person
         $fieldarray['cust_contact']      = 'Bill Gates';
         $fieldarray['barcode']           = '9876543210';
 
+        $fieldarray['delivery_address']  = 'Delivery address:  27 Lesby Avenue, Smalltown, Smallshire, SS1 1SS';
+
         return $fieldarray;
 
     } // _cm_post_fetchRow

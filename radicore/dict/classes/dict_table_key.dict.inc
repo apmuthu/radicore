@@ -1,5 +1,5 @@
 <?php
-    // file created on September 12, 2007, 3:46 pm
+    // file created on June 26, 2009, 7:21 pm
     
     // field specifications for table dict.dict_table_key
     $fieldspec['database_id']               = array('type' => 'string',
@@ -107,6 +107,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'database_id, table_id, key_name, seq_in_index';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

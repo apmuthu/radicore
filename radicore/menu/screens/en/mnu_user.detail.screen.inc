@@ -29,33 +29,35 @@ $structure['main']['fields'][8] = array('email_addr' => 'E-mail Address', 'colsp
 
 $structure['main']['fields'][9] = array('language_code' => 'Language Code', 'colspan' => 3);
 
-$structure['main']['fields'][10] = array('rdcaccount_id' => 'Account Id', 'colspan' => 3);
+$structure['main']['fields'][10] = array('user_timezone' => 'Time Zone', 'colspan' => 3);
 
-$structure['main']['fields'][11][] = array('label' => 'External Authentication Off?');
-$structure['main']['fields'][11][] = array('field' => 'is_external_auth_off');
-$structure['main']['fields'][11][] = array('label' => 'External Id');
-$structure['main']['fields'][11][] = array('field' => 'external_id', 'size' => 40);
+$structure['main']['fields'][11] = array('rdcaccount_id' => 'Account Id', 'colspan' => 3);
 
-$structure['main']['fields'][12] = array('party_id' => 'Party Id', 'colspan' => 3);
+$structure['main']['fields'][12][] = array('label' => 'External Authentication Off?');
+$structure['main']['fields'][12][] = array('field' => 'is_external_auth_off');
+$structure['main']['fields'][12][] = array('label' => 'External Id');
+$structure['main']['fields'][12][] = array('field' => 'external_id', 'size' => 40);
 
-$structure['main']['fields'][13] = array('ip_address' => 'IP Address', 'colspan' => 3);
+$structure['main']['fields'][13] = array('party_id' => 'Party Id', 'colspan' => 3);
 
-$structure['main']['fields'][14][] = array('label' => 'Password Change Date');
-$structure['main']['fields'][14][] = array('field' => 'pswd_chg_date');
-$structure['main']['fields'][14][] = array('field' => 'pswd_chg_time', 'colspan' => 2);
+$structure['main']['fields'][14] = array('ip_address' => 'IP Address', 'colspan' => 3);
 
-$structure['main']['fields'][15] = array('pswd_count' => 'Password Count', 'colspan' => 3);
+$structure['main']['fields'][15][] = array('label' => 'Password Change Date');
+$structure['main']['fields'][15][] = array('field' => 'pswd_chg_date');
+$structure['main']['fields'][15][] = array('field' => 'pswd_chg_time', 'colspan' => 2);
 
-$structure['main']['fields'][16][] = array('label' => 'Logon Date');
-$structure['main']['fields'][16][] = array('field' => 'logon_date');
-$structure['main']['fields'][16][] = array('field' => 'logon_time', 'colspan' => 2);
+$structure['main']['fields'][16] = array('pswd_count' => 'Password Count', 'colspan' => 3);
 
-$structure['main']['fields'][17] = array('created_date' => 'Created Date', 'colspan' => 3);
+$structure['main']['fields'][17][] = array('label' => 'Logon Date');
+$structure['main']['fields'][17][] = array('field' => 'logon_date');
+$structure['main']['fields'][17][] = array('field' => 'logon_time', 'colspan' => 2);
 
-$structure['main']['fields'][18] = array('created_user' => 'Created By', 'colspan' => 3);
+$structure['main']['fields'][18] = array('created_date' => 'Created Date', 'colspan' => 3);
 
-$structure['main']['fields'][19] = array('revised_date' => 'Revised Date', 'colspan' => 3);
+$structure['main']['fields'][19] = array('created_user' => 'Created By', 'colspan' => 3);
 
-$structure['main']['fields'][20] = array('revised_user' => 'Revised By', 'colspan' => 3);
+$structure['main']['fields'][20] = array('revised_date' => 'Revised Date', 'colspan' => 3);
+
+$structure['main']['fields'][21] = array('revised_user' => 'Revised By', 'colspan' => 3);
 
 ?>

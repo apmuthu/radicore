@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update1.inc
@@ -21,11 +21,11 @@ $mode = 'update';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-	// $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//	// $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -66,7 +66,7 @@ if (isset($script_vars['dbobject'])) {
     // perform any initialisation
     $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->errors);
+        scriptPrevious($dbobject->getErrors());
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -85,12 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
             // some data may have been changed in the child form, so refresh it
             $fieldarray = $dbobject->getExtraData($fieldarray);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
         } // if
     } else {
@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if ($dbobject->errors) {
             if ($dbobject->numrows > 1) {
                 // multiple rows, so display error message with this screen
-                $errors[$dbobject->getClassName()] = $dbobject->errors;
+                $errors[$dbobject->getClassName()] = $dbobject->getErrors();
             	unset($act_buttons['submit']);
                 unset($act_buttons['submitnext']);
                 // switch the whole zone into 'noedit' mode
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             } else {
                 // single row, so return to previous script before displaying error message
                 $messages = array_merge($messages, $dbobject->getMessages());
-                scriptprevious($dbobject->errors, $messages);
+                scriptprevious($dbobject->getErrors(), $messages);
             } // if
         } else {
             // no errors, so turn off the 'noedit' switch
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
 
         // rebuild selection criteria using primary key of 1st occurrence
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $fieldarray = pasteData($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
     } elseif (isset($_POST['copy'])) {
         $messages = copyForm($_POST, $dbobject);
@@ -172,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // update this data in the database
             $fieldarray = $dbobject->updateRecord($fieldarray);
             if ($dbobject->errors) {
-				$errors[$dbobject->getClassName()] = $dbobject->errors;
+				$errors[$dbobject->getClassName()] = $dbobject->getErrors();
 			} // if
             $messages = $dbobject->getMessages();
             if (empty($errors)) {
@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // get any extra data and merge with $fieldarray
                     $fieldarray = $dbobject->getExtraData($fieldarray);
                     if ($dbobject->errors) {
-                    	$errors[$dbobject->getClassName()] = $dbobject->errors;
+                    	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
                     } // if
                     // rebuild selection criteria using primary key of 1st occurrence
                     $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
@@ -235,7 +235,8 @@ if (isset($_SESSION['data'][$dbobject->tablename])) {
 } // if
 
 if (!empty($dbobject->messages)) {
-    $messages = array_merge($messages, $dbobject->messages);
+    $messages = array_merge($messages, $dbobject->getMessages());
+    $messages = array_unique($messages);
 } // if
 
 // save these variables for later in the same session
@@ -243,6 +244,11 @@ $script_vars['where']     = $where;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+    // repeat current task with GET instead of POST
+    scriptNext($GLOBALS['task_id'], $where);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

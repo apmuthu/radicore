@@ -1,11 +1,17 @@
 -- phpMyAdmin SQL Dump
--- version 2.11.9
+-- version 2.11.9.4
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 19, 2008 at 10:08 AM
+-- Generation Time: Nov 15, 2009 at 05:17 PM
 -- Server version: 4.1.22
--- PHP Version: 4.4.8
+-- PHP Version: 4.4.9
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
 
 --
 -- Database: `menu`
@@ -42,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `mnu_account` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`rdcaccount_id`)
-) TYPE=MyISAM  AUTO_INCREMENT=5 ;
+) TYPE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -133,6 +139,26 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`menu_id`,`task_id_jnr`)
+) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mnu_motd`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_motd` (
+  `motd_id` int(11) unsigned NOT NULL auto_increment,
+  `motd_subject` varchar(80) NOT NULL default '',
+  `motd_message` text NOT NULL,
+  `start_date` date NOT NULL default '2000-01-01',
+  `end_date` date default '9999-12-31',
+  `role_id` varchar(16) default NULL,
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`motd_id`)
 ) TYPE=MyISAM;
 
 -- --------------------------------------------------------
@@ -300,6 +326,22 @@ CREATE TABLE IF NOT EXISTS `mnu_task_field` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `mnu_task_ip_address`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
+  `task_id` varchar(80) NOT NULL default '',
+  `ip_address` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`task_id`,`ip_address`)
+) TYPE=MyISAM COMMENT='List of valid IP addresses';
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mnu_todo`
 --
 
@@ -349,6 +391,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `external_id` varchar(255) default NULL,
   `is_external_auth_off` char(1) default 'N',
   `party_id` int(11) unsigned default NULL,
+  `user_timezone` varchar(40) default NULL,
   `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL default 'UNKNOWN',
   `revised_date` datetime default NULL,
@@ -358,3 +401,19 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   KEY `role_id` (`role_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
 ) TYPE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mnu_user_ip_address`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
+  `user_id` varchar(16) NOT NULL default '',
+  `ip_address` varchar(40) NOT NULL default '',
+  `created_date` datetime NOT NULL default '2000-01-01 00:00:00',
+  `created_user` varchar(16) NOT NULL default 'UNKNOWN',
+  `revised_date` datetime default NULL,
+  `revised_user` varchar(16) default NULL,
+  PRIMARY KEY  (`user_id`,`ip_address`)
+) TYPE=MyISAM COMMENT='List of valid IP addresses';

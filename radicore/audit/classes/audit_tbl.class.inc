@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_tbl extends Default_Table
@@ -282,7 +282,7 @@ class audit_tbl extends Default_Table
     } // _cm_changeConfig
 
     // ***************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
     {
         if (isset($fieldarray['trn_date'])) {
@@ -295,9 +295,19 @@ class audit_tbl extends Default_Table
     } // _cm_formatData
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         if ($GLOBALS['mode'] == 'list') {
             // ignore $where, use $search instead
             $this->allow_empty_where = TRUE;

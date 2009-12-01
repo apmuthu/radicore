@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -21,10 +21,12 @@
 <xsl:variable name="session"      select="concat('session_name=',$session_name)" />
 
 <xsl:variable name="show"         select="/root/params/text/show"/>
-<xsl:variable name="select-all"   select="/root/params/text/select-all"/>
-<xsl:variable name="unselect-all" select="/root/params/text/unselect-all"/>
 <xsl:variable name="page-created" select="/root/params/text/page-created"/>
 <xsl:variable name="seconds"      select="/root/params/text/seconds"/>
+
+<xsl:variable name="select-all"     select="/root/params/text/select-all"/>
+<xsl:variable name="unselect-all"   select="/root/params/text/unselect-all"/>
+<xsl:variable name="selection-lock" select="/root/params/text/selection-lock"/>
 
 <xsl:variable name="client-side"  select="/root/params/client-side"/>
 <xsl:variable name="print-preview" select="/root/params/print-preview"/>
@@ -485,8 +487,12 @@
           <xsl:otherwise><xsl:value-of select="$show"/> 100</xsl:otherwise>
         </xsl:choose>
 
-        <!-- insert a non-breaking space -->
+        <!-- insert "(of nnn)" -->
+        <xsl:text>&#160;(</xsl:text>
+        <xsl:value-of select="/root/params/text/of"/>
         <xsl:text>&#160;</xsl:text>
+        <xsl:value-of select="$numrows"/>
+        <xsl:text>)&#160;</xsl:text>
       </p>
     </xsl:if>
 
@@ -502,6 +508,16 @@
               <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
               <xsl:text> | </xsl:text>
               <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>
+              <xsl:text> | </xsl:text>
+              <!-- allow the selection to be locked so that the same records are marked as 'selected' 
+                   when returning to this screen -->
+              <label for="rdc_selection_lock"><xsl:value-of select="$selection-lock"/></label>
+              <input type="hidden"   name="rdc_selection_lock" value="0" />              <!-- default is OFF -->
+              <input type="checkbox" name="rdc_selection_lock" id="rdc_selection_lock">  <!-- may be changed to ON -->
+                <xsl:if test="/root/params/selection_lock">
+                  <xsl:attribute name="checked">checked</xsl:attribute>
+                </xsl:if>
+              </input>
             </xsl:if>
             <!-- insert a non-breaking space -->
             <xsl:text>&#160;</xsl:text>

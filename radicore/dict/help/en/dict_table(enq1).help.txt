@@ -1,0 +1,3 @@
+This will display the contents of a record from the DICT_TABLE table.
+
+Refer to <a href="%root%/dict_table(enq1).html">Enquire Table</a> for full details.

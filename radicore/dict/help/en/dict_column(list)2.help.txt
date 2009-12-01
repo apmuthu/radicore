@@ -1,3 +1,0 @@
-This will list records on the DICT_COLUMN table for a selected TABLE.
-
-Refer to <a href="%root%/dict_column(list)2.html">List Column by Database Table</a> for full details.

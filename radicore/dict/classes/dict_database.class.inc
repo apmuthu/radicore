@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_dataBase extends Default_Table
@@ -182,7 +182,7 @@ class dict_dataBase extends Default_Table
     } // _cm_pre_getData
 
     // ****************************************************************************
-    function _cm_pre_output ($string)
+    function _cm_pre_output ($filename)
     // perform any processing required before the output operation
     {
         if ($GLOBALS['mode'] == 'pdf-list') {
@@ -190,7 +190,7 @@ class dict_dataBase extends Default_Table
             unset($this->fieldspec['subsys_id']['optionlist']);
         } // if
 
-        return $string;
+        return $filename;
 
     } // _cm_pre_output
 

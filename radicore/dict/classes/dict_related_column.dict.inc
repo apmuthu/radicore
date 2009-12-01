@@ -1,5 +1,5 @@
 <?php
-    // file created on March 8, 2007, 5:04 pm
+    // file created on June 26, 2009, 7:21 pm
     
     // field specifications for table dict.dict_related_column
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -126,6 +126,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'seq_in_index';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

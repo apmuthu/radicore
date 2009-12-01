@@ -135,7 +135,7 @@ class crs_lesson extends Default_Table
     {
         if (empty($fieldarray['lesson_short_name'])) {
             // extract everything up to the first comma or dash
-            list($short_name) = split('[,-]', $fieldarray['lesson_name']);
+            list($short_name) = preg_split('/[,-]/', $fieldarray['lesson_name']);
             $fieldarray['lesson_short_name'] = $short_name;
         } // if
 
@@ -150,7 +150,7 @@ class crs_lesson extends Default_Table
     {
         if (empty($fieldarray['lesson_short_name'])) {
             // extract everything up to the first comma or dash
-            list($short_name) = split('[,-]', $fieldarray['lesson_name']);
+            list($short_name) = preg_split('/[,-]/', $fieldarray['lesson_name']);
             $fieldarray['lesson_short_name'] = $short_name;
         } // if
 

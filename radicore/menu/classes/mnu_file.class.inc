@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_file extends Default_Table
@@ -55,9 +55,8 @@ class mnu_file extends Default_Table
     } // _cm_getPkeyNames
 
     // ****************************************************************************
-    function _cm_initialise ($where, $selection)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
-    // NOTE: $selection is only available for ADD2 tasks.
     {
         // do not try to read any data as this table does not exist
         $this->skip_getdata = true;
@@ -91,8 +90,15 @@ class mnu_file extends Default_Table
         $this->picker_filetypes   = array('txt', 'html', 'htm', 'log', 'err', 'csv', 'pdf');
         $this->picker_filetypes   = array();  // default is ANY file extension
 
-        // hyperlinks go direct to files, not redirect to download task
-        //$this->xsl_params['hyperlink_direct'] = 'y';
+        // by default hyperlinks are opened directly in the browser
+        $this->xsl_params['hyperlink_direct'] = 'y';
+
+        if (!empty($GLOBALS['settings']['download'])) {
+        	if (is_True($GLOBALS['settings']['download'])) {
+        	    // redirect hyperlinks to the download task
+        		unset($this->xsl_params['hyperlink_direct']);
+        	} // if
+        } // if
 
         return $fieldarray;
 

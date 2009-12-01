@@ -19,4 +19,6 @@ $structure['main']['fields'][3] = array('user_id' => 'User Id', 'colspan' => 3);
 
 $structure['main']['fields'][4] = array('user_password' => 'Password', 'colspan' => 3);
 
+$structure['main']['fields'][5] = array('email_addr' => 'Email Address', 'colspan' => 3);
+
 ?>

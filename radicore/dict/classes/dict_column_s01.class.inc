@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_column.class.inc';
 class dict_column_s01 extends dict_column
@@ -62,19 +62,20 @@ class dict_column_s01 extends dict_column
     // $fieldarray contains data from the initial $where clause.
     {
         // extract database and table names
-        if (is_string(key($fieldarray))) {
-            $dbname    =& $fieldarray['database_id'];
-            $tablename =& $fieldarray['table_id'];
-        } else {
-            $dbname    =& $fieldarray[0]['database_id'];
-            $tablename =& $fieldarray[0]['table_id'];
+        if (!is_string(key($fieldarray))) {
+            $fieldarray = $fieldarray[0];
         } // if
+
+        $dbname    =& $fieldarray['database_id'];
+        $tablename =& $fieldarray['table_id'];
 
         if (empty($dbname) OR empty($tablename)) {
             // 'Database and/or Table id is missing - please check selection'
             $this->errors[] = getLanguageText('e0019');
             return $fieldarray;
         } // if
+
+        $dbprefix = dict_findDBPrefix($dbname);
 
         // save these for _cm_getDatabaseLock () method
         $this->target_dbname    = $dbname;
@@ -95,7 +96,7 @@ class dict_column_s01 extends dict_column
         $this->update_array = array();
 
         // obtain a list of current column definitions from the database engine
-        $db_data = $this->_ddl_showColumns($dbname, $tablename);
+        $db_data = $this->_ddl_showColumns($dbprefix.$dbname, $tablename);
 
         // construct a smaller array of column names
         $db_data_cols = array();
@@ -204,7 +205,7 @@ class dict_column_s01 extends dict_column
             } // foreach
         } // foreach
 
-        // new records have been inserted - now process any deletions and/por updates
+        // new records have been inserted - now process any deletions and/or updates
         if (!empty($this->delete_array)) {
             $array = $this->deleteMultiple($this->delete_array);
             foreach ($this->errors as $row => $rowdata) {

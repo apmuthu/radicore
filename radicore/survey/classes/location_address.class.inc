@@ -29,22 +29,22 @@ class location_address extends Default_Table
     // perform validation that is common to INSERT and UPDATE
     {
         if (!empty($fieldarray['postcode'])) {
-            $pattern = "^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} [0-9]{1}[A-Z]{2}$";
-            if (!ereg($pattern, $fieldarray['postcode'])) {
+            $pattern = "/^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} [0-9]{1}[A-Z]{2}$/";
+            if (!preg_match($pattern, $fieldarray['postcode'])) {
                 $this->errors['postcode'] = getlanguageText('e0005'); // 'Invalid format for a postcode.';
             } // if
         } // if
 
         if (!empty($fieldarray['telephone'])) {
-            $pattern = "^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$";
-            if (!ereg($pattern, $fieldarray['telephone'])) {
+            $pattern = "/^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$/";
+            if (!preg_match($pattern, $fieldarray['telephone'])) {
                 $this->errors['telephone'] = getlanguageText('e0006'); // 'Invalid format for a telephone number.';
             } // if
         } // if
 
         if (!empty($fieldarray['fax'])) {
-            $pattern = "^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$";
-            if (!ereg($pattern, $fieldarray['fax'])) {
+            $pattern = "/^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$/";
+            if (!preg_match($pattern, $fieldarray['fax'])) {
                 $this->errors['fax'] = getlanguageText('e0007'); // 'Invalid format for a fax number.';
             } // if
         } // if

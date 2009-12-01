@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s01 extends mnu_user
@@ -46,12 +46,7 @@ class mnu_user_s01 extends mnu_user
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        // find out if user passwords are encrypted or not
-        $dbobject =& singleton::getInstance('mnu_control');
-        $encrypt_flag = $dbobject->getControlData('pswd_encrypt');
-        unset($dbobject);
-
-        if ($encrypt_flag) {
+        if (is_True($this->pswd_encrypt)) {
             $crypt_obj =& singleton::getInstance('encryption_class');
             // encrypt input password and compare with original
             $key    = $fieldarray['user_id'];
@@ -91,9 +86,22 @@ class mnu_user_s01 extends mnu_user
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_initialise ($where)
+    function _cm_initialise ($where, &$selection, $search)
     // perform any initialisation for the current task.
     {
+        $where = parent::_cm_initialise($where, $selection, $search);
+
+        $pattern_id = getPatternId();
+        if (preg_match('/^(add)/i', $pattern_id)) {
+        	// ignore contents of selection
+        	$selection = null;
+        } else {
+            if (!empty($selection)) {
+            	$where     = $selection;
+            	$selection = null;
+            } // if
+        } // if
+
         // this may be called from the home page, so insert user's id
         if (empty($where)) {
         	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_todo extends Default_Table
@@ -56,7 +56,7 @@ class mnu_todo extends Default_Table
     // perform custom formatting before values are shown to the user.
     // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
-        if (!eregi('search|insert|update', $GLOBALS['mode'])) {
+        if (!preg_match('/(search|insert|update)/i', $GLOBALS['mode'])) {
         	if (!is_True($fieldarray['is_complete'])) {
                 $today = getTimeStamp('date');
                 $dateobj = singleton::getInstance('date_class');

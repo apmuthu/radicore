@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -25,8 +25,8 @@
 
   <xsl:variable name="real_noedit">
     <xsl:choose>
-      <xsl:when test="$noedit">
-        <xsl:value-of select="$noedit"/>  <!-- 'noedit' flag for this zone -->
+      <xsl:when test="string-length($noedit) > 0">
+        <xsl:value-of select="'y'"/>  <!-- 'noedit' flag for this zone -->
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="@noedit"/>  <!-- 'noedit' flag for this occurrence -->
@@ -108,8 +108,8 @@
 
   <xsl:variable name="real_noedit">
     <xsl:choose>
-      <xsl:when test="$noedit">
-        <xsl:value-of select="$noedit"/>  <!-- 'noedit' flag for this zone -->
+      <xsl:when test="string-length($noedit) > 0">
+        <xsl:value-of select="'y'"/>  <!-- 'noedit' flag for this zone -->
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="@noedit"/>  <!-- 'noedit' flag for this occurrence -->
@@ -216,13 +216,16 @@
               <xsl:when test="$fieldvalue and not($fieldvalue/@nodisplay) and not($nodisplay)">
 
                 <xsl:if test="not(@class)">
-                  <!-- set defalt classname for this label cell -->
+                  <!-- set default classname for this label cell -->
                   <xsl:attribute name="class">label</xsl:attribute>
                 </xsl:if>
 
                 <xsl:choose>
                   <!-- insert indicator if field is required -->
                   <xsl:when test="$mode='insert' and ($fieldvalue/@pkey or $fieldvalue/@required)">
+                    <span class="required">* </span>
+                  </xsl:when>
+                  <xsl:when test="$mode='search' and $fieldvalue/@required">
                     <span class="required">* </span>
                   </xsl:when>
                   <xsl:when test="$mode='update' and $fieldvalue/@required and not($fieldvalue/@pkey) and not($noedit='y')">
@@ -469,6 +472,7 @@
               <xsl:with-param name="path"     select="$path"/>
               <xsl:with-param name="multiple" select="$multiple"/>
               <xsl:with-param name="position" select="$position"/>
+              <xsl:with-param name="str-size" select="$str-size"/>
             </xsl:call-template>
           </xsl:when>
 
@@ -570,53 +574,45 @@
       <xsl:attribute name="class"><xsl:value-of select="@class" /></xsl:attribute>
     </xsl:if>
 
-    <xsl:if test="$align_lr='l'"> <!-- put label on the left -->
-      <!-- check if field has label attribute set -->
-      <xsl:if test="$item/@label">
-        <label for="{$name}">
-          <xsl:value-of select="$item/@label"/>
-        </label>
-      </xsl:if>
-    </xsl:if>
-
     <xsl:if test="not($mode='list' or $mode='read' or $mode='delete' or $item/@noedit or $noedit='y')">
       <!-- create hidden field to send back OFF setting -->
       <!-- as checkbox control does not appear in POST array unless it is checked ON -->
       <input type="hidden" name="{$name}" value="0" />
     </xsl:if>
-
-    <!-- create a checkbox control -->
-    <input class="checkbox" type="checkbox" >
-
-      <xsl:attribute name="id"><xsl:value-of select="$name"/></xsl:attribute>
-
-      <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
-
-      <xsl:if test="$item='T' or $item='Y' or $item='1'">
-        <!-- this is to be marked as selected in the initial display -->
-        <xsl:attribute name="checked">checked</xsl:attribute>
+  
+    <label>
+      
+      <xsl:if test="$align_lr='l'"> <!-- put label on the left -->
+        <xsl:value-of select="$item/@label"/>
       </xsl:if>
-
-      <xsl:if test="$mode='list' or $mode='read' or $mode='delete'
-                 or $item/@noedit or $noedit='y'">
-        <xsl:attribute name="disabled">disabled</xsl:attribute>
+  
+      <!-- create a checkbox control -->
+      <input class="checkbox" type="checkbox" >
+  
+        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+  
+        <xsl:if test="$item='T' or $item='Y' or $item='1'">
+          <!-- this is to be marked as selected in the initial display -->
+          <xsl:attribute name="checked">checked</xsl:attribute>
+        </xsl:if>
+  
+        <xsl:if test="$mode='list' or $mode='read' or $mode='delete'
+                   or $item/@noedit or $noedit='y'">
+          <xsl:attribute name="disabled">disabled</xsl:attribute>
+        </xsl:if>
+  
+        <xsl:call-template name="scripting_events">
+          <!-- insert any scripting events which have been defined -->
+          <xsl:with-param name="item" select="$item"/>
+        </xsl:call-template>
+  
+      </input>
+  
+      <xsl:if test="not($align_lr='l')"> <!-- put label on the right -->
+        <xsl:value-of select="$item/@label"/>
       </xsl:if>
-
-      <xsl:call-template name="scripting_events">
-        <!-- insert any scripting events which have been defined -->
-        <xsl:with-param name="item" select="$item"/>
-      </xsl:call-template>
-
-    </input>
-
-    <xsl:if test="not($align_lr='l')"> <!-- put label on the right -->
-      <!-- check if field has label attribute set -->
-      <xsl:if test="$item/@label">
-        <label for="{$name}">
-          <xsl:value-of select="$item/@label"/>
-        </label>
-      </xsl:if>
-    </xsl:if>
+      
+    </label>
 
   </span>
 
@@ -691,52 +687,50 @@
         <!-- construct name as name[value] so that each element has a unique name -->
         <xsl:variable name="name3" select="concat($name, '[', @id, ']')"/>
 
-        <xsl:if test="$align_lr='l'">  <!--  put label on the left -->
-          <label for="{$name3}">
-            <!-- output the value of the current option -->
-            <xsl:value-of select="node()"/>
-          </label>
-        </xsl:if>
-
         <xsl:if test="not($mode='list' or $mode='read' or $mode='delete' or $item/@noedit or $noedit='y')">
           <!-- create hidden field to send back OFF setting -->
           <!-- as checkbox control does not appear in POST array unless it is checked ON -->
           <input type="hidden" name="{$name3}" value="0" />
         </xsl:if>
 
-        <input class="checkbox" type="checkbox" >
+        <label>
+          
+           <xsl:if test="$align_lr='l'">  <!--  put label on the left -->
+              <!-- output the value of the current option -->
+              <xsl:value-of select="node()"/>
+           </xsl:if>
 
-          <xsl:variable name="id" select="@id"/>
-
-          <xsl:attribute name="name"><xsl:value-of select="$name3" /></xsl:attribute>
-
-          <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
-
-          <xsl:attribute name="id"><xsl:value-of select="$name3" /></xsl:attribute>
-
-          <xsl:if test="//*[name()=name($item)]/array[@id=$id]">
-            <!-- this option has been selected -->
-            <xsl:attribute name="checked">checked</xsl:attribute>
-          </xsl:if>
-
-          <xsl:if test="$mode='list' or $mode='read' or $mode='delete'
-                     or $item/@noedit or $noedit='y'">
-            <xsl:attribute name="disabled">disabled</xsl:attribute>
-          </xsl:if>
-
-          <xsl:call-template name="scripting_events">
-            <!-- insert any scripting events which have been defined -->
-            <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
-          </xsl:call-template>
-
-        </input>
-
-        <xsl:if test="not($align_lr='l')">  <!--  put label on the right -->
-          <label for="{$name3}">
-            <!-- output the value of the current option -->
-            <xsl:value-of select="node()"/>
-          </label>
-        </xsl:if>
+           <input class="checkbox" type="checkbox" >
+   
+             <xsl:variable name="id" select="@id"/>
+   
+             <xsl:attribute name="name"><xsl:value-of select="$name3" /></xsl:attribute>
+   
+             <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
+   
+             <xsl:if test="//*[name()=name($item)]/array[@id=$id]">
+               <!-- this option has been selected -->
+               <xsl:attribute name="checked">checked</xsl:attribute>
+             </xsl:if>
+   
+             <xsl:if test="$mode='list' or $mode='read' or $mode='delete'
+                        or $item/@noedit or $noedit='y'">
+               <xsl:attribute name="disabled">disabled</xsl:attribute>
+             </xsl:if>
+   
+             <xsl:call-template name="scripting_events">
+               <!-- insert any scripting events which have been defined -->
+               <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+             </xsl:call-template>
+   
+           </input>
+   
+           <xsl:if test="not($align_lr='l')">  <!--  put label on the right -->
+             <!-- output the value of the current option -->
+             <xsl:value-of select="node()"/>
+           </xsl:if>
+          
+        </label>
 
         <!-- insert single space as a separator -->
         <xsl:text> </xsl:text>
@@ -1327,6 +1321,7 @@
   <xsl:param name="path"/>      <!-- the entity name -->
   <xsl:param name="multiple"/>  <!-- optional, causes position number to be added to item name -->
   <xsl:param name="position"/>  <!-- the row number -->
+  <xsl:param name="str-size"/>  <!-- string size from screen structure file -->
 
   <!-- this turns the value of the foreignfield attribute into a node set -->
   <xsl:variable name="foreign_field" select="//*[name()=$path][position()=$position]/*[name()=$item/@foreign_field]"/>
@@ -1394,7 +1389,17 @@
         <xsl:choose>
           <xsl:when test="$item/@allow_input">
             <!-- allow the foreign key to be input -->
-            <input type="text" name="{name($item)}" value="{$popupvalue}" size="{$item/@size}"/>
+            <input type="text" name="{name($item)}" value="{$popupvalue}">
+              <xsl:choose>
+                <xsl:when test="$str-size">
+                  <!-- use size specified in screen structure file -->
+                  <xsl:attribute name="size"><xsl:value-of select="$str-size"/></xsl:attribute>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:attribute name="size"><xsl:value-of select="$item/@size"/></xsl:attribute>
+                </xsl:otherwise>
+              </xsl:choose>
+            </input>
           </xsl:when>
           <xsl:otherwise>
             <!-- display the value of the foreign key -->
@@ -1518,50 +1523,43 @@
               </xsl:choose>
             </xsl:variable>
 
-            <!-- construct label id as name + underscore + value -->
-            <xsl:variable name="label_id" select="concat($name, '_', @id)" />
-
-            <xsl:if test="$align_lr='l'">  <!--  put label on the left -->
-              <label for="{@id}">
-                <!-- output the value of the current option -->
-                <xsl:value-of select="node()"/>
-              </label>
-            </xsl:if>
-
-            <input class="radio" type="radio" >
-
-              <xsl:variable name="id" select="@id"/>
-
-              <xsl:attribute name="name"><xsl:value-of select="$name" /></xsl:attribute>
-
-              <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
-
-              <xsl:attribute name="id"><xsl:value-of select="$label_id" /></xsl:attribute>
-
-              <xsl:call-template name="scripting_events">
-                <!-- insert any scripting events which have been defined -->
-                <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
-              </xsl:call-template>
-
-              <!-- use the 'id' attribute of the node as the 'value' attribute -->
-              <xsl:if test="$item=@id">
-                <!-- this option has been selected -->
-                <xsl:attribute name="checked">checked</xsl:attribute>
+            <label>
+              
+              <xsl:if test="$align_lr='l'">  <!--  put label on the left -->
+                 <xsl:value-of select="node()"/>
               </xsl:if>
-
-              <xsl:if test="$item=node()">
-                <!-- this option has been selected (variation for ENUM fields) -->
-                <xsl:attribute name="checked">checked</xsl:attribute>
-              </xsl:if>
-
-            </input>
-
-            <xsl:if test="not($align_lr='l')">  <!--  put label on the right -->
-              <label for="{@id}">
-                <!-- output the value of the current option -->
+  
+              <input class="radio" type="radio">
+  
+                <xsl:variable name="id" select="@id"/>
+  
+                <xsl:attribute name="name"><xsl:value-of select="$name" /></xsl:attribute>
+  
+                <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
+  
+                <xsl:call-template name="scripting_events">
+                  <!-- insert any scripting events which have been defined -->
+                  <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+                </xsl:call-template>
+  
+                <!-- use the 'id' attribute of the node as the 'value' attribute -->
+                <xsl:if test="$item=@id">
+                  <!-- this option has been selected -->
+                  <xsl:attribute name="checked">checked</xsl:attribute>
+                </xsl:if>
+  
+                <xsl:if test="$item=node()">
+                  <!-- this option has been selected (variation for ENUM fields) -->
+                  <xsl:attribute name="checked">checked</xsl:attribute>
+                </xsl:if>
+  
+              </input>
+  
+              <xsl:if test="not($align_lr='l')">  <!--  put label on the right -->
                 <xsl:value-of select="node()"/>
-              </label>
-            </xsl:if>
+              </xsl:if>
+              
+            </label>
 
             <!-- insert single space as a separator -->
             <xsl:text> </xsl:text>

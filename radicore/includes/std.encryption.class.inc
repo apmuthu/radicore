@@ -1,11 +1,13 @@
 <?php
 // ******************************************************************************
 // A reversible password encryption routine by:
-// Copyright 2003-2008 by A J Marston <http://www.tonymarston.net>
+// Copyright 2003-2009 by A J Marston <http://www.tonymarston.net>
 // Distributed under the GNU General Public Licence
 // Modification: May 2007, M. Kolar <http://mkolar.org>:
 // No need for repeating the first character of scramble strings at the end;
 // instead using the exact inverse function transforming $num2 to $num1.
+// Modification: Jan 2009, A J Marston <http://www.tonymarston.net>:
+// Use mb_substr() if it is available (for multibyte characters).
 // ******************************************************************************
 
 class encryption_class {
@@ -59,8 +61,12 @@ class encryption_class {
     	$factor2 = 0;
 
     	for ($i = 0; $i < strlen($source); $i++) {
-            // extract a character from $source
-            $char2 = substr($source, $i, 1);
+            // extract a (multibyte) character from $source
+            if (function_exists('mb_substr')) {
+                $char2 = mb_substr($source, $i, 1);
+            } else {
+                $char2 = substr($source, $i, 1);
+            } // if
 
             // identify its position in $scramble2
             $num2 = strpos($this->scramble2, $char2);
@@ -77,8 +83,12 @@ class encryption_class {
             $num1    = $this->_checkRange($num1);       // check range
             $factor2 = $factor1 + $num2;                // accumulate in $factor2
 
-            // extract character from $scramble1
-            $char1 = substr($this->scramble1, $num1, 1);
+            // extract (multibyte) character from $scramble1
+            if (function_exists('mb_substr')) {
+                $char1 = mb_substr($this->scramble1, $num1, 1);
+            } else {
+                $char1 = substr($this->scramble1, $num1, 1);
+            } // if
 
             // append to $target string
             $target .= $char1;
@@ -107,16 +117,18 @@ class encryption_class {
         } // if
 
         // pad $source with spaces up to $sourcelen
-        while (strlen($source) < $sourcelen) {
-            $source .= ' ';
-        } // while
+        $source = str_pad($source, $sourcelen);
 
         $target = null;
         $factor2 = 0;
 
         for ($i = 0; $i < strlen($source); $i++) {
-            // extract a character from $source
-            $char1 = substr($source, $i, 1);
+            // extract a (multibyte) character from $source
+            if (function_exists('mb_substr')) {
+            	$char1 = mb_substr($source, $i, 1);
+            } else {
+                $char1 = substr($source, $i, 1);
+            } // if
 
             // identify its position in $scramble1
             $num1 = strpos($this->scramble1, $char1);
@@ -133,8 +145,12 @@ class encryption_class {
             $num2    = $this->_checkRange($num2);   // check range
             $factor2 = $factor1 + $num2;            // accumulate in $factor2
 
-            // extract character from $scramble2
-            $char2 = substr($this->scramble2, $num2, 1);
+            // extract (multibyte) character from $scramble2
+            if (function_exists('mb_substr')) {
+                $char2 = mb_substr($this->scramble2, $num2, 1);
+            } else {
+                $char2 = substr($this->scramble2, $num2, 1);
+            } // if
 
             // append to $target string
             $target .= $char2;
@@ -232,8 +248,12 @@ class encryption_class {
 
         $tot = 0;
         for ($i = 0; $i < strlen($key); $i++) {
-            // extract a character from $key
-            $char = substr($key, $i, 1);
+            // extract a (multibyte) character from $key
+            if (function_exists('mb_substr')) {
+                $char = mb_substr($key, $i, 1);
+            } else {
+                $char = substr($key, $i, 1);
+            } // if
 
             // identify its position in $scramble1
             $num = strpos($this->scramble1, $char);

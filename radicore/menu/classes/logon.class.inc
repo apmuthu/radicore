@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class logon extends mnu_user
@@ -43,22 +43,19 @@ class logon extends mnu_user
             	$logonarray['email_addr'] = null;
             } // if
             unset($this->fieldspec['user_id']['required']);
+            unset($logonarray['user_id']);
         } else {
             $this->fieldspec['user_id']['required'] = 'y';
             if (!isset($logonarray['user_id'])) {
             	$logonarray['user_id'] = null;
             } // if
             unset($this->fieldspec['email_addr']['required']);
+            unset($logonarray['email_addr']);
         } // if
 
         // perform primary validation on the input
         $updatearray = $this->_validateUpdate($logonarray);
         if ($this->errors) {
-            if ($login_type == 'EMAIL') {
-                unset($logonarray['user_id']);
-            } else {
-                unset($logonarray['email_addr']);
-            } // if
             $this->fieldarray = $logonarray;
         	return $this->errors;
         } // if
@@ -67,11 +64,12 @@ class logon extends mnu_user
             $data = $this->getData("email_addr='{$logonarray['email_addr']}'");
             if (empty($data)) {
                 $this->errors[] = getLanguageText('sys0142'); // 'Security violation';
-                $this->PasswordRetries($logonarray['email_addr'], $updatearray['user_password']);
+                $this->PasswordRetries(NULL, $updatearray['user_password'], $logonarray['email_addr']);
                 $this->fieldarray = $logonarray;
                 return $this->errors;
             } else {
             	$updatearray['user_id'] = $data[0]['user_id'];
+            	unset($updatearray['email_addr']);
             } // if
         } // if
 
@@ -123,11 +121,18 @@ class logon extends mnu_user
             unset ($crypt_obj);
         } // if
 
+        $ip_address = $_SERVER['SERVER_ADDR'];
+
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id, mnu_user.rdcaccount_id, mnu_user.external_id, mnu_user.party_id ';
+        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id, mnu_user.rdcaccount_id, mnu_user.external_id, mnu_user.party_id, mnu_user.user_timezone ';
         $this->sql_from   = 'mnu_user '
                           . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
         $where = "user_id='" .addslashes($logon_user_id) ."'";
+        // lookup on MNU_USER_IP_ADDRESS to see if this IP address is valid
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE $where) = 0 THEN true"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE $where AND ip_address='$ip_address') = 1 THEN true"
+                                  ." ELSE false"
+                             ." END AS ip_address_valid";
         if ($auth_array['authentication'] == 'INTERNAL') {
             // include user_password in selection criteria
             $where .= " AND user_password='" .addslashes($logon_password) ."'";
@@ -164,6 +169,23 @@ class logon extends mnu_user
         	$this->errors[] = getLanguageText('sys0145');
             $this->fieldarray = $logonarray;
             return $this->errors;
+        } // if
+
+        if (!is_True($fieldarray['ip_address_valid'])) {
+            // 'This IP address is not valid'
+        	$this->errors[] = getLanguageText('sys0200', $ip_address);
+            $this->fieldarray = $logonarray;
+            return $this->errors;
+        } // if
+
+        if (!empty($_SESSION['timezone_server'])) {
+        	if (!empty($fieldarray['user_timezone']) AND $fieldarray['user_timezone'] != $_SESSION['timezone_server']) {
+            	// put this user's time zone in a permanent cookie (for use in the shutdown function)
+                setcookie("timezone_client", $fieldarray['user_timezone'], time()+7776000, '/');
+            } else {
+                // delete this cookie
+                setcookie("timezone_client", '', time()-42000, '/');
+            } // if
         } // if
 
         if ($auth_array['authentication'] != 'INTERNAL') {
@@ -216,33 +238,53 @@ class logon extends mnu_user
         // make a permanent copy in session data as global data may be changed
         $_SESSION['localeconv'] = $GLOBALS['localeconv'];
 
+        if (!empty($_SESSION['timezone_server'])) {
+            $_SESSION['timezone_client'] = $fieldarray['user_timezone'];
+        } // if
+
         // update user record to show that he/she has logged in
         $updatearray['user_id']       = $logon_user_id;
+        $updatearray['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
         $updatearray['pswd_count']    = $fieldarray['pswd_count'] + 1;
         $updatearray['logon_date']    = getTimeStamp('date');
         $updatearray['logon_time']    = getTimeStamp('time');
         $updatearray['in_use']        = true;
         $updatearray['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        unset($updatearray['user_password']);
 
         $updatearray = $this->updateRecord($updatearray);
 
-        if ($auth_array['authentication'] == 'INTERNAL') {
-            // find out if user needs to change his password
-            if ($mnu_control->getControlData('pswd_change', $updatearray)) {
-                $next['task_id']  = 'mnu_user(upd1)b';
-                $next['where']    = "user_id='$logon_user_id'";
-                $next['action']   = 'OK';
-                // 'You must change your password';
-                $next['messages'] = getLanguageText('sys0146');
-                // this is processed by scriptnext() and scriptprevious()
-                append2ScriptSequence($next);
-            } else {
-                // find out is the user's password is due to expire in the near future
-                if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {
-                	$this->messages[] = $expiry_msg;
+        if (empty($this->errors)) {
+        	if ($auth_array['authentication'] == 'INTERNAL') {
+                // find out if user needs to change his password
+                if ($mnu_control->getControlData('pswd_change', $updatearray)) {
+                    $next['task_id']  = 'mnu_user(upd1)b';
+                    $next['where']    = "user_id='$logon_user_id'";
+                    $next['action']   = 'OK';
+                    // 'You must change your password';
+                    $next['messages'] = getLanguageText('sys0146');
+                    // this is processed by scriptnext() and scriptprevious()
+                    append2ScriptSequence($next);
+                } else {
+                    // find out is the user's password is due to expire in the near future
+                    if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {
+                    	$this->messages[] = $expiry_msg;
+                    } // if
                 } // if
             } // if
+        } else {
+            // an error has occurred, so remove redundant data before screen is redisplayed
+            if ($login_type == 'EMAIL') {
+                unset($fieldarray['user_id']);
+            } else {
+                unset($fieldarray['email_addr']);
+            } // if
         } // if
+
+        // show MOTD (Message of the Day) screen
+        //$motd['task_id']  = 'mnu_motd(show)';
+        //$motd['where']    = "motd_id IS NOT NULL";
+        //append2ScriptSequence($motd);
 
         $data = $mnu_control->getControlData('pagination');
         $_SESSION['pagination_width'] = $data['pagination_width'];
@@ -256,7 +298,7 @@ class logon extends mnu_user
     } // user_logon
 
     // ****************************************************************************
-    function PasswordRetries ($user_id, $user_password)
+    function PasswordRetries ($user_id, $user_password, $email_addr=null)
     // password has been rejected, so increment count for this user, and if it
     // exceeds the value in $limit then disable this user (this prevents a
     // hacker from trying multiple guesses)
@@ -266,6 +308,7 @@ class logon extends mnu_user
         $auditobj =& singleton::getInstance('audit_logon_errors');
 
         $audit_data['user_id']       = $user_id;
+        $audit_data['email_addr']    = $email_addr;
         $audit_data['user_password'] = $user_password;
         $audit_data['ip_address']    = $_SERVER['REMOTE_ADDR'];
         $audit_data = $auditobj->insertRecord($audit_data);
@@ -336,34 +379,41 @@ class logon extends mnu_user
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        $dbobject =& singleton::getInstance('mnu_control');
-        $login_type = $dbobject->getControlData('login_type');
-
         $where = '';
         $where = $this->_cm_changeConfig($where, $fieldarray);
 
-        // remove everything from $fieldspec except PASSWORD and USER_ID/EMAIL_ADDR
+        // get list of fields which are defined in the current screen
+        foreach ($GLOBALS['screen_structure']['main']['fields'] as $key => $value) {
+        	$fieldlist[] = key($value);
+        } // foreach
+
+        // remove everything from $fieldspec except these fields
         foreach ($this->fieldspec as $fieldname => $spec) {
-            if ($fieldname == 'user_password') {
-                $fieldarray[$fieldname] = null;
+            if (in_array($fieldname, $fieldlist)) {
+            	$fieldarray[$fieldname] = null;
             } else {
-                if ($fieldname == 'user_id') {
-                    if ($login_type == 'USER') {
-                        $fieldarray[$fieldname] = null;
-                    } else {
-                        unset($this->fieldspec[$fieldname]);
-                    } // if
-                } elseif ($fieldname == 'email_addr') {
-                    if ($login_type == 'EMAIL') {
-                        $fieldarray[$fieldname] = null;
-                    } else {
-                        unset($this->fieldspec[$fieldname]);
-                    } // if
-                } else {
-                    unset($this->fieldspec[$fieldname]);
-                } // if
+                unset($this->fieldspec[$fieldname]);
             } // if
         } // foreach
+
+        // remove field(s) and data depending on 'login_type'
+        $dbobject =& singleton::getInstance('mnu_control');
+        $login_type = $dbobject->getControlData('login_type');
+
+        switch ($login_type) {
+        	case 'USER':
+        		unset($this->fieldspec['email_addr']);
+        		unset($fieldarray['email_addr']);
+        		break;
+
+        	case 'EMAIL':
+        		unset($this->fieldspec['user_id']);
+        		unset($fieldarray['user_id']);
+        		break;
+
+        	default:
+        		break;
+        } // switch
 
         return $fieldarray;
 

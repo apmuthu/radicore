@@ -13,9 +13,6 @@ $sql_select = NULL;
 $sql_from   = NULL;
 $sql_where  = NULL;
 
-// add CLEAR to action buttons (this will also enable DELETE)
-$act_buttons['clear'] = 'CLEAR';
-
 require 'std.multi1.inc';                   // activate page controller
 
 ?>

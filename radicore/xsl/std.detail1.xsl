@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -55,10 +55,14 @@
         <!-- create help button -->
         <xsl:call-template name="help" />
   
-        <xsl:if test="not($mode='logon') and not($mode='recover')">
-          <!-- create menu buttons -->
-          <xsl:call-template name="menubar" />
-        </xsl:if>
+        <xsl:choose>
+          <xsl:when test="$mode='logon'"></xsl:when>
+          <xsl:when test="$mode='recover'"></xsl:when>
+          <xsl:otherwise>
+            <!-- create menu buttons -->
+            <xsl:call-template name="menubar" />
+          </xsl:otherwise>
+        </xsl:choose>
   
         <div class="body">
   

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_task.class.inc';
 class mnu_task_s03 extends mnu_task
@@ -22,7 +22,7 @@ class mnu_task_s03 extends mnu_task
         $this->sql_from   = 'mnu_task '
                           . 'LEFT JOIN mnu_nav_button ON (mnu_nav_button.task_id_snr=mnu_task.task_id) ';
         $this->sql_groupby = 'task_id, task_desc, task_type ';
-        $this->sql_having = 'count(task_id_snr) > 0';
+        $this->sql_having = 'button_count > 0';
 
         return $where;
 

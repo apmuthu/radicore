@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update3.inc
@@ -22,11 +22,11 @@ $mode = 'update';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-	// $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//	// $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 if (isset($_POST['quit'])) {
     // cancel this screen, return to previous screen
@@ -55,9 +55,9 @@ if (isset($script_vars['dbobject'])) {
     $dbobject->sql_groupby = &$sql_groupby;
     $dbobject->sql_having  = &$sql_having;
     // perform any initialisation
-    $where = $dbobject->initialise($where);
+    $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->errors);
+        scriptPrevious($dbobject->getErrors());
     } // if
 } // if
 
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->errors;
+            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
         } // if
     } else {
@@ -76,12 +76,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getData($where);
         if ($dbobject->errors) {
             // some sort of error - return to previous script
-            scriptprevious($dbobject->errors, $messages);
+            scriptprevious($dbobject->getErrors(), $messages);
         } // if
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->errors;
+        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
     } // if
 
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $msg = $dbobject->updateSelection($fieldarray, null);
         if ($dbobject->errors) {
 			// errors are keyed by object name
-		    $errors[$dbobject->getClassName()] = $dbobject->errors;
+		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
 		} // if
         if (empty($errors)) {
             $errors = $dbobject->commit();

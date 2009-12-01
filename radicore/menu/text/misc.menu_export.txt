@@ -1,8 +1,10 @@
-// file created on November 27, 2008, 1:48 pm
+// file created on August 25, 2009, 4:37 pm
     
 // menu details for subsystem MISC
 
 // task details for subsystem MISC
+$array['batch_log(filedownload)']                 = 'Download Batch Log File';
+$array['batch_log(filepicker)']                   = 'Show Batch Log File';
 $array['date(current)']                           = 'Select Records with Current Dates';
 $array['date(future)']                            = 'Select Records with Future Dates';
 $array['date(historic)']                          = 'Select Records with Historic Dates';
@@ -10,6 +12,7 @@ $array['file(delete)']                            = 'Delete File Name';
 $array['file(search)']                            = 'Search File Name';
 
 // navigation button details for subsystem MISC
+$array['Batch Log Files']                         = 'Batch Log Files';
 $array['Current']                                 = 'Current';
 $array['Delete']                                  = 'Delete';
 $array['Future']                                  = 'Future';

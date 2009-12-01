@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_language extends Default_Table
@@ -21,6 +21,26 @@ class mnu_language extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // mnu_language
+
+    // ****************************************************************************
+    function getFieldSpec_original ()
+    // set the specifications for this database table.
+    {
+        $fieldspec = parent::getFieldSpec_original();
+
+        foreach ($this->child_relations as $index => $relation) {
+        	if (isset($relation['subsys_dir'])) {
+                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
+                if (!file_exists($classname)) {
+                    // does not exist in this installation, so remove this reference
+                	unset($this->child_relations[$index]);
+                } // if
+        	} // if
+        } // foreach
+
+        return $fieldspec;
+
+    } // getFieldSpec_original
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -87,10 +107,10 @@ class mnu_language extends Default_Table
     // perform custom processing before database record is inserted.
     // if anything is placed in $this->errors the insert will be terminated.
     {
-        if (empty($rowdata['language_name'])) {
-            // default value is descrition from lookup array
+        //if (empty($rowdata['language_name'])) {
+            // default value is description from lookup array
             $rowdata['language_name'] = $this->lookup_data['language_id'][$rowdata['language_id']];
-        } // if
+        //} // if
 
         return $rowdata;
 

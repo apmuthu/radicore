@@ -1,22 +1,148 @@
 ﻿RADICORE for PHP - news
 
+2009-10-01, version 1.54.0
+- fixed bug in setDefaultOrderBy() function which set the default sequence to 'asc', only to have it switched to 'desc' in the setOrderBy() function.
+- fixed bug in 'dict_table_key.class.inc' which failed to include the value of $dbprefix when accessing the database schema.
+- fixed bug in 'std.update4.inc' to change '$dbobject->getErrors' to '$dbobject->getErrors()'.
+- fixed bug in the 'import tables' function in the data dictionary which added $dbprefix twice to $dbname, thereby creating an invalid database name.
+- added 'xmlrpc' directory to assist in the development of web services. Point your browser to 'radicore/xmlrpc/index.html' to see some working examples.
+- replaced all POSIX functions which have been deprecated in PHP 5.3.0 with their PCRE equivalents.
+- updated the MENU database to include tables MNU_TASK_IP_ADDRESS and MNU_USER_IP_ADDRESS. This can be used to restrict access to machines with specified IP addresses. You will need to run the following scripts
+-- radicore\menu\sql\mysql\alter_table(2009-11-15).sql to alter the structure of your MENU database.
+-- radicore\menu\sql\menu.menu_export(2009-11-15).sql to update the contents of your MENU database.
+
+2009-11-01, version 1.53.0
+- modified error handler so that it only displays verbose error messages when the server is 'localhost'. Verbose messages will still be sent to file 'errorlog.html' and emailed to the system administrator.
+- fixed bug in 'runInBackground()' function which failed to pass back any error message to the calling function.
+- fixed bug in 'std.filepicker1.inc' which failed to process the 'selectall/unselectall' options.
+- fixed bug in 'initialise()' function within 'std.table.class.inc' which incorrectly replaced $where with $selection.
+- modified search screen so that a dropdown list or radio group can be temporarily converted to a MULTIDROP. This will allow multiple options to be selected instead of just one, and will result in SQL similar to the following being inserted in the WHERE string: "field IN ('option1','option2','option3',...)".
+
+2009-10-04, version 1.52.0
+- upgraded TCPDF to version 4.8.005
+- updated 'include.general.inc' to add functions 'convertTZdate()' and 'convertTZtime()'. These will allow timezone conversions on fields of type 'date' and 'time' instead of 'datetime'.
+- updated footer processing in PDF output so that 'date' and 'time' values are converted into the user's timezone.
+- updated 'std.table.class.inc' to replace the '_cm_ListView_pre_print()' method with the '_cm_ListView_print_before()' and '_cm_ListView_print_after()' methods.
+- updated 'std.pdf.class.inc' to include the 'getLinesRemaining()' method.
+- fixed bug in login screen where the email address was entered in mixed/upper case instead of lower case, causing the error message "A record already exists with this key" to be displayed.
+- updated 'std.validation.class.inc' to change all 'str*()' functions to 'mb_str*()' (if the mbstring extension has been loaded) as the func_overload option is no longer supported in htaccess files as of PHP version 5.2.7
+- fixed bug in 'std.update5.inc' which failed if $where was empty, ignoring the fact that $selection was not empty.
+- updated AUDIT database to add 'email_addr' field to 'audit_logon_errors' table. This is to fix bug when a login fails when using an email address instead of a user id. You will need to run script 'radicore\audit\sql\mysql\alter_table(2009-09-29).sql' in order to update your database schema.
+
+2009-09-01, version 1.51.0
+- fixed bug in 'std.search1.inc' which caused changes to $this-fieldspec in '_cm_validateSearch()' to be ignored.
+- changed 'std.data_field.xsl' to remove the need for the 'id' attribute when defining labels for options in radio groups and checkboxes. The 'id' attribute always used a value which was the same as the 'value' attribute for the control, which caused duplicate id's if more than one field had the same value. This in turn caused only the last label entry with that id to have any effect.
+- fixed bug in 'std.list2/3.inc', 'std.multi2/3/4.inc' where the RESET button caused action to be taken on the outer/parent entity when it should not.
+- fixed bug in 'childForm()' function which passed $search as a separate string to child forms of type 'list' instead of merging in the $where string.
+- fixed bug in 'childForm()' function which failed to include $script_vars in its arguments on the call to the runInBackground() function.
+- fixed bug in 'std.table.class.inc' which failed to set up the value for rdcaccount_id when the getData_serial() method was called.
+- fixed bug in '__sqlProcessJoin()' where $select (the current SELECT list) contained a field with an alias name and the contents of $parent_field contained more than one new field name.
+- fixed bug in 'dict_database_s01.class.inc' which referred to task 'dict_table(list)2' instead of 'dict_table(list2)'.
+- removed "header('content-length: ...')" from XSLclient() function as this caused problems when the XML document contained multibyte characters.
+- changed HELP text for DICT subsystem to reflect the latest task id's.
+- added custom method '_cm_reset()' which is called whenever the RESET button is pressed.
+- changed the processing of _cm_initialise() so that the 2nd argument, $selection, will be available for all tasks, not just those of pattern ADD2.
+- changed '_cm_pre_output()' method so that the $filename argument is available for CSV output. This will allow the filename to be changed in OUTPUT1 tasks.
+- changed 'std.pdf.class.inc' to allow the 'ignore_if_empty' attribute for a cell in the title area.
+- fixed bug in 'recover password' function which failed to decrypt the user's password before it was emailed.
+
+2009-08-01, version 1.50.0
+- fixed bug in 'include.xml.php4/5.inc' which mis-spelled a call to getLanguageText().
+- modified the _sqlSelectAlternateLanguage() method inside 'std.table.class.inc' so that it allows more options.
+- modified 'dml.pgsql.class.inc' to include the adjustGroupBy() and adjustHaving() functions which are used for the Oracle database.
+- added function replaceScreenColumns() which will replace a column id in a screen structure file with a different column id (and label) at runtime. This is similar to replaceScreenHeadings() which will only replace the column label.
+- updated 'mnu_subsystem_s01.class.inc' (subsystem export) so that it includes the MNU_ACCOUNT and MNU_MOTD tables when exporting the MENU subsystem.
+- updated various 'std.*.inc' files to use $object->getErrors() instead of $object->errors.
+- updated Virtual Private Database processing so that users whose rdcaccount_id is greater than 1 cannot modify or delete any shared records (where rdcaccount_id = 1).
+- allow the selection/choice made in popup screens to be locked for the next activation.
+- updated 'std.output1/2/3/4.inc' so that $search is available as a 3rd argument to _cm_initialise() in case it was called from a search screen. 
+
+2009-07-01, version 1.49.0
+- added field 'user_timezone' to MNU_USER table. You will need to run script radicore\menu\sql\mysql\alter_table(2009-06-01).sql in order to amend the database schema.
+- added the ability to convert datetime fields between the timezone of the server and the timezone of the client. This is only available if your PHP version is 5.2 or greater.
+- updated 'std.pdf.class.inc' to use $this->getAliasNbPages() instead of the deprecated $this->AliasNbPages (used to insert 'page n of n' in page footers).
+- modified ListView in PDF processing so that each line can have a border top and bottom instead of alternate lines having a different background colour. Also allow 'border=P' to put a border around the page instead of each cell.
+- modified all page controllers to use '$dbobject->getMessages()' instead of '$dbobject->messages' which will allow $dbobject->messages to be either a string or an array.
+- modified 'dml.oracle.php4.class.inc' and 'dml.oracle.php5.class.inc' in order to manipulate the GROUP BY and HAVING clauses as what is acceptable to MySQL will not work in Oracle.
+- added method 'post_search()' and '_cm_post_search()' to 'std.table.class.inc'.
+- modified 'std.search1.inc' to call the new 'post_search()' method in order to perform any final processing before the entered values are passed back to the calling form. This may be because the search form is being used to enter selection details before firing off a batch process.
+- all tasks and scripts in the DICT subsystem have been renamed to conform to the current Radicore naming conventions. You will need to run script radicore\dict\sql\dict.menu_export(2009-06-25).sql to update your MENU database.
+- modified search screens so that required fields will be indicated as such. The 'required' property is removed from every entry in $this->fieldspec by default, but can be reinstated in '_cm_changeConfig()'.
+- fix bug in 'dict_table_s02.class.inc' (export table) which failed to error when a related table was in a different subsystem but with no value for SUBSYS_DIR.
+
+2009-06-01, version 1.48.0
+- updated 'std.buttons.xsl' to include the total row count after 'show 25 | ... | show 100'.
+- added table 'mnu_motd' to the MENU database to deal with Message Of The Day.
+  You will need to run the following scripts:
+  - radicore\menu\sql\mysql\alter_table(2009-05-05).sql to update the structure of the MENU database. This will also add 'mnu_motd(show)' to the mnu_role_task table for each role_id so that it is accessible to all users.
+  - radicore\menu\sql\menu.menu_export(2009-05-05).sql to add the new tasks to the MENU database.
+- modified the logon process so that a 'Show Message of the Day' screen will appear immediately after passing through the LOGON screen. It will show the latest unexpired message, with the ability to scroll through earlier unexpired messages.
+- fixed bug in 'mnu_user(add1)' which failed to encrypt the password field.
+- updated the dictionary import scripts to take account of $dbprefix when reading the target database. Database names in the dictionary do not have this prefix.
+- modified the method of looking up language files, screen and report structure files. It will now look for the specified file individually in one of the possible language directories instead of assuming that if the language directory exists then the file must exist in that directory.
+- renamed script 'mnu_pattern_enq.php' to 'mnu_pattern(enq1).php' and 'mnu_role_search.php' to 'mnu_role(search).php' to conform to current naming standards. You will need to run script radicore\menu\sql\menu.menu_export(2009-05-14).sql in order to update your copy of the MENU database.
+- fixed bug which caused the BACK button from a help page to go back to the wrong page.
+- changed the MULTI1 pattern to remove the RETRIEVE button and replace the CLEAR button with RESET as it resets the screen to its previous values which may not mean clearing it to an empty state.
+- upgraded TCPDF library to version 4.6.011.
+- fixed bug in 'std.validation.class.inc' which failed to validate a string's length against the column size in the data dictionary.
+
+2009-05-01, version 1.47.0
+- updated 'include.session.inc' to include getPreviousPattern() function.
+- updated 'std.table.class.inc' to include $this->scriptPrevious() method which will call $this->commit() if there is a database transaction which is open.
+- updated 'std.table.class.inc' to include $this->no_duplicate_error which, if set to TRUE, will prevent an error message when inserting a record which already exists. Instead it will set $this->numrows to zero to signify 'no insert', and the '_cm_post_insertRecord()' method will not be called. If the new record is not a duplicate then $this>numrows will be set to 1 to signify 'record inserted'.
+- updated 'batch_log(filepicker)' task so that by default each file hyperlink will open up in the browser window. If 'download=TRUE' is entered into the task's 'settings' field then each hyperlink will be processed by the 'batch_log(filedownload)' task.
+- updated 'std.table.class.inc' to include 'post_fileUpload()' and '_cm_post_fileUpload()' methods.
+- updated 'std.fileupload1.inc' to call the 'post_fileUpload()' method so that the file may be processed after it has been uploaded.
+- updated the 'selections' area of the navigation bar so that a selection can be locked, which will enable the same records to be automatically reselected when returning to the screen.
+- modified the processing of the 'rdcaccount_id' field so that it is qualified with the table name when included in any SQL statement that is generated by the framework.
+
+2009-04-01, version 1.46.0
+- fixed bug in php_session.class.inc which accepted a session_id greater than 32 chars when the request string had '/.../...' appended to it.
+- updated 'deleteRelations()' method in 'std.table.class.inc' so that when deleting or nullifying child relations the value of $this->audit_logging for the parent table is passed down to the child table.
+- updated the 'dict_table' table in the DICT database to include columns 'nameof_start_date' an 'nameof_end_date' when the table has fields which represent 'start_date' and/or 'end_date', but with different names. You must run script radicore\dict\sql\mysql\alter_table(2009-03-08).sql in order to update your database schema.
+- updated PDF processing to allow '<imagename>' to be expressed as '%%name' instead of the hard-coded path to an image file so that the path name can be provided from data which is obtained at runtime.
+- fixed bug in 'mnu_user.class.inc' which tried to validate the password when attempting to update a different field, such as the role_id. As the password is not present on the screen the validation always failed.
+- fixed bug in 'std.pdf.class.inc' where variables in the title were not being shown correctly if the printing of _cm_ListView_total() caused a new page to be started.
+- updated 'std.table.class.inc' to include $this->scriptNext() method which will call $this->commit() if there is a database transaction which is open.
+
+2009-03-01, version 1.45.0
+- fixed bug in lookup of language directories which used format 'xx-XX' instead of 'xx_xx' (all lower-case characters, with '_' (underscore) instead of '-' (hyphen)).
+- fixed bug in conversion of WHERE string into array to allow operator of NOT LIKE as well as LIKE.
+- updated TCPDF library to version 4.5.018
+
+2009-02-01, version 1.44.0
+- ensure that if a screen is refreshed after a database update it is done via GET instead of POST.  
+- fixed bug in 'std.detail1.xsl' which prevented a field's 'size' attribute in the screen structure file from being used to override the default size.
+- fixed bug in 'getData_raw()' when $this->sql_orderby contains a field which does not exist in either $this->sql_select or $this->fieldspec, thus causing an error.
+- fixed bug in 'mnu_user.class.inc' which corrupted the password when the COPY button is pressed while running 'mnu_user(add1)'.
+- fixed bug in 'std.encryption.class.inc' regarding multibyte characters.
+- fixed bug in 'include.xml.php4/5.inc' which tried to output a numeric field name as an element id. These are invalid in XML, so are ignored.
+- fixed bug in 'std.filedownload1.inc' to allow spaces in the file name.
+- fixed bug in 'std.head.xsl' which failed to append the session name to the meta refresh line.
+
+2009-01-01, version 1.43.0
+- added variable '$this->sql_no_foreign_db' (default value is FALSE) to 'std.table.class.inc'. If this is set to TRUE then when $this->_sqlForeignJoin() is executed it will ignore any tables which exist in other databases. This is to deal with the situation where an application contains several databases which are spit across more than one server, in which case cross-database JOINs would fail.
+- replaced 'getColumnHeadings()' and 'setColumnHeadings()' functions with 'replaceScreenHeadings()'.
+- added 'replaceReportHeadings()' function for PDF output.
+- updated PDF report structure files to allow column widths to be expressed as a percentage as well as a number.
+- upgraded TCPF library to version 4.4.006.
+
 2008-12-02, version 1.42.0
-- made it possible to connect to a remote MySQL database using SSL encryption. This is only possible when using the 'improved' mysqli extension for version 4.1 and above.
+- made it possible to connect to a remote MySQL database using SSL encryption. This is only possible when using the 'improved' mysqli extension for version 4.1 and above. Refer to FAQ115.
 - fixed bug in 'std.pdf.class.inc' in order to allow an image to appear in the 'multi*' area.
 - modified 'insertOrUpdate() method within 'std.table.class.inc' so that the input array is checked to see if the full primary key has been specified. If it has not then a lookup cannot be performed and the record will be inserted. This is to deal with auto_increment columns.
 - modified the 'getColumnNames()' method within 'std.table.class.inc' so that it calls custom method '_cm_getColumNames()'. This will allow both the list of column names (defined within $this->fieldpsec) and their initial values to be customised.
 - fixed bug in 'logon.class.inc' which caused the wrong error message to be displayed if the login is via email address and the address does not exist in the MNU_USER table.
-- updated the processing of radio groups to allow individual entries to be given their own CSS style. See FAQ117.
+- updated the processing of radio groups to allow individual entries to be given their own CSS style. Refer to FAQ117.
 - updated 'std.batch.inc' so that it will use the INCLUDE_PATH from the local {.}htaccess{.txt} file instead of the 'batch.ini' file. You will need to copy the updated version from the 'radicore/default' directory.
-- modified list of patterns to include 'BATCH' for tasks which are to be run in the background. You will need to run script 'radicore\menu\sql\menu.menu_export(2008-11-21).sql' in order to update your copy of the MENU database.
+- modified list of patterns to include 'BATCH' for tasks which are to be run in the background. Refer to FAQ119. You will need to run script 'radicore\menu\sql\menu.menu_export(2008-11-21).sql' in order to update your copy of the MENU database.
 - updated directory structure to include 'radicore/logs' for the output from background tasks. You will need to create this directory and change its permissions so that it can be written to by the application.
 - created task 'batch_log(filepicker)' to read the contents of the 'radicore/logs' directory. Clicking on a file name will download/display its contents.
 - updated 'std.filepicker1.inc' to include a call to the 'filePickerSelect()' method after a selection has been made in case some further processing is necessary.
 - updated 'std.filedownload1.inc' to include a call to the 'initialise()' method to perform any processing before the 'initialiseFileDownload()' method is called.
 - added task 'file(search)' to be used as the search function for the 'filepicker' pattern.
 - added task 'file(delete)' as a navigation button in 'batch_log(filepicker)', to allow selected entries to be deleted.
-- updated 'std.filepicker1.inc' to include optional 'size' and 'date' column, and to allow sortng on these columns.
-
+- updated 'std.filepicker1.inc' to include optional 'size' and 'date' column, and to allow sorting on these columns.
 
 2008-11-01, version 1.41.0
 - fixed bug in 'initSession()' function within file 'include.session.inc' which lost the value of a task's pattern_id in the session data.

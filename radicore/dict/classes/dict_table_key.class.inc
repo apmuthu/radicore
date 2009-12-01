@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table_key extends Default_Table
@@ -120,7 +120,8 @@ class dict_table_key extends Default_Table
 
         // obtain a list of current column definitions from the database engine
         $fieldarray = array();
-        $db_data = $this->_ddl_showTableKeys($dbname, $tablename);
+        $dbprefix = dict_findDBPrefix($dbname);
+        $db_data = $this->_ddl_showTableKeys($dbprefix.$dbname, $tablename);
 
         // construct a smaller array of column names
         $db_data_cols = array();

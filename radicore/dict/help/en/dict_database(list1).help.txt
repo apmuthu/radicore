@@ -1,0 +1,3 @@
+This will list records on the DICT_DATABASE table.
+
+Refer to <a href="%root%/dict_database(list1).html">List Databases</a> for full details.

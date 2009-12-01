@@ -1,5 +1,5 @@
 <?php
-    // file created on September 18, 2008, 9:33 pm
+    // file created on May 6, 2009, 2:48 pm
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -73,6 +73,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_motd',
+                                                    'type' => 'RES',
+                                                    'fields' => array('role_id' => 'role_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_role_task',
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
@@ -111,6 +115,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

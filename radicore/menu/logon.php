@@ -145,7 +145,7 @@ if (!empty($_POST)) {
         // logon is OK - go to next screen
         $fieldarray = $dbobject->getFieldArray();
         $messages   = $dbobject->getMessages();
-        $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
+        $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}&motd=true";
         scriptNext('menu', null, null, $task_array);
     } // if
 } else {

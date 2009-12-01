@@ -7,6 +7,8 @@
 $table_id = '#tablename#';                    // table id
 $screen   = '#tablename#.detail.screen.inc';  // file identifying screen structure
 
+$sql_search_table = null;			// name under which details will be saved
+
 require 'std.search1.inc';          // activate page controller
 
 ?>

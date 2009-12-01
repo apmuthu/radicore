@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -19,6 +19,7 @@ class oracle
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
     var $lastpage;              // last available page number in current query
+    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
@@ -98,6 +99,92 @@ class oracle
         return $string_out;
 
     } // adjustData
+
+    // ****************************************************************************
+    function adjustGroupBy ($select_str, $group_str, $sort_str)
+    // ensure GROUP_BY contains every field in the SELECT string, plus every field
+    // in the ORDER_BY string.
+    {
+        if (preg_match('/WITH ROLLUP/i', $group_str, $regs)) {
+            // convert 'field1 field2 WITH ROLLUP' to 'ROLLUP (field1, field2)'
+        	$group_str = str_replace($regs[0], '', $group_str);
+        	$group_str = "ROLLUP ($group_str)";
+        } // if
+
+        // turn $group_str into an array (delimiter is ',' followed by zero or more spaces)
+        $group_array = preg_split('/, */', $group_str);
+
+        list($field_alias, $field_orig) = extractFieldNamesIndexed ($select_str);
+        foreach ($field_alias as $ix => $fieldname) {
+        	if ($fieldname == $field_orig[$ix]) {
+        	    // $fieldname is not an alias for an expression, so include in $group_array
+        		if (!in_array($fieldname, $group_array)) {
+        			$group_array[] = $fieldname;
+        		} // if
+        	} // if
+        } // foreach
+
+        if (!empty($sort_str)) {
+        	// turn $sort_str into an array
+            $sort_array = preg_split('/, */', $sort_str);
+            foreach ($sort_array as $fieldname) {
+                $ix = array_search($fieldname, $field_alias);
+                if ($ix !== false) {
+                	// check that this is not an alias name
+                	if ($fieldname == $field_orig[$ix]) {
+                	    if (!in_array($fieldname, $group_array)) {
+                			$group_array[] = $fieldname;
+                		} // if
+                	} // if
+                } else {
+                	if (!in_array($fieldname, $group_array)) {
+            			$group_array[] = $fieldname;
+            		} // if
+                } // if
+            } // foreach
+        } //  if
+
+        // convert amended array back into a string
+        $group_str = implode(', ', $group_array);
+
+        return $group_str;
+
+    } // adjustGroupBy
+
+    // ****************************************************************************
+    function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str)
+    // make 'SELECT ... FROM ... WHERE ...' into a subquery so that the HAVING clause can
+    // become the WHERE clause of the outer query.
+    // This is because the HAVING clause cannot reference an expression by its alias name.
+    {
+        // put current query into a subqery
+        $subquery = "SELECT $select_str FROM $from_str $where_str $group_str";
+
+        // extract SELECT list (with alias names for any expressions)
+        list($select_alias, $select_orig) = extractFieldNamesIndexed ($select_str);
+
+        $select_str = '';
+        foreach ($select_alias as $fieldname) {
+            if ($substring = strrchr($fieldname, '.')) {
+        	    // now remove the tablename and put amended entry back into the array
+                $fieldname = ltrim($substring, '.');
+            } // if
+            if (empty($select_str)) {
+            	$select_str = "$fieldname";
+            } else {
+                $select_str .= ", $fieldname";
+            } // if
+        } // foreach
+
+        $from_str = "(\n    $subquery\n)";
+        $where_str  = "WHERE $having_str";
+        $having_str = '';
+        $group_str  = '';
+        $sort_str   = unqualifyOrderBy($sort_str);
+
+        return array($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str);
+
+    } // adjustHaving
 
     // ****************************************************************************
     function adjustSqlFrom ($string_in)
@@ -227,7 +314,8 @@ class oracle
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
-            $dbconn = oci_pconnect($dbusername, $dbuserpass, $dbhost, 'UTF8');
+            //$dbconn = oci_pconnect($dbusername, $dbuserpass, $dbhost, 'UTF8');
+            $dbconn = oci_connect($dbusername, $dbuserpass, $dbhost, 'UTF8');
             if ($dbconn) {
                 $this->server_info = oci_server_version ($dbconn);
                 // get name of current database
@@ -397,7 +485,7 @@ class oracle
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        if (eregi('^(select )', $where)) {
+        if (preg_match('/^(select )/i', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
@@ -415,7 +503,7 @@ class oracle
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (eregi("group by ", $this->query) == true AND !eregi("\(SELECT .+group by.+\)", $this->query)) {
+        if (preg_match("/group by /i", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/i", $this->query)) {
             oci_fetch_all($this->stmt, $row, null, null, OCI_NUM);
             $count = count($row[0]);
         } else {
@@ -478,21 +566,10 @@ class oracle
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            if (preg_match('/WITH ROLLUP/i', $this->sql_groupby, $regs)) {
-                // convert 'field1, field2 WITH ROLLUP' to 'ROLLUP (field1, field2)'
-            	$this->sql_groupby = str_replace($regs[0], '', $this->sql_groupby);
-            	$this->sql_groupby = "ROLLUP ($this->sql_groupby)";
-            } // if
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
-        } // if
-
-        // incorporate optional HAVING parameters
-        if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
-        } else {
-            $having_str = NULL;
         } // if
 
         // incorporate optional sort order
@@ -500,6 +577,14 @@ class oracle
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
+        } // if
+
+        // incorporate optional HAVING parameters
+        if (!empty($this->sql_having)) {
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            //$having_str = "HAVING $this->sql_having";
+        } else {
+            $having_str = NULL;
         } // if
 
         $lock_str = null;
@@ -663,21 +748,10 @@ class oracle
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            if (preg_match('/WITH ROLLUP/i', $this->sql_groupby, $regs)) {
-                // convert 'field1 field2 WITH ROLLUP' to 'ROLLUP (field1, field2)'
-            	$this->sql_groupby = str_replace($regs[0], '', $this->sql_groupby);
-            	$this->sql_groupby = "ROLLUP ($this->sql_groupby)";
-            } // if
-            $group_str = "GROUP BY $this->sql_groupby";
+            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
-        } // if
-
-        // incorporate optional HAVING parameters
-        if (!empty($this->sql_having)) {
-            $having_str = "HAVING $this->sql_having";
-        } else {
-            $having_str = NULL;
         } // if
 
         // incorporate optional sort order
@@ -685,6 +759,14 @@ class oracle
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
+        } // if
+
+        // incorporate optional HAVING parameters
+        if (!empty($this->sql_having)) {
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            //$having_str = "HAVING $this->sql_having";
+        } else {
+            $having_str = NULL;
         } // if
 
         // get number of rows which match this selection criteria
@@ -749,7 +831,10 @@ class oracle
             $this->error_string = null;
 		} else {
 		    $array = oci_error($this->stmt);
-        	$string = 'ORACLE error: ' .$array['code'] .', ' .$array['message'];
+        	$string = $array['message'];
+        	if (!empty($string)) {
+        		$string = 'ORACLE: ' .$string;
+        	} // if
 		} // if
 
         return $string;
@@ -814,6 +899,8 @@ class oracle
     {
         $this->errors = array();
 
+        $this->numrows = 0;  // record not inserted (yet)
+
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
@@ -876,11 +963,14 @@ class oracle
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
-	            // set error message for each field within this key
-	            foreach ($this->primary_key as $fieldname) {
-                    // 'A record already exists with this ID.'
-	                $this->errors[$fieldname] = getLanguageText('sys0002');
-	            } // foreach
+	            if (is_True($this->no_duplicate_error)) {
+	                // exit without setting an error
+	            } else {
+	            	// set error message for each field within this key
+    	            foreach ($this->primary_key as $fieldname) {
+    	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
+    	            } // foreach
+	            } // if
 	            return $fieldarray;
 	        } // if
 	        $primary_key = $where;
@@ -978,6 +1068,8 @@ class oracle
             $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
+
+        $this->numrows = 1;  // record has been inserted
 
         return $fieldarray;
 
@@ -1708,8 +1800,8 @@ class oracle
     } // ddl_showColumns
 
     // ****************************************************************************
-    function ddl_showDatabases ()
-    // obtain a list of existing database (schema in PostgreSQL) names.
+    function ddl_showDatabases ($dbprefix=null)
+    // obtain a list of existing database ('user' in Oracle) names.
     {
         // connect to database
         $this->connect() or trigger_error($this, E_USER_ERROR);

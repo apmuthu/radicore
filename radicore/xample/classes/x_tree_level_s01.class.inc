@@ -77,6 +77,7 @@ class x_tree_level_s01 extends x_tree_level
                 $lock_array[] = $this->tablename;
                 $lock_array[] = 'x_tree_level AS t2';
                 $lock_array[] = 'x_tree_node';
+                $lock_array[] = 'x_tree_type';
                 break;
             case 'delete':
                 $lock_array[] = $this->tablename;

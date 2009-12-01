@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2008 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add4.inc
@@ -20,11 +20,11 @@ $mode = 'insert';
 // load session variables
 initSession();
 
-if (!empty($selection) AND !isset($return_from)) {
-    // $selection takes precedence over $where
-    $where     = $selection;
-    $selection = null;
-} // if
+//if (!empty($selection) AND !isset($return_from)) {
+//    // $selection takes precedence over $where
+//    $where     = $selection;
+//    $selection = null;
+//} // if
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -39,26 +39,31 @@ $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 
 // get initial data for new record(s)
-$where = $dbobject->initialise($where);
+$where = $dbobject->initialise($where, $selection);
 if (empty($dbobject->errors)) {
 	$fieldarray = $dbobject->getInitialDataMultiple($where);
 } // if
+if (!empty($dbobject->messages)) {
+	$messages = array_merge($messages, $dbobject->getMessages());
+} // if
 if ($dbobject->errors) {
     // error detected, so quit now
-    $batch_errors = scriptPrevious($dbobject->errors, $messages);
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
     return $batch_errors;
 } // if
 
 // add record(s) to the database
 $dbobject->startTransaction();
 $fieldarray = $dbobject->insertMultiple($fieldarray);
-$errors   = $dbobject->errors;
-$messages = $dbobject->messages;
+$errors   = $dbobject->getErrors();
+$messages = $dbobject->getMessages();
 if ($errors) {
     $dbobject->rollback();
 } else {
     $errors = $dbobject->commit();
 } // if
+
+$messages = array_merge($messages, $dbobject->getMessages());
 
 $batch_errors = scriptPrevious($errors, $messages);
 return $batch_errors;
