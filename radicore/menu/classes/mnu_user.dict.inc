@@ -1,5 +1,5 @@
 <?php
-    // file created on November 15, 2009, 5:26 pm
+    // file created on October 25, 2010, 9:58 am
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -149,6 +149,10 @@
     $this->unique_keys[]                    = array('email_addr');
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'mnu_favourite',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_initial_value_user',
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
@@ -159,6 +163,12 @@
     
     $this->child_relations[]                = array('child' => 'mnu_user_ip_address',
                                                     'type' => 'RES',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
+    $this->child_relations[]                = array('child' => 'email_signature',
+                                                    'dbname' => 'party',
+                                                    'subsys_dir' => 'party',
+                                                    'type' => 'DEL',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',

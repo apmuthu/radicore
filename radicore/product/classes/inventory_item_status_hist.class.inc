@@ -27,7 +27,7 @@ class inventory_item_status_hist extends Default_Table
     // update status on inventory_item record
     {
         // get status value with latest date
-        $object =& singleton::getInstance('inventory_item_status_hist');
+        $object =& RDCsingleton::getInstance('inventory_item_status_hist');
         $product_id        = $fieldarray['product_id'];
         $inventory_item_id = $fieldarray['inventory_item_id'];
 
@@ -43,7 +43,7 @@ class inventory_item_status_hist extends Default_Table
         } // if
 
         // update inventory_item record with this value
-        $object =& singleton::getInstance('inventory_item');
+        $object =& RDCsingleton::getInstance('inventory_item');
         $update['product_id']         = $product_id;
         $update['inventory_item_id']  = $inventory_item_id;
         $update['inv_item_status_id'] = $status_id;
@@ -65,7 +65,7 @@ class inventory_item_status_hist extends Default_Table
             return $fieldarray;
         } // if
 
-        $object =& singleton::getInstance('inventory_item_status_hist');
+        $object =& RDCsingleton::getInstance('inventory_item_status_hist');
 
         $product_id        = $fieldarray['product_id'];
         $inventory_item_id = $fieldarray['inventory_item_id'];
@@ -121,7 +121,7 @@ class inventory_item_status_hist extends Default_Table
     {
         if (!array_key_exists('inv_item_status_id', $this->lookup_data)) {
             // get array for inv_item_status_id and put into LOOKUP_DATA
-            $object =& singleton::getInstance('inventory_item_status');
+            $object =& RDCsingleton::getInstance('inventory_item_status');
             $array  = $object->getValRep('inv_item_status_id');
             $this->lookup_data['inv_item_status_id'] = $array;
         } // if
@@ -142,7 +142,7 @@ class inventory_item_status_hist extends Default_Table
             $where = "product_id='$product_id' AND inventory_item_id='$inventory_item_id'";
 
             // check that this is a serialised item
-            $object =& singleton::getInstance('inventory_item');
+            $object =& RDCsingleton::getInstance('inventory_item');
             $object->sql_select = 'inv_type';
             $data = $object->getData_raw($where);
             if ($data[0]['inv_type'] != 'S') {

@@ -22,7 +22,7 @@ $structure['title'][] = array('text' => '- Contents of MNU_ROLE table -',
 $structure['columns'][] = array('width' => 42);
 $structure['columns'][] = array('width' => 120);
 $structure['columns'][] = array('width' => 80);
-$structure['columns'][] = array('width' => 35, 'align' => 'center');
+$structure['columns'][] = array('width' => 35, 'halign' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('role_id' => 'Role Id');
@@ -31,9 +31,9 @@ $structure['body']['fields'][] = array('start_task_id' => 'Start Task');
 $structure['body']['fields'][] = array('global_access' => "Global Access?");
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -27,7 +27,7 @@ initSession();
 
 $help_desc = getLanguageText($help_id);
 
-$title = getLanguageText('sys0099', $help_id, $help_desc); // "Help text for '$help_id'"
+$title = getLanguageText('sys0099', $help_id); // "Help text for '$help_id'"
 
 if (!isset($root)) {
     // not set, so use default value
@@ -70,6 +70,7 @@ echo "<body>\n";
 echo "$header\n";
 echo "<div class='body'>\n";
 echo "<h1>$title</h1>\n";
+echo "<h2>$help_desc</h2>\n";
 echo $help_text . "\n";
 echo "</div>\n";
 echo "$footer\n";

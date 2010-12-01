@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 3:01 pm
+    // file created on July 17, 2010, 2:59 pm
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -64,10 +64,12 @@
                                                     'size' => 80,
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)a',
-                                                    'foreign_field' => 'task_desc');
+                                                    'foreign_field' => 'task_desc',
+                                                    'noedit' => 'y');
     
     $fieldspec['task_context']              = array('type' => 'string',
-                                                    'size' => 255);
+                                                    'size' => 255,
+                                                    'noedit' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -125,6 +127,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

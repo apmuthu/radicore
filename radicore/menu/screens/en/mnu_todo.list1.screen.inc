@@ -7,6 +7,7 @@ $structure['tables']['main'] = 'mnu_todo';
 $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => '*');
+$structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => 30);
 
@@ -14,6 +15,7 @@ $structure['main']['columns'][] = array('width' => 30);
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('user_id' => 'User Id');
 $structure['main']['fields'][] = array('item_desc' => 'Description');
+$structure['main']['fields'][] = array('item_notes' => 'Notes');
 $structure['main']['fields'][] = array('due_date' => 'Due Date');
 $structure['main']['fields'][] = array('is_complete' => 'Done?');
 

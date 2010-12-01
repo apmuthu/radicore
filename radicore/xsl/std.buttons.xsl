@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -17,7 +17,7 @@
 <xsl:variable name="doc_root"     select="/root/params/doc_root"/>
 <xsl:variable name="help_root"    select="/root/params/help_root"/>
 <xsl:variable name="taskid"       select="/root/params/taskid"/>
-
+  
 <xsl:variable name="session"      select="concat('session_name=',$session_name)" />
 
 <xsl:variable name="show"         select="/root/params/text/show"/>
@@ -28,7 +28,7 @@
 <xsl:variable name="unselect-all"   select="/root/params/text/unselect-all"/>
 <xsl:variable name="selection-lock" select="/root/params/text/selection-lock"/>
 
-<xsl:variable name="client-side"  select="/root/params/client-side"/>
+<xsl:variable name="client-side"   select="/root/params/client-side"/>
 <xsl:variable name="print-preview" select="/root/params/print-preview"/>
 
 <!--
@@ -143,6 +143,32 @@
         <!-- do not include this in the sample application -->
         <xsl:if test="not($mode='logon') and not ($mode='recover')">
 
+          <!-- create a link to add current ask to favourites -->
+          <xsl:choose>
+            <xsl:when test="/root/params/icon/add-to-favourites">
+              <!-- create image link -->
+              <a href="{$script}?action=add-to-favourites&amp;{$session}" class="no-underline">
+                <img border="0" class="bottom" height="{/root/params/icon/size}">
+                  <xsl:attribute name="src">
+                    <xsl:value-of select="concat($doc_root,/root/params/icon/add-to-favourites)"/>
+                  </xsl:attribute>
+                  <xsl:attribute name="alt">
+                    <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                  </xsl:attribute>
+                  <xsl:attribute name="title">
+                    <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                  </xsl:attribute>
+                </img>
+              </a>
+              <xsl:text> | </xsl:text>
+            </xsl:when>
+            <xsl:when test="/root/params/text/add-to-favourites">
+              <!-- create text link -->
+              <a href="{$script}?action=add-to-favourites&amp;{$session}" ><xsl:value-of select="/root/params/text/add-to-favourites"/></a>
+              <xsl:text> | </xsl:text>
+            </xsl:when>
+          </xsl:choose>
+          
           <!-- create a logout link to close current session -->
           <xsl:choose>
             <xsl:when test="/root/params/icon/logout">
@@ -162,11 +188,11 @@
               </a>
               <xsl:text> | </xsl:text>
             </xsl:when>
-            <xsl:otherwise>
+            <xsl:when test="/root/params/text/logout">
               <!-- create text link -->
               <a href="{$script}?action=logout&amp;{$session}" ><xsl:value-of select="/root/params/text/logout"/></a>
               <xsl:text> | </xsl:text>
-            </xsl:otherwise>
+            </xsl:when>
           </xsl:choose>
 
           <!-- create a logout (all) link to close ALL sessions on this client -->
@@ -189,11 +215,11 @@
                 </a>
                 <xsl:text> | </xsl:text>
               </xsl:when>
-              <xsl:otherwise>
+              <xsl:when test="/root/params/text/logout-all">
                 <!-- create text link -->
                 <a href="{$script}?action=logout_all&amp;{$session}" ><xsl:value-of select="/root/params/text/logout-all"/></a>
                 <xsl:text> | </xsl:text>
-              </xsl:otherwise>
+              </xsl:when>
             </xsl:choose>
 
             <!-- include optional icon -->
@@ -219,11 +245,11 @@
               </a>
               <xsl:text> | </xsl:text>
             </xsl:when>
-            <xsl:otherwise>
+            <xsl:when test="/root/params/text/new-session">
               <!-- create text link -->
               <a href="{$script}?action=newsession&amp;{$session}" ><xsl:value-of select="/root/params/text/new-session"/></a>
               <xsl:text> | </xsl:text>
-            </xsl:otherwise>
+            </xsl:when>
           </xsl:choose>
 
           <!-- print/noprint options -->
@@ -247,11 +273,11 @@
                   </a>
                   <xsl:text> | </xsl:text>
                 </xsl:when>
-                <xsl:otherwise>
+                <xsl:when test="/root/params/text/noprint">
                   <!-- display text link-->
                   <a href="{$script}?action=noprint&amp;{$session}" ><xsl:value-of select="/root/params/text/noprint"/></a>
                   <xsl:text> | </xsl:text>
-                </xsl:otherwise>
+                </xsl:when>
               </xsl:choose>
             </xsl:when>
             <xsl:otherwise>
@@ -275,11 +301,11 @@
                   </a>
                   <xsl:text> | </xsl:text>
                 </xsl:when>
-                <xsl:otherwise>
+                <xsl:when test="/root/params/text/print">
                   <!-- display text link -->
                   <a href="{$script}?action=print&amp;{$session}" ><xsl:value-of select="/root/params/text/print"/></a>
                   <xsl:text> | </xsl:text>
-                </xsl:otherwise>
+                </xsl:when>
               </xsl:choose>
 
             </xsl:otherwise>
@@ -309,11 +335,11 @@
               </a>
               <xsl:text> | </xsl:text>
             </xsl:when>
-            <xsl:otherwise>
+            <xsl:when test="/root/params/text/recover-pswd">
               <!-- display text link -->
               <a href="{$script}?action=recoverpswd&amp;{$session}"><xsl:value-of select="/root/params/text/recover-pswd"/></a>
               <xsl:text> | </xsl:text>
-            </xsl:otherwise>
+            </xsl:when>
           </xsl:choose>
         </xsl:if>
       </xsl:if>
@@ -336,10 +362,10 @@
             </img>
           </a>
         </xsl:when>
-        <xsl:otherwise>
+        <xsl:when test="/root/params/text/help">
           <!-- display text link -->
           <a href="{$help_root}/help.php?{$session}&amp;taskid={$taskid}"><xsl:value-of select="/root/params/text/help"/></a>
-        </xsl:otherwise>
+        </xsl:when>
       </xsl:choose>
       <xsl:text> </xsl:text>
     </p>

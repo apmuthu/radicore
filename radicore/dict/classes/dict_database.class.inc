@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_dataBase extends Default_Table
@@ -81,14 +81,14 @@ class dict_dataBase extends Default_Table
     {
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of this table and put into lookup data
-    		$dbobject =& singleton::getInstance('dict_database');
+    		$dbobject =& RDCsingleton::getInstance('dict_database');
     		$array = $dbobject->_cm_getValRep('database_id');
     		$this->lookup_data['database_id'] = $array;
         } // if
 
         if (!array_key_exists('subsys_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& singleton::getInstance('mnu_subsystem');
+            $dbobject =& RDCsingleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
         } // if

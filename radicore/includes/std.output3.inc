@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output3.inc
@@ -84,10 +84,11 @@ if (empty($pdfout)) {
 } // if
 
 // transform output to PDF format and deal with it as specified in $report
-$destination = $dbobject->outputPDF_DetailView($resource, $report_structure);
+$document = $dbobject->outputPDF_DetailView($resource, $report_structure);
 
-$messages = $dbobject->getMessages();
-$errors   = $dbobject->getErrors();
+$destination = $dbobject->pdf_destination;
+$messages    = $dbobject->getMessages();
+$errors      = $dbobject->getErrors();
 
 $prev_script = getPreviousScript($task_id);
 $prev_task   = getPreviousTask($prev_script);

@@ -9,7 +9,7 @@ require 'std.batch.inc';
 
 batchInit(__FILE__);
 
-$dbobject = singleton::getInstance('x_person');
+$dbobject = RDCsingleton::getInstance('x_person');
 
 $dbobject->sql_select = 'x_person.person_id, x_person.last_addr_no, count(address_no) as count';
 $dbobject->sql_from   = 'x_person LEFT JOIN x_person_addr ON (x_person_addr.person_id=x_person.person_id)';

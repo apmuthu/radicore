@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'wf_workitem.class.inc';
 class wf_workitem_s01 extends wf_workitem
@@ -77,7 +77,7 @@ class wf_workitem_s01 extends wf_workitem
         //$this->row_locks = 'EX';    // exclusive
         //$this->row_locks_supp = '?' // DBMS-specific
 
-        $dbobject =& singleton::getInstance('workflow_engine');
+        $dbobject =& RDCsingleton::getInstance('workflow_engine');
         $result = $dbobject->fireTimedEvent($rowdata);
         if ($dbobject->errors) {
         	$this->errors = array_merge($this->errors, $dbobject->errors);

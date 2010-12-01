@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_todo extends Default_Table
@@ -23,6 +23,29 @@ class mnu_todo extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // mnu_todo
+
+    // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if ($GLOBALS['mode'] == 'list') {
+        	// change field from multi-line to ordinary text
+        	unset($this->fieldspec['item_notes']['control']);
+        } // if
+
+        if ($GLOBALS['mode'] == 'search') {
+        	// remove 'noedit' attribute
+        	unset($this->fieldspec['task_id']['noedit']);
+        	unset($this->fieldspec['task_context']['noedit']);
+        	// remove popup control
+        	unset($this->fieldspec['task_id']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
 
     // ***************************************************************************
     function _cm_commonValidation ($fieldarray, $originaldata)
@@ -59,7 +82,7 @@ class mnu_todo extends Default_Table
         if (!preg_match('/(search|insert|update)/i', $GLOBALS['mode'])) {
         	if (!is_True($fieldarray['is_complete'])) {
                 $today = getTimeStamp('date');
-                $dateobj = singleton::getInstance('date_class');
+                $dateobj = RDCsingleton::getInstance('date_class');
                 $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
                 if ($due_date < $today) {
                     foreach ($this->fieldspec as $field => $specs) {
@@ -81,7 +104,7 @@ class mnu_todo extends Default_Table
     {
         if (!array_key_exists('user_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& singleton::getInstance('mnu_user');
+            $dbobject =& RDCsingleton::getInstance('mnu_user');
             $array = $dbobject->getValRep('user_id');
             $this->lookup_data['user_id'] = $array;
         } // if
@@ -127,10 +150,11 @@ class mnu_todo extends Default_Table
         if ($rowdata['is_complete'] != $old_data['is_complete']) {
             // is this changed from 'N' to 'Y'?
         	if (is_True($rowdata['is_complete']) AND !empty($rowdata['repeat_interval'])) {
+        	    $dbobject =& RDCsingleton::getInstance('mnu_todo');
         		$new_data                = $rowdata;
         		$new_data['is_complete'] = 'N';
 
-        		$dateobj = singleton::getInstance('date_class');
+        		$dateobj = RDCsingleton::getInstance('date_class');
                 switch ($rowdata['repeat_unit']) {
                 	case 'D':  // days
                 		$new_date = $dateobj->addDays($rowdata['due_date'], $rowdata['repeat_interval']);
@@ -150,7 +174,12 @@ class mnu_todo extends Default_Table
                 } // switch
         		$new_data['due_date'] = $new_date;
         		// create a copy of this record with an adjusted due_date
-        		$new_data = $this->insertRecord($new_data);
+        		$new_data = $dbobject->insertRecord($new_data);
+        		if ($dbobject->errors) {
+        			$this->errors[] = array_merge($this->errors, $dbobject->errors);
+        			// prepend this error message: 'Cannot create repeat entry'
+        			array_unshift($this->errors, getLanguageText('e0064'));
+        		} // if
         	} // if
         } // if
 
@@ -159,11 +188,39 @@ class mnu_todo extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        // customisable code goes here
+
+        if (empty($this->sql_from)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            if ($GLOBALS['mode'] == 'list') {
+            	// for LIST screens reduce length of notes to 100 characters
+            	$this->sql_select .= ", CONCAT(SUBSTR(item_notes, 1, 100),'...') AS item_notes";
+            	// fix for oracle: will not allow menu_todo.* (which contains item_notes) plus item_notes (again)
+            	$replace = 'mnu_todo.user_id, mnu_todo.seq_no, mnu_todo.item_desc, mnu_todo.due_date, mnu_todo.is_complete';
+            	$this->sql_select = str_replace('mnu_todo.*', $replace, $this->sql_select);
+            } // if
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
+    // ****************************************************************************
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
 

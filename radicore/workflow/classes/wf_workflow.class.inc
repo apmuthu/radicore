@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_workflow extends Default_Table
@@ -104,9 +104,10 @@ class wf_workflow extends Default_Table
 
     // ****************************************************************************
     function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         //DebugBreak();
         switch ($popupname) {
@@ -177,7 +178,7 @@ class wf_workflow extends Default_Table
         //DebugBreak();
         // create initial entries on PLACE table
         require_once 'classes/wf_place.class.inc';
-        $dbobject =& singleton::getInstance('wf_place');
+        $dbobject =& RDCsingleton::getInstance('wf_place');
 
         // create entry for START place
         $place_array[0]['workflow_id'] = $fieldarray['workflow_id'];

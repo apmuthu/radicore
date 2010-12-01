@@ -1,10 +1,10 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
-class singleton
+class RDCsingleton
 // ensure that only a single instance exists for each class.
 {
     static function &getInstance ($class, $arg1=null, $initialise=true)
@@ -39,10 +39,6 @@ class singleton
         if (!empty($instances[$server.$classname])) {
             // instance exists in array, so use it
             $instance =& $instances[$server.$classname];
-            if (method_exists($instance, 'sqlSelectInit')) {
-                // initialise all sql selection criteria
-            	$instance->sqlSelectInit();
-            } // if
         } else {
             // load the class file (if not already loaded)
             if (!class_exists($classname)) {
@@ -85,6 +81,6 @@ class singleton
 
     } // getInstance
 
-} // singleton
+} // class: RDCsingleton
 
 ?>

@@ -10,6 +10,8 @@ define('XMLRPC_DEBUG', true);
 // Include the library
 include('std.xmlrpc.inc');
 
+require_once('include.library.inc');
+
 if (isset($_GET['server'])) {
     // replace server name
 	$bits = explode('/', $location);
@@ -18,9 +20,11 @@ if (isset($_GET['server'])) {
 	$location = implode('/', $bits);
 } // if
 
+$result = ini_set('zlib.output_compression', 'off');
+
 // create an instance of the XMLRPC client
 $client = new XMLRPC_client($location);
-//$client->use_curl = false;    // curl or sockets
+//$client->use_curl = true;    // curl or sockets
 //$client->timeout = 30;
 
 ?>
@@ -63,10 +67,11 @@ if (!$success) {
     $client->log_error();
 } else {
     $response = $client->response;
-    display_array($response);
-    echo '<hr>';
+    $string = format_array($response);
+    echo $string .'<hr>';
     if (defined('XMLRPC_DEBUG')) {
-    	$client->debug();
+    	$string = $client->debug();
+    	echo $string;
     } // if
 } // if
 ?>

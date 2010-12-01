@@ -1,0 +1,5 @@
+This will allow a new record to be added to the USER_IP_ADDRESS table.
+
+Enter your data then press the SUBMIT button to add it to the database.
+
+Refer to <a href="%root%/mnu_user_ip_address(add1).html">Add User IP Address</a> for full details.

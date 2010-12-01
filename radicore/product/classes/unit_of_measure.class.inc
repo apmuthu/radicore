@@ -30,9 +30,9 @@ class unit_of_measure extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if (!array_key_exists('party_type', $this->lookup_data)) {
+        if (!array_key_exists('uom_cat_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& singleton::getInstance('uom_Category');
+            $dbobject =& RDCsingleton::getInstance('uom_Category');
             $data_array = $dbobject->getValRep('uom_cat_id');
             $this->lookup_data['uom_cat_id'] = $data_array;
         } // if

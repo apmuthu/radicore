@@ -1,4 +1,4 @@
-This will allow a new record to be added to the MOTD table.
+This will allow a new record to be added to the MOTD (Message Of The Day) table.
 
 Enter your data then press the SUBMIT button to add it to the database.
 

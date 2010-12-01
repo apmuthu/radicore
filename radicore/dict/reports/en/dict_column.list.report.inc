@@ -21,7 +21,7 @@ $structure['title'][] = array('text' => '- Contents of DICT_COLUMN table -',
 // set column widths
 $structure['columns'][] = array('width' => 30);
 $structure['columns'][] = array('width' => 40, 'overflow' => 'y');
-$structure['columns'][] = array('width' => 10, 'align' => 'center');
+$structure['columns'][] = array('width' => 10, 'halign' => 'center');
 $structure['columns'][] = array('width' => 50, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 50, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 30);
@@ -41,9 +41,9 @@ $structure['body']['fields'][] = array('col_null' => 'Null');
 $structure['body']['fields'][] = array('col_key' => 'Key');
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

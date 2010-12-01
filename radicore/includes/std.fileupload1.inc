@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.fileupload1.inc
@@ -40,6 +40,10 @@ require_once "classes/$table_id.class.inc";
 if (isset($script_vars['fileobject'])) {
     // use data from previous instance for this script
     $fileobject = unserialize($script_vars['fileobject']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $fileobject->restart($return_from, $return_action);
+    } // if
 } else {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -116,16 +120,15 @@ if (!empty($_FILES) and empty($errors)) {
 		$errors[] = getLanguageText('sys0129', $maxfilesize);
     } // if
     // Check to see if a file is the correct type
-    if (is_array($filetypes)) {
+    if ($filetypes == '*') {
+    	// any type is valid
+    } elseif (is_array($filetypes)) {
         if (preg_match('/(\.[0-9a-z]+)$/i', $_FILES['userfile']['name'], $regs)) {
             $extension = substr($regs[0], 1);
             if (!in_array($extension, $filetypes)) {
                 $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
             } // if
         } // if
-//    	if (!in_array($_FILES['userfile']['type'], $filetypes)) {
-//            $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
-//        } // if
     } elseif ($filetypes == 'image') {
         if (!preg_match('/^image/i', $_FILES['userfile']['type'])) {
         	$errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
@@ -168,13 +171,16 @@ if (!empty($_FILES) and empty($errors)) {
                 } // foreach
             } // if
             // allow uploaded file to be processed
-            $fileobject->post_fileUpload($uploadfile);
+            $result = $fileobject->post_fileUpload($uploadfile, $_FILES['userfile']['size']);
+            if (!empty($result)) {
+            	$uploadfile = $result;
+            } // if
             $errors = $fileobject->getErrors();
             if (empty($errors)) {
             	// send selection back to the previous script
                 $prev_script = getPreviousScript();
                 $prev_task   = getPreviousTask($prev_script);
-                $_SESSION['pages'][$prev_script][$prev_task]['selection'] = "$uploadfile";
+                $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
                 scriptPrevious($errors, $messages, 'choose');
             } else {
                 @unlink($uploadfile);
@@ -196,10 +202,12 @@ if ($maxfilesize >= 1000000) {
 } else {
     $fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize);               // bytes
 } // if
-if (is_array($filetypes)) {
-	$fieldarray['msg3']    = getLanguageText('sys0122', implode(',', $filetypes));   // array of values
-} else {
-    $fieldarray['msg3']    = getLanguageText('sys0122', $filetypes);                 // single value
+if ($filetypes != '*') {
+	if (is_array($filetypes)) {
+    	$fieldarray['msg3']    = getLanguageText('sys0122', implode(',', $filetypes));   // array of values
+    } else {
+        $fieldarray['msg3']    = getLanguageText('sys0122', $filetypes);                 // single value
+    } // if
 } // if
 $fileobject->setFieldArray($fieldarray);
 

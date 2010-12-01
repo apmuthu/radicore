@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_menu extends Default_Table
@@ -43,8 +43,6 @@ class mnu_menu extends Default_Table
                           . 'LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_menu.task_id_jnr) '
                           . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_menu.task_id_jnr AND mnu_role_task.role_id='$role_id') "
                           . "LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
-        $this->sql_where  = "(mnu_role_task.role_id IS NOT NULL OR mnu_role.global_access='Y') "
-                          . "AND (mnu_task.is_disabled='N')";
 
         // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
         $ip_address = $_SERVER['SERVER_ADDR'];
@@ -54,7 +52,13 @@ class mnu_menu extends Default_Table
                              ." END AS ip_address_valid";
         $this->sql_having = "ip_address_valid=true";
 
-        $dbmenu_data = $this->getData_raw("menu_id='$task_id'");
+        $this->sql_select .= ', mnu_menu.sort_seq';  // required for postgres
+
+        $where = "menu_id='$task_id'"
+          ." AND (mnu_role_task.role_id IS NOT NULL OR mnu_role.global_access='Y')"
+          ." AND (mnu_task.is_disabled='N')";
+
+        $dbmenu_data = $this->getData_raw($where);
 
         $menu_buttons = array();
         foreach ($dbmenu_data as $data) {
@@ -131,7 +135,7 @@ class mnu_menu extends Default_Table
         if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
             $task_id_jnr = $fieldarray['task_id_jnr'];
             // get default button text from mnu_task table
-            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject =& RDCsingleton::getInstance('mnu_task');
             $dbobject->sql_select = 'button_text';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
             $fieldarray = array_merge($fieldarray, $data[0]);
@@ -165,6 +169,7 @@ class mnu_menu extends Default_Table
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         // clear out the contents of $where
         $where = '';

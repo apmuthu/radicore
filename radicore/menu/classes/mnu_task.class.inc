@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
@@ -39,7 +39,7 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time'
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel'
                            .", CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 'Y' ELSE 'N' END AS access_allowed";
         // - check that IP address is valid
         $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN true"
@@ -115,8 +115,10 @@ class mnu_task extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if ($GLOBALS['mode'] == 'search') {
-            // make this a text box for the search screen
+            // make these into text boxes for the search screen
             unset($this->fieldspec['initial_passthru']['control']);
+            unset($this->fieldspec['task_id_run_at_end']['control']);
+            unset($this->fieldspec['task_id_run_at_cancel']['control']);
 
             $prev_script = getPreviousScript();
             $pattern_id  = getPatternId($prev_script);
@@ -144,17 +146,20 @@ class mnu_task extends Default_Table
         if (isset($fieldarray['task_type'])) {
             if (strtoupper($fieldarray['task_type']) == 'MENU') {
                 // these fields are irrelevant for menus, so turn them off
-                $this->fieldspec['pattern_id']['noedit']          = 'y';
-                $this->fieldspec['script_id']['nodisplay']        = 'y';
-                $this->fieldspec['initial_passthru']['nodisplay'] = 'y';
-                $this->fieldspec['selection_fixed']['nodisplay']  = 'y';
-                $this->fieldspec['selection_temp']['nodisplay']   = 'y';
-                $this->fieldspec['settings']['nodisplay']         = 'y';
-                $this->fieldspec['order_by']['nodisplay']         = 'y';
-                $this->fieldspec['keep_data']['nodisplay']        = 'y';
-                $this->fieldspec['log_sql_query']['nodisplay']    = 'y';
-                $this->fieldspec['screen_refresh']['nodisplay']   = 'y';
-                $this->fieldspec['use_https']['nodisplay']        = 'y';
+                $this->fieldspec['pattern_id']['noedit']               = 'y';
+                $this->fieldspec['script_id']['nodisplay']             = 'y';
+                $this->fieldspec['initial_passthru']['nodisplay']      = 'y';
+                $this->fieldspec['selection_fixed']['nodisplay']       = 'y';
+                $this->fieldspec['selection_temp']['nodisplay']        = 'y';
+                $this->fieldspec['settings']['nodisplay']              = 'y';
+                $this->fieldspec['order_by']['nodisplay']              = 'y';
+                $this->fieldspec['keep_data']['nodisplay']             = 'y';
+                $this->fieldspec['log_sql_query']['nodisplay']         = 'y';
+                $this->fieldspec['screen_refresh']['nodisplay']        = 'y';
+                $this->fieldspec['use_https']['nodisplay']             = 'y';
+                $this->fieldspec['max_execution_time']['nodisplay']    = 'y';
+                $this->fieldspec['task_id_run_at_end']['nodisplay']    = 'y';
+                $this->fieldspec['task_id_run_at_cancel']['nodisplay'] = 'y';
             } else {
                 // turn these fields back on
                 unset($this->fieldspec['pattern_id']['noedit']);
@@ -168,6 +173,9 @@ class mnu_task extends Default_Table
                 unset($this->fieldspec['log_sql_query']['nodisplay']);
                 unset($this->fieldspec['screen_refresh']['nodisplay']);
                 unset($this->fieldspec['use_https']['nodisplay']);
+                unset($this->fieldspec['max_execution_time']['nodisplay']);
+                unset($this->fieldspec['task_id_run_at_end']['nodisplay']);
+                unset($this->fieldspec['task_id_run_at_cancel']['nodisplay']);
             } // if
         } // if
 
@@ -182,13 +190,16 @@ class mnu_task extends Default_Table
         switch (strtoupper($fieldarray['task_type'])) {
             case 'MENU':
                 // menus always have these values
-                $fieldarray['pattern_id']       = 'MENU';
-                $fieldarray['script_id']        = 'menu.php';
-                $fieldarray['initial_passthru'] = null;
-                $fieldarray['selection_fixed']  = null;
-                $fieldarray['selection_temp']   = null;
-                $fieldarray['settings']         = null;
-                $fieldarray['use_https']        = null;
+                $fieldarray['pattern_id']            = 'MENU';
+                $fieldarray['script_id']             = 'menu.php';
+                $fieldarray['initial_passthru']      = null;
+                $fieldarray['selection_fixed']       = null;
+                $fieldarray['selection_temp']        = null;
+                $fieldarray['settings']              = null;
+                $fieldarray['use_https']             = null;
+                $fieldarray['max_execution_time']    = null;
+                $fieldarray['task_id_run_at_end']    = null;
+                $fieldarray['task_id_run_at_cancel'] = null;
                 break;
             case 'PROC':
                 // script_id must not include any directory names
@@ -203,14 +214,16 @@ class mnu_task extends Default_Table
         switch (strtoupper($fieldarray['pattern_id'])) {
             case 'BATCH':
                 // these fields are not allowed
-                $fieldarray['initial_passthru']   = null;
-                $fieldarray['use_https']          = null;
-                $fieldarray['keep_data']          = null;
-                $fieldarray['screen_refresh']     = null;
-                $fieldarray['max_execution_time'] = null;
-                $fieldarray['order_by']           = null;
-                $fieldarray['selection_fixed']    = null;
-                $fieldarray['selection_temp']     = null;
+                $fieldarray['initial_passthru']      = null;
+                $fieldarray['use_https']             = null;
+                $fieldarray['keep_data']             = null;
+                $fieldarray['screen_refresh']        = null;
+                $fieldarray['max_execution_time']    = null;
+                $fieldarray['order_by']              = null;
+                $fieldarray['selection_fixed']       = null;
+                $fieldarray['selection_temp']        = null;
+                $fieldarray['task_id_run_at_end']    = null;
+                $fieldarray['task_id_run_at_cancel'] = null;
                 break;
             default:
                 break;
@@ -222,7 +235,7 @@ class mnu_task extends Default_Table
                 $this->errors['initial_passthru'] = getLanguageText('e0018');
                 return $fieldarray;
             } // if
-            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject =& RDCsingleton::getInstance('mnu_task');
             $data = $dbobject->getData("task_id='{$fieldarray['initial_passthru']}'");
             if ($dbobject->numrows < 1) {
                 // "This task does not exist"
@@ -232,6 +245,22 @@ class mnu_task extends Default_Table
             if (strtoupper($data[0]['task_type']) != 'PROC') {
                 // "This task must be of type PROC"
                 $this->errors['initial_passthru'] = getLanguageText('e0020');
+                return $fieldarray;
+            } // if
+        } // if
+
+        if (!empty($fieldarray['task_id_run_at_end'])) {
+            if ($fieldarray['task_id_run_at_end'] == $fieldarray['task_id']) {
+                // "Cannot add a task to itself"
+                $this->errors['task_id_run_at_end'] = getLanguageText('e0012');
+                return $fieldarray;
+            } // if
+        } // if
+
+        if (!empty($fieldarray['task_id_run_at_cancel'])) {
+            if ($fieldarray['task_id_run_at_cancel'] == $fieldarray['task_id']) {
+                // "Cannot add a task to itself"
+                $this->errors['task_id_run_at_cancel'] = getLanguageText('e0012');
                 return $fieldarray;
             } // if
         } // if
@@ -268,14 +297,14 @@ class mnu_task extends Default_Table
 
         if (!array_key_exists('pattern_id', $this->lookup_data)) {
             // get contents of foreign table PATTERN and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('mnu_pattern');
+            $dbobject =& RDCsingleton::getInstance('mnu_pattern');
             $array = $dbobject->getValRep('pattern_id');
             $this->lookup_data['pattern_id'] = $array;
         } // if
 
         if (!array_key_exists('subsys_id', $this->lookup_data)) {
             // get contents of foreign table SUBSYSTEM and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('mnu_subsystem');
+            $dbobject =& RDCsingleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
         } // if
@@ -349,7 +378,7 @@ class mnu_task extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from MNU_MENU table
-                $object =& singleton::getInstance('mnu_menu');
+                $object =& RDCsingleton::getInstance('mnu_menu');
                 $menu_id  = $fieldarray['task_id'];
                 $object->sql_orderby = 'sort_seq asc';
                 $outarray = $object->getData("menu_id='$menu_id'");
@@ -452,7 +481,7 @@ class mnu_task extends Default_Table
             if (isset($rowdata[0]['task_id'])) {
             	// check to see if any menu items exist
                 require_once 'mnu_menu.class.inc';
-                $dbobject =& singleton::getInstance('mnu_menu');
+                $dbobject =& RDCsingleton::getInstance('mnu_menu');
                 $count = $dbobject->getCount("menu_id='{$rowdata[0]['task_id']}'");
                 if ($count == 0) {
                     // no menu items exist, so allow type to be changed

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -27,12 +27,13 @@ class mysql
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
+    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
     var $row_locks_supp;        // supplemental lock type
     var $table_locks;           // array of tables to be locked
     var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of canidate keys
+    var $unique_keys = array(); // array of candidate keys
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -41,6 +42,7 @@ class mysql
     var $sql_having;
     var $sql_orderby;
     var $sql_orderby_seq;       // 'asc' or 'desc'
+    var $sql_union;
     var $query;                 // completed DML statement
 
     var $dbconnect;             // database connection resource
@@ -56,10 +58,14 @@ class mysql
             $result = TRUE;
         } // if
 
-        if (!class_exists('audit_tbl')) {
-    	    // obtain definition of the audit_tbl class
-    		require_once 'classes/audit_tbl.class.inc';
-    	} // if
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            if (!class_exists('audit_tbl')) {
+        	    // obtain definition of the audit_tbl class
+        		require_once 'classes/audit_tbl.class.inc';
+        	} // if
+        } // if
 
         return $result;
 
@@ -79,15 +85,21 @@ class mysql
         $array = where2indexedArray($string_out);   // convert string into indexed array
 
         $pattern = '/^('        // begins with
+                 . '\) OR \('   // ') OR ('
+                 . '|'
+                 . '\) OR'      // ') OR'
+                 . '|'
+                 . 'OR \('      // 'OR ('
+                 . '|'
                  . 'OR'         // 'OR'
                  . '|'
-                 . '\) OR \('   // ') OR ('
+                 . '\) AND \('  // ') AND ('
+                 . '|'
+                 . '\) AND'     // ') AND'
                  . '|'
                  . 'AND \('     // 'AND ('
                  . '|'
                  . 'AND'        // 'AND'
-                 . '|'
-                 . '\) AND \('  // ') AND ('
                  . '|'
                  . '(\()+'      // one or more '('
                  . '|'
@@ -177,8 +189,12 @@ class mysql
         logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1');
         $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
-        $result = $auditobj->close();
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -188,7 +204,7 @@ class mysql
     function connect ($dbname=null)
     // establish a connection to the database
     {
-        global $dbhost, $dbusername, $dbuserpass, $dbprefix;
+        global $dbhost, $dbusername, $dbuserpass, $dbprefix, $dbport, $dbsocket;
         global $ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher;
 
         if (!empty($dbname) AND !empty($dbprefix)) {
@@ -208,9 +224,9 @@ class mysql
             $dbconn = mysqli_init();
             if (!empty($ssl_key)) {
                 $result = $dbconn->ssl_set($ssl_key, $ssl_cert, $ssl_ca, $ssl_capath, $ssl_cipher) or trigger_error($this, E_USER_ERROR);
-                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass, null, null, null, MYSQLI_CLIENT_SSL) or trigger_error($this, E_USER_ERROR);
+                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass, null, $dbport, $dbsocket, MYSQLI_CLIENT_SSL) or trigger_error($this, E_USER_ERROR);
             } else {
-                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass) or trigger_error($this, E_USER_ERROR);
+                $result = $dbconn->real_connect($dbhost, $dbusername, $dbuserpass, null, $dbport, $dbsocket) or trigger_error($this, E_USER_ERROR);
             } // if
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
@@ -248,7 +264,13 @@ class mysql
 
         if ($dbname) {
             if (!mysqli_select_db($dbconn, $dbname)) {
-                return FALSE;
+                if (mysqli_errno($this->dbconnect) == 2006) {
+                    // connection has been lost, so re-connect
+            	    unset($this->dbconnect);
+            	    $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+            	} else {
+                    return FALSE;
+            	} // if
             } // if
         } // if
 
@@ -278,8 +300,8 @@ class mysql
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($dbname, $tablename, $this->fieldspec, $where, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -304,8 +326,8 @@ class mysql
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $count);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($dbname, $tablename, $this->fieldspec, $selection, array());
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -496,8 +518,25 @@ class mysql
             } // if
 
             // build the query string and run it
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            } else {
+            	$this->query = "(SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $lock_str)"
+            	              ."\nUNION\n".$this->sql_union.' '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
+            	$this->sql_union = null;
+            } // if
+            //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query);
+            if ($result === false) {
+            	if (mysqli_errno($this->dbconnect) == 2006) {
+            	    // connection has been lost, so re-connect and retry
+            	    unset($this->dbconnect);
+            	    $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+            	    $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            	} else {
+            	    trigger_error($this, E_USER_ERROR);
+            	} // if
+            } // if
 
             $result2    = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
             $found_rows = mysqli_fetch_row($result2);
@@ -775,24 +814,26 @@ class mysql
         $fieldspec = $this->fieldspec;
 
         foreach ($fieldspec as $field => $spec) {
-            // look for fields with 'autoinsert' option set
-            if (array_key_exists('autoinsert', $spec)) {
-				switch ($spec['type']){
-					case 'datetime':
-						$fieldarray[$field] = getTimeStamp();
-						break;
-					case 'date':
-						$fieldarray[$field] = getTimeStamp('date');
-						break;
-					case 'time':
-						$fieldarray[$field] = getTimeStamp('time');
-						break;
-					case 'string':
-						$fieldarray[$field] = $_SESSION['logon_user_id'];
-						break;
-					default:
-						// do nothing
-				} // switch
+            if (empty($fieldarray[$field])) {
+            	// look for fields with 'autoinsert' option set
+                if (array_key_exists('autoinsert', $spec)) {
+    				switch ($spec['type']){
+    					case 'datetime':
+    						$fieldarray[$field] = getTimeStamp();
+    						break;
+    					case 'date':
+    						$fieldarray[$field] = getTimeStamp('date');
+    						break;
+    					case 'time':
+    						$fieldarray[$field] = getTimeStamp('time');
+    						break;
+    					case 'string':
+    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+    						break;
+    					default:
+    						// do nothing
+    				} // switch
+                } // if
             } // if
         } // foreach
 
@@ -800,6 +841,7 @@ class mysql
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
+			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
 			    	// value has been supplied manually, so do not auto-generate
 			    } else {
@@ -809,29 +851,34 @@ class mysql
 			} // if
 		} // foreach
 
-		if (empty($auto_increment)) {
-	        // build 'where' string using values for primary key
-	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
+		if (!empty($this->retry_on_duplicate_key)) {
+        	if (!array_key_exists($this->retry_on_duplicate_key, $fieldspec)) {
+        	    // this field does not exist, so remove it
+        		$this->retry_on_duplicate_key = null;
+        	} // if
+        } // if
 
+        // build 'where' string using values for primary key
+        $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
+
+        if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
 	        // find out if a record with this primary key already exists
-	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-	        $count = $this->getCount($dbname, $tablename, $this->query);
-
-	        $pkey = $where;
-
-	        // Is this primary key taken?
+	        $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
+	        $count = $this->getCount($dbname, $tablename, $query);
+	        // is this primary key taken?
 	        if ($count <> 0) {
 	            if (is_True($this->no_duplicate_error)) {
 	                // exit without setting an error
+	                return $fieldarray;
 	            } else {
 	            	// set error message for each field within this key
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
     	            } // foreach
+    	            $this->query = $query;  // save this in case trigger_error() is called
 	            } // if
 	            return $fieldarray;
 	        } // if
-	        $primary_key = $where;
 		} // if
 
         // validate any optional unique/candidate keys
@@ -839,32 +886,65 @@ class mysql
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
                 $where = $this->buildKeyString ($fieldarray, $key);
-                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-                $count = $this->getCount($dbname, $tablename, $this->query);
+                $query = "SELECT count(*) FROM $tablename WHERE $where";
+                $count = $this->getCount($dbname, $tablename, $query);
                 if ($count <> 0) {
-                    // set error message for each field within this key
-                    foreach ($key as $fieldname) {
-                        $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
-                    } // foreach
-                    return $fieldarray;
+                    if (is_True($this->no_duplicate_error)) {
+    	                // exit without setting an error
+    	                return $fieldarray;
+    	            } else {
+                        // set error message for each field within this key
+                        foreach ($key as $fieldname) {
+                            $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
+                        } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
+                        return $fieldarray;
+    	            } // if
                 } // if
             } // foreach
         } // if
 
-        // insert this record into the database
-        $this->query = "INSERT INTO $tablename SET ";
-        foreach ($fieldarray as $item => $value) {
-            if (isset($value)) {
-                $this->query .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
+        $repeat       = false;
+        $repeat_count = 0;
+        do {
+            // insert this record into the database
+            $this->query = "INSERT INTO $tablename SET ";
+            foreach ($fieldarray as $item => $value) {
+                if (!array_key_exists('required',$fieldspec[$item])
+                AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
+                    $this->query .= "$item=NULL, ";
+                } else {
+                    $this->query .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
+                } // if
+            } // foreach
+
+            // remove trailing comma
+            $this->query = rtrim($this->query, ', ');
+
+            //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = mysqli_query($this->dbconnect, $this->query);
+            if ($result === false) {
+                $errno = mysqli_errno($this->dbconnect);
+                if ($errno == 1062 AND !empty($this->retry_on_duplicate_key)) {
+                    // increment the specified field and try again
+                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    $repeat = true;
+                    $repeat_count++;
+                    if ($repeat_count > 5) {
+                        // too many retries, so turn this feature off
+                    	$this->retry_on_duplicate_key = null;
+                    } // if
+                } elseif ($errno == 1062 AND is_True($this->no_duplicate_error)) {
+                    // this is a duplicate, but don't fail
+                    $this->numrows = 0;
+                } else {
+            	    trigger_error($this, E_USER_ERROR);
+                } // if
             } else {
-                $this->query .= "$item=NULL, ";
+                $repeat = false;
+                $this->numrows = 1;  // record has been inserted
             } // if
-        } // foreach
-
-        // remove trailing comma
-        $this->query = rtrim($this->query, ', ');
-
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        } while ($repeat == true);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query);
@@ -875,14 +955,14 @@ class mysql
 			$primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 		} // if
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
-        } // if
-
-        $this->numrows = 1;  // record has been inserted
+		if ($this->numrows > 0) {
+			if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+                // add record details to audit database
+                $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
+                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            } // if
+		} // if
 
         return $fieldarray;
 
@@ -916,8 +996,12 @@ class mysql
         logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES');
         $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
-        $result = $auditobj->close();
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -1014,6 +1098,9 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
+        $this->query = 'START TRANSACTION';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
         $this->query = 'SET AUTOCOMMIT=0';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
@@ -1055,13 +1142,14 @@ class mysql
                 $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
-                    $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
-                    $count = $this->getCount($dbname, $tablename, $this->query);
+                    $query = "SELECT count(*) FROM $tablename WHERE $where2";
+                    $count = $this->getCount($dbname, $tablename, $query);
                     if ($count <> 0) {
                         // set error message for each field within this key
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
                 } // if
@@ -1081,20 +1169,28 @@ class mysql
             // do not set these fields when logging in
         } else {
             foreach ($fieldspec as $field => $spec) {
-                // look for fields with 'autoupdate' option set
+            	// look for fields with 'autoupdate' option set
                 if (array_key_exists('autoupdate', $spec)) {
                     switch ($spec['type']){
     					case 'datetime':
-    						$fieldarray[$field] = getTimeStamp();
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp();
+    					    } // if
     						break;
     					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp('date');
+    					    } // if
     						break;
     					case 'time':
-						    $fieldarray[$field] = getTimeStamp('time');
+    					    if (empty($fieldarray[$field])) {
+						        $fieldarray[$field] = getTimeStamp('time');
+    					    } // if
 						    break;
 					    case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+					        if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+					        } // if
     						break;
     					case 'integer':
 					        $fieldarray[$field] = $oldarray[$field] +1;
@@ -1142,14 +1238,14 @@ class mysql
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditUpdate($dbname, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
 
-        return;
+        return $fieldarray;
 
     } // updateRecord
 
@@ -1169,8 +1265,8 @@ class mysql
         logSqlQuery ($dbname, $tablename, $this->query, $count);
 
         if ($count > 0) {
-            if ($this->audit_logging) {
-                $auditobj =& singleton::getInstance('audit_tbl');
+            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
                 // add record details to audit database
                 $auditobj->auditUpdateSelection($dbname, $tablename, $this->fieldspec, $selection, $replace);
                 $this->errors = array_merge($auditobj->getErrors(), $this->errors);

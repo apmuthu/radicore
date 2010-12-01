@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class x_tree_level_alt extends Default_Table
@@ -31,7 +31,7 @@ class x_tree_level_alt extends Default_Table
         if (!array_key_exists('language_id', $this->lookup_data)) {
             // get options for language_code
             //$array = getLanguageArray('languages');
-            $dbobject =& singleton::getInstance('mnu_language');
+            $dbobject =& RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
             $array = array_change_key_case($array, CASE_LOWER);
             $this->lookup_data['language_id'] = $array;

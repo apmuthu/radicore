@@ -61,6 +61,7 @@ multi1.screen.inc
 multi2.screen.inc
 multi3.screen.inc
 multi4.screen.inc
+output4.screen.inc
 popup1.screen.inc
 popup2.screen.inc
 popup3.screen.inc

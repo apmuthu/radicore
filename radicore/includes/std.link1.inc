@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -50,15 +50,20 @@ $act_buttons['quit']   = 'cancel';
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
-    // use data from previous instance of this script
+    // recreate previous instance of this object
     $dbouter = unserialize($script_vars['dbouter']);
-    // get previously retrieved data
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
+    // get data rom previous instance
     $outer_data = $dbouter->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
+    $dbouter->zone                      = 'outer';
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -90,15 +95,20 @@ if (isset($script_vars['dbouter'])) {
 // create a class instance for the LINK database table
 require_once "classes/$link_table.class.inc";
 if (isset($script_vars['dblink'])) {
-    // use data from previous instance of this script
+    // recreate previous instance of this object
     $dblink = unserialize($script_vars['dblink']);
-    // get previously retrieved data
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dblink->restart($return_from, $return_action);
+    } // if
+    // get data rom previous instance
     $link_data = $dblink->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dblink = new $link_table;
     // indicate that this object was started from a page controller
     $dblink->initiated_from_controller = true;
+    $dblink->zone                      = 'link';
     $dblink->sql_select       = &$link_sql_select;
     $dblink->sql_from         = &$link_sql_from;
     $dblink->sql_where        = &$link_sql_where;
@@ -163,17 +173,17 @@ if (!empty($return_from) AND !empty($popup_object)) {
         } else {
             // retrieve values from scrolling array
             $where = $scrolling[$dbouter->getClassName()]['where'];
-            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+            if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+                // set index number of item to be read from current $where list
+                $dbouter->setPageNo($_GET['item']);
+            } else {
+                $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+            } // if
         } // if
     } // if
 
     if (empty($where)) {
         scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
-    } // if
-
-    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-        // set index number of item to be read from current $where list
-        $dbouter->setPageNo($_GET['item']);
     } // if
 
     // get data from the outer table
@@ -213,12 +223,12 @@ if (isset($_GET['page'])) {
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
     $string = validateSortItem('link', $_GET['orderby'], $dblink, $screen_structure);
-    $dblink->setOrderBy($string);
+    $dblink->setOrderBy($string, $dblink->sql_orderby_seq);
 } // if
 
 // load optional criteria from search screen
 if (isset($search)) {
-    $dblink->setSqlSearch($search);
+    $dblink->setSqlSearch($search, true);
 } // if
 
 // get primary key of current row retrieved from OUTER entity
@@ -262,7 +272,7 @@ if (count($outer_data) > 0) {
 } // if
 
 if (isset($_GET['action'])) {
-    $fieldarray = $dblink->setAction($_GET['action']);
+    $link_data = $dblink->setAction($_GET['action']);
 } // if
 
 // get pagination details
@@ -270,16 +280,16 @@ $pagination['link']['numrows']  = $dblink->getNumRows();
 $pagination['link']['curpage']  = $dblink->getPageNo();
 $pagination['link']['lastpage'] = $dblink->getLastPage();
 
+// get sort details
+$orderby     = $dblink->getOrderBy();
+$orderby_seq = $dblink->getOrderBySeq($orderby);
+
 // save these variables for later in the same session
 $script_vars['where']     = $where;
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dblink']    = serialize($dblink);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
-
-// get sort details
-$orderby     = $dblink->getOrderBy();
-$orderby_seq = $dblink->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

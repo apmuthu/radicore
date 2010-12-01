@@ -19,8 +19,8 @@ $structure['title'][] = array('text' => '- Contents of MNU_TASK table -',
                               'border' => 'y');
 
 // set column widths
-$structure['columns'][] = array('width' => 50, 'align' => 'right');
-$structure['columns'][] = array('width' => 140, 'align' => 'left');
+$structure['columns'][] = array('width' => 50, 'halign' => 'right');
+$structure['columns'][] = array('width' => 140, 'halign' => 'left');
 
 // identify labels and data to be output
 
@@ -32,8 +32,8 @@ $structure['body']['fields'][] = array('task_type' => 'Task Type');
 $structure['body']['fields'][] = array('script_id' => 'Script Id');
 $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
 $structure['body']['fields'][] = array('subsys_id' => 'Subsys Id');
-$structure['body']['fields'][] = array('initial_passthru' => 'Initial Passthru');
 
+$structure['body']['fields'][] = array('initial_passthru' => 'Initial Passthru');
 $structure['body']['fields'][] = array('selection_fixed' => 'Selection (fixed)');
 $structure['body']['fields'][] = array('selection_temp' => 'Selection (temp)');
 $structure['body']['fields'][] = array('settings' => 'Settings');
@@ -44,6 +44,8 @@ $structure['body']['fields'][] = array('is_disabled' => 'Disabled?');
 $structure['body']['fields'][] = array('screen_refresh' => 'Screen Refresh');
 $structure['body']['fields'][] = array('use_https' => 'Use HTTPS?');
 $structure['body']['fields'][] = array('max_execution_time' => 'Max Execution Time');
+$structure['body']['fields'][] = array('task_id_run_at_end' => 'Run at End');
+$structure['body']['fields'][] = array('task_id_run_at_cancel' => 'Run at Cancel');
 
 $structure['body']['fields'][] = array('created_date' => 'Created Date');
 $structure['body']['fields'][] = array('created_user' => 'Created By');
@@ -58,13 +60,13 @@ $structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => '
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 
 // identify output for 1st additional zone
-$structure['multi1']['fields'][1][] = array('label' => 'Seq', 'width' => 10, 'align' => 'center');
-$structure['multi1']['fields'][1][] = array('label' => 'Menu Option', 'width' => 50, 'align' => 'center');
-$structure['multi1']['fields'][1][] = array('label' => 'Option Description', 'width' => 90, 'align' => 'center');
-$structure['multi1']['fields'][1][] = array('label' => 'Button Text', 'width' => 40, 'align' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Seq', 'width' => 10, 'halign' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Menu Option', 'width' => 50, 'halign' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Option Description', 'width' => 90, 'halign' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Button Text', 'width' => 40, 'halign' => 'center');
 
 // identify output for 2nd additional zone
-$structure['multi2']['fields'][1][] = array('field' => 'sort_seq', 'width' => 10, 'align' => 'center');
+$structure['multi2']['fields'][1][] = array('field' => 'sort_seq', 'width' => 10, 'halign' => 'center');
 $structure['multi2']['fields'][1][] = array('field' => 'task_id_jnr', 'width' => 50);
 $structure['multi2']['fields'][1][] = array('field' => 'task_desc_jnr', 'width' => 90);
 $structure['multi2']['fields'][1][] = array('field' => 'button_text', 'width' => 40);

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add3.inc
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             	// 'Nothing selected from popup screen'
                 $errors[] = getLanguageText('sys0083');
             } // if
-            $batch_errors = scriptprevious($errors,null,'quit');
+            $batch_errors = scriptprevious($errors, null, 'quit');
             return $batch_errors;
         } // if
     } // if
@@ -73,6 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
     $dbobject->startTransaction();
 
+    $count = 0;
+
     foreach ($array2 as $row) {
         // convert row string into an array
         $array3 = where2array($row, false, false);
@@ -84,12 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getExtraData($fieldarray);
         // now add combined values to the database
         $fieldarray = $dbobject->insertRecord($fieldarray);
+        $count = $count + $dbobject->getNumRows();
         $messages   = array_merge($messages, $dbobject->getMessages());
         if ($dbobject->errors) {
             // reduce array to primary key for error message
             $where2 = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
             $errors[] = getLanguageText('sys0084', $where2); // "Cannot insert where $where2"
-            $errors = array_merge($errors, $dbobject->getErrors());
+            $errors = array_merge($errors, array_unique($dbobject->getErrors()));
         } // if
     } // foreach
 
@@ -97,10 +100,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $errors  = array_merge($errors, $errors2);
 
     // return a count of affected rows
-    $messages[] = getLanguageText('sys0005', $dbobject->getNumRows(), strtoupper($dbobject->getTableName())); // 'N records were inserted'
+    $messages[] = getLanguageText('sys0005', $count, strtoupper($dbobject->getTableName())); // 'N records were inserted'
+
+    if (empty($errors)) {
+    	$action = 'OK';
+    } else {
+        $action = null;
+    } // if
 
     // last, return to previous screen
-    $batch_errors = scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages, $action);
     return $batch_errors;
 } // if
 

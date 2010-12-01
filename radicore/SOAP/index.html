@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>RADICORE demo of web services using SOAP</title>
+	<style type="text/css">
+	<!--
+		body { margin-left: 5%; margin-right: 5%; }
+		h1 { text-align: center; }
+	-->
+	</style>
+</head>
+
+<body>
+
+<h1>RADICORE demo of web services using SOAP</h1>
+
+<table border="1" width="100%" cellpadding="5">
+<colgroup width="125" />
+<colgroup width="125" />
+
+<tr><td><a href="generate_wsdl.php">Generate WSDL</a></td>
+    <td>&nbsp;</td>
+    <td>Generate WSDL using NUSOAP library</td>
+</tr>
+
+<tr><td><a href="client.php?request=1&server=test-server.php">Client #1</a></td>
+    <td><a href="test-server.php?request=1">Server #1</a></td>
+    <td>Return a single value</td>
+</tr>
+
+<tr><td><a href="client.php?request=2&server=test-server.php">Client #2</a></td>
+    <td><a href="test-server.php?request=2">Server #2</a></td>
+    <td>Return fields from a single database row</td>
+</tr>
+
+<tr><td><a href="client.php?request=3&server=test-server.php">Client #3</a></td>
+    <td><a href="test-server.php?request=3">Server #3</a></td>
+    <td>Return fields from multiple database rows</td>
+</tr>
+
+</table>
+
+</body>
+</html>

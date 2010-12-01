@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -34,7 +34,11 @@ require_once "classes/$table_id.class.inc";
 if (isset($script_vars['dbobject'])) {
     // use data from previous instance for this script
     $dbobject = unserialize($script_vars['dbobject']);
-    // get previous data
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbobject->restart($return_from, $return_action);
+    } // if
+    // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
     if (!is_string(key($fieldarray))) {
         // indexed by row, so use first row only
@@ -46,31 +50,30 @@ if (isset($script_vars['dbobject'])) {
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
     // get initial data for a new record
-    $where = $dbobject->initialise ($where, $selection);
+    $where = $dbobject->initialise($where, $selection);
     if (empty($dbobject->errors)) {
         $fieldarray = $dbobject->getInitialData($where);
     } // if
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->getErrors());
+        scriptPrevious($dbobject->getErrors(), $dbobject->getMessages());
     } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // check if we are returning from a child form
-    if (!empty($return_from) AND !empty($popup_object)) {
-        if (isset($selection)) {
+    // check if we are returning from a child form where something has been selected
+    if (!empty($return_from) AND !empty($popup_object) ) {
+        if (!empty($selection)) {
             // merge previous saved variables with selection from popup form
             $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
             if ($dbobject->errors) {
-                $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+                $errors = $dbobject->getErrors();
             } // if
         } // if
     } // if
-} // if
-
-$fieldarray = $dbobject->getExtraData($fieldarray, $where);
-if ($dbobject->errors) {
-	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    $fieldarray = $dbobject->getExtraData($fieldarray, $where);
+    if ($dbobject->errors) {
+    	$errors = $dbobject->getErrors();
+    } // if
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -87,45 +90,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $fieldarray = array_update_associative($fieldarray, $_POST);
-        // ensure that changes are stored inside relevant object
-        $dbobject->setFieldArray($fieldarray);
+        // get any extra data and merge with $fieldarray
+        $fieldarray = $dbobject->getExtraData($fieldarray);
         // look for an action which is another script
         $errors = childForm($_POST, array('dbobject' => $dbobject));
 		if (empty($errors)) {
-            $dbobject->startTransaction();
-            // add this data to the database
-            $fieldarray = $dbobject->insertRecord($fieldarray);
-            $messages   = array_merge($messages, $dbobject->getMessages());
-            if ($dbobject->errors) {
-				$errors[$dbobject->getClassName()] = $dbobject->getErrors();
-			} // if
-            if (empty($errors)) {
-                $errors = $dbobject->commit();
-                if (empty($errors)) {
-                    if (isset($_POST['submitstay'])) {
-                        $messages[] = getLanguageText('sys0080'); // 'Record inserted OK'
-                        // re-initialise data for a new record
-                        $fieldarray = $dbobject->getInitialData($where);
-                        // get any extra data and merge with $fieldarray
-                        $fieldarray = $dbobject->getExtraData($fieldarray);
-                        if (isset($_SESSION['script_sequence'])) {
-                            $script_vars['dbobject'] = serialize($dbobject);
-                            // do other tasks before returning to this one
-                            scriptNext($task_id);
-                        } // if
-                    } else {
-                        // update was OK - return to previous screen
-                        $selection = array2where($fieldarray, $dbobject->getPkeyNamesAdjusted());
-                        $prev_script = getPreviousScript();
-                        $prev_task   = getPreviousTask($prev_script);
-                        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-                        scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
-                    } // if
+		    // look for a custom button (a field which begins with 'button#')
+		    $button = false;
+            foreach ($_POST as $postname => $postvalue) {
+            	if (preg_match('/^button#/i', $postname, $regs)) {
+            	    // strip off the prefix to leave the original field name
+            		$button = str_replace($regs[0], '', $postname);
+            		break;
+            	} // if
+            } // foreach
+            if ($button) {
+            	// a custom button was pressed
+            	$fieldarray = $dbobject->customButton($fieldarray, $button);
+            	if ($dbobject->errors) {
+                    $errors = $dbobject->getErrors();
                 } // if
             } else {
-                $dbobject->rollback();
+                // this is a standard 'submit' button, so update the database
+                $dbobject->startTransaction();
+                // add this data to the database
+                $fieldarray = $dbobject->insertRecord($fieldarray);
+                $messages   = array_merge($messages, $dbobject->getMessages());
+                if ($dbobject->errors) {
+    				$errors = $dbobject->getErrors();
+    			} // if
+                if (empty($errors)) {
+                    $errors = $dbobject->commit();
+                    if (empty($errors)) {
+                        $messages[] = getLanguageText('sys0080'); // 'Record inserted OK'
+                        if (isset($_POST['submitstay'])) {
+                            // re-initialise data for a new record
+                            $fieldarray = $dbobject->getInitialData($where);
+                            // get any extra data and merge with $fieldarray
+                            $fieldarray = $dbobject->getExtraData($fieldarray);
+                            if (isset($_SESSION['script_sequence'])) {
+                                $script_vars['dbobject'] = serialize($dbobject);
+                                // do other tasks before returning to this one
+                                scriptNext($task_id);
+                            } // if
+                        } else {
+                            // update was OK - return to previous screen
+                            $selection = array2where($fieldarray, $dbobject->getPkeyNamesAdjusted());
+                            $prev_script = getPreviousScript();
+                            $prev_task   = getPreviousTask($prev_script);
+                            $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+                            scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
+                        } // if
+                    } // if
+                } else {
+                    $dbobject->rollback();
+                } // if
             } // if
-        } // if
+		} // if
     } // if
 } // if
 
@@ -142,9 +163,15 @@ $script_vars['where']    = $where;
 $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
+} // if
+
+if (!empty($errors)) {
+    // all errors are associated with row zero for this table
+	$errors2[$dbobject->getClassName()][0] = $errors;
+	$errors = $errors2;
 } // if
 
 // build list of objects for output to XML data

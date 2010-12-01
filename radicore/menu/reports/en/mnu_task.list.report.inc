@@ -23,7 +23,7 @@ $structure['columns'][] = array('width' => 60);
 $structure['columns'][] = array('width' => 130);
 $structure['columns'][] = array('width' => 30);
 $structure['columns'][] = array('width' => 30);
-$structure['columns'][] = array('width' => 25, 'align' => 'center');
+$structure['columns'][] = array('width' => 25, 'halign' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('task_id' => 'Task Id');
@@ -33,9 +33,9 @@ $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
 $structure['body']['fields'][] = array('task_type' => 'Task Type');
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

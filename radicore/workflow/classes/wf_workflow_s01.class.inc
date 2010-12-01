@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'wf_workflow.class.inc';
 class wf_workflow_s01 extends wf_workflow
@@ -19,7 +19,7 @@ class wf_workflow_s01 extends wf_workflow
 
         // ********************************************************************
         require_once 'classes/wf_place.class.inc';
-        $dbplace =& singleton::getInstance('wf_place');
+        $dbplace =& RDCsingleton::getInstance('wf_place');
 
         // check that workflow contains a single START place
         $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND place_type='1'");
@@ -58,7 +58,7 @@ class wf_workflow_s01 extends wf_workflow
 
         // ********************************************************************
         require_once 'classes/wf_arc.class.inc';
-        $dbarc =& singleton::getInstance('wf_arc');
+        $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         // check that workflow contains at least one arc
         $count = $dbarc->getCount("workflow_id='$workflow_id'");
@@ -170,10 +170,10 @@ class wf_workflow_s01 extends wf_workflow
                             // "Not enough arcs of type 'OR-join' at place '$place_name'"
                             $errors[] = getLanguageText('e0033', $place_name);
                         } // if
-                        if ($arc['arc_count'] > 2) {
-                            // "Too many arcs of type 'OR-join' at place '$place_name'"
-                            $errors[] = getLanguageText('e0067', $place_name);
-                        } // if
+//                        if ($arc['arc_count'] > 2) {
+//                            // "Too many arcs of type 'OR-join' at place '$place_name'"
+//                            $errors[] = getLanguageText('e0067', $place_name);
+//                        } // if
                         break;
                     case 'AND-SPLIT':
                         if ($arc['direction'] != 'OUT') {
@@ -210,7 +210,7 @@ class wf_workflow_s01 extends wf_workflow
 
         // ********************************************************************
         require_once 'classes/wf_transition.class.inc';
-        $dbtransition =& singleton::getInstance('wf_transition');
+        $dbtransition =& RDCsingleton::getInstance('wf_transition');
 
         // check that workflow contains at least one transition
         $transition_data = $dbtransition->getData_raw("workflow_id='$workflow_id'");
@@ -254,17 +254,21 @@ class wf_workflow_s01 extends wf_workflow
                             // "Less than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
                             $errors[] = getLanguageText('e0040', $transition_name);
                         } // if
-                        if ($arc['arc_count'] > 2) {
-                            // "More than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
-                            $errors[] = getLanguageText('e0041', $transition_name);
-                        } // if
+//                        if ($arc['arc_count'] > 2) {
+//                            // "More than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
+//                            $errors[] = getLanguageText('e0041', $transition_name);
+//                        } // if
                         if ($arc['guard_count'] < 1) {
                             // "Less than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
                             $errors[] = getLanguageText('e0042', $transition_name);
                         } // if
-                        if ($arc['guard_count'] > 1) {
-                            // "More than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
-                            $errors[] = getLanguageText('e0043', $transition_name);
+//                        if ($arc['guard_count'] > 1) {
+//                            // "More than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
+//                            $errors[] = getLanguageText('e0043', $transition_name);
+//                        } // if
+                        if ($arc['guard_count'] != ($arc['arc_count']-1)) {
+                        	// "Must be 1 empty pre-condition for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
+                        	$errors[] = getLanguageText('e0070', $transition_name);
                         } // if
                         break;
                     case 'OR-SPLIT-I':

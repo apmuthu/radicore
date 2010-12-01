@@ -52,7 +52,7 @@ class good_identification extends Default_Table
     {
         if (!array_key_exists('identity_type_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& singleton::getInstance('good_identity_type');
+            $dbobject =& RDCsingleton::getInstance('good_identity_type');
             $data_array = $dbobject->getValRep('identity_type_id');
             $this->lookup_data['identity_type_id'] = $data_array;
         } // if
@@ -68,7 +68,7 @@ class good_identification extends Default_Table
     {
         //DebugBreak();
         require_once 'classes/product.class.inc';
-        $dbobject =& singleton::getInstance('product');
+        $dbobject =& RDCsingleton::getInstance('product');
         $dbobject->sql_select = 'product_subtype';
         $data = $dbobject->getData("product_id='{$fieldarray['product_id']}'");
         if ($data[0]['product_subtype'] != 'G') {

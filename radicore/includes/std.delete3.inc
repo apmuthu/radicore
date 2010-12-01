@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete3.inc
@@ -50,8 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $dbobject->rollback();
     } // if
 
+    if (empty($errors)) {
+    	$action = 'OK';
+    } else {
+        $action = null;
+    } // if
+
     // return to previous screen
-    $batch_errors = scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages, $action);
     return $batch_errors;
 } // if
 

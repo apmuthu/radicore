@@ -21,8 +21,8 @@ $structure['title'][] = array('type' => 'text',
                               'x' => 70);
 
 // set column widths for lines of format 1
-$structure['columns'][] = array('width' => 40, 'align' => 'right');
-$structure['columns'][] = array('width' => 150, 'align' => 'left');
+$structure['columns'][] = array('width' => 40, 'halign' => 'right');
+$structure['columns'][] = array('width' => 150, 'halign' => 'left');
 
 // identify labels and data to be output
 

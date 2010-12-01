@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<definitions xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+             xmlns:tns="urn:radicore_v1"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             targetNamespace="urn:radicore_v1">
+<types>
+<xsd:schema targetNamespace="urn:radicore_v1">
+ <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+ <xsd:import namespace="http://schemas.xmlsoap.org/wsdl/" />
+
+ <xsd:complexType name="rdc_error">
+  <xsd:all>
+   <xsd:element name="fieldname" type="xsd:string"/>
+   <xsd:element name="fieldvalue" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+
+ <xsd:complexType name="menu_getPatternListRequest">
+  <xsd:all>
+   <xsd:element name="limit" type="xsd:int"/>
+   <xsd:element name="page_no" type="xsd:int"/>
+   <xsd:element name="order" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+
+ <xsd:complexType name="menu_viewPatternIdRequest">
+  <xsd:all>
+   <xsd:element name="pattern_id" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+
+ <xsd:complexType name="ArrayOfPatternRowShort">
+  <xsd:complexContent>
+   <xsd:restriction base="SOAP-ENC:Array">
+    <xsd:attribute ref="SOAP-ENC:arrayType" wsdl:arrayType="tns:PatternRowShort[]"/>
+   </xsd:restriction>
+  </xsd:complexContent>
+ </xsd:complexType>
+
+ <xsd:complexType name="PatternRowShort">
+  <xsd:all>
+   <xsd:element name="pattern_id" type="xsd:string"/>
+   <xsd:element name="pattern_desc" type="xsd:string"/>
+   <xsd:element name="pattern_long_desc" type="xsd:string"/>
+   <xsd:element name="context_preselect" type="xsd:boolean"/>
+   <xsd:element name="keep_data" type="xsd:boolean"/>
+   <xsd:element name="visible_screen" type="xsd:boolean"/>
+  </xsd:all>
+ </xsd:complexType>
+
+ <xsd:complexType name="PatternRowFull">
+  <xsd:all>
+   <xsd:element name="pattern_id" type="xsd:string"/>
+   <xsd:element name="pattern_desc" type="xsd:string"/>
+   <xsd:element name="pattern_long_desc" type="xsd:string"/>
+   <xsd:element name="context_preselect" type="xsd:boolean"/>
+   <xsd:element name="keep_data" type="xsd:boolean"/>
+   <xsd:element name="visible_screen" type="xsd:boolean"/>
+   <xsd:element name="created_date" type="xsd:datetime"/>
+   <xsd:element name="created_user" type="xsd:string"/>
+   <xsd:element name="revised_date" type="xsd:datetime"/>
+   <xsd:element name="revised_user" type="xsd:string"/>
+   <xsd:element name="rdc_errors" type="rdc_error" minOccurs="0"/>
+  </xsd:all>
+ </xsd:complexType>
+
+</xsd:schema>
+</types>
+
+<!-- MESSAGES -->
+<message name="menu_getPatternListRequest">
+  <part name="params" type="tns:menu_getPatternListRequest" />
+</message>
+<message name="menu_getPatternListResponse">
+  <part name="return" type="tns:ArrayOfPatternRowShort" />
+</message>
+<message name="menu_viewPatternIdRequest">
+  <part name="params" type="tns:menu_viewPatternIdRequest" />
+</message>
+<message name="menu_viewPatternIdResponse">
+  <part name="return" type="tns:PatternRowFull" />
+</message>
+<message name="menu_getAnswerRequest">
+  <part name="request" type="xsd:string" />
+</message>
+<message name="menu_getAnswerResponse">
+  <part name="return" type="xsd:string" />
+</message>
+
+<!-- PORT TYPES -->
+<portType name="radicore_v1PortType">
+
+  <operation name="menu_getPatternList">
+    <documentation>Request a list of available Patterns.</documentation>
+    <input message="tns:menu_getPatternListRequest"/>
+    <output message="tns:menu_getPatternListResponse"/>
+  </operation>
+
+  <operation name="menu_viewPatternId">
+    <documentation>Request the details of a selected Pattern.</documentation>
+    <input message="tns:menu_viewPatternIdRequest"/>
+    <output message="tns:menu_viewPatternIdResponse"/>
+  </operation>
+
+  <operation name="menu_getAnswer">
+    <documentation>Request an answer.</documentation>
+    <input message="tns:menu_getAnswerRequest"/>
+    <output message="tns:menu_getAnswerResponse"/>
+  </operation>
+</portType>
+
+<!-- BINDINGS -->
+<binding name="radicore_v1Binding" type="tns:radicore_v1PortType">
+  <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+  <operation name="menu_getPatternList">
+    <soap:operation soapAction="urn:radicore_v1#menu_getPatternList" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+
+  <operation name="menu_viewPatternId">
+    <soap:operation soapAction="urn:radicore_v1#menu_viewPatternId" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+
+  <operation name="menu_getAnswer">
+    <soap:operation soapAction="urn:radicore_v1#menu_getAnswer" style="rpc"/>
+    <input><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="urn:radicore_v1" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+</binding>
+
+<!-- SERVICE -->
+<service name="radicore_v1">
+  <port name="radicore_v1Port" binding="tns:radicore_v1Binding">
+    <soap:address location="http://localhost/radicore/soap/generate_wsdl.php"/>
+  </port>
+</service>
+</definitions>

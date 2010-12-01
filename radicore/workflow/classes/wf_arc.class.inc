@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_arc extends Default_Table
@@ -44,7 +44,7 @@ class wf_arc extends Default_Table
 
         // now check that these places have the correct number of tokens
         require_once 'classes/wf_token.class.inc';
-        $dbtoken =& singleton::getInstance('wf_token');
+        $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         $token_array = array();
 
@@ -73,7 +73,7 @@ class wf_arc extends Default_Table
 
         // transition has enough input tokens, so create a workitem
         require_once 'classes/wf_workitem.class.inc';
-        $dbworkitem =& singleton::getInstance('wf_workitem');
+        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
         $workitem_data['workflow_id'] = $workflow_id;
         $workitem_data['transition_id'] = $transition_id;
         $workitem_data['case_id'] = $case_id;
@@ -82,7 +82,8 @@ class wf_arc extends Default_Table
         $workitem_data['context'] = $arc_data['context'];
         $workitem_data['transition_trigger'] = $arc_data['transition_trigger'];
         if ($arc_data['transition_trigger'] == 'TIME') {
-        	$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
+        	//$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
+        	$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} minutes");
         } // if
 
         $workitem_data = $dbworkitem->insertRecord($workitem_data);
@@ -96,7 +97,8 @@ class wf_arc extends Default_Table
             $this->errors = $dbworkitem->commit();
             $next['task_id'] = $arc_data['task_id'];
             $next['where']   = $arc_data['context'];
-            $_SESSION['script_sequence'][] = $next;
+            // prepend so that workflow tasks are executed before non-workflow tasks
+            append2ScriptSequence($next, true);
             // terminate current script and activate designated task
             scriptPrevious();
         } // if
@@ -114,7 +116,7 @@ class wf_arc extends Default_Table
         if (!empty($fieldarray['place_id'])) {
             // get PLACE details
             require_once 'classes/wf_place.class.inc';
-            $dbobject =& singleton::getInstance('wf_place');
+            $dbobject =& RDCsingleton::getInstance('wf_place');
             $dbobject->sql_select = 'place_type';
             $place_data = $dbobject->getData_raw("workflow_id='{$fieldarray['workflow_id']}' AND place_id='{$fieldarray['place_id']}'");
             $place_type = $place_data[0]['place_type'];
@@ -208,12 +210,12 @@ class wf_arc extends Default_Table
             $workflow_id = $fieldarray['workflow_id'];
 
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('wf_transition');
+            $dbobject =& RDCsingleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
 
             // get contents of foreign table PLACE and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('wf_place');
+            $dbobject =& RDCsingleton::getInstance('wf_place');
             $array = $dbobject->getValRep('place_id', "workflow_id='$workflow_id'");
             $this->lookup_data['place_id'] = $array;
         } // if

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_tbl extends Default_Table
@@ -33,10 +33,14 @@ class audit_tbl extends Default_Table
     function auditDelete ($dbname, $tablename, $fieldspec, $where, $oldarray)
     // add a record to the audit trail for a DELETE.
     {
+        $dbprefix = $GLOBALS['dbprefix'];  // save
+
         $newarray = array();
 
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
+
+        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -46,6 +50,8 @@ class audit_tbl extends Default_Table
     function auditDeleteSelection ($dbname, $tablename, $fieldspec, $selection)
     // add a record to the audit trail for a DELETE of a selection of records.
     {
+        $dbprefix = $GLOBALS['dbprefix'];  // save
+
         $newarray = array();
         $oldarray = array();
 
@@ -59,6 +65,8 @@ class audit_tbl extends Default_Table
             $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
         } // foreach
 
+        $GLOBALS['dbprefix'] = $dbprefix;  // restore
+
         return;
 
     } // auditDeleteSelection
@@ -67,10 +75,14 @@ class audit_tbl extends Default_Table
     function auditInsert ($dbname, $tablename, $fieldspec, $where, $newarray)
     // add a record to the audit trail for an INSERT.
     {
+        $dbprefix = $GLOBALS['dbprefix'];  // save
+
         $oldarray = array();
 
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
+
+        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -80,8 +92,12 @@ class audit_tbl extends Default_Table
     function auditUpdate ($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray)
     // add a record to the audit trail for an UPDATE.
     {
+        $dbprefix = $GLOBALS['dbprefix'];  // save
+
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
+
+        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -91,6 +107,8 @@ class audit_tbl extends Default_Table
     function auditUpdateSelection ($dbname, $tablename, $fieldspec, $selection, $replace)
     // add a record to the audit trail for an UPDATE of a selection of records.
     {
+        $dbprefix = $GLOBALS['dbprefix'];  // save
+
         $oldarray = where2array($selection);
 
         // turn $replace string into an array of 'item=value' pairs
@@ -106,6 +124,8 @@ class audit_tbl extends Default_Table
             $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
         } // foreach
 
+        $GLOBALS['dbprefix'] = $dbprefix;  // restore
+
         return;
 
     } // auditUpdateSelection
@@ -118,8 +138,7 @@ class audit_tbl extends Default_Table
 
         if (!isset($_SESSION['session_number'])) {
             // first time only, get details from audit_ssn
-            //require_once 'classes/audit_ssn.class.inc';
-            $ssn_obj =& singleton::getInstance('audit_ssn');
+            $ssn_obj =& RDCsingleton::getInstance('audit_ssn');
             $ssn_data = $ssn_obj->insertRecord(array());
             if ($ssn_obj->errors) {
                 $this->errors = $ssn_obj->getErrors();
@@ -132,8 +151,7 @@ class audit_tbl extends Default_Table
 
         if (empty($this->trn_array)) {
             // first time only, get details from audit_trn
-            //require_once 'classes/audit_trn.class.inc';
-            $trn_obj =& singleton::getInstance('audit_trn');
+            $trn_obj =& RDCsingleton::getInstance('audit_trn');
             $this->trn_array = $trn_obj->insertRecord($ssn_data);
             if ($trn_obj->errors) {
                 $this->errors = $trn_obj->getErrors();
@@ -170,6 +188,14 @@ class audit_tbl extends Default_Table
         	    } // if
         	    if (isset($newarray[$field])) {
         	    	$newarray[$field] = '**********';
+        	    } // if
+        	} elseif (isset($spec['type']) AND $spec['type'] == 'blob') {
+        	    // do not include BLOB fields in the audit trail
+        	    if (!empty($oldarray[$field])) {
+        	    	$oldarray[$field] = '<BLOB>';
+        	    } // if
+        	    if (!empty($newarray[$field])) {
+        	    	$newarray[$field] = '<BLOB>';
         	    } // if
             } // if
         } // foreach
@@ -224,8 +250,7 @@ class audit_tbl extends Default_Table
         } // foreach
 
         // add all these records to the database
-        //require_once 'classes/audit_fld.class.inc';
-        $fld_obj =& singleton::getInstance('audit_fld');
+        $fld_obj =& RDCsingleton::getInstance('audit_fld');
 
         $fieldarray = $fld_obj->insertMultiple($fieldarray);
         $this->errors = $fld_obj->getErrors();
@@ -286,7 +311,7 @@ class audit_tbl extends Default_Table
     // perform custom formatting before values are shown to the user.
     {
         if (isset($fieldarray['trn_date'])) {
-            $dateobj =& singleton::getInstance('date_class');
+            $dateobj =& RDCsingleton::getInstance('date_class');
         	$fieldarray['trn_date'] = $dateobj->getExternalDate($fieldarray['trn_date']);
         } // if
 
@@ -349,28 +374,24 @@ class audit_tbl extends Default_Table
             $this->checkPrimaryKey = FALSE;
         } // if
 
-        if (empty($this->sql_search)) return $where;
+        if (!empty($this->sql_search)) {
+            $search_array = where2array($this->sql_search, false, false);
 
-        // convert from string to an associative array
-        $fieldarray = where2array($this->sql_search, false, false);
-        // do not strip LIKE operator from any fields
-        //$array1 = where2indexedArray($this->sql_search);   // convert string into indexed array
-        //$fieldarray = indexed2assoc($array1);              // convert indexed array to associative
+            // deal with values which have ranges
+            if (!empty($search_array['date_from']) OR !empty($search_array['date_to'])) {
+                $search_array['trn_date'] = rangeFromTo($search_array['date_from'], $search_array['date_to'], true);
+                unset($search_array['date_from']);
+                unset($search_array['date_to']);
+            } // if
 
-        // deal with values which have ranges
-        if (!empty($fieldarray['date_from']) OR !empty($fieldarray['date_to'])) {
-            $fieldarray['trn_date'] = rangeFromTo($fieldarray['date_from'], $fieldarray['date_to'], true);
-            unset($fieldarray['date_from']);
-            unset($fieldarray['date_to']);
+            if (!empty($search_array['time_from']) OR !empty($search_array['time_to'])) {
+            	$search_array['trn_time'] = rangeFromTo($search_array['time_from'], $search_array['time_to']);
+                unset($search_array['time_from']);
+                unset($search_array['time_to']);
+            } // if
+
+            $this->sql_search = array2where($search_array);
         } // if
-
-        if (!empty($fieldarray['time_from']) OR !empty($fieldarray['time_to'])) {
-        	$fieldarray['trn_time'] = rangeFromTo($fieldarray['time_from'], $fieldarray['time_to']);
-            unset($fieldarray['time_from']);
-            unset($fieldarray['time_to']);
-        } // if
-
-        $this->sql_search = array2where($fieldarray);
 
         return $where;
 

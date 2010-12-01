@@ -5,6 +5,8 @@
 
 // this is the XML-RPC server used by RADICORE
 
+ob_start();
+
 // include the standard RADICORE library
 require('include.general.inc');
 
@@ -26,7 +28,7 @@ if (!empty($GLOBALS['project_code'])) {
 if (empty($HTTP_RAW_POST_DATA) AND isset($_GET['request'])) {
     define('XMLRPC_DEBUG', true);
     // load request details from specified file
-    $fn = $dir .'request-' .(int)$_GET['request'] .'.xml';
+    $fn = $dir .$_GET['request'] .'.xml';
     if (file_exists($fn)) {
     	$HTTP_RAW_POST_DATA = file_get_contents($fn);
     	if (empty($HTTP_RAW_POST_DATA)) {
@@ -64,23 +66,29 @@ foreach ($xmlrpc_methods as $method => $function) {
 // execute specified method and return response as an XML document
 $response = xmlrpc_server_call_method($server, $HTTP_RAW_POST_DATA, $userdata, $server_options);
 $output = ob_get_contents();
-if (empty($output)) {
+//if (empty($output)) {
     if (isset($_GET['request'])) {
+        $result = ini_set('zlib.output_compression', 'off');
         // display details in web page
         echo '<html><body>';
         echo '<p><b>Result:</b></p>';
-        display_array(xmlrpc_decode($response));
+        $string = format_array(xmlrpc_decode($response));
+        echo $string;
         echo '<p><b>Request:</b></p>';
         echo '<pre>' .htmlspecialchars($HTTP_RAW_POST_DATA) .'</pre>';
         echo '<p><b>Response:</b></p>';
         echo '<pre>' .htmlspecialchars($response) .'</pre>';
         echo '</body></html>';
     } else {
+        $result = ini_set('zlib.output_compression', 'off');
         // send result back to the client
         header('Content-Type: text/xml');
         header("Date: " . date("r"));
         echo $response;
+        if (!empty($output)) {
+        	echo "\nOUTPUT:" .$output;
+        } // if
     } // if
-} // if
+//} // if
 
 ?>

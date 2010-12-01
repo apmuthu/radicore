@@ -9,7 +9,7 @@ $style['hdg']['font'] = array('family' => 'Times',      // Courier, Helvetica, T
                               'size' => 12,             // size in points
                               'height' => 7,            // line height in units
                               'draw' => .4,             // width of drawn lines
-                              'align' => 'center');     // text alignment (left, right, center)
+                              'halign' => 'center');    // horizontal text alignment (left, right, center)
 
 $style['hdg']['fillcolour'] = array(24,116,205);        // colour for background
 $style['hdg']['textcolour'] = array(255,255,255);       // colour for foreground
@@ -33,7 +33,7 @@ $style['title']['font'] = array('family' => 'Times',    // Courier, Helvetica, T
                                 'size' => 12,           // size in points
                                 'height' => 6,          // line height in units
                                 'draw' => .3,           // width of drawn lines
-                                'align' => 'center');   // text alignment (left, right, center)
+                                'halign' => 'center');  // horizontal text alignment (left, right, center)
 
 $style['title']['fillcolour'] = array(112,219,147);     // colour for background
 $style['title']['textcolour'] = array(0,0,0);           // colour for foreground
@@ -65,7 +65,7 @@ $style['label']['font'] = array('family' => 'Times',    // Courier, Helvetica, T
                                 'size' => 12,           // size in points
                                 'height' => 6,          // line height in units
                                 'draw' => .3,           // width of drawn lines
-                                'align' => 'right');    // text alignment (left, right, center)
+                                'halign' => 'right');   // horizontal text alignment (left, right, center)
 
 $style['label']['fillcolour'] = array(176,176,176);     // colour for background
 $style['label']['textcolour'] = array(0,0,0);           // colour for foreground
@@ -88,21 +88,21 @@ $style['foot']['font'] = array('family' => 'Times',     // Courier, Helvetica, T
                                'size' => 10,            // size in points
                                'height' => 5,           // line height in units
                                'draw' => .2,            // width of drawn lines
-                               'align' => 'center');    // text alignment (left, right, center)
+                               'halign' => 'center');   // horizontal text alignment (left, right, center)
 
 $style['foot']['fillcolour'] = array(255,255,255);      // colour for background
 $style['foot']['textcolour'] = array(0,0,0);            // colour for foreground
 $style['foot']['drawcolour'] = array(0,0,0);            // colour for line drawing
 
 // allow text alignment within a cell to be changed
-$style['textalignleft']['font'] = array('align' => 'left');     // text alignment = left
-$style['textalignright']['font'] = array('align' => 'right');   // text alignment = right
-$style['textaligncenter']['font'] = array('align' => 'center'); // text alignment = center
-$style['noborder']['drawcolour'] = array(255,255,255);          // border = white
+$style['textalignleft']['font'] = array('halign' => 'left');     // text alignment = left
+$style['textalignright']['font'] = array('halign' => 'right');   // text alignment = right
+$style['textaligncenter']['font'] = array('halign' => 'center'); // text alignment = center
+$style['noborder']['drawcolour'] = array(255,255,255);           // border = white
 
 // barcode styles
 $style['barcode1']['type'] = 'I25';         // I25, C128A, C128B, C128C, C39
-$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right
+$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right, X=Stretch Barcode
 $style['barcode1']['xres'] = 2;             // 1,2,3
 $style['barcode1']['fontsize'] = 5;         // 1,2,3,4,5
 

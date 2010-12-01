@@ -1,9 +1,10 @@
 <?php
 // *****************************************************************************
-// Copyright 2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2009-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
-// Version: 1.0.0
-// Date: 01-12-2009
+// Author:  Tony Marston
+// Version: 1.3.0
+// Date:    14-06-2010
 // *****************************************************************************
 
 // this file contains functions which use PHP's XMLRPC extension
@@ -14,10 +15,14 @@ $server_options = array();
 require('config.xmlrpc.inc');
 
 // ****************************************************************************
-function get_XMLRPC_client ()
+function get_XMLRPC_client ($subject)
 // return an object for the XMLRPC client
 {
-    $object =& singleton::getInstance('XMLRPC_client');
+    $object =& RDCsingleton::getInstance('XMLRPC_client');
+
+    $object->subject = $subject;
+
+    //$object->use_curl = true;     // curl or fsockopen
 
     return $object;
 
@@ -43,7 +48,7 @@ class XMLRPC_client
     var $errorMsg;
     var $fatal_error;       // true/false
     var $timeout = 30;      // connection timeout
-    var $use_curl = true;   // yes/no
+    var $use_curl = false;  // yes/no
 
     var $numrows;
     var $pageno;
@@ -128,8 +133,8 @@ class XMLRPC_client
         	return false;
         } // if
 
-        // convert request into an XML document
-        $options = array('encoding' => 'UTF-8');
+        // convert request into an XML document (UTF-8 characters will become numeric entities)
+        $options = array('encoding' => 'ISO-8859-1');
         $this->request = xmlrpc_encode_request($method, $params, $options);
 
         // issue the query and obtain a response
@@ -144,13 +149,33 @@ class XMLRPC_client
             return false;
         } // if
 
+//        $response = <<<EOD
+//HTTP/1.1 301 Moved Permanently
+//Date: Mon, 23 Aug 2010 09:26:48 GMT
+//Server: Apache
+//Location: http://www.weddingrings-direct.com/transix/XMLRPC/server.php
+//Content-Length: 268
+//Connection: close
+//Content-Type: text/html; charset=iso-8859-1
+//
+//<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+//<html><head>
+//<title>301 Moved Permanently</title>
+//</head><body>
+//<h1>Moved Permanently</h1>
+//<p>The document has moved <a href="http://www.weddingrings-direct.com/transix/XMLRPC/server.php">here</a>.</p>
+//</body></html>
+//
+//EOD;
+
         if (preg_match('/^(http)/i', $response)) {
             // strip http headers from the response
-    		$pos = strpos($response, "\r\n\r\n")+4;
+    		$pos = strpos($response, "\r\n\r\n");
     		if ($pos === false) {
     		    $this->responsehdr = $response;
     		    $response          = null;
     		} else {
+    		    $pos = $pos+4;
     		    $this->responsehdr = substr($response, 0, $pos);
     		    $response          = substr($response, $pos);
     		    if (!preg_match('/^(<\?xml)/i', $response)) {
@@ -169,8 +194,8 @@ class XMLRPC_client
         $this->responseXML = $response;
 
         if (empty($response)) {
-        	$response['faultCode'] = -9998;
-        	$response['faultString'] = 'Unexpected error';
+        	$response['faultCode']   = -9998;
+        	$response['faultString'] = 'Error - response from server is empty';
         	if (!empty($this->responsehdr)) {
         		$response['faultString'] .= ': ' .$this->responsehdr;
         	} // if
@@ -217,15 +242,17 @@ class XMLRPC_client
 		} // if
 
 		foreach ($rowdata as $rownum => $data) {
-			foreach ($data as $fieldname => $fieldvalue) {
-                if (is_object($fieldvalue)) {
-                    if ($fieldvalue->xmlrpc_type == 'datetime') {
-                    	$data[$fieldname] = date('Y-m-d H:i:s', $fieldvalue->timestamp);
-                    } elseif ($fieldvalue->xmlrpc_type == 'base64') {
-                        $data[$fieldname] = base64_decode($fieldvalue->base64);
+		    if (is_array($data)) {
+    			foreach ($data as $fieldname => $fieldvalue) {
+                    if (is_object($fieldvalue)) {
+                        if ($fieldvalue->xmlrpc_type == 'datetime') {
+                        	$data[$fieldname] = date('Y-m-d H:i:s', $fieldvalue->timestamp);
+                        } elseif ($fieldvalue->xmlrpc_type == 'base64') {
+                            $data[$fieldname] = base64_decode($fieldvalue->base64);
+                        } // if
                     } // if
-                } // if
-			} // foreach
+    			} // foreach
+		    } // if
 			$rowdata[$rownum] = $data;
 		} // foreach
 
@@ -245,18 +272,22 @@ class XMLRPC_client
     function debug ()
     // display info for debugging
     {
+        $string = '';
+
         if (!empty($this->requestHdr)) {
-        	echo "<p>Request Hdr: <br>" .nl2br($this->requestHdr) ."</p>";
+        	$string .= "<p>Request Hdr: <br>" .nl2br($this->requestHdr) ."</p>";
         } // if
         if (!empty($this->request)) {
-        	echo "<p>Request: <pre>" .htmlspecialchars($this->request) ."</pre></p>";
+        	$string .= "<p>Request: <pre>" .htmlspecialchars($this->request) ."</pre></p>";
         } // if
         if (!empty($this->responsehdr)) {
-            echo "<p>Response Hdr: <br>" .nl2br($this->responsehdr) ."</p>";
+            $string .= "<p>Response Hdr: <br>" .nl2br($this->responsehdr) ."</p>";
         } // if
         if (!empty($this->responseXML)) {
-            echo "<p>Response: <pre>" .htmlspecialchars($this->responseXML) ."</pre></p>";
+            $string .= "<p>Response: <pre>" .htmlspecialchars($this->responseXML) ."</pre></p>";
         } // if
+
+        return $string;
 
     } // debug
 
@@ -264,7 +295,7 @@ class XMLRPC_client
     function log_error ()
     // send a copy of these error details to a log file (or email)
     {
-        $mailstring = '';
+        $mailstring = null;
 
         if (!empty($this->errorMsg)) {
         	$mailstring .= "errorCode: " .$this->errorCode ."\n"
@@ -283,8 +314,31 @@ class XMLRPC_client
             $mailstring .= "Response:\n" .$this->responseXML ."\n";
         } // if
 
-        $headers = "From: XML-RPC Client\r\n";
-        @error_log($mailstring, 1, $_SERVER['SERVER_ADMIN'], $headers);
+        // obtain backtrace data
+        $result = debug_backtrace();
+        $trace = null;
+        foreach ($result as $level => $string) {
+            $trace .= "$level: array =\n";
+            if (is_array($string)) {
+                $trace = print_Trace($level, $string, $trace);
+            } // if
+        } // foreach
+
+        // email details to sysadmin
+        $headers = "From: XML-RPC Client on {$_SERVER['HTTP_HOST']}\r\n";
+        @error_log("$mailstring\nBacktrace:\n$trace", 1, $_SERVER['SERVER_ADMIN'], $headers);
+
+        // append details to error log
+        $errorstring = "<h2>" . date('Y-m-d H:i:s') . "</h2>\n";
+
+        $trace = "Backtrace:\n<pre>\n" .$trace ."\n</pre>\n";
+
+        $mailstring = htmlentities($mailstring);
+        $mailstring = str_replace(' ', '&nbsp;', $mailstring);
+        $mailstring = nl2br($mailstring);
+
+        $logfile = $_SERVER['DOCUMENT_ROOT'] .'/errorlog.html';
+        @error_log($errorstring.' '.$mailstring.' '.$trace, 3, $logfile);
 
         return;
 
@@ -313,13 +367,32 @@ class XMLRPC_client
         $this->errorCode = $faultCode;
         $this->errorMsg  = $faultString;
 
+        return false;
+
     } // setError
+
+    // ****************************************************************************
+    function __call ($name, $args)
+    // magic method to satisfy method names which are not actually defined.
+    {
+        if (preg_match('/^getMany$/i', $name)) $name = 'list';
+
+        $method = $name .'_' .$this->subject;
+
+        if (method_exists($this, $method)) {
+        	$response = $this->$method($args);
+        } else {
+            die("XML-RPC Client: Method '$method' does not exist");
+        } // if
+
+        return $response;
+
+    } // __call
 
     // ****************************************************************************
     function _send($site, $location, $port=null, $request=null, $user_agent=null, $timeout=30)
     // send the request to the server and receive a response.
     {
-        //$this->use_curl = false;
         if ($this->use_curl) {
         	$response = $this->_send_via_curl($site, $location, $port, $request, $user_agent, $timeout);
         } else {
@@ -347,6 +420,9 @@ class XMLRPC_client
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        if (defined('CURLINFO_HEADER_OUT')) {
+            curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+        } // if
         curl_setopt($ch, CURLOPT_POSTFIELDS, $request);
 
         $response = curl_exec($ch);
@@ -488,36 +564,5 @@ function XMLRPC_non_fatal_error($array)
     exit;
 
 } // XMLRPC_non_fatal_error
-
-// ****************************************************************************
-function display_array ($input, $prefix=null)
-// an alternative to print_r()
-{
-    if (is_string($input)) {
-    	echo $input;
-    } elseif (is_bool($input)) {
-        if ($input) {
-        	echo 'True';
-        } else {
-            echo 'False';
-        } // if
-    } elseif (is_array($input)) {
-        foreach ($input as $key => $value) {
-        	if (is_array($value)) {
-        		display_array($value, $prefix.'['.$key.']');
-        		echo '<br>';
-        	} else {
-        	    if (empty($prefix)) {
-        	    	echo               $key .' = ' .$value .'<br>';
-        	    } else {
-        	        echo $prefix .' ' .$key .' = ' .$value .'<br>';
-        	    } // if
-        	} // if
-        } // foreach
-    } else {
-        echo $input;
-    } // if
-    return;
-} // display_array
 
 ?>

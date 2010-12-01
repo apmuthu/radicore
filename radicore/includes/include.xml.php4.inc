@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 4
@@ -42,9 +42,15 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 		    $array[] = $object_errors;
 			$object_errors = $array;
 		} // if
-		foreach ($object_errors as $row => $row_errors) {
-			// deal with errors for fields which are not actually displayed
-    		$object_errors[$row] = filterErrors($row_errors, $objectname, $errors[$row], $screen_structure);
+		// there may be different errors for different rows
+		foreach ($object_errors as $rownum => $row_errors) {
+			// extract errors which are linked to named fields
+    		$result = filterErrors($row_errors, $objectname, $errors, $screen_structure);
+    		if (empty($result)) {
+    		    unset($object_errors[$rownum]);
+    		} else {
+		       $object_errors[$rownum] = $result;
+		    } // if
 		} // foreach
     } else {
 		// no errors for current object
@@ -162,10 +168,15 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                     } // if
 
                     if (isset($spec['control'])) {
-                        // option for hidden field (contained within form but not shown)
+                        // option for hidden field (included in POST array but not shown)
                         if ($spec['control'] == 'hidden') {
                             $child->set_attribute('control', 'hidden');
+                            if (isset($spec['visible'])) {
+                                // override to display value as non-editable
+                            	$child->set_attribute('visible', $spec['visible']);
+                            } // if
                         } // if
+
                         // option for dropdown fields
                         if ($spec['control'] == 'dropdown') {
                             $child->set_attribute('control', 'dropdown');
@@ -174,6 +185,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             	$child->set_attribute('rows', $spec['rows']);
                             } // if
                         } // if
+
                         // option for multi-dropdown fields
                         if ($spec['control'] == 'multidrop') {
                             $child->set_attribute('control', 'multidrop');
@@ -182,6 +194,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             	$child->set_attribute('rows', $spec['rows']);
                             } // if
                         } // if
+
                         // option for filename fields
                         if ($spec['control'] == 'filepicker') {
                             $child->set_attribute('control', 'filepicker');
@@ -196,18 +209,27 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                                 if (isset($spec['imageheight'])) {
                                     $child->set_attribute('imageheight', $spec['imageheight']);
                                 } // if
+                                // look for '[alt=...]' at the end of the string
+                                if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                    $alt = $regs[0];  // extract alt text
+                                    $child->set_attribute('alt', $alt);
+                                    // remove '[alt=...]' from the value
+                                    $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue;
+                                } // if
                             } // if
                             if (isset($spec['notext'])) {
                                 // display the image without any filename text
                                 $child->set_attribute('notext', "{$spec['notext']}");
                             } // if
                         } // if
+
                         // options for multiline fields
                         if ($spec['control'] == 'multiline') {
                             $child->set_attribute('control', 'multiline');
                             $child->set_attribute('cols', $spec['cols']);
                             $child->set_attribute('rows', $spec['rows']);
                         } // if
+
                         // option for popup fields
                         if ($spec['control'] == 'popup') {
                             $child->set_attribute('control', 'popup');
@@ -221,6 +243,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                                 $child->set_attribute('allow_input', $spec['allow_input']);
                             } // if
                         } // if
+
                         // option for radio buttons
                         if ($spec['control'] == 'radiogroup' or $spec['control'] == 'radio') {
                             $child->set_attribute('control', 'radiogroup');
@@ -232,6 +255,7 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
                             } // if
                         } // if
+
                         // option for a single checkbox
                         if ($spec['control'] == 'checkbox') {
                             $child->set_attribute('control', 'checkbox');
@@ -243,7 +267,11 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             if (isset($spec['align_lr'])) {
                             	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
                             } // if
+                            if (isset($spec['class'])) {
+                            	$child->set_attribute('class', strtolower($spec['class']));
+                            } // if
                         } // if
+
                         // option for multiple checkboxes
                         if ($spec['control'] == 'm_checkbox' OR $spec['control'] == 'checkbox_multi') {
                             $child->set_attribute('control', 'checkbox_multi');
@@ -255,9 +283,112 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                             	$child->set_attribute('align_lr', strtolower($spec['align_lr']));
                             } // if
                         } // if
-                        // option for hyperlink
+
+                        // option for hyperlink (single or multiple)
                         if ($spec['control'] == 'hyperlink') {
+                            $array_in  = array();
+                            $array_out = array();
                             $child->set_attribute('control', 'hyperlink');
+                            if (is_array($fieldvalue)) {
+                            	$array_in   = $fieldvalue;  // multiple
+                            } else {
+                                $array_in[] = $fieldvalue;  // single
+                            } // if
+                            foreach ($array_in as $ix => $hyperlink) {
+                            	// look for '[url=...]' at the end of the string
+                                if (preg_match('/(?<=\[url=).*(?=\])/', $hyperlink, $regs)) {
+                                    $url = $regs[0];  // extract url
+                                    // remove '[url=...]' from the value
+                                    $label = preg_replace('/\[url=.*\]/', '', $hyperlink);
+                                    // store label and url as separate parts
+                                    $array_out[$ix]['label'] = $label;
+                                    $array_out[$ix]['url']   = $url;
+                            	} else {
+                                    $array_out[$ix]['label'] = $hyperlink;
+                            	} // if
+                            } // foreach
+                            // store 'label' as the value and 'url' as an attribute
+                            if (count($array_out) == 1) {
+                                $array_out = $array_out[0];
+                                if (!empty($array_out['url'])) {
+                                    $child->set_attribute('url', $array_out[0]['url']);
+                                } // if
+                                $fieldvalue = $array_out['label'];
+                            } else {
+                                foreach ($array_out as $entry) {
+                                    // add "<array url='...'>label</array>"
+                                	$array_value = $doc->create_element('array');
+                                    $array_value = $child->append_child($array_value);
+                                    if (!empty($entry['url'])) {
+                                        $array_value->set_attribute('url', $entry['url']);
+                                    } // if
+                                    $value = $doc->create_text_node($entry['label']);
+                                    $value = $array_value->append_child($value);
+                                } // foreach
+                                $fieldvalue = null;
+                            } // if
+                        } // if
+
+                        // option for hyperlink around an image
+                        if ($spec['control'] == 'imagehyper') {
+                            $child->set_attribute('control', 'image_hyperlink');
+                            if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
+                                $child->set_attribute('image', 'y');
+                                if (isset($spec['imagewidth'])) {
+                                    $child->set_attribute('imagewidth', $spec['imagewidth']);
+                                } // if
+                                if (isset($spec['imageheight'])) {
+                                    $child->set_attribute('imageheight', $spec['imageheight']);
+                                } // if
+                                // look for '[alt=...]' at the end of the string
+                                if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                    $alt = $regs[0];  // extract alt text
+                                    $child->set_attribute('alt', $alt);
+                                    // remove '[alt=...]' from the value
+                                    $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                } // if
+                            } // if
+                        } // if
+
+                        // option for image fields
+                        if ($spec['control'] == 'image') {
+                            $child->set_attribute('control', 'image');
+                            if (isset($spec['imagewidth'])) {
+                                $child->set_attribute('imagewidth', $spec['imagewidth']);
+                            } // if
+                            if (isset($spec['imageheight'])) {
+                                $child->set_attribute('imageheight', $spec['imageheight']);
+                            } // if
+                            // look for '[alt=...]' at the end of the string
+                            if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                $alt = $regs[0];  // extract alt text
+                                $child->set_attribute('alt', $alt);
+                                // remove '[alt=...]' from the value
+                                $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                            } // if
+                        } // if
+
+                        // option for submit buttons
+                        if ($spec['control'] == 'button') {
+                            $child->set_attribute('control', 'button');
+                            if (isset($spec['task_id'])) {
+                                if (substr($spec['task_id'], 0, 2) == '%%') {
+                                    // extract name of field which contains task_id
+                                    $button_task_id = substr($spec['task_id'], 2);
+                                	if (isset($rowdata[$button_task_id])) {
+                                		$child->set_attribute('id', 'task#'.$rowdata[$button_task_id]);
+                                	} else {
+                                	    $child->set_attribute('id', 'task#'.$spec['task_id']);
+                                	} // if
+                                } else {
+                            	    $child->set_attribute('id', 'task#'.$spec['task_id']);
+                                } // if
+                            } else {
+                                $child->set_attribute('id', 'button#'.$fieldname);
+                            } // if
+                            if (empty($fieldvalue)) {
+                            	$fieldvalue = getLanguageText($fieldname);
+                            } // if
                         } // if
                     } // if
 
@@ -293,33 +424,43 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                 } else {
                     $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
 
+                    if (isset($spec['xml']) AND $spec['xml'] == 'CDATA') {
+                        $child->set_attribute('CDATA', 'y');
+                    	// insert as CDATA element for the current node
+                        $value = $doc->create_cdata_section($fieldvalue);
+                        $value = $child->append_child($value);
+                    } else {
+                        // insert as text element for the current node
+                        $value = $doc->create_text_node($fieldvalue);
+                        $value = $child->append_child($value);
+                    } // if
+
                     // insert as text element for the current node
                     $value = $doc->create_text_node($fieldvalue);
                     $value = $child->append_child($value);
                 } // if
             } // foreach
         } // if
+
         if (array_key_exists($rownum, $object_errors)) {
-		    if (count($object_errors[$rownum]) > 0) {
-				// there are errors that have not been extracted yet, so ...
-				// transfer them to general array
-			    foreach ($object_errors as $key => $value){
-			        if (is_array($value)) {
-			            foreach ($value as $key2 => $value2) {
-			                // prefix with fieldname
-			            	$errors[$key] = '[' .$key2 .'] ' .$value2;
-			            } // foreach
-			        } else {
-			            if ($key == (int)$key) {
-			                // do not prefix with row number
-    			            $errors[$key] = $value;
-			            } else {
-			                // prefix with fieldname
-        					$errors[$key] = '[' .$key .'] ' .$value;
-			            } // if
-			        } // if
-				} // foreach
-			} // if
+			// there are errors that have not been extracted yet, so ...
+			// transfer them to general array
+		    foreach ($object_errors as $key => $value){
+		        if (is_array($value)) {
+		            foreach ($value as $key2 => $value2) {
+		                // prefix with fieldname
+		            	$errors[$key2] = '[' .$key2 .'] ' .$value2;
+		            } // foreach
+		        } else {
+		            if ($key == (int)$key) {
+		                // do not prefix with row number
+			            $errors[$key] = $value;
+		            } else {
+		                // prefix with fieldname
+    					$errors[$key] = '[' .$key .'] ' .$value;
+		            } // if
+		        } // if
+			} // foreach
 		} // if
     } // foreach
 
@@ -487,11 +628,12 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     } // if
 
     // insert various pieces of text
-    $xsl_params['text']['logout-all']   = getLanguageText('xsl_logout_all');
-    $xsl_params['text']['recover-pswd'] = getLanguageText('xsl_recover_pswd');
-    $xsl_params['text']['new-session']  = getLanguageText('xsl_new_session');
-    $xsl_params['text']['print']        = getLanguageText('xsl_print');
-    $xsl_params['text']['noprint']      = getLanguageText('xsl_noprint');
+    $xsl_params['text']['logout-all']        = getLanguageText('xsl_logout_all');
+    $xsl_params['text']['recover-pswd']      = getLanguageText('xsl_recover_pswd');
+    $xsl_params['text']['new-session']       = getLanguageText('xsl_new_session');
+    $xsl_params['text']['print']             = getLanguageText('xsl_print');
+    $xsl_params['text']['noprint']           = getLanguageText('xsl_noprint');
+    $xsl_params['text']['add-to-favourites'] = getLanguageText('xsl_add_to_favourites');
 
     if (file_exists('../css/xsl_params.inc')) {
         // include overrides from optional file
@@ -583,11 +725,15 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     if (isset($GLOBALS['no_script_time']) AND is_True($GLOBALS['no_script_time'])) {
         // do not add script_time to XML output
     } else {
-    	// calculate the function's elapsed time
-        list($usec, $sec) = explode(' ', microtime());
-        $script_end = (float) $sec + (float) $usec;
-        $elapsed = number_format($script_end - $_SESSION['script_start'], 5, '.', '');
-        $xsl_params['script_time'] = $elapsed;
+    	if (isset($_SESSION['script_start'])) {
+        	// calculate the function's elapsed time
+            list($usec, $sec) = explode(' ', microtime());
+            $script_end = (float) $sec + (float) $usec;
+            $elapsed = number_format($script_end - $_SESSION['script_start'], 5, '.', '');
+            $xsl_params['script_time'] = $elapsed;
+        } else {
+            $xsl_params['script_time'] = '0.0';
+        } // if
     } // if
     unset($_SESSION['script_start']);
 
@@ -710,7 +856,7 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
 	            $xsl_params['print-preview'] = 'true';
             } else {
                 // get navigation buttons from last $object
-                $dbnav =& singleton::getInstance('mnu_nav_button');
+                $dbnav =& RDCsingleton::getInstance('mnu_nav_button');
                 $nav_buttons = $dbnav->getNavButtons($task_id, $object);
                 if ($dbnav->errors) {
                     $errors = array_merge($errors, $dbnav->getErrors());
@@ -1026,7 +1172,9 @@ function setCSSfiles ($doc, $root, $css_files)
 
     // if no custom stylesheet is specified use 'style_custom.css' in local directory
     if (empty($css_files)) {
-        $css_files[] = 'style_custom.css';
+        if (file_exists('style_custom.css')) {
+        	$css_files[] = 'style_custom.css';
+        } // if
     } // if
 
     foreach ($css_files as $filenum => $filename) {
@@ -1328,7 +1476,7 @@ function setScreenStructure ($xml_doc, $root, $structure)
                         		// add this entry as an attribute to the current row
                         	    $rowocc->set_attribute($sttr, $attrvalue);
                         	} // foreach
-                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|class|display-empty)$/i', $fieldname, $regs)) {
+                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty)$/i', $fieldname, $regs)) {
                             // write these out as attributes on the current cell
                             $cell->set_attribute($regs[0], $fieldlabel);
                         } else {

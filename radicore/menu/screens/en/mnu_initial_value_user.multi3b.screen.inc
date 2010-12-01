@@ -5,10 +5,15 @@ $structure['tables']['outer'] = 'mnu_user';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => 100);
+$structure['outer']['columns'][] = array('width' => 100);
 $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
-$structure['outer']['fields'][] = array('user_name' => 'User');
+$structure['outer']['fields'][1][] = array('label' => 'User Id');
+$structure['outer']['fields'][1][] = array('field' => 'user_id');
+$structure['outer']['fields'][1][] = array('label' => 'User Name');
+$structure['outer']['fields'][1][] = array('field' => 'user_name');
 
 $structure['tables']['middle'] = 'mnu_task';
 
@@ -37,7 +42,7 @@ $structure['inner']['columns'][] = array('width' => 60);
 //$structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('field_id' => 'Field Id');
 $structure['inner']['fields'][] = array('field_desc' => 'Description');
-$structure['inner']['fields'][] = array('initial_value' => 'Initial Value', 'size' => 30);
+$structure['inner']['fields'][] = array('initial_value' => 'Initial Value', 'size' => 40);
 $structure['inner']['fields'][] = array('is_noedit' => 'No Edit?');
 
 ?>

@@ -29,13 +29,13 @@ class prod_cat_class extends Default_Table
     // check that end_date of current record is earlier than end_date of next record.
     {
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
         $end_date    = $dateobj->getInternalDate($fieldarray['end_date']);
         $next_seq_no = $fieldarray['seq_no'] + 1;
 
         $where = "(product_id='{$fieldarray['product_id']}' AND prod_cat_id='{$fieldarray['prod_cat_id']}' AND seq_no='$next_seq_no')" ;
 
-        $dbobject =& singleton::getInstance('prod_cat_class');
+        $dbobject =& RDCsingleton::getInstance('prod_cat_class');
         $dbobject->sql_select = 'end_date';
         $next_seq_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
@@ -65,14 +65,14 @@ class prod_cat_class extends Default_Table
     // check that start_date of current record is later than start_date of previous record.
     {
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         $start_date  = $dateobj->getInternalDate($fieldarray['start_date']);
         $prev_seq_no = $fieldarray['seq_no'] -1;
 
         $where = "(product_id='{$fieldarray['product_id']}' AND prod_cat_id='{$fieldarray['prod_cat_id']}' AND seq_no='$prev_seq_no')" ;
 
-        $dbobject =& singleton::getInstance('prod_cat_class');
+        $dbobject =& RDCsingleton::getInstance('prod_cat_class');
         $dbobject->sql_select = 'start_date';
         $prev_rec_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
@@ -160,7 +160,7 @@ class prod_cat_class extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);
         $end_date   = $dateobj->getInternalDate($fieldarray['end_date']);
 
@@ -193,7 +193,7 @@ class prod_cat_class extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         // set seq_no to next available number
         if (!empty($fieldarray['product_id'])
@@ -336,7 +336,7 @@ class prod_cat_class extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         $seq_no     = (int)$fieldarray['seq_no'];
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);

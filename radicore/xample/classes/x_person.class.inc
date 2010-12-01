@@ -51,6 +51,8 @@ class x_person extends Default_Table
         	unset($this->fieldspec['favourite_food']);
         } // if
 
+        //$this->fieldspec['picture']['notext'] = 'y';
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -71,8 +73,9 @@ class x_person extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
         if (!isset($fieldarray['person_name'])) {
             // merge first_name and last_name into person_name
@@ -81,6 +84,12 @@ class x_person extends Default_Table
                                            . ' '
                                            . $fieldarray['last_name'];
             } // if
+        } // if
+
+        global $mode;
+        if ($mode == 'pdf-list') {
+        	$css_array['value1'] = 'red';
+        	$css_array['value2'] = 'blue';
         } // if
 
         return $fieldarray;
@@ -109,6 +118,7 @@ class x_person extends Default_Table
             case 'delete':
                 $lock_array[] = $this->tablename;
                 $lock_array[] = 'x_person_addr';
+                $lock_array[] = 'x_pers_opt_xref';
                 break;
             default:
                 $lock_array = array();
@@ -139,7 +149,7 @@ class x_person extends Default_Table
 
         if (!array_key_exists('pers_type_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $pers_type =& singleton::getInstance('x_pers_type');
+            $pers_type =& RDCsingleton::getInstance('x_pers_type');
             $pers_type_array = $pers_type->getValRep('pers_type_id');
             $this->lookup_data['pers_type_id'] = $pers_type_array;
         } // if
@@ -332,14 +342,14 @@ class x_person extends Default_Table
     {
         $output = array();
 
-//        if (!empty($prev_row)) {
-//            $lines_left = $this->pdf->getLinesRemaining();
-//            // row has changed
-//            if (substr($prev_row['last_name'], 0, 1) != substr($curr_row['last_name'], 0, 1)) {
-//            	$this->pdf->AddPage();
-//            } // if
-//        } // if
-//
+        if (!empty($prev_row)) {
+            $lines_left = $this->pdf->getLinesRemaining();
+            if (substr($prev_row['last_name'], 0, 1) != substr($curr_row['last_name'], 0, 1)) {
+                // first character of last name has changed
+            	$this->pdf->AddPage();
+            } // if
+        } // if
+
 //        $output[0]['pers_type_desc'] = 'before ' .$curr_row['person_id'];
 
         return $output;
@@ -347,12 +357,19 @@ class x_person extends Default_Table
     } // _cm_ListView_print_before
 
     // ****************************************************************************
-    function _cm_ListView_print_after ($curr_row)
+    function _cm_ListView_print_after ($curr_row, $next_row)
     // allow extra rows to be created in List View
     {
         $output = array();
 
-//       	$output[0]['pers_type_desc'] = 'after ' .$curr_row['person_id'];
+//        $output[0]['pers_type_desc'] = 'after ' .$curr_row['person_id'];
+
+//        $lines_left = $this->pdf->getLinesRemaining();
+
+        if (substr($next_row['last_name'], 0, 1) != substr($curr_row['last_name'], 0, 1)) {
+            // first character of last name has changed
+            $output[0]['pers_type_desc'] = 'after ' .$curr_row['person_id'];
+        } // if
 
         return $output;
 
@@ -385,7 +402,7 @@ class x_person extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from PERSON_ADDR table
-                $object =& singleton::getInstance('x_person_addr');
+                $object =& RDCsingleton::getInstance('x_person_addr');
                 $where = array2where($fieldarray, $this->getPkeyNames());
                 $object->sql_orderby = 'address_no asc';
                 $outarray = $object->getData($where);
@@ -470,10 +487,11 @@ class x_person extends Default_Table
     } // _cm_output_multi
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         if ($popupname == 'x_tree_structure(popup)') {
             // structure must be of type 'ORG'
@@ -520,7 +538,7 @@ class x_person extends Default_Table
             return $fieldarray;
         } // if
 
-        $dbobject =& singleton::getInstance('x_person_addr');
+        $dbobject =& RDCsingleton::getInstance('x_person_addr');
 
         if ($fieldarray['start_date'] <> $old_data['start_date']) {
             // update start date on first address
@@ -575,7 +593,7 @@ class x_person extends Default_Table
         // no validation required if $last_addr_no = 0 or 1
         if ($last_addr_no > 1) {
             // there is more than one address, so...
-            $dbobject =& singleton::getInstance('x_person_addr');
+            $dbobject =& RDCsingleton::getInstance('x_person_addr');
 
             // compare start date with end date of first address
             $dbobject->sql_select = 'end_date';

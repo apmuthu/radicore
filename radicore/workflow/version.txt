@@ -1,1 +1,1 @@
-﻿Workflow v1.54.0
+﻿Workflow v1.59.0

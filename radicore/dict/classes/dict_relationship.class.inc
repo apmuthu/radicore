@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_relationship extends Default_Table
@@ -135,7 +135,7 @@ class dict_relationship extends Default_Table
     {
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DICT_DATABASE and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('dict_database');
+            $dbobject =& RDCsingleton::getInstance('dict_database');
             $array = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -150,7 +150,7 @@ class dict_relationship extends Default_Table
 
         if (isset($fieldarray['database_id_snr']) and isset($fieldarray['table_id_snr'])) {
             // get column details for snr table and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('dict_column');
+            $dbobject =& RDCsingleton::getInstance('dict_column');
             $array = $dbobject->getValRep('column_id', "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'");
             $array = array_merge(array('' => ' ', '#calc#' => 'CALCULATED'), $array);
             $this->lookup_data['parent_field'] = $array;
@@ -259,7 +259,7 @@ class dict_relationship extends Default_Table
         } // if
 
         if (preg_match('/(add2)/i', $pattern_id)) {
-            $where_array = where2array($where);
+            $where_array = where2array($where, false, false);
          	// remove fields included from $selection instead of $where
             if (isset($where_array['database_id_jnr'])) {
             	unset($where_array['database_id_jnr']);
@@ -304,7 +304,7 @@ class dict_relationship extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from RELATED_COLUMN table
-                $object =& singleton::getInstance('dict_related_column');
+                $object =& RDCsingleton::getInstance('dict_related_column');
                 $db_id_snr  = $fieldarray['database_id_snr'];
                 $tbl_id_snr = $fieldarray['table_id_snr'];
                 $db_id_jnr  = $fieldarray['database_id_jnr'];
@@ -331,10 +331,11 @@ class dict_relationship extends Default_Table
     } // _cm_output_multi
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         //DebugBreak();
         switch ($popupname) {
@@ -419,7 +420,7 @@ class dict_relationship extends Default_Table
         if (is_string(key($rows))) {
         	if (isset($rows['database_id_snr']) and isset($rows['table_id_snr'])) {
                 // get column details for snr table and add as a LOOKUP list
-                $dbobject =& singleton::getInstance('dict_column');
+                $dbobject =& RDCsingleton::getInstance('dict_column');
                 $array = $dbobject->getValRep('column_id', "database_id='{$rows['database_id_snr']}' AND table_id='{$rows['table_id_snr']}'");
                 $array = array_merge(array('#calc#' => 'CALCULATED'), $array);
                 $this->lookup_data['parent_field'] = $array;
@@ -439,7 +440,7 @@ class dict_relationship extends Default_Table
 
         // create initial records on DICT_RELATED_COLUMN table
         //require_once 'classes/dict_related_column.class.inc';
-        $relobj =& singleton::getInstance('dict_related_column');
+        $relobj =& RDCsingleton::getInstance('dict_related_column');
 
         $outarray = $relobj->getInitialDataMultiple($fieldarray);
         $outarray = $relobj->insertMultiple($outarray);
@@ -478,10 +479,9 @@ class dict_relationship extends Default_Table
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-        //DebugBreak();
-        if (empty($fieldarray['seq_no'])) {
-            $fieldarray['seq_no'] = 0;
-        } // if
+//        if (empty($fieldarray['seq_no'])) {
+//            $fieldarray['seq_no'] = '0';
+//        } // if
 
         return $fieldarray;
 

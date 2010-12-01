@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -65,7 +65,11 @@ require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
     // use previous instance from session data
     $dbouter = unserialize($script_vars['dbouter']);
-    // get data from previous instance
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
+    // get data from this instance
     $outer_data = $dbouter->getFieldArray();
     if (!is_string(key($outer_data))) {
         // indexed by row, so use first row only
@@ -76,6 +80,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
+    $dbouter->zone                      = 'outer';
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -112,11 +117,16 @@ require_once "classes/$inner_table.class.inc";
 if (isset($script_vars['dbinner'])) {
     // use previous instance from session data
     $dbinner = unserialize($script_vars['dbinner']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbinner->restart($return_from, $return_action);
+    } // if
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
+    $dbinner->zone                      = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -158,7 +168,12 @@ if (isset($scrolling)) {
     } else {
         // use previous values from scrolling array
         $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+            // set index number of item to be read from current $where list
+            $dbouter->setPageNo($_GET['item']);
+        } else {
+            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        } // if
     } // if
 } // if
 if (empty($where)) {
@@ -172,11 +187,6 @@ if (empty($where)) {
         // 'No parent has been selected yet.'
         scriptPrevious(getLanguageText('sys0082'));
     } // if
-} // if
-
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbouter->setPageNo($_GET['item']);
 } // if
 
 if (isset($_POST['reset'])) {
@@ -252,12 +262,12 @@ if (isset($_GET['pagesize'])) {
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
     $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
-    $dbinner->setOrderBy($string);
+    $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
 } // if
 
 // load optional criteria from search screen
 if (isset($search)) {
-    $dbinner->setSqlSearch($search);
+    $dbinner->setSqlSearch($search, true);
 } // if
 
 if (isset($instruction)) {
@@ -269,9 +279,6 @@ if (isset($instruction)) {
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
 $inner_where = array2where($outer_data, $pkeynames, $dbouter);
 
-// load in current data from $outer in case it is needed
-$dbinner->setFieldArray($outer_data);
-
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
     $dbinner->setPageNo($_GET['page']);
@@ -282,8 +289,10 @@ if (isset($_POST['reset'])) {
     $dbinner->reset($inner_where);
 } // if
 
-// get data from the database
 if (!empty($outer_data)) {
+    // load in current data from $outer in case it is needed
+    $dbinner->setFieldArray($outer_data);
+    // get data from the database
 	$inner_data = $dbinner->getData($inner_where);
 
 	if ($dbinner->tablename == $dbouter->alt_language_table) {
@@ -342,16 +351,17 @@ $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
-// save these variables for later in the same session
-$script_vars['where']     = unqualifyWhere($where);
-$script_vars['dbouter']   = serialize($dbouter);
-$script_vars['dbinner']   = serialize($dbinner);
-$script_vars['scrolling'] = $scrolling;
-$script_vars = updateScriptVars ($script_vars);
-
 // get sort details
 $orderby     = $dbinner->getOrderBy();
 $orderby_seq = $dbinner->getOrderBySeq($orderby);
+
+// save these variables for later in the same session
+$script_vars['where']      = unqualifyWhere($where);
+$script_vars['dbouter']    = serialize($dbouter);
+$script_vars['dbinner']    = serialize($dbinner);
+$script_vars['scrolling']  = $scrolling;
+$script_vars['pagination'] = $pagination;
+$script_vars = updateScriptVars ($script_vars);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

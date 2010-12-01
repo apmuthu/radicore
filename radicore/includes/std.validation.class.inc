@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -55,7 +55,7 @@ class validation_class
         	// 'custom validation - Class X does not exist'
         	$errors[$fieldname] = getLanguageText('sys0158', $class);
         } // if
-        $object =& singleton::getInstance($class);
+        $object =& RDCsingleton::getInstance($class);
 
         if (!method_exists($object, $method)) {
         	// 'custom validation - Method X does not exist'
@@ -108,7 +108,7 @@ class validation_class
         // find user-friendly version of $fieldname
         $translated_fieldname = getLanguageText($fieldname);
 
-        $this->dateobj =& singleton::getInstance('date_class');
+        $this->dateobj =& RDCsingleton::getInstance('date_class');
 
         if ($fieldspec['type'] == 'enum') {
             // get enum array for this field
@@ -123,6 +123,11 @@ class validation_class
         if (preg_match('/(set|array|varray)/i',$fieldspec['type'])) {
             // convert $fieldvalue array into a string with comma separator
             if (is_array($fieldvalue)) {
+                foreach ($fieldvalue as $key => $value) {
+                	if (empty($value)) {
+                		unset($fieldvalue[$key]);
+                	} // if
+                } // foreach
             	$fieldvalue = implode($fieldvalue, ',');
             } // if
         } // if
@@ -134,7 +139,7 @@ class validation_class
             // value is empty, but is there a default which can be inserted?
             if ($fieldname == 'rdcaccount_id') {
             	// this table is split by account, so insert user's account_id
-            	if ($_SESSION['rdcaccount_id'] > 1) {
+            	if (isset($_SESSION['rdcaccount_id']) AND $_SESSION['rdcaccount_id'] > 1) {
             	    $fieldvalue = $_SESSION['rdcaccount_id'];
             	} elseif ($this->caller->tablename == 'mnu_account') {
             	    // value will be generated automatically
@@ -214,7 +219,9 @@ class validation_class
                 	} // if
                 } // if
                 if (strlen($fieldvalue) > $size) {
-                    if (function_exists('mb_strlen')) {
+                    if (preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type']) AND preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
+                        // assume value is in format 'field+1', so let it through
+                    } elseif (function_exists('mb_strlen')) {
                         $encoding = mb_detect_encoding($fieldvalue);
                         if (mb_strlen($fieldvalue, $encoding) > $size) {
                         	// '$fieldname cannot be > $size characters
@@ -323,6 +330,9 @@ class validation_class
 
                 break;
 
+            case 'blob':
+                break;
+
             case 'date':
                 // value must be a date
                 if (!$internaldate = $this->dateobj->getInternalDate($fieldvalue)) {
@@ -405,6 +415,11 @@ class validation_class
     function validateNumber ($field, $value, $spec)
     // if $spec identifies $field as a number then check that $value is within range.
     {
+        if (preg_match("/^$field"."[+-][1-9]+/i", $value)) {
+            // assume value is in format 'field+1', so let it through
+            return $value;
+        } // if
+
         // check if field type = integer (whole numbers only)
         $pattern = '/(int1|tinyint|int2|smallint|int3|mediumint|int4|integer|int8|bigint|int)/i';
         if (preg_match($pattern, $spec['type'], $match)) {
@@ -603,7 +618,7 @@ class validation_class
                 $value = $this->validateField($field, $value, $fieldspec[$field]);
                 // transfer to array which will be passed to the database
                 // (allow null values as field may have been cleared)
-                if (strlen($value) > 0) {
+                if (strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
                     $updatearray[$field] = $value;
                 } else {
                     $updatearray[$field] = null;

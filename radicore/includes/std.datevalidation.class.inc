@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
@@ -492,7 +492,7 @@ class date_class {
         $gregorian = JDtoGregorian($julian);
 
         // split date into its component parts
-        list ($month, $day, $year) = split ('[/]', $gregorian);
+        list ($month, $day, $year) = preg_split ('[/]', $gregorian);
 
         // convert back into standard format
         $result = $this->getInternaldate("$day/$month/$year");

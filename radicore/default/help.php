@@ -7,7 +7,7 @@
 
 if ($_SERVER['SERVER_NAME'] == 'localhost') {
    // this is for my PC, not for my web host
-   $root = "e:/www.ajm.net/lypha";
+   $root = "e:/www.tonymarston.net/lypha";
 } // if
 
 require 'std.help.inc';     // activate page controller

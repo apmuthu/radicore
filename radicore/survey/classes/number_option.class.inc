@@ -47,7 +47,7 @@ class number_option extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $dbobject =& singleton::getInstance('survey_question');
+        $dbobject =& RDCsingleton::getInstance('survey_question');
     	$data  = $dbobject->getData_raw($where);
 
         if ($data[0]['answer_type'] != 'N') {
@@ -74,7 +74,7 @@ class number_option extends Default_Table
     // perform custom processing before database record is inserted.
     {
         if (!isset($fieldarray['answer_type'])) {
-        	$dbobject =& singleton::getInstance('survey_question');
+        	$dbobject =& RDCsingleton::getInstance('survey_question');
         	$survey_id   = $fieldarray['survey_id'];
         	$section_id  = $fieldarray['section_id'];
         	$question_id = $fieldarray['question_id'];

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update2.inc
@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // use them to update the database accordingly
     $dbobject->startTransaction();
 
-    $messages = $dbobject->updateSelection($selection, $where);
+    $messages[] = $dbobject->updateSelection($selection, $where);
+    $messages = array_merge($messages, $dbobject->getMessages());
     $errors   = $dbobject->getErrors();
     if (!$errors) {
     	$errors = $dbobject->commit();
@@ -77,8 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         } // if
     } // if
 
+    if (empty($errors)) {
+    	$action = 'OK';
+    } else {
+        $action = null;
+    } // if
+
     // return to previous screen
-    $batch_errors = scriptPrevious($errors, $messages);
+    $batch_errors = scriptPrevious($errors, $messages, $action);
     return $batch_errors;
 } // if
 

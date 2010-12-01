@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // Author: Kyle Brost <http://www.softelephant.com>
 // *****************************************************************************
 
@@ -90,7 +90,7 @@ if (isset($mode) and $mode == 'inline') {
 } else {
     header("Content-Disposition: attachment; filename=\"" .basename($file) ."\"");
 } // if
-header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+header('Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0');
 header('Pragma: public');
 while (!feof($handle)) {
     echo fgets($handle, 8192);

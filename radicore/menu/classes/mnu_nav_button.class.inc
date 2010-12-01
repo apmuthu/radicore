@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_nav_button extends Default_Table
@@ -35,7 +35,7 @@ class mnu_nav_button extends Default_Table
         // the current screen's navigation bar.
 
         // first we must obtain the user's current security setting
-        $dbrole =& singleton::getInstance('mnu_role');
+        $dbrole =& RDCsingleton::getInstance('mnu_role');
         $dbrole_data = $dbrole->getRole();
         if ($dbrole->errors) {
         	$this->errors = $dbrole->errors;
@@ -52,7 +52,7 @@ class mnu_nav_button extends Default_Table
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
-            $this->sql_where  = "(x.is_disabled='N') ";
+            $where = "x.is_disabled='N'";
         } else {
             // if global_access is OFF then a button cannot be loaded unless it has an
             // entry on MNU_ROLE_TASK for the current role
@@ -62,8 +62,7 @@ class mnu_nav_button extends Default_Table
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) '
                               . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_nav_button.task_id_jnr AND mnu_role_task.role_id='$role_id')";
-            $this->sql_where  = "(x.is_disabled='N') "
-                              . 'AND (mnu_role_task.role_id IS NOT NULL)';
+            $where = "x.is_disabled='N' AND (mnu_role_task.role_id IS NOT NULL)";
         } // if
 
         // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
@@ -76,7 +75,9 @@ class mnu_nav_button extends Default_Table
 
         $this->sql_orderby = 'mnu_nav_button.sort_seq';
 
-        $buttons = $this->getData_raw("mnu_task.task_id='$task_id'");
+        $this->sql_select .= ', mnu_nav_button.sort_seq';  // required by postgres
+
+        $buttons = $this->getData_raw("$where AND mnu_task.task_id='$task_id'");
 
         if (count($buttons) > 0) {
             if (!empty($object->sql_search_table)) {
@@ -222,7 +223,7 @@ class mnu_nav_button extends Default_Table
         if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
             $task_id_jnr = $fieldarray['task_id_jnr'];
             // get default button text from mnu_task table
-            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject =& RDCsingleton::getInstance('mnu_task');
             $dbobject->sql_select = 'button_text,task_type,pattern_id';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
             $fieldarray = array_merge($fieldarray, $data[0]);
@@ -230,7 +231,7 @@ class mnu_nav_button extends Default_Table
             if (!array_key_exists('context_preselect', $fieldarray)) {
                 // get default context_preselect from mnu_pattern table
                 $pattern_id = $fieldarray['pattern_id'];
-                $dbobject =& singleton::getInstance('mnu_pattern');
+                $dbobject =& RDCsingleton::getInstance('mnu_pattern');
                 $dbobject->sql_select = 'context_preselect';
                 $data = $dbobject->getData("pattern_id='$pattern_id'");
                 $fieldarray = array_merge($fieldarray, $data[0]);
@@ -260,10 +261,11 @@ class mnu_nav_button extends Default_Table
     } // _cm_pre_updateLinkData
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         // clear out the contents of $where
         $where = '';

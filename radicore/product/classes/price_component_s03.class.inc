@@ -16,7 +16,7 @@ class price_component_s03 extends price_component
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         $price_component_id = $fieldarray['price_component_id'];
         $price_type         = $fieldarray['price_type'];
@@ -31,7 +31,7 @@ class price_component_s03 extends price_component
             $where .= " AND prod_feature_id='$prod_feature_id'";
         } // if
 
-        $dbobject =& singleton::getInstance('price_component');
+        $dbobject =& RDCsingleton::getInstance('price_component');
 
         $dbobject->sql_select      = 'price_component_id,end_date';
         $dbobject->rows_per_page   = 1;
@@ -66,7 +66,7 @@ class price_component_s03 extends price_component
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         $price_component_id = $fieldarray['price_component_id'];
         $price_type         = $fieldarray['price_type'];
@@ -81,7 +81,7 @@ class price_component_s03 extends price_component
             $where .= " AND prod_feature_id='$prod_feature_id'";
         } // if
 
-        $dbobject =& singleton::getInstance('price_component');
+        $dbobject =& RDCsingleton::getInstance('price_component');
 
         $dbobject->sql_select      = 'price_component_id,start_date';
         $dbobject->rows_per_page   = 1;

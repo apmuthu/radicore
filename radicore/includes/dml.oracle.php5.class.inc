@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -23,6 +23,7 @@ class oracle
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
+    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
     var $row_locks_supp;        // supplemental lock type
@@ -30,7 +31,7 @@ class oracle
     var $stmt;                  // sql statement resource
     var $table_locks;           // array of tables to be locked
     var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of canidate keys
+    var $unique_keys = array(); // array of candidate keys
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -50,44 +51,18 @@ class oracle
     {
         $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        if (!class_exists('audit_tbl')) {
-    	    // obtain definition of the audit_tbl class
-    		require_once 'classes/audit_tbl.class.inc';
-    	} // if
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            if (!class_exists('audit_tbl')) {
+        	    // obtain definition of the audit_tbl class
+        		require_once 'classes/audit_tbl.class.inc';
+        	} // if
+        } // if
 
         return $result;
 
     } // oracle
-
-    // ****************************************************************************
-    function adjustConcat ($input)
-    // replace 'CONCAT(A, B, C)' with 'A || B || C' as Oracle will only accept two
-    // arguments with the CONCAT function, but any number with '||'
-    {
-        // look for something between 'CONCAT(' and ')'
-        if ($count = preg_match_all("/(?<=concat\()[a-z_\., ']*/i", $input, $regs)) {
-        	foreach ($regs[0] as $string1) {
-        		$array = array();
-        		$pattern  = '/';          // start pattern
-        		$pattern .= "'.+'";       // any string enclosed in single quotes
-        		$pattern .= '|';          // or
-        		$pattern .= '\w+\.\w+';   // word dot word
-        		$pattern .= '|';          // or
-        		$pattern .= '\w+';        // word
-        		$pattern .= '/';          // end pattern
-        		$count = preg_match_all($pattern, $string1, $regs2);
-        		foreach ($regs2[0] as $value) {
-        		    // trim leading and trailing spaces from each entry
-        			$array[] = trim($value);
-        		} // foreach
-        		$string2 = implode('||', $array);     // rejoin with '||' as separator
-        		$input   = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $input);
-        	} // foreach;
-        } // if
-
-        return $input;
-
-    } // adjustConcat
 
     // ****************************************************************************
     function adjustData ($string_in)
@@ -157,6 +132,11 @@ class oracle
     // become the WHERE clause of the outer query.
     // This is because the HAVING clause cannot reference an expression by its alias name.
     {
+        // Replace TRUE/FALSE to 1/0.
+        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
+        $replace = array( '=1',           '=0');
+        $having_str = preg_replace($search, $replace, $having_str);
+
         // put current query into a subqery
         $subquery = "SELECT $select_str FROM $from_str $where_str $group_str";
 
@@ -187,6 +167,43 @@ class oracle
     } // adjustHaving
 
     // ****************************************************************************
+    function adjustSelect ($input)
+    // adjust for differences between MySQL and Oracle.
+    {
+        $output = $input;
+
+        // replace 'CONCAT(A, B, C)' with 'A || B || C' as Oracle will only accept two
+        // arguments with the CONCAT function, but any number with '||'.
+        if ($count = preg_match_all("/(?<=concat\()[a-z_\., ']*/i", $output, $regs)) {
+        	foreach ($regs[0] as $string1) {
+        		$array = array();
+        		$pattern  = '/';          // start pattern
+        		$pattern .= "'.+'";       // any string enclosed in single quotes
+        		$pattern .= '|';          // or
+        		$pattern .= '\w+\.\w+';   // word dot word
+        		$pattern .= '|';          // or
+        		$pattern .= '\w+';        // word
+        		$pattern .= '/';          // end pattern
+        		$count = preg_match_all($pattern, $string1, $regs2);
+        		foreach ($regs2[0] as $value) {
+        		    // trim leading and trailing spaces from each entry
+        			$array[] = trim($value);
+        		} // foreach
+        		$string2 = implode('||', $array);     // rejoin with '||' as separator
+        		$output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
+        	} // foreach;
+        } // if
+
+        // Replace TRUE/FALSE in CASE statements to 1/0.
+        $search  = array('/THEN TRUE/i', '/ELSE TRUE/i', '/THEN FALSE/i', '/ELSE FALSE/i');
+        $replace = array( 'THEN 1',       'ELSE 1',       'THEN 0',        'ELSE 0');
+        $output  = preg_replace($search, $replace, $output);
+
+        return $output;
+
+    } // adjustSelect
+
+    // ****************************************************************************
     function adjustSqlFrom ($string_in)
     // adjust SQL 'from' string just for Oracle
     {
@@ -210,12 +227,7 @@ class oracle
 
     // ****************************************************************************
     function adjustWhere ($string_in)
-    // modify string which may have been altered by addslashes() as Oracle does not
-    // use backslash as its escape character. If a string contains a single quote
-    // it must be escaped with another single quote, so ...
-    // - replace 'backslash+char' with 'char' (i.e. remove the backslash)
-    // - replace [\'] (backslash+quote) with [''] (quote+quote)
-    // - replace [\\\'] with ['''']
+    // adjust for differences between MySQL and Oracle.
     {
         $string_out = null;
 
@@ -231,6 +243,84 @@ class oracle
             $string_out = $string_in;
         } // if
 
+        $modified = false;
+
+        $array = where2indexedArray($string_out);   // convert string into indexed array
+
+        $pattern = <<< END_OF_REGEX
+/
+^               # begins with
+(               # start choice
+ \) OR \(       # ') OR ('
+ |
+ \) OR'         # ') OR'
+ |
+ OR \(          # 'OR ('
+ |
+ OR             # 'OR'
+ |
+ \) AND \(      # ') AND ('
+ |
+ \) AND         # ') AND'
+ |
+ AND \(         # 'AND ('
+ |
+ AND            # 'AND'
+ |
+ (\()+          # one or more '('
+ |
+ (\))+          # one or more ')'
+)               # end choice
+$               # ends with
+/xi
+END_OF_REGEX;
+
+        foreach ($array as $key => $value) {
+            if (preg_match($pattern, $value, $regs)) {
+            	// ignore this
+            } else {
+                list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
+                $fieldvalue = trim($fieldvalue);
+                if (preg_match('/date_sub/i', $fieldname)) {
+                    // contains 'date_sub(field1, field2)', so extract 'field1, field2'
+                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
+                    list($field1, $field2) = split(',', $regs[0]);
+                    // replace with 'field1 - field2'
+                    $fieldname = trim($field1).' - '.trim($field2);
+//                    if (substr($fieldvalue, 0, 1) == "'") {
+//                    	// this is a quoted string, so format it into a date
+//                    	$fieldvalue = "TO_DATE($fieldvalue, 'YYYY-MM-DD HH24:MI:SS')";
+//                    } // if
+                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+                    $modified = true;
+
+            	} elseif (preg_match('/date_add/i', $fieldname)) {
+                    // contains 'date_add(field1, field2)', so extract 'field1, field2'
+                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
+                    list($field1, $field2) = split(',', $regs[0]);
+                    // replace with 'field1 - field2'
+                    $fieldname = trim($field1).' + '.trim($field2);
+//                    if (substr($fieldvalue, 0, 1) == "'") {
+//                    	// this is a quoted string, so format it into a date
+//                    	$fieldvalue = "TO_DATE($fieldvalue, 'YYYY-MM-DD HH24:MI:SS')";
+//                    } // if
+                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+                    $modified = true;
+
+            	} // if
+            } // if
+        } // foreach
+
+        if ($modified) {
+        	$string_out = implode(' ', $array);
+        } // if
+
+        // modify string which may have been altered by addslashes() as Oracle does not
+        // use backslash as its escape character. If a string contains a single quote
+        // it must be escaped with another single quote, so ...
+        // - replace 'backslash+char' with 'char' (i.e. remove the backslash)
+        // - replace [\'] (backslash+quote) with [''] (quote+quote)
+        // - replace [\\\'] with ['''']
         $search  = array('\\\\\\\'', '\\\''); // [\\\'], [\']
         $replace = array('\'\'\'\'', '\'\''); // [''''], ['']
         $string_out = str_replace($search, $replace, $string_out);
@@ -240,10 +330,15 @@ class oracle
         while (preg_match($pattern, $string_out, $regs, PREG_OFFSET_CAPTURE, $offset)) {
             $offset    = $regs[0][1];
             $remainder = strlen($string_out) - $offset;
-            // remove the backslash and keep all remainibng characters
+            // remove the backslash and keep all remaining characters
             $string_out = substr_replace($string_out, '', $offset-1, -$remainder);
             $offset ++;
         } // while
+
+        // Replace TRUE/FALSE to 1/0.
+        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
+        $replace = array( '=1',           '=0');
+        $string_out = preg_replace($search, $replace, $string_out);
 
         return $string_out;
 
@@ -298,6 +393,17 @@ class oracle
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $result = oci_commit($this->dbconnect) or trigger_error($this, E_USER_ERROR);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, null, 'COMMIT');
+        $this->query = '';
+
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -378,8 +484,8 @@ class oracle
         if (empty($where)) return;    // nothing to delete, so exit
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $where";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
@@ -393,8 +499,8 @@ class oracle
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -414,8 +520,8 @@ class oracle
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $selection";
+        $count = $this->getCount($schema, $tablename, $query);
 
         $this->query = "DELETE FROM $tablename WHERE $selection";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
@@ -428,8 +534,8 @@ class oracle
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -545,7 +651,7 @@ class oracle
             // the default is all fields
             $select_str = '*';
         } else {
-            $select_str = $this->adjustConcat($this->sql_select);
+            $select_str = $this->adjustSelect($this->sql_select);
         } // if
 
         // use specified FROM parameters, or default to current table name
@@ -625,8 +731,8 @@ class oracle
 
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
-            $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-            $this->numrows = $this->getCount($schema, $tablename, $this->query);
+            $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+            $this->numrows = $this->getCount($schema, $tablename, $query);
 
             if ($this->numrows <= 0) {
                 $this->pageno = 0;
@@ -727,7 +833,7 @@ class oracle
             // the default is all fields
             $select_str = '*';
         } else {
-            $select_str = $this->adjustConcat($this->sql_select);
+            $select_str = $this->adjustSelect($this->sql_select);
         } // if
 
         // use specified FROM parameters, or default to current table name
@@ -770,8 +876,8 @@ class oracle
         } // if
 
         // get number of rows which match this selection criteria
-        $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
@@ -814,6 +920,9 @@ class oracle
         if (isset($this->stmt)) {
         	$array = oci_error($this->stmt);
             $errno = $array['code'];
+            if (!empty($array['message']) AND empty($this->error_string)) {
+            	$this->error_string = $array['message'];
+            } // if
         } else {
             $errno = null;
         } // if
@@ -912,22 +1021,24 @@ class oracle
         foreach ($fieldspec as $field => $spec) {
             // look for fields with 'autoinsert' option set
             if (array_key_exists('autoinsert', $spec)) {
-				switch ($spec['type']){
-					case 'datetime':
-						$fieldarray[$field] = getTimeStamp();
-						break;
-					case 'date':
-						$fieldarray[$field] = getTimeStamp('date');
-						break;
-					case 'time':
-						$fieldarray[$field] = getTimeStamp('time');
-					    break;
-					case 'string':
-						$fieldarray[$field] = $_SESSION['logon_user_id'];
-						break;
-					default:
-						// do nothing
-				} // switch
+                if (empty($fieldarray[$field])) {
+    				switch ($spec['type']){
+    					case 'datetime':
+    						$fieldarray[$field] = getTimeStamp();
+    						break;
+    					case 'date':
+    						$fieldarray[$field] = getTimeStamp('date');
+    						break;
+    					case 'time':
+    						$fieldarray[$field] = getTimeStamp('time');
+    					    break;
+    					case 'string':
+    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+    						break;
+    					default:
+    						// do nothing
+    				} // switch
+                } // if
             } else {
                 if ($spec['type'] == 'string' AND $spec['size'] > 4000) {
                     // special processing required for LOBs (large objects)
@@ -944,22 +1055,23 @@ class oracle
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
+			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
 			    	// value has been supplied manually, so do not auto-generate
 			    } else {
-    			    $auto_increment = $pkey ;                // save name of related sequence
-    				unset($fieldarray[$auto_increment]);     // remove from data array
+    			    $auto_increment = $pkey;                // save name of related sequence
+    				unset($fieldarray[$auto_increment]);    // remove from data array
 			    } // if
 			} // if
 		} // foreach
 
-		if (empty($auto_increment)) {
+		if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
 	        // build 'where' string using values for primary key
 	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
 	        // find out if a record with this primary key already exists
-	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-	        $count = $this->getCount($schema, $tablename, $this->query);
+	        $query = "SELECT count(*) FROM $tablename WHERE $where";
+	        $count = $this->getCount($schema, $tablename, $query);
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
@@ -970,6 +1082,7 @@ class oracle
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
     	            } // foreach
+    	            $this->query = $query;  // save this in case trigger_error() is called
 	            } // if
 	            return $fieldarray;
 	        } // if
@@ -981,14 +1094,20 @@ class oracle
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
                 $where = $this->buildKeyString ($fieldarray, $key);
-                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-                $count = $this->getCount($schema, $tablename, $this->query);
+                $query = "SELECT count(*) FROM $tablename WHERE $where";
+                $count = $this->getCount($schema, $tablename, $query);
                 if ($count <> 0) {
-                    // set error message for each field within this key
-                    foreach ($key as $fieldname) {
-                        $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
-                    } // foreach
-                    return $fieldarray;
+                    if (is_True($this->no_duplicate_error)) {
+    	                // exit without setting an error
+    	                return $fieldarray;
+    	            } else {
+                        // set error message for each field within this key
+                        foreach ($key as $fieldname) {
+                            $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
+                        } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
+                        return $fieldarray;
+    	            } // if
                 } // if
             } // foreach
         } // if
@@ -1006,12 +1125,13 @@ class oracle
             	$cols .= "$item, ";
             	$vals .= "EMPTY_CLOB(), ";
             } else {
-                if (isset($value)) {
-                    $cols .= "$item, ";
-                    $vals .= "'" .$this->adjustData($value) ."', ";
-                } else {
+                if (!array_key_exists('required',$fieldspec[$item])
+                AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } else {
+                    $cols .= "$item, ";
+                    $vals .= "'" .$this->adjustData($value) ."', ";
                 } // if
             } // if
         } // foreach
@@ -1036,7 +1156,33 @@ class oracle
             } // foreach
         } // if
 
-        $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
+        $repeat       = false;
+        $repeat_count = 0;
+        do {
+            //$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
+            $result = oci_execute($this->stmt, OCI_DEFAULT);
+            if ($result == false) {
+            	$error_array = oci_error($this->stmt);
+            	if ($error_array['code'] == 1 AND !empty($this->retry_on_duplicate_key)) {
+            	    // increment the specified field and try again
+                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    $repeat = true;
+                    $repeat_count++;
+                    if ($repeat_count > 5) {
+                        // too many retries, so turn this feature off
+                    	$this->retry_on_duplicate_key = null;
+                    } // if
+            	} elseif ($error_array['code'] == 1 AND is_True($this->no_duplicate_error)) {
+            	    // this is a duplicate, but don't fail
+                    $this->numrows = 0;
+            	} else {
+            	    trigger_error($this, E_USER_ERROR);
+                } // if
+            } else {
+                $repeat = false;
+                $this->numrows = 1;  // record has been inserted
+            } // if
+        } while ($repeat == true);
 
         if (!empty($lob_names)) {
             foreach ($lob_names as $lob_name => $lob_value) {
@@ -1062,14 +1208,14 @@ class oracle
             logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
         } // if
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->numrows > 0) {
+            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+                // add record details to audit database
+                $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
+                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            } // if
         } // if
-
-        $this->numrows = 1;  // record has been inserted
 
         return $fieldarray;
 
@@ -1092,8 +1238,12 @@ class oracle
         logSqlQuery ($schema, null, 'ROLLBACK');
         $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
-        $result = $auditobj->close();
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -1240,13 +1390,14 @@ class oracle
                 $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
-                    $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
-                    $count = $this->getCount($schema, $tablename, $this->query);
+                    $query = "SELECT count(*) FROM $tablename WHERE $where2";
+                    $count = $this->getCount($schema, $tablename, $query);
                     if ($count <> 0) {
                         // set error message for each field within this key
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
                 } // if
@@ -1272,16 +1423,24 @@ class oracle
                 if (array_key_exists('autoupdate', $spec)) {
                     switch ($spec['type']){
     					case 'datetime':
-    						$fieldarray[$field] = getTimeStamp();
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp();
+    					    } // if
     						break;
     					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp('date');
+    					    } // if
     						break;
     					case 'time':
-						    $fieldarray[$field] = getTimeStamp('time');
+    					    if (empty($fieldarray[$field])) {
+						        $fieldarray[$field] = getTimeStamp('time');
+    					    } // if
 						    break;
 					    case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+					        if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+					        } // if
     						break;
     					case 'integer':
 					        $fieldarray[$field] = $oldarray[$field] +1;
@@ -1361,20 +1520,20 @@ class oracle
         } // if
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $where";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
 
-        return;
+        return $fieldarray;
 
     } // updateRecord
 
@@ -1388,8 +1547,8 @@ class oracle
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $selection";
+        $count = $this->getCount($schema, $tablename, $query);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
@@ -1403,8 +1562,8 @@ class oracle
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($count > 0) {
-            if ($this->audit_logging) {
-                $auditobj =& singleton::getInstance('audit_tbl');
+            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
                 // add record details to audit database
                 $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
                 $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1571,8 +1730,8 @@ class oracle
         $tablename = strtoupper($tablename);
 
         // build the query string and run it
-        $this->query = "SELECT count(*) FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
-        $count = $this->getcount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
+        $count = $this->getcount($schema, $tablename, $query);
 
         $this->query = "SELECT * FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
         $statement  = oci_parse($this->dbconnect, $this->query);
@@ -1684,8 +1843,8 @@ class oracle
                         // find out if the primary key is to be filled from a sequence
                         if (count($pkey) == 1) {
                             if ($columnarray['column_id'] == $pkey[0] AND $type = 'number') {
-                                $this->query = "SELECT count(*) FROM sys.all_sequences WHERE sequence_owner='$schema' AND sequence_name='{$tablename}_SEQ'";
-                                $count = $this->getcount($schema, $tablename, $this->query);
+                                $query = "SELECT count(*) FROM sys.all_sequences WHERE sequence_owner='$schema' AND sequence_name='{$tablename}_SEQ'";
+                                $count = $this->getcount($schema, $tablename, $query);
                             	if ($count > 0) {
                             		$columnarray['col_auto_increment']  = 'Y';
                             	} // if
@@ -1822,7 +1981,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         oci_free_statement($statement);
 
@@ -1855,7 +2014,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         oci_free_statement($statement);
 
@@ -1901,7 +2060,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         oci_free_statement($statement);
 

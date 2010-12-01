@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_case extends Default_Table
@@ -54,7 +54,7 @@ class wf_case extends Default_Table
 
         if (!array_key_exists('workflow_id', $this->lookup_data)) {
             // get list of workflow names
-            $dbobject =& singleton::getInstance('wf_workflow');
+            $dbobject =& RDCsingleton::getInstance('wf_workflow');
             $array = $dbobject->getValRep('workflow_id');
             $this->lookup_data['workflow_id'] = $array;
         } // if
@@ -111,7 +111,7 @@ class wf_case extends Default_Table
         // a new workflow instance has started, so ....
         // find the place which is the start point
         require_once 'classes/wf_place.class.inc' ;
-        $dbplace =& singleton::getInstance('wf_place');
+        $dbplace =& RDCsingleton::getInstance('wf_place');
 
         $dbplace->sql_select = "workflow_id, place_id, place_type";
         $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND wf_place.place_type='1'");
@@ -128,7 +128,7 @@ class wf_case extends Default_Table
 
         // create a token for the start point
         require_once 'classes/wf_token.class.inc';
-        $dbtoken =& singleton::getInstance('wf_token');
+        $dbtoken =& RDCsingleton::getInstance('wf_token');
         $token_array['workflow_id'] = $fieldarray['workflow_id'];
         $token_array['place_id']    = $place_data[0]['place_id'];
         $token_array['place_type']  = $place_data[0]['place_type'];

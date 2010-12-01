@@ -20,8 +20,8 @@ $structure['title'][] = array('text' => '- Contents of DICT_RELATIONSHIP table -
                               'newline' => 'y');
 
 // set column widths
-$structure['columns'][] = array('width' => 40, 'align' => 'right');
-$structure['columns'][] = array('width' => 150, 'align' => 'left');
+$structure['columns'][] = array('width' => 40, 'halign' => 'right');
+$structure['columns'][] = array('width' => 150, 'halign' => 'left');
 
 // identify labels and data to be output
 $structure['body']['fields'][1][] = array('label' => 'Database Id (snr)', 'width' => 40);
@@ -59,19 +59,19 @@ $structure['body']['fields'][36][] = array('label' => 'Revised By', 'width' => 4
 $structure['body']['fields'][36][] = array('field' => 'revised_user', 'width' => 55);
 
 // label for related columns
-$structure['multi1']['fields'][1][] = array('label' => 'Seq', 'width' => 10, 'align' => 'center');
-$structure['multi1']['fields'][1][] = array('label' => 'Column Id (snr)', 'width' => 85, 'align' => 'center');
-$structure['multi1']['fields'][1][] = array('label' => 'Column Id (jnr)', 'width' => 95, 'align' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Seq', 'width' => 10, 'halign' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Column Id (snr)', 'width' => 85, 'halign' => 'center');
+$structure['multi1']['fields'][1][] = array('label' => 'Column Id (jnr)', 'width' => 95, 'halign' => 'center');
 
 // data for related columns
-$structure['multi2']['fields'][1][] = array('field' => 'seq_in_index', 'width' => 10, 'align' => 'center');
+$structure['multi2']['fields'][1][] = array('field' => 'seq_in_index', 'width' => 10, 'halign' => 'center');
 $structure['multi2']['fields'][1][] = array('field' => 'column_id_snr', 'width' => 85);
 $structure['multi2']['fields'][1][] = array('field' => 'column_id_jnr', 'width' => 95);
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

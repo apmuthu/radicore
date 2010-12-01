@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_workitem extends Default_Table
@@ -58,13 +58,13 @@ class wf_workitem extends Default_Table
         } // if
 
         if (!array_key_exists('role_id', $this->lookup_data)) {
-            $dbobject =& singleton::getInstance('mnu_role');
+            $dbobject =& RDCsingleton::getInstance('mnu_role');
             $role_array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $role_array;
         } // if
 
         if (!array_key_exists('user_id', $this->lookup_data)) {
-            $dbobject =& singleton::getInstance('mnu_user');
+            $dbobject =& RDCsingleton::getInstance('mnu_user');
             $role_array = $dbobject->getValRep('user_id');
             $this->lookup_data['user_id'] = $role_array;
         } // if
@@ -74,7 +74,7 @@ class wf_workitem extends Default_Table
             if (!class_exists('wf_workflow', false)) {
             	require_once 'classes/wf_workflow.class.inc';
             } // if
-            $dbobject =& singleton::getInstance('wf_workflow');
+            $dbobject =& RDCsingleton::getInstance('wf_workflow');
             $array = $dbobject->getValRep('workflow_id');
             $this->lookup_data['workflow_id'] = $array;
         } // if
@@ -82,7 +82,7 @@ class wf_workitem extends Default_Table
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('wf_transition');
+            $dbobject =& RDCsingleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
             // set field control to dropdown
@@ -103,7 +103,7 @@ class wf_workitem extends Default_Table
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
             require_once 'classes/wf_case.class.inc';
-            $dbobject =& singleton::getInstance('wf_case');
+            $dbobject =& RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
             // add to current data
@@ -156,7 +156,7 @@ class wf_workitem extends Default_Table
 
         if ($item == 'transition_trigger') {
             require_once 'classes/wf_transition.class.inc';
-            $dbtransition =& singleton::getInstance('wf_transition');
+            $dbtransition =& RDCsingleton::getInstance('wf_transition');
             $array = $dbtransition->getValRep($item);
             return $array;
         } // if
@@ -186,7 +186,7 @@ class wf_workitem extends Default_Table
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
-            $this->sql_select = 'user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name, task_desc';
+            $this->sql_select = 'rdcaccount_id, user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, transition_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name, task_desc';
             $this->sql_from   = 'wf_workitem '
                               . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
                               . 'LEFT JOIN ' . $dbprefix . 'menu.mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';

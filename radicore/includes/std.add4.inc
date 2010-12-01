@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add4.inc
@@ -56,7 +56,6 @@ if ($dbobject->errors) {
 $dbobject->startTransaction();
 $fieldarray = $dbobject->insertMultiple($fieldarray);
 $errors   = $dbobject->getErrors();
-$messages = $dbobject->getMessages();
 if ($errors) {
     $dbobject->rollback();
 } else {
@@ -65,7 +64,13 @@ if ($errors) {
 
 $messages = array_merge($messages, $dbobject->getMessages());
 
-$batch_errors = scriptPrevious($errors, $messages);
+if (empty($errors)) {
+	$action = 'OK';
+} else {
+    $action = null;
+} // if
+
+$batch_errors = scriptPrevious($errors, $messages, $action);
 return $batch_errors;
 
 ?>

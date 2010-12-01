@@ -31,7 +31,7 @@ class crs_student_lesson extends Default_Table
         if (basename($_SERVER['PHP_SELF']) == 'lesson_list(a).php') {
             if (!array_key_exists('teacher_id', $this->lookup_data)) {
                 // get contents of foreign table TEACHER and add to lookup array
-                $object =& singleton::getInstance('crs_teacher');
+                $object =& RDCsingleton::getInstance('crs_teacher');
                 $data = $object->getValRep('teacher_id');
                 $this->lookup_data['teacher_id'] = $data;
             } // if
@@ -52,7 +52,7 @@ class crs_student_lesson extends Default_Table
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     {
         // convert 'student=X' into 'year=Y'
-        $object =& singleton::getInstance('crs_student');
+        $object =& RDCsingleton::getInstance('crs_student');
         $object->sql_select = 'year';
         $data = $object->getData_raw($where);
         if (isset($data[0]['year']) and $data[0]['year'] > 0) {

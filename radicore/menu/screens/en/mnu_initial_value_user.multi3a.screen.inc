@@ -37,7 +37,7 @@ $structure['inner']['columns'][] = array('width' => 60);
 //$structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('field_id' => 'Field Id');
 $structure['inner']['fields'][] = array('field_desc' => 'Description');
-$structure['inner']['fields'][] = array('initial_value' => 'Initial Value', 'size' => 30);
+$structure['inner']['fields'][] = array('initial_value' => 'Initial Value', 'size' => 40);
 $structure['inner']['fields'][] = array('is_noedit' => 'No Edit?');
 
 

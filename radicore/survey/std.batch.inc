@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -36,15 +36,32 @@ function batchInit ($batchfile)
         $ini_array = parse_ini_file('batch.ini.default');   // use default file
     } // if
 
-    $_SERVER['SERVER_NAME'] = $ini_array['server_name'];
-    $_SERVER['DOCUMENT_ROOT'] = str_replace("\\", "/", $ini_array['doc_root']);
-    $_SERVER['HTTP_ACCEPT_LANGUAGE'] = $ini_array['language'];
-    $_SERVER['SCRIPT_FILENAME'] = $curr_file;
-    $_SERVER['REMOTE_ADDR'] = 'batch';
-    $_SERVER['REQUEST_URI'] = $curr_file;
-    if (!empty($ini_array['server_admin'])) {
-    	$_SERVER['SERVER_ADMIN'] = $ini_array['server_admin'];
+    if (empty($_SERVER['SERVER_NAME'])) {
+    	$_SERVER['SERVER_NAME']          = $ini_array['server_name'];
     } // if
+    if (empty($_SERVER['HTTP_HOST'])) {
+    	$_SERVER['HTTP_HOST']            = $ini_array['server_name'];
+    } // if
+    if (empty($_SERVER['DOCUMENT_ROOT'])) {
+    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", $ini_array['doc_root']);
+    } // if
+    if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = $ini_array['language'];
+    } // if
+    if (empty($_SERVER['REMOTE_ADDR'])) {
+    	$_SERVER['REMOTE_ADDR']          = 'batch';
+    } // if
+    if (empty($_SERVER['REQUEST_URI'])) {
+    	$_SERVER['REQUEST_URI']          = $curr_file;
+    } // if
+    if (empty($_SERVER['SERVER_ADMIN'])) {
+        $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
+    } // if
+
+    $_SERVER['SCRIPT_FILENAME']      = $curr_file;
+
+    // if multiple accounts are being used, then default to the shared account
+    $_SESSION['rdcaccount_id']       = 1;
 
     // look for INCLUDE_PATH in optional htaccess file
     if (file_exists('.htaccess')) {
@@ -72,7 +89,7 @@ function batchInit ($batchfile)
     if (empty($include_path)) {
     	ini_set('include_path', $ini_array['include_path']);
     } // if
-    
+
     if (file_exists('user.ini')) {
         $fn = 'user.ini';
     } elseif (file_exists('.user.ini')) {
@@ -101,7 +118,6 @@ function batchInit ($batchfile)
     echo '<p>server_admin : ' .$_SERVER["SERVER_ADMIN"] ."</p>\n";
 
     $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
-    $_SERVER['PHP_SELF'] = $PHP_SELF;
 
     $_SESSION['role_id']       = 'batch';
     $_SESSION['logon_user_id'] = 'batch';
@@ -113,6 +129,12 @@ function batchInit ($batchfile)
     require_once 'include.session.inc';
 
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
+
+    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
+    	initSession();
+    } // if
+
+    $_SERVER['PHP_SELF'] = $PHP_SELF;
 
     if (isset($stdout)) {
         $output = ob_get_contents();
@@ -126,7 +148,7 @@ function batchInit ($batchfile)
 
 // ****************************************************************************
 function batchEnd ($errors=null)
-//
+// end batch processing
 {
     if (!empty($errors)) {
     	if (is_array($errors)) {
@@ -152,8 +174,6 @@ function batchEnd ($errors=null)
         fclose($stdouth);
     } // if
 
-    echo "<p>Done!</p>";
-
     return;
 
 } // batchEnd
@@ -165,21 +185,36 @@ function check_errors ($object)
     $errors = $object->getErrors();
 
 	if ($errors) {
-	    foreach ($errors as $ix1 => $error1) {
+	    if (!empty($object->query)) {
+	        // append database query to array
+        	$errors['query'] = $object->query;
+        } // if
+
+        // $errors should be an associative array, but it may be indexed
+        $array_in = $errors;
+	    foreach ($array_in as $ix1 => $error1) {
 	        if (is_string($error1)) {
-	        	$error = $ix1 .': ' .$error1;
+	            // merge key and value into a single string
+	        	$array_out[] = $ix1 .': ' .$error1;
 	        } elseif (is_array($error1)) {
 	            foreach ($error1 as $ix2 => $error2) {
-	            	$error = $ix2 .': ' .$error2;
-	            	break; // stop after the 1st entry
+	                // merge index, key and value into a single string
+	            	$array_out[] = '['.$ix1.']'.$ix2 .': ' .$error2;
 	            } // foreach
 	        } // if
-	    	trigger_error($error, E_USER_ERROR);
 	    } // foreach
+	    $errors = $array_out;
+	    unset($array_in, $array_out, $ix1, $ix2, $error1);
+
+	    // put first error into $string
+	    $string = $errors[key($errors)];
+
+	    trigger_error($string, E_USER_ERROR);
 	} // if
 
 } // check_errors
 
+// ****************************************************************************
 function check_warnings ($object)
 // check object for errors and terminate if any are found
 {

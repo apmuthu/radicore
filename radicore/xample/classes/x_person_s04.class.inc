@@ -166,7 +166,7 @@ class x_person_s04 extends x_person
     // perform custom processing after a call to fetchRow().
     {
         $fieldarray['company_name']    = 'Radicore Software Limited';
-        $fieldarray['company_address'] = "Code Castle\nWebtown\nFrameworkshire\nEngland, AA1 1AA";
+        $fieldarray['company_address'] = "Code Castle\nCastle Street\nWebtown\nFrameworkshire\nEngland, AA1 1AA";
 
         $fieldarray['invoice_date'] = '2006-08-26';
         $fieldarray['invoice_no']   = '06/1001';

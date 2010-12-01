@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_tbl.class.inc';
 class audit_tbl_s02 extends audit_tbl
@@ -36,7 +36,7 @@ class audit_tbl_s02 extends audit_tbl
         // construct components of SQL string
         $output = "\nUSE `" .$rowdata['base_name'] ."`;\n\n";
 
-        $dbobject =& singleton::getInstance('audit_fld');
+        $dbobject =& RDCsingleton::getInstance('audit_fld');
         $field_data = $dbobject->getData_raw($where);
         // split $field_data into $old_array and $new_array
         $old_array = array();

@@ -20,9 +20,9 @@ $structure['title'][] = array('text' => "- <insert title here> -",
 
 // set column widths
 $structure['columns'][] = array('width' => 20);
-$structure['columns'][] = array('width' => 25, 'align' => 'left', 'overflow' => 'y');
-$structure['columns'][] = array('width' => 20, 'align' => 'right');
-$structure['columns'][] = array('width' => 20, 'align' => 'center');
+$structure['columns'][] = array('width' => 25, 'halign' => 'left', 'overflow' => 'y');
+$structure['columns'][] = array('width' => 20, 'halign' => 'right');
+$structure['columns'][] = array('width' => 20, 'halign' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('field1' => 'Label1');

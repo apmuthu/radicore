@@ -33,7 +33,7 @@ class tree_node extends Default_Table
                 case 'O':
                     if (array_key_exists('org_type_id', $fieldarray)) {
                         require_once 'classes/org_type.class.inc';
-                        $dbobject =& singleton::getInstance('org_type');
+                        $dbobject =& RDCsingleton::getInstance('org_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("org_type_id='{$fieldarray['org_type_id']}'");
                         $fieldarray['icon'] = $data[0]['image_fname'];
@@ -42,7 +42,7 @@ class tree_node extends Default_Table
                 case 'L':
                     if (array_key_exists('location_type_id', $fieldarray)) {
                         require_once 'classes/location_type.class.inc';
-                        $dbobject =& singleton::getInstance('location_type');
+                        $dbobject =& RDCsingleton::getInstance('location_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("location_type_id='{$fieldarray['location_type_id']}'");
                         $fieldarray['icon'] = $data[0]['image_fname'];
@@ -51,7 +51,7 @@ class tree_node extends Default_Table
                 case 'A':
                     if (array_key_exists('asset_type_id', $fieldarray)) {
                         require_once 'classes/asset_type.class.inc';
-                        $dbobject =& singleton::getInstance('asset_type');
+                        $dbobject =& RDCsingleton::getInstance('asset_type');
                         $dbobject->sql_select = 'image_fname';
                         $data = $dbobject->getData("asset_type_id='{$fieldarray['asset_type_id']}'");
                         $fieldarray['icon'] = $data[0]['image_fname'];
@@ -93,7 +93,7 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table ORG_TYPE and add as a LOOKUP list
-                $dbobject =& singleton::getInstance('org_type');
+                $dbobject =& RDCsingleton::getInstance('org_type');
                 $data_array = $dbobject->getValRep('org_type_id');
                 $this->lookup_data['org_type_id'] = $data_array;
                 break;
@@ -107,12 +107,12 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['asset_type_id']['required']);
 
                 // get contents of foreign table LOCATION_TYPE and add as a LOOKUP list
-                $dbobject =& singleton::getInstance('location_type');
+                $dbobject =& RDCsingleton::getInstance('location_type');
                 $data_array = $dbobject->getValRep('location_type_id');
                 $this->lookup_data['location_type_id'] = $data_array;
 
                 // get address data associated with this location
-                $address =& singleton::getInstance('location_address');
+                $address =& RDCsingleton::getInstance('location_address');
                 $node_id = $fieldarray['node_id'];
                 $address_data = $address->getData("node_id='$node_id'");
                 if ($address->numrows > 0) {
@@ -146,7 +146,7 @@ class tree_node extends Default_Table
                 unset($this->fieldspec['location_type_id']['required']);
 
                 // get contents of foreign table ASSET_TYPE and add as a LOOKUP list
-                $dbobject =& singleton::getInstance('asset_type');
+                $dbobject =& RDCsingleton::getInstance('asset_type');
                 $data_array = $dbobject->getValRep('asset_type_id');
                 $this->lookup_data['asset_type_id'] = $data_array;
                 break;
@@ -259,7 +259,7 @@ class tree_node extends Default_Table
         if ($fieldarray['node_type'] == 'L') {
             // insert address data associated with this location
             require_once 'classes/location_address.class.inc';
-            $address =& singleton::getInstance('location_address');
+            $address =& RDCsingleton::getInstance('location_address');
             $fieldarray = $address->insertRecord($fieldarray);
             $address_errors = $address->getErrors();
             if ($address_errors) {
@@ -278,7 +278,7 @@ class tree_node extends Default_Table
         if ($fieldarray['node_type'] == 'L') {
             // update address data associated with this location
             require_once 'classes/location_address.class.inc';
-            $address =& singleton::getInstance('location_address');
+            $address =& RDCsingleton::getInstance('location_address');
             $count = $address->getCount("node_id='{$fieldarray['node_id']}'");
             if ($count == 0) {
                 $fieldarray = $address->insertRecord($fieldarray);

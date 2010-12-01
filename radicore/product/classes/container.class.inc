@@ -28,16 +28,16 @@ class container extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if (!array_key_exists('party_type', $this->lookup_data)) {
+        if (!array_key_exists('facility_id', $this->lookup_data)) {
             // get array for facility and put into LOOKUP_DATA
-            $object =& singleton::getInstance('facility');
+            $object =& RDCsingleton::getInstance('facility');
             $array  = $object->getValRep('facility_id');
             $this->lookup_data['facility_id'] = $array;
         } // if
 
-        if (!array_key_exists('party_type', $this->lookup_data)) {
+        if (!array_key_exists('facility_id', $this->lookup_data)) {
             // get array for container_type and put into LOOKUP_DATA
-            $object =& singleton::getInstance('container_type');
+            $object =& RDCsingleton::getInstance('container_type');
             $array  = $object->getValRep('container_type_id');
             $this->lookup_data['container_type_id'] = $array;
         } // if

@@ -67,7 +67,7 @@ class x_person_addr extends Default_Table
             return $fieldarray;
         } // if
 
-        $dbobject =& singleton::getInstance('x_person');
+        $dbobject =& RDCsingleton::getInstance('x_person');
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
         $where = array2where($fieldarray, $dbobject->getPkeyNames());
@@ -85,7 +85,10 @@ class x_person_addr extends Default_Table
 
         // get last_addr_no and increment it for the new address
         $address_no = $person_data['last_addr_no'] + 1;
+        //$address_no = 1;  // ********** TEST **********
         $fieldarray['address_no'] = $address_no;
+
+        $this->retry_on_duplicate_key = 'address_no';
 
         // end_date must be same as person.end_date (and not editable)
         $fieldarray['end_date'] = $person_data['end_date'];
@@ -143,7 +146,7 @@ class x_person_addr extends Default_Table
         // (ignored if deleting all addresses for a person)
         if (isset($fieldarray['address_no']) AND (int)$fieldarray['address_no'] > 0) {
             // update last_addr_no value on PERSON record
-            $dbobject =& singleton::getInstance('x_person');
+            $dbobject =& RDCsingleton::getInstance('x_person');
 
             $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
 
@@ -214,7 +217,7 @@ class x_person_addr extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        $dbobject =& singleton::getInstance('x_person');
+        $dbobject =& RDCsingleton::getInstance('x_person');
 
         // update last_addr_no value on PERSON record
         $update_array['person_id']    = $fieldarray['person_id'];
@@ -294,7 +297,7 @@ class x_person_addr extends Default_Table
     // $parent_table is not empty during a cascade delete.
     // (put any errors in $this->errors)
     {
-        $dbobject =& singleton::getInstance('x_person');
+        $dbobject =& RDCsingleton::getInstance('x_person');
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
         $where = array2where($fieldarray, $dbobject->getPkeyNames());
@@ -330,7 +333,7 @@ class x_person_addr extends Default_Table
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
-        $dbobject =& singleton::getInstance('x_person');
+        $dbobject =& RDCsingleton::getInstance('x_person');
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
 
@@ -371,7 +374,7 @@ class x_person_addr extends Default_Table
     function _cm_validateUpdate ($fieldarray, $orignaldata)
     // perform custom validation before update and allow for changes being made.
     {
-        $dbobject =& singleton::getInstance('x_person');
+        $dbobject =& RDCsingleton::getInstance('x_person');
 
         $dbobject->sql_select = 'person_id,last_addr_no,start_date,end_date';
 
@@ -428,7 +431,7 @@ class x_person_addr extends Default_Table
     function _checkNextAddress ($fieldarray)
     // check that end_date of current address is earlier than end_date of next address.
     {
-        $dbobject =& singleton::getInstance('x_person_addr');
+        $dbobject =& RDCsingleton::getInstance('x_person_addr');
         $dbobject->sql_select = 'end_date';
 
         $where_array['person_id']  = $fieldarray['person_id'];
@@ -459,7 +462,7 @@ class x_person_addr extends Default_Table
     function _checkPrevAddress ($fieldarray)
     // check that start_date of current address is later than start_date of previous address.
     {
-        $dbobject =& singleton::getInstance('x_person_addr');
+        $dbobject =& RDCsingleton::getInstance('x_person_addr');
         $dbobject->sql_select = 'start_date';
 
         $where_array['person_id']  = $fieldarray['person_id'];

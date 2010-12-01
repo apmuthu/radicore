@@ -16,7 +16,7 @@ class crs_class_lesson_s01 extends crs_class_lesson
     {
         if (!array_key_exists('teacher_id', $this->lookup_data)) {
             // get contents of foreign table TEACHER and add to lookup array
-            $object =& singleton::getInstance('crs_teacher');
+            $object =& RDCsingleton::getInstance('crs_teacher');
             $data = $object->getValRep('teacher_id');
             $this->lookup_data['teacher_id'] = $data;
         } // if

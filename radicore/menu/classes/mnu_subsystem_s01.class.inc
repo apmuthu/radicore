@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -51,10 +51,10 @@ class mnu_subsystem_s01 extends mnu_subsystem
         // (1) create file 'text/<subsys>.menu_export.txt'
 
         // create object for retrieving task details
-        $taskobj =& singleton::getInstance('mnu_task');
+        $taskobj =& RDCsingleton::getInstance('mnu_task');
 
         // create object for retrieving dictionary details
-        $dictobj =& singleton::getInstance('dict_column');
+        $dictobj =& RDCsingleton::getInstance('dict_column');
 
 		$subsys_id   = $rowdata['subsys_id'];
         $subsys_dir  = $rowdata['subsys_dir'];
@@ -240,7 +240,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     {
         $output = '-- file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
 
-        $taskobj =& singleton::getInstance('mnu_task');
+        $taskobj =& RDCsingleton::getInstance('mnu_task');
 
         // export contents of MNU_SUBSYSTEM for this subsystem
     	$taskobj->sql_select = '*';
@@ -409,7 +409,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $output = $this->_exportSqlData('mnu_motd', $data, $output);
 
             unset($taskobj);
-            $userobj =& singleton::getInstance('mnu_user');
+            $userobj =& RDCsingleton::getInstance('mnu_user');
             $userobj->sql_select = '*';
         	$userobj->sql_from   = '';
         	$userobj->sql_orderby = 'task_id';
@@ -418,11 +418,11 @@ class mnu_subsystem_s01 extends mnu_subsystem
             	$output = $this->_exportSqlData('mnu_user', $user_data, $output);
             	$user_id = $user_data['user_id'];
 
-            	// export the contents of MNU_INITIAL_VALUE_USER for this task
+            	// export the contents of MNU_INITIAL_VALUE_USER for this user
             	$userobj->sql_select = 'mnu_initial_value_user.*';
             	$userobj->sql_from   = 'mnu_initial_value_user';
             	$userobj->sql_orderby = 'field_id,user_id';
-                $data2 = $userobj->getData_raw("task_id='$task_id'");
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
 
             	// export contents of MNU_TODO for this user
@@ -432,12 +432,19 @@ class mnu_subsystem_s01 extends mnu_subsystem
                 $data2 = $userobj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_todo', $data2, $output);
 
-                // export the contents of MNU_USER_IP_ADDRESS for this use
-            	$userobj->sql_select = 'mnu_task_ip_address.*';
-            	$userobj->sql_from   = 'mnu_task_ip_address';
-            	$userobj->sql_orderby = 'task_id,ip_address';
-                $data2 = $userobj->getData_raw("task_id='$task_id'");
-                $output = $this->_exportSqlData('mnu_task_ip_address', $data2, $output);
+                // export the contents of MNU_USER_IP_ADDRESS for this user
+            	$userobj->sql_select = 'mnu_user_ip_address.*';
+            	$userobj->sql_from   = 'mnu_user_ip_address';
+            	$userobj->sql_orderby = 'user_id,ip_address';
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $output = $this->_exportSqlData('mnu_user_ip_address', $data2, $output);
+
+                // export the contents of MNU_FAVOURITE for this user
+            	$userobj->sql_select = 'mnu_favourite.*';
+            	$userobj->sql_from   = 'mnu_favourite';
+            	$userobj->sql_orderby = 'user_id,sort_seq';
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $output = $this->_exportSqlData('mnu_favourite', $data2, $output);
 
             } // foreach
 

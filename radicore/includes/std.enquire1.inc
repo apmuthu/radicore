@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -43,7 +43,11 @@ require_once "classes/$table_id.class.inc";
 if (isset($script_vars['dbobject'])) {
     // use data from previous instance for this script
     $dbobject = unserialize($script_vars['dbobject']);
-    // get previous data
+    if (!empty($return_from)) {
+    	// see if any action is required when being restarted
+        $dbobject->restart($return_from, $return_action);
+    } // if
+    // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
     if (!is_string(key($fieldarray))) {
         // indexed by row, so use first row only
@@ -81,17 +85,17 @@ if (isset($scrolling)) {
     } else {
         // retrieve values from scrolling array
         $where = $scrolling[$dbobject->getClassName()]['where'];
-        $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
+        if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
+            // set index number of item to be read from current $where list
+            $dbobject->setPageNo($_GET['item']);
+        } else {
+            $dbobject->setPageNo($scrolling[$dbobject->getClassName()]['curitem']);
+        } // if
     } // if
 } // if
 
 if (empty($where)) {
     scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
-} // if
-
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbobject->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbobject->setPageNo($_GET['item']);
 } // if
 
 // get data from the database

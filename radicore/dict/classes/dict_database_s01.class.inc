@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s01 extends dict_dataBase
@@ -95,7 +95,7 @@ class dict_dataBase_s01 extends dict_dataBase
     // perform custom processing after database record is inserted.
     {
         // import tables from database just processed
-        $tableobj =& singleton::getInstance('dict_table_s01');
+        $tableobj =& RDCsingleton::getInstance('dict_table_s01');
 
         $array = $tableobj->getInitialDataMultiple($fieldarray);
         $array = $tableobj->insertMultiple($array);

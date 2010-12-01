@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions related to session management
@@ -18,8 +18,13 @@ function checkSelection ($task_id, $where=null)
 {
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
 
+    if ($PHP_SELF == '/menu/menu.php' AND $task_id == 'menu') {
+        // task_id has been lost because of initial_passthru, so reset it
+        $task_id = $_SESSION['start_task_id'];
+    } // if
+
     //require_once 'classes/mnu_task.class.inc';
-    $dbtask =& singleton::getInstance('mnu_task');
+    $dbtask =& RDCsingleton::getInstance('mnu_task');
 
     $task_array = $dbtask->checkSelection($task_id);
     $errors = $dbtask->getErrors();
@@ -43,7 +48,7 @@ function checkSelection ($task_id, $where=null)
 
         if ($PHP_SELF == '/menu/menu.php') {
             // get menu details for the chosen menu
-            $dbmenu =& singleton::getInstance('mnu_menu');
+            $dbmenu =& RDCsingleton::getInstance('mnu_menu');
             $menu_buttons = $dbmenu->getMenuButtons($task_id);
             // we are in menu page, so update script_vars now
             $GLOBALS['menu_buttons'] = $menu_buttons;
@@ -58,12 +63,12 @@ function checkSelection ($task_id, $where=null)
         } else {
             // we are not in the menu page, so jump to it
             $menu_array['query_string'] = "selection=$task_id";
-            scriptNext('menu', null, null, $menu_array);
+            $errors = scriptNext('menu', null, null, $menu_array);
         } // if
 
     } else {
         // not a menu, so process designated script instead
-        scriptNext($task_id, $where, null, $task_array);
+        $errors = scriptNext($task_id, $where, null, $task_array);
     } // if
 
     return $errors;
@@ -143,127 +148,130 @@ function childForm ($post, $object_array, $where=null)
         } // if
     } // foreach
 
-    if (isset($next_task)) {
-        // check to see if this selection is valid
-        $taskobj =& singleton::getInstance('mnu_task');
-        $task_array = $taskobj->checkSelection($next_task);
-        if ($taskobj->errors) {
-        	return $taskobj->errors;
-        } // if
-
-        // check to see if a popup/filepicker form has been called
-        if (preg_match('/(popup|filepicker)/i', $task_array['pattern_id'], $regs)) {
-            if (is_object($dbobject)) {
-                if (!$multiple AND count($object_array) > 1) {
-            		// set to previous object in array
-                	$null       = prev($object_array);
-                	$objectname = key($object_array);
-                    $dbobject   = $object_array[$objectname];
-            	} // if
-                // save these details for processing after returning from the popup
-                $script_vars['popup_object'] = $objectname;
-        	    $script_vars['popup_offset'] = $offset;
-
-                // get current data from this object
-                $fieldarray = $dbobject->getFieldarray();
-                // extract current row from array of rows
-                $current_row = $fieldarray[$offset-1];
-                // extract current $where string from object
-                $where = $dbobject->getWhere($task_array);
-                // allow $where and $settings to be modified
-            	$settings = null;
-                $where = $dbobject->popupcall($next_task, $where, $script_vars, $current_row, $settings);
-                if ($dbobject->errors) {
-            		return $dbobject->errors;
-            	} // if
-                if ($next_task != $task_array['task_id']) {
-                	// task_id has changed, so...
-                	$task_array = $taskobj->checkSelection($next_task);
-                	if ($taskobj->errors) {
-                		return $taskobj->errors;
-                	} // if
-                	$script_vars[$objectname] = serialize($dbobject);
-                } // if
-                $task_array['settings'] = mergeSettings($task_array['settings'], $settings);
-            } // if
-            // call popup script
-            scriptNext($next_task, $where, null, $task_array);
-        } // if
-
-        if (is_object($dbobject)) {
-        	$dbobject->select_string = null;
-        } // if
-
-        // this must be from a navigation button
-        if (isset($post['select'])) {
-            // convert selection into SQL where format
-            $pkey_array = $dbobject->getPkeyArray(null, $task_array);
-            $selection = selection2where($pkey_array, $post['select']);
-            if (is_True($_SESSION['selection_lock'])) {
-            	$dbobject->select_string = $selection;
-            } // if
-        } else {
-            $selection = null;
-        } // if
-        $search = null;
-		if (is_object($dbobject)) {
-		    // extract current $where string from object
-	        $where = $dbobject->getWhere($task_array);
-		    if ($next_task == 'audit_dtl(list)3') {
-		    	$database_id = $dbobject->dbname;
-		    	// restrict selection to current database
-		    	$search = "base_name='$database_id'";
-		    } elseif ($next_task == 'audit_dtl(list)3exact') {
-		    	$database_id = $dbobject->dbname;
-		    	$table_id    = $dbobject->tablename;
-		    	// restrict selection to current database and table
-		    	$search = "base_name='$database_id' AND table_name='$table_id'";
-		    } else {
-            	// extract any sort parameters from the current object
-            	// so that they can be passed to the next task
-            	$task_array['sql_orderby']     = $dbobject->getOrderBy();
-            	$task_array['sql_orderby_seq'] = $dbobject->getOrderBySeq();
-            	$search                        = $dbobject->getSearch();
-            	if (!empty($search)) {
-            	    if (preg_match('/^(list/i)', $task_array['pattern_id'])) {
-            	    	// merge the SEARCH and WHERE strings
-                        $where = mergeWhere($where, $search);
-                        $search = null;
-            	    } elseif (preg_match('/^(output|batch)/i', $task_array['pattern_id'])) {
-            	        // leave $search sring alone
-            	    } else {
-            	        $search = null;
-            	    } // if
-            	} // if
-		    } // if
-		} // if
-
-		if (is_object($dbobject)) {
-    		// serialise object contents for saving in session array
-    		$script_vars[$objectname] = serialize($dbobject);
-		} // if
-
-		if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
-            // this is to be run in the background as a batch process
-            if (!empty($where)) {
-            	$task_array['where'] = $where;
-            } // if
-            if (!empty($search)) {
-            	$task_array['search'] = $search;
-            } // if
-            if (!empty($selection)) {
-            	$task_array['selection'] = $selection;
-            } // if
-            $errors = runInBackground($task_array, $script_vars);
-            return $errors;
-		} else {
-            // pass control to selected script
-            scriptNext($next_task, $where, $selection, $task_array, $search);
-		} // if
+    if (!isset($next_task)) {
+        return;
     } // if
 
+    // check to see if this selection is valid
+    $taskobj =& RDCsingleton::getInstance('mnu_task');
+    $task_array = $taskobj->checkSelection($next_task);
+    if ($taskobj->errors) {
+    	return $taskobj->errors;
+    } // if
+
+    // check to see if a popup/filepicker/fileupload form has been called
+    if (preg_match('/(popup|filepicker|fileupload)/i', $task_array['pattern_id'], $regs)) {
+        if (is_object($dbobject)) {
+            if (!$multiple AND count($object_array) > 1) {
+        		// set to previous object in array
+            	$null       = prev($object_array);
+            	$objectname = key($object_array);
+                $dbobject   = $object_array[$objectname];
+        	} // if
+            // save these details for processing after returning from the popup
+            $script_vars['popup_object'] = $objectname;
+    	    $script_vars['popup_offset'] = $offset;
+
+            // get current data from this object
+            $fieldarray = $dbobject->getFieldarray();
+            // extract current row from array of rows
+            $current_row = $fieldarray[$offset-1];
+            // extract current $where string from object
+            $where = $dbobject->getWhere($task_array);
+            // allow $where and $settings to be modified
+        	$settings = null;
+            $where = $dbobject->popupcall($next_task, $where, $script_vars, $current_row, $settings);
+            if ($dbobject->errors) {
+        		return $dbobject->errors;
+        	} // if
+            if ($next_task != $task_array['task_id']) {
+            	// task_id has changed, so...
+            	$task_array = $taskobj->checkSelection($next_task);
+            	if ($taskobj->errors) {
+            		return $taskobj->errors;
+            	} // if
+            	$script_vars[$objectname] = serialize($dbobject);
+            } // if
+            $task_array['settings'] = mergeSettings($task_array['settings'], $settings);
+        } // if
+        // call popup script
+        $errors = scriptNext($next_task, $where, null, $task_array);
+    } // if
+
+    if (is_object($dbobject)) {
+    	$dbobject->select_string = null;
+    } // if
+
+    // this must be from a navigation button
+    if (isset($post['select'])) {
+        // convert selection into SQL where format
+        $pkey_array = $dbobject->getPkeyArray(null, $task_array);
+        $selection = selection2where($pkey_array, $post['select']);
+        if (is_True($_SESSION['selection_lock'])) {
+        	$dbobject->select_string = $selection;
+        } // if
+    } else {
+        $selection = null;
+    } // if
+
+    $search = null;
+	if (is_object($dbobject)) {
+	    // extract current $where string from object
+        $where = $dbobject->getWhere($task_array);
+	    if ($next_task == 'audit_dtl(list)3') {
+	    	$database_id = $dbobject->dbname;
+	    	// restrict selection to current database
+	    	$search = "base_name='$database_id'";
+	    } elseif ($next_task == 'audit_dtl(list)3exact') {
+	    	$database_id = $dbobject->dbname;
+	    	$table_id    = $dbobject->tablename;
+	    	// restrict selection to current database and table
+	    	$search = "base_name='$database_id' AND table_name='$table_id'";
+	    } else {
+        	// extract any sort parameters from the current object
+        	// so that they can be passed to the next task
+        	$task_array['sql_orderby']     = $dbobject->getOrderBy();
+        	$task_array['sql_orderby_seq'] = $dbobject->sql_orderby_seq;
+        	$search                        = $dbobject->getSearch();
+        	if (!empty($search)) {
+        	    if (preg_match('/^(list)/i)', $task_array['pattern_id'])) {
+        	    	// merge the SEARCH and WHERE strings
+                    $where = mergeWhere($where, $search);
+                    $search = null;
+        	    } elseif (preg_match('/^(output|batch|other)/i', $task_array['pattern_id'])) {
+        	        // leave $search string alone
+        	    } else {
+        	        $search = null;
+        	    } // if
+        	} // if
+	    } // if
+	} // if
+
+	if (is_object($dbobject)) {
+		// serialise object contents for saving in session array
+		$script_vars[$objectname] = serialize($dbobject);
+	} // if
+
+	if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
+        // this is to be run in the background as a batch process
+        if (!empty($where)) {
+        	$task_array['where'] = $where;
+        } // if
+        if (!empty($search)) {
+        	$task_array['search'] = $search;
+        } // if
+        if (!empty($selection)) {
+        	$task_array['selection'] = $selection;
+        } // if
+        $errors = runInBackground($task_array, $script_vars);
+        return $errors;
+	} else {
+        // pass control to selected script
+        $errors = scriptNext($next_task, $where, $selection, $task_array, $search);
+	} // if
+
     // nothing found, so return to calling script
-    return;
+    return $errors;
 
 } // childForm
 
@@ -316,11 +324,30 @@ function chooseButton ($postarray, $dbobject, $objectname='dbobject')
 } // choose button
 
 // ****************************************************************************
-function cleanSavedPages ($script_id, $task_id)
-// check if a script's data can be removed from $_SESSION['pages']
+function cleanSavedPages ($script_id, $task_id, $errors=array())
+// script has terminated, so check if it's data can be removed from $_SESSION['pages']
 {
     if (isset($_SESSION['pages'][$script_id])) {
         if (isset($_SESSION['pages'][$script_id][$task_id])) {
+            if (empty($errors) AND isset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_end'])) {
+                // task has ended, so run this next
+            	$next['task_id']    = $_SESSION['pages'][$script_id][$task_id]['task_id_run_at_end'];
+                $next['where']      = $_SESSION['pages'][$script_id][$task_id]['task_id_run_at_end_context'];
+                $next['run_at_end'] = true;
+                append2ScriptSequence($next, true);
+                // these entries have been used, so remove them
+                unset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_end']);
+                unset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_end_context']);
+            } // if
+            if (isset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_cancel'])) {
+                // task has been cancelled, so run this next
+            	$next['task_id']    = $_SESSION['pages'][$script_id][$task_id]['task_id_run_at_cancel'];
+                $next['where']      = $_SESSION['pages'][$script_id][$task_id]['task_id_run_at_cancel_context'];
+                append2ScriptSequence($next, true);
+                // these entries have been used, so remove them
+                unset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_cancel']);
+                unset($_SESSION['pages'][$script_id][$task_id]['task_id_run_at_cancel_context']);
+            } // if
             $keep_data =& $_SESSION['pages'][$script_id][$task_id]['keep_data'];
             if (is_True($keep_data)) {
                 // keep script data in memory
@@ -333,9 +360,11 @@ function cleanSavedPages ($script_id, $task_id)
                 	unset($_SESSION['pages'][$script_id]);
                 } else {
                     // replace task_id with the latest one in the array
-                    $end = end($_SESSION['pages'][$script_id]['task_array']);
+                    $end  = end($_SESSION['pages'][$script_id]['task_array']);
                     $last = key($_SESSION['pages'][$script_id]['task_array']);
                     $_SESSION['pages'][$script_id]['task_id'] = $last;
+                    // reload script_vars for this task
+                    //$GLOBALS['script_vars'] = $_SESSION['pages'][$script_id][$last];
                 } // if
             } // if
         } else {
@@ -545,7 +574,7 @@ function getSupportedLanguages ()
 {
     $array = array();
 
-    $dbobject =& singleton::getInstance('mnu_language');
+    $dbobject =& RDCsingleton::getInstance('mnu_language');
     $dbobject->sql_select = 'language_id';
     $data = $dbobject->getData();
     foreach ($data as $rownum => $rowdata) {
@@ -571,8 +600,9 @@ function initSession()
     global $log_sql_query;      // Yes/No switch
     global $lookup;             // array of lookup values
     global $menu_buttons;       // array of menu buttons
-    global $nav_buttons_omit;   // tasks to be removed from navigation bar
     global $messages;           // optional array of messages
+    global $nav_buttons_omit;   // tasks to be removed from navigation bar
+    global $no_getdata;         // flag to ignore next getData() method
     global $orderby;            // field names for ORDER BY clause of SELECT
     global $orderby_seq;        // sequence ('asc' or 'desc')
     global $page_stack;         // hierarchy of pages used in this session
@@ -619,7 +649,7 @@ function initSession()
     } // if
 
     // continue with existing session, or start a new one
-    $session_obj =& singleton::getInstance('php_session');
+    $session_obj =& RDCsingleton::getInstance('php_session');
     if (isset($GLOBALS['batch']) AND !empty($_SESSION)) {
     	$save_session = $_SESSION;
     } // if
@@ -657,6 +687,21 @@ function initSession()
     } // if
 
     $PHP_SELF = getSelf();
+
+    if (basename($PHP_SELF) != 'help.php') {
+        // record the time at which this script started
+        // (end time is determined in function XSLTransform)
+        if (!isset($_SESSION['script_start'])) {
+            list($usec, $sec) = explode(' ', microtime());
+            $_SESSION['script_start'] = (float) $sec + (float) $usec;
+        } // if
+    } // if
+
+    if (isset($_SESSION['no_getdata'])) {
+        $no_getdata = $_SESSION['no_getdata'];
+    	unset($_SESSION['no_getdata']);
+    } // if
+
     if ($GLOBALS['mode'] == 'logon') {
         // this is a logon screen (there could be several) so save its ID
         $logon_screen = $PHP_SELF;
@@ -717,7 +762,7 @@ function initSession()
     list($shutdown_errors, $shutdown_messages) = getShutDownStatus();
 
     if (!empty($shutdown_errors)) {
-    	if (isset($GLOBALS['mode']) and $GLOBALS['mode'] == 'logon') {
+    	if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
     	    // on LOGON screen, so convert error to a warning message
     	    $shutdown_messages = $shutdown_errors;
     		$shutdown_errors   = array();
@@ -750,39 +795,39 @@ function initSession()
     	    $_SESSION['XSLT_client_side'] = FALSE;
         } // if
     } // if
-//    if (is_True($_SESSION['XSLT_client_side'])) {
-//        // continue with this setting
+    // look for alternate settings
+	if (isset($_COOKIE['XSLT_client_side'])) {
+        $_SESSION['XSLT_client_side'] = $_COOKIE['XSLT_client_side'];
+    } // if
+    if (isset($_GET['csxslt'])) {
+        // use this setting, and save it in a cookie for the following pages
+        if (is_True($_GET['csxslt'])) {
+        	$_SESSION['XSLT_client_side'] = TRUE;
+        	setcookie("XSLT_client_side", 'on', time()+7776000, '/');
+        } else {
+            $_SESSION['XSLT_client_side'] = FALSE;
+            setcookie("XSLT_client_side", 'off', time()+7776000, '/');
+        } // if
+    } // if
+
+//    if ($_SERVER['REMOTE_ADDR'] == '80.177.120.119') {
+//        // skip this next bit
 //    } else {
-        // look for alternate settings
-    	if (isset($_COOKIE['XSLT_client_side'])) {
-            $_SESSION['XSLT_client_side'] = $_COOKIE['XSLT_client_side'];
-        } // if
-        if (isset($_GET['csxslt'])) {
-            // use this setting, and save it in a cookie for the following pages
-            if (is_True($_GET['csxslt'])) {
-            	$_SESSION['XSLT_client_side'] = TRUE;
-            	setcookie("XSLT_client_side", 'on', time()+7776000, '/');
-            } else {
-                $_SESSION['XSLT_client_side'] = FALSE;
-                setcookie("XSLT_client_side", 'off', time()+7776000, '/');
-            } // if
-        } // if
-//        if (!is_True($_SESSION['XSLT_client_side'])) {
-//            // not true, so destroy any cookie
-//        	setcookie('XSLT_client_side', 'off', time()-42000, '/');
+//        if (is_True($_SESSION['XSLT_client_side'])) {
+//            if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
+//            	if (preg_match('/(MSIE)/i', $_SERVER['HTTP_USER_AGENT'])) {
+//            	    //if ($_SERVER['REMOTE_ADDR'] != '80.177.120.119') {
+//                	    // this combination does not work with a secure server
+//                	    $GLOBALS['http_server']         = '';
+//                        $GLOBALS['https_server']        = '';
+//                        $GLOBALS['https_server_suffix'] = '';
+//                        $GLOBALS['use_https']           = false;
+//                        unset($_SERVER['HTTPS']);
+//            	    //} // if
+//            	} // if
+//            } // if
 //        } // if
 //    } // if
-
-    if (is_True($_SESSION['XSLT_client_side'])) {
-    	if (preg_match('/(MSIE)/i', $_SERVER['HTTP_USER_AGENT'])) {
-    	    //if ($_SERVER['REMOTE_ADDR'] != '80.177.120.119') {
-        	    // this combination does not work with a secure server
-        	    $GLOBALS['http_server']  = '';
-                $GLOBALS['https_server'] = '';
-                $GLOBALS['https_server_suffix'] = '';
-    	    //} // if
-    	} // if
-    } // if
 
     if (isset($_COOKIE['theme'])) {
         $_SESSION['css_file'] = $_COOKIE['theme'];
@@ -791,6 +836,28 @@ function initSession()
     if (!array_key_exists('css_file', $_SESSION)) {
         // not yet defined, so set to default
     	$_SESSION['css_file'] = 'default';
+    } // if
+
+    // look for security class from logon screen
+    if (!isset($_SESSION['role_id'])) {
+        if (basename($PHP_SELF) == 'help.php') {
+        	// ROLE_ID is not required in this screen, so continue
+        } elseif ($PHP_SELF == $logon_screen) {
+            // ROLE_ID will be supplied by this screen, so continue
+        } else {
+            // ROLE_ID not supplied yet, so jump to logon screen
+            session_unset();
+            $_SESSION['messages'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
+            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                                  .getParentDIR()
+                                  .$logon_screen
+                                  .'?session_name=' .session_name();
+
+            //logstuff("location: $location", __FUNCTION__, __LINE__);
+
+            header('Location: ' .$location);
+            exit;
+        } // if
     } // if
 
     if (isset($_GET['action'])) {
@@ -829,75 +896,66 @@ function initSession()
             // now restart the current script
             $task_id = $_SESSION['pages'][$PHP_SELF]['task_id'];
             scriptNext($task_id);
-	    } // if
-	    if ($_GET['action'] == 'recoverpswd') {
+	    } elseif ($_GET['action'] == 'recoverpswd') {
             // switch to specified task
             updateScriptVars();
             $page_stack = updatePageStack($task_id, '', $PHP_SELF);
             $_SESSION['role_id'] = 'GLOBAL';
             scriptNext('mnu_user(upd1)c', 'user_id=false');
+	    } elseif ($_GET['action'] == 'add-to-favourites') {
+            // add current task to MNU_FAVOURITES table
+            $dbobject =& RDCsingleton::getInstance('mnu_favourite');
+            $insert['user_id'] = $_SESSION['logon_user_id'];
+            $insert['task_id'] = $task_id;
+            $dbobject->startTransaction();
+            $insert = $dbobject->insertRecord($insert);
+            $errors = $dbobject->getErrors();
+            if (empty($errors)) {
+            	$errors = $dbobject->commit();
+            } // if
+            if (empty($errors)) {
+                // "Task has been added to favourites"
+                $messages[] = getLanguageText('sys0203', $task_id);
+            } else {
+                $dbobject->rollback();
+            } // if
+            unset($dbobject);
 	    } // if
 	} // if
 
-	// look for security class from logon screen
-    if (!isset($_SESSION['role_id'])) {
-        if (basename($PHP_SELF) == 'help.php') {
-        	// ROLE_ID is not required in this screen, so continue
-        } elseif ($PHP_SELF == $logon_screen) {
-            // ROLE_ID will be supplied by this screen, so continue
-        } else {
-            // ROLE_ID not supplied yet, so jump to logon screen
-            session_unset();
-            $_SESSION['messages'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
-            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-                                  .getParentDIR()
-                                  .$logon_screen
-                                  .'?session_name=' .session_name();
+	if (!empty($_SESSION['logon_user_id'])) {
+		// check that this user_id is valid for this IP address (helps prevent session hijacking)
+        $ip_address = $_SERVER['SERVER_ADDR'];
+        $user_id    = $_SESSION['logon_user_id'];
+        $dbobject =& RDCsingleton::getInstance('mnu_user');
+        $dbobject->sql_select  = 'user_id, ip_address';
+        $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+                                      ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
+                                      ." ELSE false"
+                                 ." END AS ip_address_valid";
+        $data = $dbobject->getData_raw("user_id='$user_id'");
+        if (!empty($data)) {
+        	$data = $data[0];
+        	if (!is_True($data['ip_address_valid'])) {
+                // 'This IP address is not valid'
+            	$_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
+                $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                                      .getParentDIR()
+                                      .$logon_screen
+                                      .'?session_name=' .session_name();
 
-            //logstuff("location: $location", __FUNCTION__, __LINE__);
+                //logstuff("location: $location", __FUNCTION__, __LINE__);
 
-            header('Location: ' .$location);
-            exit;
+                header('Location: ' .$location);
+                exit;
+            } // if
         } // if
-    } // if
-
-    // check that this user_id is valid for this IP address (helps prevent session hijacking)
-    $ip_address = $_SERVER['SERVER_ADDR'];
-    $user_id    = $_SESSION['logon_user_id'];
-    $dbobject =& singleton::getInstance('mnu_user');
-    $dbobject->sql_select  = 'user_id, ip_address';
-    $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
-                                  ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
-                                  ." ELSE false"
-                             ." END AS ip_address_valid";
-    $data = $dbobject->getData_raw("user_id='$user_id'");
-    if (!empty($data)) {
-    	$data = $data[0];
-    	if (!is_True($data['ip_address_valid'])) {
-            // 'This IP address is not valid'
-        	$_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
-            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-                                  .getParentDIR()
-                                  .$logon_screen
-                                  .'?session_name=' .session_name();
-
-            //logstuff("location: $location", __FUNCTION__, __LINE__);
-
-            header('Location: ' .$location);
-            exit;
-        } // if
-    } // if
-
-    // record the time at which this script started
-    // (end time is determined in function XSLTransform)
-    if (!isset($_SESSION['script_start'])) {
-        list($usec, $sec) = explode(' ', microtime());
-        $_SESSION['script_start'] = (float) $sec + (float) $usec;
-    } // if
+        unset($dbobject);
+	} // if
 
     if (empty($_SESSION['default_language'])) {
     	// get default language from control table
-        $mnu_control =& singleton::getInstance('mnu_control');
+        $mnu_control =& RDCsingleton::getInstance('mnu_control');
         $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
     } // if
 
@@ -981,10 +1039,6 @@ function initSession()
         $_POST['submitstay'] = $_POST['submitstay_x'];
         unset($_POST['submitstay_x']);
     } // if
-
-//    if ($_SERVER['REMOTE_ADDR'] == '80.177.120.119') {
-//        $GLOBALS['use_https'] = true;
-//    } // if
 
     if ($PHP_SELF == $logon_screen){
         // always true for a logon screen
@@ -1229,7 +1283,25 @@ function initSession()
         // remove $current_task (and any following entries) from $page_stack
         $page_stack = reducePageStack($current_task, true);
         // clear script sequence as it has been interrupted and cannot be processed
-        unset($_SESSION['script_sequence']);
+        if (isset($_SESSION['script_sequence'])) {
+            if (is_array($_SESSION['script_sequence'])) {
+            	foreach ($_SESSION['script_sequence'] as $index => $entry) {
+                	if (isset($entry['run_at_end'])) {
+                	    // this entry is important, so leave it in
+                	} else {
+                	    unset($_SESSION['script_sequence'][$index]);
+                	} // if
+                } // foreach
+                if (!empty($_SESSION['script_sequence'])) {
+                    // cause array to be re-indexed
+                	$_SESSION['script_sequence'] = array_merge($_SESSION['script_sequence']);
+                } else {
+                    unset($_SESSION['script_sequence']);
+                } // if
+        	} else {
+                unset($_SESSION['script_sequence']);
+            } // if
+        } // if
         // verify and process selection
         $errors = array_merge($errors, checkSelection($_GET['selection']));
     } else {
@@ -1406,30 +1478,18 @@ function reducePageStack ($task_id, $keep_entry=false)
     if (array_key_exists($task_id, $page_stack)) {
         // task is within current stack, so remove anything which follows
         while (array_key_exists($task_id, $page_stack)) {
-            // pick out the last entry on he stack
+            // pick out the last entry on the stack
             $end           = end($page_stack);
         	$end_script_id = $end['script_id'];
         	$end_task_id   = key($page_stack);
         	if ($end_task_id == $task_id) {
-        	    break;
+        	    break;  // this is the last task in the stack
         	} else {
         	    if ($end_script_id == '/menu/menu.php') {
         	        // leave menus alone!
         	    } else {
         	    	// remove this script's variables from session details if required
-                    if (isset($_SESSION['pages'][$end_script_id])) {
-                        $keep_data =& $_SESSION['pages'][$end_script_id][$end_task_id]['keep_data'];
-                        if (is_True($_SESSION['pages'][$end_script_id][$end_task_id]['keep_data'])) {
-                            // keep script data in memory
-                        } else {
-                            unset($_SESSION['pages'][$end_script_id][$end_task_id]);
-                            unset($_SESSION['pages'][$end_script_id]['task_array'][$end_task_id]);
-                        	if (count($_SESSION['pages'][$end_script_id]['task_array']) < 1) {
-                                // no more tasks left for this script, so remove it from session array
-                            	unset($_SESSION['pages'][$end_script_id]);
-                            } // if
-                        } // if
-                    } // if
+                    cleanSavedPages ($end_script_id, $end_task_id);
         	    } // if
 
                 // remove page from page stack
@@ -1484,12 +1544,21 @@ function runInBackground ($task_array, $save_script_vars)
         return $errors;
     } // if
 
+    $dir = dirname($_SERVER['PHP_SELF']);
+
+    $cwd = getcwd();
+    if (basename(getcwd()) != $task_array['subsys_dir']) {
+    	chdir('../'.$task_array['subsys_dir']);
+    	$dir = dirname($dir).'/'.$task_array['subsys_dir'];
+    } // if
+
     if (!$fp = @fopen($task_array['script_id'], 'r')) {
         // "File 'XX' does not exist"
         $errors[] = getLanguageText('sys0057', $task_array['script_id']);
         return $errors;
     } // if
     fclose($fp);
+    chdir($cwd);
 
     $save_session_name   = session_name('batch');
     $save_session_id     = session_id();
@@ -1504,7 +1573,6 @@ function runInBackground ($task_array, $save_script_vars)
     } else {
         $url = 'HTTP://' .$_SERVER['HTTP_HOST'];
     } // if
-    $dir = dirname($_SERVER['PHP_SELF']);
     if (!empty($dir)) {
     	$url .= $dir .'/';
     } // if
@@ -1598,21 +1666,31 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     } // if
 
     global $current_menu;
-    global $current_task;
+    global $current_task;   // task to be highlighted
     global $menu_buttons;
     global $messages;
     global $page_stack;
     global $script_vars;
 
+    $parent_task = $GLOBALS['task_id'];
+
     $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
+
+    $role_id = $_SESSION['role_id'];
 
     // ensure that latest set of script variables is stored in $_SESSION array
     // for the current task (indexed under ['pages'][script_id][task_id])
     if (isset($_SESSION['pages'][$PHP_SELF]['task_id'])) {
-        $curr_task = $_SESSION['pages'][$PHP_SELF]['task_id'];
-        $_SESSION['pages'][$PHP_SELF][$curr_task] = $script_vars;
-        // do not save anything set in childform() method
-        unset($_SESSION['pages'][$PHP_SELF][$curr_task]['search']);
+        $page_task = $_SESSION['pages'][$PHP_SELF]['task_id'];
+        if ($page_task == $parent_task) {
+            // task is changing, so save variables for parent task
+        	$_SESSION['pages'][$PHP_SELF][$page_task] = $script_vars;
+            // do not save any search criteria set in childform() method
+            unset($_SESSION['pages'][$PHP_SELF][$page_task]['search']);
+        } else {
+            // reload variables for new task
+            $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
+        } // if
     } // if
 
     // remove saved pages which are no longer in page_stack
@@ -1709,7 +1787,11 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             $search = $next['search'];
         } // if
         if (array_key_exists('messages', $next)) {
-            $messages = $next['messages'];
+            if (!empty($messages) AND is_array($messages)) {
+            	$messages = array_merge($messages, $next['messages']);
+            } else {
+                $messages = $next['messages'];
+            } // if
         } // if
         if (array_key_exists('previous', $next)) {
             $previous = $next['previous'];
@@ -1720,11 +1802,13 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         		$null = array_shift($_SESSION['script_sequence']);
         	} // if
         } // if
+        // force script details for this task to be loaded
+        unset($task_array['script_id']);
     } // if
 
     if (!isset($task_array['script_id'])) {
         // $script_id not supplied yet - so translate $task_id into $script_id
-        $taskobj =& singleton::getInstance('mnu_task');
+        $taskobj =& RDCsingleton::getInstance('mnu_task');
         $task_array = $taskobj->checkSelection($task_id);
         $errors = $taskobj->getErrors();
         if ($errors) {
@@ -1734,12 +1818,27 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         if ($task_array['task_type'] == 'MENU') {
             $query_string = "selection={$task_array['task_id']}";
         } // if
-        if (!empty($_SESSION['script_sequence'])) {
-            if (empty($_SESSION['script_sequence'][0]['script_id'])) {
-            	$_SESSION['script_sequence'][0]['script_id'] = $task_array['script_id'];
-            } // if
-        } // if
+//        if (!empty($_SESSION['script_sequence'])) {
+//            if (empty($_SESSION['script_sequence'][0]['script_id'])) {
+//            	$_SESSION['script_sequence'][0]['script_id'] = $task_array['script_id'];
+//            } // if
+//        } // if
     } // if
+
+    // find out if this task has been set to be run at the end of an existing task
+    foreach ($_SESSION['pages'] as $page_script => $page_data) {
+    	foreach ($page_data['task_array'] as $page_task => $task_data) {
+    		if (isset($page_data[$page_task]['task_id_run_at_end'])) {
+    			if ($page_data[$page_task]['task_id_run_at_end'] == $task_id
+    		    AND $page_data[$page_task]['task_id_run_at_end_context'] == $where) {
+    		        // this task has been nominated, but is already being run, so...
+    		        // remove it so that it is not run again autmatically
+                    unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end']);
+                    unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end_context']);
+    			} // if
+    		} // if
+    	} // foreach
+    } // foreach
 
     $script_id = $task_array['script_id'];
 
@@ -1790,6 +1889,14 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             if (!empty($task_array['initial_passthru'])) {
                 $script_vars['initial_passthru'] = $task_array['initial_passthru'];
             } // if
+        } // if
+
+        if (!empty($task_array['task_id_run_at_end'])) {
+            $script_vars['task_id_run_at_end'] = $task_array['task_id_run_at_end'];
+        } // if
+        if (!empty($task_array['task_id_run_at_cancel'])) {
+            $script_vars['task_id_run_at_cancel']         = $task_array['task_id_run_at_cancel'];
+            $script_vars['task_id_run_at_cancel_context'] = $where;
         } // if
 
         if (!empty($task_array['task_desc'])) {
@@ -1971,7 +2078,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
     global $page_stack;
 
     // check if anything in $_SESSION['pages'] can be removed
-    cleanSavedPages ($PHP_SELF, $task_id);
+    cleanSavedPages ($PHP_SELF, $task_id, $errors);
 
     // get id of the previous script (and optional query string)
     $prev_script = getPreviousScript($task_id);
@@ -1989,7 +2096,8 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                     // current script did not terminate with required action,
                     // so it must be done again
                     $GLOBALS['messages'] = getLanguageText('sys0034');
-                    scriptNext($first['task_id']);
+                    $where =& $first['where'];
+                    scriptNext($first['task_id'], $where);
                 } // if
             } // if
             // script is done, so drop it from array
@@ -2003,7 +2111,8 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                     // current script did not terminate with required action,
                     // so it must be done again
                     $GLOBALS['messages'] = getLanguageText('sys0034');
-                    scriptNext($last['task_id']);
+                    $where =& $last['where'];
+                    scriptNext($last['task_id'], $where);
                 } // if
             } // if
             // script is done, so drop it from array
@@ -2029,7 +2138,8 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                 // no, so remove current task from $page_stack
                 unset($page_stack[$task_id]);
                 // now go forwards to a new script
-                scriptNext($first['task_id']);
+                $where =& $first['where'];
+                scriptNext($first['task_id'], $where);
             } // if
          } // if
     } // if

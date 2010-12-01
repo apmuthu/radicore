@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s03 extends dict_table
@@ -76,7 +76,7 @@ class dict_table_s03 extends dict_table
 
         if (!array_key_exists('pattern_id', $this->lookup_data)) {
             // get contents of foreign table and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('mnu_pattern');
+            $dbobject =& RDCsingleton::getInstance('mnu_pattern');
             $array    = $dbobject->getValRep('pattern_id', "pattern_id IN ($select_list)");
             $this->lookup_data['pattern_id'] = $array;
         } // if
@@ -101,7 +101,7 @@ class dict_table_s03 extends dict_table
         } // if
 
         // reduce multiple selections to a single selection
-        $array = where2array($where);
+        $array = where2array($where, false, false);
         $where = array2where($array);
 
         unset($GLOBALS['act_buttons']['submit']);
@@ -131,11 +131,13 @@ class dict_table_s03 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+        $menu_prefix = dict_findDBPrefix('menu');
+
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
-        	                  . 'LEFT JOIN ' .$GLOBALS['dbprefix'] .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
+        	                  . 'LEFT JOIN ' .$menu_prefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
         } // if
 
         return $where;

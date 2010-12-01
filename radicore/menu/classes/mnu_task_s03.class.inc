@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_task.class.inc';
 class mnu_task_s03 extends mnu_task
@@ -46,7 +46,7 @@ class mnu_task_s03 extends mnu_task
 
         	case 'multi2':
                 // retrieve associated data from MNU_MENU table
-                $object =& singleton::getInstance('mnu_nav_button');
+                $object =& RDCsingleton::getInstance('mnu_nav_button');
                 $task_id  = $fieldarray['task_id'];
                 $object->sql_orderby = 'sort_seq asc';
                 $outarray = $object->getData("task_id_snr='$task_id'");

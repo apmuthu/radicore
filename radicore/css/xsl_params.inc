@@ -9,6 +9,7 @@ $xsl_params['icon']['logged-in-as'] = '/images/user.png';
 //$xsl_params['icon']['noprint']      = '/images/noprint.png';
 //$xsl_params['icon']['new-session']  = '/images/new-session.png';
 //$xsl_params['icon']['recover-pswd'] = '/images/recover-pswd.png';
+//$xsl_params['icon']['add-to-favourites'] = '/images/add-to-favourites.png';
 
 // set display size of these icons (in pixels)
 $xsl_params['icon']['size'] = 20;
@@ -22,5 +23,6 @@ $xsl_params['icon']['home']         = '/images/home.png';
 //unset($xsl_params['text']['new-session']);
 //unset($xsl_params['text']['print']);
 //unset($xsl_params['text']['noprint']);
+//unset($xsl_params['text']['add-to-favourites']);
 
 ?>

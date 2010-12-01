@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns1="urn:radicore_v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+    SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+    <SOAP-ENV:Body>
+        <ns1:menu_viewPatternId>
+            <params xsi:type="ns1:menu_viewPatternIdRequest">
+                <pattern_id xsi:type="xsd:string">add1</pattern_id>
+            </params>
+        </ns1:menu_viewPatternId>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

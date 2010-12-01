@@ -1,4 +1,19 @@
 
+textarea {
+  width: 100%;
+}
+
+pre.textarea {
+}
+pre.height_10 {
+}
+pre.height_15 {
+}
+pre.height_20 {
+}
+pre.height_30 {
+}
+
 /* custom classes */
 .green {
   background: green;
@@ -17,5 +32,11 @@
 div.todo_user .overdue {
   background: transparent;
   color: red;
+  font-weight: bold;
+}
+
+.weekend {
+  background-color: green;
+  color: white;
   font-weight: bold;
 }

@@ -19,8 +19,8 @@ $structure['title'][] = array('text' => '- Contents of DICT_COLUMN table -',
                               'border' => 'y');
 
 // set column widths
-$structure['columns'][] = array('width' => 40, 'align' => 'right');
-$structure['columns'][] = array('width' => 150, 'align' => 'left');
+$structure['columns'][] = array('width' => 40, 'halign' => 'right');
+$structure['columns'][] = array('width' => 150, 'halign' => 'left');
 
 // identify labels and data to be output
 $structure['body']['fields'][1][] = array('label' => 'Database Id', 'width' => 40);
@@ -124,9 +124,9 @@ $structure['body']['fields'][36][] = array('label' => 'Revised By', 'width' => 4
 $structure['body']['fields'][36][] = array('field' => 'revised_user', 'width' => 55);
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

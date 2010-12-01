@@ -1,6 +1,122 @@
 ﻿RADICORE for PHP - news
 
-2009-10-01, version 1.54.0
+2010-12-01, version 1.66.0
+- updated 'std.imap.class.inc' to include method html2text() which will convert an HTML document into plain text.
+- updated 'std.imap.class.inc' so that it will provide the content-id of any attachments which are included in the HTML email. This will allow the 'cid' entry to be replaced with a URL that will obtain the attachment from its new location.
+- added the 'fullwidth' property to each 'style_custom.css' file so that the 'textarea' control can be made to fit the full width of the cell instead of being restricted to the specified number of columns.
+- amended XML/XSL processing so that if you add $this->fieldspec['<fieldname>']['xml'] = 'CDATA' to a field's specifications it will be added to the XHTML document in a <pre> element with disable-output-escaping="yes". This will prevent characters such as '<', '>' and '&' from being converted to '&lt;', '&gt;' and '&amp;'. Note that the 'disable-output-escaping' option does not work in client-side transformations with Firefox.
+- updated 'dml.pgsql.class.inc' so that it can deal with the 'retry_on_duplicate_key' property.
+- updated 'dml.oracle.php5.class.inc' so that it can deal with the DATE_SUB() and DATE_ADD() functions.
+- updated 'std.update2.inc' so that it will combine the result of the call to $dbobject->updateSelection() with any other messages generated within the object.
+- updated 'error.inc' so that the error log is emailed using 'charset=UTF-8' so that non-ascii characters are displayed correctly.
+- updated 'errorlogdel.php' so that after creating an empty 'errorlog.html' file it inserts a 'charset=utf-8' header so that utf-8 characters can be displayed correctly.
+- amended 'std.data_field.xsl' so that if additional CSS class names are supplied in the screen structure file and/or the XML document then they will be merged into a single 'class' attribute.
+
+2010-11-01, version 1.65.0
+- ensure that search screens allow 'IS NULL' and 'IS NOT NULL' as search criteria in any field.
+- amended 'std.imap.class.inc' so that if the plain text version of the message is empty (which it should never be if the email client follows the correct protocols) it will use the HTML version.
+- modified 'std.fileupload1.inc' and 'std.table.class.inc' so that filesize is made available in the _cm_post_fileUpload() method.
+- modified 'include.session.inc' so that a 'run_at_end' task is not added to the processing sequence if the current task terminates with errors.
+- fixed bug with breadcrumbs area when switching between different tasks which use the same script.
+- updated 'std.list1/2/3.inc', 'std.multi2/3/4.inc' so that any search criteria supplied in either selection_fixed or selection_temp on MNU_TASK table is saved so that it becomes visible in the associated search screen.
+- updated 'std.table.class.inc' to include methods 'restart()' and '_cm_restart()'. These will be called from all page controllers when they are restarted after returning from a child form. This will allow action to be taken after returning from a particular child task.
+- modified 'include.library.inc' to improve the use of regular expressions when processing the WHERE string.
+
+2010-10-02, version 1.64.0
+- fixed bug in 'stripOperators()' function in file 'include.library.inc', which is used in 'where2array()', so that if the value is enclosed in single or double quotes it will also call stripslashes() in case it contains any escaped characters.
+- fixed some anomalies when using column hyperlinks to change the sort sequence in LIST forms.
+- updated 'audit_fld.class.inc' so that it will truncate any string larger than 65535 characters.
+- updated the config.inc file to include the constant ERROR_LOG_MAILTO. This can contain one or more email addresses. If this is defined then the error_log will be emailed to this address.
+- modified 'dml.*.class.inc' files so that when inserting a record with a compound primary key, part of which is empty, it will set the field to '' (empty string) instead of NULL.
+
+2010-09-01, version 1.63.0
+- updated std.help.inc so that the script id and script description are on separate lines.
+- fixed bug in 'std.add3.inc' which caused it to return the wrong count when inserting more than one record.
+- updated 'std.data_field.xsl' to copy across any 'class' attribute found with any <option> in the <lookup> area for dropdown lists.
+- modified 'include.xml.php4/5.inc' so that the reference to file 'style_custom.css' will be excluded from the HTML output if it does not exist.
+- when converting a selection string to or from an array ensure that the difference between a field value of '' (empty string) and NULL is maintained.
+- updated TCPDF library to version 5.8.013
+- fixed bug which caused the creation of a PDF file which could not be read. This was caused by running the initialisation code a second time after detecting a change in language, and this re-initialisation caused a corruption.
+
+2010-08-01, version 1.62.0
+- fixed bug in unFormatNumber() where it processed an empty field.
+- fixed bug in getWhere() where it returned multiple selections when the current task only displayed one.
+- fixed bug in 'append2ScriptSequence()' which caused the 'prepend' option to fail if the $_SESSION['script_sequence'] array did not currently exist.
+- created some extra popups for 'Choose Task'. You will need to run the following script:
+-- radicore\menu\sql\menu.menu_export(2010-07-18).sql in order to update the contents of your MENU database.
+- updated the MNU_TASK table in the MENU database to include columns for 'task_id_run_at_end' and 'task_id_run_at_cancel'. You will need to run the following script:
+-- radicore\menu\sql\mysql\alter_table(2010-07-18).sql in order to update the structure of your MENU database.
+- added the MNU_FAVOURITE table to the MENU database. This stores a user's favourite tasks so that they can be displayed in the 'Favourites' area of the Menu/Home Page screen. They are displayed as buttons on the Menu/Home Page screen which can be pressed to activate the task. You will need to run the following scripts:
+-- radicore\menu\sql\mysql\alter_table(2010-07-20).sql in order to update the structure of your MENU database.
+-- radicore\menu\sql\menu.menu_export(2010-07-20).sql in order to update the contents of your MENU database.
+- added navigation buttons to the 'List To-Do' screens to set the selection criteria to either COMPLETE or INCOMLETE. You will need to run the following script:
+-- radicore\menu\sql\menu.menu_export(2010-07-24).sql in order to update the contents of your MENU database.
+- added task 'Delete Logon Errors' to AUDIT subsystem. You must run the folowing script:
+-- radicore\audit\sql\audit.menu_export(2010-07-31).sql in order to update the contents of your MENU database.
+
+2010-07-01, version 1.61.0
+- modified 'std.validation.class.inc' and 'logon.class.inc' to deal with situation where $_SESSION['rdcaccount_id'] is not present.
+- modified 'error.inc' to skip logoff function if $logon_user_id is 'INTERNET' or 'BATCH'.
+- amended XMLRPC functions to obtain the value for $GLOBALS['dbprefix'] before the database is accessed.
+- modified 'dml.mysqli.class.inc' so that if an errno of 2006 (MySQL server has gone away) is returned it will attempt to reconnect.
+- modified 'config.xmlrpc.inc.default' to change the server encoding from 'utf8' to 'iso-8895-1'. This is because the client has already changed any utf8 characters into numeric entities, and to decode them using 'utf8' again would produce the wrong results.
+- modified 'getLanguageFile()' within 'include.library.inc' so that if it cannot find a file beginning with 'sys' then it uses a literal error message instead of one supplied by 'getLanguageText()' as this would also fail with 'file not found'. 
+- modified 'std.table.class.inc' so that 'getForeignData()' will not clear out any key fields if a lookup failed while within a search screen as the key may only contain a partial value.
+- modified 'std.table.class.inc' so that 'unFormatData()' will not insert '9999-12-31' into a field which has 'infinityisnull' set while within a search screen.
+- fixed bug in convertTZdate() and convertTZtime() which failed to ensure that date is converted to internal format (ccyy-mm-dd) before being converted.
+
+2010-06-01, version 1.60.0
+- modified 'config.inc' file to include optional 'port' and 'socket' parameters for MySQL database connections. See 'config.inc.default' for details.
+- modified 'std.batch.inc' and 'dml.???.class.inc' so that if a batch job fails on a duplicate candidate key during an insert or an update then the error log will contain the key value.
+- modified XML/XSL processing to allow a field's HTML control to be set to 'button'. See FAQ137 for details.
+- modified 'std.add1.inc', 'std.add2.inc', 'std.add5.inc' and 'std.update1.inc' to deal with 'button' controls.
+- fixed bug with cascadeDelete() when called from deleteRelations() method which failed to pass down the identity of the parent table.
+- modified processing of MNU_INITIAL_VALUE_ROLE and MNU_INITIAL_VALUE_USER so that both will be read and combined, with USER values taking precedence over ROLE values.
+- fixed bug in 'std.validation.class.inc' involving a MySQL field type of 'SET' which uses a screen control of MULTI CHECKBOX. This bug resulted in unselected values being represented as '0' in the sql query, thus causing an error. This does not happen if the control is MULTI DROPDOWN. See http://www.radicore.org/forum/index.php?t=msg&goto=2543 for details.
+
+2010-05-01, version 1.59.0
+- fixed bug when writing to the AUDIT database when it has a dbprefix which is different from that of the table being audited.
+- updated TCPDF library to version 4.9.007.
+- added the ability to execute a task between the logon screen and the display of the first menu. This task can be specified as the 'initial passthru' on the 'menu' (Home Page) task. See FAQ132 for details.
+- fixed bug in wf_workitem.class.inc and workflow_engine.class.inc where rdcaccount_id was not included in the SELECT list. See http://www.radicore.org/forum/index.php?t=msg&th=554 for details.
+- amended function 'append2ScriptSequence()' to include an optional second argument, which, if set to TRUE, will cause the task details to be prepended to the $_SESSION['script_sequence'] array instead of being appended. This is to force any AUTO tasks generated by the workflow system to go to the head of the queue in front of any non-workflow tasks. See http://www.radicore.org/forum/index.php?t=msg&th=556 for details.
+- amended 'workitem(timeout).php' so that it will process records for all values of rdcaccount_id.
+- updated 'wf_transition' table in 'workflow' database so that the time_limit can be specified in minutes instead of hours. You will need to run script radicore\workflow\sql\mysql\alter_table(2010-04-07).sql in order to implement this change.
+- fixed bug in 'std.multi4.inc' which prevented it from changing the rows-per-page setting.
+- fixed bug with the regular expression within the 'unFormatNumber()' method in 'std.table.class.inc'.
+- fixed bug which prevented a task of pattern 'batch' to be run from a menu button.
+- amended the 'auditWrite()' method inside 'audit_tbl.class.inc' so that it ignores BLOB fields. This is to prevent an error when attempting to write to a string field which contains invalid characters.
+- updated the data dictionary to allow a column to have a control of 'image'. This is similar to the 'control=filepicker' with 'subtype=image', but without the filepicker option.
+- updated XML/XSL processing to allow the specification of 'alt' text for an image field. See FAQ133 for details.
+- updated XML/XSL processing to allow a hyperlink field to have separate parts for 'label' and 'url'. See FAQ133 for details.
+- updated XML/XSL processing to allow a hyperlink field to be specified as an array so that multiple entries can be displayed. See FAQ133 for details.
+
+2010-04-01, version 1.58.0
+- updated PDF processing to allow the page footer to contain an image.
+- updated PDF processing to allow the page margins to be changed from the defaults.
+- updated PDF processing to allow 'ignore_if_empty' to be set for an entire style. This saves having to specify it for every line that uses that style.
+- updated PDF processing to allow title elements to be printed once per database row (not on overflow pages). This facility uses the 'print_only_once' option.
+- fixed database export and table export functions within the data dictionary so that when they link to the MENU database to find the subsystem's directory name they use the correct dbprefix from the config.inc file.
+- change 'singleton' class to 'RDCsingleton' so that it wll not clash with a class/interface with the same name when being integrated with other software. YOU WILL NEED TO CHANGE ALL REFERENCES TO THIS CLASS IN YOUR CODE.
+
+2010-03-01, version 1.57.0
+- modified the workflow system to allow more than 2 Explicit OR-Splits to come out of a transition. Any number can be specified, but they must all have a pre-condition that can be tested for TRUE except for the last one. This will be used as the default when none of the pre-conditions evaluates to TRUE.
+- allow the text on the menu/home page for pending workflow items to be customised. For details see FAQ130.
+- added 'soap' directory to assist in the development of web services. Point your browser to 'radicore/soap/index.html' to see some working examples.
+
+2010-02-01, version 1.56.0
+- fixed bug in startTransaction() method within 'std.table.class.inc' so that, when setting up the lock array, if the multiple database server option is employed it will use a separate dbprefix for each server rather than a single dbprefix for all servers.
+- modified the '_cm_ListView_print_after()' method within 'std.table.class.inc' so that it includes $next_row as the second argument. This will allow a comparison to be made with the current row before printing any extra lines.
+- fixed bug in processing of MULTI4 pattern which failed to associate error messages with the correct rows of the inner entity.
+- modified screen structure files to allow the 'align' and 'valign' attributes to be specified for cells in the vertical view.
+- modified 'std.multi1.inc' so that it calls the 'validateDelete()' method before the 'deleteRecord()' method.
+- modified 'update column' in the data dictionary to allow a new control called 'image hyperlink'. The field value should be the path to an image, and this will be displayed as a thumbnail image which will also be a hyperlink to the full-sized image.
+
+2010-01-01, version 1.55.0
+- updated 'std.validation.class.inc' to allow a numeric field to contain text such as 'field+1' so that it can be incremented from its current value instead of just being set to a new value.
+- updated 'std.delete1.inc' to display a message after a record has been deleted.
+
+2009-12-01, version 1.54.0
 - fixed bug in setDefaultOrderBy() function which set the default sequence to 'asc', only to have it switched to 'desc' in the setOrderBy() function.
 - fixed bug in 'dict_table_key.class.inc' which failed to include the value of $dbprefix when accessing the database schema.
 - fixed bug in 'std.update4.inc' to change '$dbobject->getErrors' to '$dbobject->getErrors()'.

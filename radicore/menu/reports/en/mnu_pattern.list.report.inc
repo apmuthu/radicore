@@ -21,10 +21,10 @@ $structure['title'][] = array('text' => '- Contents of MNU_PATTERN table -',
 // set column widths
 $structure['columns'][] = array('width' => 42);
 $structure['columns'][] = array('width' => 145);
-$structure['columns'][] = array('width' => 25, 'align' => 'center');
-$structure['columns'][] = array('width' => 25, 'align' => 'center');
-$structure['columns'][] = array('width' => 25, 'align' => 'center');
-$structure['columns'][] = array('width' => 15, 'align' => 'right');
+$structure['columns'][] = array('width' => 25, 'halign' => 'center');
+$structure['columns'][] = array('width' => 25, 'halign' => 'center');
+$structure['columns'][] = array('width' => 25, 'halign' => 'center');
+$structure['columns'][] = array('width' => 15, 'halign' => 'right');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
@@ -35,9 +35,9 @@ $structure['body']['fields'][] = array('keep_data' => 'Keep Data?');
 $structure['body']['fields'][] = array('count' => 'Count');
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
 $structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

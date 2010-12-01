@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -140,7 +140,7 @@ class dict_table_s04 extends dict_table
     {
         if (!array_key_exists('pattern_id', $this->lookup_data)) {
             // get contents of foreign table and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('mnu_pattern');
+            $dbobject =& RDCsingleton::getInstance('mnu_pattern');
             $array    = $dbobject->getValRep('pattern_id');
             $this->lookup_data['pattern_id'] = $array;
         } // if
@@ -148,11 +148,11 @@ class dict_table_s04 extends dict_table
         if (isset($fieldarray['database_id'])) {
             $database_id = $fieldarray['database_id'];
         	// get list of tables from current database
-            $dbobject =& singleton::getInstance('dict_table');
+            $dbobject =& RDCsingleton::getInstance('dict_table');
             $array1    = $dbobject->getValRep('table_id', "database_id='$database_id'");
 
             // get alias names from any relationships
-            $dbobject =& singleton::getInstance('dict_relationship');
+            $dbobject =& RDCsingleton::getInstance('dict_relationship');
             $array2   = $dbobject->getValRep('table_alias_snr', "database_id_snr='$database_id'");
             $array3   = $dbobject->getValRep('table_alias_jnr', "database_id_jnr='$database_id'");
 
@@ -164,11 +164,11 @@ class dict_table_s04 extends dict_table
         if (isset($fieldarray['database_id_outer'])) {
             $database_id = $fieldarray['database_id_outer'];
         	// get list of tables from current database
-            $dbobject =& singleton::getInstance('dict_table');
+            $dbobject =& RDCsingleton::getInstance('dict_table');
             $array1    = $dbobject->getValRep('table_id', "database_id='$database_id'");
 
             // get alias names from any relationships
-            $dbobject =& singleton::getInstance('dict_relationship');
+            $dbobject =& RDCsingleton::getInstance('dict_relationship');
             $array2   = $dbobject->getValRep('table_alias_snr', "database_id_snr='$database_id'");
             $array3   = $dbobject->getValRep('table_alias_jnr', "database_id_jnr='$database_id'");
 
@@ -197,7 +197,7 @@ class dict_table_s04 extends dict_table
         } // if
 
         // reduce multiple selections to a single selection
-        $array = where2array($where);
+        $array = where2array($where, false, false);
         $where = array2where($array);
 
         // remove message created by table_generate_a.php
@@ -427,6 +427,18 @@ class dict_table_s04 extends dict_table
 
     } // _cm_post_getData
 
+    // ****************************************************************************
+    function _cm_post_updateRecord ($rowdata, $old_data)
+    // perform custom processing after database record is updated.
+    {
+        if (empty($this->errors)) {
+        	$this->messages[] = getLanguageText('e0042');  // 'Script has been generated';
+        } // if
+
+        return $rowdata;
+
+    } // _cm_post_updateRecord
+
     // ***************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
@@ -434,12 +446,14 @@ class dict_table_s04 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+        $menu_prefix = dict_findDBPrefix('menu');
+
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
-        	                  . 'LEFT JOIN ' .$GLOBALS['dbprefix'] .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
-        	                  . 'LEFT JOIN ' .$GLOBALS['dbprefix'] ."menu.mnu_pattern ON (mnu_pattern.pattern_id='$this->pattern_id')";
+        	                  . 'LEFT JOIN ' .$menu_prefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
+        	                  . 'LEFT JOIN ' .$menu_prefix ."menu.mnu_pattern ON (mnu_pattern.pattern_id='$this->pattern_id')";
         } // if
 
         return $where;
@@ -483,7 +497,7 @@ class dict_table_s04 extends dict_table
         $subsys_dir = $this->subsys_dir;
 
         // check to see if task_id or script_id have been used yet
-        $task_obj =& singleton::getInstance('mnu_task');
+        $task_obj =& RDCsingleton::getInstance('mnu_task');
         $count = $task_obj->getCount("task_id='$task_id'");
         if ($count > 0) {
             // 'This id is already in use'
@@ -496,7 +510,7 @@ class dict_table_s04 extends dict_table
         } // if
 
         // get default language for screen/report file
-        $control_obj =& singleton::getInstance('mnu_control');
+        $control_obj =& RDCsingleton::getInstance('mnu_control');
         $default_lang = $control_obj->getControlData('DEFAULT_LANGUAGE');
         unset($control_obj);
 
@@ -713,7 +727,7 @@ class dict_table_s04 extends dict_table
 
         if (!empty($this->nav_array)) {
             // add enties to MNU_NAV_BUTTON
-            $nav_obj =& singleton::getInstance('mnu_nav_button');
+            $nav_obj =& RDCsingleton::getInstance('mnu_nav_button');
             $fieldarray = $nav_obj->insertMultiple($this->nav_array);
             if ($nav_obj->errors) {
             	$this->errors = array_merge($this->errors, $nav_obj->getErrors());
@@ -723,7 +737,7 @@ class dict_table_s04 extends dict_table
 
         if (!empty($this->menu_array)) {
             // add enties to MNU_MENU
-            $menu_obj =& singleton::getInstance('mnu_menu');
+            $menu_obj =& RDCsingleton::getInstance('mnu_menu');
             $fieldarray = $menu_obj->insertMultiple($this->menu_array);
             if ($menu_obj->errors) {
             	$this->errors = array_merge($this->errors, $menu_obj->getErrors());
@@ -829,7 +843,7 @@ class dict_table_s04 extends dict_table
 	        } // if
 		} // if
 
-		$task_obj =& singleton::getInstance('mnu_task');
+		$task_obj =& RDCsingleton::getInstance('mnu_task');
         $count = $task_obj->getCount("task_id='{$fieldarray['task_id']}'");
         if ($count == 0) {
             // task does not exist, so create details to be added later
@@ -985,7 +999,7 @@ class dict_table_s04 extends dict_table
 		    // this task has a parent, so add it to parent's navigation buttons
 			$nav_data['task_id_snr'] = $parent_id;
 			$nav_data['task_id_jnr'] = $fieldarray['task_id'];
-			$nav_obj =& singleton::getInstance('mnu_nav_button');
+			$nav_obj =& RDCsingleton::getInstance('mnu_nav_button');
             $count = $nav_obj->getCount("task_id_snr='{$nav_data['task_id_snr']}' AND task_id_jnr='{$nav_data['task_id_jnr']}'");
             if ($count == 0) {
             	switch ($pattern_id) {
@@ -1053,7 +1067,7 @@ class dict_table_s04 extends dict_table
         } // if
 
         // create object for obtaining column details for each table
-        $object =& singleton::getInstance('dict_column');
+        $object =& RDCsingleton::getInstance('dict_column');
     	$object->sql_select = 'column_id, column_desc';
 	    $database_id = $fieldarray['database_id'];
 	    $table_id = $fieldarray['table_id'];
@@ -1183,7 +1197,7 @@ class dict_table_s04 extends dict_table
         } else {
 
             // create object for obtaining column details for each table
-            $object =& singleton::getInstance('dict_column');
+            $object =& RDCsingleton::getInstance('dict_column');
         	$object->sql_select = 'column_id, column_desc';
 
     	    // array of processed objects (so each one is only done once)
@@ -1327,7 +1341,7 @@ class dict_table_s04 extends dict_table
         } // if
 
         // create object for obtaining column details for each table
-        $object =& singleton::getInstance('dict_column');
+        $object =& RDCsingleton::getInstance('dict_column');
     	$object->sql_select = 'column_id, column_desc';
 	    $database_id = $fieldarray['database_id'];
 
@@ -1385,7 +1399,7 @@ class dict_table_s04 extends dict_table
         // look for 'original AS alias' and extract the two names
         list($original, $alias) = getTableAlias3($parent);
 
-        $dbobject =& singleton::getInstance('dict_relationship');
+        $dbobject =& RDCsingleton::getInstance('dict_relationship');
         if (strlen($original) > 0) {
         	$where = "database_id_snr='$parent_database' AND table_id_snr='$original' AND database_id_jnr='$child_database' AND table_id_jnr='$child'";
         } else {

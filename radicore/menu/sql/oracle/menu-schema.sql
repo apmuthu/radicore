@@ -14,424 +14,602 @@ GRANT CREATE VIEW TO "MENU";
 
 ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 
--- 
--- Table structure for table help_text
--- 
+--------------------------------------------------------
+--  DDL for Sequence MNU_ACCOUNT_SEQ
+--------------------------------------------------------
 
-CREATE TABLE help_text (
-  task_id varchar2(80) NOT NULL,
-  help_text clob,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (task_id)
-);
+  CREATE SEQUENCE  "MNU_ACCOUNT_SEQ"  MINVALUE 1 MAXVALUE 999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE ;
 
-REVOKE ALL ON help_text FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON help_text TO PUBLIC;
+  GRANT ALTER ON "MNU_ACCOUNT_SEQ" TO PUBLIC;
+  GRANT SELECT ON "MNU_ACCOUNT_SEQ" TO PUBLIC;
+ 
 
---
--- Table structure for table mnu_account
---
+--------------------------------------------------------
+--  DDL for Sequence MNU_MOTD_SEQ
+--------------------------------------------------------
 
-CREATE TABLE mnu_account (
-  rdcaccount_id number(10) NOT NULL,
-  account_name varchar2(255) NOT NULL,
-  rdcversion number(10) default 1 NOT NULL,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (rdcaccount_id)
-);
-CREATE SEQUENCE mnu_account_seq; 
+  CREATE SEQUENCE  "MNU_MOTD_SEQ"  MINVALUE 1 MAXVALUE 999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE ;
 
-REVOKE ALL ON mnu_account FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_account TO PUBLIC;
-REVOKE ALL ON mnu_account_seq FROM PUBLIC; 
-GRANT SELECT,ALTER ON mnu_account_seq TO PUBLIC; 
+  GRANT ALTER ON "MNU_MOTD_SEQ" TO PUBLIC;
+  GRANT SELECT ON "MNU_MOTD_SEQ" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_control
--- 
+--------------------------------------------------------
+--  DDL for Table HELP_TEXT
+--------------------------------------------------------
 
-CREATE TABLE mnu_control (
-  record_id varchar2(16) NOT NULL,
-  field_id varchar2(32) NOT NULL,
-  field_value varchar2(255),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (record_id,field_id)
-);
+  CREATE TABLE "HELP_TEXT" 
+   (	"TASK_ID" VARCHAR2(80), 
+	"HELP_TEXT" CLOB, 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "HELP_TEXT" TO PUBLIC;
+ 
+  GRANT INSERT ON "HELP_TEXT" TO PUBLIC;
+ 
+  GRANT SELECT ON "HELP_TEXT" TO PUBLIC;
+ 
+  GRANT UPDATE ON "HELP_TEXT" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_control FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_control TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_ACCOUNT
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_initial_value_role 
--- 
+  CREATE TABLE "MNU_ACCOUNT" 
+   (	"RDCACCOUNT_ID" NUMBER(10,0), 
+	"ACCOUNT_NAME" VARCHAR2(255), 
+	"RDCVERSION" NUMBER(10,0) DEFAULT 1, 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_ACCOUNT" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_ACCOUNT" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_ACCOUNT" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_ACCOUNT" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_initial_value_role (
-  role_id varchar2(16) NOT NULL,
-  task_id varchar2(80) NOT NULL,
-  field_id varchar2(40) NOT NULL,
-  initial_value varchar2(255),
-  is_noedit char(1) default 'N',
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (role_id,task_id,field_id)
-);
-CREATE INDEX  mnu_initial_value_role_idx1 ON  mnu_initial_value_role (task_id);
+--------------------------------------------------------
+--  DDL for Table MNU_CONTROL
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_initial_value_role FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_initial_value_role TO PUBLIC;
+  CREATE TABLE "MNU_CONTROL" 
+   (	"RECORD_ID" VARCHAR2(16), 
+	"FIELD_ID" VARCHAR2(32), 
+	"FIELD_VALUE" VARCHAR2(255), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_CONTROL" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_CONTROL" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_CONTROL" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_CONTROL" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_initial_value_user 
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_FAVOURITE
+--------------------------------------------------------
 
-CREATE TABLE mnu_initial_value_user (
-  user_id varchar2(16) NOT NULL,
-  task_id varchar2(80) NOT NULL,
-  field_id varchar2(40) NOT NULL,
-  initial_value varchar2(255),
-  is_noedit char(1) default 'N',
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (user_id,task_id,field_id)
-);
-CREATE INDEX  mnu_initial_value_user_idx1 ON  mnu_initial_value_user (task_id);
+  CREATE TABLE "MNU_FAVOURITE" 
+   (	"USER_ID" VARCHAR2(16), 
+	"SEQ_NO" NUMBER(6,0), 
+	"TASK_ID" VARCHAR2(80), 
+	"TASK_DESC" VARCHAR2(80), 
+	"SORT_SEQ" NUMBER(6,0), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_FAVOURITE" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_FAVOURITE" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_FAVOURITE" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_FAVOURITE" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_initial_value_user FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_initial_value_user TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_INITIAL_VALUE_ROLE
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_language
--- 
+  CREATE TABLE "MNU_INITIAL_VALUE_ROLE" 
+   (	"ROLE_ID" VARCHAR2(16), 
+	"TASK_ID" VARCHAR2(80), 
+	"FIELD_ID" VARCHAR2(40), 
+	"INITIAL_VALUE" VARCHAR2(255), 
+	"IS_NOEDIT" CHAR(1) DEFAULT 'N', 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_INITIAL_VALUE_ROLE" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_INITIAL_VALUE_ROLE" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_INITIAL_VALUE_ROLE" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_INITIAL_VALUE_ROLE" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_language (
-  language_id varchar(5) default 'EN' NOT NULL,
-  language_name varchar(40) default 'English' NOT NULL,
-  created_date timestamp default '2000-01-01 00:00:00' NOT NULL,
-  created_user varchar(16) default 'UNKNOWN',
-  revised_date timestamp default NULL,
-  revised_user varchar(16) default NULL,
-  PRIMARY KEY  (language_id)
-);
+--------------------------------------------------------
+--  DDL for Table MNU_INITIAL_VALUE_USER
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_language FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_language TO PUBLIC;
+  CREATE TABLE "MNU_INITIAL_VALUE_USER" 
+   (	"USER_ID" VARCHAR2(16), 
+	"TASK_ID" VARCHAR2(80), 
+	"FIELD_ID" VARCHAR2(40), 
+	"INITIAL_VALUE" VARCHAR2(255), 
+	"IS_NOEDIT" CHAR(1) DEFAULT 'N', 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_INITIAL_VALUE_USER" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_INITIAL_VALUE_USER" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_INITIAL_VALUE_USER" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_INITIAL_VALUE_USER" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_menu
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_LANGUAGE
+--------------------------------------------------------
 
-CREATE TABLE mnu_menu (
-  menu_id varchar2(80) NOT NULL,
-  task_id_jnr varchar2(80) NOT NULL,
-  sort_seq number(3) default '000' NOT NULL,
-  button_text varchar2(40),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (menu_id,task_id_jnr)
-);
+  CREATE TABLE "MNU_LANGUAGE" 
+   (	"LANGUAGE_ID" VARCHAR2(5) DEFAULT 'EN', 
+	"LANGUAGE_NAME" VARCHAR2(40) DEFAULT 'English', 
+	"CREATED_DATE" TIMESTAMP (6) DEFAULT '2000-01-01 00:00:00', 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6) DEFAULT NULL, 
+	"REVISED_USER" VARCHAR2(16) DEFAULT NULL
+   ) ;
+  GRANT DELETE ON "MNU_LANGUAGE" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_LANGUAGE" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_LANGUAGE" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_LANGUAGE" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_menu FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_menu TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_MENU
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_motd
--- 
+  CREATE TABLE "MNU_MENU" 
+   (	"MENU_ID" VARCHAR2(80), 
+	"TASK_ID_JNR" VARCHAR2(80), 
+	"SORT_SEQ" NUMBER(3,0) DEFAULT '000', 
+	"BUTTON_TEXT" VARCHAR2(40), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_MENU" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_MENU" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_MENU" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_MENU" TO PUBLIC;
+ 
 
-CREATE TABLE MNU_MOTD
-(
-  MOTD_ID       NUMBER                          NOT NULL,
-  MOTD_SUBJECT  CHAR(80 BYTE)                   NOT NULL,
-  MOTD_MESSAGE  CLOB                            NOT NULL,
-  START_DATE    DATE                            DEFAULT '2001-01-01'          NOT NULL,
-  END_DATE      DATE                            DEFAULT '9999-12-31',
-  role_id       varchar2(16 byte),
-  CREATED_DATE  TIMESTAMP(6)                    DEFAULT '2001-01-01'          NOT NULL,
-  CREATED_USER  VARCHAR2(16 BYTE)               DEFAULT 'UNKNOWN'             NOT NULL,
-  REVISED_DATE  TIMESTAMP(6),
-  REVISED_USER  VARCHAR2(16 BYTE)
-);
-CREATE SEQUENCE mnu_motd_seq; 
+--------------------------------------------------------
+--  DDL for Table MNU_MOTD
+--------------------------------------------------------
 
-CREATE UNIQUE INDEX MNU_MOTD_PK ON MNU_MOTD (MOTD_ID);
+  CREATE TABLE "MNU_MOTD" 
+   (	"MOTD_ID" NUMBER, 
+	"MOTD_SUBJECT" CHAR(80), 
+	"MOTD_MESSAGE" CLOB, 
+	"START_DATE" DATE DEFAULT '2001-01-01', 
+	"END_DATE" DATE DEFAULT '9999-12-31', 
+	"ROLE_ID" VARCHAR2(16), 
+	"CREATED_DATE" TIMESTAMP (6) DEFAULT '2001-01-01', 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_MOTD" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_MOTD" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_MOTD" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_MOTD" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_motd FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_motd TO PUBLIC;
-REVOKE ALL ON mnu_motd_seq FROM PUBLIC; 
-GRANT SELECT,ALTER ON mnu_motd_seq TO PUBLIC; 
+--------------------------------------------------------
+--  DDL for Table MNU_NAV_BUTTON
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_nav_button
--- 
+  CREATE TABLE "MNU_NAV_BUTTON" 
+   (	"TASK_ID_SNR" VARCHAR2(80), 
+	"TASK_ID_JNR" VARCHAR2(80), 
+	"SORT_SEQ" NUMBER(3,0) DEFAULT '000', 
+	"BUTTON_TEXT" VARCHAR2(40), 
+	"CONTEXT_PRESELECT" CHAR(1), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_NAV_BUTTON" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_NAV_BUTTON" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_NAV_BUTTON" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_NAV_BUTTON" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_nav_button (
-  task_id_snr varchar2(80) NOT NULL,
-  task_id_jnr varchar2(80) NOT NULL,
-  sort_seq number(3) default '000' NOT NULL,
-  button_text varchar2(40),
-  context_preselect char(1),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (task_id_snr,task_id_jnr)
-);
+--------------------------------------------------------
+--  DDL for Table MNU_PATTERN
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_nav_button FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_nav_button TO PUBLIC;
+  CREATE TABLE "MNU_PATTERN" 
+   (	"PATTERN_ID" VARCHAR2(16), 
+	"PATTERN_DESC" VARCHAR2(60), 
+	"PATTERN_LONG_DESC" CLOB, 
+	"VISIBLE_SCREEN" CHAR(1), 
+	"CONTEXT_PRESELECT" CHAR(1), 
+	"KEEP_DATA" CHAR(1), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_PATTERN" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_PATTERN" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_PATTERN" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_PATTERN" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_pattern
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_ROLE
+--------------------------------------------------------
 
-CREATE TABLE mnu_pattern (
-  pattern_id varchar2(16) NOT NULL,
-  pattern_desc varchar2(60) NOT NULL,
-  pattern_long_desc clob,
-  visible_screen char(1),
-  context_preselect char(1),
-  keep_data char(1),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (pattern_id)
-);
+  CREATE TABLE "MNU_ROLE" 
+   (	"ROLE_ID" VARCHAR2(16), 
+	"ROLE_DESC" VARCHAR2(30), 
+	"START_TASK_ID" VARCHAR2(80), 
+	"GLOBAL_ACCESS" CHAR(1) DEFAULT 'N', 
+	"IS_EXTERNAL_AUTH_OFF" CHAR(1) DEFAULT 'N', 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_ROLE" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_ROLE" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_ROLE" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_ROLE" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_pattern FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_pattern TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_ROLE_TASK
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_role
--- 
+  CREATE TABLE "MNU_ROLE_TASK" 
+   (	"ROLE_ID" VARCHAR2(16), 
+	"TASK_ID" VARCHAR2(80), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_ROLE_TASK" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_ROLE_TASK" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_ROLE_TASK" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_ROLE_TASK" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_role (
-  role_id varchar2(16) NOT NULL,
-  role_desc varchar2(30) NOT NULL,
-  start_task_id varchar2(80),
-  global_access char(1) default 'N',
-  is_external_auth_off char(1) default 'N',
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (role_id)
-);
+--------------------------------------------------------
+--  DDL for Table MNU_ROLE_TASKFIELD
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_role FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role TO PUBLIC;
+  CREATE TABLE "MNU_ROLE_TASKFIELD" 
+   (	"ROLE_ID" VARCHAR2(16), 
+	"TASK_ID" VARCHAR2(80), 
+	"FIELD_ID" VARCHAR2(40), 
+	"ACCESS_TYPE" VARCHAR2(4), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_ROLE_TASKFIELD" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_ROLE_TASKFIELD" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_ROLE_TASKFIELD" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_ROLE_TASKFIELD" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_role_task
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_SUBSYSTEM
+--------------------------------------------------------
 
-CREATE TABLE mnu_role_task (
-  role_id varchar2(16) NOT NULL,
-  task_id varchar2(80) NOT NULL,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (role_id,task_id)
-);
+  CREATE TABLE "MNU_SUBSYSTEM" 
+   (	"SUBSYS_ID" VARCHAR2(16), 
+	"SUBSYS_DESC" VARCHAR2(255), 
+	"SUBSYS_DIR" VARCHAR2(255), 
+	"TASK_PREFIX" VARCHAR2(8), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_SUBSYSTEM" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_SUBSYSTEM" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_SUBSYSTEM" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_SUBSYSTEM" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_role_task FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role_task TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_TASK
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_role_taskfield
--- 
+  CREATE TABLE "MNU_TASK" 
+   (	"TASK_ID" VARCHAR2(80), 
+	"TASK_DESC" VARCHAR2(80), 
+	"BUTTON_TEXT" VARCHAR2(80), 
+	"TASK_TYPE" VARCHAR2(4), 
+	"SCRIPT_ID" VARCHAR2(80), 
+	"IS_DISABLED" CHAR(1), 
+	"PATTERN_ID" VARCHAR2(16), 
+	"SUBSYS_ID" VARCHAR2(16), 
+	"INITIAL_PASSTHRU" VARCHAR2(80), 
+	"SELECTION_FIXED" VARCHAR2(255), 
+	"SELECTION_TEMP" VARCHAR2(255), 
+	"SETTINGS" VARCHAR2(255), 
+	"ORDER_BY" VARCHAR2(255), 
+	"KEEP_DATA" CHAR(1), 
+	"LOG_SQL_QUERY" CHAR(1), 
+	"SCREEN_REFRESH" NUMBER(5,0), 
+	"USE_HTTPS" CHAR(1), 
+	"MAX_EXECUTION_TIME" NUMBER(5,0), 
+        "TASK_ID_RUN_AT_END" VARCHAR2(80), 
+	"TASK_ID_RUN_AT_CANCEL" VARCHAR2(80),
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_TASK" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_TASK" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_TASK" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_TASK" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_role_taskfield (
-  role_id varchar2(16) NOT NULL,
-  task_id varchar2(80) NOT NULL,
-  field_id varchar2(40) NOT NULL,
-  access_type varchar2(4),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (role_id,task_id,field_id)
-);
-CREATE INDEX  mnu_role_taskfield_idx1 ON  mnu_role_taskfield (task_id);
+--------------------------------------------------------
+--  DDL for Table MNU_TASK_FIELD
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_role_taskfield FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_role_taskfield TO PUBLIC;
+  CREATE TABLE "MNU_TASK_FIELD" 
+   (	"TASK_ID" VARCHAR2(80), 
+	"FIELD_ID" VARCHAR2(40), 
+	"FIELD_DESC" VARCHAR2(255), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_TASK_FIELD" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_TASK_FIELD" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_TASK_FIELD" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_TASK_FIELD" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_subsystem
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_TASK_IP_ADDRESS
+--------------------------------------------------------
 
-CREATE TABLE mnu_subsystem (
-  subsys_id varchar2(16) NOT NULL,
-  subsys_desc varchar2(255) NOT NULL,
-  subsys_dir varchar2(255),
-  task_prefix varchar2(8),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (subsys_id)
-);
+  CREATE TABLE "MNU_TASK_IP_ADDRESS" 
+   (	"TASK_ID" VARCHAR2(80), 
+	"IP_ADDRESS" VARCHAR2(40), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_TASK_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_TASK_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_TASK_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_TASK_IP_ADDRESS" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_subsystem FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_subsystem TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_TODO
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_task
--- 
+  CREATE TABLE "MNU_TODO" 
+   (	"USER_ID" VARCHAR2(16), 
+	"SEQ_NO" NUMBER(6,0), 
+	"ITEM_DESC" VARCHAR2(80), 
+	"ITEM_NOTES" CLOB, 
+	"DUE_DATE" DATE, 
+	"VISIBILITY" NUMBER(3,0), 
+	"IS_COMPLETE" CHAR(1) DEFAULT 'N', 
+	"REPEAT_INTERVAL" NUMBER(3,0), 
+	"REPEAT_UNIT" CHAR(1), 
+	"TASK_ID" VARCHAR2(80), 
+	"TASK_CONTEXT" VARCHAR2(255) DEFAULT NULL, 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_TODO" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_TODO" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_TODO" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_TODO" TO PUBLIC;
+ 
 
-CREATE TABLE mnu_task (
-  task_id varchar2(80) NOT NULL,
-  task_desc varchar2(80) NOT NULL,
-  button_text varchar2(80),
-  task_type varchar2(4),
-  script_id varchar2(80),
-  is_disabled char(1),
-  pattern_id varchar2(16),
-  subsys_id varchar2(16),
-  initial_passthru varchar2(40),
-  selection_fixed varchar2(255),
-  selection_temp varchar2(255),
-  settings varchar2(255),
-  order_by varchar2(255),
-  keep_data char(1),
-  log_sql_query char(1),
-  screen_refresh number(5),
-  use_https char(1),
-  max_execution_time number(5),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (task_id)
-);
-CREATE INDEX  mnu_task_idx1 ON  mnu_task (subsys_id);
-CREATE INDEX  mnu_task_idx2 ON  mnu_task (pattern_id);
+--------------------------------------------------------
+--  DDL for Table MNU_USER
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_task FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task TO PUBLIC;
+  CREATE TABLE "MNU_USER" 
+   (	"USER_ID" VARCHAR2(16), 
+	"USER_NAME" VARCHAR2(30), 
+	"USER_PASSWORD" VARCHAR2(40), 
+	"ROLE_ID" VARCHAR2(16), 
+	"RDCACCOUNT_ID" NUMBER(10,0), 
+	"PSWD_CHG_DATE" DATE, 
+	"PSWD_CHG_TIME" CHAR(8), 
+	"PSWD_COUNT" NUMBER(6,0), 
+	"IN_USE" CHAR(1) DEFAULT 'N', 
+	"IS_DISABLED" CHAR(1) DEFAULT 'N', 
+	"LOGON_DATE" DATE, 
+	"LOGON_TIME" CHAR(8), 
+	"LANGUAGE_CODE" VARCHAR2(6), 
+	"START_DATE" DATE, 
+	"END_DATE" DATE, 
+	"IP_ADDRESS" VARCHAR2(16), 
+	"EMAIL_ADDR" VARCHAR2(50), 
+	"EXTERNAL_ID" VARCHAR2(255), 
+	"IS_EXTERNAL_AUTH_OFF" CHAR(1) DEFAULT 'N', 
+	"PARTY_ID" NUMBER(10,0), 
+	"USER_TIMEZONE" VARCHAR2(40), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_USER" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_USER" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_USER" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_USER" TO PUBLIC;
+ 
 
--- 
--- Table structure for table mnu_task_field
--- 
+--------------------------------------------------------
+--  DDL for Table MNU_USER_IP_ADDRESS
+--------------------------------------------------------
 
-CREATE TABLE mnu_task_field (
-  task_id varchar2(80) NOT NULL,
-  field_id varchar2(40) NOT NULL,
-  field_desc varchar2(255),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (task_id,field_id)
-);
+  CREATE TABLE "MNU_USER_IP_ADDRESS" 
+   (	"USER_ID" VARCHAR2(16), 
+	"IP_ADDRESS" VARCHAR2(40), 
+	"CREATED_DATE" TIMESTAMP (6), 
+	"CREATED_USER" VARCHAR2(16) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6), 
+	"REVISED_USER" VARCHAR2(16)
+   ) ;
+  GRANT DELETE ON "MNU_USER_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT INSERT ON "MNU_USER_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT SELECT ON "MNU_USER_IP_ADDRESS" TO PUBLIC;
+ 
+  GRANT UPDATE ON "MNU_USER_IP_ADDRESS" TO PUBLIC;
+ 
 
-REVOKE ALL ON mnu_task_field FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task_field TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Index MNU_FAVOURITE_PK
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_todo
--- 
+  CREATE UNIQUE INDEX "MNU_FAVOURITE_PK" ON "MNU_FAVOURITE" ("USER_ID", "SEQ_NO") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_INITIAL_VALUE_ROLE_IDX1
+--------------------------------------------------------
 
-CREATE TABLE mnu_todo (
-  user_id varchar2(16) NOT NULL,
-  seq_no number(6) NOT NULL,
-  item_desc varchar2(80) NOT NULL,
-  item_notes clob,
-  due_date date NOT NULL,
-  visibility number(3) NOT NULL,
-  is_complete char(1) default 'N' NOT NULL,
-  repeat_interval decimal(3,0),
-  repeat_unit char(1),
-  task_id varchar2(80),
-  task_context varchar2(255) default NULL,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (user_id,seq_no)
-);
+  CREATE INDEX "MNU_INITIAL_VALUE_ROLE_IDX1" ON "MNU_INITIAL_VALUE_ROLE" ("TASK_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_INITIAL_VALUE_USER_IDX1
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_todo FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_todo TO PUBLIC;
+  CREATE INDEX "MNU_INITIAL_VALUE_USER_IDX1" ON "MNU_INITIAL_VALUE_USER" ("TASK_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_MOTD_PK
+--------------------------------------------------------
 
--- 
--- Table structure for table mnu_user
--- 
+  CREATE UNIQUE INDEX "MNU_MOTD_PK" ON "MNU_MOTD" ("MOTD_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_ROLE_TASKFIELD_IDX1
+--------------------------------------------------------
 
-CREATE TABLE mnu_user (
-  user_id varchar2(16) NOT NULL,
-  user_name varchar2(30) NOT NULL,
-  user_password varchar2(40) NOT NULL,
-  role_id varchar2(16) NOT NULL,
-  rdcaccount_id number(10),
-  pswd_chg_date date,
-  pswd_chg_time char(8),
-  pswd_count number(6),
-  in_use char(1) default 'N' NOT NULL,
-  is_disabled char(1) default 'N' NOT NULL,
-  logon_date date,
-  logon_time char(8),
-  language_code varchar2(6),
-  start_date date NOT NULL,
-  end_date date,
-  ip_address varchar2(16),
-  email_addr varchar2(50),
-  external_id varchar2(255),
-  is_external_auth_off char(1) default 'N',
-  party_id number(10),
-  user_timezone varchar2(40),
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (user_id)
-);
-CREATE UNIQUE INDEX  mnu_user_idx1 ON  mnu_user (email_addr);
-CREATE INDEX  mnu_user_idx2 ON  mnu_user (role_id);
-CREATE INDEX  mnu_user_idx3 ON  mnu_user (rdcaccount_id);
+  CREATE INDEX "MNU_ROLE_TASKFIELD_IDX1" ON "MNU_ROLE_TASKFIELD" ("TASK_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_TASK_IDX1
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_user FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_user TO PUBLIC;
+  CREATE INDEX "MNU_TASK_IDX1" ON "MNU_TASK" ("SUBSYS_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_TASK_IDX2
+--------------------------------------------------------
 
-CREATE TABLE mnu_user_ip_address (
-  user_id varchar2(16) NOT NULL,
-  ip_address varchar2(40) NOT NULL,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (user_id, ip_address)
-);
+  CREATE INDEX "MNU_TASK_IDX2" ON "MNU_TASK" ("PATTERN_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_USER_IDX1
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_user_ip_address FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_user_ip_address TO PUBLIC;
+  CREATE UNIQUE INDEX "MNU_USER_IDX1" ON "MNU_USER" ("EMAIL_ADDR") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_USER_IDX2
+--------------------------------------------------------
 
-CREATE TABLE mnu_task_ip_address (
-  task_id varchar2(80) NOT NULL,
-  ip_address varchar2(40) NOT NULL,
-  created_date timestamp NOT NULL,
-  created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
-  revised_user varchar2(16),
-  PRIMARY KEY  (task_id, ip_address)
-);
+  CREATE INDEX "MNU_USER_IDX2" ON "MNU_USER" ("ROLE_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_USER_IDX3
+--------------------------------------------------------
 
-REVOKE ALL ON mnu_task_ip_address FROM PUBLIC;
-GRANT SELECT,INSERT,DELETE,UPDATE ON mnu_task_ip_address TO PUBLIC;
-
+  CREATE INDEX "MNU_USER_IDX3" ON "MNU_USER" ("RDCACCOUNT_ID") 
+  ;

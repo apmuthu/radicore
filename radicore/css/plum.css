@@ -517,6 +517,22 @@ table.timetable td.blank {
   border: 0px;
 }
 
+/* Favourites list */
+div.favourites {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 4pt;
+  background: #ffbbff;
+}
+div.favourites h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+
 /* ToDo list */
 div.todo_user {
   border-bottom: 1px solid #000000;
@@ -660,13 +676,13 @@ input.submit {
   font-weight: normal;
 }   
 
-input.radio {
+.radio input {
   background-color: transparent;
   font-size: 100%;
   color: maroon;
 }
 
-input.checkbox {
+.checkbox input {
   background-color: transparent;
   font-size: 100%;
   color: maroon;
@@ -706,11 +722,39 @@ select.dropdown {
   color: black;
 }
 
+select.dropdown option.heading {
+  background: #dddddd;
+  font-weight: bold;
+}
+
 textarea {
   background-color: white;
   border: #000000 1px solid;
   font-size: 100%;
   color: maroon;
+  overflow: auto;
+}
+
+pre.textarea {
+	/* emulates a read-only textarea which contains hyperlinks */
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+  height: 5em;
+  border: 1px solid gray; 
+  background-color: white;
+	overflow: auto;
+}
+pre.height_10 {
+  height: 10em;
+}
+pre.height_15 {
+  height: 15em;
+}
+pre.height_20 {
+  height: 20em;
+}
+pre.height_30 {
+  height: 30em;
 }
 
 /* generic classes */
@@ -733,6 +777,9 @@ textarea {
   font-weight: normal;
   color: red;
   background: transparent;
+}
+.fullwidth {
+  width: 100%;
 }
 .invisible {
   display: none;
@@ -757,6 +804,9 @@ textarea {
 }
 .right {
   text-align: right;
+}
+.transparent {
+  background-color: transparent;
 }
 
 /* for items which are due or overdue */

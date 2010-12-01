@@ -1,5 +1,5 @@
 <?php
-    // file created on September 10, 2007, 5:56 pm
+    // file created on April 7, 2010, 3:42 pm
     
     // field specifications for table workflow.wf_transition
     $fieldspec['workflow_id']               = array('type' => 'integer',
@@ -39,9 +39,9 @@
                                                     'optionlist' => 'transition_trigger');
     
     $fieldspec['time_limit']                = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'size' => 11,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 999);
+                                                    'maxvalue' => 4294967295);
     
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 80,
@@ -125,6 +125,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'workflow_id, transition_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

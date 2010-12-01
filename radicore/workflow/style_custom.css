@@ -263,6 +263,14 @@ div.workitem_user h2 {
 div.workitem_user p {
 }
 
+/* IMG */
+img.bottom {
+}
+img.middle {
+}
+img.top {
+}
+
 /* HTML controls */
 .dropdown {
 }
@@ -281,6 +289,18 @@ select {
 select option {
 }
 textarea {
+  width: 100%;
+}
+
+pre.textarea {
+}
+pre.height_10 {
+}
+pre.height_15 {
+}
+pre.height_20 {
+}
+pre.height_30 {
 }
 
 /* generic classes */
@@ -289,6 +309,8 @@ textarea {
 .center {
 }
 .error {
+}
+.fullwidth {
 }
 .justify {
 }
@@ -299,4 +321,15 @@ textarea {
 .required {
 }
 .right {
+}
+
+/* for items which are due or overdue */
+.overdue {
+}
+.due {
+}
+
+/* custom classes */
+.divider {
+  height: 6px;
 }

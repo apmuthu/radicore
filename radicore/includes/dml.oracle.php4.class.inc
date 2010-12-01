@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -30,7 +30,7 @@ class oracle
     var $stmt;                  // sql statement resource
     var $table_locks;           // array of tables to be locked
     var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of canidate keys
+    var $unique_keys = array(); // array of candidate keys
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -379,8 +379,8 @@ class oracle
         if (empty($where)) return;    // nothing to delete, so exit
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $where";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
@@ -395,7 +395,7 @@ class oracle
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
         if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -415,8 +415,8 @@ class oracle
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $selection";
+        $count = $this->getCount($schema, $tablename, $query);
 
         $this->query = "DELETE FROM $tablename WHERE $selection";
         $this->stmt  = ociParse($this->dbconnect, $this->query);
@@ -430,7 +430,7 @@ class oracle
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -626,8 +626,8 @@ class oracle
 
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
-            $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-            $this->numrows = $this->getCount($schema, $tablename, $this->query);
+            $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+            $this->numrows = $this->getCount($schema, $tablename, $query);
 
             if ($this->numrows <= 0) {
                 $this->pageno = 0;
@@ -771,8 +771,8 @@ class oracle
         } // if
 
         // get number of rows which match this selection criteria
-        $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
@@ -959,8 +959,8 @@ class oracle
 	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
 
 	        // find out if a record with this primary key already exists
-	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-	        $count = $this->getCount($schema, $tablename, $this->query);
+	        $query = "SELECT count(*) FROM $tablename WHERE $where";
+	        $count = $this->getCount($schema, $tablename, $query);
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
@@ -971,6 +971,7 @@ class oracle
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
     	            } // foreach
+    	            $this->query = $query;  // save this in case trigger_error() is called
 	            } // if
 	            return $fieldarray;
 	        } // if
@@ -982,14 +983,20 @@ class oracle
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
                 $where = $this->buildKeyString ($fieldarray, $key);
-                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-                $count = $this->getCount($schema, $tablename, $this->query);
+                $query = "SELECT count(*) FROM $tablename WHERE $where";
+                $count = $this->getCount($schema, $tablename, $query);
                 if ($count <> 0) {
-                    // set error message for each field within this key
-                    foreach ($key as $fieldname) {
-                        $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
-                    } // foreach
-                    return $fieldarray;
+                    if (is_True($this->no_duplicate_error)) {
+    	                // exit without setting an error
+    	                return $fieldarray;
+    	            } else {
+                        // set error message for each field within this key
+                        foreach ($key as $fieldname) {
+                            $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
+                        } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
+                        return $fieldarray;
+    	            } // if
                 } // if
             } // foreach
         } // if
@@ -1007,12 +1014,13 @@ class oracle
             	$cols .= "$item, ";
             	$vals .= "EMPTY_CLOB(), ";
             } else {
-                if (isset($value)) {
-                    $cols .= "$item, ";
-                    $vals .= "'" .$this->adjustData($value) ."', ";
-                } else {
+                if (!array_key_exists('required',$fieldspec[$item])
+                AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } else {
+                    $cols .= "$item, ";
+                    $vals .= "'" .$this->adjustData($value) ."', ";
                 } // if
             } // if
         } // foreach
@@ -1064,7 +1072,7 @@ class oracle
         } // if
 
         if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1093,7 +1101,7 @@ class oracle
         logSqlQuery ($schema, null, 'ROLLBACK');
         $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
+        $auditobj =& RDCsingleton::getInstance('audit_tbl');
         $result = $auditobj->close();
 
         return $result;
@@ -1241,13 +1249,14 @@ class oracle
                 $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
-                    $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
-                    $count = $this->getCount($schema, $tablename, $this->query);
+                    $query = "SELECT count(*) FROM $tablename WHERE $where2";
+                    $count = $this->getCount($schema, $tablename, $query);
                     if ($count <> 0) {
                         // set error message for each field within this key
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
                 } // if
@@ -1362,20 +1371,20 @@ class oracle
         } // if
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $where";
+        $this->numrows = $this->getCount($schema, $tablename, $query);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
         if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
 
-        return;
+        return $fieldarray;
 
     } // updateRecord
 
@@ -1389,8 +1398,8 @@ class oracle
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
-        $this->query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM $tablename WHERE $selection";
+        $count = $this->getCount($schema, $tablename, $query);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
         $this->stmt  = ociParse($this->dbconnect, $this->query);
@@ -1405,7 +1414,7 @@ class oracle
 
         if ($count > 0) {
             if ($this->audit_logging) {
-                $auditobj =& singleton::getInstance('audit_tbl');
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
                 // add record details to audit database
                 $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
                 $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1571,8 +1580,8 @@ class oracle
         $tablename = strtoupper($tablename);
 
         // build the query string and run it
-        $this->query = "SELECT count(*) FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
-        $count = $this->getcount($schema, $tablename, $this->query);
+        $query = "SELECT count(*) FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
+        $count = $this->getcount($schema, $tablename, $query);
 
         $this->query = "SELECT * FROM sys.all_tab_cols WHERE owner='$schema' AND table_name='$tablename' ORDER BY column_id";
         $statement  = ociParse($this->dbconnect, $this->query);
@@ -1684,8 +1693,8 @@ class oracle
                         // find out if the primary key is to be filled from a sequence
                         if (count($pkey) == 1) {
                             if ($columnarray['column_id'] == $pkey[0] AND $type = 'number') {
-                                $this->query = "SELECT count(*) FROM sys.all_sequences WHERE sequence_owner='$schema' AND sequence_name='{$tablename}_SEQ'";
-                                $count = $this->getcount($schema, $tablename, $this->query);
+                                $query = "SELECT count(*) FROM sys.all_sequences WHERE sequence_owner='$schema' AND sequence_name='{$tablename}_SEQ'";
+                                $count = $this->getcount($schema, $tablename, $query);
                             	if ($count > 0) {
                             		$columnarray['col_auto_increment']  = 'Y';
                             	} // if
@@ -1822,7 +1831,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         ociFreeStatement($statement);
 
@@ -1855,7 +1864,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         ociFreeStatement($statement);
 
@@ -1901,7 +1910,7 @@ class oracle
         $count = count($array);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         ociFreeStatement($statement);
 

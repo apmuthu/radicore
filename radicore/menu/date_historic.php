@@ -8,11 +8,16 @@ require_once 'include.general.inc';
 
 initSession();      // initialise session
 
+// retrieve and modify current search criteria
+$search_array = where2array($search, null, false);
+$search_array['curr_or_hist'] = 'H';
+$search  = array2where($search_array);
+$message = getLanguageText('sys0096');  // Date range has been set to HISTORIC
+
 // send search criteria back to the previous script
 $prev_script = getPreviousScript();
 $prev_task   = getPreviousTask($prev_script);
-$_SESSION['pages'][$prev_script][$prev_task]['search'] = "curr_or_hist='H'";
-// Date range has been set to HISTORIC
-scriptPrevious(null, getLanguageText('sys0096'));
+$_SESSION['pages'][$prev_script][$prev_task]['search'] = $search;
+scriptPrevious(null, $message);
 
 ?>

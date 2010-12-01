@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -248,144 +248,148 @@ class mnu_control extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // default language code
-        $fieldspec['default_language']      = array('type' => 'string',
-                                                    'size' => 5,
-                                                    'required' => 'y',
-                                                    'lowercase' => 'y',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'language_code');
+        if (isset($this->fieldspec['default_language'])) {
+        	// already done, so skip the next bit
+        } else {
+            // default language code
+            $fieldspec['default_language']      = array('type' => 'string',
+                                                        'size' => 5,
+                                                        'required' => 'y',
+                                                        'lowercase' => 'y',
+                                                        'control' => 'dropdown',
+                                                        'optionlist' => 'language_code');
 
-        // login type
-        $fieldspec['login_type']            = array('type' => 'string',
-                                                    'size' => 5,
-                                                    'required' => 'y',
-                                                    'uppercase' => 'y',
-                                                    'control' => 'radiogroup',
-                                                    'optionlist' => 'login_type');
+            // login type
+            $fieldspec['login_type']            = array('type' => 'string',
+                                                        'size' => 5,
+                                                        'required' => 'y',
+                                                        'uppercase' => 'y',
+                                                        'control' => 'radiogroup',
+                                                        'optionlist' => 'login_type');
 
-        // how often must the user change his password?
-        $fieldspec['pswd_change']           = array('type' => 'string',
-                                                    'size' => 2,
-                                                    'required' => 'y',
-                                                    'uppercase' => 'y',
-                                                    'control' => 'radiogroup',
-                                                    'optionlist' => 'pswd_change',
-                                                    'align_hv' => 'vertical');
-        // change password after 'n' logons
-        $fieldspec['pswd_count']            = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        // change password after 'n' days
-        $fieldspec['pswd_days']             = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        // an invalid password can be tried 'n' times after which the user_id will be disabled
-        $fieldspec['pswd_retries']          = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        // issue a "password will expire in N days/logons" warning
-        $fieldspec['pswd_warning']          = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        // specify the format of user passwords
-        $fieldspec['pswd_format_minlen']    = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y',
-                                                    'required' => 'y',
-                                                    'minvalue' => 1);
-        $fieldspec['pswd_format_upper']     = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        $fieldspec['pswd_format_lower']     = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        $fieldspec['pswd_format_digits']    = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'unsigned' => 'y');
-        // are passwords to be encrypted on the database?
-        $fieldspec['pswd_encrypt']          = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N');
+            // how often must the user change his password?
+            $fieldspec['pswd_change']           = array('type' => 'string',
+                                                        'size' => 2,
+                                                        'required' => 'y',
+                                                        'uppercase' => 'y',
+                                                        'control' => 'radiogroup',
+                                                        'optionlist' => 'pswd_change',
+                                                        'align_hv' => 'vertical');
+            // change password after 'n' logons
+            $fieldspec['pswd_count']            = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            // change password after 'n' days
+            $fieldspec['pswd_days']             = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            // an invalid password can be tried 'n' times after which the user_id will be disabled
+            $fieldspec['pswd_retries']          = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            // issue a "password will expire in N days/logons" warning
+            $fieldspec['pswd_warning']          = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            // specify the format of user passwords
+            $fieldspec['pswd_format_minlen']    = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y',
+                                                        'required' => 'y',
+                                                        'minvalue' => 1);
+            $fieldspec['pswd_format_upper']     = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            $fieldspec['pswd_format_lower']     = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            $fieldspec['pswd_format_digits']    = array('type' => 'integer',
+                                                        'size' => 3,
+                                                        'unsigned' => 'y');
+            // are passwords to be encrypted on the database?
+            $fieldspec['pswd_encrypt']          = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N');
 
-        // are passwords to be visible in the update/enquiry screens?
-        $fieldspec['pswd_hidden']           = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N');
+            // are passwords to be visible in the update/enquiry screens?
+            $fieldspec['pswd_hidden']           = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N');
 
-        // are logons to be authenticated internally, or with an external server?
-        $fieldspec['authentication']        = array('type' => 'string',
-                                                    'size' => 8,
-                                                    'required' => 'y',
-                                                    'uppercase' => 'y',
-                                                    'control' => 'radiogroup',
-                                                    'optionlist' => 'authentication');
+            // are logons to be authenticated internally, or with an external server?
+            $fieldspec['authentication']        = array('type' => 'string',
+                                                        'size' => 8,
+                                                        'required' => 'y',
+                                                        'uppercase' => 'y',
+                                                        'control' => 'radiogroup',
+                                                        'optionlist' => 'authentication');
 
-        // define width for 'google-style' pagination
-        $fieldspec['pagination_width']      = array('type' => 'integer',
-                                                    'size' => 1,
-                                                    'unsigned' => 'y',
-                                                    'maxvalue' => 9);
-        $fieldspec['scrolling_width']       = array('type' => 'integer',
-                                                    'size' => 1,
-                                                    'unsigned' => 'y',
-                                                    'maxvalue' => 9);
+            // define width for 'google-style' pagination
+            $fieldspec['pagination_width']      = array('type' => 'integer',
+                                                        'size' => 1,
+                                                        'unsigned' => 'y',
+                                                        'maxvalue' => 9);
+            $fieldspec['scrolling_width']       = array('type' => 'integer',
+                                                        'size' => 1,
+                                                        'unsigned' => 'y',
+                                                        'maxvalue' => 9);
 
-        // define lockout times between which system is unavailable
-        $fieldspec['shutdown_start']        = array('type' => 'time',
-                                                    'size' => 5);
-        $fieldspec['shutdown_end']          = array('type' => 'time',
-                                                    'size' => 5);
-        $fieldspec['shutdown_warning']      = array('type' => 'time',
-                                                    'size' => 5);
+            // define lockout times between which system is unavailable
+            $fieldspec['shutdown_start']        = array('type' => 'time',
+                                                        'size' => 5);
+            $fieldspec['shutdown_end']          = array('type' => 'time',
+                                                        'size' => 5);
+            $fieldspec['shutdown_warning']      = array('type' => 'time',
+                                                        'size' => 5);
 
-        $day_names = getLanguageArray('day_names_short');
+            $day_names = getLanguageArray('day_names_short');
 
-        $fieldspec['shutdown_monday']       = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['mon'],
-                                                    'align_lr' => 'left');
+            $fieldspec['shutdown_monday']       = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['mon'],
+                                                        'align_lr' => 'left');
 
-        $fieldspec['shutdown_tuesday']      = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['tue'],
-                                                    'align_lr' => 'left');
-        $fieldspec['shutdown_wednesday']    = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['wed'],
-                                                    'align_lr' => 'left');
-        $fieldspec['shutdown_thursday']     = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['thu'],
-                                                    'align_lr' => 'left');
-        $fieldspec['shutdown_friday']       = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['fri'],
-                                                    'align_lr' => 'left');
-        $fieldspec['shutdown_saturday']     = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['sat'],
-                                                    'align_lr' => 'left');
-        $fieldspec['shutdown_sunday']       = array('type' => 'boolean',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox',
-                                                    'label' => $day_names['sun'],
-                                                    'align_lr' => 'left');
+            $fieldspec['shutdown_tuesday']      = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['tue'],
+                                                        'align_lr' => 'left');
+            $fieldspec['shutdown_wednesday']    = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['wed'],
+                                                        'align_lr' => 'left');
+            $fieldspec['shutdown_thursday']     = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['thu'],
+                                                        'align_lr' => 'left');
+            $fieldspec['shutdown_friday']       = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['fri'],
+                                                        'align_lr' => 'left');
+            $fieldspec['shutdown_saturday']     = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['sat'],
+                                                        'align_lr' => 'left');
+            $fieldspec['shutdown_sunday']       = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N',
+                                                        'control' => 'checkbox',
+                                                        'label' => $day_names['sun'],
+                                                        'align_lr' => 'left');
 
-        $this->fieldspec = $fieldspec;
+            $this->fieldspec = $fieldspec;
+        } // if
 
         return $fieldarray;
 
@@ -396,7 +400,7 @@ class mnu_control extends Default_Table
     // perform validation that is common to INSERT and UPDATE.
     {
         // get password length from USER class
-        $dbobject =& singleton::getInstance('mnu_user');
+        $dbobject =& RDCsingleton::getInstance('mnu_user');
 
         // encrypt or decrypt all user passwords as required
         $fieldspec = $dbobject->getFieldSpec();
@@ -484,6 +488,17 @@ class mnu_control extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_filterWhere ($array=null)
+    // identify field names which are NOT to be filtered out of a $where string.
+    {
+        $this->fieldspec['record_id']       = array('type' => 'string',
+                                                    'size' => 16);
+
+        return $array;
+
+    } // _cm_filterWhere
+
+    // ****************************************************************************
     function _cm_getDatabaseLock ()
     // return array of database tables to be locked in current transaction.
     {
@@ -535,8 +550,12 @@ class mnu_control extends Default_Table
             // get options for dropdown/radiogroup and insert in LOOKUP data
             $array = getLanguageArray('authentication');
             $this->lookup_data['authentication'] = $array;
-            //$this->lookup_css['authentication']['INTERNAL'] = 'green';
         } // if
+
+        // change style of various radio group and checkbox controls
+//        $this->lookup_css['authentication']['INTERNAL'] = 'green';
+//        $this->fieldspec['shutdown_saturday']['class'] = 'weekend';
+//        $this->fieldspec['shutdown_sunday']['class'] = 'weekend';
 
         if (!array_key_exists('login_type', $this->lookup_data)) {
             // get options for dropdown/radiogroup and insert in LOOKUP data
@@ -643,7 +662,7 @@ class mnu_control extends Default_Table
             // if 'pswd_encrypt' has changed then process the change
             if ($fieldarray['field_value'] <> $old_data['field_value']) {
                 // open up a dialog with the user class
-                $dbobject =& singleton::getInstance('mnu_user');
+                $dbobject =& RDCsingleton::getInstance('mnu_user');
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->setPasswords($fieldarray['field_value']);
                 if ($dbobject->errors) {
@@ -688,7 +707,7 @@ class mnu_control extends Default_Table
         $updatearray = $this->_validateUpdate($fieldarray);
         if (!empty($this->errors)) {
             // replace any empty fields with their default values
-            $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
+            $this->fieldarray = array_update_empty ($fieldarray, $updatearray, false, $this->fieldspec);
             return;
         } // if
 
@@ -703,7 +722,7 @@ class mnu_control extends Default_Table
         $updatearray = $this->_cm_commonValidation($updatearray, $this->save_fieldarray);
         if (!empty($this->errors)) {
             // replace any empty fields with their new values
-            $this->fieldarray = array_update_empty ($fieldarray, $updatearray);
+            $this->fieldarray = array_update_empty ($fieldarray, $updatearray, false, $this->fieldspec);
             return;
         } // if
 
@@ -711,7 +730,7 @@ class mnu_control extends Default_Table
         	// if 'pswd_encrypt' has changed then check that the passwords can be changed
             if ($fieldarray['pswd_encrypt'] <> $this->save_fieldarray['pswd_encrypt']) {
                 // open up a dialog with the user class
-                $dbobject =& singleton::getInstance('mnu_user');
+                $dbobject =& RDCsingleton::getInstance('mnu_user');
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->checkPasswords($fieldarray['pswd_encrypt']);
                 if ($dbobject->errors) {
@@ -763,8 +782,12 @@ class mnu_control extends Default_Table
             $rownum = $rownum + 1;
         } // foreach
 
-        $_SESSION['pagination_width'] = $fieldarray['pagination_width'];
-        $_SESSION['scrolling_width']  = $fieldarray['scrolling_width'];
+        if (!empty($fieldarray['pagination_width'])) {
+        	$_SESSION['pagination_width'] = $fieldarray['pagination_width'];
+        } // if
+        if (!empty($fieldarray['scrolling_width'])) {
+        	$_SESSION['scrolling_width']  = $fieldarray['scrolling_width'];
+        } // if
 
         return getLanguageText('sys0091');  // "Update successful"
 

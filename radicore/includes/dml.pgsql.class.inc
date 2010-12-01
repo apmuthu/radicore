@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -24,12 +24,13 @@ class pgsql
     var $numrows;               // number of rows retrieved
     var $pageno;                // requested page number
     var $primary_key = array(); // array of primary key names
+    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
     var $row_locks_supp;        // supplemental lock type
     var $table_locks;           // array of tables to be locked
     var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of canidate keys
+    var $unique_keys = array(); // array of candidate keys
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -55,10 +56,14 @@ class pgsql
             trigger_error('No value supplied for $PGSQL_dbname', E_USER_ERROR);
         } // if
 
-        if (!class_exists('audit_tbl')) {
-    	    // obtain definition of the audit_tbl class
-    		require_once 'classes/audit_tbl.class.inc';
-    	} // if
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            if (!class_exists('audit_tbl')) {
+        	    // obtain definition of the audit_tbl class
+        		require_once 'classes/audit_tbl.class.inc';
+        	} // if
+        } // if
 
         return $result;
 
@@ -121,7 +126,7 @@ class pgsql
     // This is because the HAVING clause cannot reference an expression by its alias name.
     {
         // put current query into a subqery
-        $subquery = "SELECT $select_str FROM $from_str $where_str $group_str";
+        $subquery = "    SELECT $select_str\n    FROM $from_str $where_str $group_str";
 
         // extract SELECT list (with alias names for any expressions)
         list($select_alias, $select_orig) = extractFieldNamesIndexed ($select_str);
@@ -139,8 +144,8 @@ class pgsql
             } // if
         } // foreach
 
-        $from_str = "(\n    $subquery\n) AS x";
-        $where_str  = "WHERE $having_str";
+        $from_str = "(\n$subquery\n) AS x";
+        $where_str  = "\nWHERE $having_str";
         $having_str = '';
         $group_str  = '';
         $sort_str   = unqualifyOrderBy($sort_str);
@@ -169,39 +174,38 @@ class pgsql
             $string_out = $string_in;
         } // if
 
-//        $modified = false;
-//        $array = where2array($string_out, false, false);
-//        foreach ($array as $name => $value) {
-//            $value = ltrim($value);
-//        	if (preg_match('/^like /i', $value)) {
-//        	    $search  = array('\\\\\\\'', '\\\\');
-//        	    $replace = array('\\\'\\\'', '\\\\\\\\');
-//        	    if (preg_match('/'.$search[0].'/', $value) OR preg_match('/'.$search[1].'/', $value)) {
-//        	    	$array[$name] = str_replace($search, $replace, $value);
-//            		$modified = true;
-//        	    } // if
-//        	} // if
-//        } // foreach
-
         $modified = false;
 
         $array = where2indexedArray($string_out);   // convert string into indexed array
 
-        $pattern = '/^('        // begins with
-                 . 'OR'         // 'OR'
-                 . '|'
-                 . '\) OR \('   // ') OR ('
-                 . '|'
-                 . 'AND \('     // 'AND ('
-                 . '|'
-                 . 'AND'        // 'AND'
-                 . '|'
-                 . '\) AND \('  // ') AND ('
-                 . '|'
-                 . '(\()+'      // one or more '('
-                 . '|'
-                 . '(\))+'      // one or more ')'
-                 . ')$/i';      // ends with, case insensitive
+        $pattern = <<< END_OF_REGEX
+/
+^               # begins with
+(               # start choice
+ \) OR \(       # ') OR ('
+ |
+ \) OR'         # ') OR'
+ |
+ OR \(          # 'OR ('
+ |
+ OR             # 'OR'
+ |
+ \) AND \(      # ') AND ('
+ |
+ \) AND         # ') AND'
+ |
+ AND \(         # 'AND ('
+ |
+ AND            # 'AND'
+ |
+ (\()+          # one or more '('
+ |
+ (\))+          # one or more ')'
+)               # end choice
+$               # ends with
+/xi
+END_OF_REGEX;
+
         foreach ($array as $key => $value) {
             if (preg_match($pattern, $value, $regs)) {
             	// ignore this
@@ -216,6 +220,25 @@ class pgsql
             	    	$array[$key] = $fieldname.$operator.$fieldvalue;
                 		$modified = true;
             	    } // if
+
+//                } elseif (preg_match('/date_sub/i', $fieldname)) {
+//                    // contains 'date_sub(field1, field2)', so extract 'field1, field2'
+//                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
+//                    list($field1, $field2) = split(',', $regs[0]);
+//                    // replace with 'field1 - field2'
+//                    $fieldname = trim($field1).' - '.trim($field2);
+//                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+//                    $modified = true;
+
+//            	} elseif (preg_match('/date_add/i', $fieldname)) {
+//                    // contains 'date_add(field1, field2)', so extract 'field1, field2'
+//                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
+//                    list($field1, $field2) = split(',', $regs[0]);
+//                    // replace with 'field1 - field2'
+//                    $fieldname = trim($field1).' + '.trim($field2);
+//                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+//                    $modified = true;
+
             	} // if
             } // if
         } // foreach
@@ -283,8 +306,10 @@ class pgsql
         logSqlQuery ($schema, null, 'COMMIT');
         $this->query = '';
 
-        if (class_exists('audit_tbl')) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
 
@@ -297,7 +322,7 @@ class pgsql
     // establish a connection to the database
     {
         //DebugBreak();
-        global $dbhost, $dbusername, $dbuserpass, $PGSQL_dbname;
+        global $dbhost, $dbusername, $dbuserpass, $PGSQL_dbname, $dbport, $dbsocket;
 
         $this->errors = array();
         $this->query  = '';
@@ -306,7 +331,11 @@ class pgsql
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
-            $string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname ";
+            if (!empty($dbport)) {
+            	$string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname port=$dbport ";
+            } else {
+                $string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname ";
+            } // if
             $dbconn = pg_connect($string);
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
@@ -383,8 +412,8 @@ class pgsql
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $this->fieldspec, $this->fieldspec, $where, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -411,8 +440,8 @@ class pgsql
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -525,6 +554,9 @@ class pgsql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -532,12 +564,12 @@ class pgsql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            $group_str = "\nGROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
             //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
@@ -545,7 +577,7 @@ class pgsql
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\nORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
@@ -560,8 +592,8 @@ class pgsql
 
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
-            $this->query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
-            $this->numrows = $this->getCount($schema, $tablename, $this->query);
+            $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+            $this->numrows = $this->getCount($schema, $tablename, $query);
 
             if ($this->numrows <= 0) {
                 $this->pageno = 0;
@@ -617,7 +649,7 @@ class pgsql
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+        $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // convert result set into a simple associative array for each row
@@ -731,6 +763,24 @@ class pgsql
     } // getErrors
 
     // ****************************************************************************
+    function getErrorNo ()
+    // return number of last error.
+    {
+        $errno = null;
+
+        if ($this->dbconnect) {
+            $string = pg_last_error($this->dbconnect);
+            // look for 'ERROR: nnnnn:' in string
+            if (preg_match('/(?<=error:)[ ]*\d+(?=:)/i', $string, $regs)) {
+            	$errno = (int)ltrim($regs[0]);
+            } // if
+        } // if
+
+        return $errno;
+
+    } // getErrorNo
+
+    // ****************************************************************************
     function getErrorString ()
     // return string containing details of last error.
     {
@@ -821,24 +871,26 @@ class pgsql
         $fieldspec = $this->fieldspec;
 
         foreach ($fieldspec as $field => $spec) {
-            // look for fields with 'autoinsert' option set
-            if (array_key_exists('autoinsert', $spec)) {
-				switch ($spec['type']){
-					case 'datetime':
-						$fieldarray[$field] = getTimeStamp();
-						break;
-					case 'date':
-						$fieldarray[$field] = getTimeStamp('date');
-						break;
-					case 'time':
-						$fieldarray[$field] = getTimeStamp('time');
-					    break;
-					case 'string':
-						$fieldarray[$field] = $_SESSION['logon_user_id'];
-						break;
-					default:
-						// do nothing
-				} // switch
+            if (empty($fieldarray[$field])) {
+                // look for fields with 'autoinsert' option set
+                if (array_key_exists('autoinsert', $spec)) {
+    				switch ($spec['type']){
+    					case 'datetime':
+    						$fieldarray[$field] = getTimeStamp();
+    						break;
+    					case 'date':
+    						$fieldarray[$field] = getTimeStamp('date');
+    						break;
+    					case 'time':
+    						$fieldarray[$field] = getTimeStamp('time');
+    					    break;
+    					case 'string':
+    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+    						break;
+    					default:
+    						// do nothing
+    				} // switch
+                } // if
             } // if
         } // foreach
 
@@ -846,36 +898,45 @@ class pgsql
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
+			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
 			    	// value has been supplied manually, so do not auto-generate
 			    } else {
-    			    $auto_increment = $pkey ;                // save name of related sequence
-    				unset($fieldarray[$auto_increment]);     // remove from data array
+    			    $auto_increment = $pkey;                // save name of related sequence
+    				unset($fieldarray[$auto_increment]);    // remove from data array
 			    } // if
 			} // if
 		} // foreach
 
-		if (empty($auto_increment)) {
-	        // build 'where' string using values for primary key
-	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
+		if (!empty($this->retry_on_duplicate_key)) {
+        	if (!array_key_exists($this->retry_on_duplicate_key, $fieldspec)) {
+        	    // this field does not exist, so remove it
+        		$this->retry_on_duplicate_key = null;
+        	} // if
+        } // if
 
+        // build 'where' string using values for primary key
+	    $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
+
+        if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
 	        // find out if a record with this primary key already exists
-	        $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-	        $count = $this->getCount($schema, $tablename, $this->query);
+	        $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
+	        $count = $this->getCount($schema, $tablename, $query);
 
 	        // Is this primary key taken?
 	        if ($count <> 0) {
 	            if (is_True($this->no_duplicate_error)) {
 	                // exit without setting an error
+	                return $fieldarray;
 	            } else {
 	            	// set error message for each field within this key
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
     	            } // foreach
+    	            $this->query = $query;  // save this in case trigger_error() is called
 	            } // if
 	            return $fieldarray;
 	        } // if
-	        $primary_key = $where;
 		} // if
 
         // validate any optional unique/candidate keys
@@ -883,54 +944,87 @@ class pgsql
             // there may be several keys with several fields in each
             foreach ($this->unique_keys as $key) {
                 $where = $this->buildKeyString ($fieldarray, $key);
-                $this->query = "SELECT count(*) FROM $tablename WHERE $where";
-                $count = $this->getCount($schema, $tablename, $this->query);
+                $query = "SELECT count(*) FROM $tablename WHERE $where";
+                $count = $this->getCount($schema, $tablename, $query);
                 if ($count <> 0) {
-                    // set error message for each field within this key
-                    foreach ($key as $fieldname) {
-                        $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
-                    } // foreach
-                    return $fieldarray;
+                    if (is_True($this->no_duplicate_error)) {
+    	                // exit without setting an error
+    	                return $fieldarray;
+    	            } else {
+                        // set error message for each field within this key
+                        foreach ($key as $fieldname) {
+                            $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
+                        } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
+                        return $fieldarray;
+    	            } // if
                 } // if
             } // foreach
         } // if
 
-        // insert this record into the database
-        $cols = '';
-        $vals = '';
-        foreach ($fieldarray as $item => $value) {
-            if (preg_match('/set|array|varray/i', $fieldspec[$item]['type'])) {
-                if (!empty($value)) {
-                	// assume a one-dimensional array
-                	$array1  = explode(',', $value);
-                	$string1 = '';
-                	foreach ($array1 as $value1) {
-                		if (empty($string1)) {
-                			$string1 = '"' .$value1 .'"';
-                		} else {
-                		    $string1 .= ', "' .$value1 .'"';
-                		} // if
-                	} // foreach
-                	// enclose array in curly braces
-                	$value .= "$item='{" .$string1 ."}', ";
+        $repeat       = false;
+        $repeat_count = 0;
+        do {
+            // insert this record into the database
+            $cols = '';
+            $vals = '';
+            foreach ($fieldarray as $item => $value) {
+                if (preg_match('/set|array|varray/i', $fieldspec[$item]['type'])) {
+                    if (!empty($value)) {
+                    	// assume a one-dimensional array
+                    	$array1  = explode(',', $value);
+                    	$string1 = '';
+                    	foreach ($array1 as $value1) {
+                    		if (empty($string1)) {
+                    			$string1 = '"' .$value1 .'"';
+                    		} else {
+                    		    $string1 .= ', "' .$value1 .'"';
+                    		} // if
+                    	} // foreach
+                    	// enclose array in curly braces
+                    	$value .= "$item='{" .$string1 ."}', ";
+                    } // if
                 } // if
-            } // if
-            if (is_null($value) or strtoupper(trim($value)) == 'NULL') {
-                // null entries are set to NULL, not '' (there is a difference!)
-                $cols .= "$item, ";
-                $vals .= "NULL, ";
+                if (!array_key_exists('required',$fieldspec[$item])
+                AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
+                    // null entries are set to NULL, not '' (there is a difference!)
+                    $cols .= "$item, ";
+                    $vals .= "NULL, ";
+                } else {
+                    $cols .= "$item, ";
+                    $vals .= "'" .pg_escape_string($value) ."', ";
+                } // if
+            } // foreach
+
+            // remove trailing commas
+            $cols = rtrim($cols, ', ');
+            $vals = rtrim($vals, ', ');
+
+            $this->query = 'INSERT INTO ' .$tablename .' (' .$cols .') VALUES (' .$vals .')';
+            //$result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = pg_query($this->dbconnect, $this->query);
+            if ($result === false) {
+                $errno = $this->getErrorNo();
+                if ($errno == 23505 AND !empty($this->retry_on_duplicate_key)) {
+                    // increment the specified field and try again
+                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    $repeat = true;
+                    $repeat_count++;
+                    if ($repeat_count > 5) {
+                        // too many retries, so turn this feature off
+                    	$this->retry_on_duplicate_key = null;
+                    } // if
+                } elseif ($errno == 23505 AND is_True($this->no_duplicate_error)) {
+                    // this is a duplicate, but don't fail
+                    $this->numrows = 0;
+                } else {
+            	    trigger_error($this, E_USER_ERROR);
+                } // if
             } else {
-                $cols .= "$item, ";
-                $vals .= "'" .pg_escape_string($value) ."', ";
+                $repeat = false;
+                $this->numrows = 1;  // record has been inserted
             } // if
-        } // foreach
-
-        // remove trailing commas
-        $cols = rtrim($cols, ', ');
-        $vals = rtrim($vals, ', ');
-
-        $this->query = 'INSERT INTO ' .$tablename .' (' .$cols .') VALUES (' .$vals .')';
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        } while ($repeat == true);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query);
@@ -945,8 +1039,8 @@ class pgsql
             logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
 		} // if
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -976,8 +1070,12 @@ class pgsql
         logSqlQuery ($schema, null, 'ROLLBACK');
         $this->query = '';
 
-        $auditobj =& singleton::getInstance('audit_tbl');
-        $result = $auditobj->close();
+        if (defined('TRANSIX_NO_AUDIT')) {
+        	// do nothing
+        } else {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $result = $auditobj->close();
+        } // if
 
         return $result;
 
@@ -1119,13 +1217,14 @@ class pgsql
                 $where2 = $this->buildKeyString ($fieldarray, $key);
                 if ($where1 <> $where2) {
                     // key has changed, so check for uniqueness
-                    $this->query = "SELECT count(*) FROM $tablename WHERE $where2";
-                    $count = $this->getCount($schema, $tablename, $this->query);
+                    $query = "SELECT count(*) FROM $tablename WHERE $where2";
+                    $count = $this->getCount($schema, $tablename, $query);
                     if ($count <> 0) {
                         // set error message for each field within this key
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
                 } // if
@@ -1149,16 +1248,24 @@ class pgsql
                 if (array_key_exists('autoupdate', $spec)) {
                     switch ($spec['type']){
     					case 'datetime':
-    						$fieldarray[$field] = getTimeStamp();
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp();
+    					    } // if
     						break;
     					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
+    					    if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = getTimeStamp('date');
+    					    } // if
     						break;
     					case 'time':
-						    $fieldarray[$field] = getTimeStamp('time');
+    					    if (empty($fieldarray[$field])) {
+						        $fieldarray[$field] = getTimeStamp('time');
+    					    } // if
 						    break;
 					    case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
+					        if (empty($fieldarray[$field])) {
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+					        } // if
     						break;
     					case 'integer':
 					        $fieldarray[$field] = $oldarray[$field] +1;
@@ -1222,14 +1329,14 @@ class pgsql
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging) {
-            $auditobj =& singleton::getInstance('audit_tbl');
+        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+            $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
             $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
 
-        return;
+        return $fieldarray;
 
     } // updateRecord
 
@@ -1251,8 +1358,8 @@ class pgsql
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($count > 0) {
-            if ($this->audit_logging) {
-                $auditobj =& singleton::getInstance('audit_tbl');
+            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
                 // add record details to audit database
                 $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
                 $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1641,7 +1748,7 @@ class pgsql
         $count = pg_num_rows($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery (nul, null, $this->query, $count);
+        logSqlQuery (null, null, $this->query, $count);
 
         // convert result set into a simple indexed array for each row
         while ($row = pg_fetch_assoc($result)) {

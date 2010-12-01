@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update4.inc
@@ -37,6 +37,12 @@ $dbobject->sql_from    = &$sql_from;
 $dbobject->sql_where   = &$sql_where;
 $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
+if (!empty($orderby)) {
+    $dbobject->setOrderBy($orderby);
+    if (!empty($orderby_seq)) {
+        $dbobject->setOrderBySeq($orderby_seq);
+    } // if
+} // if
 // perform any initialisation
 $where = $dbobject->initialise($where, $selection);
 if ($dbobject->errors) {
@@ -76,7 +82,20 @@ if ($dbobject->errors) {
     $messages = array_merge($messages, $dbobject->getMessages());
 } // if
 
-$batch_errors = scriptPrevious($errors, $messages, null, $dbobject->getInstruction());
+global $stdout, $stdouth;
+if (!empty($stdout)) {
+	foreach ($messages as $message) {
+		$result = fwrite($stdouth, "<p>$message</p>\n");
+	} // foreach
+} // if
+
+if (empty($errors)) {
+	$action = 'OK';
+} else {
+    $action = null;
+} // if
+
+$batch_errors = scriptPrevious($errors, $messages, $action, $dbobject->getInstruction());
 return $batch_errors;
 
 ?>

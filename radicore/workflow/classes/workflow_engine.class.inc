@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 if (!class_exists('wf_workflow')) {
 	require_once 'wf_workflow.class.inc';
@@ -29,7 +29,7 @@ class workflow_engine extends wf_workflow
 
         // create a case (workflow instance) for this task
         require_once 'classes/wf_case.class.inc';
-        $dbcase =& singleton::getInstance('wf_case');
+        $dbcase =& RDCsingleton::getInstance('wf_case');
 
         // there may be more than one workflow, but it is unlikely
         foreach ($data as $workflow) {
@@ -50,9 +50,9 @@ class workflow_engine extends wf_workflow
     function finishWorkItem ($case_id, $workitem_id, $context, $fieldarray)
     // a workitem (transition) has been completed, so update this workflow case.
     {
-        // mark this workitem as finished
+        // retrieve the current workitem
         require_once 'classes/wf_workitem.class.inc';
-        $dbworkitem =& singleton::getInstance('wf_workitem');
+        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status IN ('EN','IP')";
@@ -90,7 +90,7 @@ class workflow_engine extends wf_workflow
         // ********************************************************************
         // find tokens on all input arcs (there may be more than one)
         require_once 'classes/wf_arc.class.inc' ;
-        $dbarc =& singleton::getInstance('wf_arc');
+        $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id, token_status';
         $dbarc->sql_from   = "wf_arc "
@@ -104,7 +104,7 @@ class workflow_engine extends wf_workflow
 
         // now mark them all as consumed
         require_once 'classes/wf_token.class.inc';
-        $dbtoken =& singleton::getInstance('wf_token');
+        $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
             if ($arc['token_status'] == 'FREE') {
@@ -132,10 +132,11 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find the arc(s) which leave this transition and go to other places
-        $dbarc->sql_select = 'wf_arc.*, place_type, pre_condition';
+        $dbarc->sql_select = 'wf_arc.*, place_type, place_name, pre_condition';
         $dbarc->sql_from   = "wf_arc "
                            . "LEFT JOIN wf_place ON (wf_place.workflow_id=wf_arc.workflow_id AND wf_place.place_id=wf_arc.place_id) ";
         $where = "workflow_id='$workflow_id' AND transition_id='$transition_id' AND direction='OUT'";
+        $dbarc->sql_orderby = 'place_name ASC';
         $arc_data = $dbarc->getData($where);
         if ($dbarc->numrows < 1) {
             // "There are no outbound arcs from transition 'X'"
@@ -144,7 +145,6 @@ class workflow_engine extends wf_workflow
         } // if
 
         $arc_type = null;
-
         // check that all linked places have the same arc_type
         foreach ($arc_data as $arc) {
             if (empty($arc_type)) {
@@ -177,6 +177,7 @@ class workflow_engine extends wf_workflow
                 $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0]);
                 if ($this->errors) return;
                 break;
+
             case 'AND-SPLIT':
                 if (count($arc_data) <= 1) {
                     // "Must have more than one outward arc with ARC_TYPE='AND-split'"
@@ -189,6 +190,7 @@ class workflow_engine extends wf_workflow
                     if ($this->errors) return;
                 } // foreach
                 break;
+
             case 'OR-SPLIT-E':
                 if (count($arc_data) <= 1) {
                     // "Must have more than one outward arc with ARC_TYPE='OR-split (explicit)'"
@@ -196,32 +198,32 @@ class workflow_engine extends wf_workflow
                     return;
                 } // if
 
-                // one of the two arcs has a pre-condition (guard)
-                if (!empty($arc_data[0]['pre_condition'])) {
-                    $guard = stripslashes($arc_data[0]['pre_condition']);
-                    $true_arc  = 0;
-                    $false_arc = 1;
-                } else {
-                    $guard = stripslashes($arc_data[1]['pre_condition']);
-                    $true_arc  = 1;
-                    $false_arc = 0;
-                } // if
-                // turn on output buffering to capture any errors from eval()
-                ob_start();
-                $result = eval($guard);
-                $eval_result = ob_get_clean();
-                if ($eval_result) {
-                    // there was a parse error
-                    $this->errors[] = $eval_result;
-                    return;
-                } // if
-                if ($result == TRUE) {
-                    $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[$true_arc]);
-                } else {
-                    $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[$false_arc]);
-                } // if
-                if ($this->errors) return;
+                // examine the pre-condition (guard) in each arc to find out if one tests as TRUE
+                foreach ($arc_data as $arc) {
+                    if (empty($arc['pre_condition'])) {
+                    	// this is the default after all others have tested as FALSE
+                    	$result = TRUE;
+                    } else {
+                        // test to see if this condition evaluates to TRUE
+                        $guard = stripslashes($arc['pre_condition']);
+                        ob_start();
+                        $result = eval($guard);
+                        $eval_result = ob_get_clean();
+                        if ($eval_result) {
+                            // there was a parse error
+                            $this->errors[] = $eval_result;
+                            return;
+                        } // if
+                    } // if
+                    if ($result == TRUE) {
+                        $token_data = $this->_createToken($dbtoken, $token_data, $arc);
+                        if ($this->errors) return;
+                        break;
+                    } // if
+                } // foreach
+
                 break;
+
             case 'OR-JOIN':
                 if (count($arc_data) > 1) {
                     // "Cannot have more than one outward arc with ARC_TYPE='OR-join'"
@@ -232,6 +234,7 @@ class workflow_engine extends wf_workflow
                 $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0]);
                 if ($this->errors) return;
                 break;
+
             default:
                 // "Invalid PLACE_TYPE on outward arc"
                 $this->errors[] = getLanguageText('e0016');
@@ -256,7 +259,7 @@ class workflow_engine extends wf_workflow
 
         // mark this workitem as finished
         require_once 'classes/wf_workitem.class.inc';
-        $dbworkitem =& singleton::getInstance('wf_workitem');
+        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status='EN'";
@@ -285,7 +288,7 @@ class workflow_engine extends wf_workflow
         // ********************************************************************
         // find token on input arc (there should be only one)
         require_once 'classes/wf_arc.class.inc' ;
-        $dbarc =& singleton::getInstance('wf_arc');
+        $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id';
         $dbarc->sql_from   = "wf_arc "
@@ -315,7 +318,7 @@ class workflow_engine extends wf_workflow
 
         // now mark it as consumed
         require_once 'classes/wf_token.class.inc';
-        $dbtoken =& singleton::getInstance('wf_token');
+        $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
             $arc['token_status']  = 'CONS';
@@ -350,10 +353,10 @@ class workflow_engine extends wf_workflow
     function _cancelSplit ($workflow_id, $transition_id, $case_id, $place_id_in, $arc_type_in)
     // one transition in an OR-Split (Implicit) has been fired, so cancel the other(s)
     {
-        $dbarc =& singleton::getInstance('wf_arc');
+        $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         // find out if the place on the current inward arc has other inward arcs
-        $dbarc->sql_select = 'wf_arc.transition_id, arc_type, workitem_id, case_id, workitem_status';
+        $dbarc->sql_select = 'wf_arc.transition_id, arc_type, workitem_id, case_id, workitem_status, rdcaccount_id';
         $dbarc->sql_from   = 'wf_arc '
                            . "LEFT JOIN wf_workitem ON (wf_workitem.case_id='$case_id' AND wf_workitem.workflow_id='$workflow_id' AND wf_workitem.transition_id=wf_arc.transition_id) ";
         $where = "workflow_id='$workflow_id' AND transition_id != '$transition_id' AND place_id='$place_id_in' AND direction='IN'";
@@ -363,7 +366,7 @@ class workflow_engine extends wf_workflow
             $this->errors[] = getLanguageText('e0031', $place_id_in);
             return;
         } else {
-            $dbworkitem =& singleton::getInstance('wf_workitem');
+            $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
             // check that all arcs from this place have the same arc_type
             foreach ($arc_data as $arc) {
                 if ($arc['arc_type'] != $arc_type_in) {

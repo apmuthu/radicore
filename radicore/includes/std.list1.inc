@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -60,6 +60,10 @@ require_once "classes/$table_id.class.inc";
 if (isset($script_vars['dbobject'])) {
     // use data from previous instance of this script
     $dbobject = unserialize($script_vars['dbobject']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbobject->restart($return_from, $return_action);
+    } // if
     // refetch data for lookup lists in case they have changed
     $null = $dbobject->setLookupData($where);
 } else {
@@ -67,6 +71,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
+    $dbobject->zone                      = 'main';
     $dbobject->sql_select  = &$sql_select;
     $dbobject->sql_from    = &$sql_from;
     $dbobject->sql_where   = &$sql_where;
@@ -109,12 +114,12 @@ if (isset($_GET['page'])) {
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
     $string = validateSortItem('main', $_GET['orderby'], $dbobject, $screen_structure);
-    $dbobject->setOrderBy($string);
+    $dbobject->setOrderBy($string, $dbobject->sql_orderby_seq);
 } // if
 
 // load optional criteria from search screen
 if (isset($search)) {
-    $dbobject->setSqlSearch($search);
+    $dbobject->setSqlSearch($search, true);
 } // if
 
 if (isset($instruction)) {
@@ -184,14 +189,14 @@ $pagination['main']['numrows']  = $dbobject->getNumRows();
 $pagination['main']['curpage']  = $dbobject->getPageNo();
 $pagination['main']['lastpage'] = $dbobject->getLastPage();
 
+// get sort details
+$orderby     = $dbobject->getOrderBy();
+$orderby_seq = $dbobject->getOrderBySeq($orderby);
+
 // save these variables for later in the same session
 $script_vars['where']    = $where;
 $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
-
-// get sort details
-$orderby     = $dbobject->getOrderBy();
-$orderby_seq = $dbobject->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

@@ -42,7 +42,9 @@ $array['control']               = array('dropdown'   => 'DROPDOWN LIST',
                                         'multiline'  => 'MULTI-LINE TEXT BOX',
                                         'popup'      => 'POPUP',
                                         'filepicker' => 'FILE PICKER',
-                                        'hyperlink'  => 'HYPERLINK');
+                                        'hyperlink'  => 'HYPERLINK',
+                                        'imagehyper' => 'IMAGE HYPERLINK',
+                                        'image'      => 'IMAGE');
 
 $array['is_required']           = array('N' => 'No',
                                         'Y' => 'REQUIRED');

@@ -30,7 +30,7 @@ class facility extends Default_Table
     {
         if (!array_key_exists('facility_type_id', $this->lookup_data)) {
             // get array for facility_type and put into LOOKUP_DATA
-            $object =& singleton::getInstance('facility_type');
+            $object =& RDCsingleton::getInstance('facility_type');
             $array  = $object->getValRep('facility_type_id');
             $this->lookup_data['facility_type_id'] = $array;
         } // if

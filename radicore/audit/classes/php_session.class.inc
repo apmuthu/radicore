@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class php_session extends Default_Table
@@ -59,7 +59,9 @@ class php_session extends Default_Table
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
-        $fieldarray = $this->_dml_getData("session_id='" .addslashes($session_id) ."'");
+        $session_id = addslashes($session_id);
+
+        $fieldarray = $this->_dml_getData("session_id='$session_id'");
 
         if (isset($fieldarray[0]['session_data'])) {
             $this->fieldarray = $fieldarray[0];
@@ -78,6 +80,8 @@ class php_session extends Default_Table
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
+        $session_id = addslashes($session_id);
+
         if (!empty($this->fieldarray)) {
             if ($this->fieldarray['session_id'] != $session_id) {
                 // user is starting a new session with previous data
@@ -85,7 +89,7 @@ class php_session extends Default_Table
             } // if
         } // if
 
-        $count = $this->getCount("session_id='" .addslashes($session_id) ."'");
+        $count = $this->getCount("session_id='$session_id'");
 
         if ($count == 0) {
             // create new record
@@ -104,7 +108,7 @@ class php_session extends Default_Table
             if ($session_id == $this->fieldarray['session_id']) {
             	$old_data[0] = $this->fieldarray;
             } else {
-                $old_data = $this->_dml_ReadBeforeUpdate ("session_id='" .addslashes($session_id) ."'");
+                $old_data = $this->_dml_ReadBeforeUpdate ("session_id='$session_id'");
             } // if
             $this->_dml_updateRecord($array, $old_data[0]);
         } // if
@@ -120,7 +124,7 @@ class php_session extends Default_Table
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
-        $fieldarray['session_id'] = $session_id;
+        $fieldarray['session_id'] = addslashes($session_id);
         $this->_dml_deleteRecord($fieldarray);
 
         return true;
@@ -132,8 +136,11 @@ class php_session extends Default_Table
     // perform garbage collection.
     {
         $real_now = date('Y-m-d H:i:s');
-        $dt1 = strtotime("$real_now -$max_lifetime seconds");
-        $dt2 = date('Y-m-d H:i:s', $dt1);
+//        $dt1 = strtotime("$real_now -$max_lifetime seconds");
+//        $dt2 = date('Y-m-d H:i:s', $dt1);
+
+        $timestamp = time() - $max_lifetime;
+        $dt2 = date('Y-m-d H:i:s', $timestamp);
 
         $count = $this->_dml_deleteSelection("last_updated < '$dt2'");
 

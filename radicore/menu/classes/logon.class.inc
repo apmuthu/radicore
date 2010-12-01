@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class logon extends mnu_user
@@ -16,9 +16,10 @@ class logon extends mnu_user
 
         $GLOBALS['task_id'] = 'logoff';
 
-        $updatearray['user_id'] = $logon_user_id;
-        $updatearray['in_use']  = $this->fieldspec['in_use']['false'];
-        $this->skip_validation  = true;
+        $updatearray['user_id']       = $logon_user_id;
+        $updatearray['in_use']        = $this->fieldspec['in_use']['false'];
+        $updatearray['rdcaccount_id'] =& $_SESSION['rdcaccount_id'];
+        $this->skip_validation        = true;
 
         $updatearray = $this->updateRecord($updatearray);
 
@@ -34,7 +35,7 @@ class logon extends mnu_user
 
         $GLOBALS['task_id'] = 'logon';
 
-        $mnu_control =& singleton::getInstance('mnu_control');
+        $mnu_control =& RDCsingleton::getInstance('mnu_control');
 
         $login_type = $mnu_control->getControlData('login_type');
         if ($login_type == 'EMAIL') {
@@ -111,7 +112,7 @@ class logon extends mnu_user
             // no need to encrypt the password
         } elseif ($encrypt_flag == true) {
             // encrypt the password to include in database lookup
-            $crypt_obj =& singleton::getInstance('encryption_class');
+            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
             $spec = $this->fieldspec['user_password'];
             $logon_password = $crypt_obj->encrypt($logon_user_id, $logon_password, $spec['size']);
             if ($crypt_obj->errors) {
@@ -193,7 +194,7 @@ class logon extends mnu_user
         		$fieldarray['external_id'] = $logon_user_id;
         	} // if
             if ($auth_array['authentication'] == 'RADIUS') {
-            	$radius = singleton::getInstance('radius_class');
+            	$radius = RDCsingleton::getInstance('radius_class');
             	$result = $radius->authenticate($fieldarray['external_id'], $logon_password);
             	if ($result == RADIUS_ACCESS_ACCEPT) {
             	    // continue
@@ -204,7 +205,7 @@ class logon extends mnu_user
                     return $this->errors;
             	} // if
             } elseif ($auth_array['authentication'] == 'LDAP') {
-                $ldap = singleton::getInstance('ldap_class');
+                $ldap = RDCsingleton::getInstance('ldap_class');
                 $result = $ldap->authenticate($fieldarray['external_id'], $logon_password);
                 if ($result === true) {
                     // continue
@@ -226,6 +227,7 @@ class logon extends mnu_user
         $_SESSION['rdcaccount_id']    = $fieldarray['rdcaccount_id'];
         $_SESSION['logon_party_id']   = $fieldarray['party_id'];
         $_SESSION['start_task_id']    = $fieldarray['start_task_id'];
+        //$_SESSION['selection_lock']   = true;
 
         if (strlen($fieldarray['language_code']) > 0) {
             // user has a pre-set language code
@@ -305,7 +307,7 @@ class logon extends mnu_user
     // ALSO: write record to audit_logon_errors
     {
         // log this failed attempt in 'audit_logon_errors' table
-        $auditobj =& singleton::getInstance('audit_logon_errors');
+        $auditobj =& RDCsingleton::getInstance('audit_logon_errors');
 
         $audit_data['user_id']       = $user_id;
         $audit_data['email_addr']    = $email_addr;
@@ -317,7 +319,7 @@ class logon extends mnu_user
         } // if
 
         // get count of password attempts
-        $mnu_control =& singleton::getInstance('mnu_control');
+        $mnu_control =& RDCsingleton::getInstance('mnu_control');
 
         $max_retries = $mnu_control->getControlData('pswd_retries');
 
@@ -397,7 +399,7 @@ class logon extends mnu_user
         } // foreach
 
         // remove field(s) and data depending on 'login_type'
-        $dbobject =& singleton::getInstance('mnu_control');
+        $dbobject =& RDCsingleton::getInstance('mnu_control');
         $login_type = $dbobject->getControlData('login_type');
 
         switch ($login_type) {

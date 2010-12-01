@@ -78,10 +78,10 @@ $array['e0067'] = "Too many arcs of type 'OR-join' at place '%1\$s'";
 $array['e0068'] = "The count of AND-JOINS does not match the count of AND-SPLITS";
 $array['e0069'] = "Press SUBMIT to trigger this workitem";
 
-$array['e0070'] = "";
-$array['e0071'] = "";
-$array['e0072'] = "";
-$array['e0073'] = "";
+$array['e0070'] = "Must be 1 empty pre-condition for arcs of type 'OR-split (Explicit)' at transition '%1\$s'";
+$array['e0071'] = "Must be in format HHH:MM";
+$array['e0072'] = "Cannot specify more than 999 hours";
+$array['e0073'] = "Cannot specify more than 59 minutes";
 $array['e0074'] = "";
 $array['e0075'] = "";
 $array['e0076'] = "";

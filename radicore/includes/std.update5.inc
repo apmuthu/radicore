@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update5.inc
@@ -72,7 +72,13 @@ if (!empty($dbobject->messages)) {
     $messages = array_merge($messages, $dbobject->getMessages());
 } // if
 
-$batch_errors = scriptPrevious($errors, $messages, null, $dbobject->getInstruction());
+if (empty($errors)) {
+	$action = 'OK';
+} else {
+    $action = null;
+} // if
+
+$batch_errors = scriptPrevious($errors, $messages, $action, $dbobject->getInstruction());
 return $batch_errors;
 
 ?>

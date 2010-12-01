@@ -53,7 +53,7 @@ class x_pers_opt_xref extends Default_Table
         if (preg_match('/star_sign/i', $this->sql_select)) {
             if (!array_key_exists('star_sign', $this->lookup_data)) {
                 // get lookup list for star_sign
-                $dbobject =& singleton::getInstance('x_person');
+                $dbobject =& RDCsingleton::getInstance('x_person');
                 $data = $dbobject->getValRep('star_sign');
                 $this->lookup_data['star_sign'] = $data;
             } // if
@@ -64,10 +64,11 @@ class x_pers_opt_xref extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         // clear out the contents of $where
         $where = '';

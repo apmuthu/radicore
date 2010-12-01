@@ -31,6 +31,8 @@ if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAM
     $GLOBALS['dbusername'] = '****';
     $GLOBALS['dbuserpass'] = '****';
     $GLOBALS['dbprefix']   = null;
+    $GLOBALS['dbport']     = null;
+    $GLOBALS['dbsocket']   = null;
     // set these only if secure HTTPS protocol is available on your server
     $GLOBALS['http_server']  = '';
     $GLOBALS['https_server'] = '';
@@ -40,6 +42,8 @@ if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAM
     $GLOBALS['dbusername'] = '****';
     $GLOBALS['dbuserpass'] = '****';
     $GLOBALS['dbprefix']   = '****';
+    $GLOBALS['dbport']     = null;
+    $GLOBALS['dbsocket']   = null;
     // set these only if secure HTTPS protocol is available on your server
     $GLOBALS['http_server']  = '';
     $GLOBALS['https_server'] = '';
@@ -54,6 +58,8 @@ if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAM
 //    $servers[0]['dbengine']   = 'pgsql';
 //    $servers[0]['dbusername'] = '****';
 //    $servers[0]['dbuserpass'] = '****';
+//    $servers[0]['dbport']     = '';
+//    $servers[0]['dbsocket']   = '';
 //    $servers[0]['dbprefix']   = '';
 //    $servers[0]['dbnames']    = 'xample,classroom,survey';
 //    $servers[0]['ssl_key']    = '';
@@ -66,6 +72,8 @@ if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAM
 //    $servers[1]['dbengine']   = 'mysql';
 //    $servers[1]['dbusername'] = 'tony';
 //    $servers[1]['dbuserpass'] = 'tony';
+//    $servers[1]['dbport']     = '';
+//    $servers[1]['dbsocket']   = '';
 //    $servers[1]['dbprefix']   = '';
 //    $servers[1]['dbnames']    = '*';
 } // if
@@ -96,5 +104,8 @@ $GLOBALS['use_https'] = false;
 
 // converts datetime between client and server timezones (PHP version >= 5.2)
 //$GLOBALS['server_timezone'] = 'Europe/London';
+
+// defines address(es) to which any error_log will be sent
+//define('ERROR_LOG_MAILTO', '');
 
 ?>

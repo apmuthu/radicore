@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s02 extends mnu_subsystem
@@ -40,7 +40,7 @@ class mnu_subsystem_s02 extends mnu_subsystem
         $this->_copyDirectory('../default', $dir_to, $exclude_array);
 
         // create a menu task for this subsystem
-        $dbobject =& singleton::getInstance('mnu_task');
+        $dbobject =& RDCsingleton::getInstance('mnu_task');
         $task_array['task_id']     = $rowdata[0]['subsys_id'];
         $task_array['task_desc']   = 'Main menu for ' .$rowdata[0]['subsys_id'] .' subsystem';
         $task_array['button_text'] = $rowdata[0]['subsys_id'];
@@ -52,7 +52,7 @@ class mnu_subsystem_s02 extends mnu_subsystem
         } // if
 
         // add this menu task to the main menu
-        $dbobject =& singleton::getInstance('mnu_menu');
+        $dbobject =& RDCsingleton::getInstance('mnu_menu');
         $menu_array['menu_id']     = 'main_menu';
         $menu_array['task_id_jnr'] = $rowdata[0]['subsys_id'];
         $menu_array['button_text'] = $rowdata[0]['subsys_id'];

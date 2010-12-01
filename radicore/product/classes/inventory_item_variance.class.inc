@@ -34,7 +34,7 @@ class inventory_item_variance extends Default_Table
         $variance_qty = $this->getCount("SELECT sum(variance_qty) FROM $this->tablename WHERE $where");
 
         // update inventory_item record with this value
-        $object =& singleton::getInstance('inventory_item');
+        $object =& RDCsingleton::getInstance('inventory_item');
         $object->row_locks = 'EX'; // lock this row for update
         $data   = $object->getData_raw($where);
         if (empty($data)) {
@@ -72,7 +72,7 @@ class inventory_item_variance extends Default_Table
         	return $fieldarray;
         } // if
 
-        $object =& singleton::getInstance('inventory_item_variance');
+        $object =& RDCsingleton::getInstance('inventory_item_variance');
 
         $product_id        = $fieldarray['product_id'];
         $inventory_item_id = $fieldarray['inventory_item_id'];
@@ -152,7 +152,7 @@ class inventory_item_variance extends Default_Table
     {
         if (!array_key_exists('inv_var_reason_id', $this->lookup_data)) {
             // get array for inv_item_status_id and put into LOOKUP_DATA
-            $object =& singleton::getInstance('inventory_variance_reason');
+            $object =& RDCsingleton::getInstance('inventory_variance_reason');
             $array  = $object->getValRep('inv_var_reason_id');
             $this->lookup_data['inv_var_reason_id'] = $array;
         } // if
@@ -173,7 +173,7 @@ class inventory_item_variance extends Default_Table
             $where = "product_id='$product_id' AND inventory_item_id='$inventory_item_id'";
 
             // check that this is a non-serialised item
-            $object =& singleton::getInstance('inventory_item');
+            $object =& RDCsingleton::getInstance('inventory_item');
             $object->sql_select = 'inv_type';
             $data = $object->getData_raw($where);
             if ($data[0]['inv_type'] != 'N') {

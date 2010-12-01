@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_transition extends Default_Table
@@ -62,6 +62,25 @@ class wf_transition extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if (!empty($fieldarray['time_limit'])) {
+        	// convert from minutes to hours and minutes
+        	$hours   = floor($fieldarray['time_limit'] / 60);
+        	$minutes = $fieldarray['time_limit'] % 60;
+        	if (strlen($minutes) < 2) {
+        		$minutes = '0'.$minutes;
+        	} // if
+        	$fieldarray['time_limit'] = $hours.':'.$minutes;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -74,7 +93,7 @@ class wf_transition extends Default_Table
         } // if
 
         if (!array_key_exists('role_id', $this->lookup_data)) {
-            $dbobject =& singleton::getInstance('mnu_role');
+            $dbobject =& RDCsingleton::getInstance('mnu_role');
             $role_array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $role_array;
         } // if
@@ -198,6 +217,46 @@ class wf_transition extends Default_Table
         return $where;
 
     } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($rowdata)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        //$this->row_locks = 'SH';    // shared
+        //$this->row_locks = 'EX';    // exclusive
+        //$this->row_locks_supp = '?' // DBMS-specific
+
+        // reuse existing SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = true;
+
+        if (!empty($rowdata['time_limit'])) {
+        	if (preg_match('/([0-9]{1,3}):[0-9]{2}/', $rowdata['time_limit'], $regs)) {
+        	    // convert from hours and minutes to minutes
+                preg_match('/[0-9]{1,9}(?=:)/', $rowdata['time_limit'], $regs);
+                $hours = $regs[0];
+                if ($hours > 999) {
+                    // "Cannot specify more than 999 hours"
+                	$this->errors['time_limit'] = getLanguageText('e0072');
+                	$hours = 999;
+                } // if
+                preg_match('/(?<=:)[0-9]{2}/', $rowdata['time_limit'], $regs);
+                $minutes = $regs[0];
+                if ($minutes > 59) {
+                    // "Cannot specify more than 59 minutes"
+                	$this->errors['time_limit'] = getLanguageText('e0073');
+                	$minutes = 59;
+                } // if
+                $rowdata['time_limit'] = ($hours * 60) + $minutes;
+        	} else {
+        	    // "Must be in format HHH:MM"
+        	    $this->errors['time_limit'] = getLanguageText('e0071');
+        	} //
+        } // if
+
+        return $rowdata;
+
+    } // _cm_pre_updateRecord
 
 // ****************************************************************************
 } // end class

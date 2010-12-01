@@ -29,7 +29,7 @@ class crs_class_lesson extends Default_Table
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     {
         // convert 'class=X' into 'year=Y'
-        $object =& singleton::getInstance('crs_class');
+        $object =& RDCsingleton::getInstance('crs_class');
         $object->sql_select = 'year';
         $data = $object->getData_raw($where);
         if (isset($data[0]['year']) and $data[0]['year'] > 0) {

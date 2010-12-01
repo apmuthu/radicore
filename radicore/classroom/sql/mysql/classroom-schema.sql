@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `crs_class` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`class_id`)
-) TYPE=MyISAM COMMENT='Idenfifies groups of students who attend the same lessons';
+) ENGINE=MyISAM COMMENT='Idenfifies groups of students who attend the same lessons';
 
 -- --------------------------------------------------------
 
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `crs_class_lesson` (
   `class_id` varchar(8) NOT NULL default '',
   `lesson_id` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`class_id`,`lesson_id`)
-) TYPE=MyISAM COMMENT='Cross-reference between Classes and Lessons';
+) ENGINE=MyISAM COMMENT='Cross-reference between Classes and Lessons';
 
 -- --------------------------------------------------------
 
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS `crs_conflict` (
   `lesson_id2` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`conflict_id`),
   KEY `lesson_id` (`lesson_id1`)
-) TYPE=MyISAM COMMENT='Identifies the lessons which conflict with one another';
+) ENGINE=MyISAM COMMENT='Identifies the lessons which conflict with one another';
 
 -- --------------------------------------------------------
 
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS `crs_lesson` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`lesson_id`)
-) TYPE=MyISAM COMMENT='Identifies the grade or level of subject being taught';
+) ENGINE=MyISAM COMMENT='Identifies the grade or level of subject being taught';
 
 -- --------------------------------------------------------
 
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `crs_room` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`room_id`)
-) TYPE=MyISAM COMMENT='Identifies the rooms where lessons are given';
+) ENGINE=MyISAM COMMENT='Identifies the rooms where lessons are given';
 
 -- --------------------------------------------------------
 
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `crs_schedule` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`schedule_id`,`seq_no`)
-) TYPE=MyISAM COMMENT='Schedule Events';
+) ENGINE=MyISAM COMMENT='Schedule Events';
 
 -- --------------------------------------------------------
 
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS `crs_schedule_hdr` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`schedule_id`)
-) TYPE=MyISAM COMMENT='Schedule Header';
+) ENGINE=MyISAM COMMENT='Schedule Header';
 
 -- --------------------------------------------------------
 
@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS `crs_student` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`student_id`)
-) TYPE=MyISAM COMMENT='Identifies the people who will take lessons';
+) ENGINE=MyISAM COMMENT='Identifies the people who will take lessons';
 
 -- --------------------------------------------------------
 
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `crs_student_lesson` (
   `student_id` smallint(5) unsigned NOT NULL default '0',
   `lesson_id` smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (`student_id`,`lesson_id`)
-) TYPE=MyISAM COMMENT='Cross-reference between Students and Lessons';
+) ENGINE=MyISAM COMMENT='Cross-reference between Students and Lessons';
 
 -- --------------------------------------------------------
 
@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS `crs_subject` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`subject_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -211,4 +211,4 @@ CREATE TABLE IF NOT EXISTS `crs_teacher` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`teacher_id`)
-) TYPE=MyISAM COMMENT='Identifies the people who will give lessons';
+) ENGINE=MyISAM COMMENT='Identifies the people who will give lessons';

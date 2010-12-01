@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -30,10 +30,30 @@ class mnu_user extends Default_Table
     } // mnu_user
 
     // ****************************************************************************
+    function getFieldSpec_original ()
+    // set the specifications for this database table.
+    {
+        $fieldspec = parent::getFieldSpec_original();
+
+        foreach ($this->child_relations as $index => $relation) {
+        	if (isset($relation['subsys_dir'])) {
+                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
+                if (!file_exists($classname)) {
+                    // does not exist in this installation, so remove this reference
+                	unset($this->child_relations[$index]);
+                } // if
+        	} // if
+        } // foreach
+
+        return $fieldspec;
+
+    } // getFieldSpec_original
+
+    // ****************************************************************************
     function checkPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
-        $crypt_obj =& singleton::getInstance('encryption_class');
+        $crypt_obj =& RDCsingleton::getInstance('encryption_class');
 
         // read records for all current users
         $this->sql_select = 'user_id,user_password';
@@ -69,7 +89,7 @@ class mnu_user extends Default_Table
     function setPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
-        $crypt_obj =& singleton::getInstance('encryption_class');
+        $crypt_obj =& RDCsingleton::getInstance('encryption_class');
 
         // read records for all current users
         $this->sql_select = 'user_id,user_password';
@@ -186,6 +206,7 @@ class mnu_user extends Default_Table
         } // if
 
         if (!empty($_SESSION['rdcaccount_id'])) {
+            // account is fixed, so cannot be changed
         	$this->fieldspec['rdcaccount_id']['noedit'] = 'y';
         } // if
 
@@ -239,7 +260,7 @@ class mnu_user extends Default_Table
         // if both 'user_id' and 'user_password' exist then encrypt the password
         if (!empty($fieldarray['user_id']) AND !empty($password_value)) {
             // always encrypt string to ensure it has valid characters
-            $crypt_obj =& singleton::getInstance('encryption_class');
+            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
             $key    = $fieldarray['user_id'];
             $spec   = $this->fieldspec['user_password'];
             $encrypted_string = $crypt_obj->encrypt($key, $password_value, $spec['size']);
@@ -284,7 +305,7 @@ class mnu_user extends Default_Table
         	if ((isset($fieldarray['pswd_is_encrypted']) and $fieldarray['pswd_is_encrypted'])) {
             	// decrypt the password
                 if (!empty($fieldarray['user_id']) and !empty($fieldarray['user_password'])) {
-                    $crypt_obj =& singleton::getInstance('encryption_class');
+                    $crypt_obj =& RDCsingleton::getInstance('encryption_class');
                     $key = $fieldarray['user_id'];
                     $string = $fieldarray['user_password'];
                     $fieldarray['user_password'] = $crypt_obj->decrypt($key, $string);
@@ -297,7 +318,7 @@ class mnu_user extends Default_Table
         } // if
 
         if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
-            $dateobj =& singleton::getInstance('date_class');
+            $dateobj =& RDCsingleton::getInstance('date_class');
             // combine 'date' and 'time' fields before performing timezone conversion
             $date = $fieldarray['logon_date'];
             $time = $fieldarray['logon_time'];
@@ -354,14 +375,14 @@ class mnu_user extends Default_Table
     {
         if (!array_key_exists('role_id', $this->lookup_data)) {
             // get contents of foreign table MNU_ROLE and put into lookup_data
-            $dbobject =& singleton::getInstance('mnu_role');
+            $dbobject =& RDCsingleton::getInstance('mnu_role');
             $array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $array;
         } // if
 
         if (!array_key_exists('language_code', $this->lookup_data)) {
             // get array of all supported language codes
-            $dbobject =& singleton::getInstance('mnu_language');
+            $dbobject =& RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
             if (!empty($_SESSION['default_language'])) {
                 // remove default language as an option in this screen
@@ -372,7 +393,7 @@ class mnu_user extends Default_Table
 
         if (!array_key_exists('rdcaccount_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& singleton::getInstance('mnu_account');
+            $dbobject =& RDCsingleton::getInstance('mnu_account');
             $array = $dbobject->getValRep('rdcaccount_id');
             $this->lookup_data['rdcaccount_id'] = $array;
         } // if
@@ -450,7 +471,7 @@ class mnu_user extends Default_Table
 
         // this may be called from the home page, so insert user's id
         if (empty($where)) {
-            if (preg_match('/(upd1|enq1)/i', $pattern_id)) {
+            if (preg_match('/(upd1|enq1|list2)/i', $pattern_id)) {
             	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
             } // if
         } else {
@@ -468,7 +489,7 @@ class mnu_user extends Default_Table
         } // if
 
         // find out if user passwords are to be hidden or not
-    	$dbobject =& singleton::getInstance('mnu_control');
+    	$dbobject =& RDCsingleton::getInstance('mnu_control');
         $this->pswd_hidden  = $dbobject->getControlData('pswd_hidden');
         $this->pswd_encrypt = $dbobject->getControlData('pswd_encrypt');
         $this->pswd_format  = $dbobject->getControlData('pswd_format');
@@ -519,6 +540,19 @@ class mnu_user extends Default_Table
         return $rows;
 
     } // _cm_post_getData
+
+    // ****************************************************************************
+    function _cm_post_insertRecord ($rowdata)
+    // perform custom processing after database record has been inserted.
+    {
+        // create default favourites
+        $next['task_id']  = 'mnu_favourite(add4)';
+        $next['where']    = "user_id='{$rowdata['user_id']}'";
+        append2ScriptSequence($next);
+
+        return $rowdata;
+
+    } // _cm_post_insertRecord
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($rowdata)

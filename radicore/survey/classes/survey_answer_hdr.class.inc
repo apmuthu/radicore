@@ -72,7 +72,7 @@ class survey_answer_hdr extends Default_Table
         if (!empty($fieldarray['node_id']) and empty($fieldarray['node_desc'])) {
             // not supplied yet, so get it manually
             require_once 'classes/tree_node.class.inc';
-            $dbobject =& singleton::getInstance('tree_node');
+            $dbobject =& RDCsingleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $foreign_data = $dbobject->getData("node_id='{$fieldarray['node_id']}'");
             if ($foreign_data[0]['node_type'] == 'L') {
@@ -113,10 +113,11 @@ class survey_answer_hdr extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         //DebugBreak();
         if ($popupname == 'mnu_user(popup1)') {
@@ -163,7 +164,7 @@ class survey_answer_hdr extends Default_Table
         if ($return_from == 'srv_tree_node(popup)') {
             // get description for selected item
             require_once 'classes/tree_node.class.inc';
-            $dbobject =& singleton::getInstance('tree_node');
+            $dbobject =& RDCsingleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $selection = array2where($select_array);
             $foreign_data = $dbobject->getData($selection);
@@ -195,7 +196,7 @@ class survey_answer_hdr extends Default_Table
         $next['where']   = $where;
 
         // this is processed by scriptnext() and scriptprevious()
-        $_SESSION['script_sequence'][] = $next;
+        append2ScriptSequence($next);
 
         return $fieldarray;
 

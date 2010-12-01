@@ -12,7 +12,7 @@ BODY, P, TABLE, OL, UL {
 caption {
 	font-weight: bold;
 }
-h1 {
+h1, h2 {
   	font-size: 125%;
   	font-weight: bold;
   	margin-top: 5px;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi4.inc
@@ -48,13 +48,18 @@ require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
     // use previous instance from session data
     $dbouter = unserialize($script_vars['dbouter']);
-    // get data from previous instance
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
+    // get data from this instance
     $outer_data = $dbouter->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
+    $dbouter->zone                      = 'outer';
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -88,12 +93,17 @@ require_once "classes/$inner_table.class.inc";
 if (isset($script_vars['dbinner'])) {
     // use data from previous instance of this script
     $dbinner = unserialize($script_vars['dbinner']);
-    // get data from previous instance
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbinner->restart($return_from, $return_action);
+    } // if
+    // get data from this instance
     $inner_data = $dbinner->getFieldArray();
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
+    $dbouter->zone                      = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -136,17 +146,18 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
     $dbouter->startTransaction();
     // update this data in the database
     $outer_data = $dbouter->updateRecord($outer_data);
+    $messages = $dbouter->getMessages();
     if ($dbouter->errors) {
 		// errors are keyed by object name
 	    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+	} else {
+        if (is_True($dbouter->no_display_count)) {
+            // do not display the record count
+        } else {
+        	// '$count records were updated in $tablename'
+            $messages[] = getLanguageText('sys0006', $dbouter->numrows, strtoupper($dbouter->tablename));
+        } // if
 	} // if
-    $messages  = $dbouter->getMessages();
-    if (is_True($dbouter->no_display_count)) {
-        // do not display the record count
-    } else {
-    	// '$count records were updated in $tablename'
-        $messages[] = getLanguageText('sys0006', $dbouter->numrows, strtoupper($dbouter->tablename));
-    } // if
     if (empty($errors)) {
         // update database with changes in POST array
         $inner_data = $dbinner->updateMultiple($inner_data, $inner_post);
@@ -161,13 +172,14 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
             $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
             $dbinner->wf_context     = $dbouter->wf_context;
             $errors = $dbinner->commit();
-            if (empty($errors)) {
-                if ($dbinner->no_controller_msg == TRUE) {
-                	// no messages from the controller, please
-                } else {
-                    $messages[] = getLanguageText('sys0091'); // 'Update successful'
-                } // if
-            } // if
+//            if (empty($errors)) {
+//                if ($dbinner->no_controller_msg == TRUE) {
+//                	// no messages from the controller, please
+//                } else {
+//                    // '$count records were updated in $tablename'
+//                    $messages[] = getLanguageText('sys0006', $dbinner->numrows, strtoupper($dbinner->tablename));
+//                } // if
+//            } // if
             if (isset($_POST['submitnext'])) {
                 $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
                 $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
@@ -179,6 +191,7 @@ if (isset($_POST['submit']) or isset($_POST['submitnext'])) {
                     $where = $scrolling[$dbouter->getClassName()]['where'];
                     $outer_data = $dbouter->getData($where);
                     $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+                    $inner_data = $dbinner->setFieldArray(null);
                 } else {
                     // update was OK - return to previous screen
                     scriptPrevious($errors, $messages, 'OK', $dbinner->getInstruction());
@@ -212,7 +225,12 @@ if (!empty($return_from) AND !empty($popup_object)) {
     if (isset($scrolling)) {
         // retrieve values from scrolling array
         $where = $scrolling[$dbouter->getClassName()]['where'];
-        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+            // set index number of item to be read from current $where list
+            $dbouter->setPageNo($_GET['item']);
+        } else {
+            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+        } // if
     } // if
 
     if (empty($where)) {
@@ -227,32 +245,31 @@ if (!empty($return_from) AND !empty($popup_object)) {
         } // if
     } // if
 
-    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-        // set index number of item to be read from current $where list
-        $dbouter->setPageNo($_GET['item']);
-    } // if
-
-    // get data from the outer table
-    $outer_data = $dbouter->getData($where);
-    if ($dbouter->errors) {
-        // some sort of error
-        if ($dbouter->getLastPage() <= 1) {
-            // only 1 entry requested, so return to previous script
-            scriptprevious($dbouter->getErrors(), $messages);
-        } else {
-            // multiple entries requested, so disable SUBMIT button
-            unset($act_buttons['submit']);
-            if ($dbouter->errors) {
-            	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
+    if (empty($errors[$dbouter->getClassName()])) {
+        // get data from the outer table
+        $outer_data = $dbouter->getData($where);
+        if ($dbouter->errors) {
+            // some sort of error
+            if ($dbouter->getLastPage() <= 1) {
+                // only 1 entry requested, so return to previous script
+                scriptprevious($dbouter->getErrors(), $messages);
+            } else {
+                // multiple entries requested, so disable SUBMIT button
+                unset($act_buttons['submit']);
+                if ($dbouter->errors) {
+                	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
+                } // if
             } // if
         } // if
-    } // if
-    if ($dbouter->getNumRows() < 1) {
-        scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+        if (empty($outer_data)) {
+        	scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+        } // if
+        $inner_data = $dbinner->setFieldArray(null);  // force retrieval of inner data
+        $dbinner->setPageNo($pagination['inner']['curpage']);  // reset to last requested page
     } // if
 
     // get any additional data for the current record
-    $outer_data = $dbouter->getExtraData($outer_data);
+    $outer_data = $dbouter->getExtraData($outer_data, $where);
     if ($dbouter->errors) {
     	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
     } // if
@@ -275,12 +292,12 @@ if (isset($_GET['pagesize'])) {
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
     $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
-    $dbinner->setOrderBy($string);
+    $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
 } // if
 
 // load optional criteria from search screen
 if (isset($search)) {
-    $dbinner->setSqlSearch($search);
+    $dbinner->setSqlSearch($search, true);
 } // if
 
 // obtain the required page number (optional)
@@ -306,25 +323,24 @@ if (count($outer_data) > 0) {
             } // if
         } //if
     } else {
-        if (!empty($errors)) {
-        	$inner_data = array();
-        	$dbinner->setFieldArray($inner_data);
-        } else {
-            // load in current data from $outer in case it is needed
+        if (empty($inner_data)) {
+        	// load in current data from $outer in case it is needed
             $dbinner->setFieldArray($outer_data);
-
             // get data from the database
             $inner_data = $dbinner->getData($where);
-
-            if ($dbinner->getNumRows() == 0) {
-                $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
-                //unset($act_buttons['submit']);
+        } else {
+            if (!empty($dbinner->select_string)) {
+                $inner_data = $dbinner->setSelectedRows($dbinner->select_string, $inner_data);
             } // if
+        } // if
+        if (empty($inner_data)) {
+            $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+            //unset($act_buttons['submit']);
+        } // if
 
-            if (empty($dbinner->errors)) {
-            	// get any additional data for current record
-                $inner_data = $dbinner->getExtraData($inner_data);
-            } // if
+        if (empty($dbinner->errors)) {
+        	// get any additional data for current record
+            $inner_data = $dbinner->getExtraData($inner_data);
         } // if
         if ($dbinner->errors) {
         	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -341,21 +357,28 @@ $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
-// save these variables for later in the same session
-$script_vars['where']     = unqualifyWhere($where);
-$script_vars['dbouter']   = serialize($dbouter);
-$script_vars['dbinner']   = serialize($dbinner);
-$script_vars['scrolling'] = $scrolling;
-$script_vars = updateScriptVars ($script_vars);
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
-    // repeat current task with GET instead of POST
-    scriptNext($GLOBALS['task_id'], $where);
-} // if
-
 // get sort details
 $orderby     = $dbinner->getOrderBy();
 $orderby_seq = $dbinner->getOrderBySeq($orderby);
+
+// save these variables for later in the same session
+$script_vars['where']      = unqualifyWhere($where);
+$script_vars['dbouter']    = serialize($dbouter);
+$script_vars['dbinner']    = serialize($dbinner);
+$script_vars['scrolling']  = $scrolling;
+$script_vars['pagination'] = $pagination;
+$script_vars = updateScriptVars ($script_vars);
+
+// do not do this as any amendments to the screen structure file will be lost
+//if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+//    // repeat current task with GET instead of POST
+//    scriptNext($GLOBALS['task_id'], $where);
+//} // if
+
+//if (isset($dbouter->xsl_params['outer_noedit']) AND isset($dbinner->xsl_params['inner_noedit'])) {
+//    unset($act_buttons['submit']);
+//    unset($act_buttons['submitnext']);
+//} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

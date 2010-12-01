@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // are we using PHP 5, or something earlier?
@@ -15,6 +15,7 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
 class PDF extends TCPDF
 {
     // member variables
+    var $previous_row;              // used by the printFooter() method
     var $dbobject;                  // the database object from which this is being activated
     var $destination = 'I';         // I=Inline (browser), D=Download (browser), F=Filename (on server), S=String
     var $fieldarray = array();      // array of field data
@@ -50,22 +51,28 @@ class PDF extends TCPDF
     } // PDF
 
     // ****************************************************************************
-    function AddPage ($orientation=null, $format=null)
+    function AddPage ($orientation=null, $format=null, $keepmargins=false, $tocpage=false)
     // start a new page.
     {
         $save_last_height = $this->last_height;
-        parent::AddPage ($orientation, $format);
+        parent::AddPage ($orientation, $format, $keepmargins, $tocpage);
         $this->last_height = $save_last_height;
 
     } // addPage
 
     // ****************************************************************************
-    function Cell ($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=0, $link='', $stretch=0, $ignore_min_height=false)
+    function Cell ($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=0, $link='', $stretch=0, $ignore_min_height=false, $calign='T', $valign='M')
     // this is a wrapper for the parent method
     {
-        $align = strtoupper(substr($align, 0, 1));
+        // reduce to single character, upper case
+        $align  = strtoupper(substr($align, 0, 1));
+        $calign = strtoupper(substr($calign, 0, 1));
+        $valign = strtoupper(substr($valign, 0, 1));
+        if (!empty($stretch)) {
+        	$stretch = 4;  // forced character spacing
+        } // if
 
-        parent::Cell ($w, $h, $txt, $border, $ln, $align, $fill, $link, $stretch, $ignore_min_height);
+        parent::Cell ($w, $h, $txt, $border, $ln, $align, $fill, $link, $stretch, $ignore_min_height, $calign, $valign);
 
     } // Cell
 
@@ -113,6 +120,7 @@ class PDF extends TCPDF
             // perform any formatting on retrieved data
             $style_array = array();
             $fieldarray_formatted = $object->formatData($fieldarray, $style_array);
+            $fieldarray_formatted = array_change_key_case($fieldarray_formatted, CASE_LOWER);
             $this->fieldarray = $fieldarray_formatted;  // make this accessible to Header() method
             $this->AddPage();
             // output each field in the required order
@@ -143,8 +151,10 @@ class PDF extends TCPDF
                 	    // default is width is 1/3 page width
                     	$cellspec['width'] = $this->printable_width / 3;
                 	} // if
-                	if (isset($this->structure['columns'][0]['align'])) {
-                    	$cellspec['textalign'] = $this->structure['columns'][0]['align'];
+                	if (isset($this->structure['columns'][0]['halign'])) {
+                    	$cellspec['halign'] = $this->structure['columns'][0]['halign'];
+                    } elseif (isset($this->structure['columns'][0]['align'])) {
+                    	$cellspec['halign'] = $this->structure['columns'][0]['align'];
                     } // if
 
                     $print_array[0] = $cellspec;
@@ -152,6 +162,9 @@ class PDF extends TCPDF
                     // follow with field data
                     $cellspec = array();
                     $cellspec['default_style'] = $this->structure['data']['style'];
+                    if (array_key_exists('ignore_if_empty', $this->style[$cellspec['default_style']])) {
+                    	$cellspec['ignore_if_empty'] = $this->style[$cellspec['default_style']]['ignore_if_empty'];
+                    } // if
                     if (array_key_exists($fieldname, $style_array)) {
                     	$cellspec['style'] = $style_array[$fieldname];
                     } // if
@@ -177,13 +190,18 @@ class PDF extends TCPDF
                 	    // default is width is 2/3 page width
                     	$cellspec['width'] = $this->printable_width / (3/2);
                 	} // if
-                	if (isset($this->structure['columns'][1]['align'])) {
-                    	$cellspec['textalign'] = $this->structure['columns'][1]['align'];
+                	if (isset($this->structure['columns'][1]['halign'])) {
+                    	$cellspec['halign'] = $this->structure['columns'][1]['halign'];
+                    } elseif (isset($this->structure['columns'][1]['align'])) {
+                    	$cellspec['halign'] = $this->structure['columns'][1]['align'];
                     } // if
 
-                	$print_array[1] = $cellspec;
-
-                	$result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
+                    if (empty($cellspec['text']) AND array_key_exists('ignore_if_empty', $cellspec)) {
+                        // do not print an empty line
+                    } else {
+                    	$print_array[1] = $cellspec;
+                    	$result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
+                    } // if
 
                 } else {
                     // there is a separate entry for each label or field in the current line
@@ -282,6 +300,11 @@ class PDF extends TCPDF
                 // construct $cellspec for each cell, then add it to $print_array
                 foreach ($columndata as $cellno => $cellspec) {
                     $cellspec = array_change_key_case($cellspec, CASE_LOWER);
+                    if (!empty($cellspec['align'])) {
+                        // rename 'align' to 'halign'
+                    	$cellspec['halign'] = $cellspec['align'];
+                    	unset($cellspec['align']);
+                    } // if
                     if (array_key_exists('label', $cellspec)) {
                         $cellspec['default_style'] = $this->structure['label']['style'];
                         $cellspec['text'] = getLanguageText($cellspec['label']);
@@ -319,20 +342,20 @@ class PDF extends TCPDF
                 		// default is page width divided by number of columns
                 	    $cellspec['width'] = $this->printable_width / count($columndata);
                 	} // if
-                	if (!isset($cellspec['height'])) {
-                	    // no override specified, so use height from secondary syle
-                		if (isset($cellspec['style'])) {
-                			if (isset($this->style[$cellspec['style']]['font']['height'])) {
-                				$cellspec['height'] = $this->style[$cellspec['style']]['font']['height'];
-                			} // if
-                		} // if
-                		if (!isset($cellspec['height']) AND isset($cellspec['default_style'])) {
-                		    // use height from default style
-                			if (isset($this->style[$cellspec['default_style']]['font']['height'])) {
-                				$cellspec['height'] = $this->style[$cellspec['default_style']]['font']['height'];
-                			} // if
-                		} // if
-                	} // if
+//                	if (!isset($cellspec['height'])) {
+//                	    // no override specified, so use height from secondary syle
+//                		if (isset($cellspec['style'])) {
+//                			if (isset($this->style[$cellspec['style']]['font']['height'])) {
+//                				$cellspec['height'] = $this->style[$cellspec['style']]['font']['height'];
+//                			} // if
+//                		} // if
+//                		if (!isset($cellspec['height']) AND isset($cellspec['default_style'])) {
+//                		    // use height from default style
+//                			if (isset($this->style[$cellspec['default_style']]['font']['height'])) {
+//                				$cellspec['height'] = $this->style[$cellspec['default_style']]['font']['height'];
+//                			} // if
+//                		} // if
+//                	} // if
 
                     $print_array[] = $cellspec;
                 } // foreach
@@ -348,10 +371,9 @@ class PDF extends TCPDF
     } // detailView_multi
 
     // ****************************************************************************
-    function Error ($msg='')
+    function Error ($msg)
     // call standard error handler
     {
-
         trigger_error($msg, E_USER_ERROR);
 
     } // Error
@@ -395,10 +417,12 @@ class PDF extends TCPDF
     // individual lines are extracted and added to $celldata['line_array'].
     {
         // set current font to this cell's desired font
-        $textalign = 'L';
-        $height = $this->setPrintStyle($celldata['default_style'], $textalign);
+        $halign  = 'Left';
+        $valign  = 'Middle';
+        $stretch = null;
+        list($height, $halign, $valign, $stretch) = $this->setPrintStyle($celldata['default_style'], $halign, $valign, $stretch);
         if (isset($celldata['style'])) {
-        	$height = $this->setPrintStyle($celldata['style'], $textalign);
+        	list($height, $halign, $valign, $stretch) = $this->setPrintStyle($celldata['style'], $halign, $valign, $stretch);
         } // if
 
         if (isset($celldata['height']) AND !isset($celldata['barcode'])) {
@@ -408,6 +432,10 @@ class PDF extends TCPDF
             if ($this->last_height < $height) {
             	$this->last_height = $height;
             } // if
+        } // if
+
+        if (empty($celldata['height'])) {
+        	$celldata['height'] = $height;
         } // if
 
         $cell_width = $celldata['width'];
@@ -506,7 +534,7 @@ class PDF extends TCPDF
         // examine column widths for percentages and turn them into numbers
         $this->structure['title'] = $this->adjustColumnWidths($this->structure['title']);
 
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         // get default style for the 'title' area
         $default_style = $this->style[$this->structure['title']['style']];
@@ -518,32 +546,34 @@ class PDF extends TCPDF
             	// this is something that goes in the title area
 
             	// set default style for whole title
-            	$textalign = 'L';
-            	//$height = $this->setPrintStyle($this->structure['title']['style'], $textalign);
             	$attributes['default_style'] = $this->structure['title']['style'];
-            	$height = $default_style['font']['height'];
-            	if (isset($default_style['font']['align'])) {
-            		$textalign = $default_style['font']['align'];
-            	} // if
-            	if (isset($attributes['style'])) {
-            	    // use style override for this cell
-            	    //$height = $this->setPrintStyle($attributes['style'], $textalign);
-            	    $second_style = $this->style[$attributes['style']];
-            	    if (isset($second_style['font']['height'])) {
-            	    	$height = $second_style['font']['height'];
-            	    } // if
-            	    if (isset($second_style['font']['align'])) {
-                		$textalign = $second_style['font']['align'];
-                	} // if
-            	} // if
-            	if (isset($attributes['height'])) {
-            	    // use height override for this cell
-                	$height = $attributes['height'];
-            	} else {
-            	    $attributes['height'] = $height;
+
+            	$halign = 'Left';    // horizontal alignment - Left, Center, Right
+            	$valign = 'Middle';  // vertical alignment - Top, Middle, Bottom
+            	$stretch = null;     // no stretching of text within the cell
+            	list($height, $halign, $valign, $stretch) = $this->setPrintStyle($attributes['default_style'], $halign, $valign, $stretch);
+                if (isset($attributes['style'])) {
+                	list($height, $halign, $valign, $stretch) = $this->setPrintStyle($attributes['style'], $halign, $valign, $stretch);
                 } // if
+
+            	if (empty($attributes['height'])) {
+            	    // not supplied, so use definition from style
+            	    $attributes['height'] = $height;
+            	} // if
+            	$height            = $attributes['height'];
                 $this->last_height = $height;
-                $attributes['textalign'] = $textalign;
+                if (empty($attributes['halign'])) {
+                    // not supplied, so use definition from style
+                	$attributes['halign'] = $halign;
+                } // if
+                if (empty($attributes['valign'])) {
+                    // not supplied, so use definition from style
+                	$attributes['valign'] = $valign;
+                } // if
+                if (empty($attributes['stretch'])) {
+                    // not supplied, so use definition from style
+                	$attributes['stretch'] = $stretch;
+                } // if
 
             	if (isset($attributes['image'])) {
             	    $cell_width = $this->Pixels2Units($attributes['imagewidth']);
@@ -560,15 +590,18 @@ class PDF extends TCPDF
             	$saveY = $this->getY();
 
             	if (isset($attributes['align'])) {
-            	    // absolute cell positioning - left, center or right
+            	    // absolute cell positioning on page - left, center or right
                 	$align = strtoupper(substr($attributes['align'], 0, 1));
                 	if ($align == 'C') {
+                	    // put cell in center of page
                         $X = ($this->printable_width - $cell_width) /2;
                     	$this->setX($X + $this->lMargin);
                     } elseif ($align == 'R') {
+                        // put cell against the right margin
                         $X = ($this->printable_width - $cell_width);
                     	$this->setX($X + $this->lMargin);
                     } elseif ($align == 'L') {
+                        // put cell against the left margin
                     	$this->setX($this->lMargin);
                     } // if
                     unset($attributes['align']);
@@ -657,6 +690,11 @@ class PDF extends TCPDF
                         	if (isset($this->fieldarray[$fieldname]) OR is_null($this->fieldarray[$fieldname])) {
                         		$text = $this->fieldarray[$fieldname];
                         		$attributes['text'] = $text;
+                        		if (isset($attributes['print_only_once'])) {
+                        		    // empty this field so that it is not output again if the page overflows
+                        		    // (when used in conjunction with 'ignore_if-empty')
+                        			$this->fieldarray[$fieldname] = '';
+                        		} // if
                         	} // if
                         } // if
             	    } elseif (isset($attributes['type'])) {
@@ -678,7 +716,7 @@ class PDF extends TCPDF
                 	    } // switch
             	    } // if
 
-                    if (isset($attributes['nofill'])) {
+                    if (!empty($attributes['nofill'])) {
                     	$fill = 0;
                     } else {
                         $fill = 1;
@@ -699,9 +737,10 @@ class PDF extends TCPDF
                         } // if
 
                         if ($line_count == 1) {
+                            // print a single-line cell
                         	$this->printCell($attributes, 0, 0, $border, $fill);
                         } else {
-                            $line_count = $this->MultiCell($cell_width, $height, $text, $border, $textalign, $fill);
+                            $line_count = $this->MultiCell($cell_width, $height, $text, $border, $halign, $fill);
                         } // if
                         $depth = $line_count * $height;
                     } // if
@@ -762,8 +801,10 @@ class PDF extends TCPDF
         	$this->structure['body']['style'] = 'default';
         } // if
         $body_style  = $this->structure['body']['style'];
-        $textalign  = 'L';
-        $line_height = $this->setPrintStyle($body_style, $textalign);
+        $halign  = 'Left';
+        $valign  = 'Middle';
+        $stretch = null;
+        list($line_height, $halign, $valign, $stretch) = $this->setPrintStyle($body_style, $halign, $valign, $stretch);
         if (isset($this->style[$body_style]['font']['border'])) {
         	$border  =  $this->style[$body_style]['font']['border'];
         } else {
@@ -773,8 +814,9 @@ class PDF extends TCPDF
         $fill = 0;
         $started = false;
 
-        $previous_row = array();                     // initialise previous row
-        $fieldarray = $object->fetchRow($resource);  // read first row
+        $previous_row = array();                      // initialise previous row
+        $style_array  = array();
+        $current_row = $object->fetchRow($resource);  // read first row
         // add each row to the document
         do {
             if ($object->errors) return;
@@ -785,57 +827,66 @@ class PDF extends TCPDF
             	$this->validateStructure($this->structure);
             } // if
 
-            if (!empty($fieldarray)) {
-            	// perform any formatting on retrieved data
-                $style_array = array();
-                $fieldarray = $object->formatData($fieldarray, $style_array);
-            } // if
-            $this->fieldarray = $fieldarray;  // make this data accessible to Header() method
+            $this->fieldarray = $current_row;  // make this data accessible to Header() method
 
             if (method_exists($object, '_cm_ListView_pre_print')) {
             	// find out if any rows need to be printed before this one
-                $extra_rows = $object->_cm_ListView_pre_print ($previous_row, $fieldarray);
-
-                // append current row then print them all
-                if (!empty($fieldarray)) {
-                	$extra_rows[] = $fieldarray;
+                $before = $object->_cm_ListView_pre_print($previous_row, $current_row);
+                if (!empty($before)) {
+                	$fill = $this->listView_print($before, $border, $fill, $style_array, $object);
                 } // if
 
-                if (!empty($extra_rows)) {
-                	$fill = $this->listView_print($extra_rows, $border, $fill, $style_array);
-                } //if
+                // print current row
+                $fill = $this->listView_print($current_row, $border, $fill, $style_array, $object);
+
+                $previous_row = $current_row;
+                $this->previous_row = $previous_row;  // save for printFooter()
+                if (!empty($current_row)) {
+                	$current_row = $object->fetchRow($resource);
+                    if (empty($current_row)) {
+                        // save last row for possible use in Header() method
+                    	$last_row = $previous_row;
+                    } // if
+                } // if
 
             } else {
-                if (!empty($fieldarray)) {
+                if (!empty($current_row)) {
+                    $this->fieldarray = $current_row;  // make this data accessible to Header() method
+
                     // find out if any rows need to be printed before this one
-                    $before = $object->_cm_ListView_print_before ($previous_row, $fieldarray);
+                    $before = $object->_cm_ListView_print_before($previous_row, $current_row);
                     if (!empty($before)) {
-                    	$fill = $this->listView_print($before, $border, $fill, $style_array);
+                    	$fill = $this->listView_print($before, $border, $fill, $style_array, $object);
                     } // if
 
-                    // print current row
-                    $fill = $this->listView_print($fieldarray, $border, $fill, $style_array);
+                	// print current row
+                    $fill = $this->listView_print($current_row, $border, $fill, $style_array, $object);
 
-                    // find out if any rows need to be printed before this one
-                    $after = $object->_cm_ListView_print_after ($fieldarray);
+                    // read next row for comparison in 'print_after' method
+                    $previous_row = $current_row;
+                    $this->previous_row = $previous_row;  // save for printFooter()
+                    if (!empty($current_row)) {
+                    	$next_row = $object->fetchRow($resource);
+                        if (empty($next_row)) {
+                            // save last row for possible use in Header() method
+                        	$last_row = $previous_row;
+                        } // if
+                    } // if
+
+                    // find out if any rows need to be printed after this one
+                    $after = $object->_cm_ListView_print_after($current_row, $next_row);
                     if (!empty($after)) {
-                    	$fill = $this->listView_print($after, $border, $fill, $style_array);
+                    	$fill = $this->listView_print($after, $border, $fill, $style_array, $object);
                     } // if
+
+                    $current_row = $next_row;
                 } // if
             } // if
 
-            $previous_row = $fieldarray;
-            if (!empty($fieldarray)) {
-            	$fieldarray = $object->fetchRow($resource);
-                if (empty($fieldarray)) {
-                    // save last row for possible use in Header() method
-                	$last_row = $previous_row;
-                } // if
-            } // if
+        } while (!empty($current_row));
 
-        } while (!empty($previous_row));
-
-        $this->fieldarray = $last_row;  // make this data accessible to Header() method
+        $this->previous_row = $last_row;  // save for printFooter()
+        $this->fieldarray   = $last_row;  // make this data accessible to Header() method
 
         // look for a line of totals to be printed (optional)
         $fieldarray = $object->_cm_ListView_total();
@@ -879,8 +930,16 @@ class PDF extends TCPDF
             // default is width divided by number of columns
             $cellspec['width'] = $this->printable_width / count($this->structure['body']['fields']);
         } // if
-        if (isset($this->structure['columns'][$column]['align'])) {
-        	$cellspec['textalign'] = $this->structure['columns'][$column]['align'];
+        if (isset($this->structure['columns'][$column]['halign'])) {
+        	$cellspec['halign'] = $this->structure['columns'][$column]['halign'];
+        } elseif (isset($this->structure['columns'][$column]['align'])) {
+        	$cellspec['halign'] = $this->structure['columns'][$column]['align'];
+        } // if
+        if (isset($this->structure['columns'][$column]['valign'])) {
+        	$cellspec['valign'] = $this->structure['columns'][$column]['valign'];
+        } // if
+        if (isset($this->structure['columns'][$column]['stretch'])) {
+        	$cellspec['stretch'] = $this->structure['columns'][$column]['stretch'];
         } // if
 
         if (isset($fieldarray[$fieldname])) {
@@ -905,7 +964,7 @@ class PDF extends TCPDF
     } // listView_assemble_row
 
     // ****************************************************************************
-    function listView_print($rows, $border, $fill, $style_array)
+    function listView_print($rows, $border, $fill, $style_array, $object=null)
     // print a line for each entry in $rows
     {
         if (!is_int(key($rows))) {
@@ -915,6 +974,11 @@ class PDF extends TCPDF
         } // if
 
         foreach ($rows as $rowdata) {
+            if (is_object($object)) {
+            	// format current row
+                $style_array = array();
+                $rowdata = $object->formatData($rowdata, $style_array);
+            } // if
             // assemble a row of column details
             $print_array = array();
             foreach ($this->structure['body']['fields'] as $column => $columndata) {
@@ -930,7 +994,7 @@ class PDF extends TCPDF
     } // listView_print
 
     // ****************************************************************************
-    function MultiCell ($width, $height, $text, $border=0, $align='J', $fill=0, $ln=1, $x='', $y='', $reseth=true, $stretch=0, $ishtml=false, $autopadding=true, $maxh=0)
+    function MultiCell ($width, $height, $text, $border=0, $align='J', $fill=0, $ln=1, $x='', $y='', $reseth=true, $stretch=0, $ishtml=false, $autopadding=true, $maxh=0, $valign='T', $fitcell=false)
     // this is a wrapper for the parent method
     {
         $align = strtoupper(substr($align, 0, 1));
@@ -939,7 +1003,7 @@ class PDF extends TCPDF
         $X = $this->getX();
         $Y = $this->getY();
 
-        $cells = parent::MultiCell ($width, $height, $text, $border, $align, $fill, $ln, $x, $y, $reseth, $stretch, $ishtml, $autopadding, $maxh);
+        $cells = parent::MultiCell ($width, $height, $text, $border, $align, $fill, $ln, $x, $y, $reseth, $stretch, $ishtml, $autopadding, $maxh, $valign, $fitcell);
 
         $line_count = ($this->getY() - $Y) / $height;
 
@@ -958,21 +1022,33 @@ class PDF extends TCPDF
         $col_remainder = array();
 
         foreach ($columns as $colnum => $coldata) {
-            if (is_array($coldata) AND array_key_exists('width', $coldata)) {
-            	if (preg_match('/^(\*)$/', $coldata['width'])) {
-            	    // width is '*', to be set to remainder after all other columns have been done
-                	$col_remainder[] = $colnum;
-            	} else {
-            	    if (preg_match('/(%)$/', $coldata['width'])) {
-                        // contains a percentage, so turn it into a number
-                    	$percent = substr($coldata['width'], 0, -1);  // strip off trailing '%' character
-                        $coldata['width'] = $this->printable_width * ($percent / 100);
-            	        // update input array - this is required for PHP 4
-            	        $columns[$colnum]['width'] = $coldata['width'];
+            if (is_array($coldata)) {
+                if (array_key_exists('width', $coldata)) {
+                	if (preg_match('/^(\*)$/', $coldata['width'])) {
+                	    // width is '*', to be set to remainder after all other columns have been done
+                    	$col_remainder[] = $colnum;
+                	} else {
+                	    if (preg_match('/(%)$/', $coldata['width'])) {
+                            // contains a percentage, so turn it into a number
+                        	$percent = substr($coldata['width'], 0, -1);  // strip off trailing '%' character
+                            $coldata['width'] = $this->printable_width * ($percent / 100);
+                	        // update input array - this is required for PHP 4
+                	        $columns[$colnum]['width'] = $coldata['width'];
+                        } // if
+                	    // accumulate total width used
+                	    $width_used += $coldata['width'];
                     } // if
-            	    // accumulate total width used
-            	    $width_used += $coldata['width'];
                 } // if
+//                if ($in_title) {
+//                    // leave 'align' alone
+//                } else {
+//                	if (!empty($coldata['align'])) {
+//                        // rename 'align' to 'halign'
+//                    	$coldata['halign'] = $coldata['align'];
+//                    	unset($coldata['align']);
+//                    	$columns[$colnum] = $coldata;
+//                    } // if
+//                } // if
             } // if
         } // foreach
 
@@ -1029,10 +1105,12 @@ class PDF extends TCPDF
     function Pixels2Units ($pixels)
     // convert value in pixels to current units
     {
+        $factor = 0.8854457708;  // this is required to make the image life-sized
+
         // this may be wrong, in which case each calculation may have to be changed
         switch ($this->units) {
         	case 'mm':
-        		$output = $pixels/$this->k;
+        		$output = ($pixels/$this->k)*$factor;
         		break;
         	case 'cm':
         	    $output = $pixels/$this->k;
@@ -1088,10 +1166,17 @@ class PDF extends TCPDF
         } else {
         	$style['padding'] = 1;
         } // if
-        if (isset($celldata['position'])) {
-        	$style['position'] = $celldata['position'];
+//        if (isset($celldata['position'])) {
+//          // alignment within the page
+//        	$style['position'] = $celldata['position'];
+//        } else {
+//        	$style['position'] = 'C';
+//        } // if
+        if (isset($celldata['align'])) {
+            // alignment within the cell
+        	$style['cellfitalign'] = $celldata['align'];
         } else {
-        	$style['position'] = 'C';
+        	$style['cellfitalign'] = 'C';
         } // if
         if (isset($celldata['border'])) {
         	$style['border'] = true;
@@ -1113,10 +1198,15 @@ class PDF extends TCPDF
             } else {
             	$style['fontsize'] = 8;
             } // if
+            if (isset($celldata['stretch'])) {
+                // stretch the barcode within the cell
+            	$style['stretch'] = $celldata['stretch'];
+            } // if
             if (isset($celldata['stretchtext'])) {
+                // stretch the text as wide as the barcode
             	$style['stretchtext'] = $celldata['stretchtext'];
             } else {
-            	$style['stretchtext'] = 0;  // no character spacing
+            	$style['stretchtext'] = 0;
             } // if
         } // if
 
@@ -1141,15 +1231,18 @@ class PDF extends TCPDF
 			} // if
 			// image position = L/C/R/X (Left, Center, Right, Stretch Image)
 			if (preg_match('/(L|C|R)/i', $celldata['style'], $regs)) {
-			    $style['position'] = $regs[0];
+			    //$style['position'] = $regs[0];
+			    $style['align'] = $regs[0];
 			} else {
-			    $style['position'] = 'C';    // default is center
+			    //$style['position'] = 'C';    // default is center
+			    $style['align'] = 'C';    // default is center
 			} // if
 			if (preg_match('/X/i', $celldata['style'], $regs)) {
-			    $style['position'] = 'S';
+			    //$style['position'] = 'S';
+			    $style['stretch'] = true;  // stretch the barcode image to fit the cell
 			} // if
 			if (preg_match('/S/i', $celldata['style'], $regs)) {
-			    $style['stretchtext'] = 4;
+			    $style['stretchtext'] = 4;  // forced character spacing
 			} // if
 			// convert 'old' values to 'new'
 			switch ($celldata['xres']) {
@@ -1211,11 +1304,13 @@ class PDF extends TCPDF
     // print a line from this cell using the contents of $celldata
     {
         // set print style for current cell
-        $textalign = 'L';
-        $height = $this->setPrintStyle($celldata['default_style'], $textalign);
+        $halign  = 'Left';
+        $valign  = 'Middle';
+        $stretch = null;
+        list($height, $halign, $valign, $stretch) = $this->setPrintStyle($celldata['default_style'], $halign, $valign, $stretch);
         if (isset($celldata['style'])) {
             // use style override for this cell
-        	$height = $this->setPrintStyle($celldata['style'], $textalign);
+        	list($height, $halign, $valign, $stretch) = $this->setPrintStyle($celldata['style'], $halign, $valign, $stretch);
         } // if
         if (isset($celldata['height'])) {
 	        $height = $celldata['height'];
@@ -1225,10 +1320,30 @@ class PDF extends TCPDF
 	        } // if
 	    } // if
 
-        if (isset($celldata['textalign'])) {
-        	$textalign = $celldata['textalign'];
-        } elseif (isset($celldata['align'])) {
-        	$textalign = $celldata['align'];
+        if (isset($celldata['halign'])) {
+            $halign = $celldata['halign'];
+        } // if
+
+        if (isset($celldata['valign'])) {
+            $valign = $celldata['valign'];
+        } // if
+
+        if (!empty($celldata['stretch'])) {
+            $stretch = $celldata['stretch'];
+        } // if
+
+        $calign = 'T';  // always 'cell top'
+
+        if (isset($celldata['ignore_min_height'])) {
+            $ignore_min_height = true;
+        } else {
+        	$ignore_min_height = false;
+        } // if
+
+        if (isset($celldata['link'])) {
+            $link = $celldata['link'];
+        } else {
+        	$link = null;
         } // if
 
         if (strtoupper($this->DrawColor) == strtoupper($this->FillColor)) {
@@ -1349,7 +1464,7 @@ class PDF extends TCPDF
             	$this->printBarcode($celldata);
             	if ($this->error) {
             	    $text = $this->error;
-            		$this->Cell($cell_width, $height, $text, $mod_border, 0, $textalign, $fill);
+            		$this->Cell($cell_width, $height, $text, $mod_border, 0, $valign, $fill);
             	} else {
             	    if ($border == 1 OR preg_match('/L/i', $border)) {
             	    	// draw line along left hand border
@@ -1367,10 +1482,10 @@ class PDF extends TCPDF
         } else {
             if (array_key_exists('notext', $celldata['fieldspec'])) {
             	// write a line without any text
-            	$this->Cell($cell_width, $height, '', $mod_border, 0, $textalign, $fill);
+            	$this->Cell($cell_width, $height, '',    $mod_border, 0, $halign, $fill);
             } else {
                 // output a line of text in the current cell
-                $this->Cell($cell_width, $height, $text, $mod_border, 0, $textalign, $fill);
+                $this->Cell($cell_width, $height, $text, $mod_border, 0, $halign, $fill, $link, $stretch, $ignore_min_height, $calign, $valign);
             } // if
         } // if
 
@@ -1409,16 +1524,28 @@ class PDF extends TCPDF
     function printFooter ($zone)
     // print a line in the page footer
     {
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
 
         foreach ($this->structure[$zone] as $element => $attributes) {
             if (is_integer($element)) {
                 // use default style for whole title
-                $textalign = 'L';
-            	$height = $this->setPrintStyle($this->structure['foot']['style'], $textalign);
+                $halign  = 'Left';
+                $valign  = 'Middle';
+                $stretch = null;
+            	list($height, $halign, $valign, $stretch) = $this->setPrintStyle($this->structure['foot']['style'], $halign, $valign, $stretch);
                 if (isset($attributes['style'])) {
             	    // use style specified for this element
-            	    $height = $this->setPrintStyle($attributes['style'], $textalign);
+            	    list($height, $halign, $valign, $stretch) = $this->setPrintStyle($attributes['style'], $halign, $valign, $stretch);
+            	} // if
+
+            	if (!empty($attributes['halign'])) {
+            	    $halign = $attributes['halign'];
+            	} // if
+            	if (!empty($attributes['valign'])) {
+            	    $valign = $attributes['valign'];
+            	} // if
+            	if (!empty($attributes['stretch'])) {
+            	    $stretch = $attributes['stretch'];
             	} // if
 
             	if (isset($attributes['text'])) {
@@ -1426,10 +1553,23 @@ class PDF extends TCPDF
             		if (substr($text, 0, 2) == '%%') {
                         // replace field name with field data
                     	$fieldname = substr($text, 2);
-                    	if (isset($this->fieldarray[$fieldname])) {
-                    		$text = $this->fieldarray[$fieldname];
+                    	if ($GLOBALS['mode'] == 'pdf-detail') {
+                    		if (isset($this->fieldarray[$fieldname])) {
+                        		$text = $this->fieldarray[$fieldname];
+                        	} // if
+                    	} else {
+                        	if (isset($this->previous_row[$fieldname])) {
+                        		$text = $this->previous_row[$fieldname];
+                        	} // if
                     	} // if
                     } // if
+
+            	} elseif (isset($attributes['image'])) {
+                    $imagewidth  = $this->Pixels2Units($attributes['imagewidth']);
+            	    $imageheight = $this->Pixels2Units($attributes['imageheight']);
+                    $cell_width  = $imagewidth;
+                    $attributes['width']  = $imagewidth;
+                    $attributes['height'] = $imageheight;
 
             	} else {
                 	switch (strtolower($attributes['type'])) {
@@ -1475,12 +1615,14 @@ class PDF extends TCPDF
                 } // if
 
                 if (isset($attributes['align'])) {
-                    // absolute cell positioning - left, center or right
+                    // absolute cell positioning on page - left, center or right
                 	$align = strtoupper(substr($attributes['align'], 0, 1));
                     if ($align == 'C') {
+                        // put in center of page
                         $X = ($this->printable_width - $cell_width) /2;
                     	$this->setX($X + $this->lMargin);
                     } elseif ($align == 'R') {
+                        // put against the right margin
                         $X = ($this->printable_width - $cell_width);
                     	$this->setX($X + $this->lMargin);
                     } // if
@@ -1507,14 +1649,33 @@ class PDF extends TCPDF
         	        $border = 0;
         	    } // if
 
-        	    // if text is too long it must be truncated
-        	    $str_width = $this->GetStringWidth($text);
-        	    while ($str_width > $cell_width-1) {
-            		$text = substr($text, 0, strlen($text) -1);
-            		$str_width = $this->GetStringWidth($text);
-            	} // while
+        	    if (isset($attributes['image'])) {
+        	    	$imagewidth  = $this->Pixels2Units($attributes['imagewidth']);
+            	    $imageheight = $this->Pixels2Units($attributes['imageheight']);
+            	    $imagename   = $attributes['image'];
+            	    if (substr($imagename, 0, 2) == '%%') {
+                        // replace field name with field data
+                    	$fieldname = substr($imagename, 2);
+                    	if (isset($this->fieldarray[$fieldname])) {
+                    		$imagename = $this->fieldarray[$fieldname];
+                    	} // if
+                    } // if
+            	    $this->Image($imagename, $this->getX(), $this->getY(), $imagewidth, $imageheight);
 
-                $this->Cell($cell_width, $line_height, $text, $border, 0, $textalign, 1);
+        	    } else {
+            	    // if text is too long it must be truncated
+            	    $str_width = $this->GetStringWidth($text);
+            	    while ($str_width > $cell_width-1) {
+                		$text = substr($text, 0, strlen($text) -1);
+                		$str_width = $this->GetStringWidth($text);
+                	} // while
+
+                	$link              = null;
+                	$ignore_min_height = false;
+                	$calign            = 'T';
+
+                    $this->Cell($cell_width, $line_height, $text, $border, 0, $halign, 1, $link, $stretch, $ignore_min_height, $calign, $valign);
+        	    } // if
 
                 if (isset($attributes['marginright'])) {
         		    // increase X coordinate to include this margin
@@ -1675,9 +1836,8 @@ class PDF extends TCPDF
     } // setHeader
 
     // ****************************************************************************
-    function setPrintStyle ($style, &$textalign)
+    function setPrintStyle ($style, $halign, $valign, $stretch)
     // set print style (font, colours, etc)
-    // NOTE: $textalign is passed BY REFERENCE as it may be amended.
     {
         if (!array_key_exists($style, $this->style)) {
             $style = 'default';
@@ -1712,8 +1872,24 @@ class PDF extends TCPDF
         } // if
 
         if (isset($this->style[$style]['font']['align'])) {
-        	// set alignment for text within current cell (use 1st character only)
-            $textalign = strtoupper(substr($this->style[$style]['font']['align'],0 ,1));
+        	// switch from 'align' to 'halign'
+            $this->style[$style]['font']['halign'] = $this->style[$style]['font']['align'];
+            unset($this->style[$style]['font']['align']);
+        } // if
+
+        if (isset($this->style[$style]['font']['halign'])) {
+        	// set horizotal alignment for text within current cell
+            $halign = $this->style[$style]['font']['halign'];
+        } // if
+
+        if (isset($this->style[$style]['font']['valign'])) {
+        	// set vertical alignment for text within current cell
+            $valign = $this->style[$style]['font']['valign'];
+        } // if
+
+        if (isset($this->style[$style]['font']['stretch'])) {
+        	// set stretch for text within current cell
+            $stretch = $this->style[$style]['font']['stretch'];
         } // if
 
         if (isset($this->style[$style]['font']['draw'])) {
@@ -1721,7 +1897,7 @@ class PDF extends TCPDF
             $this->SetLineWidth($this->style[$style]['font']['draw']);
         } // if
 
-        return $height;
+        return array($height, $halign, $valign, $stretch);
 
     } // setPrintStyle
 
@@ -1775,26 +1951,37 @@ class PDF extends TCPDF
         	$this->line_width = .2;
         } // if
 
-        $this->units     = $units;
+        $this->units = $units;
 
         // load default style
         $this->style['default']['font'] = array('family' => 'Helvetica',// Courier, Helvetica, Times
                                                 'style' => '',          // blank=Regular, B=Bold, I=Italic, U=Underline
                                                 'size' => 11,           // size in points
-                                                'height' => 5,          // line height
+                                                'height' => 5,          // line height in units
                                                 'draw' => .2,           // width of drawn lines
-                                                'align' => 'left');     // text alignment
+                                                'halign' => 'left');    // horizontal text alignment
 
         $this->style['default']['fillcolour'] = array(255,255,255);     // colour for background
         $this->style['default']['textcolour'] = array(0,0,0);           // colour for foreground
         $this->style['default']['drawcolour'] = array(0,0,0);           // colour for line drawing
 
-        // now call constructor in parent class
-        if (version_compare(phpversion(), '5.0.0', '<')) {
-            parent::TCPDF($orientation, $units, $format);
+        if (!empty($this->fontlist)) {
+            // constructor has already been called, so don't call it again
         } else {
-            // PHP 5 uses different code
-            parent::__construct($orientation, $units, $format);
+        	// now call constructor in parent class
+            if (version_compare(phpversion(), '5.0.0', '<')) {
+                parent::TCPDF($orientation, $units, $format);
+            } else {
+                // PHP 5 uses different code
+                parent::__construct($orientation, $units, $format);
+            } // if
+        } // if
+
+        if (isset($structure['pdf']['marginleft'])) {
+    	    $this->SetLeftMargin($structure['pdf']['marginleft']);
+        } // if
+    	if (isset($structure['pdf']['marginright'])) {
+    	    $this->SetRightMargin($structure['pdf']['marginright']);
         } // if
 
         $this->printable_width = $this->w - ($this->lMargin + $this->rMargin);

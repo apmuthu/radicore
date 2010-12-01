@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -55,6 +55,10 @@ require_once "classes/$inner_table.class.inc";
 if (isset($script_vars['dbinner'])) {
     // use data from previous instance for this script
     $dbinner = unserialize($script_vars['dbinner']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbinner->restart($return_from, $return_action);
+    } // if
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
@@ -77,7 +81,11 @@ require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
     // use data from previous instance for this script
     $dbouter = unserialize($script_vars['dbouter']);
-    // build array of primary keys
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
+    // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
 } else {
     $dbouter = new $outer_table;
@@ -116,15 +124,15 @@ if (!empty($_POST)) {
 if (isset($scrolling)) {
     // retrieve values from scrolling array
     $where = $scrolling[$dbouter->getClassName()]['where'];
-    $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+        // set index number of item to be read from current $where list
+        $dbouter->setPageNo($_GET['item']);
+    } else {
+        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+    } // if
 } // if
 if (empty($where)) {
     scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
-} // if
-
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbouter->setPageNo($_GET['item']);
 } // if
 
 // get data for the outer table

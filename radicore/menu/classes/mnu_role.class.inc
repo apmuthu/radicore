@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_role extends Default_Table
@@ -96,7 +96,7 @@ class mnu_role extends Default_Table
         //DebugBreak();
         if (isset($fieldarray['start_task_id'])) {
             //require_once 'classes/mnu_task.class.inc';
-            $dbobject =& singleton::getInstance('mnu_task');
+            $dbobject =& RDCsingleton::getInstance('mnu_task');
             $dbobject->sql_select = 'task_type';
             $foreign_data = $dbobject->getData("task_id='{$fieldarray['start_task_id']}'");
             if ($foreign_data[0]['task_type'] != 'MENU') {
@@ -150,9 +150,10 @@ class mnu_role extends Default_Table
 
     // ****************************************************************************
     function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         //DebugBreak();
         switch ($popupname) {
@@ -224,7 +225,27 @@ class mnu_role extends Default_Table
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_user(upd1)c');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_motd(show)');
 
-        $dbobject =& singleton::getInstance('mnu_role_task');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(list2)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(add1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(del1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(enq1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(search)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(upd1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(complete)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_todo(incomplete)');
+
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(add2)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(add4)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(del1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(enq1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(list2)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(search)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd1)');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)movedown');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)moveup');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)reseq');
+
+        $dbobject =& RDCsingleton::getInstance('mnu_role_task');
         $access = $dbobject->insertMultiple($access);
         if ($dbobject->errors) {
         	$this->errors = array_merge($this->errors, $dbobject->errors);

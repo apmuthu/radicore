@@ -131,7 +131,7 @@ class crs_schedule_x01 extends crs_schedule
         } else {
             // get current schedule_id
             //require_once 'classes/crs_schedule_hdr.class.inc';
-            $dbobject =& singleton::getInstance('crs_schedule_hdr');
+            $dbobject =& RDCsingleton::getInstance('crs_schedule_hdr');
             $dbobject->sql_select = 'schedule_id';
             $data = $dbobject->getData("is_active='" .$dbobject->fieldspec['is_active']['true'] ."'");
             if ($dbobject->numrows > 0) {

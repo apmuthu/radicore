@@ -32,25 +32,28 @@ $structure['main']['fields'][15][] = array('field' => 'log_sql_query');
 $structure['main']['fields'][15][] = array('label' => 'Screen Refresh');
 $structure['main']['fields'][15][] = array('field' => 'screen_refresh');
 
-$structure['main']['fields'][] = array('max_execution_time' => 'Max. Execution Time', 'colspan' => 3);
+$structure['main']['fields'][16] = array('max_execution_time' => 'Max. Execution Time', 'colspan' => 3);
 
-$structure['main']['fields'][17][] = array('label' => 'Created Date');
-$structure['main']['fields'][17][] = array('field' => 'created_date');
-$structure['main']['fields'][17][] = array('label' => 'Created By');
-$structure['main']['fields'][17][] = array('field' => 'created_user');
+$structure['main']['fields'][17] = array('task_id_run_at_end' => 'Run at End', 'colspan' => 3);
+$structure['main']['fields'][18] = array('task_id_run_at_cancel' => 'Run at Cancel', 'colspan' => 3);
 
-$structure['main']['fields'][18][] = array('label' => 'Revised Date');
-$structure['main']['fields'][18][] = array('field' => 'revised_date');
-$structure['main']['fields'][18][] = array('label' => 'Revised By');
-$structure['main']['fields'][18][] = array('field' => 'revised_user');
+$structure['main']['fields'][19][] = array('label' => 'Created Date');
+$structure['main']['fields'][19][] = array('field' => 'created_date');
+$structure['main']['fields'][19][] = array('label' => 'Created By');
+$structure['main']['fields'][19][] = array('field' => 'created_user');
 
-$structure['main']['fields'][] = array('selected' => 'Selected', 'colspan' => 3);
+$structure['main']['fields'][20][] = array('label' => 'Revised Date');
+$structure['main']['fields'][20][] = array('field' => 'revised_date');
+$structure['main']['fields'][20][] = array('label' => 'Revised By');
+$structure['main']['fields'][20][] = array('field' => 'revised_user');
+
+$structure['main']['fields'][21] = array('selected' => 'Selected', 'colspan' => 3);
 
 // this is here in case no multi-field line is displayed, as a browser bug causes
 // the output to ignore the 'colspan' attibute
-$structure['main']['fields'][20][] = array('label' => '');
-$structure['main']['fields'][20][] = array('field' => 'blank');
-$structure['main']['fields'][20][] = array('label' => '');
-$structure['main']['fields'][20][] = array('field' => 'blank');
+$structure['main']['fields'][22][] = array('label' => '');
+$structure['main']['fields'][22][] = array('field' => 'blank');
+$structure['main']['fields'][22][] = array('label' => '');
+$structure['main']['fields'][22][] = array('field' => 'blank');
 
 ?>

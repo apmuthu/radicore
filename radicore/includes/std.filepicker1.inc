@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -64,6 +64,10 @@ require_once "classes/$table_id.class.inc";
 if (isset($script_vars['fileobject'])) {
     // use data from previous instance for this script
     $fileobject = unserialize($script_vars['fileobject']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $fileobject->restart($return_from, $return_action);
+    } // if
 } else {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -183,14 +187,14 @@ if (count($file_list) == 0) {
 } // if
 
 if (isset($_GET['orderby'])) {
-	$fileobject->setOrderBy($_GET['orderby']);
+	$fileobject->setOrderBy($_GET['orderby'], $fileobject->sql_orderby_seq);
 } // if
 $orderby = $fileobject->getOrderBy();
 if (!preg_match('/(file|size|date)/i', $orderby)) {
 	$orderby = 'file';
-	$fileobject->setOrderBy($orderby);
+	$fileobject->setOrderBy($orderby, $fileobject->sql_orderby_seq);
 } // if
-$orderby_seq = $fileobject->getOrderBySeq();
+$orderby_seq = $fileobject->getOrderBySeq($orderby, $fileobject->sql_orderby_seq);
 // set sequence to be used by array_multisort
 if (empty($orderby_seq) OR $orderby_seq == 'asc') {
  	$multisort_seq = SORT_ASC;

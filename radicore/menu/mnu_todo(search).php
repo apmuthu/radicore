@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 $table_id = 'mnu_todo';                     // table id
-$screen   = 'mnu_todo.detail.screen.inc';   // file identifying screen structure
+$screen   = 'mnu_todo.search.screen.inc';   // file identifying screen structure
 
 require 'std.search1.inc';                  // activate page controller
 

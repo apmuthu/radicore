@@ -71,7 +71,7 @@ class crs_schedule_hdr extends Default_Table
     {
         if (!array_key_exists('day_no', $this->lookup_data)) {
             // get day number and add to lookup array
-            $object =& singleton::getInstance('crs_schedule');
+            $object =& RDCsingleton::getInstance('crs_schedule');
             $data = $object->getValRep('day_no');
             $this->lookup_data['day_no'] = $data;
         } // if

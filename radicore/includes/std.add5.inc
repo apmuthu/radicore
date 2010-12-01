@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add5.inc
@@ -47,7 +47,11 @@ require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
     // use data from previous instance of this script
     $dbouter = unserialize($script_vars['dbouter']);
-    // get previously retrieved data
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
+    // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
     if (!is_string(key($outer_data))) {
         // indexed by row, so use row zero only
@@ -79,7 +83,11 @@ require_once "classes/$inner_table.class.inc";
 if (isset($script_vars['dbinner'])) {
     // use data from previous instance of this script
     $dbinner = unserialize($script_vars['dbinner']);
-    // get previously retrieved data
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbinner->restart($return_from, $return_action);
+    } // if
+    // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
 } else {
     $dbinner = new $inner_table;
@@ -109,6 +117,34 @@ if (!empty($_POST)) {
     $inner_data = $dbinner->setParentData($outer_data);
     // look for an action which is another script
     $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+    if (empty($errors)) {
+	    // look for a custom button (a field which begins with 'button#')
+	    $button = false;
+        foreach ($_POST as $postname => $postvalue) {
+        	if (preg_match('/^button#/i', $postname, $regs)) {
+        	    // strip off the prefix to leave the original field name
+        		$button = str_replace($regs[0], '', $postname);
+        		break;
+        	} // if
+        } // foreach
+        if ($button) {
+        	// a custom button was pressed - was it for outer or inner entity?
+        	if (is_array($postvalue)) {
+        		$row = key($postvalue)-1;
+        		$inner_data = $dbinner->customButton($inner_data[$row], $button, $row);
+        		if ($dbinner->errors) {
+                    // errors are keyed by object name
+                    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+                } // if
+        	} else {
+        	    $outer_data = $dbouter->customButton($outer_data, $button);
+        	    if ($dbouter->errors) {
+                    // errors are keyed by object name
+                    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+                } // if
+        	} // if
+        } // if
+    } // if
 } // if
 
 // look for entered data
@@ -119,6 +155,7 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
         // errors are keyed by object name
         $errors[$dbouter->getClassName()] = $dbouter->getErrors();
     } else {
+        // update of $outer was OK, so update $inner as well
         $inner_data = $dbinner->insertMultiple($inner_data);
         if ($dbinner->errors) {
             // errors are keyed by object name
@@ -150,9 +187,10 @@ if (isset($_POST['submit']) or isset($_POST['submitstay'])) {
             } // if
         } // if
     } // if
-} else {
+} // if
 
-    // check if we are returning from a child form
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // check to see if we are returning from a child form
     if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection) AND $popup_object == 'dbouter') {
             // merge previous saved variables with selection from popup form
@@ -226,7 +264,7 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars = updateScriptVars ($script_vars);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if

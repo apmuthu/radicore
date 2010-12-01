@@ -26,12 +26,12 @@ function menu_getAnswer ($func, $params, $user_data)
 function menu_getPatternList ( $func, $params, $user_data )
 // list entries from the MNU_PATTERN table.
 {
-    if (is_int(key($params))) {
+    if (is_array($params[key($params)])) {
     	$params = $params[0];
     } // if
 
     // instantiate object to access the database
-    $dbobject = singleton::getInstance('mnu_pattern');
+    $dbobject = RDCsingleton::getInstance('mnu_pattern');
 
     if ( isset ( $params['order'] ) ) {
         $order = $params['order'];
@@ -72,19 +72,21 @@ function menu_getPatternList ( $func, $params, $user_data )
         // there was an error, so respond with an error message
         XMLRPC_fatal_error(1234, "menu_getPatternList() error: Unable to read entries");
     } // if
+
     return $response;
+
 } // menu_getPatternList
 
 // ****************************************************************************
 function menu_viewPatternId ( $func, $params, $user_data )
 // view a full news item corresponding to the news.viewNewsItem method
 {
-    if (is_int(key($params))) {
+    if (is_array($params[key($params)])) {
     	$params = $params[0];
     } // if
 
     // instantiate object to access the database
-    $dbobject = singleton::getInstance('mnu_pattern');
+    $dbobject = RDCsingleton::getInstance('mnu_pattern');
 
     if (isset($params['pattern_id'])) {
     	$pattern_id = $params['pattern_id'];
@@ -118,7 +120,9 @@ function menu_viewPatternId ( $func, $params, $user_data )
         // there was an error, so respond with an error message
         XMLRPC_fatal_error(1234, "menu_viewPatternId() error: Unable to read entry");
     } // if
+
     return $response;
+
 } // menu_viewPatternId
 
 // ****************************************************************************

@@ -49,13 +49,15 @@ $array['e0039'] = "";
 // menu details for subsystem AUDIT
 
 // task details for subsystem AUDIT
-$array['audit_dtl(del)']                = 'Delete Audit Details';
-$array['audit_dtl(list)2']              = 'List Audit Details';
-$array['audit_dtl(list)3']              = 'List Audit Details for an Object';
-$array['audit_dtl(list)3exact']         = 'List Audit Details for an Object (exact match)';
-$array['audit_dtl(search)']             = 'Search Audit Detail';
-$array['audit_logon_errors(list)']      = 'List Logon Errors';
-$array['audit_logon_errors(search)']    = 'Search Logon Errors';
+$array['audit_dtl(del)']                          = 'Delete Audit Detail';
+$array['audit_dtl(list)2']                        = 'List Audit Details';
+$array['audit_dtl(list)3']                        = 'List Audit Details for an Object';
+$array['audit_dtl(list)3exact']                   = 'List Audit Details for an Object (exact match)';
+$array['audit_dtl(search)']                       = 'Search Audit Detail';
+$array['audit_logon_errors(del)']                 = 'Delete Audit Logon Errors';
+$array['audit_logon_errors(list)']                = 'List Logon Errors';
+$array['audit_logon_errors(search)']              = 'Search Logon Errors';
+$array['audit_tbl(upd4)']                         = 'Generate SQL';
 
 // navigation button details for subsystem AUDIT
 $array['Audit Trail']                   = 'Audit Trail';

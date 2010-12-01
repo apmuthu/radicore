@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete4.inc
@@ -45,6 +45,10 @@ require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
     // use previous instance from session data
     $dbouter = unserialize($script_vars['dbouter']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbouter->restart($return_from, $return_action);
+    } // if
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
     if (!is_string(key($outer_data))) {
@@ -113,6 +117,10 @@ require_once "classes/$inner_table.class.inc";
 if (isset($script_vars['dbinner'])) {
     // use previous instance from session data
     $dbinner = unserialize($script_vars['dbinner']);
+    if (!empty($return_from)) {
+        // see if any action is required when being restarted
+        $dbinner->restart($return_from, $return_action);
+    } // if
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -137,7 +145,12 @@ if (isset($script_vars['dbinner'])) {
 if (isset($scrolling)) {
     // retrieve values from scrolling array
     $where = $scrolling[$dbouter->getClassName()]['where'];
-    $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+        // set index number of item to be read from current $where list
+        $dbouter->setPageNo($_GET['item']);
+    } else {
+        $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+    } // if
 } // if
 if (empty($where)) {
     if ($dbouter->allow_empty_where == TRUE) {
@@ -149,11 +162,6 @@ if (empty($where)) {
     } else {
         scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
     } // if
-} // if
-
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbouter->setPageNo($_GET['item']);
 } // if
 
 if (isset($_POST['reset'])) {
@@ -213,7 +221,7 @@ if (isset($_GET['pagesize'])) {
 // obtain the 'orderby' field (optional)
 if (isset($_GET['orderby'])) {
     $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
-    $dbinner->setOrderBy($string);
+    $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
 } // if
 
 // load optional criteria from search screen
@@ -282,6 +290,10 @@ $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
+// get sort details
+$orderby     = $dbinner->getOrderBy();
+$orderby_seq = $dbinner->getOrderBySeq($orderby);
+
 // save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);
 $script_vars['dbouter']   = serialize($dbouter);
@@ -293,10 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if
-
-// get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

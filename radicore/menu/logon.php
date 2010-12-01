@@ -133,6 +133,7 @@ $dbobject = new $table_id;
 if (!empty($_POST)) {
     // attempt to log on using this data
     $dbobject->startTransaction();
+    $_SESSION['logon_user_id'] = null;
     $result = $dbobject->user_logon($_POST, $external_auth_off);
 	if (!empty($result)) {
 		// errors are keyed by object name
@@ -145,7 +146,8 @@ if (!empty($_POST)) {
         // logon is OK - go to next screen
         $fieldarray = $dbobject->getFieldArray();
         $messages   = $dbobject->getMessages();
-        $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}&motd=true";
+        $_SESSION['motd'] = true;
+        $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
         scriptNext('menu', null, null, $task_array);
     } // if
 } else {

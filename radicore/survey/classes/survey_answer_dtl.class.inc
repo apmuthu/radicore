@@ -48,7 +48,7 @@ class survey_answer_dtl extends Default_Table
 
         if (!empty($question_id)) {
             if (empty($fieldarray['question_text']) or empty($fieldarray['answer_type']) or empty($fieldarray['question_seq']) or empty($fieldarray['advice_text'])) {
-            	$dbobject =& singleton::getInstance('survey_question');
+            	$dbobject =& RDCsingleton::getInstance('survey_question');
                 $dbobject->sql_select = 'question_text, question_seq, advice_text, answer_type';
                 $data = $dbobject->getData($question_where);
                 // use data from 1st row only
@@ -60,7 +60,7 @@ class survey_answer_dtl extends Default_Table
         if ($fieldarray['answer_type'] == 'M') {
             if (!isset($fieldarray['answer_text'])) {
             	// get the current answer
-            	$dbobject =& singleton::getInstance('survey_answer_dtl');
+            	$dbobject =& RDCsingleton::getInstance('survey_answer_dtl');
             	$dbobject->sql_select = 'answer_text';
                 $data = $dbobject->getData($where);
                 if (!empty($data)) {
@@ -70,7 +70,7 @@ class survey_answer_dtl extends Default_Table
 
             if (isset($fieldarray['answer_text'])) {
                 // answer is multiple choice, so see if a JUMP TO has been set for the current answer
-                $dbobject =& singleton::getInstance('answer_option');
+                $dbobject =& RDCsingleton::getInstance('answer_option');
 
                 $dbobject->sql_select = 'jumpto_section_seq';
                 $answer_where = "survey_id='$survey_id' AND "
@@ -156,7 +156,7 @@ class survey_answer_dtl extends Default_Table
     {
         if (!empty($fieldarray['survey_answer_id']) and empty($fieldarray['answer_date'])) {
             // not supplied yet, so get it manually
-            $dbobject =& singleton::getInstance('survey_answer_hdr');
+            $dbobject =& RDCsingleton::getInstance('survey_answer_hdr');
             $dbobject->sql_select = 'survey_id, survey_answer_id, user_id, answer_date, node_id, is_complete';
             $data = $dbobject->getData("survey_answer_id='$this->survey_answer_id'");
             // merge with internal array
@@ -177,7 +177,7 @@ class survey_answer_dtl extends Default_Table
 
         if ($fieldarray['answer_type'] == 'M') {
             // get contents of ANSWER_OPTION and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('answer_option');
+            $dbobject =& RDCsingleton::getInstance('answer_option');
 
             $data_array = $dbobject->getValRep('answer_id', $question_where);
             $this->lookup_data['answer_id'] = $data_array;
@@ -193,7 +193,7 @@ class survey_answer_dtl extends Default_Table
 
         } elseif ($fieldarray['answer_type'] == 'N') {
             // get contents of NUMBER_OPTION for possible min/max values
-            $dbobject =& singleton::getInstance('number_option');
+            $dbobject =& RDCsingleton::getInstance('number_option');
 
             $dbobject->sql_select = 'min_value,max_value';
             $data_array = $dbobject->getData($question_where);
@@ -232,14 +232,14 @@ class survey_answer_dtl extends Default_Table
 
         if (!array_key_exists('weighting_id', $this->lookup_data)) {
             // get contents of foreign table RISK_WEIGHTING and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('risk_weighting');
+            $dbobject =& RDCsingleton::getInstance('risk_weighting');
             $data_array = $dbobject->getValRep('weighting_id');
             $this->lookup_data['weighting_id'] = $data_array;
             unset($dbobject);
         } // if
 
         // get contents of QUESTION_PROMPT and concatenate into a single list
-        $dbobject =& singleton::getInstance('question_prompt');
+        $dbobject =& RDCsingleton::getInstance('question_prompt');
         $dbobject->sql_select = "prompt_desc";
         $dbobject->sql_from   = "question_prompt "
                               . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
@@ -303,7 +303,7 @@ class survey_answer_dtl extends Default_Table
 
             // now look for a new 'jumpto' option
             require_once 'classes/answer_option.class.inc';
-            $dbobject =& singleton::getInstance('answer_option');
+            $dbobject =& RDCsingleton::getInstance('answer_option');
 
             $dbobject->sql_select = 'jumpto_section_seq';
             $where = "survey_id='{$fieldarray['survey_id']}' AND "
@@ -354,7 +354,7 @@ class survey_answer_dtl extends Default_Table
 
         // 1 - read survey_answer_hdr to get survey_id
         require_once 'classes/survey_answer_hdr.class.inc';
-        $dbobject =& singleton::getInstance('survey_answer_hdr');
+        $dbobject =& RDCsingleton::getInstance('survey_answer_hdr');
 
         $dbobject->sql_select = 'survey_id, user_id, is_complete';
         $hdrdata = $dbobject->getData($where);
@@ -374,7 +374,7 @@ class survey_answer_dtl extends Default_Table
         // 2 - read all the sections for the selected survey_id
         $survey_id = $hdrdata[0]['survey_id'];
         require_once 'classes/survey_section.class.inc';
-        $dbobject =& singleton::getInstance('survey_section');
+        $dbobject =& RDCsingleton::getInstance('survey_section');
 
         $dbobject->sql_select = 'survey_id, section_seq, section_id';
         $dbobject->sql_orderby = 'section_seq';
@@ -389,7 +389,7 @@ class survey_answer_dtl extends Default_Table
 
         // 3 - loop through all sections and read the questions
         require_once 'classes/survey_question.class.inc';
-        $dbobject =& singleton::getInstance('survey_question');
+        $dbobject =& RDCsingleton::getInstance('survey_question');
 
         $dbobject->sql_select = 'survey_id, section_id, question_id';
         $dbobject->sql_orderby = 'question_seq';

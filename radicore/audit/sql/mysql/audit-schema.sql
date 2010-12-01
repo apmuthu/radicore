@@ -1,11 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 2.11.9.4
+-- version 3.3.3
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Sep 29, 2009 at 02:26 PM
--- Server version: 4.1.22
--- PHP Version: 4.4.9
+-- Generation Time: May 16, 2010 at 05:33 PM
+-- Server version: 5.1.46
+-- PHP Version: 5.2.13
+
+SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -24,15 +26,15 @@
 --
 
 CREATE TABLE IF NOT EXISTS `audit_fld` (
-  `session_id` bigint(20) unsigned NOT NULL default '0',
-  `tran_seq_no` smallint(6) unsigned NOT NULL default '0',
-  `table_seq_no` smallint(6) unsigned NOT NULL default '0',
-  `field_id` varchar(255) NOT NULL default '',
-  `old_value` text,
-  `new_value` text,
-  PRIMARY KEY  (`session_id`,`tran_seq_no`,`table_seq_no`,`field_id`),
+  `session_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `tran_seq_no` smallint(6) unsigned NOT NULL DEFAULT '0',
+  `table_seq_no` smallint(6) unsigned NOT NULL DEFAULT '0',
+  `field_id` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `old_value` text COLLATE utf8_unicode_ci,
+  `new_value` text COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`session_id`,`tran_seq_no`,`table_seq_no`,`field_id`),
   KEY `field_id` (`field_id`)
-) TYPE=InnoDB COMMENT='Audit Trail Field data';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Field data';
 
 -- --------------------------------------------------------
 
@@ -41,14 +43,14 @@ CREATE TABLE IF NOT EXISTS `audit_fld` (
 --
 
 CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
-  `id` int(11) NOT NULL auto_increment,
-  `err_timestamp` datetime NOT NULL default '0000-00-00 00:00:00',
-  `ip_address` varchar(16) NOT NULL default '0.0.0.0',
-  `user_id` varchar(16) default NULL,
-  `user_password` varchar(16) NOT NULL default '',
-  `email_addr` varchar(50) default NULL,
-  PRIMARY KEY  (`id`)
-) TYPE=MyISAM ;
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `err_timestamp` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `ip_address` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '0.0.0.0',
+  `user_id` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `user_password` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `email_addr` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -57,12 +59,12 @@ CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
 --
 
 CREATE TABLE IF NOT EXISTS `audit_ssn` (
-  `session_id` bigint(20) unsigned NOT NULL auto_increment,
-  `user_id` varchar(16) NOT NULL default 'UNKNOWN',
-  `ssn_date` date NOT NULL default '2000-01-01',
-  `ssn_time` time NOT NULL default '00:00:00',
-  PRIMARY KEY  (`session_id`)
-) TYPE=InnoDB COMMENT='Audit Trail Session data';
+  `session_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `ssn_date` date NOT NULL DEFAULT '2000-01-01',
+  `ssn_time` time NOT NULL DEFAULT '00:00:00',
+  PRIMARY KEY (`session_id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Session data';
 
 -- --------------------------------------------------------
 
@@ -71,15 +73,15 @@ CREATE TABLE IF NOT EXISTS `audit_ssn` (
 --
 
 CREATE TABLE IF NOT EXISTS `audit_tbl` (
-  `session_id` bigint(20) unsigned NOT NULL default '0',
-  `tran_seq_no` smallint(6) unsigned NOT NULL default '0',
-  `table_seq_no` smallint(6) unsigned NOT NULL default '0',
-  `base_name` varchar(64) NOT NULL default '',
-  `table_name` varchar(64) NOT NULL default '',
-  `pkey` varchar(255) NOT NULL default '',
-  PRIMARY KEY  (`session_id`,`tran_seq_no`,`table_seq_no`),
+  `session_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `tran_seq_no` smallint(6) unsigned NOT NULL DEFAULT '0',
+  `table_seq_no` smallint(6) unsigned NOT NULL DEFAULT '0',
+  `base_name` varchar(64) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `table_name` varchar(64) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `pkey` varchar(255) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`session_id`,`tran_seq_no`,`table_seq_no`),
   KEY `pkey` (`pkey`)
-) TYPE=InnoDB COMMENT='Audit Trail Table data';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Table data';
 
 -- --------------------------------------------------------
 
@@ -88,13 +90,13 @@ CREATE TABLE IF NOT EXISTS `audit_tbl` (
 --
 
 CREATE TABLE IF NOT EXISTS `audit_trn` (
-  `session_id` bigint(20) unsigned NOT NULL default '0',
-  `tran_seq_no` smallint(6) unsigned NOT NULL default '0',
-  `trn_date` date NOT NULL default '2000-01-01',
-  `trn_time` time NOT NULL default '00:00:00',
-  `task_id` varchar(80) NOT NULL default '',
-  PRIMARY KEY  (`session_id`,`tran_seq_no`)
-) TYPE=InnoDB COMMENT='Audit Trail Transaction data';
+  `session_id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `tran_seq_no` smallint(6) unsigned NOT NULL DEFAULT '0',
+  `trn_date` date NOT NULL DEFAULT '2000-01-01',
+  `trn_time` time NOT NULL DEFAULT '00:00:00',
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`session_id`,`tran_seq_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Transaction data';
 
 -- --------------------------------------------------------
 
@@ -103,11 +105,11 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
 --
 
 CREATE TABLE IF NOT EXISTS `php_session` (
-  `session_id` varchar(32) NOT NULL default '',
-  `user_id` varchar(16) NOT NULL default 'UNKNOWN',
-  `date_created` datetime NOT NULL default '2000-01-01 00:00:00',
-  `last_updated` datetime NOT NULL default '2000-01-01 00:00:00',
-  `session_data` longtext,
-  PRIMARY KEY  (`session_id`),
+  `session_id` varchar(32) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `date_created` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `last_updated` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `session_data` longtext COLLATE utf8_unicode_ci,
+  PRIMARY KEY (`session_id`),
   KEY `last_updated` (`last_updated`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_column.class.inc';
 class dict_column_s01 extends dict_column
@@ -77,7 +77,7 @@ class dict_column_s01 extends dict_column
 
         $dbprefix = dict_findDBPrefix($dbname);
 
-        // save these for _cm_getDatabaseLock () method
+        // save these for _cm_getDatabaseLock() method
         $this->target_dbname    = $dbname;
         $this->target_tablename = $tablename;
 
@@ -151,7 +151,7 @@ class dict_column_s01 extends dict_column
                 } // if
 
                 if (is_True($update['col_null'])) {
-                	// do not change existing value
+                	$update['is_required'] = 'N';
                 } else {
                     $update['is_required'] = 'Y';
                 } // if
@@ -227,7 +227,7 @@ class dict_column_s01 extends dict_column
         $this->errors = $errors;
 
         // now import the keys for the current table
-        $keyobj =& singleton::getInstance('dict_table_key');
+        $keyobj =& RDCsingleton::getInstance('dict_table_key');
 
         $array = $keyobj->getInitialDataMultiple($this->where);
         $array = $keyobj->insertMultiple($array);

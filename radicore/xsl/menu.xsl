@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -24,9 +24,6 @@
 <xsl:include href="std.head.xsl"/>
 <xsl:include href="std.pagination.xsl"/>
 
-<xsl:variable name="todo-user" select="/root/params/text/todo-user"/>
-<xsl:variable name="workitems-for-role" select="/root/params/text/workitems-for-role"/>
-<xsl:variable name="workitems-for-user" select="/root/params/text/workitems-for-user"/>
 <xsl:variable name="numrows">1</xsl:variable>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
@@ -68,6 +65,11 @@
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar_detail" />
   
+          <div class="favourites">
+            <!-- include favourite items for the current user -->
+            <xsl:call-template name="favourites_user"/>
+          </div>
+          
           <div class="todo_user">
             <!-- include todo items for the current user -->
             <xsl:call-template name="todo_user"/>
@@ -102,33 +104,74 @@
 
 </xsl:template>
 
-<xsl:template name="todo_user">
+<xsl:template name="favourites_user">
 
   <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
 
+  <xsl:if test="/root/mnu_favourite/task_id">
+
+    <h2>
+      <xsl:choose>
+        <xsl:when test="/root/params/text/favourites-user">
+          <xsl:value-of select="/root/params/text/favourites-user"/>: <xsl:value-of select="//mnu_todo/user_id"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="/root/params/text/favourites"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </h2>
+
+    <xsl:for-each select="/root/mnu_favourite" >
+      <!-- insert a submit button for each entry -->
+      <input class="button" type="submit" name="task#{task_id}" value="{task_desc}" />
+      <xsl:text> </xsl:text>  <!-- insert a single space as a separator -->
+    </xsl:for-each>
+
+  </xsl:if>
+
+</xsl:template>
+  
+<xsl:template name="todo_user">
+    
+  <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
+  
   <xsl:if test="/root/mnu_todo/user_id">
-
-    <h2><xsl:value-of select="$todo-user"/>: <xsl:value-of select="//mnu_todo/user_id"/></h2>
-
+    
+    <h2><xsl:value-of select="/root/params/text/todo-user"/>: <xsl:value-of select="//mnu_todo/user_id"/></h2>
+    
     <xsl:for-each select="/root/mnu_todo" >
       <p>
         <xsl:if test="due_date/@css_class">
-           <xsl:attribute name="class"><xsl:value-of select="due_date/@css_class" /></xsl:attribute>
+          <xsl:attribute name="class"><xsl:value-of select="due_date/@css_class" /></xsl:attribute>
         </xsl:if>
-
-        <xsl:value-of select="due_date" />
-        <xsl:text> - </xsl:text>
-        <xsl:value-of select="item_desc" />
+        
+        <xsl:choose>
+          <xsl:when test="string-length(task_id) > 0">
+            <a href="{$script}?{$session}&amp;todo_id={seq_no}">
+              <xsl:value-of select="due_date" />
+              <xsl:text> - </xsl:text>
+              <xsl:value-of select="item_desc" />
+              <xsl:text> - </xsl:text>
+              <xsl:value-of select="item_notes" />
+            </a>  
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="due_date" />
+            <xsl:text> - </xsl:text>
+            <xsl:value-of select="item_desc" />
+          </xsl:otherwise>
+        </xsl:choose>
+        
       </p>
     </xsl:for-each>
-
+    
     <!-- insert the pagination links for WORKITEM_ROLE -->
     <xsl:call-template name="pagination" >
       <xsl:with-param name="object" select="'mnu_todo'"/>
     </xsl:call-template>
-
+    
   </xsl:if>
-
+  
 </xsl:template>
 
 <xsl:template name="workitem_role">
@@ -137,7 +180,7 @@
 
   <xsl:if test="/root/wf_workitem_role/role_id">
 
-    <h2><xsl:value-of select="$workitems-for-role"/>: <xsl:value-of select="/root/wf_workitem_role/role_id"/></h2>
+    <h2><xsl:value-of select="/root/params/text/workitems-for-role"/>: <xsl:value-of select="/root/wf_workitem_role/role_id"/></h2>
 
     <xsl:for-each select="/root/wf_workitem_role" >
       <xsl:call-template name="workitem"/>
@@ -158,7 +201,7 @@
 
   <xsl:if test="/root/wf_workitem_user/user_id">
 
-    <h2><xsl:value-of select="$workitems-for-user"/>: <xsl:value-of select="/root/wf_workitem_user/user_id"/></h2>
+    <h2><xsl:value-of select="/root/params/text/workitems-for-user"/>: <xsl:value-of select="/root/wf_workitem_user/user_id"/></h2>
 
     <xsl:for-each select="/root/wf_workitem_user" >
       <xsl:call-template name="workitem"/>
@@ -177,9 +220,18 @@
 
   <p>
     <a href="{$script}?{$session}&amp;case_id={case_id}&amp;workitem_id={workitem_id}">
-      <xsl:value-of select="task_desc" />
-      <xsl:text> where </xsl:text>
-      <xsl:value-of select="context" />
+      <xsl:choose>
+        <xsl:when test="link_text">
+          <!-- customised text -->
+          <xsl:value-of select="link_text"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <!-- default text -->
+          <xsl:value-of select="task_desc" />
+          <xsl:text> where </xsl:text>
+          <xsl:value-of select="context" />
+        </xsl:otherwise>
+      </xsl:choose>
     </a>
   </p>
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
@@ -16,16 +16,16 @@ class dict_table_s02 extends dict_table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        global $dbprefix;
+        $menu_prefix = dict_findDBPrefix('menu');
 
         // create object for retrieving column details
-        $columnobj =& singleton::getInstance('dict_column');
+        $columnobj =& RDCsingleton::getInstance('dict_column');
 
         // create object for retrieving key details
-        $keyobj =& singleton::getInstance('dict_table_key');
+        $keyobj =& RDCsingleton::getInstance('dict_table_key');
 
         // create object for retrieving relationship details
-        $relobj =& singleton::getInstance('dict_relationship');
+        $relobj =& RDCsingleton::getInstance('dict_relationship');
 
         // process each table separately
         foreach ($rowdata as $row => $tabledata) {
@@ -72,7 +72,7 @@ class dict_table_s02 extends dict_table
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
-                                     . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
                 $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
                 $this->_createChildRelations($data, $subsys_id);
@@ -81,7 +81,7 @@ class dict_table_s02 extends dict_table
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
-                                     . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_snr, table_id_snr';
                 $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
                 $this->_createParentRelations($data, $subsys_id);
@@ -156,7 +156,7 @@ class dict_table_s02 extends dict_table
         // ensure that at least one entry has been selected
         $this->checkPrimaryKey = true;
 
-        global $dbprefix;
+        $menu_prefix = dict_findDBPrefix('menu');
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM table
@@ -164,7 +164,7 @@ class dict_table_s02 extends dict_table
             $this->sql_from   = 'dict_table '
                               . 'LEFT JOIN dict_database '
                               . 'ON (dict_database.database_id=dict_table.database_id) '
-                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_subsystem '
+                              . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem '
                               . 'ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
         } // if
 
@@ -188,7 +188,7 @@ class dict_table_s02 extends dict_table
     // format the contents of $rel_array into the $child_relations array.
     {
         // create an object to obtain column data
-        $colobj =& singleton::getInstance('dict_related_column');
+        $colobj =& RDCsingleton::getInstance('dict_related_column');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
@@ -455,9 +455,9 @@ class dict_table_s02 extends dict_table
     // format the contents of $rel_array into the $parent_relations array.
     {
         // create an object to obtain column data
-        $colobj =& singleton::getInstance('dict_related_column');
+        $colobj =& RDCsingleton::getInstance('dict_related_column');
         // create an object to obtain table data
-        $tblobj =& singleton::getInstance('dict_table');
+        $tblobj =& RDCsingleton::getInstance('dict_table');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);

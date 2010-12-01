@@ -63,7 +63,7 @@ class price_component extends Default_Table
     // perform validation that is common to INSERT and UPDATE.
     {
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& singleton::getInstance('date_class');
+        $dateobj =& RDCsingleton::getInstance('date_class');
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);
         $end_date   = $dateobj->getInternalDate($fieldarray['end_date']);
 
@@ -123,14 +123,14 @@ class price_component extends Default_Table
 
         if (!array_key_exists('uom_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& singleton::getInstance('unit_of_measure');
+            $dbobject =& RDCsingleton::getInstance('unit_of_measure');
             $data_array = $dbobject->getValRep('uom_id');
             $this->lookup_data['uom_id'] = $data_array;
         } // if
 
         if (!array_key_exists('prod_cat_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& singleton::getInstance('product_category');
+            $dbobject =& RDCsingleton::getInstance('product_category');
             $data_array = $dbobject->getValRep('prod_cat_id');
             $this->lookup_data['prod_cat_id'] = $data_array;
         } // if
@@ -148,7 +148,7 @@ class price_component extends Default_Table
         // wrong when the PRODUCT table is accessed via the getForeignData() method).
         if (isset($fieldarray['uom_id'])) {
         	require_once 'classes/unit_of_measure.class.inc';
-            $dbobject =& singleton::getInstance('unit_of_measure');
+            $dbobject =& RDCsingleton::getInstance('unit_of_measure');
             $dbobject->sql_select = 'uom_desc';
             $data = $dbobject->getData("uom_id='{$fieldarray['uom_id']}'");
             $fieldarray = array_merge($data[0], $fieldarray);

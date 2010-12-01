@@ -25,7 +25,7 @@ class x_tree_level_s01 extends x_tree_level
         $tree_level_id_jnr = $fieldarray['tree_level_id_jnr'];
 
         // create a new object to deal with child nodes
-        $dbobject =& singleton::getInstance('x_tree_level');
+        $dbobject =& RDCsingleton::getInstance('x_tree_level');
 
         $dbobject->sql_select = "x_tree_level.tree_type_id, x_tree_level.tree_level_id, t2.tree_level_id as tree_level_id_jnr";
         $dbobject->sql_from = "x_tree_level "
@@ -35,7 +35,7 @@ class x_tree_level_s01 extends x_tree_level
 
         if ($newdata[0]['tree_level_id_jnr'] <> $tree_level_id_jnr) {
             // child level has changed, so update all nodes in previous child level
-            $dbnode =& singleton::getInstance('x_tree_node');
+            $dbnode =& RDCsingleton::getInstance('x_tree_node');
             $where = "tree_type_id='$tree_type_id' AND tree_level_id='$tree_level_id_jnr'";
             $replace = 'node_id_snr=NULL';
             $count = $dbnode->updateSelection($where, $replace);

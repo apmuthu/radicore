@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -323,8 +323,8 @@ class dict_column extends Default_Table
                     ;
                     break;
                 case 'image':
-            		if ($fieldarray['control'] != 'filepicker') {
-            		    // "Invalid unless CONTROL = 'filepicker'"
+            		if (!preg_match('/^(filepicker|imagehyper)$/i', $fieldarray['control'])) {
+            		    // "Invalid unless CONTROL = 'filepicker' or 'image hyperlink'"
                         $this->errors['col_subtype'] = getLanguageText('e0004');
                     } // if
             		break;
@@ -346,14 +346,18 @@ class dict_column extends Default_Table
         } // if
 
         if (isset($fieldarray['image_width'])) {
-            if ($fieldarray['col_subtype'] != 'image') {
-                // "Invalid unless SUBTYPE = 'image'"
+            if ($fieldarray['control'] == 'image' OR $fieldarray['col_subtype'] == 'image') {
+            	// this is valid
+            } else {
+                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image'"
                 $this->errors['image_width'] = getLanguageText('e0006');
             } // if
         } // if
         if (isset($fieldarray['image_height'])) {
-            if ($fieldarray['col_subtype'] != 'image') {
-                // "Invalid unless SUBTYPE = 'image'"
+            if ($fieldarray['control'] == 'image' OR $fieldarray['col_subtype'] == 'image') {
+                // this is valid
+            } else {
+                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image'"
                 $this->errors['image_height'] = getLanguageText('e0006');
             } // if
         } // if
@@ -487,6 +491,20 @@ class dict_column extends Default_Table
             	    if ($colspecs[$type]['type'] != 'string') {
             		    // "CONTROL cannot be 'hyperlink' unless TYPE is 'string'"
                         $this->errors['control'] = getLanguageText('e0034');
+                    } // if
+            	    break;
+            	case 'imagehyper':
+            	    $type = $fieldarray['col_type'];
+            	    if ($colspecs[$type]['type'] != 'string') {
+            		    // "CONTROL cannot be 'image hyperlink' unless TYPE is 'string'"
+                        $this->errors['control'] = getLanguageText('e0070');
+                    } // if
+            	    break;
+            	case 'image':
+            	    $type = $fieldarray['col_type'];
+            	    if ($colspecs[$type]['type'] != 'string') {
+            		    // "CONTROL cannot be 'image' unless TYPE is 'string'"
+                        $this->errors['control'] = getLanguageText('e0071');
                     } // if
             	    break;
             	default:
@@ -720,7 +738,7 @@ class dict_column extends Default_Table
 
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DATABASE and add as a LOOKUP list
-            $dbobject =& singleton::getInstance('dict_database');
+            $dbobject =& RDCsingleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -864,10 +882,11 @@ class dict_column extends Default_Table
     } // _cm_ListView_total
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where amy need to
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
         //DebugBreak();
         switch ($popupname) {
@@ -894,7 +913,7 @@ class dict_column extends Default_Table
     // perform custom processing after database record has been deleted.
     {
         // find out if this column is named as an alias on DICT_TABLE entry
-        $dbobject =& singleton::getInstance('dict_table');
+        $dbobject =& RDCsingleton::getInstance('dict_table');
         $data = $dbobject->getData("database_id='{$fieldarray['database_id']}' AND table_id='{$fieldarray['table_id']}'");
         if ($data) {
         	$data = $data[0];

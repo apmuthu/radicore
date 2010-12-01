@@ -39,7 +39,7 @@ class survey_answer_hdr_s01 extends survey_answer_hdr
             // check that all answers have been given
             // 1st - build an array of answers
             require_once 'classes/survey_answer_dtl.class.inc';
-            $dbobject =& singleton::getInstance('survey_answer_dtl');
+            $dbobject =& RDCsingleton::getInstance('survey_answer_dtl');
             $null = $dbobject->setScrollArray($where);
 
             $last = $dbobject->getNumRows(); // get count of entries

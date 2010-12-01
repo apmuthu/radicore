@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2009 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require 'std.pdf.class.inc';
 class PDF_list extends PDF
@@ -19,6 +19,10 @@ class PDF_list extends PDF
         } // if
 
         if (isset($this->structure['title'])) {
+            // format current row
+            $style_array = array();
+            $this->fieldarray = $this->dbobject->formatData($this->fieldarray, $style_array);
+            // allow contents to be customised
             $this->fieldarray = $this->dbobject->_cm_ListView_header($this->fieldarray);
             // this code is in the parent class
             parent::header();
@@ -26,11 +30,15 @@ class PDF_list extends PDF
 
         $this->setY($this->getY()+1);  // leave a gap under the title
 
-        // set print style for heading
+        // set print style for the column headings
         if (!isset($this->structure['head']['style'])) {
             $this->structure['head']['style'] = 'default';
         } // if
-        $height = $this->setPrintStyle($this->structure['head']['style']);
+
+        $halign  = 'Left';
+        $valign  = 'Middle';
+        $stretch = null;
+        list($height, $halign, $valign, $stretch) = $this->setPrintStyle($this->structure['head']['style'], $halign, $valign, $stretch);
 
         $this->total_width = 0;
 
@@ -50,10 +58,6 @@ class PDF_list extends PDF
                 $cellspec['width'] = $this->printable_width / count($this->structure['body']['fields']);
             } // if
             $this->total_width = $this->total_width + $cellspec['width'];
-
-//            if (isset($this->structure['columns'][$column]['align'])) {
-//            	$cellspec['align'] = $this->structure['columns'][$column]['align'];
-//            } // if
 
             $cellspec['text'] = getLanguageText($fieldlabel);
 
