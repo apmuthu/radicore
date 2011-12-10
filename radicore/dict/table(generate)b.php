@@ -1,6 +1,6 @@
 <?php
 //*****************************************************************************
-// Generate PHP script(s) to maintain a databas table.
+// Generate PHP script(s) to maintain a database table.
 //*****************************************************************************
 
 $table_id = 'dict_table_s04';                   // table id

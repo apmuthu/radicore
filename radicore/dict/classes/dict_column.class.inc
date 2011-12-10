@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -741,6 +741,19 @@ class dict_column extends Default_Table
             $dbobject =& RDCsingleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('database_id' => 'Database Id',
+                               'table_id' => 'Table Id',
+                               'column_id' => 'Column Id');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
         } // if
 
 		return $fieldarray;

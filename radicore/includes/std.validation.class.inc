@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -83,19 +83,48 @@ class validation_class
     // standard function for validating email addresses.
     {
         // look for 'user@hostname.domain'
-        $pattern = "/"                      // start pattern
-                 . "^[a-z0-9_-]+"           // valid chars (at least once)
-                 . "(\.[a-z0-9_-]+)*"       // dot valid chars (0-n times)
-                 . "@"                      // at
-                 . "[a-z0-9][a-z0-9-]*"     // valid chars (at least once)
-                 . "(\.[a-z0-9-]+)*"        // dot valid chars (0-n times)
-                 . "\.([a-z]{2,6})$"        // dot valid chars
-                 . "/i";                    // end pattern, case insensitive
+        $pattern1 = <<< END_OF_REGEX
+/
+^                     # begins with
+[a-z0-9_-]+           # valid chars (at least once)
+(\.[a-z0-9_-]+)*      # dot valid chars (0-n times)
+@                     # at
+[a-z0-9][a-z0-9-]*    # valid chars (at least once)
+(\.[a-z0-9-]+)*       # dot valid chars (0-n times)
+\.([a-z]{2,6})$       # ends with dot valid chars
+/xi
+END_OF_REGEX;
 
-        if (!preg_match($pattern, $fieldvalue)) {
-            // 'Invalid format for e-mail address.'
-            $this->errors[$fieldname] = getLanguageText('sys0039');
-        } // if
+        $pattern2 = <<< END_OF_REGEX
+;                                  # start pattern
+^                                  # begins with
+[a-z0-9!#$%&'*+/=?^_`{|}~-]+       # valid chars (at least once)
+(\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*  # dot valid chars (0-n times)
+@                                  # at
+[a-z0-9][a-z0-9-]*                 # valid chars (at least once)
+(\.[a-z0-9-]+)*                    # dot valid chars (0-n times)
+\.([a-z]{2,})$                     # ends with dot valid chars
+;xi
+END_OF_REGEX;
+
+        // there may be multiple addresses separated by ',' (comma)
+        $addresses = explode(',', $fieldvalue);
+
+        foreach ($addresses as $entry) {
+        	// look for 'name <user@hostname.domain>'
+            if (preg_match('/(?<=<).*(?=>)/', $entry, $regs)) {
+                // extract everything between '<' and >'
+            	$address = $regs[0];
+            } else{
+                $address = $entry;
+            } // if
+
+            if (!preg_match($pattern2, trim($address), $regs)) {
+                // 'Invalid format for e-mail address.'
+                $this->errors[$fieldname] = getLanguageText('sys0039');
+                return;
+            } // if
+        } // foreach
 
         return;
 
@@ -155,7 +184,7 @@ class validation_class
                     // value will be filled in later
                 } elseif (isset($fieldspec['optionlist'])) {
                     // get list of options for this field
-                    $optionlist = $this->caller->lookup_data[$fieldspec['optionlist']];
+                    $optionlist =& $this->caller->lookup_data[$fieldspec['optionlist']];
                     if (empty($optionlist)) {
                         // no options found, so use default value
                     	$fieldvalue = $fieldspec['default'];
@@ -204,8 +233,8 @@ class validation_class
 
         // field is not empty - check field size
         if (isset($fieldspec['size'])) {
-            if (preg_match('/(set|array|varray)/i', $fieldspec['type'])) {
-                // ignore size on 'array' datatypes
+            if (preg_match('/(set|array|varray|datetime|timestamp)/i', $fieldspec['type'])) {
+                // ignore size on these datatypes
             } else {
                 $size = (double)$fieldspec['size'];
                 if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
@@ -233,6 +262,10 @@ class validation_class
                     } // if
                 } // if
             } // if
+        } // if
+
+        if (!empty($this->errors)) {
+        	return $fieldvalue;
         } // if
 
         if (!empty($fieldspec['custom_validation'])) {

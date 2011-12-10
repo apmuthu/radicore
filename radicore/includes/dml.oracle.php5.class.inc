@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -881,7 +881,7 @@ END_OF_REGEX;
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
-        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
         	$min_rows = $rdc_limit;
         	$max_rows = $min_rows + $rdc_offset;
         	$this->query = 'select * from ( select a.*, rownum as rnum from ( '
@@ -1374,11 +1374,14 @@ END_OF_REGEX;
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
+        $this->numrows = 0;
+
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key
             $where = $this->buildKeyString ($oldarray, $this->primary_key);
         } else {
         	// use $where as supplied, and remove pkey specs so their values can be changed
+        	$this->unique_keys[] = $this->primary_key;  // but still check for duplicate value
         	$this->primary_key = array();
         } // if
 
@@ -1409,7 +1412,6 @@ END_OF_REGEX;
 
         if (empty($fieldarray)) {
             // nothing to update, so return now
-            $this->numrows = 0;
             return $fieldarray;
         } // if
 

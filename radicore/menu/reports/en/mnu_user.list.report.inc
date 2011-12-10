@@ -35,9 +35,9 @@ $structure['body']['fields'][] = array('start_date' => "Start Date");
 $structure['body']['fields'][] = array('end_date' => "End Date");
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
-$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
+$structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'halign' => 'left');
+$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center', 'margin_left' => 8.5);
+$structure['foot1'][] = array('type' => 'time',   'align' => 'right',  'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

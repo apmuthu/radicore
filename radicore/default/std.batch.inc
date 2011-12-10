@@ -19,9 +19,26 @@ function batchInit ($batchfile)
     $curr_dir  = dirname($curr_file);   // extract directory
     chdir($curr_dir);                   // set current working directory to this
 
+    // retrieve variables from file
+    if (file_exists('batch.ini')) {
+    	$ini_array = parse_ini_file('batch.ini');           // use custom file
+    } else {
+        $ini_array = parse_ini_file('batch.ini.default');   // use default file
+    } // if
+
     if (isset($stdout)) {
     	if (!$stdouth = fopen($stdout, 'w')) {
-    	    trigger_error("Cannot open file $stdout", E_USER_ERROR);
+    	    $message = "Error in script ".basename($curr_file);
+    	    $message .= "Cannot open file $stdout";
+    	    if (!empty($_SERVER['SERVER_ADMIN'])) {
+            	$mailto = $_SERVER['SERVER_ADMIN'];
+    	    } else {
+    	        $mailto = 'webmaster@'.$ini_array['server_name'];
+            } // if
+            $headers = "From: {$_SERVER['HTTP_HOST']}\r\n";
+            @error_log($message, 1, $mailto, $headers);
+    	    //trigger_error("Cannot open file $stdout", E_USER_ERROR);
+    	    exit;
         } // if
         ob_start();  // start output buffering
         if (!preg_match('/^WIN/i', PHP_OS)) {
@@ -32,24 +49,17 @@ function batchInit ($batchfile)
     echo "<html>\n";
     echo '<p>** started at ' .date('F j, Y, g:i a') ."</p>\n";
 
-    // retrieve variables from file
-    if (file_exists('batch.ini')) {
-    	$ini_array = parse_ini_file('batch.ini');           // use custom file
-    } else {
-        $ini_array = parse_ini_file('batch.ini.default');   // use default file
-    } // if
-
     if (empty($_SERVER['SERVER_NAME'])) {
-    	$_SERVER['SERVER_NAME']          = $ini_array['server_name'];
+    	$_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
     } // if
     if (empty($_SERVER['HTTP_HOST'])) {
-    	$_SERVER['HTTP_HOST']            = $ini_array['server_name'];
+    	$_SERVER['HTTP_HOST']            = trim($ini_array['server_name'], "'");
     } // if
     if (empty($_SERVER['DOCUMENT_ROOT'])) {
-    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", $ini_array['doc_root']);
+    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
     } // if
     if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = $ini_array['language'];
+    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
     } // if
     if (empty($_SERVER['REMOTE_ADDR'])) {
     	$_SERVER['REMOTE_ADDR']          = 'batch';
@@ -59,6 +69,9 @@ function batchInit ($batchfile)
     } // if
     if (empty($_SERVER['SERVER_ADMIN'])) {
         $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
+        if (empty($_SERVER['SERVER_ADMIN'])) {
+            $_SERVER['SERVER_ADMIN']     = trim($ini_array['server_admin'], "'");
+        } // if
     } // if
 
     $_SERVER['SCRIPT_FILENAME']      = $curr_file;
@@ -90,7 +103,7 @@ function batchInit ($batchfile)
     	unset($fn);
     } // if
     if (empty($include_path)) {
-    	ini_set('include_path', $ini_array['include_path']);
+    	ini_set('include_path', trim($ini_array['include_path'], "'"));
     } // if
 
     if (file_exists('user.ini')) {
@@ -102,6 +115,7 @@ function batchInit ($batchfile)
         // alternative to htaccess when run as CGI/FastCGI
         $ini_array = parse_ini_file($fn);
         foreach ($ini_array as $key => $value) {
+            $value = trim($value, "'");
             if ($key == 'include_path') {
                 if (substr($value, 0, 1) == ';') {
                     // append to current value
@@ -132,6 +146,7 @@ function batchInit ($batchfile)
     require_once 'include.session.inc';
 
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
+    echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
 
     if (!empty($_SERVER['SERVER_PROTOCOL'])) {
     	initSession();
@@ -211,6 +226,8 @@ function check_errors ($object)
 	    } // foreach
 	    $errors = $array_out;
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);
+
+	    $object->rollback();
 
 	    // put first error into $string
 	    $string = $errors[key($errors)];

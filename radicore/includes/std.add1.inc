@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -169,8 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
 } // if
 
 if (!empty($errors)) {
-    // all errors are associated with row zero for this table
-	$errors2[$dbobject->getClassName()][0] = $errors;
+    // all errors are associated with this table
+	$errors2[$dbobject->getClassName()] = $errors;
 	$errors = $errors2;
 } // if
 

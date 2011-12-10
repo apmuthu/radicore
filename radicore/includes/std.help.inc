@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -22,8 +22,7 @@ if (isset($_GET['taskid'])) {
 // identify mode for XSL file
 $mode = 'read';
 
-// load session variables
-initSession();
+initSession(); // load session variables
 
 $help_desc = getLanguageText($help_id);
 

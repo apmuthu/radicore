@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_pattern extends Default_Table
@@ -25,6 +25,28 @@ class mnu_pattern extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // mnu_pattern
+
+    // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('pattern_id' => 'Pattern Id',
+                               'pattern_desc' => 'Pattern Desc');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
 
     // ****************************************************************************
     function _cm_getValRep ($item=null, $where=nul)

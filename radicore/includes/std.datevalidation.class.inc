@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
@@ -225,7 +225,8 @@ class date_class {
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([0-9]{2})'         // 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{2}$)'        // 2 digits
+                 . '([0-9]{2})'         // 2 digits
+                 . '(\.[0-9]+)?$'       // optional '.nnn' microseconds (for SQL Server)
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyTime($regs[1], $regs[3], $regs[5]);
@@ -280,7 +281,7 @@ class date_class {
 
         // now split the input into its two portions
         $date = substr($input, 0, $pos);
-        $time = substr($input, $pos);
+        $time = substr($input, $pos+1);
 
         // validate the separate portions
         if (!$internaldate = $this->getInternalDate(trim($date))) {

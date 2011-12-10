@@ -85,10 +85,7 @@ class x_person_addr extends Default_Table
 
         // get last_addr_no and increment it for the new address
         $address_no = $person_data['last_addr_no'] + 1;
-        //$address_no = 1;  // ********** TEST **********
         $fieldarray['address_no'] = $address_no;
-
-        $this->retry_on_duplicate_key = 'address_no';
 
         // end_date must be same as person.end_date (and not editable)
         $fieldarray['end_date'] = $person_data['end_date'];

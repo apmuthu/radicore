@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -230,13 +230,13 @@ if (!empty($return_from) AND !empty($popup_object)) {
 
     // get data from the outer table
     $outer_data = $dbouter->getData($where);
+    if ($dbouter->messages) {
+    	$messages = array_merge($messages, $dbouter->getMessages());
+    } // if
     if ($dbouter->errors) {
         // some sort of error
         if ($dbouter->getLastPage() <= 1) {
             // only 1 entry requested, so return to previous script
-            if ($dbouter->messages) {
-            	$messages = array_merge($messages, $dbouter->getMessages());
-            } // if
             scriptprevious($dbouter->getErrors(), $messages);
         } else {
             // multiple entries requested, so disable SUBMIT button
@@ -323,9 +323,22 @@ if (count($outer_data) > 0) {
         } // if
 
         if ($dbinner->getNumRows() == 0) {
-            $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
-            unset($act_buttons['submit']);
-            unset($act_buttons['submitnext']);
+            if (!empty($return_from) AND ($return_action == 'OK')) {
+                // have returned to this occurrence after it has been processed, so...
+                if ($scrolling[$dbouter->getClassName()]['curitem'] == $scrolling[$dbouter->getClassName()]['lastitem']) {
+            	    // this is the last occurrence, so exit
+            		scriptprevious($errors, $messages);
+            	} else {
+            	    // restart from next occurrence
+            	    $object = $dbouter->getClassName();
+            	    $item = $scrolling[$object]['curitem']+1;
+            	    scriptRestart ($dbinner, $query_string="scrolling=$object&item=$item");
+            	} // if
+            } else {
+                $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+                unset($act_buttons['submit']);
+                unset($act_buttons['submitnext']);
+            } // if
         } // if
 
         // get any additional data for current record

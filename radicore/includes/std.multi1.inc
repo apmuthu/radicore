@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -307,10 +307,13 @@ if (empty($errors)) {
     $fieldarray = $dbobject->getExtraData($fieldarray);
     if ($dbobject->errors) {
     	$errors = $dbobject->getErrors();
-        // remove the SUBMIT button
-        unset($act_buttons['submit']);
-        unset($act_buttons['submitnext']);
     } // if
+} // if
+
+if (!empty($errors)) {
+	// remove the SUBMIT button
+    unset($act_buttons['submit']);
+    unset($act_buttons['submitnext']);
 } // if
 
 // save these variables for later in the same session
@@ -338,8 +341,8 @@ if (empty($errors)) {
 } // if
 
 if (!empty($errors)) {
-    // all errors are associated with row zero for this table
-	$errors2[$dbobject->getClassName()][0] = $errors;
+    // all errors are associated with this table
+	$errors2[$dbobject->getClassName()] = $errors;
 	$errors = $errors2;
 } // if
 

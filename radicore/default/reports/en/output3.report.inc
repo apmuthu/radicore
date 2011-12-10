@@ -13,8 +13,7 @@ $structure['data']['style']  = 'data';              // style for field data
 $structure['foot']['style']  = 'foot';              // style for page footer
 
 // define contents of page title
-$structure['title'][] = array('type' => 'text',
-                              'value' => "- page title -",
+$structure['title'][] = array('text' => "- page title -",
                               'width' => 70,
                               'align' => 'center',
                               'border' => 'y',

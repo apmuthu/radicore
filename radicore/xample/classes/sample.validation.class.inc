@@ -19,8 +19,8 @@ class sample_validation_class
     // perform validation that is common to INSERT and UPDATE.
     {
         if (!empty($input)) {
-            $pattern = "/^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} [0-9]{1}[A-Z]{2}$/";
-            if (!preg_match($pattern, $input)) {
+            $pattern = "^[A-Z]{1,2}[0-9]{1,2}[A-Z]{0,1} [0-9]{1}[A-Z]{2}$";
+            if (!ereg($pattern, $input)) {
                 // 'Invalid format for a postcode.'
                 return getLanguageText('sample001');
             } // if
@@ -35,8 +35,8 @@ class sample_validation_class
     // perform validation that is common to INSERT and UPDATE.
     {
        if (!empty($input)) {
-            $pattern = "/^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$/";
-            if (!preg_match($pattern, $input)) {
+            $pattern = "^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$";
+            if (!ereg($pattern, $input)) {
                 // 'Invalid format for a telephone number.'
                 return getLanguageText('sample002');
             } // if
@@ -51,8 +51,8 @@ class sample_validation_class
     // perform validation that is common to INSERT and UPDATE.
     {
          if (!empty($input)) {
-            $pattern = "/^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$/";
-            if (!preg_match($pattern, $input)) {
+            $pattern = "^([0-9]{3,5})[ ][0-9]{3,4}[ ]([0-9]{3,4})$";
+            if (!ereg($pattern, $input)) {
                 // 'Invalid format for a fax number.'
                 return getLanguageText('sample003');
             } // if

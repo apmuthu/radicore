@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -65,6 +65,12 @@ class dict_table_s04 extends dict_table
                                                     'required' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'table_id');
+        } // if
+
+        if (!isset($this->fieldspec['table_alias'])) {
+            $this->fieldspec['table_alias'] = array('type' => 'string',
+                                                    'size' => 40,
+                                                    'lowercase' => 'y');
         } // if
 
         if (!isset($this->fieldspec['outer_table'])) {
@@ -313,6 +319,10 @@ class dict_table_s04 extends dict_table
         	case 'tree2':
         	    $fieldarray['inner_table_alias'] = ''; // ensure this field is displayed
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
+        	    break;
+
+        	case 'output5':
+        	    $fieldarray['table_alias'] = $fieldarray['table_id'].'_s01';  // set to default value
         	    break;
 
         	default:
@@ -784,6 +794,9 @@ class dict_table_s04 extends dict_table
             } else {
                 $string = str_replace("#tablename#", $fieldarray['table_id'], $string);
             } // if
+            if (!empty($fieldarray['table_alias'])) {
+            	$string = str_replace("#table_id_alias#", $fieldarray['table_alias'], $string);
+            } // if
         } // if
         if (!empty($fieldarray['outer_table'])) {
             if (!empty($fieldarray['outer_table_alias'])) {
@@ -932,7 +945,6 @@ class dict_table_s04 extends dict_table
 					break;
 
 				case 'output1':
-				case 'output4':
 					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
@@ -945,6 +957,16 @@ class dict_table_s04 extends dict_table
 				case 'output3':
 					$task_data['task_desc']   = getLanguageText('t0024', $fieldarray['table_desc']);  // 'Output X to PDF (detail view)';
     		        $task_data['button_text'] = getLanguageText('t0025');  // 'Output to PDF(D)';
+					break;
+
+				case 'output4':
+					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
+    		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
+					break;
+
+				case 'output5':
+					$task_data['task_desc']   = getLanguageText('t0028', $fieldarray['table_desc']);  // 'Output X to PDF (address labels)';
+    		        $task_data['button_text'] = getLanguageText('t0029');  // 'Address labels';
 					break;
 
 				case 'popup1':
@@ -1087,6 +1109,9 @@ class dict_table_s04 extends dict_table
                     	// already been done, so do not repeat
                     } else {
                         $done['columns'] = true;
+                        // set column width as a percentage
+                        $percent = round(100 / count($rowdata), 2);
+                        $string_in = str_replace('n%', "$percent%", $string_in);
                         // repeat this line for every column in the table
                         for ($i = 0; $i < count($rowdata); $i++) {
                 		    $string_out .= $string_in;
@@ -1096,18 +1121,22 @@ class dict_table_s04 extends dict_table
                 } // if
             } // if
 
-            // insert field details
-            if (preg_match('/^\$structure\[\'body\']\[\'fields\']/i', $string_in)) {
-                $string_in = '';
-                if (array_key_exists('fields', $done)) {
-                	// already been done, so do not repeat
-                } else {
-                    $done['fields'] = true;
-                    foreach ($rowdata as $data) {
-                        $field = $data['column_id'];
-                        $label = $data['column_desc'];
-                        $string_out .= '$structure' ."['body']['fields'][] = array('$field' => '$label');\n";
-                    } // foreach
+            if ($pattern_id == 'output5') {
+                // skip this next bit
+            } else {
+                // insert field details
+                if (preg_match('/^\$structure\[\'body\']\[\'fields\']/i', $string_in)) {
+                    $string_in = '';
+                    if (array_key_exists('fields', $done)) {
+                    	// already been done, so do not repeat
+                    } else {
+                        $done['fields'] = true;
+                        foreach ($rowdata as $data) {
+                            $field = $data['column_id'];
+                            $label = $data['column_desc'];
+                            $string_out .= '$structure' ."['body']['fields'][] = array('$field' => '$label');\n";
+                        } // foreach
+                    } // if
                 } // if
             } // if
 

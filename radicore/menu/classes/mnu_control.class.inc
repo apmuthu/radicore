@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -619,6 +619,7 @@ class mnu_control extends Default_Table
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
         $fieldarray = array();
+        $fieldarray[0] = array();
 
         // turn multiple rows into a single associative array
         foreach ($rowdata as $row => $data) {

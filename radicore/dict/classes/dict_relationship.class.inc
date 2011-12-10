@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_relationship extends Default_Table
@@ -160,6 +160,20 @@ class dict_relationship extends Default_Table
             // get array of relationship types
             $array = $this->getValRep('rel_type');
             $this->lookup_data['rel_type'] = $array;
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('database_id_snr' => 'Database Id Snr',
+                               'table_id_snr' => 'Table Id Snr',
+                               'database_id_jnr' => 'Database Id Jnr',
+                               'table_id_jnr' => 'Table Id Jnr');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
         } // if
 
         return $fieldarray;

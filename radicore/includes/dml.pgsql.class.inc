@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -126,25 +126,10 @@ class pgsql
     // This is because the HAVING clause cannot reference an expression by its alias name.
     {
         // put current query into a subqery
-        $subquery = "    SELECT $select_str\n    FROM $from_str $where_str $group_str";
+        $subquery   = "    SELECT $select_str\n    FROM $from_str $where_str $group_str";
 
-        // extract SELECT list (with alias names for any expressions)
-        list($select_alias, $select_orig) = extractFieldNamesIndexed ($select_str);
-
-        $select_str = '';
-        foreach ($select_alias as $fieldname) {
-            if ($substring = strrchr($fieldname, '.')) {
-        	    // now remove the tablename and put amended entry back into the array
-                $fieldname = ltrim($substring, '.');
-            } // if
-            if (empty($select_str)) {
-            	$select_str = "$fieldname";
-            } else {
-                $select_str .= ", $fieldname";
-            } // if
-        } // foreach
-
-        $from_str = "(\n$subquery\n) AS x";
+        $select_str = '*';
+        $from_str   = "(\n$subquery\n) AS x";
         $where_str  = "\nWHERE $having_str";
         $having_str = '';
         $group_str  = '';
@@ -212,6 +197,11 @@ END_OF_REGEX;
             } else {
                 list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
                 $fieldvalue = trim($fieldvalue);
+                if (strpos($fieldvalue, "\\")) {
+                	$fieldvalue = 'E'.$fieldvalue;  // identify that string contains an escape character
+                	$array[$key] = $fieldname.$operator.$fieldvalue;
+                	$modified = true;
+                } // if
                 if (preg_match('/^like /i', $fieldvalue)) {
             	    $search  = array('\\\\\\\'', '\\\\');
             	    $replace = array('\\\'\\\'', '\\\\\\\\');
@@ -415,7 +405,7 @@ END_OF_REGEX;
         if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
             $auditobj =& RDCsingleton::getInstance('audit_tbl');
             // add record details to audit database
-            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $this->fieldspec, $this->fieldspec, $where, $fieldarray);
+            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
             $this->errors = array_merge($auditobj->getErrors(), $this->errors);
         } // if
 
@@ -734,7 +724,7 @@ END_OF_REGEX;
             $having_str = NULL;
         } // if
 
-        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
         	$limit_str = 'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
         } elseif ($rows_per_page > 0) {
             $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
@@ -1201,11 +1191,14 @@ END_OF_REGEX;
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
+        $this->numrows = 0;
+
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key
             $where = $this->buildKeyString ($oldarray, $this->primary_key);
         } else {
         	// use $where as supplied, and remove pkey specs so their values can be changed
+        	$this->unique_keys[] = $this->primary_key;  // but still check for duplicate value
         	$this->primary_key = array();
         } // if
 
@@ -1236,7 +1229,6 @@ END_OF_REGEX;
 
         if (empty($fieldarray)) {
             // nothing to update, so return now
-            $this->numrows = 0;
             return $fieldarray;
         } // if
 

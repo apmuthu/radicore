@@ -69,9 +69,9 @@ $structure['multi2']['fields'][1][] = array('field' => 'column_id_snr', 'width' 
 $structure['multi2']['fields'][1][] = array('field' => 'column_id_jnr', 'width' => 95);
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
-$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
+$structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'halign' => 'left');
+$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center', 'margin_left' => 8.5);
+$structure['foot1'][] = array('type' => 'time',   'align' => 'right',  'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

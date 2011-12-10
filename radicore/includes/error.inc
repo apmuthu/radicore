@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This is my universal error handler.
@@ -37,12 +37,10 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
 function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 // If the error condition is E_USER_ERROR or above then abort
 {
-    if ($errno != E_STRICT AND $errno != E_DEPRECATED) {
-        if (function_exists('debugger_start_debug')) {
-            //debugger_connect();
-            //debugger_start_debug();
+    if ($errno != E_STRICT) {
+        if (function_exists('debugBreak') AND defined("DEBUGBREAK_ON_ERROR")) {
+            debugBreak();
         } // if
-        $breakpoint = 'breakpoint';
     } // if
 
     //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
@@ -53,10 +51,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_WARNING:
             if (isset($errcontext['this']) AND is_object($errcontext['this'])) {
                 if ($errcontext['this'] instanceof pgsql) {
-                    return;  // exit now if this is PostgreSQL
+                    $errno  = $errcontext['this']->getErrorNo();
+                    if ($errno <> 0) {
+                        break;
+                    } // if
+                    //return;  // exit now if this is PostgreSQL
                 } elseif ($errcontext['this'] instanceof oracle) {
                     $errcontext['this']->error_string = $errstr;
-                    return;  // exit now if this is Oracle
+                    //return;  // exit now if this is Oracle
                 } else {
                     // context is an object, but does it have a variable called $error_string?
                     if (method_exists($errcontext['this'], 'getErrorString')) {
@@ -314,49 +316,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     die();
 
 } // errorHandler
-
-// *****************************************************************************
-function print_Trace ($level, $string, $trace, $indent=null)
-// output a segment of the array produced by debug_backrace()
-{
-    $indent .= '  ';    // increase indent by 2 spaces
-    foreach ($string as $level2 => $string2) {
-        $pattern = '/'                      // begin pattern
-                 . '^(HTTP_[a-z]+_VARS)$'   // HTTP_xxxx_VARS
-                 . '|'                      // or
-                 . '^(HTTP_[a-z]+_FILES)$'  // HTTP_xxxx_FILES
-                 . '|'                      // or
-                 . '^(_[a-z]+)$'            // _xxxx
-                 . '|'                      // or
-                 . '^GLOBALS$'              // GLOBALS
-                 . '/i';                    // end pattern, case insensitive
-        if (preg_match($pattern, $level2, $regs)) {
-            // ignore
-        } else {
-        	if (is_array($string2)) {
-                if (isset($string2['this'])) {
-                    // output class name, but no class properties
-                    $class = get_class($string2['this']);
-                    $trace .= $indent ."$level2: object = $class\n";
-                } else {
-                    $trace .= $indent ."$level2: array =\n";
-                    $trace = print_Trace($level2, $string2, $trace, $indent);
-                } // if
-        	} elseif (is_object($string2)) {
-        	    // do nothing
-            } else {
-                if (is_null($string2)) {
-                	$trace .= $indent ."$level2: string = null\n";
-                } else {
-                    $trace .= $indent ."$level2: " .gettype($string2) ." = $string2\n";
-                } // if
-            } // if
-        } // if
-    } // foreach
-
-    return $trace;
-
-} // print_Trace
 
 // *****************************************************************************
 function XML_errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)

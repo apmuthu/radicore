@@ -24,6 +24,8 @@ $structure['main']['fields'][2][] = array('field' => 'sort_seq');
 $structure['main']['fields'][] = array('task_id' => 'Task Id', 'colspan' => 3);
 $structure['main']['fields'][] = array('task_desc' => 'Task Desc', 'colspan' => 3);
 
+//$structure['main']['fields'][] = array('breadcrumbs' => 'Breadcrumbs', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_user' => 'Created User', 'colspan' => 3);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 3);

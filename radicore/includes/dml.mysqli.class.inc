@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -643,7 +643,7 @@ class mysql
             $sort_str = '';
         } // if
 
-        if (!empty($rdc_limit) AND !empty($rdc_offset)) {
+        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
         	$limit_str = "\n" .'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
         } elseif ($rows_per_page > 0) {
             $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
@@ -1126,11 +1126,14 @@ class mysql
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
+        $this->numrows = 0;
+
         if (strlen($where) == 0) {
             // build 'where' string using values for primary key
             $where = $this->buildKeyString ($oldarray, $this->primary_key);
         } else {
         	// use $where as supplied, and remove pkey specs so their values can be changed
+        	$this->unique_keys[] = $this->primary_key;  // but still check for duplicate value
         	$this->primary_key = array();
         } // if
 
@@ -1161,7 +1164,6 @@ class mysql
 
         if (empty($fieldarray)) {
             // nothing to update, so return now
-            $this->numrows = 0;
             return $fieldarray;
         } // if
 
@@ -1293,6 +1295,8 @@ class mysql
                                         'type' => 'numeric');
         $colspecs['boolean']    = array('name' => 'BOOLEAN',
                                         'type' => 'boolean');
+        $colspecs['bit']        = array('name' => 'BIT',
+                                        'type' => 'bit');
         $colspecs['tinyint']    = array('name' => 'TINYINT',
                                         'type' => 'integer',
                                         'minvalue' => -128,
@@ -1310,7 +1314,9 @@ class mysql
                                         'minvalue' => -2147483648,
                                         'maxvalue' => 2147483647);
         $colspecs['integer']    = array('name' => 'INTEGER',
-                                        'type' => 'integer');
+                                        'type' => 'integer',
+                                        'minvalue' => -2147483648,
+                                        'maxvalue' => 2147483647);
         $colspecs['bigint']     = array('name' => 'BIGINT',
                                         'type' => 'integer',
                                         'minvalue' => '-9223372036854775808',

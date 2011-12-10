@@ -51,8 +51,6 @@ class x_person extends Default_Table
         	unset($this->fieldspec['favourite_food']);
         } // if
 
-        //$this->fieldspec['picture']['notext'] = 'y';
-
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -84,12 +82,6 @@ class x_person extends Default_Table
                                            . ' '
                                            . $fieldarray['last_name'];
             } // if
-        } // if
-
-        global $mode;
-        if ($mode == 'pdf-list') {
-        	$css_array['value1'] = 'red';
-        	$css_array['value2'] = 'blue';
         } // if
 
         return $fieldarray;
@@ -209,10 +201,6 @@ class x_person extends Default_Table
             $this->sql_groupby = null;
             $this->sql_having  = null;
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
-            // // include reference to additional tables
-//            $this->sql_from .= " LEFT JOIN x_person_addr"
-//                             . " ON (x_person_addr.person_id=x_person.person_id)";
-
         } // if
 
         $pattern_id = getPatternId();
@@ -260,7 +248,7 @@ class x_person extends Default_Table
     } // _cm_pre_output
 
     // ****************************************************************************
-    function _cm_getValRep ($item='', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -318,23 +306,6 @@ class x_person extends Default_Table
         return $fieldarray;
 
     } // _cm_initialiseFileUpload
-
-    // ****************************************************************************
-//    function _cm_ListView_pre_print ($prev_row, $curr_row)
-//    // allow extra rows to be created in List View
-//    {
-//        $rows = array();
-//
-//        if (!empty($prev_row)) {
-//        	$rows[0]['pers_type_desc'] = 'after ' .$prev_row['person_id'];
-//        } // if
-//        if (!empty($curr_row)) {
-//            $rows[1]['pers_type_desc'] = 'before ' .$curr_row['person_id'];
-//        } // if
-//
-//        return $rows;
-//
-//    } // _cm_ListView_pre_print
 
     // ****************************************************************************
     function _cm_ListView_print_before ($prev_row, $curr_row)

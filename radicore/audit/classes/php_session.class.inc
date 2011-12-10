@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class php_session extends Default_Table
@@ -105,13 +105,15 @@ class php_session extends Default_Table
             } // if
             $array['last_updated'] = getTimeStamp();
             $array['session_data'] = $session_data;
-            if ($session_id == $this->fieldarray['session_id']) {
+            if (isset($this->fieldarray['session_id']) AND $this->fieldarray['session_id'] == $session_id) {
             	$old_data[0] = $this->fieldarray;
             } else {
                 $old_data = $this->_dml_ReadBeforeUpdate ("session_id='$session_id'");
             } // if
             $this->_dml_updateRecord($array, $old_data[0]);
         } // if
+
+        $result = RDCsingleton::getInstance('__destruct');
 
         return true;
 
@@ -154,6 +156,7 @@ class php_session extends Default_Table
     // (see http://bugs.php.net/bug.php?id=33772 for details)
     {
 
+        $result = RDCsingleton::getInstance('__destruct');
         @session_write_close();
 
     } // __destruct

@@ -1,32 +1,28 @@
-// file created on July 31, 2010, 2:30 pm
+// file created on August 26, 2011, 10:24 am
     
 // menu details for subsystem MENU
+$array['Admin']                                   = 'Admin';
 $array['Audit']                                   = 'Audit';
+$array['Classroom']                               = 'Classroom';
 $array['Dictionary']                              = 'Dictionary';
+$array['Example']                                 = 'Example';
 $array['Hosting Account']                         = 'Hosting Account';
-$array['Inventory']                               = 'Inventory';
-$array['Invoicing']                               = 'Invoicing';
 $array['Languages']                               = 'Languages';
 $array['Menu Controls']                           = 'Menu Controls';
 $array['Menu System']                             = 'Menu System';
 $array['MOTD']                                    = 'MOTD';
-$array['Order Processing']                        = 'Order Processing';
-$array['Party']                                   = 'Party';
 $array['Pattern']                                 = 'Pattern';
-$array['Product']                                 = 'Product';
-$array['Requests']                                = 'Requests';
+$array['PROTO']                                   = 'PROTO';
 $array['Role']                                    = 'Role';
-$array['Shipments']                               = 'Shipments';
 $array['Subsystem']                               = 'Subsystem';
+$array['Survey']                                  = 'Survey';
 $array['Task (All)']                              = 'Task (All)';
 $array['Task (Menu)']                             = 'Task (Menu)';
 $array['Task (Proc)']                             = 'Task (Proc)';
 $array['ToDo']                                    = 'ToDo';
-$array['Transix']                                 = 'Transix';
 $array['User']                                    = 'User';
-$array['Work Effort']                             = 'Work Effort';
+$array['VPD']                                     = 'VPD';
 $array['Workflow']                                = 'Workflow';
-$array['WRD']                                     = 'WRD';
 
 // task details for subsystem MENU
 $array['logon']                                   = 'Logon screen';
@@ -148,10 +144,8 @@ $array['mnu_task(rename)']                        = 'Rename Task';
 $array['mnu_task(search)']                        = 'Search Task';
 $array['mnu_task(upd1)']                          = 'Update Task';
 $array['mnu_todo(add1)']                          = 'Add ToDo';
-$array['mnu_todo(complete)']                      = 'Set selection criteria to COMPLETE';
 $array['mnu_todo(del1)']                          = 'Delete ToDo';
 $array['mnu_todo(enq1)']                          = 'Enquire ToDo';
-$array['mnu_todo(incomplete)']                    = 'Set selection criteria to INCOMPLETE';
 $array['mnu_todo(list1)']                         = 'List ToDo';
 $array['mnu_todo(list2)']                         = 'List ToDo by User';
 $array['mnu_todo(search)']                        = 'Search ToDo';
@@ -178,14 +172,12 @@ $array['mnu_user(upd1)c']                         = 'Retrieve User Password';
 // navigation button details for subsystem MENU
 $array['Build Directory']                         = 'Build Directory';
 $array['Change Password']                         = 'Change Password';
-$array['COMPLETE']                                = 'COMPLETE';
 $array['Delete']                                  = 'Delete';
 $array['Erase']                                   = 'Erase';
 $array['Export']                                  = 'Export';
 $array['Favourites']                              = 'Favourites';
 $array['Field Access']                            = 'Field Access';
 $array['Help Text']                               = 'Help Text';
-$array['INCOMPLETE']                              = 'INCOMPLETE';
 $array['Initial Values']                          = 'Initial Values';
 $array['Initial Values (Role)']                   = 'Initial Values (Role)';
 $array['Initial Values (User)']                   = 'Initial Values (User)';
@@ -228,6 +220,7 @@ $array['Update']                                  = 'Update';
 // column details for subsystem MENU
 $array['access_type']                             = 'access_type';
 $array['account_name']                            = 'account_name';
+$array['breadcrumbs']                             = 'breadcrumbs';
 $array['button_text']                             = 'button_text';
 $array['context_preselect']                       = 'context_preselect';
 $array['created_date']                            = 'created_date';

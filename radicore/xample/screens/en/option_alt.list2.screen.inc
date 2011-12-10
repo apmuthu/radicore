@@ -14,7 +14,7 @@ $structure['tables']['inner'] = 'x_option_alt';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => 150);
+$structure['inner']['columns'][] = array('width' => 200);
 $structure['inner']['columns'][] = array('width' => 350);
 $structure['inner']['columns'][] = array('width' => '*');
 

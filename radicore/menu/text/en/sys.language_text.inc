@@ -70,7 +70,7 @@ $array['sys0059'] = "Source directory (%1\$s) does not exist";
 
 $array['sys0060'] = "This application has encountered an unrecoverable error";
 $array['sys0061'] = "The following has been reported to the administrator:";
-$array['sys0062'] = "Uncaught exception fron %1\$s, message = %2\$s";
+$array['sys0062'] = "Uncaught exception from %1\$s, message = %2\$s";
 $array['sys0063'] = "Fatal Error: %1\$s";
 $array['sys0064'] = "SQL query: %1\$s";
 $array['sys0065'] = "Error in line %1\$s of file '%2\$s'.";
@@ -220,7 +220,7 @@ $array['sys0195'] = "Invalid date range - FROM DATE is greater than TO DATE";
 $array['sys0196'] = "Invalid date range - TO DATE is less than FROM DATE";
 $array['sys0197'] = "Date cannot be earlier than today";
 $array['sys0198'] = "";
-$array['sys0199'] = "";
+$array['sys0199'] = "No record was found with this identity";
 
 $array['sys0200'] = "IP address '%1\$s' is not valid for this user";
 $array['sys0201'] = "IP address '%1\$s' is not valid for this task";
@@ -233,8 +233,8 @@ $array['sys0207'] = "";
 $array['sys0208'] = "";
 $array['sys0209'] = "";
 
-$array['sys0210'] = "";
-$array['sys0211'] = "";
+$array['sys0210'] = "LABEL_PRINT has not been defined in Report Structure File";
+$array['sys0211'] = "LABEL_PRINT in Report Structure File is not a positive number";
 $array['sys0212'] = "";
 $array['sys0213'] = "";
 $array['sys0214'] = "";

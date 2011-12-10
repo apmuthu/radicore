@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s03 extends dict_table
@@ -53,6 +53,7 @@ class dict_table_s03 extends dict_table
         $include_array[] = 'output2';
         $include_array[] = 'output3';
         $include_array[] = 'output4';
+        $include_array[] = 'output5';
         $include_array[] = 'popup1';
         $include_array[] = 'popup2';
         $include_array[] = 'popup3';

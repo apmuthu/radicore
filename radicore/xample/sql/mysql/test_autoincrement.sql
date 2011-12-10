@@ -21,4 +21,4 @@ CREATE TABLE `test_autoincrement` (
   `field1` varchar(40) default NULL,
   `field2` varchar(255) default NULL,
   PRIMARY KEY  (`id`)
-) TYPE=MyISAM;
+) TYPE=MyISAM AUTO_INCREMENT=11 ;

@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -15,6 +15,7 @@
             omit-xml-declaration="yes"
             doctype-public = "-//W3C//DTD XHTML 1.0 Strict//EN"
             doctype-system = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            encoding="UTF-8"
 />
 
 <!-- include common templates -->
@@ -66,7 +67,9 @@
   
         <div class="body">
   
-          <h1><xsl:value-of select="$title"/></h1>
+          <div class="title">
+            <h1 class="title"><xsl:value-of select="$title"/></h1>
+          </div>
   
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar_detail" />

@@ -1,0 +1,22 @@
+/* this file contains hacks for ie7 */
+
+/* these are for the quicksearch area to the right of the title */
+div.title {
+  min-height: 27px;
+}
+div.with_quicksearch {
+  margin-bottom: -17px;
+}
+div.without_quicksearch {
+  margin-bottom: -17px;
+}
+h1.title {
+  padding-top: 1px;
+  height: 25px;
+}
+div.with_quicksearch h1.title {
+}
+div.without_quicksearch h1.title {
+}
+div.quicksearch {
+}

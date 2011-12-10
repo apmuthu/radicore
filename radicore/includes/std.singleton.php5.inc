@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class RDCsingleton
@@ -11,6 +11,17 @@ class RDCsingleton
     // implements the 'singleton' design pattern.
     {
         static $instances = array();  // array of instance names
+
+        if ($class == '__destruct') {
+            // session is being destroyed, instances are being lost, so lose all references to them
+            foreach ($instances as $key => $value) {
+            	unset($instances[$key]);
+            } // foreach
+        	$instances = array();
+        	return $instances;
+        } // if
+
+        $classdir = $GLOBALS['classdir'];  // save
 
         $pattern = '/^('        // begins with
                  . 'server'     // 'server'
@@ -64,6 +75,9 @@ class RDCsingleton
             // instance does not exist, so create it
             $instances[$server.$classname] = new $classname($arg1);
             $instance =& $instances[$server.$classname];
+            if (defined('TRANSIX_NO_AUDIT')) {
+            	$instance->audit_logging = false;
+            } // if
             if ($initialise === true) {
                 if (method_exists($instance, 'initialise')) {
                     // object has an 'initialise' method, so call it
@@ -76,6 +90,8 @@ class RDCsingleton
             // initialise all sql variables
             $instance->sqlSelectInit();
         } // if
+
+        $GLOBALS['classdir'] = $classdir;  // restore
 
         return $instance;
 

@@ -2,16 +2,18 @@
 -- PostgreSQL database dump
 --
 
--- Started on 2006-12-08 11:34:59
+-- Dumped from database version 9.1.0
+-- Dumped by pg_dump version 9.1.0
+-- Started on 2011-09-15 17:17:59
 
+SET statement_timeout = 0;
 SET client_encoding = 'UTF8';
-SET standard_conforming_strings = off;
+SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
-SET escape_string_warning = off;
 
 --
--- TOC entry 11 (class 2615 OID 17815)
+-- TOC entry 12 (class 2615 OID 17613)
 -- Name: workflow; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -27,8 +29,8 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 1467 (class 1259 OID 18364)
--- Dependencies: 1835 1836 1837 1838 1839 11
+-- TOC entry 233 (class 1259 OID 18311)
+-- Dependencies: 2257 2258 2259 2260 2261 12
 -- Name: wf_arc; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -49,13 +51,13 @@ CREATE TABLE wf_arc (
 ALTER TABLE workflow.wf_arc OWNER TO postgres;
 
 --
--- TOC entry 1468 (class 1259 OID 18373)
--- Dependencies: 1840 1841 1842 1843 11
+-- TOC entry 234 (class 1259 OID 18322)
+-- Dependencies: 2262 2263 2264 2265 2266 12
 -- Name: wf_case; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE wf_case (
-    rdcaccount_id integer NOT NULL default 1,
+    rdcaccount_id integer DEFAULT 1 NOT NULL,
     case_id integer DEFAULT 0 NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
     context character varying(255),
@@ -72,8 +74,8 @@ CREATE TABLE wf_case (
 ALTER TABLE workflow.wf_case OWNER TO postgres;
 
 --
--- TOC entry 1469 (class 1259 OID 18379)
--- Dependencies: 1844 1845 1846 11
+-- TOC entry 235 (class 1259 OID 18330)
+-- Dependencies: 2267 2268 2269 12
 -- Name: wf_place; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -93,13 +95,13 @@ CREATE TABLE wf_place (
 ALTER TABLE workflow.wf_place OWNER TO postgres;
 
 --
--- TOC entry 1470 (class 1259 OID 18387)
--- Dependencies: 1847 1848 1849 1850 1851 11
+-- TOC entry 236 (class 1259 OID 18339)
+-- Dependencies: 2270 2271 2272 2273 2274 2275 12
 -- Name: wf_token; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE wf_token (
-    rdcaccount_id integer NOT NULL default 1,
+    rdcaccount_id integer DEFAULT 1 NOT NULL,
     case_id integer DEFAULT 0 NOT NULL,
     token_id smallint DEFAULT (0)::smallint NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
@@ -115,8 +117,8 @@ CREATE TABLE wf_token (
 ALTER TABLE workflow.wf_token OWNER TO postgres;
 
 --
--- TOC entry 1471 (class 1259 OID 18394)
--- Dependencies: 1852 1853 1854 1855 11
+-- TOC entry 237 (class 1259 OID 18348)
+-- Dependencies: 2276 2277 2278 2279 12
 -- Name: wf_transition; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -139,8 +141,8 @@ CREATE TABLE wf_transition (
 ALTER TABLE workflow.wf_transition OWNER TO postgres;
 
 --
--- TOC entry 1472 (class 1259 OID 18403)
--- Dependencies: 1856 1857 11
+-- TOC entry 238 (class 1259 OID 18358)
+-- Dependencies: 2280 2281 12
 -- Name: wf_workflow; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -163,13 +165,13 @@ CREATE TABLE wf_workflow (
 ALTER TABLE workflow.wf_workflow OWNER TO postgres;
 
 --
--- TOC entry 1473 (class 1259 OID 18410)
--- Dependencies: 1858 1859 1860 1861 11
+-- TOC entry 239 (class 1259 OID 18366)
+-- Dependencies: 2282 2283 2284 2285 2286 12
 -- Name: wf_workitem; Type: TABLE; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE TABLE wf_workitem (
-    rdcaccount_id integer NOT NULL default 1,
+    rdcaccount_id integer DEFAULT 1 NOT NULL,
     case_id integer DEFAULT 0 NOT NULL,
     workitem_id smallint DEFAULT (0)::smallint NOT NULL,
     workflow_id smallint DEFAULT (0)::smallint NOT NULL,
@@ -190,8 +192,8 @@ CREATE TABLE wf_workitem (
 ALTER TABLE workflow.wf_workitem OWNER TO postgres;
 
 --
--- TOC entry 1865 (class 2606 OID 18621)
--- Dependencies: 1467 1467 1467 1467 1467
+-- TOC entry 2290 (class 2606 OID 18617)
+-- Dependencies: 233 233 233 233 233
 -- Name: wf_arc_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -200,8 +202,8 @@ ALTER TABLE ONLY wf_arc
 
 
 --
--- TOC entry 1868 (class 2606 OID 18623)
--- Dependencies: 1468 1468
+-- TOC entry 2294 (class 2606 OID 18619)
+-- Dependencies: 234 234
 -- Name: wf_case_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -210,8 +212,8 @@ ALTER TABLE ONLY wf_case
 
 
 --
--- TOC entry 1870 (class 2606 OID 18625)
--- Dependencies: 1469 1469 1469
+-- TOC entry 2296 (class 2606 OID 18621)
+-- Dependencies: 235 235 235
 -- Name: wf_place_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -220,8 +222,8 @@ ALTER TABLE ONLY wf_place
 
 
 --
--- TOC entry 1873 (class 2606 OID 18627)
--- Dependencies: 1470 1470 1470
+-- TOC entry 2300 (class 2606 OID 18623)
+-- Dependencies: 236 236 236
 -- Name: wf_token_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -230,8 +232,8 @@ ALTER TABLE ONLY wf_token
 
 
 --
--- TOC entry 1875 (class 2606 OID 18629)
--- Dependencies: 1471 1471 1471
+-- TOC entry 2302 (class 2606 OID 18625)
+-- Dependencies: 237 237 237
 -- Name: wf_transition_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -240,8 +242,8 @@ ALTER TABLE ONLY wf_transition
 
 
 --
--- TOC entry 1877 (class 2606 OID 18631)
--- Dependencies: 1472 1472
+-- TOC entry 2304 (class 2606 OID 18627)
+-- Dependencies: 238 238
 -- Name: wf_workflow_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -250,8 +252,8 @@ ALTER TABLE ONLY wf_workflow
 
 
 --
--- TOC entry 1880 (class 2606 OID 18633)
--- Dependencies: 1473 1473 1473
+-- TOC entry 2308 (class 2606 OID 18629)
+-- Dependencies: 239 239 239
 -- Name: wf_workitem_pkey; Type: CONSTRAINT; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -260,8 +262,8 @@ ALTER TABLE ONLY wf_workitem
 
 
 --
--- TOC entry 1862 (class 1259 OID 18664)
--- Dependencies: 1467 1467 1467
+-- TOC entry 2287 (class 1259 OID 18671)
+-- Dependencies: 233 233 233
 -- Name: wf_arc_index1; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -269,8 +271,8 @@ CREATE INDEX wf_arc_index1 ON wf_arc USING btree (workflow_id, place_id, directi
 
 
 --
--- TOC entry 1863 (class 1259 OID 18665)
--- Dependencies: 1467 1467 1467
+-- TOC entry 2288 (class 1259 OID 18672)
+-- Dependencies: 233 233 233
 -- Name: wf_arc_index2; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
@@ -278,38 +280,62 @@ CREATE INDEX wf_arc_index2 ON wf_arc USING btree (workflow_id, transition_id, di
 
 
 --
--- TOC entry 1866 (class 1259 OID 18666)
--- Dependencies: 1468
--- Name: wf_case_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+-- TOC entry 2291 (class 1259 OID 18673)
+-- Dependencies: 234
+-- Name: wf_case_index1; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE INDEX wf_case_index1 ON wf_case USING btree (workflow_id);
+
+
+--
+-- TOC entry 2292 (class 1259 OID 18674)
+-- Dependencies: 234
+-- Name: wf_case_index2; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+--
+
 CREATE INDEX wf_case_index2 ON wf_case USING btree (rdcaccount_id);
 
 
 --
--- TOC entry 1871 (class 1259 OID 18667)
--- Dependencies: 1470 1470
--- Name: wf_token_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+-- TOC entry 2297 (class 1259 OID 18675)
+-- Dependencies: 236 236
+-- Name: wf_token_index1; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE INDEX wf_token_index1 ON wf_token USING btree (workflow_id, place_id);
+
+
+--
+-- TOC entry 2298 (class 1259 OID 18676)
+-- Dependencies: 236
+-- Name: wf_token_index2; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+--
+
 CREATE INDEX wf_token_index2 ON wf_token USING btree (rdcaccount_id);
 
 
 --
--- TOC entry 1878 (class 1259 OID 18668)
--- Dependencies: 1473 1473
--- Name: wf_workitem_index; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+-- TOC entry 2305 (class 1259 OID 18677)
+-- Dependencies: 239 239
+-- Name: wf_workitem_index1; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
 --
 
 CREATE INDEX wf_workitem_index1 ON wf_workitem USING btree (workflow_id, transition_id);
+
+
+--
+-- TOC entry 2306 (class 1259 OID 18678)
+-- Dependencies: 239
+-- Name: wf_workitem_index2; Type: INDEX; Schema: workflow; Owner: postgres; Tablespace: 
+--
+
 CREATE INDEX wf_workitem_index2 ON wf_workitem USING btree (rdcaccount_id);
 
 
 --
--- TOC entry 1883 (class 0 OID 0)
--- Dependencies: 11
+-- TOC entry 2311 (class 0 OID 0)
+-- Dependencies: 12
 -- Name: workflow; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -320,8 +346,8 @@ GRANT USAGE ON SCHEMA workflow TO PUBLIC;
 
 
 --
--- TOC entry 1884 (class 0 OID 0)
--- Dependencies: 1467
+-- TOC entry 2312 (class 0 OID 0)
+-- Dependencies: 233
 -- Name: wf_arc; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -332,8 +358,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_arc TO PUBLIC;
 
 
 --
--- TOC entry 1885 (class 0 OID 0)
--- Dependencies: 1468
+-- TOC entry 2313 (class 0 OID 0)
+-- Dependencies: 234
 -- Name: wf_case; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -344,8 +370,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_case TO PUBLIC;
 
 
 --
--- TOC entry 1886 (class 0 OID 0)
--- Dependencies: 1469
+-- TOC entry 2314 (class 0 OID 0)
+-- Dependencies: 235
 -- Name: wf_place; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -356,8 +382,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_place TO PUBLIC;
 
 
 --
--- TOC entry 1887 (class 0 OID 0)
--- Dependencies: 1470
+-- TOC entry 2315 (class 0 OID 0)
+-- Dependencies: 236
 -- Name: wf_token; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -368,8 +394,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_token TO PUBLIC;
 
 
 --
--- TOC entry 1888 (class 0 OID 0)
--- Dependencies: 1471
+-- TOC entry 2316 (class 0 OID 0)
+-- Dependencies: 237
 -- Name: wf_transition; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -380,8 +406,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_transition TO PUBLIC;
 
 
 --
--- TOC entry 1889 (class 0 OID 0)
--- Dependencies: 1472
+-- TOC entry 2317 (class 0 OID 0)
+-- Dependencies: 238
 -- Name: wf_workflow; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -392,8 +418,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_workflow TO PUBLIC;
 
 
 --
--- TOC entry 1890 (class 0 OID 0)
--- Dependencies: 1473
+-- TOC entry 2318 (class 0 OID 0)
+-- Dependencies: 239
 -- Name: wf_workitem; Type: ACL; Schema: workflow; Owner: postgres
 --
 
@@ -403,7 +429,7 @@ GRANT ALL ON TABLE wf_workitem TO postgres;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE wf_workitem TO PUBLIC;
 
 
--- Completed on 2006-12-08 11:35:00
+-- Completed on 2011-09-15 17:18:01
 
 --
 -- PostgreSQL database dump complete

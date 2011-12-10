@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.fileupload1.inc
@@ -32,8 +32,9 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit']  = 'submit';
-$act_buttons['quit'] 	= 'cancel';
+$act_buttons['submit']     = 'submit';
+$act_buttons['submitstay'] = 'submitstay';
+$act_buttons['quit'] 	   = 'cancel';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -177,11 +178,15 @@ if (!empty($_FILES) and empty($errors)) {
             } // if
             $errors = $fileobject->getErrors();
             if (empty($errors)) {
-            	// send selection back to the previous script
-                $prev_script = getPreviousScript();
-                $prev_task   = getPreviousTask($prev_script);
-                $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
-                scriptPrevious($errors, $messages, 'choose');
+                if (isset($_POST['submitstay'])) {
+
+                } else {
+                	// send selection back to the previous script
+                    $prev_script = getPreviousScript();
+                    $prev_task   = getPreviousTask($prev_script);
+                    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
+                    scriptPrevious($errors, $messages, 'choose');
+                } // if
             } else {
                 @unlink($uploadfile);
             } // if

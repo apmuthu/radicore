@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -225,7 +225,7 @@ if ($dbouter->getNumRows() < 1) {
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $where;
-        scriptPrevious(null, null, 'choose');
+        scriptPrevious($errors, $messages, 'choose');
     } // if
     if (count($page_stack) > 2) {
         // 'Nothing retrieved from database table $outer'

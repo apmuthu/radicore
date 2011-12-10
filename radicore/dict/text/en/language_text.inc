@@ -130,8 +130,8 @@ $array['t0024'] = "Output %1\$s to PDF (detail view)";
 $array['t0025'] = "Output to PDF(D)";
 $array['t0026'] = "Timetable for %1\$s";
 $array['t0027'] = "Tree Structure for %1\$s";
-$array['t0028'] = "";
-$array['t0029'] = "";
+$array['t0028'] = "Output %1\$s to PDF (address labels)";
+$array['t0029'] = "Address labels";
 
 $array['batch']             = 'batch';
 $array['by']                = 'by';

@@ -10,8 +10,7 @@ $screen = 'mnu_role.list1.screen.inc';  // file identifying screen structure
 // identify extra parameters for a JOIN
 $sql_select = 'mnu_role.role_id, start_task_id, global_access, role_desc, count(user_id) as count';
 $sql_from   = 'mnu_role LEFT JOIN mnu_user ON (mnu_user.role_id=mnu_role.role_id) ';
-$sql_where  = null;
-//$sql_groupby = 'mnu_role.role_id, start_task_id, global_access, role_desc';
+$sql_where  = '';
 $sql_groupby = 'mnu_role.role_id';
 
 // set default sort sequence

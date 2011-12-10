@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 4
@@ -37,21 +37,21 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
         // extract errors for this object only
         $object_errors = $errors[$objectname];
 		unset($errors[$objectname]);
-		if (is_string(key($object_errors))) {
-			// not indexed by row, so set to row zero
-		    $array[] = $object_errors;
-			$object_errors = $array;
-		} // if
-		// there may be different errors for different rows
-		foreach ($object_errors as $rownum => $row_errors) {
-			// extract errors which are linked to named fields
-    		$result = filterErrors($row_errors, $objectname, $errors, $screen_structure);
-    		if (empty($result)) {
-    		    unset($object_errors[$rownum]);
-    		} else {
-		       $object_errors[$rownum] = $result;
+		foreach ($object_errors as $key => $value) {
+		    if (is_string($key) AND is_string($value)) {
+		    	// simple associative array not indexed by rownum, so save for row zero
+		    	$row_zero[$key] = $value;
+		    	unset($object_errors[$key]);
 		    } // if
 		} // foreach
+		if (isset($row_zero)) {
+			if (isset($object_errors[0])) {
+			    // shift this to the end of array before it gets overwritten
+				$object_errors[] = $object_errors[0];
+			} // if
+			$object_errors[0] = $row_zero;
+			unset($row_zero);
+		} // if
     } else {
 		// no errors for current object
         $object_errors = array();
@@ -132,12 +132,15 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         $child->set_attribute('nodisplay', 'y');
                         $fieldvalue = '**hidden**';
                     } else {
-                        // if an error message exists put it into the error attribute
+                        // if an error message exists for this row/field put it into the field's error attribute
                         if (!empty($object_errors)) {
                             if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
                                 if (array_key_exists($fieldname, $object_errors[$rownum])) {
                                     $child->set_attribute('error', $object_errors[$rownum][$fieldname]);
                                     unset($object_errors[$rownum][$fieldname]);
+                                    if (empty($object_errors[$rownum])) {
+                                    	unset($object_errors[$rownum]);
+                                    } // if
                                 } // if
                             } // if
                         } // if
@@ -414,12 +417,12 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
 
                 if (is_array($fieldvalue)) {
                     // output each entry as a separate child node
-                    foreach ($fieldvalue as $entry) {
+                    foreach ($fieldvalue as $entry_key => $entry_value) {
                     	$array_value = $doc->create_element('array');
                         $array_value = $child->append_child($array_value);
-                        $array_value->set_attribute('id', $entry);
-                        //$value = $doc->create_text_node($entry);
-                        //$value = $array_value->append_child($value);
+                        $array_value->set_attribute('key', $entry_key);
+                        $array_value = $child->append_child($array_value);
+                        $array_value->set_attribute('value', $entry_value);
                     } // foreach
                 } else {
                     $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
@@ -434,33 +437,47 @@ function addData2XMLdoc ($doc, $root, $parent, $dbobject, &$errors)
                         $value = $doc->create_text_node($fieldvalue);
                         $value = $child->append_child($value);
                     } // if
-
-                    // insert as text element for the current node
-                    $value = $doc->create_text_node($fieldvalue);
-                    $value = $child->append_child($value);
                 } // if
             } // foreach
         } // if
 
         if (array_key_exists($rownum, $object_errors)) {
-			// there are errors that have not been extracted yet, so ...
-			// transfer them to general array
-		    foreach ($object_errors as $key => $value){
-		        if (is_array($value)) {
-		            foreach ($value as $key2 => $value2) {
-		                // prefix with fieldname
-		            	$errors[$key2] = '[' .$key2 .'] ' .$value2;
+			// there are errors that have not been extracted yet, so transfer them to general message area
+		    foreach ($object_errors as $key1 => $value1){
+		        if (is_array($value1)) {
+		            foreach ($value1 as $key2 => $value2) {
+		                if (is_array($value2)) {
+		                    foreach ($value2 as $key3 => $value3) {
+		                        if (is_array($value3)) {
+		                        	foreach ($value3 as $key4 => $value4) {
+		                        	    $errors[] = "[$key1] [$key2] [$key3] [$key4] $value4";
+		                        	} // foreach
+		                        } else {
+		                            $errors[] = "[$key1] [$key2] [$key3] $value3";
+		                        } // if
+		                    } // foreach
+		                } else {
+		                    if (is_int($key1) AND $key1 == 0 AND $rownum == 0 AND count($objectdata) == 1) {
+		        	            // do not prefix with row zero when it is the only row
+        		            	$errors[] = "[$key2] $value2";
+		                    } else {
+        		                // prefix with object name or row number
+        		            	$errors[] = "[$key1] [$key2] $value2";
+		                    } // if
+		                } // if
 		            } // foreach
 		        } else {
-		            if ($key == (int)$key) {
-		                // do not prefix with row number
-			            $errors[$key] = $value;
+		            if (is_int($key1) AND is_string($value1)) {
+		                // do not prefix with index number at tis level
+			            $errors[] = $value1;
 		            } else {
 		                // prefix with fieldname
-    					$errors[$key] = '[' .$key .'] ' .$value;
+    					$errors[] = "[$key1] $value1";
 		            } // if
 		        } // if
 			} // foreach
+		} else {
+		    $errors = array_merge($errors, $object_errors);
 		} // if
     } // foreach
 
@@ -614,11 +631,16 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
     $xsl_params['title'] = getLanguageText($task_id);
 
     if ($handle = fopen('version.txt', "r")) {
-        $xsl_params['version'] = trim(fread($handle, 40));
+        $version = trim(fread($handle, 40));
+        // remove any BOM (Byte Order Mark) from UTF-8 files
+        $version = preg_replace('/^\xEF\xBB\xBF/', '', $version);
+        $xsl_params['version'] = $version;
         fclose($handle);
     } // if
 
-    $xsl_params['language'] = $GLOBALS['output_language'];
+    $xsl_params['language']     = $GLOBALS['output_language'];
+    $xsl_params['project_code'] = $GLOBALS['project_code'];
+    $xsl_params['image-dir']    = '../images/';
 
     if (isset($_SESSION['pagination_width'])) {
     	$xsl_params['pagination_width'] = $_SESSION['pagination_width'];
@@ -758,6 +780,7 @@ function addParams2XMLdoc ($doc, $root, $xsl_params)
         	} // foreach
         } else {
             $value = convertEncoding($value, 'UTF-8');
+
             $text = $doc->create_text_node($value);
             $text = $child->append_child($text);
         } // if
@@ -880,54 +903,53 @@ function buildXML ($xml_objects, $errors=null, $messages=null)
     } // if
 
     if (!empty($errors)) {
-        // there may be errors for fields which are not in the form
-        // so write them to separate error lines
+        // these are errors for fields which are not in the form, so write them to general message area
         if (!is_array($errors)) {
             // convert string into an array
             $errors = (array)$errors;
         } // if
-        if (is_string(key($errors))) {
-            // array is not indexed by rownum, so set it to row zero
-            $array[0] = $errors;
-            $errors   = $array;
-        } // if
-        // add node to hold error lines
-        $occ = $xml_doc->create_element('errmsg');
-        $occ = $root->append_child($occ);
-        foreach ($errors as $rownum => $rowdata) {
-            if (!is_array($rowdata)) {
-                // convert string into an array
-                $rowdata = (array)$rowdata;
-            } // if
-			if (!empty($rowdata) AND is_array($rowdata[key($rowdata)])) {
-	            // array within an array, so bring it up one level
-	            $array  = $rowdata[key($rowdata)];
-	            if (!is_string(key($array))) {
-	                // array is indexed, so use it 'as-is'
-	                $rowdata = $array;
+        // reformat $errors array into $lines array
+        $lines = array();
+        foreach ($errors as $key1 => $value1) {
+	        if (is_array($value1)) {
+	            foreach ($value1 as $key2 => $value2) {
+	                if (is_array($value2)) {
+	                    foreach ($value2 as $key3 => $value3) {
+	                        if (is_array($value3)) {
+	                        	foreach ($value3 as $key4 => $value4) {
+	                        	    $lines[] = "[$key1] [$key2] [$key3] [$key4] $value4";
+	                        	} // foreach
+	                        } else {
+	                            $lines[] = "[$key1] [$key2] [$key3] $value3";
+	                        } // if
+	                    } // foreach
+	                } else {
+	                    $lines[] = "[$key1] [$key2] $value2";
+	                } // if
+	            } // foreach
+	        } else {
+	            if (is_int($key1) AND is_string($value1)) {
+	                // do not prefix with index number at this level
+		            $lines[] = $value1;
 	            } else {
-	                // array is associative, so add column name to error message
-	                $rowdata = array();
-	                foreach ($array as $name => $value) {
-	                    $rowdata[] = '[' .$name .'] ' .$value;
-	                } // foreach
+	                // prefix with fieldname
+					$lines[] = "[$key1] $value1";
 	            } // if
 	        } // if
-			foreach ($rowdata as $id => $msg) {
+		} // foreach
+	    if (!empty($lines)) {
+	        $occ = $xml_doc->create_element('errmsg');
+            $occ = $root->append_child($occ);
+			foreach ($lines as $line) {
                 $child = $xml_doc->create_element('line');
                 $child = $occ->append_child($child);
 
-                if (is_string($id)) {
-                	// put fieldname and rownum into error message
-                    $msg = $id .'[' .$rownum .']: ' .$msg;
-                } // if
+                $line = convertEncoding($line, 'UTF-8');
 
-                $msg = convertEncoding($msg, 'UTF-8');
-
-                $value = $xml_doc->create_text_node($msg);
+                $value = $xml_doc->create_text_node($line);
                 $value = $child->append_child($value);
             } // foreach
-        } // foreach
+        } // if
     } // if
 
     if (!empty($messages)) {
@@ -1049,7 +1071,7 @@ function createXMLdoc ($rows, $root_name='root', $root_attrs, $element_name='ele
     } // foreach
 
     if (is_string(key($rows))) {
-        // this is an associative array containing a single row, so mae it row zero
+        // this is an associative array containing a single row, so make it row zero
     	$temp[0] = $rows;
     	$rows    = $temp;
     	unset($temp);
@@ -1096,33 +1118,28 @@ function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
         trigger_error(getLanguageText('sys0074', $screen), E_USER_ERROR);
     } // if
 
-    // does a local variation of this XSL file exist?
-    $filename = './xsl/' .$xsl_file;
-    if (!file_exists($filename)) {
-        // no, so load from standard area
-        if (is_True($_SERVER['HTTPS'])) {
-            // use one or the other of these, whichever is available
-            if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
-            	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
-            } else {
-                $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
-            } // if
-            $filename = $dir .'/xsl/' .$xsl_file;
-            //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
-
-            $xsl_url = 'HTTPS://' .$GLOBALS['https_server']
-                                  .$GLOBALS['https_server_suffix']
-                                  .getParentDIR()
-                                  .'/xsl/' .$xsl_file;
+    if (is_True($_SERVER['HTTPS'])) {
+        // use one or the other of these, whichever is available
+        if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
+        	$dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
         } else {
-            $dir = getParentDIR();
-            $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/xsl/' .$xsl_file;
-            $xsl_url = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
+            $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
         } // if
-        if (!file_exists($filename)) {
-            // "File name 'X' does not exist"
-            trigger_error(getLanguageText('sys0057', $filename), E_USER_ERROR);
-        } // if
+        $filename = $dir .'/xsl/' .$xsl_file;
+        //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
+
+        $xsl_url = 'HTTPS://' .$GLOBALS['https_server']
+                              .$GLOBALS['https_server_suffix']
+                              .getParentDIR()
+                              .'/xsl/' .$xsl_file;
+    } else {
+        $dir = getParentDIR();
+        $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/xsl/' .$xsl_file;
+        $xsl_url = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
+    } // if
+    if (!file_exists($filename)) {
+        // "File name 'X' does not exist"
+        trigger_error(getLanguageText('sys0057', $filename), E_USER_ERROR);
     } // if
 
     if (is_true($_SESSION['XSLT_client_side'])) {
@@ -1170,11 +1187,18 @@ function setCSSfiles ($doc, $root, $css_files)
         $css_files = (array)$css_files;
     } // if
 
-    // if no custom stylesheet is specified use 'style_custom.css' in local directory
+    // if no stylesheet is specified use 'style_custom.css' in local directory
+    // also try 'style_custom.XXX.css' where 'XXX' is the current project code
     if (empty($css_files)) {
-        if (file_exists('style_custom.css')) {
-        	$css_files[] = 'style_custom.css';
+        $try[] = 'style_custom.css';
+        if (!empty($GLOBALS['project_code'])) {
+        	$try[] = 'style_custom.'.$GLOBALS['project_code'].'.css';
         } // if
+        foreach ($try as $fname) {
+        	if (file_exists($fname)) {
+            	$css_files[] = $fname;
+            } // if
+        } // foreach
     } // if
 
     foreach ($css_files as $filenum => $filename) {
@@ -1188,6 +1212,15 @@ function setCSSfiles ($doc, $root, $css_files)
     $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'] .'.css';
     array_unshift($css_files, $default_css);
 
+    // find out if there is a browser-specific CSS file
+    $browserid = getBrowserVersion();
+    if (!empty($browserid)) {
+        $fname = '/css/browser.' .$browserid .'.css';
+        if (file_exists("..$fname")) {
+        	$css_files[] = getParentDIR().$fname;
+        } // if
+    } // if
+
     foreach ($css_files as $filenum => $filename) {
         // prepend each file with protocol and domain name
         if (is_True($_SERVER['HTTPS'])) {
@@ -1198,6 +1231,10 @@ function setCSSfiles ($doc, $root, $css_files)
             } // if
         } else {
             $css_files[$filenum] = 'HTTP://' . $_SERVER['HTTP_HOST'] .$filename;
+        } // if
+        if (!preg_match('/(\.css)$/i', $css_files[$filenum], $regs)) {
+            // file name does not end with '.css', so append it
+            $css_files[$filenum] = $css_files[$filenum] .".css";
         } // if
     } // if
 
@@ -1427,18 +1464,29 @@ function setScreenStructure ($xml_doc, $root, $structure)
             $columns = $table->append_child($columns);
             foreach ($structure[$zone]['columns'] as $row => $array) {
                 $array = array_change_key_case($array, CASE_LOWER);
-                // if 'nodisplay' attribute is set then do not output this column
-                if (!array_key_exists('nodisplay', $array)) {
+                if (array_key_exists('nodisplay', $array)) {
+                    // 'nodisplay' attribute is set, so do not output this column
+                } else {
                 	$column = $xml_doc->create_element('column');
                     $column = $columns->append_child($column);
+                    $class_value = '';
                     foreach ($array as $attrname => $attrvalue) {
-                        $attrname = trim($attrname);
-                        if ($attrname == 'nosort') {
-                            // ignore this attribute
-                        } else {
-                            $column->set_attribute($attrname, $attrvalue);
-                        } // if
+                        $attrname  = trim($attrname);
+                        $attrvalue = trim($attrvalue);
+                        if (preg_match('/^(align|valign|class)$/i', $attrname)) {
+                    	    // these values must be merged into a single string separated with a space
+                    		if (empty($class_value)) {
+                    			$class_value = $attrvalue;
+                    		} else {
+                    		    $class_value .= ' '.$attrvalue;
+                    		} // if
+                    	} else {
+                    	    $column->set_attribute($attrname, $attrvalue);
+                    	} // if
                     } // foreach
+                    if (!empty($class_value)) {
+                    	$column->set_attribute('class', $class_value);
+                    } // if
                 } // if
             } // foreach
         } // if
@@ -1645,7 +1693,7 @@ function XSLTransform ($xml_string, $xsl_file)
     $xsl_start = (float) $sec + (float) $usec;
 
     // process the two files to get the desired output
-    if ((!$result = xslt_process($xp, 'arg:/xml', 'arg:/xsl', null, $arg_buffer))) {
+    if ((!$html = xslt_process($xp, 'arg:/xml', 'arg:/xsl', null, $arg_buffer))) {
         // display error
         global $xslt_error;
         trigger_error($xslt_error, E_USER_ERROR);
@@ -1660,9 +1708,12 @@ function XSLTransform ($xml_string, $xsl_file)
     $xsl_elapsed = number_format($xsl_end - $xsl_start, 5, '.', '');
 
     // insert this value into the HTML output
-    $result = str_replace('$xsl$', $xsl_elapsed, $result);
+    $html = str_replace('$xsl$', $xsl_elapsed, $html);
 
-    echo $result;
+    // fix possible bug in libxslt processor
+    $html = str_replace('<br></br>', '<br />', $html);
+
+    echo $html;
 
     return;
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list1.inc
@@ -172,7 +172,7 @@ if ($dbobject->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $selection = array2where($pkey_array);
         // send selection back to the previous script
         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-        scriptPrevious(null, null, 'choose');
+        scriptPrevious($errors, $messages, 'choose');
     } // if
 } // if
 

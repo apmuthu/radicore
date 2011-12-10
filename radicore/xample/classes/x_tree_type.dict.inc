@@ -1,5 +1,5 @@
 <?php
-    // file created on May 31, 2009, 3:37 pm
+    // file created on January 10, 2008, 5:34 pm
     
     // field specifications for table xample.x_tree_type
     $fieldspec['tree_type_id']              = array('type' => 'string',
@@ -71,10 +71,6 @@
     // alternative language options 
     $this->alt_language_table               = 'x_tree_type_alt';
     $this->alt_language_cols                = 'tree_type_desc';
-    
-    // alias names 
-    $this->nameof_start_date                = '';
-    $this->nameof_end_date                  = '';
     
     // finished
 ?>

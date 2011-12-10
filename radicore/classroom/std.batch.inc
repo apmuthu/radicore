@@ -24,6 +24,9 @@ function batchInit ($batchfile)
     	    trigger_error("Cannot open file $stdout", E_USER_ERROR);
         } // if
         ob_start();  // start output buffering
+        if (!preg_match('/^WIN/i', PHP_OS)) {
+        	$result = @chmod($stdout, 0777);
+        } // if
     } // if
 
     echo "<html>\n";
@@ -37,16 +40,16 @@ function batchInit ($batchfile)
     } // if
 
     if (empty($_SERVER['SERVER_NAME'])) {
-    	$_SERVER['SERVER_NAME']          = $ini_array['server_name'];
+    	$_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
     } // if
     if (empty($_SERVER['HTTP_HOST'])) {
-    	$_SERVER['HTTP_HOST']            = $ini_array['server_name'];
+    	$_SERVER['HTTP_HOST']            = trim($ini_array['server_name'], "'");
     } // if
     if (empty($_SERVER['DOCUMENT_ROOT'])) {
-    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", $ini_array['doc_root']);
+    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
     } // if
     if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = $ini_array['language'];
+    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
     } // if
     if (empty($_SERVER['REMOTE_ADDR'])) {
     	$_SERVER['REMOTE_ADDR']          = 'batch';
@@ -56,6 +59,9 @@ function batchInit ($batchfile)
     } // if
     if (empty($_SERVER['SERVER_ADMIN'])) {
         $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
+        if (empty($_SERVER['SERVER_ADMIN'])) {
+            $_SERVER['SERVER_ADMIN']     = trim($ini_array['server_admin'], "'");
+        } // if
     } // if
 
     $_SERVER['SCRIPT_FILENAME']      = $curr_file;
@@ -87,7 +93,7 @@ function batchInit ($batchfile)
     	unset($fn);
     } // if
     if (empty($include_path)) {
-    	ini_set('include_path', $ini_array['include_path']);
+    	ini_set('include_path', trim($ini_array['include_path'], "'"));
     } // if
 
     if (file_exists('user.ini')) {
@@ -99,6 +105,7 @@ function batchInit ($batchfile)
         // alternative to htaccess when run as CGI/FastCGI
         $ini_array = parse_ini_file($fn);
         foreach ($ini_array as $key => $value) {
+            $value = trim($value, "'");
             if ($key == 'include_path') {
                 if (substr($value, 0, 1) == ';') {
                     // append to current value
@@ -129,6 +136,7 @@ function batchInit ($batchfile)
     require_once 'include.session.inc';
 
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
+    echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
 
     if (!empty($_SERVER['SERVER_PROTOCOL'])) {
     	initSession();
@@ -180,8 +188,11 @@ function batchEnd ($errors=null)
 
 // ****************************************************************************
 function check_errors ($object)
-// check object for errors and terminate if any are found
+// check object for errors and terminate if any are found.
+// output any messages without terminaing.
 {
+    global $stdout, $stdouth;
+
     $errors = $object->getErrors();
 
 	if ($errors) {
@@ -212,11 +223,24 @@ function check_errors ($object)
 	    trigger_error($string, E_USER_ERROR);
 	} // if
 
+	// now deal with any non-fatal messages
+	$messages = $object->getMessages();
+
+	foreach ($messages as $message) {
+		if (empty($stdout)) {
+        	echo $message;
+        } else {
+            $result = fwrite($stdouth, $message);
+        } // if
+	} // foreach
+
+	return;
+
 } // check_errors
 
 // ****************************************************************************
 function check_warnings ($object)
-// check object for errors and terminate if any are found
+// check object for warnings and display any that are found
 {
     $warnings = $object->warnings;
 

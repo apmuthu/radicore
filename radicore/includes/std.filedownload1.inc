@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // Author: Kyle Brost <http://www.softelephant.com>
 // *****************************************************************************
 

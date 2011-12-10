@@ -3,7 +3,7 @@
 // Each text string may include parameter substitution - refer to SPRINTF() function
 
 $array['e0000'] = "";
-$array['e0001'] = "";
+$array['e0001'] = "This user has been disabled.";
 $array['e0002'] = "You must change your password.";
 $array['e0003'] = "Retry count exceeded.";
 $array['e0004'] = "Invalid value for field_id (%1\$s).";

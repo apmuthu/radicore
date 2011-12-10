@@ -20,7 +20,8 @@ $style['body']['font'] = array('family' => 'Times',     // Courier, Helvetica, T
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 12,            // size in points
                                'height' => 6,           // line height in units
-                               'draw' => .3);           // width of drawn lines
+                               'draw' => .3,            // width of drawn lines
+                               'border' => 'LR');       // L=Left, R=Right, T=Top, B=Bottom, P=Page, 1=All
 
 $style['body']['fillcolour'] = array(224,235,255);      // colour for background
 $style['body']['textcolour'] = array(0,0,0);            // colour for foreground
@@ -86,22 +87,26 @@ $style['foot']['font'] = array('family' => 'Times',     // Courier, Helvetica, T
                                'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
                                'size' => 10,            // size in points
                                'height' => 5,           // line height in units
-                               'draw' => .2,            // width of drawn lines
+                               'draw' => 0,             // width of drawn lines
                                'halign' => 'center');   // horizontal text alignment (left, right, center)
 
-$style['foot']['fillcolour'] = array(255,255,255);      // colour for background
+$style['foot']['fillcolour'] = false;                   // colour for background
 $style['foot']['textcolour'] = array(0,0,0);            // colour for foreground
 $style['foot']['drawcolour'] = array(0,0,0);            // colour for line drawing
 
 // allow text alignment within a cell to be changed
-$style['textalignleft']['font'] = array('halign' => 'left');     // text alignment = left
-$style['textalignright']['font'] = array('halign' => 'right');   // text alignment = right
-$style['textaligncenter']['font'] = array('halign' => 'center'); // text alignment = center
-$style['noborder']['drawcolour'] = array(255,255,255);           // border = white
+$style['textalignleft']['font'] = array('halign' => 'left');     // horizontal alignment = left
+$style['textalignright']['font'] = array('halign' => 'right');   // horizontal alignment = right
+$style['textaligncenter']['font'] = array('halign' => 'center'); // horizontal alignment = center
+
+//$style['noborder']['drawcolour'] = array(255,255,255);        // border = white
+$style['noborder']['font'] = array('draw' => 0);                // no border
 
 // barcode styles
+$style['barcode1']['drawcolour'] = array(0,0,0);        // colour for border
+$style['barcode1']['font']['draw'] = .2;                // width of border
 $style['barcode1']['type'] = 'I25';         // I25, C128A, C128B, C128C, C39
-$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right
+$style['barcode1']['style'] = 'CDS';        // blank=default, B=Border, D=Draw Text, S=Stretch Text, N=Negative, L=Align Left, C=Align Center, R=Align Right, X=Stretch Barcode
 $style['barcode1']['xres'] = 2;             // 1,2,3
 $style['barcode1']['fontsize'] = 5;         // 1,2,3,4,5
 

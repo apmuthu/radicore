@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -23,12 +23,14 @@ if (!function_exists('addPreviousSearchButton')) {
         foreach ($buttons_in as $button_data) {
             // copy from input to output area
             $buttons_out[] = $button_data;
-            if (preg_match('/SRCH/i', $button_data['pattern_id'], $regs) AND !$done) {
-                // found task_id with pattern 'search', so add an extra button
-                $buttons_out[] = array('task_id' => 'previous_search',
-                                       'button_text' => 'Previous Search',
-                                       'context_preselect' => 'N');
-                $done = true;
+            if (!$done) {
+            	if (preg_match('/SRCH/i', $button_data['pattern_id'], $regs)) {
+                    // found task_id with pattern 'search', so add an extra button
+                    $buttons_out[] = array('task_id' => 'previous_search',
+                                           'button_text' => 'Previous Search',
+                                           'context_preselect' => 'N');
+                    $done = true;
+                } // if
             } // if
         } // foreach
 
@@ -116,7 +118,8 @@ if (!function_exists('append2ScriptSequence')) {
     function append2ScriptSequence ($next, $prepend=false)
     // append/prepend details of next task to $_SESSION['script_sequence']
     {
-        if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])) {
+        if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])
+        OR (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch']))) {
         	return;
         } // if
 
@@ -147,18 +150,69 @@ if (!function_exists('array2range')) {
     {
         $range = '';
         foreach ($input as $row) {
-            foreach ($row as $value) {
+            if (is_array($row)) {
+            	foreach ($row as $value) {
+                    if (empty($range)) {
+                        $range = "'$value'";
+                    } else {
+                        $range .= ",'$value'";
+                    } // if
+                } // foreach
+            } else {
                 if (empty($range)) {
-                    $range = "'$value'";
+                    $range = "'$row'";
                 } else {
-                    $range .= ",'$value'";
+                    $range .= ",'$row'";
                 } // if
-            } // foreach
+            } // if
         } // foreach
 
         return $range;
 
     } // array2range
+} // if
+
+// ****************************************************************************
+if (!function_exists('array2rangeUnique')) {
+    function array2rangeUnique ($input, &$array_full)
+    // take an array of rows and put the values into an SQL range clause
+    // fieldname IN ('value1','value2',...)
+    // $array_full is an indexed array of all the values found so far, which can
+    // be used to check that any new values aren't already there.
+    // NOTE: $array_full is passed BY REFERENCE as it may be updated.
+    {
+        $range = '';
+        foreach ($input as $row) {
+            if (is_array($row)) {
+            	foreach ($row as $value) {
+            	    if (in_array($value, $array_full)) {
+            	    	// already there, so ignore it
+            	    } else {
+            	        $array_full[] = $value;
+                        if (empty($range)) {
+                            $range = "'$value'";
+                        } else {
+                            $range .= ",'$value'";
+                        } // if
+            	    } // if
+                } // foreach
+            } else {
+                if (in_array($row, $array_full)) {
+        	    	// already there, so ignore it
+        	    } else {
+        	        $array_full[] = $row;
+                    if (empty($range)) {
+                        $range = "'$row'";
+                    } else {
+                        $range .= ",'$row'";
+                    } // if
+        	    } // if
+            } // if
+        } // foreach
+
+        return $range;
+
+    } // array2rangeUnique
 } // if
 
 // ****************************************************************************
@@ -291,7 +345,7 @@ if (!function_exists('array2where')) {
                 if (array_key_exists($fieldname_unq, $fieldlist)) {
                     $type = 'string';  // set to default
                     // does this field exist in $fieldspec?
-                    if (array_key_exists($fieldname_unq, $fieldspec)) {
+                    if (is_array($fieldspec) AND array_key_exists($fieldname_unq, $fieldspec)) {
                         $type =& $fieldspec[$fieldname_unq]['type'];
                     	// check fieldspec for upper/lower case
                         if (is_array($fieldspec[$fieldname_unq])) {
@@ -525,7 +579,7 @@ if (!function_exists('convertEncoding')) {
     {
         if ($string) {
             if (function_exists('mb_convert_encoding')) {
-                if (!$from_encoding) {
+                if (empty($from_encoding)) {
                     // not supplied, so find out what it is
                     $from_encoding = mb_detect_encoding($string);
                     //$check         = mb_check_encoding($string, $to_encoding);
@@ -534,12 +588,12 @@ if (!function_exists('convertEncoding')) {
                     $string = mb_convert_encoding($string, $to_encoding, $from_encoding);
                 } // if
             } elseif (function_exists('iconv')) {
-                if (!$from_encoding) {
+                if (empty($from_encoding)) {
                     // not supplied, so find out what it is
                     $from_encoding = ini_get('default_charset');
                 } // if
-                if ($from_encoding != $to_encoding) {
-                    $string = iconv($from_encoding, $to_encoding, $string);
+                if (strtoupper($from_encoding) != strtoupper($to_encoding)) {
+                    $string = iconv($from_encoding, $to_encoding.'//TRANSLIT', $string);
                 } // if
             } // if
         } // if
@@ -742,10 +796,37 @@ if (!function_exists('currentOrHistoric')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('dateDifference')) {
+    function dateDifference ($date1, $date2)
+    // calculate the difference between two dates
+    {
+        if (version_compare(phpversion(), '5.3.0', '<')) {
+            $dateobj =& RDCsingleton::getInstance('date_class');
+
+            $date1 = $dateobj->getInternalDate($date1);
+            $julian1 = GregoriantoJD(substr($date1, 5, 2) , substr($date1, 8, 2) , substr($date1, 0, 4));
+
+            $date2 = $dateobj->getInternalDate($date2);
+            $julian2 = GregoriantoJD(substr($date2, 5, 2) , substr($date2, 8, 2) , substr($date2, 0, 4));
+
+            $diff = $julian2-$julian1;
+        } else {
+            $datetime1 = new DateTime($date1);
+            $datetime2 = new DateTime($date2);
+            $interval = $datetime1->diff($datetime2);
+            $diff = $interval->format('%R%a');
+        } // if
+
+        return (int)$diff;
+
+    } // dateDifference
+} // if
+
+// ****************************************************************************
 if (!function_exists('extractAliasNames')) {
     function extractAliasNames ($sql_select)
-    // extract "... AS alias" from $sql_select and return alias names in an
-    // indexed array.
+    // extract "expression AS alias" from $sql_select and return an associative array
+    // in the format: "alias = expression"
     {
         if (empty($sql_select)) {
         	return array();
@@ -758,9 +839,9 @@ if (!function_exists('extractAliasNames')) {
 
         foreach ($select_array as $element) {
             // find out if this entry uses an alias
-            list($original, $alias) = getFieldAlias3($element);
-            if ($original != $alias) {
-            	$field_array[] = $alias;
+            list($expression, $alias) = getFieldAlias3($element);
+            if ($expression != $alias) {
+            	$field_array[$alias] = $expression;
             } // if
         } // foreach
 
@@ -789,6 +870,9 @@ if (!function_exists('extractFieldNamesAssoc')) {
         $field_array = array();
         foreach ($elements as $element) {
             list($original, $alias) = getFieldAlias3($element);
+            if (isset($field_array[$alias])) {
+            	unset($field_array[$alias]);  // remove duplicate from its original position
+            } // if
             $field_array[$alias] = $original;
         } // foreach
 
@@ -831,27 +915,27 @@ if (!function_exists('extractOperatorValue')) {
 ^                            # begins with
 (                            # start choice
  <>|<=|<|>=|>|!=|=           # comparison operators
- |
+ |                           # or
  NOT[ ]+LIKE[ ]+             # NOT LIKE
- |
+ |                           # or
  LIKE[ ]+                    # LIKE
- |
+ |                           # or
  IS[ ]+NOT[ ]+               # IS NOT
- |
+ |                           # or
  IS[ ]+                      # IS
- |
+ |                           # or
  NOT[ ]+IN[ ]*               # NOT IN
- |
+ |                           # or
  IN[ ]+                      # IN
- |
+ |                           # or
  IN(?=\()                    # 'IN(' but without the '('
- |
+ |                           # or
  IN[^a-zA-Z_]                # 'IN' not followed by an alpha character or underscore
- |
+ |                           # or
  NOT[ ]+BETWEEN[ ]+          # NOT BETWEEN
- |
+ |                           # or
  BETWEEN[ ]+                 # BETWEEN
- |
+ |                           # or
  (-|\+)                      # '-' or '+'
  [ ]*                        # 0 or more spaces
  (\w+(\.\w+)?[ ]*)+          # word [.word] 1 or more times
@@ -948,27 +1032,27 @@ if (!function_exists('extractSeparator')) {
     // ($array is passed by reference so that it can be updated).
     {
         $where = ltrim($where);
-        if (preg_match('/^\) +AND +\(/i', $where, $regs)) {
+        if (preg_match('/^\)[ ]*AND[ ]*\(/i', $where, $regs)) {
             $array[] = ') AND (';
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
-        } elseif (preg_match('/^AND +[\(]+/i', $where, $regs)) {
+        } elseif (preg_match('/^AND[ ]*[\(]+/i', $where, $regs)) {
             $array[] = $regs[0];
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
-        } elseif (preg_match('/^AND +/i', $where, $regs)) {
+        } elseif (preg_match('/^AND[ ]+/i', $where, $regs)) {
             $array[] = 'AND';
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
-        } elseif (preg_match('/^\) +OR +\(/i', $where, $regs)) {
+        } elseif (preg_match('/^\)[ ]*OR[ ]*\(/i', $where, $regs)) {
             $array[] = ') OR (';
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
-        } elseif (preg_match('/^OR +[\(]+/i', $where, $regs)) {
+        } elseif (preg_match('/^OR[ ]*[\(]+/i', $where, $regs)) {
             $array[] = $regs[0];
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
-        } elseif (preg_match('/^OR +/i', $where, $regs)) {
+        } elseif (preg_match('/^OR[ ]+/i', $where, $regs)) {
             $array[] = 'OR';
             $where = substr($where, strlen($regs[0]));
             $where = extractSeparator($where, $array);  // recursive
@@ -1214,7 +1298,7 @@ if (!function_exists('filterWhere')) {
 ^
 (                            # start choice
  NOT[ ]+[a-zA-Z_]+           # 'NOT <something>'
- |
+ |                           # or
  [a-zA-Z_]+                  # '<something>'
 )                            # end choice
 [ ]*                         # 0 or more spaces
@@ -1255,15 +1339,15 @@ END_OF_REGEX;
         $pattern3 = <<< END_OF_REGEX
 /
 ^
-\(SELECT [^\(\)]* .*\)      # '(SELECT ...)'
-[ ]*                        # 0 or more spaces
-(<>|<=|<|>=|>|!=|=)         # comparison operators
-[ ]*                        # 0 or more spaces
-(                           # start choice
- '(([^\\\']*(\\\.)?)*)'     # quoted string
- |                          # or
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                           # end choice
+\(SELECT [^\(\)]* .*\)         # '(SELECT ...)'
+[ ]*                           # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)            # comparison operators
+[ ]*                           # 0 or more spaces
+(                              # start choice
+ '(([^\\\']*(\\\.)?)*)'        # quoted string
+ |                             # or
+ [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                              # end choice
 /xi
 END_OF_REGEX;
 
@@ -1303,7 +1387,7 @@ END_OF_REGEX;
                     // format is: 'func(...)', so do not filter out
                     if (!empty($prev_separator)) {
                         if (!empty($array4)) {
-                        	// this as other entries, so output the separator as well
+                        	// this array has other entries, so output the separator as well
                     		$array4[] = $prev_separator;
                         } // if
                 		$prev_separator = null;
@@ -1323,6 +1407,17 @@ END_OF_REGEX;
 
                 } elseif (preg_match($pattern3, $string)) {
                     // format: '(SELECT ...) = <something>', so do not filter out
+                    if (!empty($prev_separator)) {
+                	    if (!empty($array4)) {
+                        	// this exists, so output it as well
+                    		$array4[] = $prev_separator;
+                        } // if
+                		$prev_separator = null;
+                	} // if
+                	$array4[] = $string;
+
+                } elseif (preg_match('/^\(/', $string)) {
+                    // begins with '(', so do not filter out
                     if (!empty($prev_separator)) {
                 	    if (!empty($array4)) {
                         	// this exists, so output it as well
@@ -1404,7 +1499,7 @@ if (!function_exists('filterWhere1Where2')) {
 ^
 (                            # start choice
  NOT[ ]+[a-zA-Z_]+           # 'NOT <something>'
- |
+ |                           # or
  [a-zA-Z_]+                  # '<something>'
 )                            # end choice
 [ ]*                         # 0 or more spaces
@@ -1445,15 +1540,15 @@ END_OF_REGEX;
         $pattern3 = <<< END_OF_REGEX
 /
 ^
-\(SELECT [^\(\)]* .*\)      # '(SELECT ...)'
-[ ]*                        # 0 or more spaces
-(<>|<=|<|>=|>|!=|=)         # comparison operators
-[ ]*                        # 0 or more spaces
-(                           # start choice
- '(([^\\\']*(\\\.)?)*)'     # quoted string
- |                          # or
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                           # end choice
+\(SELECT [^\(\)]* .*\)         # '(SELECT ...)'
+[ ]*                           # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)            # comparison operators
+[ ]*                           # 0 or more spaces
+(                              # start choice
+ '(([^\\\']*(\\\.)?)*)'        # quoted string
+ |                             # or
+ [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                              # end choice
 /xi
 END_OF_REGEX;
 
@@ -1559,6 +1654,81 @@ END_OF_REGEX;
 } // if
 
 // ****************************************************************************
+if (!function_exists('findClosingParenthesis')) {
+    function findClosingParenthesis(&$string)
+    // an expression starts with '(', so look for the closing ')', but ignore
+    // any nested '(...)', or ')' inside quoted strings.
+    {
+        // this pattern had to be split into 2 as it aborted with some strings
+//        $pattern3 = <<< END_OF_REGEX
+///
+//^                            # begins with
+//[ ]*                         # 0 or more spaces
+//(                            # start choice - operator
+// \(                          # begins with '('
+//  (                          # start choice
+//   \([^\(\)]*\)              # '(...)'
+//   |                         # or
+//   '(([^\\\']*(\\\.)?)*)'    # quoted string
+//   |                         # or
+//   .*?                       # any characters
+//  )+                         # end choice
+// \)+                         # ends with ')'
+//)                            # end choice
+///xi
+//END_OF_REGEX;
+
+//        $pattern3a = <<< END_OF_REGEX
+///
+//^                            # begins with
+//[ ]*                         # 0 or more spaces
+//\(                           # then '('
+///xi
+//END_OF_REGEX;
+
+        $pattern3b = <<< END_OF_REGEX
+/
+^                        # starts with
+(                        # start choice
+  (                      # start choice
+  [^\(\)']+              # anything except '(', ')' and single quote
+  '(([^\\\']*(\\\.)?)*)' # quoted string
+  )+                     # 1 or more times
+  [^\(\)']*              # anything except '(', ')' and single quote
+|                        # or
+  [^\(\)']+              # anything except '(', ')' and single quote
+|                        # or
+  '(([^\\\']*(\\\.)?)*)' # quoted string
+|                        # or
+  [\(\)]                 # '(' or ')'
+)                        # end choice
+/xi
+END_OF_REGEX;
+
+        $fieldvalue = '';
+		$count = 1;  // 1st opening brace has already been found, so start count at 1
+		while ($count > 0) {
+			if ($result = preg_match($pattern3b, $string, $regs)) {
+				if ($regs[0] == ')') {
+					$count--;  // closing brace, so decrement count
+					$fieldvalue = rtrim($fieldvalue);
+				} elseif ($regs[0] == '(') {
+					$count++;  // opening brace, so increment count
+				} // if
+				$fieldvalue .= $regs[0];  // append to current value
+			} // if
+			$string = substr($string, strlen($regs[0]));   // remove value from string
+			if (strlen($string) == 0 AND $count > 0) {
+				$count = 0;  // nothing left to extract, so force exit
+			} // if
+		} // while
+
+        return $fieldvalue;
+
+    } // findClosingParenthesis
+} // if
+
+// ****************************************************************************
 if (!function_exists('findDBPrefix')) {
     function findDBPrefix($dbname)
     // find the prefix which is to be used with this database name.
@@ -1598,19 +1768,31 @@ if (!function_exists('fixTrueFalseArray')) {
         $true  =& $spec['true'];
         $false =& $spec['false'];
 
+        if (!is_array($lookup)) {
+            $lookup = array();
+        } // if
+
         if (!empty($true)) {
         	if (!array_key_exists($true, $lookup)) {
-            	$value = $lookup['true'];
+                if (!empty($lookup['true'])) {
+                    $value = $lookup['true'];
+                    unset($lookup['true']);
+                } else {
+                    $value = $true;
+                } // if
             	$lookup[$true] = $value;
-            	unset($lookup['true']);
             } // if
         } // if
 
         if (!empty($false)) {
             if (!array_key_exists($false, $lookup)) {
-            	$value = $lookup['false'];
+                if (!empty($lookup['false'])) {
+                    $value = $lookup['false'];
+                    unset($lookup['false']);
+                } else {
+                    $value = $false;
+                } // if
             	$lookup[$false] = $value;
-            	unset($lookup['false']);
             } // if
         } // if
 
@@ -1797,6 +1979,28 @@ if (!function_exists('getBrowserLanguage')) {
         return FALSE;
 
     } // getBrowserLanguage
+} // if
+
+// ****************************************************************************
+if (!function_exists('getBrowserVersion')) {
+    function getBrowserVersion ()
+    // get the name and verson number of the user's browser.
+    {
+        $result = '';
+
+        if ($browser = get_browser(null, true)) {
+            $result = $browser['browser'].$browser['majorver'];
+        } else {
+            include_once('browser_detection.inc');
+            if (function_exists('browser_detection')) {
+                $browser = browser_detection('full');
+                $result = $browser[0].(int)$browser[1];
+            } // if
+        } // if
+
+        return strtolower($result);
+
+    } // getBrowserVersion
 } // if
 
 // ****************************************************************************
@@ -2012,7 +2216,11 @@ if (!function_exists('getLanguageArray')) {
         if (!is_array($array1)) {
             $array1 = array();
             // find file in a language subdirectory
-            $fname = getLanguageFile('sys.language_array.inc', '../menu/text');
+            if (file_exists('../menu/text')) {
+            	$fname = getLanguageFile('sys.language_array.inc', '../menu/text');
+            } else {
+                $fname = getLanguageFile('sys.language_array.inc', './text');
+            } // if
             $array1 = require $fname;  // import contents of disk file
             if (empty($array1)) {
             	//trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
@@ -2169,11 +2377,16 @@ if (!function_exists('getLanguageText')) {
         if (!is_array($array1)) {
             $array1 = array();
             // find file in a language subdirectory
+            if (file_exists('../menu/text')) {
+            	$dir = '../menu/text';
+            } else {
+                $dir = './text';
+            } // if
             if (defined('RDC_WITHIN_ERROR_HANDLER')) {
                 // do not fail if this file is not found
-                $fname = getLanguageFile('sys.language_text.inc', '../menu/text', true);
+                $fname = getLanguageFile('sys.language_text.inc', $dir, true);
             } else {
-                $fname = getLanguageFile('sys.language_text.inc', '../menu/text');
+                $fname = getLanguageFile('sys.language_text.inc', $dir);
             } // if
             if ($fname) {
             	$array1 = require $fname;  // import contents of disk file
@@ -2317,7 +2530,11 @@ if (!function_exists('getPatternId')) {
         	$pattern_id = 'batch';
         } else {
             if (!empty($_SESSION) AND !empty($_SESSION['pages'])) {
-            	$pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
+                if (isset($_SESSION['pages'][$script_id])) {
+            	    $pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
+                } else {
+                    $pattern_id = 'unknown';
+                } // if
             } else {
                 $pattern_id = 'unknown';
             } // if
@@ -2416,9 +2633,12 @@ if (!function_exists('getSelf')) {
     function getSelf ()
     // reduce PHP_SELF to '/dir/file.php' to exclude all leading directory names.
     {
-
-        $PHP_SELF = '/' .basename(dirname($_SERVER['PHP_SELF']))
-                   .'/' .basename($_SERVER['PHP_SELF']);
+        if (basename(dirname($_SERVER['PHP_SELF'])) != null) {
+        	$PHP_SELF = '/' .basename(dirname($_SERVER['PHP_SELF']))
+                       .'/' .basename($_SERVER['PHP_SELF']);
+        } else {
+            $PHP_SELF = '/' .basename($_SERVER['PHP_SELF']);
+        } // if
 
         return strtolower($PHP_SELF);
 
@@ -2645,17 +2865,17 @@ if (!function_exists('indexed2assoc')) {
 ^
 (                            # start choice
  NOT[ ]+[a-zA-Z_]+           # 'NOT <something>'
- |
+ |                           # or
  [a-zA-Z_]+                  # '<something>'
 )                            # end choice
 [ ]*                         # 0 or more spaces
 \(                           # starts with '('
- (
+ (                           # start choice
   \([^\(\)]*\)               # '(...)'
-  |
+  |                          # or
   '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |
-  .*?
+  |                          # or
+  .*?                        # any characters
  )                           # end choice
 \)                           # end with ')'
 /xi
@@ -2664,15 +2884,15 @@ END_OF_REGEX;
         $pattern2 = <<< END_OF_REGEX
 /
 ^
-\(SELECT [^\(\)]* .*\)      # '(SELECT ...)'
-[ ]*                        # 0 or more spaces
-(<>|<=|<|>=|>|!=|=)         # comparison operators
-[ ]*                        # 0 or more spaces
-(                           # start choice
- '(([^\\\']*(\\\.)?)*)'     # quoted string
- |                          # or
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                           # end choice
+\([ ]*SELECT [^\(\)]* .*\)     # '(SELECT ...)'
+[ ]*                           # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)            # comparison operators
+[ ]*                           # 0 or more spaces
+(                              # start choice
+ '(([^\\\']*(\\\.)?)*)'        # quoted string
+ |                             # or
+ [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                              # end choice
 /xi
 END_OF_REGEX;
 
@@ -2750,6 +2970,19 @@ END_OF_REGEX;
             	} // if
             	$prev_separator = null;
 
+            } elseif (substr($string, 0,1) == '(' AND substr($string, -1, 1) == ')') {
+                // begins with '(' and ends with ')', so cannot be split
+                if (empty($prev_separator)) {
+                    if (empty($array_out)) {
+                        $array_out[] = $string;
+                    } else {
+                	    // no separator available, so revert to default
+                		$array_out[] = 'AND '.$string;
+                    } // if
+            	} else {
+            	    $array_out[] = $prev_separator.' '.$string;
+            	} // if
+            	$prev_separator = null;
             } else {
                 while (!empty($string)){
                     $duff = array();
@@ -3310,6 +3543,51 @@ if (!function_exists('pasteData')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('print_Trace')) {
+    function print_Trace ($level, $string, $trace, $indent=null)
+    // output a segment of the array produced by debug_backrace()
+    {
+        $indent .= '  ';    // increase indent by 2 spaces
+        foreach ($string as $level2 => $string2) {
+            $pattern = '/'                      // begin pattern
+                     . '^(HTTP_[a-z]+_VARS)$'   // HTTP_xxxx_VARS
+                     . '|'                      // or
+                     . '^(HTTP_[a-z]+_FILES)$'  // HTTP_xxxx_FILES
+                     . '|'                      // or
+                     . '^(_[a-z]+)$'            // _xxxx
+                     . '|'                      // or
+                     . '^GLOBALS$'              // GLOBALS
+                     . '/i';                    // end pattern, case insensitive
+            if (preg_match($pattern, $level2, $regs)) {
+                // ignore
+            } else {
+            	if (is_array($string2)) {
+                    if (isset($string2['this'])) {
+                        // output class name, but no class properties
+                        $class = get_class($string2['this']);
+                        $trace .= $indent ."$level2: object = $class\n";
+                    } else {
+                        $trace .= $indent ."$level2: array =\n";
+                        $trace = print_Trace($level2, $string2, $trace, $indent);
+                    } // if
+            	} elseif (is_object($string2)) {
+            	    // do nothing
+                } else {
+                    if (is_null($string2)) {
+                    	$trace .= $indent ."$level2: string = null\n";
+                    } else {
+                        $trace .= $indent ."$level2: " .gettype($string2) ." = $string2\n";
+                    } // if
+                } // if
+            } // if
+        } // foreach
+
+        return $trace;
+
+    } // print_Trace
+} // if
+
+// ****************************************************************************
 if (!function_exists('qualifyField')) {
     function qualifyField ($fieldarray, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, &$having_array)
     // Examine each field in $fieldarray and ensure that it is qualified with a table name.
@@ -3362,7 +3640,7 @@ if (!function_exists('qualifyField')) {
             	    } // if
             	} else {
             	    // fieldname is not qualified, but does it need to be?
-            	    if (in_array($fieldname, $select_alias)) {
+            	    if (is_array($select_alias) AND array_key_exists($fieldname, $select_alias)) {
             	    	// fieldname is an alias of something, so move it to the HAVING clause
             	    	$having_array[$fieldname] = $fieldvalue;
             	    } elseif (empty($table_array)) {
@@ -3454,7 +3732,7 @@ if (!function_exists('qualifyOrderby')) {
             if (isset($namearray[1])) {
                 // fieldname is qualified but, ...
                 // does fieldname have an alias?
-                if (in_array($namearray[1], $alias_array)) {
+                if (array_key_exists($namearray[1], $alias_array)) {
                     // yes, so it needs no qualification
                     $value = $namearray[1];
                 } else {
@@ -3473,7 +3751,7 @@ if (!function_exists('qualifyOrderby')) {
                 } // if
             } else {
                 // fieldname is not qualified
-                if (in_array($value, $alias_array)) {
+                if (array_key_exists($value, $alias_array)) {
                     // found as alias name in SELECT string, so leave unqualified
                 } else {
                     foreach ($qual_array as $tablefield) {
@@ -3622,7 +3900,7 @@ if (!function_exists('qualifyWhere')) {
 ^
 (                            # start choice
  NOT[ ]+[a-zA-Z_]+           # 'NOT <something>'
- |
+ |                           # or
  [a-zA-Z_]+                  # '<something>'
 )                            # end choice
 [ ]*                         # 0 or more spaces
@@ -3706,6 +3984,8 @@ END_OF_REGEX;
                 } elseif (preg_match($pattern3, $string)) {
                     // format: 'col = [ANY,ALL,SOME] (...)', so do not modify
                     $result = 'pattern3';
+                } elseif (substr($string, 0, 1) == '(' AND substr($string, -1, 1) == ')') {
+                    // begins with '(' and ends with ')', so do not modfy
                 } else {
             	    // split element into its component parts
             		list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
@@ -3796,8 +4076,31 @@ if (!function_exists('rangeFromTo')) {
 
 // ****************************************************************************
 if (!function_exists('removeDuplicateFromSelect')) {
-    function removeDuplicateFromSelect ($select_array, $name)
-    // if $name exists in $sql_select then remove it
+    function removeDuplicateFromSelect ($sql_select)
+    // remove duplicated field names from the select string.
+    {
+        $select_array = extractFieldNamesAssoc($sql_select);
+        $sql_select = '';
+        foreach ($select_array as $alias => $original) {
+        	if (!empty($sql_select)) {
+        		$sql_select .= ', ';
+        	} // if
+        	if ($alias == $original) {
+        		$sql_select .= $original;
+        	} else {
+        	    $sql_select .= $original .' AS ' .$alias;
+        	} // if
+        } // foreach
+
+        return $sql_select;
+
+    } // removeDuplicateFromSelect
+} // if
+
+// ****************************************************************************
+if (!function_exists('removeDuplicateNameFromSelect')) {
+    function removeDuplicateNameFromSelect ($select_array, $name)
+    // if $name exists in $select_array (from sql_select) then remove it
     {
         foreach ($select_array as $ix => $element) {
             if ($name == $element) {
@@ -3827,7 +4130,7 @@ if (!function_exists('removeDuplicateFromSelect')) {
 
         return $select_array;
 
-    } // removeDuplicateFromSelect
+    } // removeDuplicateNameFromSelect
 } // if
 
 // ****************************************************************************
@@ -4251,6 +4554,7 @@ if (!function_exists('send_email')) {
 //
 //        return true;  // ********** END OF TEST **********
 
+        $parameters = '';
         $headers = "From: $from";
 //        if (!empty($cc)) {
 //        	$headers .= "\nCc: $cc";
@@ -4289,9 +4593,13 @@ if (!function_exists('send_email')) {
 
         if (!empty($attachments)) {
             foreach ($attachments as $ix => $attachment) {
-                $filename =& $attachment['filename'];
-                $filebody =& $attachment['filebody'];  // either
-                $filepath =& $attachment['filepath'];  // or
+                $filename = trim($attachment['filename']);
+                if (!empty($attachment['filepath'])) {
+                	$filepath = trim($attachment['filepath']);
+                	$filebody = file_get_contents($filepath);
+                } else {
+                    $filebody = $attachment['filebody'];
+                } // if
                 // Add file attachment to the message
                 $message .= "--{$mime_boundary}\n";
                 //$message .= "Content-Type: application/pdf; name=\"$filename\"\n";
@@ -4299,17 +4607,28 @@ if (!function_exists('send_email')) {
                 $message .= "Content-Disposition: attachment; filename=\"$filename\"\n";
                 $message .= "Content-Transfer-Encoding: base64\n\n";
                 // format $data using RFC 2045 semantics
-                if (!empty($filebody)) {
-                	$message .= chunk_split(base64_encode($filebody));
-                } else {
-                    $message .= chunk_split(base64_encode(file_get_contents($filepath)));
-                } // if
+                $message .= chunk_split(base64_encode($filebody));
+                $filebody = null;
                 //$message .= "\n\n--{$mime_boundary}--\n";
             } // foreach
         } // if
 
+        if (defined('MAIL_RETURN_PATH')) {
+            // use hard-coded address
+        	$parameters = '-f' .MAIL_RETURN_PATH;
+        } else {
+            $pattern = "/(?<=<)(.)+(?=>)/";
+            if (preg_match($pattern, $from, $regs)) {
+                // extract 'foo@bar.com' from "foobar <foo@bar.com>"
+                $parameters = '-f' .$regs[0];
+            } else{
+                // use complete FROM address
+                $parameters = '-f' .$from;
+            } // if
+        } // if
+
         // now send it
-        $result = mail($to, $subject, $message, $headers);
+        $result = mail($to, $subject, $message, $headers, $parameters);
 
         if (!$result) {
         	return false;
@@ -4418,11 +4737,11 @@ if (!function_exists('splitNameOperatorValue')) {
 [ ]*                         # 0 or more spaces
 (                            # start choice - fieldname
  \w+\([^\(\)]*\)             # word(...)
-|
+|                            # or
  \w+(\.\w+)?                 # word [.word]
-|
+|                            # or
  \([^\(\)]*\)                # '(...)'
-|
+|                            # or
  '(([^\\\']*(\\\.)?)*)'      # quoted string
 )                            # end choice
 /xi
@@ -4434,15 +4753,15 @@ END_OF_REGEX;
 [ ]*                         # 0 or more spaces
 (                            # start choice - operator
  <>|<=|<|>=|>|!=|=           # comparison operators
- |
+ |                           # or
  NOT[ ]+LIKE|LIKE            # [NOT] LIKE
- |
+ |                           # or
  NOT[ ]+IN|IN                # [NOT] IN
- |
+ |                           # or
  NOT[ ]+BETWEEN|BETWEEN      # [NOT] BETWEEN
- |
+ |                           # or
  IS[ ]+NOT|IS                # IS [NOT]
- |
+ |                           # or
  (-|\+)                      # '-' or '+'
  [ ]*                        # 0 or more spaces
  (\w+(\.\w+)?[ ]*)+          # word [.word] 1 or more times
@@ -4453,19 +4772,19 @@ END_OF_REGEX;
 
         $pattern3a = <<< END_OF_REGEX
 /
-^                            # begins with
-[ ]*                         # 0 or more spaces
-(                            # start choice - operator
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                            # end choice
- [ ]*AND[ ]*                 # 'AND'
-(                            # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                            # end choice
+^                               # begins with
+[ ]*                            # 0 or more spaces
+(                               # start choice - operator
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                               # end choice
+ [ ]*AND[ ]*                    # 'AND'
+(                               # start choice
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                               # end choice
 /xi
 END_OF_REGEX;
 
@@ -4473,76 +4792,80 @@ END_OF_REGEX;
 /
 ^                            # begins with
 [ ]*                         # 0 or more spaces
-(                            # start choice - operator
- \(                          # begins with '('
-  (                          # start choice
-   \([^\(\)]*\)              # '(...)'
-   |                         # or
-   '(([^\\\']*(\\\.)?)*)'    # quoted string
-   |                         # or
-   .*?                       # any characters
-  )+                         # end choice
- \)+                         # ends with ')'
-)                            # end choice
+\(                           # begins with '('
 /xi
 END_OF_REGEX;
 
         $pattern3c = <<< END_OF_REGEX
 /
-^                            # begins with
-[ ]*                         # 0 or more spaces
-(                            # start choice - operator
- '(([^\\\']*(\\\.)?)*)'      # quoted string
- |                           # or
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
- |                           # or
- NULL                        # NULL
-)                            # end choice
+^                              # begins with
+[ ]*                           # 0 or more spaces
+(                              # start choice - operator
+ '(([^\\\']*(\\\.)?)*)'        # quoted string
+ |                             # or
+ [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+ |                             # or
+ NULL                          # NULL
+)                              # end choice
 /xi
 END_OF_REGEX;
 
         // extract 'name' from 'name|operator|value'
         $result = preg_match($pattern1, $where, $regs);
-        $fieldname = $regs[0];
-        $where = substr($where, strlen($fieldname));    // remove name from string
+        if (empty($regs)) {
+            $fieldname = null;
+        } else {
+        	$fieldname = $regs[0];
+            $where = substr($where, strlen($fieldname));    // remove name from string
 
-        if (preg_match('/(NOT[ ]+EXISTS|EXISTS)/i', $fieldname)) {
-        	// expression is 'EXISTS (SELECT ....), so cannot be split
-        	$where = null;
-        	return array(null, null, null);
-        } // if
+            if (preg_match('/(NOT[ ]+EXISTS|EXISTS)/i', $fieldname)) {
+            	// expression is 'EXISTS (SELECT ....), so cannot be split
+            	$where = null;
+            	return array(null, null, null);
+            } // if
 
-        if (is_numeric($fieldname) AND $fieldname == (int)$fieldname) {
-            // convert this into a quoted string so that it does not get confused with an index in array2where()
-        	$fieldname = "'$fieldname'";
+            if (is_numeric($fieldname) AND $fieldname == (int)$fieldname) {
+                // convert this into a quoted string so that it does not get confused with an index in array2where()
+            	$fieldname = "'$fieldname'";
+            } // if
         } // if
 
         // extract 'operator' from 'name|operator|value'
         $result = preg_match($pattern2, $where, $regs);
-        $operator = $regs[0];
-        $where = substr($where, strlen($operator));     // remove operator from string
+        if (empty($regs)) {
+            $operator = null;
+        } else {
+            $operator = $regs[0];
+            $where = substr($where, strlen($operator));     // remove operator from string
 
-        $operator = trim(strtoupper($operator));
-        if (preg_match('/[a-zA-Z_]+[ ]*[a-zA-Z_]*/', trim($operator))) {
-        	$operator = " $operator ";  // operator is alphabetic, so enclose in spaces
+            $operator = trim(strtoupper($operator));
+            if (preg_match('/[a-zA-Z_]+[ ]*[a-zA-Z_]*/', trim($operator))) {
+            	$operator = " $operator ";  // operator is alphabetic, so enclose in spaces
+            } // if
         } // if
 
         // extract 'value' from 'name|operator|value'
-        if       ($result = preg_match($pattern3a, $where, $regs)) {
+        if       ($result = preg_match($pattern3b, $where, $regs)) {
+            // begins with '(', so look for matching ')'
+            $fieldvalue = $regs[0];
+        	$where = substr($where, strlen($regs[0]));   // remove value from string
+            $fieldvalue .= findClosingParenthesis($where);
+
+        } elseif ($result = preg_match($pattern3a, $where, $regs)) {
             // format: '...' AND '...' or 'ddd AND ddd'
         	$fieldvalue = $regs[0];
-        } elseif ($result = preg_match($pattern3b, $where, $regs)) {
-            // format: '(... [(...)] ...)'
-        	$fieldvalue = $regs[0];
+        	$where = substr($where, strlen($regs[0]));   // remove value from string
+
         } elseif ($result = preg_match($pattern3c, $where, $regs)) {
             // format: quoted string or digits or NULL
         	$fieldvalue = $regs[0];
+        	$where = substr($where, strlen($regs[0]));   // remove value from string
+
         } else {
             // whoops! nothing found, so use remainder of string
             $fieldvalue = $where;
+            $where = null;
         } // if
-
-        $where = substr($where, strlen($fieldvalue));   // remove value from string
 
         // return all three elements in the output array
         return array(trim($fieldname), $operator, trim($fieldvalue));
@@ -4565,6 +4888,7 @@ if (!function_exists('splitWhereByRow')) {
         } // if
 
         $array2       = array();
+        $array_out    = array();
         $paren_count  = 0;  // parentheses count: '('= +1, ')'= -1
         $paren_string = '';
         $string2      = '';
@@ -4640,12 +4964,8 @@ if (!function_exists('stripOperators')) {
         } // if
 
         if (is_string($fieldarray)) {
+            // no fieldname, so strip any operators from the value
             $fieldvalue = stripOperators_ex($fieldarray);
-            if (is_null($fieldvalue) OR empty($fieldvalue)) {
-            	$fieldarray[$fieldname] = $fieldvalue;
-            } else {
-                $fieldarray[$fieldname] = stripslashes($fieldvalue);
-            } // if
             return $fieldvalue;
         } // if
 
@@ -4659,73 +4979,6 @@ if (!function_exists('stripOperators_ex')) {
     function stripOperators_ex ($input)
     // turn string from "='value'" or "=value" to "value"
     {
-
-//        $pattern2 = <<< END_OF_REGEX
-///
-//^                            # begins with
-//[ ]*                         # 0 or more spaces
-//(                            # start choice - operator
-// <>|<=|<|>=|>|!=|=           # comparison operators
-// |
-// NOT[ ]+LIKE|LIKE            # [NOT] LIKE
-// |
-// NOT[ ]+IN|IN                # [NOT] IN
-// |
-// NOT[ ]+BETWEEN|BETWEEN      # [NOT] BETWEEN
-// |
-// IS[ ]+NOT|IS                # IS [NOT]
-// |
-// (-|\+)                      # '-' or '+'
-// [ ]*                        # 0 or more spaces
-// (\w+(\.\w+)?[ ]*)+          # word [.word] 1 or more times
-// (<>|<=|<|>=|>|!=|=)         # comparison operators
-//)                            # end choice
-///xi
-//END_OF_REGEX;
-//
-//        $pattern3 = <<< END_OF_REGEX
-///
-//^                            # begins with
-//[ ]*                         # 0 or more spaces
-//(                            # start choice - operator
-// NOT[ ]+IN|IN                # [NOT] IN
-// |
-// NOT[ ]+BETWEEN|BETWEEN      # [NOT] BETWEEN
-//)                            # end choice
-///xi
-//END_OF_REGEX;
-
-//        if (preg_match($pattern2, $input, $regs)) {
-//            $operator = $regs[0];
-//            $output = substr($input, strlen($operator));
-//            $output = trim($output);
-//
-//            if (preg_match('/^(null)$/i', $output)) {
-//                // change 'null' (string) into null value
-//            	$output = null;
-//            } // if
-//
-//            if (preg_match($pattern3, $operator)) {
-//                // do not strip any delimiters
-//            	return $output;
-//
-//            } else {
-//                // the next character is the delimiter (single or double quote)
-//                $delimiter = substr($output, 0, 1);
-//                if ($delimiter == '"' or $delimiter == "'") {
-//                    // delimiter found, so remove from both ends of string
-//                    $output = substr($output, 1);
-//                    $output = substr($output, 0, -1);
-//                    //$output = stripslashes($output);  // remove any escape characters
-//                } else {
-//                	// no delimiter found, so use whole string
-//                    return $output;
-//                } // if
-//            } // if
-//
-//            return $output;
-//        } // if
-
         list($operator, $value, $delimiter) = extractOperatorValue($input);
 
         if (preg_match('/^(null)$/i', $value)) {
@@ -4846,9 +5099,9 @@ if (!function_exists('unqualifyWhere')) {
 /
 ^
 (                            # start choice
- NOT[ ]+[a-zA-Z_]+           # 'NOT <something>'
- |
- [a-zA-Z_]+                  # '<something>'
+ NOT[ ]+[\w]+                # 'NOT <something>'
+ |                           # or
+ [\w]+                       # '<something>'
 )                            # end choice
 [ ]*                         # 0 or more spaces
 \(                           # begins with '('
@@ -4911,6 +5164,9 @@ END_OF_REGEX;
 /xi
 END_OF_REGEX;
 
+        if (!isset($tablename)) {
+            $tablename = '';
+        } // if
         foreach ($array2 as $rownum => $rowdata) {
             $array3 = where2indexedArray($rowdata);
             foreach ($array3 as $ix => $string) {
@@ -5022,7 +5278,7 @@ if (!function_exists('validateSortItem')) {
         // look for fields which exist within the current screen
         // (usually obtained from a different table via a JOIN)
         foreach ($array3 as $sortfield) {
-            if (!empty($zone) AND array_key_exists('fields', $structure[$zone])) {
+            if (!empty($zone) AND !empty($structure[$zone]) AND array_key_exists('fields', $structure[$zone])) {
             	foreach ($structure[$zone]['fields'] as $array) {
                     if (is_string(key($array))) {
                         // array is associative
@@ -5194,262 +5450,254 @@ if (!function_exists('where2indexedArray')) {
             } // if
         } // if
 
-$pattern1 = <<< END_OF_REGEX
-/
+        $pattern1 = <<< END_OF_REGEX
+~
 ^
 (                            # start choice
- (                           # start choice
-  \w+\(\w+(\.\w+)?\)         # func(word [.word])
-  |
-  \w+(\.\w+)?                # word [.word]
-  |
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
- )                           # end choice
+ [ ]*AND(?=\()               # 'AND(' but without the '(' - see pattern 2
+|                            # or
+ [ ]*AND[ ]+                 # 'AND' followed by 1 or more spaces
+|                            # or
+ [ ]*OR(?=\()                # 'OR(' but without the '(' - see pattern 2
+|                            # or
+ [ ]*OR[ ]+                  # 'OR' followed by 1 or more spaces
+|                            # or
+ NOT[ ]*\(                   # 'NOT (' - see pattern 2
+|                            # or
+ \([ ]*(SELECT|CASE)[ ]+     # '(select ' or '(case '
+|                            # or
+ (NOT[ ]+EXISTS|EXISTS)      # [NOT] EXISTS
  [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=)         # comparison operators
- [ ]*                        # 0 or more spaces
- (                           # start choice
-  \w+(\.\w+)?                # word [.word]
-  |
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-  |
-  TRUE|FALSE                 # boolean
- )                           # end choice
-|
+ \(                          # starts with '(' - see pattern 2
+|                            # or
+ \w+(\.\w+)?                 # word[.word]
+ [ ]+                        # 1 or more spaces
+ (IS[ ]+NOT|IS)              # 'IS [NOT]
+ [ ]+                        # 1 or more spaces
+ NULL                        # NULL
+|                            # or
  \w+(\.\w+)?                 # word [.word]
  [ ]+                        # 1 or more spaces
- (NOT[ ]+IN|IN)              # 'NOT IN' or 'IN'
+ (NOT[ ]+LIKE|LIKE)          # [NOT] LIKE
  [ ]*                        # 0 or more spaces
- \(                          # begins with '('
- (?!select)                  # but not followed by 'SELECT'
+ '(([^\\\']*(\\\.)?)*)'      # quoted string
+|                            # or
+ \w+(\.\w+)?                 # word [.word]
+ [ ]+                        # 1 or more spaces
+ (NOT[ ]+BETWEEN|BETWEEN)    # [NOT] BETWEEN
+ [ ]+                        # 1 or more spaces
  (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  .*?                        # any characters
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+ )                           # end choice
+ [ ]*AND[ ]*                 # AND
+ (                           # start choice
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+ )                           # end choice
+|                            # or
+ \w+(\.\w+)?                 # word [.word]
+ [ ]+                        # 1 or more spaces
+ (NOT[ ]+IN|IN)              # [NOT] IN
+ [ ]*                        # 0 or more spaces
+ \(                          # '(' followed by
+ (                           # start choice
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [ ,]*                         # space or comma
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
  )                           # end choice
  +                           # 1 or more times
- \)                          # ends with ')'
-|
+ \)                          # ')'
+|                            # or
+ (                           # start choice
+  \w+(\.\w+)?                # word[.word]
+  |                          # r
+  \w+(\.\w+)?                # word[.word] followed by
+  [ ]*                       # 0 or more spaces
+  \(                         # '(' followed by
+  (?>                        # start atomic group
+  (                          # start choice
+   [\w ,\./*+-]                  # word or ',. /*+-'
+   |                             # or
+   '(([^\\\']*(\\\.)?)*)'        # quoted string
+   |                             # or
+   [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+  )                          # end choice
+  )                          # end atomic group
+  ++                         # 1 or more times (possessive quantifier)
+  \)                         # ending with ')'
+  |                          # or
+  \(                         # '(' followed by
+  (?>                        # start atomic group
+  (                          # start choice
+   [\w ,\./*+-]                  # word or ',. /*+-'
+   |                             # or
+   '(([^\\\']*(\\\.)?)*)'        # quoted string
+   |                             # or
+   [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+  )                          # end choice
+  )                          # end atomic group
+  ++                         # 1 or more times (possessive quantifier)
+  \)                         # ending with ')'
+  |                          # or
+  '(([^\\\']*(\\\.)?)*)'     # quoted string
+ )                           # end choice
+ [ ]*                        # 0 or more spaces
+ (<>|<=|<|>=|>|!=|=)         # comparison operators
+ [ ]*                        # 0 or more spaces
+ (                           # start choice
+  (ANY|ALL|SOME)             # 'ANY' or 'ALL' or 'SOME'
+  [ ]*                       # 0 or more spaces
+  \(                         # starts with '(' - see pattern 2
+  |                          # or
+  (\w+(\.\w+)?)?             # optional word[.word] followed by
+  [ ]*                       # 0 or more spaces
+  \(                         # '(' followed by
+  (?![ ]*(select|case)[ ]+)  # anything but 'select ' or 'case '
+  (?>                        # start atomic group
+  (                          # start choice
+   [\w ,\./*+-]                  # word or ',. /*+-'
+   |                             # or
+   '(([^\\\']*(\\\.)?)*)'        # quoted string
+   |                             # or
+   [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+  )                          # end choice
+  )                          # end atomic grouping
+  ++                         # 1 or more times (possessive quantifier)
+  \)                         # ending with ')'
+  |                             # or
+  \w+(\.\w+)?                   # word[.word]
+  |                             # or
+  '(([^\\\']*(\\\.)?)*)'        # quoted string
+  |                             # or
+  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+  |                             # or
+  \(                            # '('
+ )                           # end choice
+|                            # or
  (                           # start choice
   \w+(\.\w+)?                # word [.word]
- |                           # or
-  \([^\(\)]*\)               # '(...)'
+  |                          # or
+  \(                         # '(' followed by
+  (?>                        # start atomic group
+  (                          # start choice
+   [\w ,\./*+-]                  # word or ',. /*+-'
+   |                             # or
+   '(([^\\\']*(\\\.)?)*)'        # quoted string
+   |                             # or
+   [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
+  )                          # end choice
+  )                          # end atomic group
+  ++                         # 1 or more times (possessive quantifier)
+  \)                         # ending with ')'
  )                           # end choice
- [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=|IN)      # comparison operators
- [ ]*                        # 0 or more spaces
- (ANY|ALL|SOME)?             # 'ANY' or 'ALL' or 'SOME' (0 or 1 times)
+ [ ]+                        # 1 or more spaces
+ (NOT[ ]+IN|IN)              # [NOT] IN
  [ ]*                        # 0 or more spaces
  \(                          # starts with '(' - see pattern 2
-|
- [\(]                        # '('
-|
- [\)]                        # ')'
-|
- AND[ ]+                     # 'AND' followed by 1 or more spaces
-|
- AND(?=\()                   # 'AND(' but without the '('
-|
- OR[ ]+                      # 'OR' followed by 1 or more spaces
-|
- OR(?=\()                    # 'OR(' but without the '('
-|
- \w+(\.\w+)?                 # word [.word]
- [ ]+                        # 1 or more spaces
- (IS[ ]+NOT|IS)              # 'IS NOT' or 'IS'
- [ ]+                        # 1 or more spaces
- NULL                        # 'NULL'
-|
- \w+(\.\w+)?                 # word [.word]
- [ ]+                        # 1 or more spaces
- (NOT[ ]+LIKE|LIKE)          # 'NOT LIKE' or 'LIKE'
- [ ]+                        # 1 or more spaces
- '(([^\\\']*(\\\.)?)*)'      # quoted string
-|
- \w+(\.\w+)?                 # word [.word]
- [ ]+                        # 1 or more spaces
- (NOT[ ]+BETWEEN|BETWEEN)    # 'NOT BETWEEN'or 'BETWEEN'
- [ ]+                        # 1 or more spaces
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
- )                           # end choice
- [ ]*AND[ ]*                 # 'AND'
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
- )                           # end choice
- |
- \w+(\.\w+)?                 # word [.word]
- [ ]*                        # 0 or more spaces
- [-\+]?                      # '-' or '+'
- [ ]*                        # 0 or more spaces
- (\w+(\.\w+)?[ ]*)+          # word [.word] 1 or more times
- (<>|<=|<|>=|>|!=|=)         # comparison operators
- [ ]*                        # 0 or more spaces
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
- )                           # end choice
- |
- (NOT[ ]+EXISTS|EXISTS)      # 'NOT EXISTS' or 'EXISTS'
- [ ]*                        # 0 or more spaces
- \(                          # starts with '(' - see pattern 2
- |
- \w+[ ]*\([^\(\)]*\)         # 'function(...)'
- [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=)         # comparison operators
- [ ]*                        # 0 or more spaces
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
- )                           # end choice
- |
- \w+(\.\w+)?                 # word [.word]
- [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=)         # comparison operators
- [ ]*                        # 0 or more spaces
- \w+[ ]*\([^\(\)]*\)         # 'function(...)'
- |                           # or
- NOT                         # 'NOT'
- [ ]*                        # 0 or more spaces
+|                            # or
  \(                          # begins with '(' - see pattern 2
 )                            # end choice
-/xi
+~xi
 END_OF_REGEX;
 
-$pattern2 = <<< END_OF_REGEX
-/
-^
+        $pattern1a = <<< END_OF_REGEX
+~
+^                            # begins with
 (                            # start choice
- (                           # start choice
-  \w+\(\w+(\.\w+)?\)         # func(word [.word])
-  |
-  \w+(\.\w+)?                # word [.word]
- )                           # end choice
- [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=)         # comparison operators
- [ ]*                        # 0 or more spaces
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-  |
-  TRUE|FALSE                 # boolean
-  |
-  \w+(\.\w+)?                # word [.word]
-  |
-  \((?=[a-zA-Z_])            # '(x' but without the 'x'
- )                           # end choice
-|
- "(([^\\\"]*(\\\.)?)*)"     # double-quoted string
- \.                         # period
- \w+                        # word
-|
- "(([^\\\"]*(\\\.)?)*)"     # double-quoted string
-|
- '(([^\\\']*(\\\.)?)*)'                # single-quoted string
- ([ ]*,[ ]*'(([^\\\']*(\\\.)?)*)')*    # [,single-quoted string]
-|
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-|
- \w+[ ]*\([^\(\)]*\)+       # word(...)
-|
- \w+[ ]*(,[ ]*\w+)+         # word [, word]
-|
- \w+(\.\w+)?                # word[.word]
-|
- \(select[ ]+               # '(SELECT '
-|
- \([^\(\)]*\)               # '(...)'
-|
- \(                         # '('
-|
- \)                         # ')'
-|
- (<>|<=|<|>=|>|!=|=)        # comparison operators
-|
- [^ ]+                      # non-blank characters
-)                           # end choice
-/xi
+ [ ]*AND(?=\()               # 'AND(' but without the '(' - see pattern 2
+|                            # or
+ [ ]*AND[ ]+                 # 'AND' followed by 1 or more spaces
+|                            # or
+ [ ]*OR(?=\()                # 'OR(' but without the '(' - see pattern 2
+|                            # or
+ [ ]*OR[ ]+                  # 'OR' followed by 1 or more spaces
+|                            # or
+ NOT[ ]*\(                   # 'NOT (' - see pattern 2
+|                            # or
+ \([ ]*(SELECT|CASE)[ ]+     # '(select ' or '(case '
+|                            # or
+ \(                          # begins with '(' - see pattern 2
+)                            # end choice
+~xi
 END_OF_REGEX;
 
-        $pattern3 = <<< END_OF_REGEX
-/
+        $pattern1b = <<< END_OF_REGEX
+~
 ^
-(<>|<=|<|>=|>|!=|=)         # comparison operators
-[ ]*                        # 0 or more spaces
-(                           # start choice
- '(([^\\\']*(\\\.)?)*)'     # quoted string
- |                          # or
- [-]?\d+(\.)?\d*(E[-+][0-9]+)?    # digits (with or without decimals)
-)                           # end choice
-/xi
+-foobar-
+~xi
 END_OF_REGEX;
 
-//        $result = preg_match_all($pattern1, $where, $regs);
-//        return $regs[0];
+        $pattern1c = <<< END_OF_REGEX
+~
+^
+-foobar-
+~xi
+END_OF_REGEX;
+
+        $pattern2 = <<< END_OF_REGEX
+/
+^                              # begins with
+[ ]*                           # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)            # comparison operators
+[ ]*                           # 0 or more spaces
+(                              # start choice
+ \w+(\.\w+)?                   # word[.word]
+ |                             # or
+ '(([^\\\']*(\\\.)?)*)'        # quoted string
+ |                             # or
+ [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+)                              # end choice
+/xi
+END_OF_REGEX;
 
         $output = array();
         while (!empty($where)) {
             if (!$result = preg_match($pattern1, $where, $regs)) {
-                trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
+            	if (!$result = preg_match($pattern1a, $where, $regs)) {
+	                if (!$result = preg_match($pattern1b, $where, $regs)) {
+	                    if (!$result = preg_match($pattern1c, $where, $regs)) {
+	                        trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
+	                    } // if
+	                } // if
+	        	} // if
             } // if
-            $where = ltrim(substr($where, strlen($regs[0])));
-            $found = trim($regs[0]);
-            if (strlen($found) > 1  AND substr($found, -1, 1) == '('
-            OR (strlen($found) == 1 AND $found == '(' AND preg_match('/^(select )/i', $where))) {
-                // expression starts with '(', so step through until matching ')'
-                $paren_count  = 1;
-                $found_length = strlen($found);
-                while (!empty($where)) {
-            	    if (!$result = preg_match($pattern2, $where, $regs)) {
-            	        trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
-            	    } // if
-                	$where = ltrim(substr($where, strlen($regs[0])));
-                	$found2 = trim($regs[0]);
-                	if (empty($found2)) {
-            	        trigger_error("Nothing extracted from: '$where'", E_USER_ERROR);
-            	    } // if
-            	    while (substr($found2, -2, 2) == '))') {
-            	    	// two ')' characters found, so put one back
-            	    	$found2 = substr($found2, 0, strlen($found2)-1);
-            	    	$where = ')'.$where;
-            	    } // while
-                	if (substr($found, -1, 1) == '(') {
-                		$found .= $found2;
-                	} elseif (substr($found2, -1, 1) == '(') {
-                	    $found .= ' '.$found2;
-                	} elseif ($found2 == ')') {
-                	    $found .= $found2;
-                	} else {
-                	    $found .= ' '.$found2;
-                    } // if
-            		if (substr($found2, -1, 1) == '(' OR preg_match('/^(\(select)$/i', $found2)) {
-            		    // ignore a nested expression
-                		$paren_count ++;
-                	} elseif ($found2 == ')') {
-                	    $paren_count--;
-                	    if ($paren_count <=0) {
-                	    	break;
-                	    } // if
-                	} // if
-            	} // while
-            	if ($found_length == 1) {
-            		// nothing preceded the first '(' so look for trailing comparison
-            		if ($result = preg_match($pattern3, $where, $regs)) {
-            	        $where = ltrim(substr($where, strlen($regs[0])));
-                    	$found2 = trim($regs[0]);
-                    	$found .= ' '.$found2;
-            		} // if
-            	} // if
+            $found = $regs[0];
+            $where = ltrim(substr($where, strlen($found)));
+
+            if (strlen($found) == 1 AND $found == '(') {
+                // single '(' character, so search for matching ')'
+                $output[] = trim($found);     // output leading '(' on its own
+                $found = findClosingParenthesis($where);
+                if (substr($found, -1, 1) == ')') {
+                    $found = substr($found, 0, -1);          // strip trailing ')'
+                	$output2 = where2indexedArray($found);   // split into possible sub-expressions
+                	$output = array_merge($output, $output2);
+                	$found = ')';             // output trailing ')' on its own
+                } // if
+
+            } elseif (strlen($found) > 1  AND substr($found, -1, 1) == '(') {
+                // multiple characters ending in '(', so search for matching ')'
+                $found = trim($found);
+                $found .= findClosingParenthesis($where);
+
+            } elseif (preg_match('/^\([ ]*(SELECT|CASE)/i', $found , $regs)) {
+                // full expression is '(word ...) operator value'
+                $found .= findClosingParenthesis($where);  // extract '(word ...)'
+                // now look for 'operator value'
+                if (!$result = preg_match($pattern2, $where, $regs)) {
+                    trigger_error("Cannot extract token (operator+value) from: '$where'", E_USER_ERROR);
+                } // if
+                $found .= $regs[0];
+                $where = ltrim(substr($where, strlen($regs[0])));
             } // if
+
+            // expression is complete, so add to output array
             $output[] = trim($found);
         } // while
 

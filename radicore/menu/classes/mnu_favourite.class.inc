@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_favourite extends Default_Table
@@ -156,9 +156,74 @@ class mnu_favourite extends Default_Table
         	$rowdata['task_desc'] = $rowdata['task_desc_original'];
         } // if
 
+        if (!empty($rowdata['current_menu']) AND !empty($rowdata['breadcrumbs'])) {
+            $string = "current_menu=".$rowdata['current_menu'];
+
+            foreach ($rowdata['breadcrumbs'] as $task_id => $task_array) {
+            	foreach ($task_array as $key => $value) {
+            		$string .= "&$task_id"."[$key]=$value";
+            	} // foreach
+            } // foreach
+
+            // save this string in the database record
+            $rowdata['breadcrumbs'] = $string;
+
+            parse_str($string, $test);
+        } // if
+
         return $rowdata;
 
     } // _cm_pre_insertRecord
+
+    // ****************************************************************************
+    function rebuildBreadcrumbs ($user_id, $task_id, $task_array)
+    // a favourite task has been chosen, so rebuild the menu bar and breadcrumbs area
+    // to what it was when the favourite was first set.
+    {
+        $where = "user_id='$user_id' AND task_id='$task_id'";
+        $data = $this->getData($where);
+        if (!empty($data)) {
+        	$data = $data[0];
+        	if (!empty($data['breadcrumbs'])) {
+        	    // convert the string into an array
+        		parse_str($data['breadcrumbs'], $breadcrumbs);
+        		// obtain existing vars for this task
+        		$script_id = '/' .$task_array['subsys_dir'] .'/' .$task_array['script_id'];
+        		if (isset($_SESSION['pages'][$script_id])) {
+                    if (isset($_SESSION['pages'][$script_id][$task_id])) {
+                        $script_vars = $_SESSION['pages'][$script_id][$task_id];
+                    } else {
+                        $script_vars = array();
+                    } // if
+                } else {
+                    $script_vars = array();
+                } // if
+        		// overwrite values in $script_vars
+        		$_SESSION['pages'][$script_id]['task_id']              = $task_id;
+        		$_SESSION['pages'][$script_id]['pattern_id']           = $task_array['pattern_id'];
+        		$_SESSION['pages'][$script_id]['task_array'][$task_id] = true;
+
+        		$script_vars['current_menu'] = $breadcrumbs['current_menu'];
+        		unset($breadcrumbs['current_menu']);
+        		$script_vars['page_stack']   = $breadcrumbs;
+        		// rebuild contents of menu bar
+        		$dbmenu =& RDCsingleton::getInstance('mnu_menu');
+                $script_vars['menu_buttons'] = $dbmenu->getMenuButtons($script_vars['current_menu']);
+                unset($script_vars['dbobject']);
+                // put the amended values back into the session array
+                $_SESSION['pages'][$script_id][$task_id] = $script_vars;
+                $GLOBALS['current_task'] = $task_id;
+                // do not allow current values to be carried forward
+                unset($GLOBALS['current_menu']);
+                unset($GLOBALS['menu_buttons']);
+                unset($GLOBALS['page_stack']);
+                return true;
+        	} // if
+        } // if
+
+        return false;
+
+    } // rebuildBreadcrumbs
 
 // ****************************************************************************
 } // end class

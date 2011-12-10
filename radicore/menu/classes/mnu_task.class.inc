@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
@@ -307,6 +307,19 @@ class mnu_task extends Default_Table
             $dbobject =& RDCsingleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1|popup1)$/i', $pattern_id)
+        OR (preg_match('/^(list2|popup2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+            if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('task_id' => 'Task Id',
+                               'task_desc' => 'Task Desc',
+                               'pattern_id' => 'Pattern Id');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
         } // if
 
         return $fieldarray;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require 'std.pdf.class.inc';
 class PDF_list extends PDF
@@ -28,17 +28,27 @@ class PDF_list extends PDF
             parent::header();
         } // if
 
-        $this->setY($this->getY()+1);  // leave a gap under the title
+        if (isset($this->structure['title']['body_gap'])) {
+    	    $gap = $this->structure['title']['body_gap'];
+    	} else {
+    	    $gap = $this->millimeters2units(1);  // default is 1mm
+    	} // if
+    	if ($gap > 0) {
+    		$this->setY($this->getY() + $gap);  // leave a gap under the title
+        } // if
 
         // set print style for the column headings
         if (!isset($this->structure['head']['style'])) {
             $this->structure['head']['style'] = 'default';
         } // if
 
+        $height  = 0;
         $halign  = 'Left';
         $valign  = 'Middle';
         $stretch = null;
-        list($height, $halign, $valign, $stretch) = $this->setPrintStyle($this->structure['head']['style'], $halign, $valign, $stretch);
+        $draw    = null;
+        $result = $this->setPrintStyle($this->structure['head']['style']);
+        $count = extract($result, EXTR_IF_EXISTS);
 
         $this->total_width = 0;
 

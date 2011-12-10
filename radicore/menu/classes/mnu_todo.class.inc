@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_todo extends Default_Table
@@ -113,6 +113,18 @@ class mnu_todo extends Default_Table
             // get contents of language file and put into lookup_data
             $array = getLanguageArray('repeat_unit');
             $this->lookup_data['repeat_unit'] = $array;
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('user_id' => 'User Id',
+                               'item_desc' => 'Item Desc');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
         } // if
 
         return $fieldarray;

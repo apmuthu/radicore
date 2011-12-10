@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output1.inc
@@ -71,6 +71,11 @@ if (isset($search)) {
 // get data from the database
 $resource = $dbobject->getData_serial($where);
 
+if (isset($stdout)) {
+    $output = "<p>".$dbobject->numrows ." records read</p>\n";
+	$result = fwrite($stdouth, $output);
+} // if
+
 if ($dbobject->getNumRows() <= 0) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
@@ -86,10 +91,11 @@ if (empty($csvout)) {
 //    } // if
 //} // if
 
-// transform output to CSV format and download to client browser
+// transform output to CSV format
 $output = $dbobject->outputCSV($resource);
 
 if (!isset($GLOBALS['batch'])) {
+    // send to client browser
 	header("Content-type: text/comma-separated-values");
     header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
     header("Content-Disposition: attachment; filename=" .$csvout);
@@ -98,6 +104,7 @@ if (!isset($GLOBALS['batch'])) {
     echo $output;
 	unset($_SESSION['pages'][getSelf()]);
 } else {
+    // write to disk file
     if (!empty($output)) {
     	if (!$result = fwrite($csvouth, $output)) {
             trigger_error("Cannot write to file $csvout", E_USER_ERROR);
@@ -106,7 +113,7 @@ if (!isset($GLOBALS['batch'])) {
     fclose($csvouth);
     sleep(1);
     $filesize = filesize($csvout);
-    echo $filesize .' bytes written to file ' .$csvout;
+    echo "<p>" .$filesize .' bytes written to file ' .$csvout ."</p>\n";
     if (isset($settings['return']) AND is_True($settings['return'])) {
     	scriptPrevious($dbobject->getErrors());
     } // if

@@ -41,11 +41,11 @@ $structure['body']['fields'][6][] = array('field' => 'col_array_type', 'width' =
 $structure['body']['fields'][7] = array('col_values' => 'Column Values');
 
 $structure['body']['fields'][9][] = array('label' => 'Column Size', 'width' => 40);
-$structure['body']['fields'][9][] = array('field' => 'user_size', 'width' => 20);
-$structure['body']['fields'][9][] = array('label' => 'Precision', 'width' => 40);
+$structure['body']['fields'][9][] = array('field' => 'user_size', 'width' => 55);
+$structure['body']['fields'][9][] = array('label' => 'Precision', 'width' => 20);
 $structure['body']['fields'][9][] = array('field' => 'col_precision', 'width' => 20);
-$structure['body']['fields'][9][] = array('label' => 'Scale', 'width' => 40);
-$structure['body']['fields'][9][] = array('field' => 'col_scale', 'width' => 30);
+$structure['body']['fields'][9][] = array('label' => 'Scale', 'width' => 20);
+$structure['body']['fields'][9][] = array('field' => 'col_scale', 'width' => 35);
 
 $structure['body']['fields'][10][] = array('label' => 'Null?', 'width' => 40);
 $structure['body']['fields'][10][] = array('field' => 'col_null', 'width' => 55);
@@ -124,9 +124,9 @@ $structure['body']['fields'][36][] = array('label' => 'Revised By', 'width' => 4
 $structure['body']['fields'][36][] = array('field' => 'revised_user', 'width' => 55);
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'halign' => 'left');
-$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'halign' => 'right');
+$structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'halign' => 'left');
+$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center', 'margin_left' => 8.5);
+$structure['foot1'][] = array('type' => 'time',   'align' => 'right',  'halign' => 'right');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

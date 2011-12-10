@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_favourite.class.inc';
 class mnu_favourite_s04 extends mnu_favourite
@@ -25,7 +25,7 @@ class mnu_favourite_s04 extends mnu_favourite
             // task must not be disabled, and access must be allowed
             // (either global_access='Y' or a record exists on MNU_ROLE_TASK)
         	$this->sql_select = 'mnu_task.task_id, mnu_favourite.task_desc, mnu_task.is_disabled, mnu_role.global_access'
-        	                 .", CASE WHEN is_disabled='N' THEN 'Y'"
+        	                 .", CASE WHEN is_disabled='Y' THEN 'N'"
         	                       ." WHEN global_access='Y' THEN 'Y'"
         	                       ." WHEN mnu_role_task.role_id IS NOT NULL THEN 'Y'"
         	                       ." ELSE 'N' END AS access_allowed";

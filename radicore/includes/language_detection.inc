@@ -85,6 +85,7 @@ function get_languages($input)
 
 } // get_languages
 
+// ****************************************************************************
 function rdc_setLocale ($language_string)
 // set the locale according to the language string.
 {

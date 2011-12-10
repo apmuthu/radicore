@@ -1,7 +1,7 @@
 <?php
 
 // *****************************************************************************
-// Copyright 2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2010-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 require_once('include.library.inc');
@@ -79,8 +79,13 @@ class imap_class
 
         // start with raw header
         $rawHeader = @imap_fetchheader($this->mbox, $index, $option);
-        if (!$rawHeader) {
+        if (empty($rawHeader)) {
         	return false;
+        } // if
+
+        // return_path may or may not be enclosed in '<' and '>'
+        if (preg_match('/(?<=Return-Path:)[^\r\n>]+(?=[\r\n>])/i', $rawHeader, $regs)) {
+        	$message['return_path'] = trim($regs[0], ' <>');
         } // if
 
         // now get the individual components
@@ -125,7 +130,7 @@ class imap_class
         $message['subject']         = $mailHeader['subject'];
         if (!empty($mailHeader['reply_to'])) {
         	$message['reply_toaddress'] = $mailHeader['reply_to']['mailbox'].'@'.$mailHeader['reply_to']['host'];
-        }  else {
+        } else {
             $message['reply_toaddress'] = $message['from'];
         } // if
         $message['size']            = $mailHeader['Size'];
@@ -153,9 +158,27 @@ class imap_class
         $message['attachments'] = $attachments;
         $message['content_ids'] = $ids;
 
+        // *******************************************************
+        if (preg_match('/(kodega.de|kodega.se)$/i', $message['to'])) {
+            if (!empty($_SERVER['SERVER_ADMIN'])) {
+            	$headers  = "From: ".$_SERVER['SERVER_ADMIN'];
+            } else {
+                $headers  = "From: ".$_SERVER['HTTP_HOST'];
+            } // if
+            $headers .= "\nContent-Type: text/plain; charset=".$charset;
+        	$result = mail('tony@marston-home.demon.co.uk',
+        	               '** EMAIL COPY **',
+        	               "Here is a copy of the message sent to " .$message['to'] ." with encoding '$charset':\n"
+        	                                                        ."From: " .$message['from'] ."\n"
+        	                                                        .$message['text'],
+        	               $headers);
+        } // if
+        // *******************************************************
+
         // decode any input
         if (!empty($this->encoding)) {
-        	$message['text'] = iconv($charset, $this->encoding, $message['text']);
+        	//$message['text'] = iconv($charset, $this->encoding.'//TRANSLIT', $message['text']);
+        	$message['text'] = convertEncoding ($message['text'], $this->encoding, $charset);
         } // if
 
         // deal with any elements which have been MIME encoded
@@ -192,13 +215,21 @@ class imap_class
     function html2text ($input, $charset='iso-8859-1')
     // convert HTML document to plain text.
     {
-        $output = $input;
-
-        if (preg_match('/(?<=charset=)[-0-9a-zA-Z]+/i', $input, $regs)) {
-        	$charset = $regs[0];
+        if ($charset == 'iso-8859-1') {
+            // continue
+        } elseif ($charset == 'us-ascii') {
+        	$charset='iso-8859-1';
+        } else {
+            if (preg_match('/(?<=charset=)[-0-9a-zA-Z]+/i', $input, $regs)) {
+            	$charset = $regs[0];
+            } // if
+        } //if
+        if ($charset == 'unicode') {
+        	$charset = 'utf-8';
         } // if
 
-        $output = iconv($charset, 'UTF-8//TRANSLIT', $output);
+        $output = iconv($charset, 'UTF-8//TRANSLIT', $input);
+        $output = convertEncoding ($input, 'UTF-8', $charset);
 
         // convert non-breaking spaces (UTF-8 encoding is 0xC2 0xA0)
         $output = str_replace('&nbsp;', chr(194).chr(160), $output);
@@ -209,11 +240,15 @@ class imap_class
     	// convert all '<BR>' tags to line breaks
     	$output = preg_replace('#(<BR[ ]*[/]?>)#i', "\n", $output);
 
+    	// convert all '<p>' tags to double line breaks
+    	$output = preg_replace('#(<p[ ]*)#i', "\n\n<p ", $output);
+
     	// insert line break after each '</DIV>'
     	$output = preg_replace('#</DIV>#i', "</DIV>\n", $output);
 
     	// remove or replace all other HTML tags and special characters
     	$output = preg_replace('#<title>.*</title>#i', '', $output);
+    	$output = preg_replace('#<style>.*</style>#i', '', $output);
         $output = strip_tags($output);
     	$output = htmlspecialchars_decode($output, ENT_QUOTES);
         $output = html_entity_decode($output, ENT_QUOTES, 'UTF-8');
@@ -239,10 +274,16 @@ class imap_class
     function _getpart($mbox, $mid, $p, $partno, &$htmlmsg, &$plainmsg, &$charset, &$attachments, &$ids)
     // $partno = '1', '2', '2.1', '2.1.3', etc if multipart, 0 if not multipart
     {
-        if ($partno) {
-            $data = imap_fetchbody($mbox, $mid, $partno);  // multipart
+        if ($p->bytes > 10000000) {
+            $data = "*** ATTACHMENT TOO LARGE ***";
+            $p->bytes = strlen($data);
+            $p->encoding = 0;
         } else {
-            $data = imap_body($mbox, $mid);  // not multipart
+        	if ($partno) {
+                $data = imap_fetchbody($mbox, $mid, $partno);  // multipart
+            } else {
+                $data = imap_body($mbox, $mid);  // not multipart
+            } // if
         } // if
 
         // part may need to be decoded

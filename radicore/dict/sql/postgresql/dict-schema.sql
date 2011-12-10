@@ -2,16 +2,18 @@
 -- PostgreSQL database dump
 --
 
--- Started on 2008-01-04 17:44:31
+-- Dumped from database version 9.1.0
+-- Dumped by pg_dump version 9.1.0
+-- Started on 2011-09-15 17:14:04
 
+SET statement_timeout = 0;
 SET client_encoding = 'UTF8';
-SET standard_conforming_strings = off;
+SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
-SET escape_string_warning = off;
 
 --
--- TOC entry 13 (class 2615 OID 18785)
+-- TOC entry 8 (class 2615 OID 17610)
 -- Name: dict; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -27,8 +29,8 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 1500 (class 1259 OID 18786)
--- Dependencies: 1867 1868 1869 1870 1871 1872 1873 1874 1875 1876 1877 1878 1879 1880 1881 1882 1883 13
+-- TOC entry 187 (class 1259 OID 17893)
+-- Dependencies: 2257 2258 2259 2260 2261 2262 2263 2264 2265 2266 2267 2268 2269 2270 2271 2272 2273 8
 -- Name: dict_column; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -40,7 +42,6 @@ CREATE TABLE dict_column (
     column_desc character varying(255) DEFAULT ''::character varying NOT NULL,
     col_comment text,
     col_type character varying(20) DEFAULT ''::character varying NOT NULL,
-    col_type_native character varying(32),
     col_array_type character varying(20),
     col_values text,
     user_size bigint,
@@ -85,15 +86,16 @@ CREATE TABLE dict_column (
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,
-    revised_user character varying(16)
+    revised_user character varying(16),
+    col_type_native character varying(32)
 );
 
 
 ALTER TABLE dict.dict_column OWNER TO postgres;
 
 --
--- TOC entry 1501 (class 1259 OID 18810)
--- Dependencies: 1884 1885 1886 1887 1888 13
+-- TOC entry 188 (class 1259 OID 17916)
+-- Dependencies: 2274 2275 2276 2277 2278 8
 -- Name: dict_database; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -112,8 +114,8 @@ CREATE TABLE dict_database (
 ALTER TABLE dict.dict_database OWNER TO postgres;
 
 --
--- TOC entry 1502 (class 1259 OID 18820)
--- Dependencies: 1889 1890 1891 1892 1893 1894 1895 1896 1897 13
+-- TOC entry 189 (class 1259 OID 17927)
+-- Dependencies: 2279 2280 2281 2282 2283 2284 2285 2286 2287 8
 -- Name: dict_related_column; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -136,8 +138,8 @@ CREATE TABLE dict_related_column (
 ALTER TABLE dict.dict_related_column OWNER TO postgres;
 
 --
--- TOC entry 1503 (class 1259 OID 18831)
--- Dependencies: 1898 1899 1900 1901 1902 1903 1904 1905 13
+-- TOC entry 190 (class 1259 OID 17939)
+-- Dependencies: 2288 2289 2290 2291 2292 2293 2294 2295 8
 -- Name: dict_relationship; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -165,8 +167,8 @@ CREATE TABLE dict_relationship (
 ALTER TABLE dict.dict_relationship OWNER TO postgres;
 
 --
--- TOC entry 1504 (class 1259 OID 18844)
--- Dependencies: 1906 1907 1908 1909 1910 1911 13
+-- TOC entry 191 (class 1259 OID 17953)
+-- Dependencies: 2296 2297 2298 2299 2300 2301 8
 -- Name: dict_table; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -191,8 +193,8 @@ CREATE TABLE dict_table (
 ALTER TABLE dict.dict_table OWNER TO postgres;
 
 --
--- TOC entry 1505 (class 1259 OID 18855)
--- Dependencies: 1912 1913 1914 1915 1916 1917 1918 1919 13
+-- TOC entry 192 (class 1259 OID 17965)
+-- Dependencies: 2302 2303 2304 2305 2306 2307 2308 2309 8
 -- Name: dict_table_key; Type: TABLE; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -214,8 +216,8 @@ CREATE TABLE dict_table_key (
 ALTER TABLE dict.dict_table_key OWNER TO postgres;
 
 --
--- TOC entry 1921 (class 2606 OID 18866)
--- Dependencies: 1500 1500 1500 1500
+-- TOC entry 2311 (class 2606 OID 18527)
+-- Dependencies: 187 187 187 187
 -- Name: dict_column_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -224,8 +226,8 @@ ALTER TABLE ONLY dict_column
 
 
 --
--- TOC entry 1923 (class 2606 OID 18868)
--- Dependencies: 1501 1501
+-- TOC entry 2313 (class 2606 OID 18529)
+-- Dependencies: 188 188
 -- Name: dict_database_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -234,8 +236,8 @@ ALTER TABLE ONLY dict_database
 
 
 --
--- TOC entry 1925 (class 2606 OID 18870)
--- Dependencies: 1502 1502 1502 1502 1502 1502 1502
+-- TOC entry 2315 (class 2606 OID 18531)
+-- Dependencies: 189 189 189 189 189 189 189
 -- Name: dict_related_column_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -244,8 +246,8 @@ ALTER TABLE ONLY dict_related_column
 
 
 --
--- TOC entry 1927 (class 2606 OID 18872)
--- Dependencies: 1503 1503 1503 1503 1503 1503
+-- TOC entry 2317 (class 2606 OID 18533)
+-- Dependencies: 190 190 190 190 190 190
 -- Name: dict_relationship_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -254,8 +256,8 @@ ALTER TABLE ONLY dict_relationship
 
 
 --
--- TOC entry 1932 (class 2606 OID 18874)
--- Dependencies: 1505 1505 1505 1505 1505
+-- TOC entry 2321 (class 2606 OID 18535)
+-- Dependencies: 192 192 192 192 192
 -- Name: dict_table_key_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -264,8 +266,8 @@ ALTER TABLE ONLY dict_table_key
 
 
 --
--- TOC entry 1930 (class 2606 OID 18876)
--- Dependencies: 1504 1504 1504
+-- TOC entry 2319 (class 2606 OID 18537)
+-- Dependencies: 191 191 191
 -- Name: dict_table_pkey; Type: CONSTRAINT; Schema: dict; Owner: postgres; Tablespace: 
 --
 
@@ -274,8 +276,8 @@ ALTER TABLE ONLY dict_table
 
 
 --
--- TOC entry 1935 (class 0 OID 0)
--- Dependencies: 13
+-- TOC entry 2324 (class 0 OID 0)
+-- Dependencies: 8
 -- Name: dict; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -286,8 +288,8 @@ GRANT USAGE ON SCHEMA dict TO PUBLIC;
 
 
 --
--- TOC entry 1936 (class 0 OID 0)
--- Dependencies: 1500
+-- TOC entry 2325 (class 0 OID 0)
+-- Dependencies: 187
 -- Name: dict_column; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -298,8 +300,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_column TO PUBLIC;
 
 
 --
--- TOC entry 1937 (class 0 OID 0)
--- Dependencies: 1501
+-- TOC entry 2326 (class 0 OID 0)
+-- Dependencies: 188
 -- Name: dict_database; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -310,8 +312,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_database TO PUBLIC;
 
 
 --
--- TOC entry 1938 (class 0 OID 0)
--- Dependencies: 1502
+-- TOC entry 2327 (class 0 OID 0)
+-- Dependencies: 189
 -- Name: dict_related_column; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -322,8 +324,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_related_column TO PUBLIC;
 
 
 --
--- TOC entry 1939 (class 0 OID 0)
--- Dependencies: 1503
+-- TOC entry 2328 (class 0 OID 0)
+-- Dependencies: 190
 -- Name: dict_relationship; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -334,8 +336,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_relationship TO PUBLIC;
 
 
 --
--- TOC entry 1940 (class 0 OID 0)
--- Dependencies: 1504
+-- TOC entry 2329 (class 0 OID 0)
+-- Dependencies: 191
 -- Name: dict_table; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -346,8 +348,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_table TO PUBLIC;
 
 
 --
--- TOC entry 1941 (class 0 OID 0)
--- Dependencies: 1505
+-- TOC entry 2330 (class 0 OID 0)
+-- Dependencies: 192
 -- Name: dict_table_key; Type: ACL; Schema: dict; Owner: postgres
 --
 
@@ -357,7 +359,7 @@ GRANT ALL ON TABLE dict_table_key TO postgres;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE dict_table_key TO PUBLIC;
 
 
--- Completed on 2008-01-04 17:44:31
+-- Completed on 2011-09-15 17:14:05
 
 --
 -- PostgreSQL database dump complete

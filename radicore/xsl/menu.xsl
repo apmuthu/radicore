@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -15,6 +15,7 @@
             omit-xml-declaration="yes"
             doctype-public = "-//W3C//DTD XHTML 1.0 Strict//EN"
             doctype-system = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            encoding="UTF-8"
 />
 
 <!-- include common templates -->
@@ -45,22 +46,24 @@
   
         <div class="body">
   
-          <h1>
-            <!-- include optional icon -->
-            <xsl:if test="/root/params/icon/home">
-              <img class="middle" height="20">
-                <xsl:attribute name="src">
-                  <xsl:value-of select="concat($doc_root,/root/params/icon/home)"/>
-                </xsl:attribute>
-                <xsl:attribute name="alt">
-                  <xsl:value-of select="/root/params/text/home"/>
-                </xsl:attribute>
-              </img>
-              <xsl:text> </xsl:text>
-            </xsl:if>
-            <!-- end icon -->
-            <xsl:value-of select="$title"/>
-          </h1>
+          <div class="title">
+            <h1 class="title">
+             <!-- include optional icon -->
+             <xsl:if test="/root/params/icon/home">
+               <img class="middle" height="20">
+                 <xsl:attribute name="src">
+                   <xsl:value-of select="concat($doc_root,/root/params/icon/home)"/>
+                 </xsl:attribute>
+                 <xsl:attribute name="alt">
+                   <xsl:value-of select="/root/params/text/home"/>
+                 </xsl:attribute>
+               </img>
+               <xsl:text> </xsl:text>
+             </xsl:if>
+             <!-- end icon -->
+             <xsl:value-of select="$title"/>
+            </h1>
+          </div>
   
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar_detail" />
@@ -123,7 +126,7 @@
 
     <xsl:for-each select="/root/mnu_favourite" >
       <!-- insert a submit button for each entry -->
-      <input class="button" type="submit" name="task#{task_id}" value="{task_desc}" />
+      <input class="button" type="submit" name="favourite#{task_id}" value="{task_desc}" />
       <xsl:text> </xsl:text>  <!-- insert a single space as a separator -->
     </xsl:for-each>
 

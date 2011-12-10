@@ -150,7 +150,7 @@
 
 <ul class="compress">
 	<li>Start -&gt; T1, Inward, Sequential</li>
-  <li>T1 -&gt; P1, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray'telephone_no']) &lt; 1) return TRUE;</code></li>
+  <li>T1 -&gt; P1, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray['telephone_no']) &lt; 1) return TRUE;</code></li>
  	<li>T1 -&gt; P2, Outward, Explicit OR split</li>
   <li>P1 -&gt; T2, Inward, Sequential</li>
   <li>P2 -&gt; T3, Inward, Sequential</li>
@@ -186,7 +186,7 @@
 
 <ul class="compress">
 	<li>Start -&gt; T1, Inward, Sequential</li>
-  <li>T1 -&gt; Start, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray'telephone_no']) &lt; 1) return TRUE;</code></li>
+  <li>T1 -&gt; Start, Outward, Explicit OR split, Guard= <code>if (strlen($fieldarray['telephone_no']) &lt; 1) return TRUE;</code></li>
   <li>T1 -&gt; P1, Outward, Explicit OR split</li>
   <li>P1 -&gt; T2, Inward, Sequential</li>
   <li>T2 -&gt; END, Outward, Sequential</li>

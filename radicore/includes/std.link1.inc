@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -43,9 +43,11 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['reset']  = 'reset';
-$act_buttons['submit'] = 'submit';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['reset']      = 'reset';
+$act_buttons['submit']     = 'submit';
+$act_buttons['submitstay'] = 'submitstay';
+$act_buttons['submitnext'] = 'submitnext';
+$act_buttons['quit']       = 'cancel';
 
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
@@ -152,6 +154,48 @@ if (!empty($_POST)) {
             if (empty($errors)) {
                 $messages[] = getLanguageText('sys0091'); // 'Update successful'
             } // if
+            // where do we go from here?
+            $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
+            $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
+            if (isset($_POST['submitnext'])) {
+                // skip to the next item (if there is one)
+                if ($curitem < $lastitem) {
+                    $curitem++;
+                    $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
+                    $dbouter->setPageNo($curitem);
+                    $where = $scrolling[$dbouter->getClassName()]['where'];
+                } else {
+                    // no more items, so return to previous screen
+                    scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
+                } // if
+            } else {
+                if ($lastitem <= 1) {
+                	if (isset($_POST['submitstay'])) {
+                	    // remain in this  screen
+                	} else {
+                	    // retun to previous screen
+                	    scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
+                	} // if
+                } // if
+            } // if
+            // re-read database in case any values have changed
+            $fieldarray = $dbouter->getData($where);
+            if ($dbouter->numrows == 0) {
+                // record cannot be found, so re-read using original $where clause
+                $where      = $scrolling[$dbouter->getClassName()]['where'];
+                $fieldarray = $dbouter->getData($where);
+            } // if
+            // reset 'lastitem' in scroll array
+            $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+            $script_vars['scrolling'] = $scrolling;
+            // get any extra data and merge with $fieldarray
+            $fieldarray = $dbouter->getExtraData($fieldarray);
+            if ($dbouter->errors) {
+            	// errors are keyed by object name
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+            // rebuild selection criteria using primary key of current occurrence
+            $where = array2where($fieldarray, $dbouter->getPkeyNames(), $dbouter);
         } // if
     } // if
 } // if
@@ -177,6 +221,7 @@ if (!empty($return_from) AND !empty($popup_object)) {
                 // set index number of item to be read from current $where list
                 $dbouter->setPageNo($_GET['item']);
             } else {
+                // stay on current item
                 $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
             } // if
         } // if
@@ -264,6 +309,8 @@ if (count($outer_data) > 0) {
         if ($dblink->getNumRows() == 0) {
             $errors[] = getLanguageText('sys0088', $link_table); // "No entries found on $link_table"
             unset($act_buttons['submit']);
+            unset($act_buttons['submitstay']);
+            unset($act_buttons['submitnext']);
         } // if
 
         // get any extra data (such as lookup lists)

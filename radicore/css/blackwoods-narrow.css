@@ -1,0 +1,858 @@
+body {
+  margin-top: 2pt;
+  background: white;
+  color: black;
+}
+body, input, select, textarea, div.tree td .text {
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  font-size: small;
+  font-weight: normal;
+}
+/* HTML controls */
+input.submit, input.button {
+  color: black;
+  /*background-color: white;*/
+  font-family: arial, serif;
+  font-size: 0.9em;
+}
+.radio input {
+  background-color: transparent;
+  font-size: 100%;
+  color: black;
+}
+.checkbox input {
+  background-color: transparent;
+  font-size: 100%;
+  color: black;
+}
+input.text {
+  background-color: white;
+  color: black;
+}
+input.password {
+  background-color: white;
+  color: black;
+}
+select {
+  background-color: white;
+  color: black;
+}
+select option {
+  background-color: white;
+  color: black;
+}
+select.dropdown {
+  color: black;
+}
+select.dropdown option.heading {
+  background: #dddddd;
+  font-weight: bold;
+}
+textarea {
+  background-color: white;
+  color: black;
+  overflow: auto;
+}
+pre.textarea {
+	/* emulates a read-only textarea which contains hyperlinks */
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+  height: 5em;
+  border: 1px solid gray; 
+  background-color: white;
+	overflow: auto;
+}
+pre.height_10 {
+  height: 10em;
+}
+pre.height_15 {
+  height: 15em;
+}
+pre.height_20 {
+  height: 20em;
+}
+pre.height_30 {
+  height: 30em;
+}
+
+/* miscellaneous */
+caption {
+  font-weight: bold;
+}
+
+form {
+  margin-bottom: 0;
+}
+
+h1 {
+  font-size: 130%;
+  font-weight: bold;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: left;
+  padding-left: 5px;
+}
+
+/* title */
+div.title {
+  background: #4F66AF;
+  padding-top: 1px;
+  border: 1px solid #000000;
+  line-height: 25px;
+}
+h1.title {
+  color: white;
+  background: #4F66AF;
+}
+div.quicksearch {
+  float: right;
+  margin-top: -1px;
+  padding-bottom: 1px;
+}
+
+table {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.9em;
+}
+th {
+  text-align: center;
+  color: black;
+  background: #cceeff;
+}
+
+tr {
+}
+tr.even td {
+  /* text-align: left; */
+  color: black;
+  background: #dddddd;
+}
+tr.odd td {
+  /* text-align: left; */
+  color: black;
+  background: #eeeeee;
+}
+
+td {
+  padding: 1px;
+  padding-bottom:0px;
+  /* vertical-align: top; */
+}
+tr.odd:hover td, tr.even:hover td {
+	background-color: #ffffcc;
+}
+/* actionbar */
+div.actionbar {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding-left: 2px;
+  padding-right: 2px;
+  background: #dddddd;
+  height: 22px;
+}
+div.actionbar .left {
+  float: left;
+}
+div.actionbar .right {
+  float: right;
+}
+div.actionbar p {
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+}
+
+/* body */
+div.body {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black; 
+  text-align: left;
+  padding: 1px;
+  background: white;
+}
+
+/* footer */
+div.footer {
+  clear: both;
+  margin-top: 1em;
+  text-align: center;
+}
+
+/* header */
+div.header {
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+/* help */
+div.help {
+  background: transparent;
+}
+div.help p {
+  margin-top: 0pt;
+  margin-bottom: 2pt;
+  text-align: right;
+}
+
+/* inner */
+div.inner {
+  border-bottom: 1px solid black;
+}
+div.inner table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.inner tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.inner td {
+  padding-left: 3px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
+
+/* link */
+div.link {
+  border-bottom: 1px solid black;
+}
+div.link table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.link tr {
+  text-align: left;
+  color: black;
+  background: white;
+}
+div.link td {
+  padding-left: 3px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
+
+/* logon */
+div.logon {
+  margin-top: 100px;
+  width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.loggedinas {
+  float: left;
+  padding-left: 57px;  /* for branding image */
+}
+
+/* main */
+div.main {
+  border-bottom: 1px solid black;
+  background: transparent;
+}
+div.main table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.main tr {
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.main td {
+  padding-left: 3px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
+div.main td.label {
+  text-align: right;
+  font-style: italic;
+  font-weight: bold;
+  color: white;
+  background: gray;
+  /*padding:3px;*/
+  /*padding-right:5px;*/
+}
+
+/* fileupload */
+div.uploadbg {
+  width: 100%;
+  height: 100%;
+  background: #cccccc;
+}
+div.upload {
+  width: 500px; 
+  margin-left: auto; 
+  margin-right: auto;
+  background: #dddddd;
+  padding: 20px;
+  border: 2px solid white;
+}
+
+/* menubar */
+#menubar {
+  width: 100%;
+  line-height: normal;
+  background: #dae0d2 url(blackwoods/bg.gif) repeat-x bottom;
+  float: left;
+}
+#menubar ul {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-right: 1px; 
+  margin: 0px; 
+  list-style-type: none;
+}
+#menubar li {
+  background: url(blackwoods/left.gif) no-repeat left top; 
+  padding-top: 0px;
+  padding-bottom: 0px;
+  padding-left: 4px; 
+  padding-right: 0px;
+  margin: 0px;
+  float: left;
+}
+#menubar a {
+  background: url(blackwoods/right.gif) no-repeat right top;
+  padding-top: 5px; 
+  padding-bottom: 4px; 
+  padding-left: 6px; 
+  padding-right: 10px; 
+  display: block; 
+  color: #765;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menubar a:hover {
+	color: black;
+}
+#menubar .inactive {
+	border-bottom: 1px solid black;
+}
+#menubar .active {
+  background-image: url(blackwoods/left_on.gif);
+  border-bottom: solid 1px white;
+}
+#menubar .active a {
+  background-image: url(blackwoods/right_on.gif);
+}
+#menubar p.filler {
+  display: inline;
+}
+
+/* menustack (aka 'breadcrumbs) */
+#menustack-outer {
+  clear: both;
+  margin-right: 2px;
+  background: #dae0d2 url(blackwoods/bg.gif) repeat-x bottom;
+  margin-top: -2.5pt;
+}
+#menustack {
+  clear: left;
+  width: 100%;
+  line-height: normal;
+  background-color: transparent;
+  padding-bottom: 2pt;
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  border-bottom: solid 1pt black;
+}
+#menustack ul {
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+  padding-left: 5pt;
+  padding-right: 0pt;
+  margin: 0px;
+  list-style-type: none;
+}
+#menustack li {
+  padding: 0px; 
+  margin: 0px;
+  float: left; 
+  display: block;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menustack li a {
+  color: blue;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#menustack p {
+  padding: 0pt;
+  margin: 0pt;
+}
+
+/* middle */
+div.middle {
+  border-bottom: 1px solid black;
+}
+div.middle table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: white;
+}
+div.middle tr {
+  height: 1em;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.middle td {
+  padding-left: 3px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
+div.middle td.label {
+  text-align: right;
+  font-weight: bold;
+  font-style: italic;
+  color: white;
+  background: #aaaaaa;
+}
+
+/* errmsg */
+div.errmsg {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.errmsg p {
+  margin-top: 0pt;
+  margin-bottom: 1pt;
+  color: red;
+  background: #dddddd;
+}
+/* infomsg */
+div.infomsg {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.infomsg p {
+  margin-top: 0pt;
+  margin-bottom: 1pt;
+  color: green;
+  background: #dddddd;
+}
+
+/* navbar */
+div.navbar {
+  border-bottom: 1px solid #000000;
+  background: #dddddd;
+}
+div.navbar p.selection {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  margin-left: 2px;
+  padding-top: 3px;
+  padding-bottom: 4px;
+  font-weight: bold;
+  text-align: left;
+  background: transparent;
+}
+div.navbar p.show {
+  float: right;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 3px;
+  padding-bottom: 4px;
+  text-align: right;
+  background: transparent;
+}
+div.navbar p.show a {
+  font-weight: bold;
+}
+div.navbar p.withoutselection {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  text-align: left;
+  background: transparent;
+  border-bottom: 1px solid white;
+}
+div.navbar p.withselection {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  text-align: left;
+  background: transparent;
+  border-top: 1px solid white;
+}
+
+/* outer */
+div.outer {
+  margin-top: 1px;
+  margin-bottom: 0px;
+  border-bottom: 1px solid black;
+  background: transparent;
+}
+div.outer table {
+  width: 100%;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  background: white;
+}
+div.outer tr {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  color: black;
+  background: #eeeeee;
+}
+div.outer td.label {
+  text-align: right;
+  font-style: italic;
+  font-weight: bold;
+  color: white;
+  background: gray;
+}
+div.outer td {
+  padding-left: 3px;
+  padding-right:5px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
+
+/* pagination */
+div.pagination {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  text-align: center;
+  background: #dddddd;
+}
+div.pagination p {
+}
+
+/* picker */
+div.picker-text {
+  float: left;
+}
+div.picker-image {
+  float: left;
+  margin-left: 2px;
+  margin-right:2px;
+  margin-bottom:2px;
+  padding:0;
+  border:0;
+  max-height:100px;
+}
+
+div.picker-button {
+  float: left;
+  margin-left: 5px;
+}
+
+/* popup */
+div.popupbutton {
+  float: left;
+  margin-left: 10px;
+}
+div.popuptext {
+  float: left;
+}
+
+/* recover password */
+div.recover {
+  margin-top: 100px;
+  width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* scrolling */
+div.scrolling {
+  margin-top: 1pt;
+  margin-bottom: 1pt;
+  text-align: center;
+  background: #dddddd;
+}
+div.scrolling p {
+}
+
+/* scripttime */
+p.scripttime {
+  margin-top: 1pt;
+  margin-bottom: 0pt;
+  text-align: center;
+  color: black;
+  background: #dddddd;
+}
+
+/* timetable */
+table.timetable {
+  background: white;
+}
+table.timetable tr {
+}
+table.timetable td {
+  background: #eeeeee;
+  border: 1px solid #000000;
+  text-align: center;
+  font-weight: bold;
+}
+table.timetable td.time {
+  background: #eeeeee;
+  border: 0px;
+  font-weight: normal;
+}
+table.timetable td.blank {
+  background: transparent;
+  border: 0px;
+}
+
+/* Favourites list */
+div.favourites {
+  border-bottom: 1px solid #000000;
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+  background: #FFFFCC;
+}
+div.favourites h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+
+/* ToDo list */
+div.todo_user {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.todo_user h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.todo_user p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 1pt;
+  padding-bottom: 1pt;
+}
+
+/* tree */
+div.tree {
+  border-bottom: 1px solid black;
+}
+div.tree table {
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  border: outset 0px;
+  border-collapse: collapse;
+  background: white;
+}
+div.tree tr {
+  border-collapse: collapse;
+  text-align: left;
+  color: black;
+  background: #eeeeee;
+}
+div.tree td {
+  border-collapse: collapse;
+  padding: 0;
+  margin: 0;
+  word-spacing: -5px;
+  font-size: 1px;
+}
+div.tree td img{
+  border: 0;
+}
+div.tree td .icon {
+  margin-left: 10px;
+}
+div.tree td .text {
+  margin-left: 10px;
+  vertical-align: top;
+  text-align: left;
+  word-spacing: 0;
+}
+
+/* universe */
+div.universe {
+  background-image:url(blackwoods/logo.gif);  /* for branding image */
+  background-repeat:no-repeat;                /* for branding image */
+  padding-top:22px;                           /* for branding image */
+  margin-top: 5px;
+  width: 750px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* version */
+div.version {
+  clear: both;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* workitem */
+div.workitem_role {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.workitem_role h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.workitem_role p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+}
+div.workitem_user {
+  border-bottom: 1px solid #000000;
+  padding-top: 4pt;
+  padding-bottom: 0pt;
+  background: #FFFFCC;
+}
+div.workitem_user h2 {
+  font-size: 100%;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  margin-left: 1em;
+  padding-top: 0pt;
+  padding-bottom: 2pt;
+}
+div.workitem_user p {
+  margin-left: 2em;
+  margin-top: 0pt;
+  margin-bottom: 0pt;
+  padding-top: 2pt;
+  padding-bottom: 2pt;
+}
+
+/* IMG */
+img.bottom {
+  vertical-align: bottom;
+}
+img.middle {
+  vertical-align: middle;
+}
+img.top {
+  vertical-align: top;
+}
+
+/* generic classes */
+.border0 {
+  border-width: 0px;
+}
+.bottom {
+  vertical-align: bottom;
+}
+.center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.divider {
+  height: 3px;
+  line-height: 3px;
+  background-color: gray;
+}
+.error {
+  clear: left;
+  font-style: italic;
+  font-weight: normal;
+  color: red;
+  background: transparent;
+}
+.fullwidth {
+  width: 100%;
+}
+.invisible {
+  display: none;
+}
+.justify {
+  text-align: justify;
+}
+.left {
+  text-align: left;
+}
+.middle {
+  vertical-align: middle;
+}
+.no-underline {
+  text-decoration: none;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.required {
+  font-size: 130%;
+  vertical-align: bottom;
+  color: red;
+  background: transparent;
+}
+.right {
+  text-align: right;
+}
+.top {
+  vertical-align: top;
+}
+.transparent {
+  background-color: transparent;
+}
+
+/* for items which are due or overdue */
+.overdue {
+  background: red;
+  color: yellow;
+  font-style: italic;
+  font-weight: normal;
+}
+.due {
+  background: orange;
+  color: green;
+  font-style: italic;
+  font-weight: normal;
+}
+.warning {
+  background: yellow;
+  color: red;
+  font-style: italic;
+  font-weight: normal;
+}
+
+/* options for printing */
+@media print {
+	div.universe {
+    margin-top: 5px;
+    width: 100%;
+    text-align: left;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}

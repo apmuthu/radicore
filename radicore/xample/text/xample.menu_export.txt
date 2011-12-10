@@ -1,4 +1,4 @@
-// file created on August 19, 2009, 11:24 pm
+// file created on August 24, 2011, 12:04 pm
     
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                          = 'Auto-Increment';
@@ -21,6 +21,9 @@ $array['x_option(del)']                           = 'Delete Option';
 $array['x_option(enq)']                           = 'Enquire Option';
 $array['x_option(list)']                          = 'List Option';
 $array['x_option(list)a']                         = 'List Option for a selected Person';
+$array['x_option(output2)']                       = 'Output Option to PDF (list view)';
+$array['x_option(output5)labels2']                = 'Output Option to PDF (labels x 2)';
+$array['x_option(output5)labels3']                = 'Output Option to PDF (labels x 3)';
 $array['x_option(popup)']                         = 'Choose Options';
 $array['x_option(search)']                        = 'Search Option';
 $array['x_option(upd)']                           = 'Update Option';
@@ -122,6 +125,8 @@ $array['Delete']                                  = 'Delete';
 $array['Download Picture']                        = 'Download Picture';
 $array['Fix Addr No (batch)']                     = 'Fix Addr No (batch)';
 $array['Invoice (PDF)']                           = 'Invoice (PDF)';
+$array['LABELS (2-UP)']                           = 'LABELS (2-UP)';
+$array['LABELS (3-UP)']                           = 'LABELS (3-UP)';
 $array['Link Children']                           = 'Link Children';
 $array['List Addresses']                          = 'List Addresses';
 $array['List Options']                            = 'List Options';

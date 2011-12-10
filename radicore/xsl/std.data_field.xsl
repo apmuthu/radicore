@@ -2,13 +2,21 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns="http://www.w3.org/1999/xhtml">
-
+  
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
+  
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+
+<!-- this template is needed to get around a bug in Firefox -->
+<xsl:include href="disable-output-escaping.xsl"/>
 
 <xsl:variable name="select_one" select="/root/params/select_one"/>
 
@@ -55,39 +63,24 @@
       <!-- make available the current structure/row/cell and its attributes -->
       <xsl:variable name="cellattr" select="." />
       
+      <!-- find out if a class has been defined for this column -->
+      <xsl:variable name="col_pos" select="position()" />
+      <xsl:variable name="col_class" select="/root/structure/*[name()=$zone]/columns/column[position()=$col_pos]/@class" />
+      
+      <!-- there may be several classes, so combine them into a single list separate by spaces -->
+      <xsl:variable name="class_list" select="normalize-space(concat($col_class, ' ',$cellattr/@class, ' ',$field/@css_class))" />
+      
       <td>
-        
-        <xsl:if test="$cellattr/@class or $field/@css_class">
-          <!-- add 'class' attribute to the entire cell -->
-          <xsl:choose>
-            <xsl:when test="$cellattr/@class and $field/@css_class">
-              <xsl:attribute name="class"><xsl:value-of select="concat($cellattr/@class, ' ',$field/@css_class)"/></xsl:attribute>
-            </xsl:when>
-            <xsl:when test="$cellattr/@class">
-              <xsl:attribute name="class"><xsl:value-of select="$cellattr/@class"/></xsl:attribute>
-            </xsl:when>
-            <xsl:when test="$field/@css_class">
-              <xsl:attribute name="class"><xsl:value-of select="$field/@css_class"/></xsl:attribute>
-            </xsl:when>
-          </xsl:choose>
+        <xsl:if test="$class_list">
+          <xsl:attribute name="class"><xsl:value-of select="$class_list"/></xsl:attribute>
         </xsl:if>
         
         <xsl:choose>
           <xsl:when test="$cellattr/@class or $field/@css_class">
             <!-- surround field data in a <div> for the specified css class(es) -->
             <div>
-               
-              <xsl:choose>
-                <xsl:when test="$cellattr/@class and $field/@css_class">
-                  <xsl:attribute name="class"><xsl:value-of select="concat($cellattr/@class, ' ',$field/@css_class)"/></xsl:attribute>
-                </xsl:when>
-                <xsl:when test="$cellattr/@class">
-                  <xsl:attribute name="class"><xsl:value-of select="$cellattr/@class"/></xsl:attribute>
-                </xsl:when>
-                <xsl:when test="$field/@css_class">
-                  <xsl:attribute name="class"><xsl:value-of select="$field/@css_class"/></xsl:attribute>
-                </xsl:when>
-              </xsl:choose>
+              
+              <xsl:attribute name="class"><xsl:value-of select="$class_list"/></xsl:attribute>
               
               <!-- process the named field from the current row -->
               <xsl:call-template name="datafield">
@@ -105,7 +98,7 @@
           </xsl:when>
 
           <xsl:otherwise>
-            <!-- process the named field from the current row -->
+            <!-- process the named field from the current row (withut enclosing in a <div>) -->
             <xsl:call-template name="datafield">
               <xsl:with-param name="item"     select="$field"/>
               <xsl:with-param name="itemname" select="$fieldname"/>
@@ -685,7 +678,10 @@
   <xsl:if test="$item/@javascript">
     <!-- output any javascript before the control -->
     <script language="javascript">
-      <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+      <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+      <xsl:call-template name="disable-output-escaping">
+        <xsl:with-param name="string" select="$item/@javascript" />
+      </xsl:call-template>
     </script>
   </xsl:if>
 
@@ -790,7 +786,10 @@
   <xsl:if test="$item/@javascript">
     <!-- output any javascript before the control -->
     <script language="javascript">
-      <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+      <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+      <xsl:call-template name="disable-output-escaping">
+        <xsl:with-param name="string" select="$item/@javascript" />
+      </xsl:call-template>
     </script>
   </xsl:if>
 
@@ -831,7 +830,7 @@
    
              <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
    
-             <xsl:if test="//*[name()=name($item)]/array[@id=$id]">
+             <xsl:if test="//*[name()=name($item)]/array[@value=$id]">
                <!-- this option has been selected -->
                <xsl:attribute name="checked">checked</xsl:attribute>
              </xsl:if>
@@ -926,7 +925,10 @@
       <xsl:if test="$item/@javascript">
         <!-- output any javascript before the control -->
         <script language="javascript">
-          <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+          <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item/@javascript" />
+          </xsl:call-template>
         </script>
       </xsl:if>
 
@@ -1335,12 +1337,12 @@
       <!-- field cannot be amended, so output selected items as a simple string -->
 
       <xsl:for-each select="//*[name()=name($item)]/array">
-        <!-- use the 'id' attribute of the node as the 'value' attribute of 'option' -->
-        <xsl:variable name="id" select="@id"/>
+        <!-- use the 'value' attribute of the node as the 'value' attribute of 'option' -->
+        <xsl:variable name="value" select="@value"/>
 
-        <xsl:if test="$optionlist/option[@id=$id]">
+        <xsl:if test="$optionlist/option[@id=$value]">
           <!-- option found in optionlist, so output its value -->
-          <xsl:value-of select="$optionlist/option[@id=$id]"/>
+          <xsl:value-of select="$optionlist/option[@id=$value]"/>
           <xsl:if test="not(position()=last())">
             <xsl:text>, </xsl:text> <!-- not the last entry, so append a comma -->
           </xsl:if>
@@ -1355,7 +1357,10 @@
       <xsl:if test="$item/@javascript">
         <!-- output any javascript before the control -->
         <script language="javascript">
-          <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+          <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item/@javascript" />
+          </xsl:call-template>
         </script>
       </xsl:if>
 
@@ -1405,7 +1410,7 @@
               <xsl:attribute name="class"><xsl:value-of select="@class"/></xsl:attribute>
             </xsl:if>
 
-            <xsl:if test="//*[name()=name($item)]/array[@id=$id]">
+            <xsl:if test="//*[name()=name($item)]/array[@value=$id]">
               <!-- this option has been selected -->
               <xsl:attribute name="selected">selected</xsl:attribute>
             </xsl:if>
@@ -1469,7 +1474,10 @@
       <xsl:if test="$item/@javascript">
         <!-- output any javascript before the control -->
         <script language="javascript">
-          <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+          <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item/@javascript" />
+          </xsl:call-template>
         </script>
       </xsl:if>
 
@@ -1742,7 +1750,10 @@
         <xsl:if test="$item/@javascript">
           <!-- output any javascript before the control -->
           <script language="javascript">
-            <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+            <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+            <xsl:call-template name="disable-output-escaping">
+              <xsl:with-param name="string" select="$item/@javascript" />
+            </xsl:call-template>
           </script>
         </xsl:if>
   
@@ -1831,7 +1842,7 @@
 
 <!--
 ****************************************************************************************
-* REPLACE - replace ne string with another
+* REPLACE - replace one string with another
 ****************************************************************************************
 -->
 <xsl:template name="replace">
@@ -1983,7 +1994,10 @@
             <xsl:if test="$item/@css_class">
               <xsl:attribute name="class"><xsl:value-of select="$item/@css_class"/></xsl:attribute>
             </xsl:if>
-            <xsl:value-of select="$item" disable-output-escaping="yes"/>
+            <!--<xsl:value-of select="$item" disable-output-escaping="yes"/>-->
+            <xsl:call-template name="disable-output-escaping">
+              <xsl:with-param name="string" select="$item" />
+            </xsl:call-template>
           </pre>
         </xsl:when>
         <xsl:otherwise>
@@ -1999,7 +2013,10 @@
       <xsl:if test="$item/@javascript">
         <!-- output any javascript before the control -->
         <script language="javascript">
-          <xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>
+          <!--<xsl:value-of select="$item/@javascript" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item/@javascript" />
+          </xsl:call-template>
         </script>
       </xsl:if>
 

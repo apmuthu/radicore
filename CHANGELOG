@@ -1,10 +1,79 @@
 ﻿RADICORE for PHP - news
 
+2011-12-10, version 1.72.0
+- updated 'include.library.inc' so that the 'removeDuplicateFromSelect()' function will not insert a duplicate field reference at the position of the first reference, otherwise it may result in an invalid SQL statement.
+- updated 'dml.pgsql.class.inc' for PostgreSQL version 9.1 where string literals containing the backslash character must now be defined using the escape string syntax (E'...') otherwise an error will be generated.
+- updated 'std.imap.class.inc' to get around problems when converting encoding into UTF-8.
+- updated 'std.validation.class.inc' so that the the validateEmail() function can deal with multiple addresses in a single field, and to deal with addresses in the format 'name <user@hostname.domain>'.
+- updated 'include.session.inc' to call quicksearch code from a separate function.
+- fixed bug in 'std.table.class.inc' which cause the 'deleteRecord()' function to lose the contents of $this->numrows after calling validateDelete().
+- updated 'std.table.class.inc' so that the insertOrUpdate() function will check $this->no_display_count before generating a message.
+- updated 'std.fileupload1.inc' to include a 'submitstay' button so that it does not exit after uploading a file.
+- fixed bug in 'dml.*.class.inc' so that the getData_serial() method uses !is_null() on $rdc_limit and $rdc_offset instead of !empty() as the value zero returns TRUE with empty().
+
+2011-09-02, version 1.71.0
+- fix bug in 'std.pdf.class.inc' when a report line has both text and a barcode, and the height of the barcode is not an exact multiple of the line height of the text. 
+- updated 'std.pdf.class.inc' to include the following:
+-- allow margin and padding options to be supplied either with or without an underscore making 'marginleft' and 'margin_left' both valid.
+-- restrict the 'border' option on barcodes to the containing cell and 'image_border' for the barcode itself (when the barcode is smaller than its cell).
+-- removed the 'position' option on barcodes as this positions the cell within the page, not the barcode within the cell.
+-- added the 'cellfitalign' option to barcodes to position the barcode within its cell.
+-- added the ability to handle 2D barcodes (QRCODE and PDF417).
+-- added the 'margin_top' and 'margin_bottom' options to the page definitions.
+-- added the 'image_offset' option for pictures and barcodes to provide a space between the image border and the cell border.
+-- added the 'body_gap' option to specify a gap between the header and the body. The default is 1mm.
+-- allow width of '*' to be used on more than 1 column, in which case the remaining space will be apportioned equally.
+
+2011-08-25, version 1.70.0
+- merge 'align','valign' and 'class' attribute values into a single 'class' entry when adding the screen structure details to the XML document.
+- created script 'radicore/menu/sql/mnu_role_task.sql' to add missing standard tasks to existing roles. This is not necessary for new roles as they are added automatically when they are created.
+- updated 'table(generate)b.php' so that when it creates the '<table>.report.inc' file for an OUTPUT2 task it will set the default column widths to a percentage so that the whole line is filled.
+- updated TCPDF library to version 5.9.112.
+- updated MENU database to include the OUTPUT5 pattern. You will have to run script 'radicore\menu\sql\menu.menu_export(2011-08-24).sql' to apply this change to your database.
+- added file 'std.output5.inc' as the controller for the OUTPUT5 pattern.
+- updated 'table(generate)a.php' and 'table(generate)b.php' to include OUTPUT5 pattern for address labels.
+- updated 'std.pdf.class.inc' to deal with the OUTPUT5 pattern (address labels).
+- updated 'default/pdf.styles.inc' so that 'noborder' style sets the border width to zero instead of the border colour to white.
+- updated 'std.pdf.class.inc' to allow the 'min_lines' option on $structure['body']['fields'] elements in the report structure file so that a cell with fewer lines will be padded with empty lines.
+- updated 'std.pdf.class.inc' to allow 'padding_left/right/top/bottom' and 'margin_bottom' to be specified in the 'pdf.styles.inc' file for use with the OUTPUT5 pattern (address labels).
+
+2011-08-01, version 1.69.0
+- added ability to pre-select a field name in the QuickSearch dropdown.
+- added option to include a QuickSearch area on LIST2 screens.
+- fixed bug which failed to display multiple error messages on the logon screen.
+- modified 'include.xml.php5.inc' to replace '<br></br>' with '<br />' in HTML output to get around a bug in the libxslt library.
+- added 'SUBMIT+stay' and 'SUBMIT+next' buttons to LINK1 pattern.
+- modified XML output so that if a field's value is an array it will be output as '<array key="0" value="value1" />' instead of '<array id="value1" />' so that associative arrays can be shown properly.
+- added ability to specify the 'nosort' option in the $structure['<zone>']['columns'] array as well as the $structure['<zone>']['fields'] array.
+- as the <COL ALIGN="..."> and <COL VALIGN="..."> attributes are poorly supported in most browsers (and removed from HTML5) I have changed the code in 'include.xml.php4/5.inc' to convert them to 'class' attributes instead. The 'class' attribute within <COL> is also poorly supported, so I have changed 'std.column_hdg.xsl' and 'std.data_field.xsl' so it will now be added to every cell within that column instead. This has been tested in IE8, Firefox 5.0, Opera 11.5 and Safari 5.0.5. See http://www.tonymarston.net/php-mysql/model-view-controller.html#xsl-structure for details.
+- modified all XSL stylesheets to include 'indent=yes' so that HTML output is easier to read.
+- change the handling of error messages so that errors generated within internal objects can be shown as having come from that object. See http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq14 for details.
+
+2011-06-01, version 1.68.0
+- fixed a bug in the 'outputCSV()' method within 'std.table.class.inc' to ensure that only those fields which have been specifically selected will be output.
+- modified '_dml_updateSelection()' method within 'std.table.class.inc' so that it will stop on the first error.
+- modified 'updateRecord()' method within 'dml.*.class.inc' so that if it is called with a $where string, and the primary key has changed, it will still check for a duplicate value.
+- modified 'send_email()' function within 'include.library.inc' so that it puts the 'from' address into the 5th argument of PHP's mail() function to force a valid 'Return-Path' value in the mail header otherwise the sendmail program may use a value which causes the recipient's mail server to treat the email as spam. If a fixed value for Return-Path is required you can set the MAIL_RETURN_PATH constant in the CONFIG.INC file.
+- added option to include browser-specific CSS files.
+- added option to include a QuickSearch area on LIST1 screens.
+- upgraded TCPDF library to version 5.9.084
+
+2011-01-01, version 1.67.0
+- fixed bug which allowed tasks which had been disabled to appear in the 'favourites' area of the menu/home page.
+- changed 'include.general.inc' so that it will look for a file called 'config.local.inc' if 'config.inc' does not exist in the include path. This is for use on development machines.
+- fixed bug in XML processing when dealing with errors in a multi-row screen.
+- fixed bug in getExtraData() method in std.table.class.inc which caused it to empty $this->fieldarray.
+- updated XSL processing to use the disable-output-escaping template instead of the disable-output-escaping option. This is to get around a bug in Firefox.
+- updated TCPDF library to version 5.9.029.
+- fixed bug in 'dml.pgsql.class.inc' which had the wrong arguments in the call to $auditobj->auditDelete().
+- amended table 'mnu_favourite' in the 'menu' database to include the 'breadcrumbs' column. This will allow the menu buttons and the breadcrumbs area to be rebuilt to what they had been when the task was originally added to a user's favourites. You will have to run script radicore\menu\sql\mysql\alter_table(2010-12-29).sql in order to change the database schema.
+- added 'dml.sqlsrv.class.inc' so that RADICORE can now work with an SQL Server database.
+
 2010-12-01, version 1.66.0
 - updated 'std.imap.class.inc' to include method html2text() which will convert an HTML document into plain text.
 - updated 'std.imap.class.inc' so that it will provide the content-id of any attachments which are included in the HTML email. This will allow the 'cid' entry to be replaced with a URL that will obtain the attachment from its new location.
 - added the 'fullwidth' property to each 'style_custom.css' file so that the 'textarea' control can be made to fit the full width of the cell instead of being restricted to the specified number of columns.
-- amended XML/XSL processing so that if you add $this->fieldspec['<fieldname>']['xml'] = 'CDATA' to a field's specifications it will be added to the XHTML document in a <pre> element with disable-output-escaping="yes". This will prevent characters such as '<', '>' and '&' from being converted to '&lt;', '&gt;' and '&amp;'. Note that the 'disable-output-escaping' option does not work in client-side transformations with Firefox.
+- amended XML/XSL processing so that if you add $this->fieldspec['fieldname']['xml'] = 'CDATA' to a field's specifications it will be added to the XHTML document in a <pre> element with disable-output-escaping="yes". This will prevent characters such as '<', '>' and '&' from being converted to '&lt;', '&gt;' and '&amp;'. Note that the 'disable-output-escaping' option does not work in client-side transformations with Firefox (see bug #98168).
 - updated 'dml.pgsql.class.inc' so that it can deal with the 'retry_on_duplicate_key' property.
 - updated 'dml.oracle.php5.class.inc' so that it can deal with the DATE_SUB() and DATE_ADD() functions.
 - updated 'std.update2.inc' so that it will combine the result of the call to $dbobject->updateSelection() with any other messages generated within the object.
@@ -49,7 +118,7 @@
 - added the MNU_FAVOURITE table to the MENU database. This stores a user's favourite tasks so that they can be displayed in the 'Favourites' area of the Menu/Home Page screen. They are displayed as buttons on the Menu/Home Page screen which can be pressed to activate the task. You will need to run the following scripts:
 -- radicore\menu\sql\mysql\alter_table(2010-07-20).sql in order to update the structure of your MENU database.
 -- radicore\menu\sql\menu.menu_export(2010-07-20).sql in order to update the contents of your MENU database.
-- added navigation buttons to the 'List To-Do' screens to set the selection criteria to either COMPLETE or INCOMLETE. You will need to run the following script:
+- added navigation buttons to the 'List To-Do' screens to set the selection criteria to either COMPLETE or INCOMPLETE. You will need to run the following script:
 -- radicore\menu\sql\menu.menu_export(2010-07-24).sql in order to update the contents of your MENU database.
 - added task 'Delete Logon Errors' to AUDIT subsystem. You must run the folowing script:
 -- radicore\audit\sql\audit.menu_export(2010-07-31).sql in order to update the contents of your MENU database.
@@ -205,7 +274,7 @@
 2009-05-01, version 1.47.0
 - updated 'include.session.inc' to include getPreviousPattern() function.
 - updated 'std.table.class.inc' to include $this->scriptPrevious() method which will call $this->commit() if there is a database transaction which is open.
-- updated 'std.table.class.inc' to include $this->no_duplicate_error which, if set to TRUE, will prevent an error message when inserting a record which already exists. Instead it will set $this->numrows to zero to signify 'no insert', and the '_cm_post_insertRecord()' method will not be called. If the new record is not a duplicate then $this>numrows will be set to 1 to signify 'record inserted'.
+- updated 'std.table.class.inc' to include $this->no_duplicate_error which, if set to TRUE, will prevent an error message when inserting a record which already exists. Instead it will set $this->numrows to zero to signify 'no insert', and the '_cm_post_insertRecord()' method will not be called. If the new record is not a duplicate then $this->numrows will be set to 1 to signify 'record inserted'.
 - updated 'batch_log(filepicker)' task so that by default each file hyperlink will open up in the browser window. If 'download=TRUE' is entered into the task's 'settings' field then each hyperlink will be processed by the 'batch_log(filedownload)' task.
 - updated 'std.table.class.inc' to include 'post_fileUpload()' and '_cm_post_fileUpload()' methods.
 - updated 'std.fileupload1.inc' to call the 'post_fileUpload()' method so that the file may be processed after it has been uploaded.

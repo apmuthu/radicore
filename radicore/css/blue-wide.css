@@ -9,6 +9,87 @@ body, input, select, textarea, div.tree td .text {
   font-weight: normal;
 }
 
+/* HTML controls */
+input.submit, input.button {
+  color: white;
+  background-color: #0000bb;
+  font-family: "arial narrow", "quick type condensed", garamond, serif;
+  font-weight: bold;
+  font-size: 100%;
+}
+.radio input {
+  background-color: transparent;
+  font-size: 100%;
+  color: black;
+}
+.checkbox input {
+  background-color: transparent;
+  font-size: 100%;
+  color: black;
+} 
+input.text {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+} 
+input.password {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+} 
+select {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+} 
+select option {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+} 
+select.dropdown {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+}
+select.dropdown option.heading {
+  background: #dddddd;
+  font-weight: bold;
+}
+textarea {
+  background-color: white;
+  border: #000000 1px solid;
+  font-size: 100%;
+  color: black;
+  overflow: auto;
+}
+pre.textarea {
+	/* emulates a read-only textarea which contains hyperlinks */
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 1em;
+  height: 5em;
+  border: 1px solid gray; 
+  background-color: white;
+	overflow: auto;
+}
+pre.height_10 {
+  height: 10em;
+}
+pre.height_15 {
+  height: 15em;
+}
+pre.height_20 {
+  height: 20em;
+}
+pre.height_30 {
+  height: 30em;
+}
+
 /* miscellaneous */
 caption {
   font-weight: bold;
@@ -19,17 +100,29 @@ form {
 }
 
 h1 {
-  clear: left;
   font-size: 150%;
   font-weight: bold;
   margin-top: 1px;
   margin-bottom: 1px;
   text-align: left;
   padding-left: 5px;
+}
+
+/* title */
+div.title {
+  background: #000088;
+  padding-top: 1px;
+  border: 1px solid #000000;
+  line-height: 25px;
+}
+h1.title {
   color: white;
   background: #000088;
-  border-top: 1px solid #000000;
-  border-bottom: 1px solid #000000;
+}
+div.quicksearch {
+  float: right;
+  margin-top: -1px;
+  padding-bottom: 1px;
 }
 
 table {
@@ -39,6 +132,9 @@ th {
   text-align: center;
   color: black;
   background: #33aa99;
+}
+th a {
+  color: white;
 }
 tr {
 }
@@ -211,7 +307,7 @@ div.upload {
 #menubar {
   width: 100%;
   line-height: normal;
-  background: #dae0d2 url(../css/blue/bg.gif) repeat-x bottom;
+  background: #dae0d2 url(blue/bg.gif) repeat-x bottom;
   float: left;
 }
 #menubar ul {
@@ -223,7 +319,7 @@ div.upload {
   list-style-type: none;
 }
 #menubar li {
-  background: url(../css/blue/left.gif) no-repeat left top; 
+  background: url(blue/left.gif) no-repeat left top; 
   padding-top: 0px;
   padding-bottom: 0px;
   padding-left: 4px; 
@@ -232,7 +328,7 @@ div.upload {
   float: left;
 }
 #menubar a {
-  background: url(../css/blue/right.gif) no-repeat right top;
+  background: url(blue/right.gif) no-repeat right top;
   padding-top: 5px; 
   padding-bottom: 4px; 
   padding-left: 6px; 
@@ -249,11 +345,11 @@ div.upload {
 	border-bottom: 1px solid black;
 }
 #menubar .active {
-  background-image: url(../css/blue/left_on.gif);
+  background-image: url(blue/left_on.gif);
   border-bottom: solid 1px white;
 }
 #menubar .active a {
-  background-image: url(../css/blue/right_on.gif);
+  background-image: url(blue/right_on.gif);
 }
 #menubar p.filler {
   display: inline;
@@ -263,7 +359,7 @@ div.upload {
 #menustack-outer {
   clear: both;
   margin-right: 2px;
-  background: #dae0d2 url(../css/blue/bg.gif) repeat-x bottom;
+  background: #dae0d2 url(blue/bg.gif) repeat-x bottom;
   margin-top: -2.5pt;
 }
 #menustack {
@@ -366,19 +462,20 @@ div.navbar {
   background: #aabbc9;
 }
 div.navbar p.selection {
-  margin-top: 1px;
+  margin-top: 0px;
   margin-bottom: 0px;
-  padding-top: 5px;
-  padding-bottom: 5px;
+  margin-left: 2px;
+  padding-top: 3px;
+  padding-bottom: 4px;
   font-weight: bold;
   text-align: left;
   background: transparent;
 }
 div.navbar p.show {
   float: right;
-  margin-top: 1px;
+  margin-top: 0px;
   margin-bottom: 0px;
-  padding-top: 5px;
+  padding-top: 3px;
   padding-bottom: 4px;
   text-align: right;
   background: transparent;
@@ -386,21 +483,21 @@ div.navbar p.show {
 div.navbar p.show a {
   font-weight: bold;
 }
-div.navbar p.withselection {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  text-align: left;
-  background: transparent;
-}
 div.navbar p.withoutselection {
-  margin-top: 1px;
+  margin-top: 0px;
   margin-bottom: 0px;
   text-align: left;
   background: transparent;
   border-bottom: 1px solid white;
 }
-div.navbar input.submit {
-  color: white;
+div.navbar p.withselection {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  text-align: left;
+  background: transparent;
+  border-top: 1px solid white;
 }
 
 /* outer */
@@ -665,103 +762,12 @@ img.top {
   vertical-align: top;
 }
 
-/* HTML controls */
-input.submit {
-  background-color: #0000bb;
-  font-weight: bold;
-  font-size: 100%;
-  color: white;
-}
-.navbar input.submit {
-  font-family: "arial narrow", "quick type condensed", garamond, serif;
-  font-weight: normal;
-}  
-
-.radio input {
-  background-color: transparent;
-  font-size: 100%;
-  color: black;
-}
-
-.checkbox input {
-  background-color: transparent;
-  font-size: 100%;
-  color: black;
-} 
-
-input.text {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-} 
-
-input.password {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-} 
-
-select {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-} 
-
-select option {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-} 
-
-select.dropdown {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-}
-
-select.dropdown option.heading {
-  background: #dddddd;
-  font-weight: bold;
-}
-
-textarea {
-  background-color: white;
-  border: #000000 1px solid;
-  font-size: 100%;
-  color: black;
-  overflow: auto;
-}
-
-pre.textarea {
-	/* emulates a read-only textarea which contains hyperlinks */
-  font-family: Verdana, Arial, Helvetica, sans-serif;
-  font-size: 1em;
-  height: 5em;
-  border: 1px solid gray; 
-  background-color: white;
-	overflow: auto;
-}
-pre.height_10 {
-  height: 10em;
-}
-pre.height_15 {
-  height: 15em;
-}
-pre.height_20 {
-  height: 20em;
-}
-pre.height_30 {
-  height: 30em;
-}
-
 /* generic classes */
 .border0 {
   border-width: 0px;
+}
+.bottom {
+  vertical-align: bottom;
 }
 .center {
   text-align: center;
@@ -773,8 +779,11 @@ pre.height_30 {
   line-height: 3px;
   background-color: gray;
 }
+span.error {
+  clear: both;
+  display: block;
+}
 .error {
-  clear: left;
   font-style: italic;
   font-weight: normal;
   color: red;
@@ -792,6 +801,9 @@ pre.height_30 {
 .left {
   text-align: left;
 }
+.middle {
+  vertical-align: middle;
+}
 .no-underline {
   text-decoration: none;
 }
@@ -806,6 +818,9 @@ pre.height_30 {
 }
 .right {
   text-align: right;
+}
+.top {
+  vertical-align: top;
 }
 .transparent {
   background-color: transparent;

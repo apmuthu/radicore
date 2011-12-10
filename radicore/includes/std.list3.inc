@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -385,7 +385,7 @@ if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-        scriptPrevious(null, null, 'choose');
+        scriptPrevious($errors, $messages, 'choose');
     } // if
 } // if
 

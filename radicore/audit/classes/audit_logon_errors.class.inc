@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_logon_errors extends Default_Table
@@ -41,6 +41,29 @@ class audit_logon_errors extends Default_Table
     } // _cm_changeConfig
 
     // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('user_id' => 'User Id',
+                               'email_addr' => 'Email Address');
+                $this->lookup_data['quicksearch_field'] = $array;
+                $this->xsl_params['quicksearch_default'] = 'user_id';
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
+
+    // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
@@ -50,7 +73,7 @@ class audit_logon_errors extends Default_Table
         if (empty($this->sql_search)) return $where;
 
         // convert from string to an associative array
-        $fieldarray = where2array($this->sql_search);
+        $fieldarray = where2array($this->sql_search, false, false);
 
         // deal with values which have ranges
         if (!empty($fieldarray['date_from']) OR !empty($fieldarray['date_to'])) {

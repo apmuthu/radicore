@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 3.3.4
+-- version 3.3.8
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jul 20, 2010 at 10:19 AM
--- Server version: 5.1.48
--- PHP Version: 5.2.13
+-- Generation Time: Dec 29, 2010 at 11:58 AM
+-- Server version: 5.1.54
+-- PHP Version: 5.2.16
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 
@@ -77,10 +77,11 @@ CREATE TABLE IF NOT EXISTS `mnu_control` (
 
 CREATE TABLE IF NOT EXISTS `mnu_favourite` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `seq_no` smallint(10) unsigned NOT NULL DEFAULT '0',
+  `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `task_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `sort_seq` smallint(10) unsigned NOT NULL DEFAULT '0',
+  `sort_seq` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `breadcrumbs` varchar(4000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,
@@ -370,7 +371,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
 
 CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `seq_no` smallint(10) unsigned NOT NULL DEFAULT '0',
+  `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
   `item_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `item_notes` text COLLATE utf8_unicode_ci,
   `due_date` date NOT NULL DEFAULT '0000-00-00',
@@ -401,7 +402,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `rdcaccount_id` int(10) unsigned DEFAULT NULL,
   `pswd_chg_date` date DEFAULT NULL,
   `pswd_chg_time` time DEFAULT NULL,
-  `pswd_count` smallint(6) unsigned DEFAULT NULL,
+  `pswd_count` smallint(5) unsigned DEFAULT NULL,
   `in_use` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `is_disabled` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `logon_date` date DEFAULT NULL,

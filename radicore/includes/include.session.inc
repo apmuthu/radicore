@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions related to session management
@@ -85,7 +85,7 @@ function childForm ($post, $object_array, $where=null)
     if (is_array($object_array)) {
         foreach ($object_array as $objectname => $object) {
             // save current values in session array
-            $object->messages = null;
+            $object->messages = array();
         	$script_vars[$objectname] = serialize($object);
         } // foreach
         // set to last entry in array
@@ -125,8 +125,8 @@ function childForm ($post, $object_array, $where=null)
     $pattern_id = getPatternId();  // pattern for the current task
 
     foreach ($post as $key => $value) {
-        // look for a variable beginning with 'task#'
-        if (preg_match('/^task#/i', $key, $regs)) {
+        // look for a variable beginning with 'task#' or 'favourite#'
+        if (preg_match('/^(task#|favourite#)/i', $key, $regs)) {
             // strip pattern prefix
             $next_task = str_replace($regs[0], '', $key);
             // note: if the button is replaced with an image the key name returned
@@ -157,6 +157,13 @@ function childForm ($post, $object_array, $where=null)
     $task_array = $taskobj->checkSelection($next_task);
     if ($taskobj->errors) {
     	return $taskobj->errors;
+    } // if
+
+    if ($regs[0] == 'favourite#') {
+    	// a favourite has been chosen, so rebuild menu bar and breadcrumbs area
+    	$favObj = RDCsingleton::getInstance('mnu_favourite');
+    	$result = $favObj->rebuildBreadcrumbs($_SESSION['logon_user_id'], $next_task, $task_array);
+    	unset($favObj);
     } // if
 
     // check to see if a popup/filepicker/fileupload form has been called
@@ -234,7 +241,7 @@ function childForm ($post, $object_array, $where=null)
         	$task_array['sql_orderby_seq'] = $dbobject->sql_orderby_seq;
         	$search                        = $dbobject->getSearch();
         	if (!empty($search)) {
-        	    if (preg_match('/^(list)/i)', $task_array['pattern_id'])) {
+        	    if (preg_match('/^(list)/i', $task_array['pattern_id'])) {
         	    	// merge the SEARCH and WHERE strings
                     $where = mergeWhere($where, $search);
                     $search = null;
@@ -660,7 +667,7 @@ function initSession()
         if (isset($_GET['session_id'])) {
             session_id($_GET['session_id']);    // set the session id
         } // if
-        session_start();                    // open/reopen session
+        @session_start();                    // open/reopen session
         if (isset($save_session)) {
             // do not overwrite certain values from the starting session
             if (!empty($_SESSION['role_id'])) {
@@ -835,7 +842,7 @@ function initSession()
 
     if (!array_key_exists('css_file', $_SESSION)) {
         // not yet defined, so set to default
-    	$_SESSION['css_file'] = 'default';
+    	$_SESSION['css_file'] = 'default.css';
     } // if
 
     // look for security class from logon screen
@@ -905,8 +912,10 @@ function initSession()
 	    } elseif ($_GET['action'] == 'add-to-favourites') {
             // add current task to MNU_FAVOURITES table
             $dbobject =& RDCsingleton::getInstance('mnu_favourite');
-            $insert['user_id'] = $_SESSION['logon_user_id'];
-            $insert['task_id'] = $task_id;
+            $insert['user_id']      = $_SESSION['logon_user_id'];
+            $insert['task_id']      = $task_id;
+            $insert['current_menu'] = $script_vars['current_menu'];
+            $insert['breadcrumbs']  = $script_vars['page_stack'];
             $dbobject->startTransaction();
             $insert = $dbobject->insertRecord($insert);
             $errors = $dbobject->getErrors();
@@ -1072,7 +1081,7 @@ function initSession()
             	                           .$PHP_SELF;
             	    $location .= '?session_id=' .session_id();
             	    if (!empty($_SERVER['QUERY_STRING'])) {
-            	    	$location .= '&' .$_SERVER['QUERY_STRING'];
+            	    	$location .= '?' .$_SERVER['QUERY_STRING'];
             	    } // if
 
                     //logstuff("location: $location", __FUNCTION__, __LINE__);
@@ -1090,7 +1099,7 @@ function initSession()
                                       .$PHP_SELF;
                 $location .= '?session_id=' .session_id();
                 if (!empty($_SERVER['QUERY_STRING'])) {
-                   $location .= '&' .$_SERVER['QUERY_STRING'];
+                   $location .= '?' .$_SERVER['QUERY_STRING'];
                 } // if
 
                 //$location .= '&redirect=true';
@@ -1365,8 +1374,11 @@ function initSession()
         unset ($script_vars['popup_offset']);
     } // if
 
-    // check for string returned by SEARCH script
-    if (isset($script_vars['search'])) {
+    if (isset($_POST['quicksearch'])) {
+        // search criteria has been entered in quicksearch area
+        $search = quicksearch($_POST['quicksearch_field'], $_POST['quicksearch_value']);
+    } elseif (isset($script_vars['search'])) {
+        // search criteria has been saved in script variables
         $search = $script_vars['search'];
         unset ($script_vars['search']);
     } // if
@@ -1460,6 +1472,51 @@ function initSession()
     return;
 
 } // initSession
+
+// ****************************************************************************
+function quickSearch ($quicksearch_field, $quicksearch_value)
+// the QuickSearch button has been pressed, so output result in $search string
+{
+    $quicksearch_value = trim($quicksearch_value);
+
+    if (empty($quicksearch_field) OR empty($quicksearch_value)) {
+        return false;
+    } // if
+
+    if (substr_count($quicksearch_value, '%') > 0) {
+        // already has a wildcard character, so don't add another
+	    $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."'";
+    } else {
+        if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $quicksearch_value, $regs )) {
+            // strip pattern from string and use as the operator
+            $quicksearch_value = substr($quicksearch_value, strlen($regs[0]));
+            $search = $quicksearch_field .' ' .$regs[0] ." '" .addslashes($quicksearch_value) ."'";
+        } else {
+            if (is_numeric($quicksearch_value)) {
+                if ($quicksearch_value == (int)$quicksearch_value) {
+                	$number = (int)$quicksearch_value;
+                } elseif ($quicksearch_value == (float)$quicksearch_value) {
+                    $number = (float)$quicksearch_value;
+                } else {
+                    $number = null;
+                } // if
+                if ((string)$quicksearch_value == (string)$number) {
+                    // this is a number, so do not append the wildcard character
+                    $search = $quicksearch_field ." = " .$number;
+                } else {
+                    // put a wildcard character at the end of the string by default
+                    $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."%'";
+                } // if
+            } else {
+                // put a wildcard character at the end of the string by default
+                $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."%'";
+            } // if
+        } // if
+    } // if
+
+    return $search;
+
+} // quickSearch
 
 // ****************************************************************************
 function reducePageStack ($task_id, $keep_entry=false)

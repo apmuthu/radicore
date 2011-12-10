@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output3.inc
@@ -48,7 +48,8 @@ if (!empty($sql_orderby)) {
 // perform any initialisation
 $where = $dbobject->initialise($where, $selection, $search);
 if ($dbobject->errors) {
-	scriptPrevious($dbobject->getErrors());
+	$batch_errors = scriptPrevious($dbobject->getErrors());
+	return $batch_errors;
 } // if
 
 // get any data for lookup lists
@@ -71,11 +72,13 @@ if (isset($search)) {
 // get data from the database
 $resource = $dbobject->getData_serial($where);
 if (!empty($dbobject->errors)) {
-	scriptPrevious($dbobject->getErrors());
+	$batch_errors = scriptPrevious($dbobject->getErrors());
+	return $batch_errors;
 } // if
 
 if ($dbobject->getNumRows() == 0) {
-    scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    $batch_errors = scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    return $batch_errors;
 } // if
 
 if (empty($pdfout)) {
@@ -95,8 +98,14 @@ $prev_task   = getPreviousTask($prev_script);
 // tell previous script that we are returning
 $_SESSION['pages'][$prev_script][$prev_task]['return_from'] = 'pdf';
 
-if (!preg_match('/(D|I)/i', $destination) OR !empty($errors)) {
-	scriptPrevious($errors, $messages);
+if (!preg_match('/(D|I)/i', $destination) OR !empty($errors) OR isset($GLOBALS['batch'])) {
+	$batch_errors = scriptPrevious($errors, $messages, 'OK');
+	if (isset($GLOBALS['stdouth'])) {
+		foreach ($messages as $key => $message) {
+			$result = fwrite($stdouth, $message);
+		} // foreach
+	} // if
+	return $batch_errors;
 } else {
     unset($_SESSION['pages'][getSelf()]);  // delete current script from session array
 } // if

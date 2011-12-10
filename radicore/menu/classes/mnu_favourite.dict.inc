@@ -1,5 +1,5 @@
 <?php
-    // file created on August 1, 2010, 7:50 am
+    // file created on December 29, 2010, 2:49 pm
     
     // field specifications for table menu.mnu_favourite
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -8,7 +8,7 @@
                                                     'required' => 'y');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -28,11 +28,15 @@
                                                     'required' => 'y');
     
     $fieldspec['sort_seq']                  = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
                                                     'default' => '0');
+    
+    $fieldspec['breadcrumbs']               = array('type' => 'string',
+                                                    'size' => 4000,
+                                                    'noedit' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,

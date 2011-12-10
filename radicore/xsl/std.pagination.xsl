@@ -6,10 +6,15 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+  
 <xsl:variable name="page"  select="/root/params/text/page"/>
 <xsl:variable name="item"  select="/root/params/text/item"/>
 <xsl:variable name="of"    select="/root/params/text/of"/>

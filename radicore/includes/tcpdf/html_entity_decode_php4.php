@@ -1,9 +1,9 @@
 <?php
 //============================================================+
 // File name   : html_entity_decode_php4.php
-// Version     : 1.0.003
+// Version     : 1.0.004
 // Begin       : 2006-06-22
-// Last Update : 2010-08-08
+// Last Update : 2010-12-16
 // Author      : Nicola Asuni - Tecnick.com S.r.l - Via Della Pace, 11 - 09044 - Quartucciu (CA) - ITALY - www.tecnick.com - info@tecnick.com
 // License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
@@ -34,18 +34,16 @@
 //============================================================+
 
 /**
+ * @file
  * This is a PHP4 function that redefine the standard
  * html_entity_decode function to support UTF-8 encoding.
  * @package com.tecnick.tcpdf
  * @author Nicola Asuni
- * @copyright 2006-2010 Nicola Asuni - Tecnick.com S.r.l (www.tecnick.com) Via Della Pace, 11 - 09044 - Quartucciu (CA) - ITALY - www.tecnick.com - info@tecnick.com
- * @link http://www.tcpdf.org
- * @license http://www.gnu.org/copyleft/lesser.html LGPL
  */
 
 /**
  * Returns the UTF-8 string corresponding to unicode value.
- * @param $num unicode value to convert.
+ * @param $num (int) unicode value to convert.
  * @return string converted
  */
 function code_to_utf8($num) {
@@ -64,7 +62,7 @@ function code_to_utf8($num) {
 /**
  * Reverse function for htmlentities.
  * Convert entities in UTF-8.
- * @param $text_to_convert Text to convert.
+ * @param $text_to_convert (string) Text to convert.
  * @return string converted
  */
 function html_entity_decode_php4($text_to_convert) {

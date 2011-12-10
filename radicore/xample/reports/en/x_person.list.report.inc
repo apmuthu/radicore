@@ -17,9 +17,6 @@ $structure['title'][] = array('text' => '- Contents of X_PERSON table -',
 //$structure['title'][] = array('text' => '%%last_name',
                               'width' => '35%',
                               'align' => 'center',
-                              //'halign' => 'left',
-                              //'valign' => 'top',
-                              //'stretch' => 'y',
                               'border' => 'y');
 
 // set column widths
@@ -31,8 +28,8 @@ $structure['columns'][] = array('width' => '8%');
 $structure['columns'][] = array('width' => '*');
 $structure['columns'][] = array('width' => '9%');
 $structure['columns'][] = array('width' => '9%');
-$structure['columns'][] = array('width' => '7%', 'halign' => 'right');
-$structure['columns'][] = array('width' => '7%', 'halign' => 'right');
+$structure['columns'][] = array('width' => '7%', 'align' => 'right');
+$structure['columns'][] = array('width' => '7%', 'align' => 'right');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('person_id' => 'Id');
@@ -47,11 +44,10 @@ $structure['body']['fields'][] = array('value1' => 'Value 1');
 $structure['body']['fields'][] = array('value2' => 'Value 2');
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'valign' => 'left');
-$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center', 'margin_left' => 8.5);
+$structure['foot1'][] = array('type' => 'time',   'align' => 'right',  'style' => 'textalignright');
 
-//$structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
-$structure['foot2'][] = array('text' => '%%last_name', 'align' => 'center');
+$structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 
 ?>

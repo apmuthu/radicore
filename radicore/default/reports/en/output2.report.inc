@@ -19,7 +19,7 @@ $structure['title'][] = array('text' => "- <insert title here> -",
                               'border' => 'y');
 
 // set column widths
-$structure['columns'][] = array('width' => 20);
+$structure['columns'][] = array('width' => 'n%');
 $structure['columns'][] = array('width' => 25, 'halign' => 'left', 'overflow' => 'y');
 $structure['columns'][] = array('width' => 20, 'halign' => 'right');
 $structure['columns'][] = array('width' => 20, 'halign' => 'center');

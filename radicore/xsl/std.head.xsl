@@ -6,24 +6,17 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+  
 <xsl:variable name="title" select="/root/params/title"/>
-
-<xsl:variable name="imagedir">
-  <xsl:choose>
-    <xsl:when test="/root/params/application='sample'">
-      <!-- this is for the sample application -->
-      <xsl:text>images/</xsl:text>
-    </xsl:when>
-    <xsl:otherwise>
-      <!-- this is for the full application -->
-      <xsl:text>../images/</xsl:text>
-    </xsl:otherwise>
-  </xsl:choose>
-</xsl:variable>
+<xsl:variable name="imagedir" select="/root/params/image-dir"/>
 
 <xsl:template name="head">
 
@@ -42,19 +35,10 @@
       </meta>
     </xsl:if>
 
-    <xsl:choose>
-      <xsl:when test="/root/params/application='sample'">
-        <!-- this is for the sample application -->
-        <link rel="stylesheet" type="text/css" href="style_default.css" />
-        <link rel="stylesheet" type="text/css" href="style_custom.css" />
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:for-each select="/root/cssfiles/filename">
-          <link rel="stylesheet" type="text/css" href="{node()}" />
-        </xsl:for-each>
-      </xsl:otherwise>
-    </xsl:choose>
-
+    <xsl:for-each select="/root/cssfiles/filename">
+      <link rel="stylesheet" type="text/css" href="{node()}" />
+    </xsl:for-each>
+    
     <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
 
     <xsl:for-each select="/root/javascript/head">
@@ -64,7 +48,10 @@
         </xsl:when>
         <xsl:when test="@type='code'">
           <script language="javascript">
-            <xsl:value-of select="node()" disable-output-escaping="yes"/>
+            <!--<xsl:value-of select="node()" disable-output-escaping="yes"/>-->
+            <xsl:call-template name="disable-output-escaping">
+              <xsl:with-param name="string" select="node()" />
+            </xsl:call-template>
           </script>
         </xsl:when>
       </xsl:choose>
@@ -81,13 +68,14 @@
     <xsl:copy-of select="@*" />
   </xsl:for-each>
 
-  <div class="header">
-    <p>
-      <xsl:if test="/root/header">
-        <xsl:value-of select="/root/header" disable-output-escaping="yes"/>
-      </xsl:if>
-    </p>
-  </div>
+  <xsl:if test="/root/header">
+    <div class="header">
+      <!--<xsl:value-of select="/root/header" disable-output-escaping="yes"/>-->
+      <xsl:call-template name="disable-output-escaping">
+        <xsl:with-param name="string" select="/root/header" />
+      </xsl:call-template>
+    </div>
+  </xsl:if>
 
 </xsl:template>
 
@@ -101,7 +89,10 @@
 
   <xsl:if test="/root/footer">
     <div class="footer">
-      <xsl:value-of select="/root/footer" disable-output-escaping="yes"/>
+      <!--<xsl:value-of select="/root/footer" disable-output-escaping="yes"/>-->
+      <xsl:call-template name="disable-output-escaping">
+        <xsl:with-param name="string" select="/root/footer" />
+      </xsl:call-template>
     </div>
   </xsl:if>
 

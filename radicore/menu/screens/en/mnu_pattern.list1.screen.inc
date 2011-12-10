@@ -6,7 +6,7 @@ $structure['tables']['main'] = 'mnu_pattern';
 $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => '*');
-$structure['main']['columns'][] = array('width' => 10);
+$structure['main']['columns'][] = array('width' => 10, 'align' => 'right');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('pattern_id' => 'ID');

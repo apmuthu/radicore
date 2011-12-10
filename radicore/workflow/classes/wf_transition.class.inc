@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_transition extends Default_Table
@@ -210,8 +210,8 @@ class wf_transition extends Default_Table
             // include columns from foreign table
             $this->sql_select = 'wf_transition.*, task_desc, role_desc';
             $this->sql_from   = 'wf_transition '
-                              . 'LEFT JOIN ' .$dbprefix .'menu.mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
-                              . 'LEFT JOIN ' .$dbprefix .'menu.mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
+                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
+                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
         } // if
 
         return $where;

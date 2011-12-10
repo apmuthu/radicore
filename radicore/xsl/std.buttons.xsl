@@ -2,14 +2,19 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns="http://www.w3.org/1999/xhtml">
-
+  
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+  
 <xsl:variable name="script"       select="/root/params/script"/>
 <xsl:variable name="mode"         select="/root/params/mode"/>
 <xsl:variable name="session_name" select="/root/params/session_name"/>
@@ -139,179 +144,176 @@
 
   <div class="help">
     <p>
-      <xsl:if test="not(/root/params/application='sample')">
-        <!-- do not include this in the sample application -->
-        <xsl:if test="not($mode='logon') and not ($mode='recover')">
+      <xsl:if test="not($mode='logon') and not ($mode='recover')">
 
-          <!-- create a link to add current ask to favourites -->
+        <!-- create a link to add current ask to favourites -->
+        <xsl:choose>
+          <xsl:when test="/root/params/icon/add-to-favourites">
+            <!-- create image link -->
+            <a href="{$script}?action=add-to-favourites&amp;{$session}" class="no-underline">
+              <img border="0" class="bottom" height="{/root/params/icon/size}">
+                <xsl:attribute name="src">
+                  <xsl:value-of select="concat($doc_root,/root/params/icon/add-to-favourites)"/>
+                </xsl:attribute>
+                <xsl:attribute name="alt">
+                  <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                </xsl:attribute>
+                <xsl:attribute name="title">
+                  <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                </xsl:attribute>
+              </img>
+            </a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+          <xsl:when test="/root/params/text/add-to-favourites">
+            <!-- create text link -->
+            <a href="{$script}?action=add-to-favourites&amp;{$session}" ><xsl:value-of select="/root/params/text/add-to-favourites"/></a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+        </xsl:choose>
+        
+        <!-- create a logout link to close current session -->
+        <xsl:choose>
+          <xsl:when test="/root/params/icon/logout">
+            <!-- create image link -->
+            <a href="{$script}?action=logout&amp;{$session}" class="no-underline">
+              <img border="0" class="bottom" height="{/root/params/icon/size}">
+                <xsl:attribute name="src">
+                  <xsl:value-of select="concat($doc_root,/root/params/icon/logout)"/>
+                </xsl:attribute>
+                <xsl:attribute name="alt">
+                  <xsl:value-of select="/root/params/text/logout"/>
+                </xsl:attribute>
+                <xsl:attribute name="title">
+                  <xsl:value-of select="/root/params/text/logout"/>
+                </xsl:attribute>
+              </img>
+            </a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+          <xsl:when test="/root/params/text/logout">
+            <!-- create text link -->
+            <a href="{$script}?action=logout&amp;{$session}" ><xsl:value-of select="/root/params/text/logout"/></a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+        </xsl:choose>
+
+        <!-- create a logout (all) link to close ALL sessions on this client -->
+        <xsl:if test="/root/params/text/logout-all">
           <xsl:choose>
-            <xsl:when test="/root/params/icon/add-to-favourites">
+            <xsl:when test="/root/params/icon/logout-all">
               <!-- create image link -->
-              <a href="{$script}?action=add-to-favourites&amp;{$session}" class="no-underline">
+              <a href="{$script}?action=logout_all&amp;{$session}" class="no-underline">
                 <img border="0" class="bottom" height="{/root/params/icon/size}">
                   <xsl:attribute name="src">
-                    <xsl:value-of select="concat($doc_root,/root/params/icon/add-to-favourites)"/>
+                    <xsl:value-of select="concat($doc_root,/root/params/icon/logout-all)"/>
                   </xsl:attribute>
                   <xsl:attribute name="alt">
-                    <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                    <xsl:value-of select="/root/params/text/logout-all"/>
                   </xsl:attribute>
                   <xsl:attribute name="title">
-                    <xsl:value-of select="/root/params/text/add-to-favourites"/>
+                    <xsl:value-of select="/root/params/text/logout-all"/>
                   </xsl:attribute>
                 </img>
               </a>
               <xsl:text> | </xsl:text>
             </xsl:when>
-            <xsl:when test="/root/params/text/add-to-favourites">
+            <xsl:when test="/root/params/text/logout-all">
               <!-- create text link -->
-              <a href="{$script}?action=add-to-favourites&amp;{$session}" ><xsl:value-of select="/root/params/text/add-to-favourites"/></a>
-              <xsl:text> | </xsl:text>
-            </xsl:when>
-          </xsl:choose>
-          
-          <!-- create a logout link to close current session -->
-          <xsl:choose>
-            <xsl:when test="/root/params/icon/logout">
-              <!-- create image link -->
-              <a href="{$script}?action=logout&amp;{$session}" class="no-underline">
-                <img border="0" class="bottom" height="{/root/params/icon/size}">
-                  <xsl:attribute name="src">
-                    <xsl:value-of select="concat($doc_root,/root/params/icon/logout)"/>
-                  </xsl:attribute>
-                  <xsl:attribute name="alt">
-                    <xsl:value-of select="/root/params/text/logout"/>
-                  </xsl:attribute>
-                  <xsl:attribute name="title">
-                    <xsl:value-of select="/root/params/text/logout"/>
-                  </xsl:attribute>
-                </img>
-              </a>
-              <xsl:text> | </xsl:text>
-            </xsl:when>
-            <xsl:when test="/root/params/text/logout">
-              <!-- create text link -->
-              <a href="{$script}?action=logout&amp;{$session}" ><xsl:value-of select="/root/params/text/logout"/></a>
+              <a href="{$script}?action=logout_all&amp;{$session}" ><xsl:value-of select="/root/params/text/logout-all"/></a>
               <xsl:text> | </xsl:text>
             </xsl:when>
           </xsl:choose>
 
-          <!-- create a logout (all) link to close ALL sessions on this client -->
-          <xsl:if test="/root/params/text/logout-all">
+          <!-- include optional icon -->
+
+        </xsl:if>
+
+        <!-- create a link to start a new session with a new name and session id) -->
+        <xsl:choose>
+          <xsl:when test="/root/params/icon/new-session">
+            <!-- create image link -->
+            <a href="{$script}?action=newsession&amp;{$session}" class="no-underline">
+              <img border="0" class="bottom" height="{/root/params/icon/size}">
+                <xsl:attribute name="src">
+                  <xsl:value-of select="concat($doc_root,/root/params/icon/new-session)"/>
+                </xsl:attribute>
+                <xsl:attribute name="alt">
+                  <xsl:value-of select="/root/params/text/new-session"/>
+                </xsl:attribute>
+                <xsl:attribute name="title">
+                  <xsl:value-of select="/root/params/text/new-session"/>
+                </xsl:attribute>
+              </img>
+            </a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+          <xsl:when test="/root/params/text/new-session">
+            <!-- create text link -->
+            <a href="{$script}?action=newsession&amp;{$session}" ><xsl:value-of select="/root/params/text/new-session"/></a>
+            <xsl:text> | </xsl:text>
+          </xsl:when>
+        </xsl:choose>
+
+        <!-- print/noprint options -->
+        <xsl:choose>
+          <xsl:when test="$print-preview">
             <xsl:choose>
-              <xsl:when test="/root/params/icon/logout-all">
-                <!-- create image link -->
-                <a href="{$script}?action=logout_all&amp;{$session}" class="no-underline">
+              <xsl:when test="/root/params/icon/noprint">
+                <!-- display image link -->
+                <a href="{$script}?action=noprint&amp;{$session}" class="no-underline">
                   <img border="0" class="bottom" height="{/root/params/icon/size}">
                     <xsl:attribute name="src">
-                      <xsl:value-of select="concat($doc_root,/root/params/icon/logout-all)"/>
+                      <xsl:value-of select="concat($doc_root,/root/params/icon/noprint)"/>
                     </xsl:attribute>
                     <xsl:attribute name="alt">
-                      <xsl:value-of select="/root/params/text/logout-all"/>
+                      <xsl:value-of select="/root/params/text/noprint"/>
                     </xsl:attribute>
                     <xsl:attribute name="title">
-                      <xsl:value-of select="/root/params/text/logout-all"/>
+                      <xsl:value-of select="/root/params/text/noprint"/>
                     </xsl:attribute>
                   </img>
                 </a>
                 <xsl:text> | </xsl:text>
               </xsl:when>
-              <xsl:when test="/root/params/text/logout-all">
-                <!-- create text link -->
-                <a href="{$script}?action=logout_all&amp;{$session}" ><xsl:value-of select="/root/params/text/logout-all"/></a>
+              <xsl:when test="/root/params/text/noprint">
+                <!-- display text link-->
+                <a href="{$script}?action=noprint&amp;{$session}" ><xsl:value-of select="/root/params/text/noprint"/></a>
+                <xsl:text> | </xsl:text>
+              </xsl:when>
+            </xsl:choose>
+          </xsl:when>
+          <xsl:otherwise>
+
+            <!-- create a link to redisplay the page in print mode -->
+            <xsl:choose>
+              <xsl:when test="/root/params/icon/print">
+                <!-- display image link -->
+                <a href="{$script}?action=print&amp;{$session}" class="no-underline">
+                  <img border="0" class="bottom" height="{/root/params/icon/size}">
+                    <xsl:attribute name="src">
+                      <xsl:value-of select="concat($doc_root,/root/params/icon/print)"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="alt">
+                      <xsl:value-of select="/root/params/text/print"/>
+                    </xsl:attribute>
+                    <xsl:attribute name="title">
+                      <xsl:value-of select="/root/params/text/print"/>
+                    </xsl:attribute>
+                  </img>
+                </a>
+                <xsl:text> | </xsl:text>
+              </xsl:when>
+              <xsl:when test="/root/params/text/print">
+                <!-- display text link -->
+                <a href="{$script}?action=print&amp;{$session}" ><xsl:value-of select="/root/params/text/print"/></a>
                 <xsl:text> | </xsl:text>
               </xsl:when>
             </xsl:choose>
 
-            <!-- include optional icon -->
+          </xsl:otherwise>
+        </xsl:choose>
 
-          </xsl:if>
-
-          <!-- create a link to start a new session with a new name and session id) -->
-          <xsl:choose>
-            <xsl:when test="/root/params/icon/new-session">
-              <!-- create image link -->
-              <a href="{$script}?action=newsession&amp;{$session}" class="no-underline">
-                <img border="0" class="bottom" height="{/root/params/icon/size}">
-                  <xsl:attribute name="src">
-                    <xsl:value-of select="concat($doc_root,/root/params/icon/new-session)"/>
-                  </xsl:attribute>
-                  <xsl:attribute name="alt">
-                    <xsl:value-of select="/root/params/text/new-session"/>
-                  </xsl:attribute>
-                  <xsl:attribute name="title">
-                    <xsl:value-of select="/root/params/text/new-session"/>
-                  </xsl:attribute>
-                </img>
-              </a>
-              <xsl:text> | </xsl:text>
-            </xsl:when>
-            <xsl:when test="/root/params/text/new-session">
-              <!-- create text link -->
-              <a href="{$script}?action=newsession&amp;{$session}" ><xsl:value-of select="/root/params/text/new-session"/></a>
-              <xsl:text> | </xsl:text>
-            </xsl:when>
-          </xsl:choose>
-
-          <!-- print/noprint options -->
-          <xsl:choose>
-            <xsl:when test="$print-preview">
-              <xsl:choose>
-                <xsl:when test="/root/params/icon/noprint">
-                  <!-- display image link -->
-                  <a href="{$script}?action=noprint&amp;{$session}" class="no-underline">
-                    <img border="0" class="bottom" height="{/root/params/icon/size}">
-                      <xsl:attribute name="src">
-                        <xsl:value-of select="concat($doc_root,/root/params/icon/noprint)"/>
-                      </xsl:attribute>
-                      <xsl:attribute name="alt">
-                        <xsl:value-of select="/root/params/text/noprint"/>
-                      </xsl:attribute>
-                      <xsl:attribute name="title">
-                        <xsl:value-of select="/root/params/text/noprint"/>
-                      </xsl:attribute>
-                    </img>
-                  </a>
-                  <xsl:text> | </xsl:text>
-                </xsl:when>
-                <xsl:when test="/root/params/text/noprint">
-                  <!-- display text link-->
-                  <a href="{$script}?action=noprint&amp;{$session}" ><xsl:value-of select="/root/params/text/noprint"/></a>
-                  <xsl:text> | </xsl:text>
-                </xsl:when>
-              </xsl:choose>
-            </xsl:when>
-            <xsl:otherwise>
-
-              <!-- create a link to redisplay the page in print mode -->
-              <xsl:choose>
-                <xsl:when test="/root/params/icon/print">
-                  <!-- display image link -->
-                  <a href="{$script}?action=print&amp;{$session}" class="no-underline">
-                    <img border="0" class="bottom" height="{/root/params/icon/size}">
-                      <xsl:attribute name="src">
-                        <xsl:value-of select="concat($doc_root,/root/params/icon/print)"/>
-                      </xsl:attribute>
-                      <xsl:attribute name="alt">
-                        <xsl:value-of select="/root/params/text/print"/>
-                      </xsl:attribute>
-                      <xsl:attribute name="title">
-                        <xsl:value-of select="/root/params/text/print"/>
-                      </xsl:attribute>
-                    </img>
-                  </a>
-                  <xsl:text> | </xsl:text>
-                </xsl:when>
-                <xsl:when test="/root/params/text/print">
-                  <!-- display text link -->
-                  <a href="{$script}?action=print&amp;{$session}" ><xsl:value-of select="/root/params/text/print"/></a>
-                  <xsl:text> | </xsl:text>
-                </xsl:when>
-              </xsl:choose>
-
-            </xsl:otherwise>
-          </xsl:choose>
-
-        </xsl:if>
       </xsl:if>
 
       <xsl:if test="$mode='logon'">
@@ -534,16 +536,20 @@
               <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
               <xsl:text> | </xsl:text>
               <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>
-              <xsl:text> | </xsl:text>
-              <!-- allow the selection to be locked so that the same records are marked as 'selected' 
-                   when returning to this screen -->
-              <label for="rdc_selection_lock"><xsl:value-of select="$selection-lock"/></label>
-              <input type="hidden"   name="rdc_selection_lock" value="0" />              <!-- default is OFF -->
-              <input type="checkbox" name="rdc_selection_lock" id="rdc_selection_lock">  <!-- may be changed to ON -->
-                <xsl:if test="/root/params/selection_lock">
-                  <xsl:attribute name="checked">checked</xsl:attribute>
-                </xsl:if>
-              </input>
+              
+              <xsl:if test="$selection-lock">  <!-- optional -->
+                <xsl:text> | </xsl:text>
+                <!-- allow the selection to be locked so that the same records are marked as 'selected' 
+                     when returning to this screen -->
+                <label for="rdc_selection_lock"><xsl:value-of select="$selection-lock"/></label>
+                <input type="hidden"   name="rdc_selection_lock" value="0" />              <!-- default is OFF -->
+                <input type="checkbox" name="rdc_selection_lock" id="rdc_selection_lock">  <!-- may be changed to ON -->
+                  <xsl:if test="/root/params/selection_lock">
+                    <xsl:attribute name="checked">checked</xsl:attribute>
+                  </xsl:if>
+                </input>
+              </xsl:if>
+              
             </xsl:if>
             <!-- insert a non-breaking space -->
             <xsl:text>&#160;</xsl:text>

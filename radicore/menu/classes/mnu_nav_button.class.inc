@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_nav_button extends Default_Table
@@ -91,8 +91,12 @@ class mnu_nav_button extends Default_Table
             	$search_table = $original;
             } // if
             if (isset($_SESSION['search'][$search_table])) {
-                // previous search data is available, so create extra button
-                $buttons = addPreviousSearchButton($buttons);
+                if (preg_match("/^curr_or_hist='[a-z]{1}'$/i", $_SESSION['search'][$search_table])) {
+                    // contains only "curr_or_hist='X'", so ignore it
+                } else {
+                    // previous search data is available, so create extra button
+                    $buttons = addPreviousSearchButton($buttons);
+                } // if
             } // if
         } // if
 

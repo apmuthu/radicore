@@ -20,6 +20,7 @@ $structure['main']['fields'][] = array('pattern_desc' => 'Pattern', 'colspan' =>
 $structure['main']['fields'][] = array('task_id' => 'Task ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('script_id' => 'Script ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('tablename' => 'Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('table_alias' => 'Table Alias', 'colspan' => 3);
 $structure['main']['fields'][] = array('database_id_outer' => 'Outer Database', 'colspan' => 3);
 $structure['main']['fields'][] = array('outer_table' => 'Outer Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('link_table' => 'Link Table Name', 'colspan' => 3);

@@ -2,14 +2,19 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns="http://www.w3.org/1999/xhtml">
-
+  
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+  
 <xsl:variable name="orderby" select="/root/params/orderby"/>
 <xsl:variable name="order" select="/root/params/order"/>
 
@@ -39,9 +44,11 @@
       <xsl:if test="@width">
         <xsl:attribute name="width" ><xsl:value-of select="@width" /></xsl:attribute>
       </xsl:if>
+      <!-- the 'class' attribute will now be added to all the cells within this column
       <xsl:if test="@class">
         <xsl:attribute name="class" ><xsl:value-of select="@class" /></xsl:attribute>
       </xsl:if>
+      -->
       <xsl:if test="@align">
         <xsl:attribute name="align" ><xsl:value-of select="@align" /></xsl:attribute>
       </xsl:if>
@@ -102,6 +109,8 @@
           <!-- get fieldname from the FIELD attribute of the following sibling -->
           <xsl:with-param name="fieldname" select="string(following-sibling::*[@field]/@field)" />
           <xsl:with-param name="label" select="@label"/>
+          <xsl:with-param name="zone" select="$zone"/>
+          <xsl:with-param name="position" select="position()"/>
           <xsl:with-param name="nosort_all" select="$nosort_all"/>
           <xsl:with-param name="nosort_column" select="@nosort"/>
         </xsl:call-template>
@@ -123,8 +132,13 @@
 <xsl:template name="column_hdg">
   <xsl:param name="fieldname"/>
   <xsl:param name="label"/>
+  <xsl:param name="zone"/>
+  <xsl:param name="position"/>
   <xsl:param name="nosort_all"/>
-  <xsl:param name="nosort_column"/>
+  <xsl:param name="nosort_column"/>  <!-- from the 'structure/$zone/row' specifications -->
+
+  <!-- look for 2nd 'nosort' option supplied in the column structure specifications -->
+  <xsl:variable name="nosort_column2" select="/root/structure/*[name()=$zone]/columns/column[position()=$position]/@nosort" />
 
   <xsl:choose>
 
@@ -132,8 +146,8 @@
       <!-- text only, no hyperlink -->
       <xsl:value-of select="$label"/>
     </xsl:when>
-
-    <xsl:when test="$numrows > 0 and not($nosort_all) and not($nosort_column)">
+    
+    <xsl:when test="$numrows > 0 and not($nosort_all) and not($nosort_column) and not($nosort_column2)">
       <!-- $numrows is one of the XSL parameters -->
       <!-- note that if 'nosort' is set there are no hyperlinks for sorting -->
 

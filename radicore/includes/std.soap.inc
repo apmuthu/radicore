@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2009-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2009-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // this file contains functions which use PHP's SOAP extension

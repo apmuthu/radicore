@@ -53,9 +53,9 @@ $structure['body']['fields'][] = array('revised_date' => 'Revised Date');
 $structure['body']['fields'][] = array('revised_user' => 'Revised By');
 
 // define contents of page footer
-$structure['foot1'][] = array('type' => 'date', 'align' => 'left', 'style' => 'textalignleft');
-$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center');
-$structure['foot1'][] = array('type' => 'time', 'align' => 'right', 'style' => 'textalignright');
+$structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'style' => 'textalignleft');
+$structure['foot1'][] = array('type' => 'pageno', 'align' => 'center', 'margin_left' => 8.5);
+$structure['foot1'][] = array('type' => 'time',   'align' => 'right',  'style' => 'textalignright');
 
 $structure['foot2'][] = array('text' => 'Radicore Software Limited', 'align' => 'center');
 

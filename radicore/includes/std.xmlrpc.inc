@@ -1,10 +1,10 @@
 <?php
 // *****************************************************************************
-// Copyright 2009-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2009-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 // Author:  Tony Marston
-// Version: 1.3.0
-// Date:    14-06-2010
+// Version: 1.4.0
+// Date:    18-07-2011
 // *****************************************************************************
 
 // this file contains functions which use PHP's XMLRPC extension
@@ -12,7 +12,11 @@
 // obtain config details for this installation
 $userdata       = array();
 $server_options = array();
-require('config.xmlrpc.inc');
+if (file_exists('config.xmlrpc.inc')) {
+	require('config.xmlrpc.inc');
+} else {
+    require('config.xmlrpc.inc.default');
+} // if
 
 // ****************************************************************************
 function get_XMLRPC_client ($subject)
@@ -67,6 +71,15 @@ class XMLRPC_client
         return true;
 
     } // XMLRPC_client
+
+    // ****************************************************************************
+    function getClassName ()
+    // emulates the function within 'std.table.class.inc' by returning the name of
+    // the database table on which the method will be performed.
+    {
+        return $this->subject;
+
+    } // getClassName
 
     // ****************************************************************************
     function initialise ()
@@ -564,5 +577,7 @@ function XMLRPC_non_fatal_error($array)
     exit;
 
 } // XMLRPC_non_fatal_error
+
+// *****************************************************************************
 
 ?>

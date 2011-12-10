@@ -1,12 +1,12 @@
 <?xml version='1.0'?>
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns="http://www.w3.org/1999/xhtml">
+                xmlns="http://www.w3.org/1999/xhtml"> 
 
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -15,6 +15,7 @@
             omit-xml-declaration="yes"
             doctype-public = "-//W3C//DTD XHTML 1.0 Strict//EN"
             doctype-system = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            encoding="UTF-8"
 />
 
 <!-- include common templates -->
@@ -41,20 +42,55 @@
     
     <xsl:call-template name="body-head" />
 
-    <form method="post" action="{$script}">
-  
-      <div class="universe">
-  
-        <!-- create help button -->
-        <xsl:call-template name="help" />
-  
-        <!-- create menu buttons -->
-        <xsl:call-template name="menubar" />
-  
-        <div class="body">
-  
-          <h1><xsl:value-of select="$title"/></h1>
-  
+    <div class="universe">
+
+      <!-- create help button -->
+      <xsl:call-template name="help" />
+
+      <!-- create menu buttons -->
+      <xsl:call-template name="menubar" />
+
+      <div class="body">
+          
+        <div class="title">
+          <xsl:choose>
+            <!-- identify whether this is with or without the 'quicksearch' option -->
+            <xsl:when test="/root/lookup/quicksearch_field">
+              <xsl:attribute name="class">title with_quicksearch</xsl:attribute>
+              <!-- create an area for the QuickSearch option -->
+              <div class="quicksearch">
+                <form method="post" action="{$script}">
+                  <!-- add a dropdown list for the selectable field names -->
+                  <select class="dropdown" name="quicksearch_field">
+                    <xsl:for-each select="/root/lookup/quicksearch_field/option">
+                      <option value="{@id}" >
+                        <xsl:if test="@id=/root/params/quicksearch_default">
+                          <xsl:attribute name="selected">selected</xsl:attribute>
+                        </xsl:if>
+                        <xsl:value-of select="node()"/>
+                      </option>
+                    </xsl:for-each>
+                  </select>
+                  <!-- add a text box and a submit button to fire the search-->
+                  <input name="quicksearch_value" type="text" value="" size="20" />
+                  <input class="submit" type="submit" name="quicksearch" value="Search" />
+                  <!-- create a hidden field for session_name -->
+                  <xsl:if test="$session_name">
+                    <input type="hidden" name="session_name" value="{$session_name}" />
+                  </xsl:if>
+                </form>
+              </div> <!-- quicksearch -->
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:attribute name="class">title without_quicksearch</xsl:attribute>
+            </xsl:otherwise>
+          </xsl:choose>
+          
+          <h1 class="title"><xsl:value-of select="$title"/></h1>
+        </div> <!-- title -->
+
+        <form method="post" action="{$script}">
+            
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar">
             <xsl:with-param name="noshow"   select="/root/params/noshow"/>
@@ -93,7 +129,7 @@
               </tbody>
   
             </table>
-          </div>
+          </div> <!-- main -->
   
           <!-- look for optional messages -->
           <xsl:call-template name="message"/>
@@ -105,12 +141,12 @@
   
           <!-- create standard action buttons -->
           <xsl:call-template name="actbar"/>
+          
+        </form>
   
-        </div>
-  
-      </div>
-  
-    </form>
+      </div> <!-- body -->
+
+    </div> <!-- universe -->
 
     <xsl:call-template name="body-foot" />
 

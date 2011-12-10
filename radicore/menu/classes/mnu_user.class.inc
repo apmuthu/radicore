@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -384,10 +384,10 @@ class mnu_user extends Default_Table
             // get array of all supported language codes
             $dbobject =& RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
-            if (!empty($_SESSION['default_language'])) {
-                // remove default language as an option in this screen
-            	unset($array[strtoupper($_SESSION['default_language'])]);
-            } // if
+//            if (!empty($_SESSION['default_language'])) {
+//                // remove default language as an option in this screen
+//            	unset($array[strtoupper($_SESSION['default_language'])]);
+//            } // if
             $this->lookup_data['language_code'] = $array;
         } // if
 
@@ -403,6 +403,18 @@ class mnu_user extends Default_Table
                 // get array of available timezones
                 $array = DateTimeZone::listIdentifiers();
                 $this->lookup_data['user_timezone'] = $array;
+            } // if
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('user_id' => 'User Id',
+                               'user_name' => 'User Name');
+                $this->lookup_data['quicksearch_field'] = $array;
             } // if
         } // if
 

@@ -6,10 +6,15 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
+<xsl:output method="xml" 
+            indent="yes"
+            encoding="UTF-8"
+/>
+  
 <!-- display details for a tree node (horizontally) -->
 <xsl:template name="display_tree_node">
   <xsl:param name="zone"/>   <!-- could be 'main', 'inner', 'outer', etc -->

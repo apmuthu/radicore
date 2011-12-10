@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table extends Default_Table
@@ -161,11 +161,24 @@ class dict_table extends Default_Table
         } // if
 
         if (!array_key_exists('nameof_start_date', $this->lookup_data)) {
-            // get contents of DICT_COLMN table and add as a LOOKUP list
+            // get list of column names which could be aliases for start/end date
             $dbobject =& RDCsingleton::getInstance('dict_column');
             $array    = $dbobject->getValRep('column_id', "database_id='$database_id' AND table_id='$table_id'");
             $this->lookup_data['nameof_start_date'] = $array;
             $this->lookup_data['nameof_end_date'] = $array;
+        } // if
+
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('database_id' => 'Database Id',
+                               'table_id' => 'Table Id',
+                               'table_desc' => 'Table Desc');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
         } // if
 
 		return $fieldarray;
@@ -190,7 +203,7 @@ class dict_table extends Default_Table
             // get data from the database, ignoring any tables which have no entries on DICT_COLUMN
             $this->sql_select     = 'table_id, table_desc';
             //$this->sql_select    .= ', count(dict_column.table_id) as column_count';
-            $this->sql_select    .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_table.table_id) AS column_count';
+            $this->sql_select    .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_column.table_id) AS column_count';
             $this->sql_orderby    = 'table_id';
             $this->sql_ordery_seq = 'asc';
             $this->sql_from       = 'dict_table ';
@@ -267,10 +280,10 @@ class dict_table extends Default_Table
         } // if
 
         if (!preg_match('/ AS column_count/i', $this->sql_select)) {
-        	$this->sql_select .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_table.database_id=dict_column.database_id AND dict_table.table_id=dict_column.table_id GROUP BY dict_table.table_id) AS column_count';
+        	$this->sql_select .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_column.table_id) AS column_count';
         } // if
         if (!preg_match('/ AS rel_count/i', $this->sql_select)) {
-            $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_table.table_id) AS rel_count';
+            $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_relationship.table_id_snr) AS rel_count';
         } // if
 
         $pattern_id = getPatternId();

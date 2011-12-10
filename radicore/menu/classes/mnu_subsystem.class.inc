@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_subsystem extends Default_Table
@@ -57,6 +57,30 @@ class mnu_subsystem extends Default_Table
         return $fieldarray;
 
     } // _cm_formatData
+
+    // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(list1)$/i', $pattern_id)
+        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+                // set list of field names for QuickSearch option
+                $array = array('subsys_id' => 'Subsys Id',
+                               'subsys_desc' => 'Subsys Desc',
+                               'subsys_dir' => 'Subsys Directory',
+                               'task_prefix' => 'Task Prefix');
+                $this->lookup_data['quicksearch_field'] = $array;
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
 
     // ****************************************************************************
     function _cm_getValRep ($item=null, $where=null)
@@ -121,6 +145,24 @@ class mnu_subsystem extends Default_Table
         return $fieldarray;
 
     } // _cm_pre_eraseRecord
+
+    // ****************************************************************************
+    function _cm_validateInsert ($rowdata)
+    // perform custom validation before an insert.
+    // if anything is placed in $this->errors the insert will be terminated.
+    {
+//        $this->errors['subsys_id'] = 'dummy message for subsys_id';
+//        $this->errors[] = "This message is not associated with a field";
+//        $this->errors['foobar'] = "error message concerning 'foobar'";
+//        $this->errors['barfoo'] = "error message concerning 'barfoo'";
+//        $this->errors['internal-class']['foobar'] = "error message concerning '[x]foobar'";
+//        $this->errors['internal-class'][1] = "error message concerning '[x][1]foobar'";
+//        $this->errors[2]['foobar'] = "error message concerning '[2]foobar'";
+//        $this->errors['subsys_desc'] = 'dummy message for subsys_desc';
+
+        return $rowdata;
+
+    } // _cm_validateInsert
 
 // ****************************************************************************
 } // end class
