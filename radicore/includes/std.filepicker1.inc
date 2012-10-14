@@ -107,7 +107,7 @@ if (!empty($_POST)) {
 
 $subdir   = $fileobject->picker_subdir;
 $filemask = $fileobject->picker_filetypes;
-$errors = array();
+if (!isset($errors)) $errors = array();
 
 $fileobject->xsl_params['file_directory'] = $subdir;
 if (!empty($fileobject->image_width)) {
@@ -192,9 +192,15 @@ if (isset($_GET['orderby'])) {
 $orderby = $fileobject->getOrderBy();
 if (!preg_match('/(file|size|date)/i', $orderby)) {
 	$orderby = 'file';
-	$fileobject->setOrderBy($orderby, $fileobject->sql_orderby_seq);
+	$fileobject->setOrderBy($orderby, $fileobject->sql_orderby_seq, false);
 } // if
-$orderby_seq = $fileobject->getOrderBySeq($orderby, $fileobject->sql_orderby_seq);
+$fileobject->sql_orderby = $orderby;
+if (isset($_GET['refresh'])) {
+    // fired by a refresh, so do not toggle the sort sequence
+    $orderby_seq = $fileobject->sql_orderby_seq;
+} else {
+    $orderby_seq = $fileobject->getOrderBySeq($orderby, $fileobject->sql_orderby_seq);
+} // if
 // set sequence to be used by array_multisort
 if (empty($orderby_seq) OR $orderby_seq == 'asc') {
  	$multisort_seq = SORT_ASC;
@@ -244,7 +250,8 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$fileobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

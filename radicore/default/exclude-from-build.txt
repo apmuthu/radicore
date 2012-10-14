@@ -28,6 +28,7 @@ output1.php
 output2.php
 output3.php
 output4.php
+output5.php
 popup1.php
 popup2.php
 popup3.php

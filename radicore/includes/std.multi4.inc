@@ -50,7 +50,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action);
+        $dbouter->restart($return_from, $return_action, $return_string);
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
@@ -95,7 +95,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action);
+        $dbinner->restart($return_from, $return_action, $return_string);
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
@@ -103,7 +103,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
-    $dbouter->zone                      = 'inner';
+    $dbinner->zone                      = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -129,7 +129,7 @@ if (!empty($_POST)) {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
     $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
-    $outer_data = array_update_associative($outer_data, $outer_post);
+    $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
     $dbouter->setFieldArray($outer_data);
     // repeat for the inner entity
     $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
@@ -307,7 +307,7 @@ if (isset($_GET['page'])) {
 
 // get primary key of row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter);
+$where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
@@ -339,8 +339,10 @@ if (count($outer_data) > 0) {
         } // if
 
         if (empty($dbinner->errors)) {
-        	// get any additional data for current record
-            $inner_data = $dbinner->getExtraData($inner_data);
+            if (!empty($inner_data)) {
+                // get any additional data for current record
+                $inner_data = $dbinner->getExtraData($inner_data);
+            } // if
         } // if
         if ($dbinner->errors) {
         	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -358,8 +360,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']      = unqualifyWhere($where);
@@ -385,7 +387,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

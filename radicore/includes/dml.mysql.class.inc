@@ -1,38 +1,41 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
 // this version is for MySQL (using the standard functions)
 {
     // member variables
-    var $client_info;           // client info (version number)
-    var $host_info;             // host info (connection)
-    var $server_info;           // server info (version number)
-    var $charset;               // character set
+    var $client_info;                   // client info (version number)
+    var $host_info;                     // host info (connection)
+    var $server_info;                   // server info (version number)
+    var $charset;                       // character set
     var $character_set_client;
     var $character_set_connection;
     var $character_set_database;
     var $character_set_server;
 
-    var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
-    var $errors;                // array of errors
-    var $error_string;          //
-    var $fieldspec = array();   // field specifications (see class constructor)
-    var $lastpage;              // last available page number in current query
-    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
-    var $numrows;               // number of rows retrieved
-    var $pageno;                // requested page number
-    var $primary_key = array(); // array of primary key names
-    var $rows_per_page;         // page size for multi-row forms
-    var $row_locks;             // SH=shared, EX=exclusive
-    var $row_locks_supp;        // supplemental lock type
-    var $table_locks;           // array of tables to be locked
-    var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of candidate keys
+    var $allow_db_function = false;     // allow a field's value in a database insert/update to contain a function name
+    var $audit_logging;                 // yes/no switch
+    var $dbname;                        // database name
+    var $errors;                        // array of errors
+    var $error_string;                  //
+    var $fieldspec = array();           // field specifications (see class constructor)
+    var $lastpage;                      // last available page number in current query
+    var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
+    var $numrows;                       // number of rows retrieved
+    var $pageno;                        // requested page number
+    var $primary_key = array();         // array of primary key names
+    var $retry_on_duplicate_key;        // field name to be incremented when insert fails
+    var $rows_per_page;                 // page size for multi-row forms
+    var $row_locks;                     // SH=shared, EX=exclusive
+    var $row_locks_supp;                // supplemental lock type
+    var $table_locks;                   // array of tables to be locked
+    var $transaction_level;             // transaction level
+    var $unique_keys = array();         // array of candidate keys
+    var $update_on_duplicate_key;       // switch to 'update' if insert fails
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -40,10 +43,11 @@ class mysql
     var $sql_groupby;
     var $sql_having;
     var $sql_orderby;
-    var $sql_orderby_seq;       // 'asc' or 'desc'
-    var $query;                 // completed DML statement
+    var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $sql_union;
+    var $query;                         // completed DML statement
 
-    var $dbconnect;             // database connection resource
+    var $dbconnect;                     // database connection resource
 
     // ****************************************************************************
     // class constructor
@@ -504,8 +508,25 @@ class mysql
             } // if
 
             // build the query string and run it
-            $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-            $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            } else {
+                $this->query = "(SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $lock_str)"
+                              ."\nUNION\n".$this->sql_union.' '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
+                $this->sql_union = null;
+            } // if
+            //$result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+            $result = mysql_query($this->query, $this->dbconnect);
+            if ($result === false) {
+                if (mysql_errno($this->dbconnect) == 2006) {
+                    // connection has been lost, so re-connect and retry
+                    unset($this->dbconnect);
+                    $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+                    $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+                } else {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } // if
 
             $result2    = mysql_query('SELECT FOUND_ROWS()', $this->dbconnect) or trigger_error($this, E_USER_ERROR);
             $found_rows = mysql_fetch_row($result2);
@@ -804,6 +825,7 @@ class mysql
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
+                $this->retry_on_duplicate_key = null;       // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
 			    	// value has been supplied manually, so do not auto-generate
 			    } else {
@@ -813,31 +835,42 @@ class mysql
 			} // if
 		} // foreach
 
-		if (empty($auto_increment)) {
-		    // build 'where' string using values for primary key
-		    $where = $this->buildKeyString ($fieldarray, $this->primary_key);
+		if (!empty($this->retry_on_duplicate_key)) {
+            if (!array_key_exists($this->retry_on_duplicate_key, $fieldspec)) {
+                // this field does not exist, so remove it
+                $this->retry_on_duplicate_key = null;
+            } // if
+        } // if
 
-	        // find out if a record with this primary key already exists
-	        $query = "SELECT count(*) FROM $tablename WHERE $where";
-	        $count = $this->getCount($dbname, $tablename, $query);
+        // build 'where' string using values for primary key
+        $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 
-	        $pkey = $where;
+        if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
+            // find out if a record with this primary key already exists
+            $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
+            $count = $this->getCount($dbname, $tablename, $query);
+            // is this primary key taken?
+            if ($count <> 0) {
+                if (is_True($this->no_duplicate_error)) {
+                    // exit without setting an error
+                    return $fieldarray;
 
-	        // Is this primary key taken?
-	        if ($count <> 0) {
-	            if (is_True($this->no_duplicate_error)) {
-	                // exit without setting an error
-	            } else {
-	            	// set error message for each field within this key
-    	            foreach ($this->primary_key as $fieldname) {
-    	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
-    	            } // foreach
-    	            $this->query = $query;  // save this in case trigger_error() is called
-	            } // if
-	            return $fieldarray;
-	        } // if
-	        $primary_key = $where;
-		} // if
+                } elseif (is_True($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
+                } else {
+                    // set error message for each field within this key
+                    foreach ($this->primary_key as $fieldname) {
+                        $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
+                    } // foreach
+                    $this->query = $query;  // save this in case trigger_error() is called
+                } // if
+                return $fieldarray;
+            } // if
+        } // if
 
         // validate any optional unique/candidate keys
         if (!empty($this->unique_keys)) {
@@ -862,21 +895,59 @@ class mysql
             } // foreach
         } // if
 
-        // insert this record into the database
-        $this->query = "INSERT INTO $tablename SET ";
-        foreach ($fieldarray as $item => $value) {
-            if (!array_key_exists('required',$fieldspec[$item])
-            AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
-                $this->query .= "$item=NULL, ";
-            } else {
-                $this->query .= "$item='" .mysql_real_escape_string($value, $this->dbconnect) ."', ";
+        $repeat       = false;
+        $repeat_count = 0;
+        do {
+            // insert this record into the database
+            $this->query = "INSERT INTO $tablename SET ";
+            foreach ($fieldarray as $item => $value) {
+                if (!array_key_exists('required',$fieldspec[$item])
+                AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
+                    $this->query .= "`$item`=NULL, ";
+                } else {
+                    $this->query .= "`$item`='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
+                } // if
+            } // foreach
+
+            // remove trailing comma
+            $this->query = rtrim($this->query, ', ');
+            if (substr($this->query, -4) == ' SET') {
+                // no field list, so remove 'SET'
+                $this->query = substr($this->query, 0, strlen($this->query)-4);
             } // if
-        } // foreach
 
-        // remove trailing comma
-        $this->query = rtrim($this->query, ', ');
+            //$result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+            $result =mysql_query($this->query, $this->dbconnect);
+            if ($result === false) {
+                $errno = mysqli_errno($this->dbconnect);
+                if ($errno == 1062 AND !empty($this->retry_on_duplicate_key)) {
+                    // increment the specified field and try again
+                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    $repeat = true;
+                    $repeat_count++;
+                    if ($repeat_count > 5) {
+                        // too many retries, so turn this feature off
+                        $this->retry_on_duplicate_key = null;
+                    } // if
 
-        $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
+                } elseif ($errno == 1062 AND !empty($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
+                } elseif ($errno == 1062 AND is_True($this->no_duplicate_error)) {
+                    // this is a duplicate, but don't fail
+                    $this->numrows = 0;
+
+                } else {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } else {
+                $repeat = false;
+                $this->numrows = 1;  // record has been inserted
+            } // if
+        } while ($repeat == true);
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query);
@@ -887,11 +958,13 @@ class mysql
 			$primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 		} // if
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->numrows > 0) {
+            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
+                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+                // add record details to audit database
+                $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
+                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            } // if
         } // if
 
         $this->numrows = 1;  // record has been inserted
@@ -1140,23 +1213,28 @@ class mysql
 
         // build update string from non-pkey fields
         $update = '';
-        $pattern = '/(integer|decimal|numeric|float|real)/i';
+        $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
-                    $update .= "$item=NULL,";
-                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                    $update .= "`$item`=NULL,";
+                } elseif (preg_match($pattern1, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     if (strlen($value) == 0) {
-                    	$update .= "$item=NULL,";
+                    	$update .= "`$item`=NULL,";
                     } else {
-                        $update .= "$item=$value,";
+                        $update .= "`$item`=$value,";
                     } // if
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // change to the new value (without enclosing quotes)
+                    //$update .= "`$item`=" .mysql_real_escape_string($value, $this->dbconnect) .", ";
+                    $update .= "`$item`=$value, ";
                 } else {
-                    // change to the new value
-                    $update .= "$item='" .mysql_real_escape_string($value, $this->dbconnect) ."', ";
+                    // change to the new value (with enclosing quotes)
+                    $update .= "`$item`='" .mysql_real_escape_string($value, $this->dbconnect) ."', ";
                 } // if
             } // if
         } // foreach

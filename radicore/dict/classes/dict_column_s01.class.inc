@@ -75,13 +75,13 @@ class dict_column_s01 extends dict_column
             return $fieldarray;
         } // if
 
-        $dbprefix = dict_findDBPrefix($dbname);
+        list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
 
         // save these for _cm_getDatabaseLock() method
         $this->target_dbname    = $dbname;
         $this->target_tablename = $tablename;
 
-        // get any existing data for this table
+        // get any existing dictionary data for this table
         $this->sql_orderby      = 'column_seq';
         $dict_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
 
@@ -95,8 +95,12 @@ class dict_column_s01 extends dict_column
         $this->delete_array = array();
         $this->update_array = array();
 
-        // obtain a list of current column definitions from the database engine
-        $db_data = $this->_ddl_showColumns($dbprefix.$dbname, $tablename);
+        // obtain a list of current column definitions from the database server
+        if ($server_name != $dbname AND !empty($dbprefix)) {
+            $db_data = $this->_ddl_showColumns($server_name, $tablename);
+        } else {
+            $db_data = $this->_ddl_showColumns($dbprefix.$dbname, $tablename);
+        } // if
 
         // construct a smaller array of column names
         $db_data_cols = array();
@@ -148,6 +152,10 @@ class dict_column_s01 extends dict_column
                 if ($dict_data[$ix]['col_maxsize'] != $db_data[$db_data_cols[$columnid]]['col_maxsize']) {
                 	$update['user_minvalue'] = $update['col_minvalue'];
                     $update['user_maxvalue'] = $update['col_maxvalue'];
+                } // if
+
+                if (empty($db_data[$db_data_cols[$columnid]]['col_comment'])) {
+                    $update['col_comment'] = $dict_data[$ix]['col_comment'];
                 } // if
 
                 if (is_True($update['col_null'])) {

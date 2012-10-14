@@ -94,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $errors = $dbobject->commit();
             } // if
             if (empty($errors)) {
+                $messages = $dbobject->getMessages();
                 $messages[] = getLanguageText('sys0094'); // 'Item has been erased'
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] == 1) {
                     // last item has been deleted, so return to previous screen
@@ -159,7 +160,8 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

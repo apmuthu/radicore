@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2008 by A J Marston <http://www.tonymarston.net>
-// Licensed to Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // *****************************************************************************
@@ -9,6 +9,9 @@
 // The user must enter a valid username and password before being allowed
 // to access the remainder of the system.
 // *****************************************************************************
+
+error_reporting(-1);
+ini_set('display_errors', true);
 
 $table_id = 'logon';               // table name
 $title    = 'System Logon';        // form title
@@ -26,7 +29,7 @@ require 'include.general.inc';
 require "classes/$table_id.class.inc";
 
 // get details from any previous session
-if (isset($session_name)) {
+if (isset($session_name) AND preg_match('/^menu/i', $session_name)) {
     // use existing session name
 } else {
     // assign new session name
@@ -35,10 +38,14 @@ if (isset($session_name)) {
 session_name($session_name);
 if (isset($_GET['session_id'])) {
     session_id($_GET['session_id']);    // set the session id
+} elseif (isset($_COOKIE['PHPSESSID'])) {
+	//session_id($_COOKIE['PHPSESSID']);
+	//setcookie('PHPSESSID', '', time()-3600);
 } // if
 session_start();
 
 $PHP_SELF = getSelf();
+$save_session_data = array();
 
 if (isset($_SESSION['pages'][$PHP_SELF])) {
     $logon_data = $_SESSION['pages'][$PHP_SELF];
@@ -47,7 +54,7 @@ if (isset($_SESSION['messages'])) {
     $messages_bf = (array)$_SESSION['messages'];
 } // if
 if (isset($_SESSION['logon_retries'])) {
-    $logon_retries = $_SESSION['logon_retries'];
+    $save_session_data['logon_retries'] = $_SESSION['logon_retries'];
 } // if
 if (isset($_SESSION['user_id'])) {
     $_POST['user_id']       = $_SESSION['user_id'];
@@ -67,12 +74,21 @@ if ((isset($_GET['user_id']) OR isset($_GET['email_addr'])) AND isset($_GET['use
     $_SESSION['logon_retries'] = 0;
 } // if
 if (isset($_SESSION['XSLT_client_side'])) {
-	$XSLT_client_side = $_SESSION['XSLT_client_side'];
+	$GLOBALS['XSLT_client_side'] = $_SESSION['XSLT_client_side'];
 } // if
 if (isset($_SESSION['css_file'])) {
-	$theme = $_SESSION['css_file'];
+	$save_session_data['css_file'] = $_SESSION['css_file'];
 } elseif (isset($_COOKIE['theme'])) {
-    $theme = $_COOKIE['theme'];
+    $save_session_data['css_file'] = $_COOKIE['theme'];
+} // if
+if (isset($_SESSION['cookie_data'])) {
+	$save_session_data['cookie_data'] = $_SESSION['cookie_data'];
+} // if
+if (isset($_SESSION['cookie_time'])) {
+	$save_session_data['cookie_time'] = $_SESSION['cookie_time'];
+} // if
+if (isset($_SESSION['restore_cookie_data'])) {
+	$save_session_data['restore_cookie_data'] = $_SESSION['restore_cookie_data'];
 } // if
 if (isset($_SESSION['logon_user_id'])) {
     $dbobject = new $table_id;
@@ -96,8 +112,8 @@ if (isset($messages_bf)) {
     $_SESSION['messages'] = $messages_bf;  // put this message back
 } // if
 
-// initialise a new session
-initSession();
+// initialise a new session (but add saved data)
+initSession($save_session_data);
 
 $_SESSION['pages'][$PHP_SELF]['pattern_id'] = 'logon';
 
@@ -116,14 +132,6 @@ if (isset($logon_data)) {
     if (isset($logon_data['logon']['messages'])) {
     	$messages = (array)$logon_data['logon']['messages'];
     } // if
-} // if
-
-if (isset($logon_retries)) {
-    $_SESSION['logon_retries'] = $logon_retries;
-} // if
-
-if (isset($theme)) {
-	$_SESSION['css_file'] = $theme;
 } // if
 
 // create a class instance for the main database table
@@ -169,7 +177,8 @@ $_SESSION['page_stack'] = array();
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

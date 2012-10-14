@@ -7,7 +7,7 @@
 class RDCsingleton
 // ensure that only a single instance exists for each class.
 {
-    function &getInstance ($class, $arg1=null, $initialise=true)
+    function &getInstance ($class, $arg1=null, $initialise=true, $unbuffered_query=false)
     // implements the 'singleton' design pattern.
     {
         static $instances = array();  // array of instance names
@@ -26,6 +26,11 @@ class RDCsingleton
             $class  = substr($class, strlen($server));
         } else {
             $server = null;
+        } // if
+        
+        if ($unbuffered_query === true) {
+            // make this part unique so that it is used only once
+            $server .= 'unbuffered_';
         } // if
 
         if (substr_count($class, '/')) {
@@ -69,6 +74,7 @@ class RDCsingleton
             if (defined('TRANSIX_NO_AUDIT')) {
             	$instance->audit_logging = false;
             } // if
+            $instance->unbuffered_query = $unbuffered_query;
             if ($initialise === true) {
                 if (method_exists($instance, 'initialise')) {
                     // object has an 'initialise' method, so call it

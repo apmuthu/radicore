@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update_associative($fieldarray, $_POST);
+        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
         // look for an action which is another script
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             $prev_script = getPreviousScript();
                             $prev_task   = getPreviousTask($prev_script);
                             $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-                            scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction());
+                            scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction(), $selection);
                         } // if
                     } // if
                 } else {
@@ -178,7 +178,8 @@ if (!empty($errors)) {
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

@@ -18,19 +18,20 @@ class dict_table_s01 extends dict_table
             $fieldarray = $fieldarray[0];
         } // if
 
-    	$dbname   = $fieldarray['database_id'];
-    	$dbprefix = dict_findDBPrefix($dbname);
+    	$dbname  = $fieldarray['database_id'];
+        // NOTE: name in dictionary may be different from name on server
+    	list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
 
         $fieldarray = array();
-        $array = $this->_ddl_showTables($dbprefix.$dbname);
+        $array = $this->_ddl_showTables($dbprefix.$server_name);
 
         // filter out those that already exist in DICT database
         $i = 0;
         foreach ($array as $tablename) {
             $tablename = strtolower($tablename);
-            if ($dbname == 'staging' AND preg_match('/^sym_entries_data/', $tablename)) {
+            //if ($dbname == 'staging' AND preg_match('/^sym_entries_data/', $tablename)) {
             	// ignore these tables
-            } else {
+            //} else {
             	$count = $this->getCount("database_id='$dbname' AND table_id='$tablename'");
                 if ($count == 0) {
                     // insert details of new database table
@@ -39,7 +40,7 @@ class dict_table_s01 extends dict_table
                     $fieldarray[$i]['table_desc']  = ucwords(str_replace('_', ' ', $tablename));
                     $i++;
                 } // if
-            } // if
+            //} // if
         } // foreach
 
         return $fieldarray;

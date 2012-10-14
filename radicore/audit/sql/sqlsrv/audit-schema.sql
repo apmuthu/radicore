@@ -90,7 +90,7 @@ go
 CREATE TABLE audit_logon_errors (
   id int NOT NULL IDENTITY(1,1),
   err_timestamp datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  ip_address nvarchar(16) NOT NULL DEFAULT '0.0.0.0',
+  ip_address nvarchar(40) NOT NULL DEFAULT '0.0.0.0',
   user_id nvarchar(16) DEFAULT NULL,
   user_password nvarchar(16) NOT NULL DEFAULT '',
   email_addr nvarchar(50) DEFAULT NULL,

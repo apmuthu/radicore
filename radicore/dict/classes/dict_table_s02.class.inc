@@ -16,7 +16,7 @@ class dict_table_s02 extends dict_table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        $menu_prefix = dict_findDBPrefix('menu');
+        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
 
         // create object for retrieving column details
         $columnobj =& RDCsingleton::getInstance('dict_column');
@@ -156,7 +156,7 @@ class dict_table_s02 extends dict_table
         // ensure that at least one entry has been selected
         $this->checkPrimaryKey = true;
 
-        $menu_prefix = dict_findDBPrefix('menu');
+        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM table

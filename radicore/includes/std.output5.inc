@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output5.inc
@@ -83,8 +83,12 @@ if (empty($pdfout)) {
 	$pdfout = $table_id .'.pdf';
 } // if
 
+// create an instance of the PDF object
+require_once 'std.pdf.class.inc';
+$pdf = new PDF($report_structure, $dbobject, $pdfout);
+
 // transform output to PDF format and deal with it as specified in $report
-$document = $dbobject->outputPDF_LabelView($resource, $report_structure);
+$document = $pdf->outputPDF_LabelView($resource);
 
 $destination = $dbobject->pdf_destination;
 $messages    = $dbobject->getMessages();

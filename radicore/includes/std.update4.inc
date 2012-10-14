@@ -38,7 +38,8 @@ $dbobject->sql_where   = &$sql_where;
 $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 if (!empty($orderby)) {
-    $dbobject->setOrderBy($orderby);
+    $string = validateSortItem('main', $orderby, $dbobject);
+    $dbobject->setOrderBy($string);
     if (!empty($orderby_seq)) {
         $dbobject->setOrderBySeq($orderby_seq);
     } // if

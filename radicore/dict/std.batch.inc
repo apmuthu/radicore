@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -11,6 +11,9 @@ function batchInit ($batchfile)
 // initialisation for a batch process
 {
     global $stdout, $stdouth;
+
+    error_reporting(-1);                // report everything
+    ini_set('display_errors', true);    // display everything
 
     $result = ini_set('max_execution_time', 0);  // no time limit
 
@@ -27,6 +30,9 @@ function batchInit ($batchfile)
     } // if
 
     if (isset($stdout)) {
+        if (realpath($stdout) != false) {
+            $stdout = realpath($stdout);
+        } // if
     	if (!$stdouth = fopen($stdout, 'w')) {
     	    $message = "Error in script ".basename($curr_file);
     	    $message .= "Cannot open file $stdout";
@@ -40,7 +46,10 @@ function batchInit ($batchfile)
     	    //trigger_error("Cannot open file $stdout", E_USER_ERROR);
     	    exit;
         } // if
-        ob_start();  // start output buffering
+        // start output buffering
+        if (!ob_start()) {
+            trigger_error("Cannot turn on output buffering", E_USER_ERROR);
+        } // if
         if (!preg_match('/^WIN/i', PHP_OS)) {
         	$result = @chmod($stdout, 0777);
         } // if
@@ -142,24 +151,27 @@ function batchInit ($batchfile)
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
 
+    checkFileExists('include.general.inc');
     require_once 'include.general.inc';
+    checkFileExists('include.session.inc');
     require_once 'include.session.inc';
 
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
     echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
 
-    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
-    	initSession();
+    if (isset($stdout)) {
+        $output = ob_get_contents();
+        $result = fwrite($stdouth, $output);
+        if ($result === false) {
+            trigger_error("Cannot write to file $stdout", E_USER_ERROR);
+        } // if
+        ob_flush();
     } // if
 
     $_SERVER['PHP_SELF'] = $PHP_SELF;
 
-    if (isset($stdout)) {
-        $output = ob_get_contents();
-        if (!$result = fwrite($stdouth, $output)) {
-            trigger_error("Cannot write to file $stdout", E_USER_ERROR);
-        } // if
-        ob_flush();                 // flush current output
+    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
+        initSession();
     } // if
 
 } // batchInit
@@ -185,7 +197,8 @@ function batchEnd ($errors=null)
 
     if (isset($stdout)) {
     	$output = ob_get_contents();
-        if (!$result = fwrite($stdouth, $output)) {
+        $result = fwrite($stdouth, $output);
+        if ($result === false) {
             trigger_error("Cannot write to file $stdout", E_USER_ERROR);
         } // if
         ob_flush();                 // flush current output
@@ -211,6 +224,8 @@ function check_errors ($object)
         	$errors['query'] = $object->query;
         } // if
 
+        $objectData = $object->getFieldArray();
+
         // $errors should be an associative array, but it may be indexed
         $array_in = $errors;
 	    foreach ($array_in as $ix1 => $error1) {
@@ -220,7 +235,7 @@ function check_errors ($object)
 	        } elseif (is_array($error1)) {
 	            foreach ($error1 as $ix2 => $error2) {
 	                // merge index, key and value into a single string
-	            	$array_out[] = '['.$ix1.']'.$ix2 .': ' .$error2;
+	            	$array_out[] = '['.$ix1.'] '.$ix2 .': ' .$error2;
 	            } // foreach
 	        } // if
 	    } // foreach
@@ -228,6 +243,14 @@ function check_errors ($object)
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);
 
 	    $object->rollback();
+
+        $output = format_array($errors);
+        send_to_stdout($output);
+
+        if (!empty($objectData)) {
+            $output = "DATA:<br>".format_array($objectData);
+            send_to_stdout($output);
+        } // if
 
 	    // put first error into $string
 	    $string = $errors[key($errors)];
@@ -239,11 +262,7 @@ function check_errors ($object)
 	$messages = $object->getMessages();
 
 	foreach ($messages as $message) {
-		if (empty($stdout)) {
-        	echo $message;
-        } else {
-            $result = fwrite($stdouth, $message);
-        } // if
+        send_to_stdout($message);
 	} // foreach
 
 	return;
@@ -270,6 +289,33 @@ function check_warnings ($object)
 	} // if
 
 } // check_warnings
+
+// ****************************************************************************
+function checkFileExists ($fname)
+// check that file $fname exists on current include_path, and abort if it doesn't.
+{
+    if (!fopen($fname, 'r', true)) {
+        $message = getLanguageText('sys0076', $fname);
+        trigger_error($message, E_USER_ERROR);
+    } // if
+
+    return true;
+
+} // checkFileExists
+
+// ****************************************************************************
+function send_to_stdout($string)
+// either echo the string or write it to stdout
+{
+    global $stdout, $stdouth;
+
+    if (empty($stdout)) {
+        echo $string;
+    } else {
+        $result = fwrite($stdouth, $string);
+    } // if
+
+} // send_to_stdout
 
 // ****************************************************************************
 ?>

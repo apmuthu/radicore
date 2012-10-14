@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_workitem extends Default_Table
@@ -14,7 +14,8 @@ class wf_workitem extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'workflow';
         $this->tablename   = 'wf_workitem';
 
@@ -181,7 +182,7 @@ class wf_workitem extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        global $dbprefix;
+        $dbprefix = $this->dbprefix;
 
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {

@@ -3,30 +3,11 @@
 textarea {
   width: 100%;
 }
+.label {
+	vertical-align: top;
+}
 
 /* custom classes */
-.green {
-  background: green;
-  color: white;
-  font-weight: bold;
-}
-.red {
-  background: red;
-  color: white;
-}
-.overdue {
-  background: red;
-  color: yellow;
-  font-weight: bold;
-}
-div.todo_user .overdue {
-  background: transparent;
-  color: red;
-  font-weight: bold;
-}
-
-.weekend {
-  background-color: green;
-  color: white;
-  font-weight: bold;
+.divider {
+  height: 6px;
 }

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_tbl extends Default_Table
@@ -15,7 +15,8 @@ class audit_tbl extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'audit';
         $this->tablename   = 'audit_tbl';
 
@@ -167,6 +168,8 @@ class audit_tbl extends Default_Table
         $select = "SELECT max(table_seq_no) FROM $this->tablename WHERE session_id='$session_id' AND tran_seq_no=$tran_seq_no";
         $count = $this->getCount($select);
         $fieldarray['table_seq_no'] = $count + 1;
+        // try incrementing this value if a duplicate is detected
+        $this->retry_on_duplicate_key = 'table_seq_no';
 
         $fieldarray['base_name']  = $dbname;
         $fieldarray['table_name'] = $tablename;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -143,6 +143,40 @@ if (!function_exists('append2ScriptSequence')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('adjustQueryString')) {
+    function adjustQueryString ($query_string='', $include_session_id=false)
+    // adjust query string so that it can be appended to a URL
+    {
+    	if (is_array($query_string)) {
+    		$array = $query_string;
+    	} else {
+        	parse_str($query_string, $array);
+		} // if
+
+        $session_name = session_name();
+        if (!empty($session_name)) {
+        	$array['session_name'] = $session_name;
+        } // if
+        if ($include_session_id === false) {
+            unset($array['session_id']);
+        } else {
+            $session_id = session_id();
+            if (!empty($session_id)) {
+        	    $array['session_id'] = $session_id;
+            } // if
+        } // if
+
+        // this is redundant, so remove it
+        unset($array['PHPSESSID']);
+
+        $query_string = http_build_query($array, '', '&');
+
+        return $query_string;
+
+    } // adjustQueryString
+} // if
+
+// ****************************************************************************
 if (!function_exists('array2range')) {
     function array2range ($input)
     // take an array of rows and put the values into an SQL range clause
@@ -217,7 +251,7 @@ if (!function_exists('array2rangeUnique')) {
 
 // ****************************************************************************
 if (!function_exists('array2where')) {
-    function array2where ($inputarray, $fieldlist=array(), $dbobject=null, $no_operators=false)
+    function array2where ($inputarray, $fieldlist=array(), $dbobject=null, $no_operators=false, $add_table_name=false)
     // turn an array of 'name=value' pairs into an SQL 'where' clause.
     // $fieldlist (optional) may be in format 'n=name' (indexed) or 'name=value'
     // (associative), or even [rownum] string. It is usually a subset of $fieldspec.
@@ -225,6 +259,7 @@ if (!function_exists('array2where')) {
     // provide unformatting rules and any uppercase/lowercase field specifications.
     // $no_operators (optional) indicates that the values in the input array are NOT to
     // be scanned for operators, thus '>ABC' is to be treated as ='>ABC' not >'ABC'
+    // $add_table_name indicates if the table name may need to be added to the output string.
     {
         if (empty($inputarray)) return;
 
@@ -319,7 +354,9 @@ if (!function_exists('array2where')) {
                         if (!empty($where)) {
                         	if (empty($prefix)) {
                         	    $prefix = ' AND';  // default is 'AND'
-                        	} // if
+                        	} elseif (trim($prefix) == '(') {
+                                $prefix = ' AND (';  // default is 'AND'
+                            } // if
                         } // if
                         if (substr($prefix, -1, 1) == '(') {
                         	$where .= $prefix.$string;
@@ -424,6 +461,17 @@ if (!function_exists('array2where')) {
 
         $where = trim($where);
 
+        if ($add_table_name == true AND is_object($dbobject)) {
+            $pkey_names = $dbobject->getPkeyNames();
+            //if (count($pkey_names) == 1 AND in_array('id', $pkey_names)) {
+            if (in_array('id', $pkey_names)) {
+                // primary key is 'id', so include table name in WHERE
+                $where_array = where2array($where);
+                $where_array['rdc_table_name'] = get_class($dbobject);
+                $where = array2where($where_array);
+            } // if
+        } // if
+
         if (empty($where)) {
         	if (is_object($dbobject) AND !empty($dbobject->unique_keys)) {
         	    // nothing found using pkey, so try candidate keys
@@ -471,7 +519,7 @@ if (!function_exists('array2where2')) {
 
 // ****************************************************************************
 if (!function_exists('array_update_associative')) {
-    function array_update_associative ($array1, $array2)
+    function array_update_associative ($array1, $array2, $fieldspec=array())
     // update contents of $array1 from contents of $array2.
     // Note: this is different from a merge which will add new fields into $array1
     // if they did not previously exist, which is not what I want. This version
@@ -491,6 +539,14 @@ if (!function_exists('array_update_associative')) {
 
         foreach ($array2 as $fieldname => $fieldvalue) {
             if (array_key_exists($fieldname, $array1)) {
+                if (isset($fieldspec[$fieldname])) {
+                    $spec = $fieldspec[$fieldname];
+                     if (preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
+                        // this field in the POST array is numeric, so the value was formatted for display
+                        // in the user's locale. It must be unformatted before it can be used internally.
+                        $array2[$fieldname] = number_unformat($array2[$fieldname]);
+                    } // if
+                } // if
                 $array1[$fieldname] = $array2[$fieldname];
             } // if
         } // foreach
@@ -601,6 +657,67 @@ if (!function_exists('convertEncoding')) {
         return $string;
 
     } // convertEncoding
+} // if
+
+// ****************************************************************************
+if (!function_exists('convert_child_id_to_parent_id')) {
+    function convert_child_id_to_parent_id($fieldarray, $tablename, $child_relations)
+    // attaempt to convert the column name of 'something' to 'id'
+    {
+        $child_table = $fieldarray['rdc_table_name'];
+
+        if ($child_table == $tablename) {
+            // table names are the same, so do nothing
+        }  else {
+            foreach ($child_relations as $relation) {
+                if ($relation['child'] == $child_table) {
+                    // matching table name found, look for related field
+                    $new_array = array();
+                    foreach ($relation['fields'] as $this_column => $child_column) {
+                        if (isset($fieldarray[$child_column])) {
+                            $new_array[$this_column] = $fieldarray[$child_column];
+                        } // if
+                    } // foreach
+                    if (!empty($new_array)) {
+                        $fieldarray = $new_array;
+                    } // if
+                    break;
+                } // if
+            } // foreach
+        } // if
+
+        return $fieldarray;
+
+    } // convert_child_id_to_parent_id
+
+} // if
+
+// ****************************************************************************
+if (!function_exists('convert_parent_id_to_child_id')) {
+    function convert_parent_id_to_child_id($fieldarray, $tablename, $parent_relations)
+    // attaempt to convert the column name of 'id' to something else
+    {
+        $parent_table = $fieldarray['rdc_table_name'];
+
+        if ($parent_table == $tablename) {
+            // table names are the same, so do nothing
+        }  else {
+            foreach ($parent_relations as $relation) {
+                if ($relation['parent'] == $parent_table) {
+                    // matching table name found, look for related field
+                    if ($child_name = array_search('id', $relation['fields'])) {
+                        $fieldarray[$child_name] = $fieldarray['id'];
+                        unset($fieldarray['id']);
+                        unset($fieldarray['rdc_table_name']);
+                    } // if
+                } // if
+            } // foreach
+        } // if
+
+        return $fieldarray;
+
+    } // convert_parent_id_to_child_id
+
 } // if
 
 // ****************************************************************************
@@ -724,6 +841,34 @@ if (!function_exists('checkFileExists')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('check_memory_limit')) {
+    function check_memory_limit ()
+    // check memory usage and double it if too close to the limit
+    {
+        global $stdouth;  // handle for output file
+
+        $mem_limit = return_bytes(ini_get('memory_limit'));
+        $mem_curr = memory_get_usage(true);
+
+        if (($mem_curr / $mem_limit)*100 > 90) {
+            // greater than 90% used, so double it
+            $new_limit = $mem_limit * 2;
+            $result = ini_set('memory_limit',$new_limit);
+            $output = "<p>MEMORY LIMIT INCREASED FROM $mem_curr TO $new_limit</p>\n";
+            if (is_resource($stdouth)) {
+                $result = fwrite($stdouth, $output);
+            } else {
+                echo $output;
+            } // if
+            return true;
+        } // if
+
+        return false;
+
+    } // check_memory_limit
+} // if
+
+// ****************************************************************************
 if (!function_exists('convertCurrencyInput')) {
     function convertCurrencyInput ($value, $currency, $home_currency, $exchange_rate)
     // deal with value which may be input in either home or foreign currency.
@@ -768,7 +913,7 @@ if (!function_exists('currentOrHistoric')) {
         if (isset($search['curr_or_hist'])) {
             // replace Current/Historic/Future with a range of dates
             $search1 = stripOperators($search);
-            $date = date('Y-m-d');
+            $date = getTimeStamp('date');
             switch ($search1['curr_or_hist']) {
                 case 'C':
                     // search for records with CURRENT dates
@@ -928,9 +1073,9 @@ if (!function_exists('extractOperatorValue')) {
  |                           # or
  IN[ ]+                      # IN
  |                           # or
- IN(?=\()                    # 'IN(' but without the '('
+ IN[ ]*(?=\()                # 'IN(' but without the '('
  |                           # or
- IN[^a-zA-Z_]                # 'IN' not followed by an alpha character or underscore
+ IN[^a-zA-Z0-9_-]            # 'IN' not followed by an alphanumeric character, underscore or dash
  |                           # or
  NOT[ ]+BETWEEN[ ]+          # NOT BETWEEN
  |                           # or
@@ -1011,7 +1156,7 @@ if (!function_exists('extractSelectList')) {
         	        $string = '';
         	    } // if
         	} else {
-        	    $string .= trim($element);
+        	    $string .= $element;
         	} // if
         } // foreach
 
@@ -1246,7 +1391,7 @@ if (!function_exists('filterOrderBy')) {
 
 // ****************************************************************************
 if (!function_exists('filterWhere')) {
-    function filterWhere ($where, $fieldlist, $tablename, $extra=array())
+    function filterWhere ($where, $fieldlist, $tablename, $extra=array(), $object=null)
     // filter out any fields in $where which do not belong in this table,
     // (valid fields are identified in the $fieldlist array, with other
     // fields identified in the $extra array).
@@ -1353,6 +1498,25 @@ END_OF_REGEX;
 
         $array_out = array();
         foreach ($array2 as $rownum => $rowdata) {
+            // look for 'rdc_table_name' and change name of 'id' column if necessary
+            $arrayX = where2array($rowdata);
+            if (!empty($arrayX['rdc_table_name'])) {
+                if ($arrayX['rdc_table_name'] == $tablename AND is_object($object)) {
+                    // names are the same, so lose redundant reference
+                    unset($arrayX['rdc_table_name']);
+                    $rowdata = array2where($arrayX);
+                } else {
+                    // convert 'id' from parent name to 'other_id' on this table
+                    $arrayX = convert_parent_id_to_child_id($arrayX, $tablename, $object->parent_relations);
+                    if (!isset($arrayX['rdc_table_name'])) {
+                        $object->checkPrimaryKey = false;
+                    } else {
+                        $arrayX = convert_child_id_to_parent_id($arrayX, $tablename, $object->child_relations);
+                    } // if
+                    $rowdata = array2where($arrayX);
+                } // if
+            } // if
+            // split array into its component parts
             $array3 = where2indexedArray($rowdata);
             $prev_separator = null;
             $array4 = array();
@@ -1729,6 +1893,61 @@ END_OF_REGEX;
 } // if
 
 // ****************************************************************************
+if (!function_exists('findDBConfig')) {
+    function findDBConfig($dbname, $dbprefix, $dbengine)
+    // find out if the configuration of this table's database has changed.
+    {
+        $switch_dbnames = array();
+
+        if (empty($GLOBALS['servers'])) {
+            // use same settings for all databases
+            $dbengine = $GLOBALS['dbms'];
+            if (isset($GLOBALS['dbprefix'])) {
+                $dbprefix = $GLOBALS['dbprefix'];
+            } // if
+            if (!empty($GLOBALS['switch_dbnames']) AND is_array($GLOBALS['switch_dbnames'])) {
+                $switch_dbnames = array_merge($switch_dbnames, $GLOBALS['switch_dbnames']);
+            } // if
+        } else {
+            // different settings for each entry in $servers array
+            foreach ($GLOBALS['servers'] as $server) {
+                if ($server['dbnames'] == '*') {
+                    // any dbname not previously specified
+                    $dbprefix = $server['dbprefix'];
+                    $dbengine = $server['dbengine'];
+                    if (!empty($server['switch_dbnames']) AND is_array($server['switch_dbnames'])) {
+                        $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
+                    } // if
+                    break;
+                } else {
+                    // convert list of dbnames into an array
+                    $dbname_array = explode(',', $server['dbnames']);
+                    $dbname_array = array_map('trim', $dbname_array);
+                    if (in_array($dbname, $dbname_array)) {
+                        $dbprefix = $server['dbprefix'];
+                        $dbengine = $server['dbengine'];
+                        if (!empty($server['switch_dbnames']) AND is_array($server['switch_dbnames'])) {
+                            $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
+                        } // if
+                        break;
+                    } // if
+                } // if
+            } // foreach
+        } // if
+
+        if (!empty($switch_dbnames)) {
+            if (array_key_exists($dbname, $switch_dbnames)) {
+                // dbname in the data dictionary is different from the name on the server
+                $dbname = $switch_dbnames[$dbname];
+            } // if
+        } // if
+
+        return array($dbname, $dbprefix, $dbengine);
+
+    } // findDBConfig
+} // if
+
+// ****************************************************************************
 if (!function_exists('findDBPrefix')) {
     function findDBPrefix($dbname)
     // find the prefix which is to be used with this database name.
@@ -1742,14 +1961,21 @@ if (!function_exists('findDBPrefix')) {
     	        } else {
     	            // convert list of dbnames into an array
     	            $dbname_array = explode(',', $server['dbnames']);
+                    $dbname_array = array_map('trim', $dbname_array);
                     if (in_array($dbname, $dbname_array)) {
                     	$dbprefix = $server['dbprefix'];
     	        	    break;
                     } // if
     	        } // if
     	    } // foreach
-        } else {
-            $dbprefix = $GLOBALS['dbprefix'];
+        } // if
+
+        if (!isset($dbprefix)) {
+            if (!empty($GLOBALS['dbprefix'])) {
+                $dbprefix =& $GLOBALS['dbprefix'];  // default to global setting
+            } else {
+                $dbprefix = '';                     // no setting defined
+            } // if
         } // if
 
         return $dbprefix;
@@ -1772,7 +1998,7 @@ if (!function_exists('fixTrueFalseArray')) {
             $lookup = array();
         } // if
 
-        if (!empty($true)) {
+        if (strlen($true) > 0) {
         	if (!array_key_exists($true, $lookup)) {
                 if (!empty($lookup['true'])) {
                     $value = $lookup['true'];
@@ -1784,7 +2010,7 @@ if (!function_exists('fixTrueFalseArray')) {
             } // if
         } // if
 
-        if (!empty($false)) {
+        if (strlen($false) > 0) {
             if (!array_key_exists($false, $lookup)) {
                 if (!empty($lookup['false'])) {
                     $value = $lookup['false'];
@@ -1810,9 +2036,9 @@ if (!function_exists('fixTrueFalseString')) {
         $true  =& $spec['true'];
         $false =& $spec['false'];
 
-        if (is_True($string) AND !empty($true)) {
+        if (is_True($string) AND !is_null($true)) {
         	$string = $true;
-        } elseif (!empty($false)) {
+        } elseif (!is_null($false)) {
             $string = $false;
         } // if
 
@@ -2216,7 +2442,7 @@ if (!function_exists('getLanguageArray')) {
         if (!is_array($array1)) {
             $array1 = array();
             // find file in a language subdirectory
-            if (file_exists('../menu/text')) {
+            if (isDirectoryValid('../menu/text')) {
             	$fname = getLanguageFile('sys.language_array.inc', '../menu/text');
             } else {
                 $fname = getLanguageFile('sys.language_array.inc', './text');
@@ -2377,7 +2603,7 @@ if (!function_exists('getLanguageText')) {
         if (!is_array($array1)) {
             $array1 = array();
             // find file in a language subdirectory
-            if (file_exists('../menu/text')) {
+            if (isDirectoryValid('../menu/text')) {
             	$dir = '../menu/text';
             } else {
                 $dir = './text';
@@ -2473,6 +2699,7 @@ if (!function_exists('getMicroTime')) {
 
     } // getMicroTime
 } // if
+
 // ****************************************************************************
 if (!function_exists('getParentDIR')) {
     function getParentDIR ($filename=null)
@@ -2836,20 +3063,183 @@ if (!function_exists('getTimeStamp')) {
     function getTimeStamp ($type=null)
     // get timestamp in 'CCYY-MM-DD HH:MM:SS' format
     {
-        switch (strtolower($type)) {
-            case 'date':
-                $output = date('Y-m-d');
-                break;
-            case 'time':
-                $output = date('H:i:s');
-                break;
-            default:
-                $output = date('Y-m-d H:i:s');
-        } // switch
+        if (empty($GLOBALS['server_timezone'])) {
+            // this uses now() which is the server time
+            switch (strtolower($type)) {
+                case 'date':
+                    $output = date('Y-m-d');
+                    break;
+                case 'time':
+                    $output = date('H:i:s');
+                    break;
+                default:
+                    $output = date('Y-m-d H:i:s');
+            } // switch
+        } else {
+            // get override server time zone from config.inc
+            $server_timezone = $GLOBALS['server_timezone'];
+            switch (strtolower($type)) {
+                case 'date':
+                    $output = convertTZdate(gmdate('Y-m-d'), gmdate('H:i:s'), 'UTC', $server_timezone);
+                    break;
+                case 'time':
+                    $output = convertTZtime(gmdate('Y-m-d'), gmdate('H:i:s'), 'UTC', $server_timezone);
+                    break;
+                default:
+                    $output = convertTZ(gmdate('Y-m-d H:i:s'), 'UTC', $server_timezone);
+            } // switch
+        } // if
 
         return $output;
 
     } // getTimeStamp
+} // if
+
+// ****************************************************************************
+if (!function_exists('html2text')) {
+    function html2text ($input, $charset='iso-8859-1')
+    // convert HTML document to plain text.
+    {
+        if (preg_match('/(?<=charset=)[-0-9a-zA-Z]+/i', $input, $regs)) {
+            // use charset which was defined in the HTML document
+            $charset = $regs[0];
+        } // if
+
+        if ($charset == 'iso-8859-1') {
+            // continue
+        } elseif ($charset == 'us-ascii') {
+            $charset='iso-8859-1';
+        } elseif ($charset == 'unicode') {
+            $charset = 'utf-8';
+        } // if
+
+        $output = iconv($charset, 'UTF-8//TRANSLIT', $input);
+        $output = convertEncoding ($input, 'UTF-8', $charset);
+
+        // convert non-breaking spaces (UTF-8 encoding is 0xC2 0xA0)
+        $output = str_replace('&nbsp;', chr(194).chr(160), $output);
+
+        // decode such things as '&lt;' into '<'
+        $output = htmlspecialchars_decode($output, ENT_QUOTES);
+
+        // remove all line breaks
+        $output = str_replace(array("\r\n", "\r", "\n"), '', $output);
+
+        // convert all '<BR>' tags to line breaks
+        $output = preg_replace('#([ ]*<BR[ ]*[/]?>[ ]*)#ims', "\n", $output);
+
+        // remove any spaces between tags
+        $output = preg_replace('#>[ \n\r\t]+<#ims', '><', $output);
+
+        // convert all '<p>' tags to double line breaks
+        $output = preg_replace('#(<p[ ]*)#ims', "\n\n<p ", $output);
+
+        // insert line break after each '</DIV>'
+        $output = preg_replace('#</DIV>#ims', "</DIV>\n", $output);
+
+        // insert line break after each '</LI>'
+        $output = preg_replace('#</LI>#ims', "</LI>\n", $output);
+
+        // insert line break after each '</TR>'
+        $output = preg_replace('#</TR>#ims', "</TR>\n", $output);
+
+        // remove or replace all other HTML tags and special characters
+        $output = preg_replace('#<title>.*</title>#ims', '', $output);
+        $output = preg_replace('#<style[ ]*.*</style>#ims', '', $output);
+        $output = preg_replace('#<meta[ ]*.*/>#ims', '', $output);
+        $output = preg_replace('#<table[ ].*?>#ims', '', $output);
+        $output = strip_tags($output);
+        //$output = htmlspecialchars_decode($output, ENT_QUOTES);
+        $output = html_entity_decode($output, ENT_QUOTES, 'UTF-8');
+
+        // remove leading/trailing spaces
+        $output = trim($output);
+
+        return $output;
+
+    } // html2text
+} // if
+
+// ****************************************************************************
+if (!function_exists('includeSubsystemPath')) {
+    function includeSubsystemPath ($project_code=null)
+    // look for an optional INCLUDE file for the current subsystem
+    {
+        $attempt = array();
+        if (!empty($project_code)) {
+            $attempt[] = "./include.subsystem.$project_code.inc";
+        } // if
+        $attempt[] = './include.subsystem.inc';
+        $attempt[] = './include.subsystem.inc.default';
+        foreach ($attempt as $fn) {
+            if (file_exists($fn)) {
+                require($fn);
+                unset($attempt, $fn);
+                break;
+            } // if
+        } // foreach
+
+        if (!empty($attempt)) {
+            if (getcwd() != $_SERVER['DOCUMENT_ROOT']) {
+                // not found in working directory, so look in document root
+                $save_cwd = getcwd();
+                chdir($_SERVER['DOCUMENT_ROOT']);
+                foreach ($attempt as $fn) {
+                    if (file_exists($fn)) {
+                        require($fn);
+                        break;
+                    } // if
+                } // foreach
+                chdir($save_cwd);
+            } // if
+        } // if
+
+        return true;
+
+    } // includeSubsystemPath
+} // if
+
+// ****************************************************************************
+if (!function_exists('includeTransixPath')) {
+    function includeTransixPath ()
+    // modify INCLUDE_PATH for standard TRANSIX subsystems
+    {
+        $include_path = ini_get('include_path');
+        if (is_dir('./transix/menu')) {
+            $include_path .= PATH_SEPARATOR .realpath('./transix/menu');
+            $include_path .= PATH_SEPARATOR .realpath('./transix/audit');
+            $include_path .= PATH_SEPARATOR .realpath('./transix/workflow');
+
+        } elseif (is_dir($_SERVER['DOCUMENT_ROOT'].'/transix/menu')) {
+            $include_path .= PATH_SEPARATOR .$_SERVER['DOCUMENT_ROOT'].'/transix/menu';
+            $include_path .= PATH_SEPARATOR .$_SERVER['DOCUMENT_ROOT'].'/transix/audit';
+            $include_path .= PATH_SEPARATOR .$_SERVER['DOCUMENT_ROOT'].'/transix/workflow';
+
+        } elseif (isDirectoryValid('../radicore/menu')) {
+            $include_path .= PATH_SEPARATOR .realpath('../radicore/menu');
+            $include_path .= PATH_SEPARATOR .realpath('../radicore/audit');
+            $include_path .= PATH_SEPARATOR .realpath('../radicore/workflow');
+
+        } elseif (isDirectoryValid('../menu')) {
+            $include_path .= PATH_SEPARATOR .realpath('../menu');
+            $include_path .= PATH_SEPARATOR .realpath('../audit');
+            $include_path .= PATH_SEPARATOR .realpath('../workflow');
+
+        } elseif (isDirectoryValid('../../radicore/menu')) {
+            $include_path .= PATH_SEPARATOR .realpath('../../radicore/menu');
+            $include_path .= PATH_SEPARATOR .realpath('../../radicore/audit');
+            $include_path .= PATH_SEPARATOR .realpath('../../radicore/workflow');
+
+        } elseif (isDirectoryValid('../../../radicore/menu')) {
+            $include_path .= PATH_SEPARATOR .realpath('../../../radicore/menu');
+            $include_path .= PATH_SEPARATOR .realpath('../../../radicore/audit');
+            $include_path .= PATH_SEPARATOR .realpath('../../../radicore/workflow');
+        } // if
+        ini_set('include_path', $include_path);
+
+        return $include_path;
+
+    } // includeTransixPath
 } // if
 
 // ****************************************************************************
@@ -3075,7 +3465,8 @@ if (!function_exists('isPkeyComplete')) {
 
         if ($yes_count == count($pkey)) {
             // all components of this primary key have been supplied
-            return $errors;
+            $where = array2where($fieldarray, $pkey);
+            return array($where, null);
         } // if
 
         if (!empty($candidate_keys)) {
@@ -3093,7 +3484,8 @@ if (!function_exists('isPkeyComplete')) {
             	} // foreach
             	if ($yes_count == count($ukey)) {
             		// all components of this unique key have been supplied
-            		return $errors;
+            		$where = array2where($fieldarray, $ukey);
+                    return array($where, null);
             	} // if
             } // foreach
         }
@@ -3102,7 +3494,7 @@ if (!function_exists('isPkeyComplete')) {
             $errors[] = getLanguageText('sys0018', $fieldname); // "Primary key ($fieldname) is not complete - check selection"
         } // foreach
 
-        return $errors;
+        return array(null, $errors);
 
     } // isPkeycomplete
 } // if
@@ -3205,16 +3597,45 @@ if (!function_exists('is_True')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('isDirectoryValid')) {
+    function isDirectoryValid ($dir)
+    // check that directory $dir is valid and exists.
+    {
+        $dir = realpath($dir);
+        if (ini_get('open_basedir') == false) {
+            if (is_dir($dir)) {
+                return TRUE;
+            } // if
+        } else {
+            // check that target directory is not outside restricted area
+            $temp = realpath($dir);
+            $array = explode(PATH_SEPARATOR, ini_get('open_basedir'));
+            while (!empty($temp)){
+                if (in_array($temp, $array)) {
+                    if (is_dir($dir)) {
+                        return TRUE;
+                    } else {
+                        return FALSE;
+                    } // if
+                } else {
+                    $temp = dirname($temp);
+                } // if
+            } // while
+        } // if
+
+        return FALSE;
+
+    } // isDirectoryValid
+} // if
+
+// ****************************************************************************
 if (!function_exists('logStuff')) {
     function logStuff ($string, $function=null, $line=null)
     // write $string out to a log file for debugging
     {
-        if ($_SERVER['REMOTE_ADDR'] == '80.177.120.119') {
-            // this is my IP address, so continue
-        } elseif (preg_match('/^(localhost|desktop|laptop/i)$', $_SERVER['SERVER_NAME'])) {
-            // this is one my PCs, so continue
-        } else {
-        	return;
+    	if (!defined('LOGSTUFF')) {
+    		// this function has not been turned on, so do nothing
+    		return;
         } // if
 
         if (empty($function)) {
@@ -3223,7 +3644,11 @@ if (!function_exists('logStuff')) {
 
         $header = "\r\n<p>********** " .date('Y-m-d H:i:s') .' ';
         $header .= "function: " .$function .", line: " .$line ."</p>\r\n";
-        $logfile = '../errorlog.html';
+        if (getself() == $_SERVER['PHP_SELF']) {
+        	$logfile = 'errorlog.html';
+        } else {
+	        $logfile = '../errorlog.html';
+		} // if
         $result = error_log("$header $string", 3, $logfile);
 
         return;
@@ -3849,7 +4274,7 @@ if (!function_exists('qualifySelect')) {
 
 // ****************************************************************************
 if (!function_exists('qualifyWhere')) {
-    function qualifyWhere ($where, $tablename, $fieldspec=null, $sql_from=null, $sql_search_table=null, $select_alias=null, &$having_array)
+    function qualifyWhere ($where, $tablename, $fieldspec=null, $sql_from=null, $sql_search_table=null, $select_alias=null, &$having_array=null)
     // add table names to field names in 'where' string.
     // Some values may be moved from WHERE to HAVING (if the name appears in the select list as an alias).
     {
@@ -3994,19 +4419,14 @@ END_OF_REGEX;
             		$array5 = qualifyField ($array4, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, $having_array);
                     if (empty($array5)) {
                         unset($array3[$ix]);  // remove this entry
-                        if ($ix > 0) {
-                            // not the 1st entry, so the previous entry may ned to be removed as well
-                        	if (preg_match('/^(AND|OR)$/i', trim($array3[$ix-1]))) {
-                                // this separator is no longer required
-                            	unset($array3[$ix-1]);
-                            } // if
-                        } // if
                     } else {
                         $key = key($array5);
                         $array3[$ix] = $key.$array5[$key];
                     } // if
                 } // if
             } // foreach
+            // remove any stray 'AND/OR' separators from the array
+            $array3 = removeStrayAndOrs($array3);
             // convert array back into a string for a single row
             $where1 = implode('', $array3);
             $array2[$rownum] = $where1;
@@ -4098,6 +4518,27 @@ if (!function_exists('removeDuplicateFromSelect')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('reduceOrderBy')) {
+    function reduceOrderBy ($orderby)
+    // reduce 'table.column1, table.column2, ...' to 'column1'
+    {
+        if (preg_match('/,/', $orderby)) {
+            // convert from 'column,column' to just 'column'
+            list($column) = preg_split('/,/', $orderby);
+            $orderby = $column;
+        } // if
+        if (preg_match('/\./', $orderby)) {
+            // convert from 'table.column' to just 'column'
+            list($table, $column) = preg_split('/\./', $orderby);
+            $orderby = $column;
+        } // if
+
+        return $orderby;
+
+    } // reduceOrderBy
+} // if
+
+// ****************************************************************************
 if (!function_exists('removeDuplicateNameFromSelect')) {
     function removeDuplicateNameFromSelect ($select_array, $name)
     // if $name exists in $select_array (from sql_select) then remove it
@@ -4131,6 +4572,40 @@ if (!function_exists('removeDuplicateNameFromSelect')) {
         return $select_array;
 
     } // removeDuplicateNameFromSelect
+} // if
+
+// ****************************************************************************
+if (!function_exists('removeStrayAndOrs')) {
+    function removeStrayAndOrs ($array)
+    // remove stray 'AND' or 'OR' separators from an array
+    {
+        // remove any stray 'AND/OR' separators from the array
+        $separator_allowed = false;
+        reset($array);
+        foreach ($array as $ix => $value) {
+            if (preg_match('/^(AND|OR)$/i', trim($value))) {
+                if ($separator_allowed) {
+                    // this is allowed, but any more are not
+                    $separator_allowed = false;
+                } else {
+                    unset($array[$ix]);
+                } // if
+            } else {
+                // this is not a separateor, but one is allowed to follow
+                $separator_allowed = true;
+            } // if
+        } // foreach
+        $test = array_pop($array);
+        if (preg_match('/^(AND|OR)$/i', trim($test))) {
+            // cannot terminate with a separator
+        } else {
+            // this is not a separator, so put it back
+            $array[] = $test;
+        } // if
+
+        return $array;
+
+    } // removeStrayAndOrs
 } // if
 
 // ****************************************************************************
@@ -4305,7 +4780,7 @@ if (!function_exists('requalifyOrderBy')) {
 
 // ****************************************************************************
 if (!function_exists('resizeImage')) {
-    function resizeImage ($source, $destination, $width, $height)
+    function resizeImage ($source, $destination, $to_width, $to_height, $stretch_to_fit=true)
     // resize an image according to the specs in $resize_array
     {
         if (!file_exists($source)) {
@@ -4318,29 +4793,62 @@ if (!function_exists('resizeImage')) {
             return getLanguageText('sys0123', $destination);
         } // if
 
-        $width  = (int)$width;
-        $height = (int)$height;
-        if ($width <= 0 OR $height <= 0) {
+        $to_width  = (int)$to_width;
+        $to_height = (int)$to_height;
+        if ($to_width <= 0 OR $to_height <= 0) {
             // "Cannot resize image - dimensions are invalid"
-        	return getLanguageText('sys0138', $width, $height);
+        	return getLanguageText('sys0138', $to_width, $to_height);
         } // if
 
-        // get dimensions of source image
+        // get dimensions (and other info) of source image
         $dim = GetImageSize($source);
+        $orig_w = $dim[0];
+        $orig_h = $dim[1];
 
         // build dimensions of destination image
         // NOTE: the dimensions of the original image will be maintained,
         // which may cause blank areas in the new image
-        if ($dim[0] > $dim[1]) {
-        	$to_w = $width;
-        	$to_h = round($dim[1]*($height/$dim[0]));
-        	$to_x = 0;
-        	$to_y = round($width-$to_h)/2;
+
+        //$stretch_to_fit = false;
+        //$to_width = $to_width*1.5;
+
+        if ($stretch_to_fit == true) {
+            // if either the new width or height is too small, then stretch the image to fit.
+            $offset_x = 0;
+            $offset_y = 0;
         } else {
-        	$to_h = $height;
-        	$to_w = round($dim[0]*($width/$dim[1]));
-        	$to_y = 0;
-        	$to_x = round($height-$to_w)/2;
+            // if either the new width or height is too small, then ...
+            // create an image with the proper dimensions and fill the extra with blank space.
+            $ratio_w = $orig_w / $to_width;
+            $ratio_h = $orig_h / $to_height;
+            if ($ratio_w < $ratio_h) {
+                $offset_y    = 0;
+                $true_height = $to_height;
+                // new size is wider, so calculate difference
+                $true_width = $orig_w / $ratio_h;
+                $diff_width = $to_width - $true_width;
+                if ($diff_width < 2) {
+                    $diff_width = 0;
+                } // if
+                $offset_x = $diff_width;
+
+            } elseif ($ratio_w < $ratio_h) {
+                $offset_x    = 0;
+                $true_width = $to_width;
+                // new size is taller, so calculate difference
+                $true_height = $orig_h / $ratio_w;
+                $diff_height = $to_height - $true_height;
+                if ($diff_height < 2) {
+                    $diff_height = 0;
+                } // if
+                $offset_y = $diff_height;
+            } else {
+                // ratios are the same, so no borders needed
+                $true_width  = $to_width;
+                $true_height = $to_height;
+                $offset_x = 0;
+                $offset_y = 0;
+            } // if
         } // if
 
         switch ($dim['mime']) {
@@ -4363,13 +4871,13 @@ if (!function_exists('resizeImage')) {
         } // switch
 
         // create a new image
-    	$thumb = imagecreatetruecolor($width, $height);
+    	$thumb = imagecreatetruecolor($to_width, $to_height);
     	// set background to white, full transparency
     	imagesavealpha($thumb, true);
     	$bgc = imagecolorallocatealpha($thumb, 255, 255, 255, 127);
     	imagefill($thumb, 0, 0, $bgc);
         // copy 'old' image to the 'new' image, with adjusted dimensions
-    	imagecopyresampled($thumb, $from, $to_x, $to_y, 0, 0, $to_w, $to_h, $dim[0], $dim[1]);
+    	imagecopyresampled($thumb, $from, $offset_x, $offset_y, 0, 0, $to_width, $to_height, $orig_w, $orig_h);
 
     	// copy the 'new' image to disk using the correct MIME type
     	list($fname, $ext) = explode('.', basename($source));
@@ -4400,13 +4908,13 @@ if (!function_exists('resizeImage')) {
 
      	if ($result) {
      	    // "File uploaded into $destination";
-     	    $msg = getLanguageText('sys0126', $destination ." ($width x $height)");
+     	    $msg = getLanguageText('sys0126', $destination ." ($to_width x $to_height)");
      	    if (!preg_match('/^WIN/i', PHP_OS)) {
             	$result = chmod($uploadfile, 0664);
             } // if
     	} else {
     	    // "Image NOT resized"
-    	    $msg = getLanguageText('sys0139', $width, $height);
+    	    $msg = getLanguageText('sys0139', $to_width, $to_height);
     	} // if
 
     	ImageDestroy($from);
@@ -4415,6 +4923,32 @@ if (!function_exists('resizeImage')) {
         return $msg;
 
     } // resizeImage
+} // if
+
+// ****************************************************************************
+if (!function_exists('return_bytes')) {
+    function return_bytes ($value)
+    // convert a shorthand value such a 1K, 1M, 1G into an integer.
+    // used to change the output of "ini_get('memory_limit')"
+    {
+    	$value = trim($value);
+	    $last = $value[strlen($value)-1];
+    	switch($last) {
+            // The 'G' modifier is available since PHP 5.1.0
+            case 'g':
+            case 'G':
+                $value *= 1024;
+            case 'm':
+            case 'M':
+                $value *= 1024;
+            case 'k':
+            case 'K':
+                $value *= 1024;
+        } // switch
+
+        return $value;
+
+    } // return_bytes
 } // if
 
 // ****************************************************************************
@@ -4520,7 +5054,8 @@ if (!function_exists('selection2where')) {
 // ****************************************************************************
 if (!function_exists('send_email')) {
     function send_email ($from, $to, $subject, $msg, $attachments=null, $extra_headers=null)
-    // send an email, with optional attachment.
+    // send an email, with optional attachments.
+    // NOTE: format can be either 'T' (plain text) or 'H' (HTML)
     {
         $msg = str_replace("\r\n", "\n", $msg);
 
@@ -4534,62 +5069,147 @@ if (!function_exists('send_email')) {
             } // if
         } // if
 
-//        require('SwiftMailer/swift_required.php');
-//        $message = Swift_Message::newInstance();
-//        $message->setSubject($subject);
-//        $message->setFrom($from);
-//        $message->setTo($to);
-//        $message->setBody($msg);
-//        $attachment = Swift_Attachment::newInstance($filebody, $filename, 'application/pdf');
-//        $message->attach($attachment);
-//
-//        $headers = $message->getHeaders();
-//        $headers->removeAll('Message-ID');
-//        $headers->addIdHeader('Message-ID', $message_id);
-//        $stuff = $headers->toString();
-//
-//        $transport = Swift_MailTransport::newInstance();
-//        $mailer = Swift_Mailer::newInstance($transport);
-//        $result = $mailer->send($message);
-//
-//        return true;  // ********** END OF TEST **********
+        if (defined('USE_SWIFTMAILER')) {
+            require_once('include.swiftmailer.inc');
+            require('SwiftMailer/swift_required.php');
+            $message = Swift_Message::newInstance();
+            $message->setSubject($subject);
+            $from = SWIFT_email_address2array($from);
+            $message->setFrom($from);
+            $to = SWIFT_email_address2array($to);
+            $message->setTo($to);
+
+            if (preg_match('/^<\?xml/i', trim($msg))) {
+                // this is an XML file, so send as plain text
+                $message->setBody($msg, 'text/plain');
+            } elseif (preg_match('/^<(.+)>$/is', trim($msg))) {
+                // this is an HTML message, so send a plain text version as well
+                $message->setBody( html2text($msg), 'text/plain');
+                $message->addPart($msg, 'text/html');
+            } else {
+                $message->setBody($msg, 'text/plain');
+            } // if
+
+            //$attachments[] = array('filename' => 'file1.txt', 'filebody' => html2text($msg));  // TEST
+            //$attachments[] = array('filename' => 'file2.txt', 'filebody' => html2text($msg));  // TEST
+
+            if (!empty($attachments)) {
+                foreach ($attachments as $ix => $attachment) {
+                    $filename = trim($attachment['filename']);
+                    if (!empty($attachment['filepath'])) {
+                        $filepath = trim($attachment['filepath']);
+                        $filebody = file_get_contents($filepath);
+                    } else {
+                        $filebody = $attachment['filebody'];
+                    } // if
+                    $mime_type = 'application/octet-stream';
+                    $attachment = Swift_Attachment::newInstance($filebody, $filename, $mime_type);
+                    $message->attach($attachment);
+                } // foreach
+            } // if
+
+            $headers = $message->getHeaders();
+            $headers->removeAll('Message-ID');
+            $headers->addIdHeader('Message-ID', $message_id);
+            if (!empty($extra_headers)) {
+                foreach ($extra_headers as $extra_header) {
+                    list($key, $value) = explode(':', $extra_header, 2);
+                    if (preg_match('/^Reply-To/i', $key)) {
+                        $value = SWIFT_email_address2array($value);
+                        $message->setReplyTo($value);
+                    } else {
+                        $headers->addIdHeader($key, trim($value));
+                    } // if
+                } // foreach
+            } // if
+            $stuff = $headers->toString();
+
+            $transport = Swift_MailTransport::newInstance();
+            $mailer = Swift_Mailer::newInstance($transport);
+            $result = $mailer->send($message);
+
+            if ($result) {
+                return $message_id;
+            } else {
+                return FALSE;
+            } // if
+        } // if
+
+        // ALTERNATIVE TO SWIFTMAILER
 
         $parameters = '';
-        $headers = "From: $from";
-//        if (!empty($cc)) {
-//        	$headers .= "\nCc: $cc";
-//        } // if
-//        if (!empty($bcc)) {
-//        	$headers .= "\nBcc: $bcc";
-//        } // if
+        $headers    = '';
+        $headers .= "Message-ID: <$message_id>"."\n";
+        $headers .= "Date: ".date('r')."\n";
+        $headers .= "From: $from"."\n";
         if (!empty($extra_headers)) {
-        	foreach ($extra_headers as $extra_header) {
-        		$headers .= "\n".$extra_header;
-        	} // foreach
+            foreach ($extra_headers as $extra_header) {
+                $headers .= $extra_header."\n";
+            } // foreach
         } // if
-        $headers .= "\nMessage-ID: <$message_id>";
 
-        $message = '';
-        if (empty($attachments)) {
-        	$headers .= "\nContent-Type: text/plain; charset=UTF-8";
+        //$attachments[] = array('filename' => 'file1.txt', 'filebody' => html2text($msg));  // TEST
+        //$attachments[] = array('filename' => 'file2.txt', 'filebody' => html2text($msg));  // TEST
+        //$msg = "Hello,\n\nThis is a plain text message.\n\nI hope you like it.";
+
+        if (preg_match('/^<\?xml/i', trim($msg))) {
+            // this is an XML file, so send as plain text
+            $format = 'T';
+        } elseif (preg_match('/^<(.+)>$/is', trim($msg))) {
+            // message contains HTML tags
+            $format = 'H';
         } else {
-        	// Generate a boundary string
-            $semi_rand = md5(time());
-            $mime_boundary = "==Multipart_Boundary_x{$semi_rand}x";
-
-            // Add the headers for a file attachment
-            $headers .= "\nMIME-Version: 1.0";
-            $headers .= "\nContent-Type: multipart/mixed; boundary=\"{$mime_boundary}\"";
-
-            // Add a multipart boundary above the plain message
-            $message  = "This is a multi-part message in MIME format.\n\n";
-            $message .= "--{$mime_boundary}\n";
-            $message .= "Content-Type: text/plain; charset=UTF-8\n";
-            $message .= "Content-Transfer-Encoding: 7bit\n\n";
+            $format = 'T';
         } // if
 
-        // here is the actual text part of the message
-        $message .= $msg ."\n";
+        $message = "";
+
+        if (!empty($attachments) OR $format == 'H') {
+            $headers .= "MIME-Version: 1.0\n";
+            // Generate boundary strings
+            $semi_rand = md5(time());
+            $mult_boundary = "__Multipart_Boundary_x{$semi_rand}x__";
+            $alt_boundary  = "__Alternative_Boundary_x{$semi_rand}x__";
+        } // if
+
+        if (!empty($attachments)) {
+            $headers .= "Content-Type: multipart/mixed; boundary=\"{$mult_boundary}\""."\n";
+            $message .= "\n--{$mult_boundary}\n";
+        } // if
+
+        if ($format == 'H') {
+            if (empty($message)) {
+                $headers .= "Content-Type: multipart/alternative; boundary=\"{$alt_boundary}\""."\n\n";
+            } else {
+                $message .= "Content-Type: multipart/alternative; boundary=\"{$alt_boundary}\""."\n\n";
+            } // if
+        } // if
+
+        // message may be plain text, or HTML with plain text version
+        if ($format == 'H') {
+            // here is the plain text version
+            $message .= "\n--{$alt_boundary}\n";
+            $message .= "Content-Type: text/plain; charset=utf-8\n";
+            $message .= "Content-Transfer-Encoding: 7bit\n\n";
+            $message .= html2text($msg) ."\n";
+            // here is the HTML version
+            $message .= "\n--{$alt_boundary}\n";
+            $message .= "Content-Type: text/html; charset=utf-8\n";
+            $message .= "Content-Transfer-Encoding: 7bit\n\n";
+            $message .= $msg."\n";
+            // here is the closing boundary
+            $message .= "\n--{$alt_boundary}--\n";
+        } else {
+            // plain text without any HTML version
+            if (empty($mult_boundary)) {
+                $headers .= "Content-Type: text/plain; charset=utf-8\n";
+                $headers .= "Content-Transfer-Encoding: 7bit\n\n";
+            } else {
+                $message .= "Content-Type: text/plain; charset=utf-8\n";
+                $message .= "Content-Transfer-Encoding: 7bit\n\n";
+            } // if
+            $message .= $msg."\n";
+        } // if
 
         if (!empty($attachments)) {
             foreach ($attachments as $ix => $attachment) {
@@ -4601,16 +5221,16 @@ if (!function_exists('send_email')) {
                     $filebody = $attachment['filebody'];
                 } // if
                 // Add file attachment to the message
-                $message .= "--{$mime_boundary}\n";
-                //$message .= "Content-Type: application/pdf; name=\"$filename\"\n";
+                $message .= "\n\n--{$mult_boundary}\n";
                 $message .= "Content-Type: application/octet-stream; name=\"$filename\"\n";
                 $message .= "Content-Disposition: attachment; filename=\"$filename\"\n";
                 $message .= "Content-Transfer-Encoding: base64\n\n";
                 // format $data using RFC 2045 semantics
                 $message .= chunk_split(base64_encode($filebody));
                 $filebody = null;
-                //$message .= "\n\n--{$mime_boundary}--\n";
             } // foreach
+            // here is the closing boundary
+            $message .= "\n--{$mult_boundary}--\n";
         } // if
 
         if (defined('MAIL_RETURN_PATH')) {
@@ -4625,6 +5245,12 @@ if (!function_exists('send_email')) {
                 // use complete FROM address
                 $parameters = '-f' .$from;
             } // if
+        } // if
+
+        if (preg_match('/^(UTF-8|UTF8)$/i', mb_detect_encoding($subject))) {
+            // I don't know why this is necessary, but it works!
+            $subject = convertEncoding($subject, 'iso-8859-1', 'UTF-8');
+            $subject = convertEncoding($subject, 'UTF-8', 'iso-8859-1');
         } // if
 
         // now send it
@@ -4732,11 +5358,24 @@ if (!function_exists('splitNameOperatorValue')) {
     // ($where is passed by reference so that it can be amended)
     {
         $pattern1 = <<< END_OF_REGEX
-/
+~
 ^                            # begins with
 [ ]*                         # 0 or more spaces
 (                            # start choice - fieldname
- \w+\([^\(\)]*\)             # word(...)
+ \w+                         # word(...)
+ [ ]*                        # 0 or more spaces
+ \(                          # '(' followed by
+ (?>                         # start atomic group
+  (                          # start choice
+   [\w ,\./*:+-]             # word or ',. /*:+-'
+   |                         # or
+   \(\)                      # ()
+   |                         # or
+   '(([^\\\']*(\\\.)?)*)'    # quoted string
+  )                          # end choice
+ )                           # end atomic group
+ ++                          # 1 or more times (possessive quantifier)
+ \)                          # ending with ')'
 |                            # or
  \w+(\.\w+)?                 # word [.word]
 |                            # or
@@ -4744,7 +5383,7 @@ if (!function_exists('splitNameOperatorValue')) {
 |                            # or
  '(([^\\\']*(\\\.)?)*)'      # quoted string
 )                            # end choice
-/xi
+~xi
 END_OF_REGEX;
 
         $pattern2 = <<< END_OF_REGEX
@@ -5198,6 +5837,8 @@ END_OF_REGEX;
                     } // if
                 } // if
             } // foreach
+            // remove any stray 'AND/OR' separators from the array
+            $array3 = removeStrayAndOrs($array3);
             // convert array back into a string for a single row
             $where1 = implode('', $array3);
             $array2[$rownum] = $where1;
@@ -5515,13 +6156,15 @@ if (!function_exists('where2indexedArray')) {
 |                            # or
  (                           # start choice
   \w+(\.\w+)?                # word[.word]
-  |                          # r
+  |                          # or
   \w+(\.\w+)?                # word[.word] followed by
   [ ]*                       # 0 or more spaces
   \(                         # '(' followed by
   (?>                        # start atomic group
   (                          # start choice
-   [\w ,\./*+-]                  # word or ',. /*+-'
+   [\w ,\./*:+-]                 # word or ',. /*:+-'
+   |                             # or
+   \(\)                          # ()
    |                             # or
    '(([^\\\']*(\\\.)?)*)'        # quoted string
    |                             # or
@@ -5562,6 +6205,8 @@ if (!function_exists('where2indexedArray')) {
   (                          # start choice
    [\w ,\./*+-]                  # word or ',. /*+-'
    |                             # or
+   \(\)                          # ()
+   |                             # or
    '(([^\\\']*(\\\.)?)*)'        # quoted string
    |                             # or
    [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
@@ -5569,6 +6214,10 @@ if (!function_exists('where2indexedArray')) {
   )                          # end atomic grouping
   ++                         # 1 or more times (possessive quantifier)
   \)                         # ending with ')'
+  |                             # or
+  \w+(\.\w+)?                   # word[.word]
+  [ ]*                          # optional space(s))
+  (\+|-)[ ]*[0-9]+              # +/- digits
   |                             # or
   \w+(\.\w+)?                   # word[.word]
   |                             # or
@@ -5629,14 +6278,22 @@ END_OF_REGEX;
         $pattern1b = <<< END_OF_REGEX
 ~
 ^
--foobar-
+(            # start group
+ (           # start choice
+  \w+\(\)    # function()
+  |          # or
+  \w+        # word
+ )           # end choice
+ [,]*        # optional comma
+ [ ]*        # optional space
+)+           # end group, 1 or more times
 ~xi
 END_OF_REGEX;
 
         $pattern1c = <<< END_OF_REGEX
 ~
 ^
--foobar-
+,
 ~xi
 END_OF_REGEX;
 
@@ -5656,6 +6313,7 @@ END_OF_REGEX;
 /xi
 END_OF_REGEX;
 
+        $input = $where;
         $output = array();
         while (!empty($where)) {
             if (!$result = preg_match($pattern1, $where, $regs)) {
@@ -5697,8 +6355,12 @@ END_OF_REGEX;
                 $where = ltrim(substr($where, strlen($regs[0])));
             } // if
 
-            // expression is complete, so add to output array
-            $output[] = trim($found);
+            if (trim($found) == ',') {
+                // this is a comma separator, so ignore it
+            } else {
+                // expression is complete, so add to output array
+                $output[] = trim($found);
+            } // if
         } // while
 
         reset($output);

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class php_session extends Default_Table
@@ -18,7 +18,8 @@ class php_session extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'audit';
         $this->tablename   = 'php_session';
 
@@ -97,6 +98,7 @@ class php_session extends Default_Table
             $array['date_created'] = getTimeStamp();
             $array['last_updated'] = getTimeStamp();
             $array['session_data'] = $session_data;
+            $this->update_on_duplicate_key = true;
             $this->_dml_insertRecord($array);
         } else {
             // update existing record
@@ -137,14 +139,21 @@ class php_session extends Default_Table
     function gc ($max_lifetime)
     // perform garbage collection.
     {
-        $real_now = date('Y-m-d H:i:s');
-//        $dt1 = strtotime("$real_now -$max_lifetime seconds");
-//        $dt2 = date('Y-m-d H:i:s', $dt1);
+//        if ($max_lifetime < 14400) {
+//            $message = "max_lifetime=".$max_lifetime."\n";
+//            $message.= "request_uri=".$_SERVER['REQUEST_URI']."\n";
+//            $message.= "server_name=".$_SERVER['SERVER_NAME']."\n";
+//            $message.= "server_address=".$_SERVER['SERVER_ADDR']."\n";
+//            $message.= "remote_address=".$_SERVER['REMOTE_ADDR']."\n";
+//            $mailto = 'tony@marston-home.demon.co.uk';
+//            $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
+//            $headers .= "\nContent-Type: text/plain; charset=UTF-8";
+//            @error_log("$message\n", 1, $mailto, $headers);
+//        } // if
 
-        $timestamp = time() - $max_lifetime;
-        $dt2 = date('Y-m-d H:i:s', $timestamp);
-
-        $count = $this->_dml_deleteSelection("last_updated < '$dt2'");
+        $count = $this->_dml_deleteSelection("last_updated < DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND)");
+        //$count = $this->_dml_deleteSelection("DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND) > last_updated");
+        //$count = $this->_dml_deleteSelection("DATE_SUB(last_updated, INTERVAL $max_lifetime SECOND) < now()");
 
         return true;
 

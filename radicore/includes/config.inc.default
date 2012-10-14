@@ -123,7 +123,7 @@ $GLOBALS['use_https'] = false;
 // defines address(es) to which any error_log will be sent
 //define('ERROR_LOG_MAILTO', 'me@domain.com, someone.else@domain.co.uk');
 
-// defines Return-Path to be used n all outgoing emails
+// defines Return-Path to be used on all outgoing emails
 //define('MAIL_RETURN_PATH', 'postmaster@domain.com');
 
 ?>

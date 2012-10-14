@@ -11,6 +11,10 @@ class ldap_class
 
     function ldap_class ()
     {
+        if (!extension_loaded('ldap')) {
+    		trigger_error("LDAP extension is not loaded", E_USER_ERROR);
+    	} // if
+    	
         require 'ldap.config.inc';
 
         if (!$this->resource = @ldap_connect($ldap_host, $ldap_port)) {

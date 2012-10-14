@@ -190,8 +190,8 @@ $pagination['main']['curpage']  = $dbobject->getPageNo();
 $pagination['main']['lastpage'] = $dbobject->getLastPage();
 
 // get sort details
-$orderby     = $dbobject->getOrderBy();
-$orderby_seq = $dbobject->getOrderBySeq($orderby);
+//$orderby     = $dbobject->getOrderBy();
+//$orderby_seq = $dbobject->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']    = $where;
@@ -202,7 +202,8 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

@@ -1,4 +1,4 @@
-CREATE USER "AUDIT" IDENTIFIED BY "audit";
+CREATE USER "AUDIT" IDENTIFIED BY "AUDIT";
 GRANT CONNECT, RESOURCE TO "AUDIT";
 GRANT CREATE DATABASE LINK TO "AUDIT";
 GRANT CREATE MATERIALIZED VIEW TO "AUDIT";
@@ -39,16 +39,16 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON audit_fld TO PUBLIC;
 CREATE TABLE audit_logon_errors (
   id number(10) NOT NULL,
   err_timestamp timestamp NOT NULL,
-  ip_address varchar2(16) NOT NULL,
+  ip_address varchar2(40) NOT NULL,
   user_id varchar2(16),
   user_password varchar2(16) NOT NULL,
   email_addr varchar2(50),
   PRIMARY KEY  (id)
 );
-CREATE SEQUENCE audit_logon_errors_seq;
-
 REVOKE ALL ON audit_logon_errors FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON audit_logon_errors TO PUBLIC;
+
+CREATE SEQUENCE audit_logon_errors_seq;
 REVOKE ALL ON audit_logon_errors_seq FROM PUBLIC;
 GRANT SELECT,ALTER ON audit_logon_errors_seq TO PUBLIC;
 
@@ -63,10 +63,10 @@ CREATE TABLE audit_ssn (
   ssn_time char(8) NOT NULL,
   PRIMARY KEY  (session_id)
 );
-CREATE SEQUENCE audit_ssn_seq;
-
 REVOKE ALL ON audit_ssn FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON audit_ssn TO PUBLIC;
+
+CREATE SEQUENCE audit_ssn_seq;
 REVOKE ALL ON audit_ssn_seq FROM PUBLIC;
 GRANT SELECT,ALTER ON audit_ssn_seq TO PUBLIC;
 

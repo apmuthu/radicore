@@ -132,7 +132,8 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

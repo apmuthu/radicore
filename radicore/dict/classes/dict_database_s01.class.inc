@@ -65,26 +65,42 @@ class dict_dataBase_s01 extends dict_dataBase
 
         global $servers;
 
-        $dbnames = array();
+        $dbnames          = array();
+        $dbprefix_exclude = array();
+        $switch_dbnames   = array();
 
         if (!empty($servers)) {
             // there are different databases on different servers
         	foreach ($servers as $server) {
         		$dbprefix = $server['dbprefix'];
-        		$dbnames = $this->_loadDatabases ($dbnames, $dbprefix);
+                if (!empty($server['switch_dbnames'])) {
+                    // flip from 'dictName=serverName' to 'serverName=dictName'
+                    $server['switch_dbnames'] = array_flip($server['switch_dbnames']);
+                    // accumulate results
+                    $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
+                } // if
+        		$dbnames = $this->_loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
+                if (!empty($dbprefix)) {
+                    $dbprefix_exclude[] = $dbprefix;
+                } // if
         	} // foreach
         } else {
             // all databases are within the same server
             $dbprefix = $GLOBALS['dbprefix'];
-            $dbnames = $this->_loadDatabases ($dbnames, $dbprefix);
+            $dbnames = $this->_loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
+            if (!empty($dbprefix)) {
+                $dbprefix_exclude[] = $dbprefix;
+            } // if
         } // if
 
         if (empty($dbnames)) {
             // 'There are no new database schemas to import'
         	$this->errors[] = getLanguageText('e0025');
-        } else {
-            $this->lookup_data['database_id'] = $dbnames;
+            return $fieldarray;
         } // if
+
+        asort($dbnames);  // sort into ascending sequence
+        $this->lookup_data['database_id'] = $dbnames;
 
         return $fieldarray;
 
@@ -117,10 +133,10 @@ class dict_dataBase_s01 extends dict_dataBase
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _loadDatabases ($dbnames, $dbprefix)
+    function _loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames)
     // find databases which have this $dbprefix and load their names into $dbnames.
     {
-        // get list of existing database names
+        // get list of all database names from the database server
         $array  = $this->_ddl_showDatabases($dbprefix);
 
         // filter out those databases that already exist in DICT database
@@ -134,11 +150,28 @@ class dict_dataBase_s01 extends dict_dataBase
         			$dbname = substr($dbname, $prefix_len);
                     $array[$row] = $dbname;
                 } // if
+            } else {
+                foreach ($dbprefix_exclude as $e_dbprefix) {
+                    // this prefix has already been processed, so exclude any entries which use it
+                    if (substr($dbname, 0, strlen($e_dbprefix)) == $e_dbprefix) {
+                        $dbname = substr($dbname, strlen($e_dbprefix));
+                        $array[$row] = $dbname;
+                        break;
+                    } // if
+                } // foreach
+            } // if
+            if (!empty($switch_dbnames)) {
+                if (array_key_exists($dbname, $switch_dbnames)) {
+                    // name in the dictionary is different from the name on the server
+                    $dbname = $switch_dbnames[$dbname];
+                } // if
             } // if
         	$count = $this->getCount("database_id='$dbname'");
             if ($count == 0) {
-                // store details of new database
-                $dbnames[$dbname] = $dbname;
+                if (!array_key_exists($dbname, $dbnames)) {
+                    // this is new, so store details in return array
+                    $dbnames[$dbname] = $dbprefix.$dbname;
+                } // if
             } // if
         } // foreach
 

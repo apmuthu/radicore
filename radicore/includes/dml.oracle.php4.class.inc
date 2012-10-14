@@ -1316,7 +1316,8 @@ class oracle
 
         // build update string from non-pkey fields
         $update = '';
-        $pattern = '/(integer|decimal|numeric|float|real)/i';
+        $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -1325,15 +1326,18 @@ class oracle
                 } elseif (is_null($value)) {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
-                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                } elseif (preg_match($pattern1, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     if (strlen($value) == 0) {
                     	$update .= "$item=NULL,";
                     } else {
                         $update .= "$item=$value,";
                     } // if
+                } elseif (preg_match($pattern2, $value)) {
+                    // change to the new value (without enclosing quotes)
+                    $update .= "$item=" .$this->adjustData($value) .", ";
                 } else {
-                    // change to the new value
+                    // change to the new value (with enclosing quotes)
                     $update .= "$item='" .$this->adjustData($value) ."', ";
                 } // if
             } // if

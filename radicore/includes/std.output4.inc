@@ -113,8 +113,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     	$csvout = $table_id .'.csv';
     } // if
 
+    // create an instance of the CSV object
+    require_once 'std.csv.class.inc';
+    $csv = new CSV($dbobject);
+
     // transform output to CSV format
-    $output = $dbobject->outputCSV($resource, $_POST);
+    $output = $csv->outputCSV($resource, $_POST);
     $errors = $dbobject->getErrors();
     $messages = $dbobject->getMessages();
 
@@ -148,7 +152,7 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
-
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 ?>

@@ -95,7 +95,7 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($original_where, $original_selection);
+    $where = $dbouter->initialise($where, $selection);
     if ($dbouter->errors) {
         if (!empty($dbouter->messages)) {
         	$messages = array_merge($messages, $dbouter->getMessages);
@@ -277,7 +277,7 @@ if (isset($instruction)) {
 
 // get primary key of current row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
-$inner_where = array2where($outer_data, $pkeynames, $dbouter);
+$inner_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
@@ -289,10 +289,11 @@ if (isset($_POST['reset'])) {
     $dbinner->reset($inner_where);
 } // if
 
+// load in current data from $outer in case it is needed
+$dbinner->setFieldArray($outer_data);
+
 if (!empty($outer_data)) {
-    // load in current data from $outer in case it is needed
-    $dbinner->setFieldArray($outer_data);
-    // get data from the database
+    // get data for the inner entity from the database
 	$inner_data = $dbinner->getData($inner_where);
 
 	if ($dbinner->tablename == $dbouter->alt_language_table) {
@@ -318,8 +319,10 @@ if ($dbinner->getNumRows() == 0) {
     } // if
 } // if
 
-// get any additional data for current record
-$inner_data = $dbinner->getExtraData($inner_data);
+if (!empty($inner_data)) {
+    // get any additional data for current record
+    $inner_data = $dbinner->getExtraData($inner_data);
+} // if
 
 if ($dbinner->errors) {
     $errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -352,8 +355,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']      = unqualifyWhere($where);
@@ -368,7 +371,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

@@ -1,23 +1,21 @@
 <?php
-    // file created on March 6, 2007, 12:02 pm
+    // file created on October 3, 2012, 4:37 pm
     
     // field specifications for table audit.audit_trn
     $fieldspec['session_id']                = array('type' => 'integer',
-                                                    'size' => 20,
+                                                    'size' => 21,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 9.2233720368548e+018,
+                                                    'maxvalue' => 1.84467440737096e19,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['tran_seq_no']               = array('type' => 'integer',
-                                                    'size' => 6,
+                                                    'size' => 7,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 32767,
+                                                    'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['trn_date']                  = array('type' => 'date',
@@ -60,6 +58,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'session_id, tran_seq_no';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

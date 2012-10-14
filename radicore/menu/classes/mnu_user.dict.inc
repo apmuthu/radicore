@@ -1,5 +1,5 @@
 <?php
-    // file created on October 25, 2010, 9:58 am
+    // file created on June 11, 2012, 5:33 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -41,7 +41,7 @@
                                                     'noedit' => 'y');
     
     $fieldspec['pswd_count']                = array('type' => 'integer',
-                                                    'size' => 6,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'noedit' => 'y');
@@ -86,7 +86,7 @@
                                                     'infinityisnull' => 'y');
     
     $fieldspec['ip_address']                = array('type' => 'string',
-                                                    'size' => 16,
+                                                    'size' => 40,
                                                     'noedit' => 'y');
     
     $fieldspec['email_addr']                = array('type' => 'string',
@@ -169,6 +169,12 @@
                                                     'dbname' => 'party',
                                                     'subsys_dir' => 'party',
                                                     'type' => 'DEL',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
+    $this->child_relations[]                = array('child' => 'survey_answer_hdr',
+                                                    'dbname' => 'survey',
+                                                    'subsys_dir' => 'survey',
+                                                    'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->child_relations[]                = array('child' => 'wf_workitem',

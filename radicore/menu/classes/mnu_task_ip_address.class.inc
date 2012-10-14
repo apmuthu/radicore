@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task_ip_address extends Default_Table
@@ -12,7 +12,8 @@ class mnu_task_ip_address extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'menu';
         $this->tablename   = 'mnu_task_ip_address';
 

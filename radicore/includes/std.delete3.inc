@@ -29,36 +29,51 @@ $dbobject->initiated_from_controller = true;
 // perform any initialisation
 $where = $dbobject->initialise ($where, $selection);
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // retrieve profile must have been set by previous screen
-    if (empty($selection)) {
-        // 'Nothing has been selected yet.'
-        $batch_errors = scriptPrevious(getLanguageText('sys0081'));
-        return $batch_errors;
-    } // if
-
-    $dbobject->startTransaction();
-
-    // pass details to database object
-    $messages = $dbobject->deleteSelection($selection);
-    $errors   = $dbobject->getErrors();
-
-    if (!$errors) {
-        $errors = $dbobject->commit();
-    } // if
-    if ($errors) {
-        $dbobject->rollback();
-    } // if
-
-    if (empty($errors)) {
-    	$action = 'OK';
-    } else {
-        $action = null;
-    } // if
-
-    // return to previous screen
-    $batch_errors = scriptPrevious($errors, $messages, $action);
+// retrieve profile must have been set by previous screen
+if (empty($selection) AND empty($where)) {
+    // 'Nothing has been selected yet.'
+    $batch_errors = scriptPrevious(getLanguageText('sys0081'));
     return $batch_errors;
 } // if
+
+$dbobject->startTransaction();
+
+// pass details to database object
+if (!empty($selection)) {
+    $messages = $dbobject->deleteSelection($selection);
+} elseif (!empty($where)) {
+    $messages = $dbobject->deleteSelection($where);
+} // if
+$errors = $dbobject->getErrors();
+
+if (!$errors) {
+    $errors = $dbobject->commit();
+} // if
+if ($errors) {
+    $dbobject->rollback();
+} // if
+
+global $stdout, $stdouth;
+if (!empty($stdout)) {
+    if (!empty($messages)){
+        if (is_array($messages)) {
+            foreach ($messages as $message) {
+                $result = fwrite($stdouth, "<p>$message</p>\n");
+            } // foreach
+        } else {
+            $result = fwrite($stdouth, "<p>$messages</p>\n");
+        } // if
+    } // if
+} // if
+
+if (empty($errors)) {
+    $action = 'OK';
+} else {
+    $action = null;
+} // if
+
+// return to previous screen
+$batch_errors = scriptPrevious($errors, $messages, $action);
+return $batch_errors;
 
 ?>

@@ -1,10 +1,10 @@
 <h1>Installation</h1>
 
-<p>The first step is to ensure that you already have a working installation of web server (usually <a href="http://httpd.apache.org/">Apache</a>), database server (usually <a href="http://www.mysql.com/">MySQL</a>, <a href="http://www.postgresql.org/">PostgreSQL</a> or <a href="http://www.oracle.com">Oracle</a>), and <a href="http://www.php.net/">PHP</a>. Ensure that your PHP installation includes the right optional extensions, as documented in <a href="radicore-for-php.php">Radicore for PHP</a>.</p>
+<p>The first step is to ensure that you already have a working installation of web server (usually <a href="http://httpd.apache.org/">Apache</a>), database server (usually <a href="http://www.mysql.com/">MySQL</a>, <a href="http://www.postgresql.org/">PostgreSQL</a>, <a href="http://www.oracle.com">Oracle</a> or <a href="http://www.microsoft.com/sqlserver/">SQL Server</a>), and <a href="http://www.php.net/">PHP</a>. Ensure that your PHP installation includes the right optional extensions, as documented in <a href="radicore-for-php.php">Radicore for PHP</a>.</p>
 
 <p>Then and only then will you be able to download and install this software. Here are the steps you should take after obtaining a copy of the RADICORE zip file:</p>
 
-<ol class="expand">
+<ol class="expand nested">
 <li>Unzip the file into whatever folder has been designated as [DOCUMENT_ROOT], but remember to retain the directory structure. You should end up with something like this:
 <pre>
 [DOCUMENT_ROOT]
@@ -93,7 +93,7 @@ Note that the contents of .htaccess will be ignored by Apache unless the correct
   </ul>
 These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirectories.</li>
 
-	<ol type="a">
+	<ol type="i">
 	<li>The 'menu' database can be loaded from file <code>radicore/menu/sql/&lt;db&gt;/menu-data.sql</code> which contains the data for all subsystems (except the prototype applications), or single subsystems can be loaded individually from the <code>&lt;subsystem&gt;.menu_export.sql</code> files which exist in the <code>radicore/&lt;subsystem&gt;/sql/</code> directories. These files were created using the Menu Subsystem -&gt; Subsystem -&gt; Export function.</li>
 
   <li>User details must be loaded separately from file <code>radicore/menu/sql/&lt;db&gt;/mnu-user.sql</code>. This should be loaded only once, unlike the other *sql files which can be loaded as many times as you like.</li>
@@ -104,9 +104,10 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
 	</ol>
 
 <p>Note that each <code>&lt;subsystem&gt;-schema.sql</code> script will create tables in a separate database (or 'schema' in PostgreSQL and Oracle) whose name is identified at the start of each script. You MUST select the right database/schema before running these scripts otherwise the software will not be able to access any tables.</p>
-</li>
+<!--</li>-->
 
-<li>Notes for <a name="mysql">MySQL</a> users:
+<ol type="A">
+<li><a name="5.A"></a>Notes for <a name="mysql">MySQL</a> users:
 	<ul>
   <li>The tables used by each subsystem must be created in separate databases, as shown in the various <code>&lt;subsystem&gt;-schema.sql</code> scripts. It is not possible to create all the tables in a single database. After connecting to the MySQL server the application will use the <a href="http://www.php.net/manual/en/function.mysql-select-db.php">mysql_select_db()</a> function to identify the current database.</li>
 	<li>MySQL is case-insensitive by default, but some non-Windows operating systems can reverse this behaviour. In order to avoid any potential problems you should therefore ensure that the <code>lower_case_table_names</code> variable is set to 1. Please refer to <a href="http://dev.mysql.com/doc/refman/4.1/en/name-case-sensitivity.html">Identifier Case Sensitivity</a> for details.</li>
@@ -115,7 +116,7 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
 	</ul>
 </li>
 
-<li>Notes for <a name="postgresql">PostgreSQL</a> users:
+<li><a name="5.B">Notes for <a name="postgresql">PostgreSQL</a> users:
   <ul>
     <li>Refer to <a href="http://www.tonymarston.net/php-mysql/postgresql.html">Creating a PostgreSQL Driver</a> to see the differences encountered when using that DBMS.</li>
     <li>The database name to be used in the 'connect' function is specified in the <code>$PGSQL_dbname</code> variable in the CONFIG.INC file. The suggested database name is 'radicore', but you can change this if you wish.</li>
@@ -126,10 +127,11 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
     <li>Replace all '`' (backticks) with '' (null).</li>
 		</ul>
   </li>
+	<li>In the <code>dict/sql/postgresql/mysqlcompat-vvv</code> directory (where 'vvv' is the version number) is a series of scripts containing collections of functions, aggregates, operators and casts that make PostgreSQL mimic MySQL as closely as possible. Look at the README file for installation instructions.</li>
   </ul>
 </li>
 
-<li>Notes for <a name="oracle">Oracle</a> users:
+<li><a name="5.C">Notes for <a name="oracle">Oracle</a> users:
 	<ul>
 	<li>Refer to <a href="http://www.tonymarston.net/php-mysql/oracle.html">Creating an Oracle Driver</a> to see the differences encountered when using that DBMS.</li>
   <li>The database name to be used in the 'connect' function is specified in the <code>$dbhost</code> variable in the CONFIG.INC file.</li>
@@ -142,6 +144,12 @@ These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirec
   </li>
 	</ul>
 </li>
+</ol>
+</li>
+
+<li><a href="#5.A">(moved to 5.A)</a></li>
+<li><a href="#5.B">(moved to 5.B)</a></li>
+<li><a href="#5.C">(moved to 5.C)</a></li>
 
 <li>The contents of the Dictionary and therefore the <a href="http://www.tonymarston.net/php-mysql/data-dictionary.html#table.dict.inc">&lt;tablename&gt;.dict.inc</a> files were created from a MySQL database and consequently use MySQL data types, sizes and value ranges. For example, with the standard <code>SMALLINT (INT2)</code> type the range is -32768 to 32767, but MySQL has an unsigned version where the range is 0 to 65535. Although the application will run on any database using these ranges you may encounter problems should a value passed by the application be rejected by the database, so you may wish to rebuild these files and adjust the ranges with the following steps: 
 	<ul>

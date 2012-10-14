@@ -159,20 +159,20 @@ class imap_class
         $message['content_ids'] = $ids;
 
         // *******************************************************
-        if (preg_match('/(kodega.de|kodega.se)$/i', $message['to'])) {
-            if (!empty($_SERVER['SERVER_ADMIN'])) {
-            	$headers  = "From: ".$_SERVER['SERVER_ADMIN'];
-            } else {
-                $headers  = "From: ".$_SERVER['HTTP_HOST'];
-            } // if
-            $headers .= "\nContent-Type: text/plain; charset=".$charset;
-        	$result = mail('tony@marston-home.demon.co.uk',
-        	               '** EMAIL COPY **',
-        	               "Here is a copy of the message sent to " .$message['to'] ." with encoding '$charset':\n"
-        	                                                        ."From: " .$message['from'] ."\n"
-        	                                                        .$message['text'],
-        	               $headers);
-        } // if
+//        if (preg_match('/(customer service|customer\.service)/i', $message['to'])) {
+//            if (!empty($_SERVER['SERVER_ADMIN'])) {
+//            	$headers  = "From: ".$_SERVER['SERVER_ADMIN'];
+//            } else {
+//                $headers  = "From: ".$_SERVER['HTTP_HOST'];
+//            } // if
+//            $headers .= "\nContent-Type: text/plain; charset=".$charset;
+//        	$result = mail('tony@marston-home.demon.co.uk',
+//        	               '** EMAIL COPY **',
+//        	               "Here is a copy of the message sent to " .$message['to'] ." with encoding '$charset':\n"
+//        	                                                        ."From: " .$message['from'] ."\n"
+//        	                                                        .$message['text'],
+//        	               $headers);
+//        } // if
         // *******************************************************
 
         // decode any input
@@ -194,7 +194,7 @@ class imap_class
 
         if (empty($message['text']) AND !empty($message['htmlmsg'])) {
             // text missing, so use HTML version
-            $message['text'] = $this->html2text($message['htmlmsg'], $message['charset']);
+            $message['text'] = html2text($message['htmlmsg'], $message['charset']);
         } // if
 
         return $message;
@@ -212,55 +212,6 @@ class imap_class
     } // deleteMsg
 
     // ****************************************************************************
-    function html2text ($input, $charset='iso-8859-1')
-    // convert HTML document to plain text.
-    {
-        if ($charset == 'iso-8859-1') {
-            // continue
-        } elseif ($charset == 'us-ascii') {
-        	$charset='iso-8859-1';
-        } else {
-            if (preg_match('/(?<=charset=)[-0-9a-zA-Z]+/i', $input, $regs)) {
-            	$charset = $regs[0];
-            } // if
-        } //if
-        if ($charset == 'unicode') {
-        	$charset = 'utf-8';
-        } // if
-
-        $output = iconv($charset, 'UTF-8//TRANSLIT', $input);
-        $output = convertEncoding ($input, 'UTF-8', $charset);
-
-        // convert non-breaking spaces (UTF-8 encoding is 0xC2 0xA0)
-        $output = str_replace('&nbsp;', chr(194).chr(160), $output);
-
-    	// remove all line breaks
-    	$output = str_replace(array("\r\n", "\r", "\n"), '', $output);
-
-    	// convert all '<BR>' tags to line breaks
-    	$output = preg_replace('#(<BR[ ]*[/]?>)#i', "\n", $output);
-
-    	// convert all '<p>' tags to double line breaks
-    	$output = preg_replace('#(<p[ ]*)#i', "\n\n<p ", $output);
-
-    	// insert line break after each '</DIV>'
-    	$output = preg_replace('#</DIV>#i', "</DIV>\n", $output);
-
-    	// remove or replace all other HTML tags and special characters
-    	$output = preg_replace('#<title>.*</title>#i', '', $output);
-    	$output = preg_replace('#<style>.*</style>#i', '', $output);
-        $output = strip_tags($output);
-    	$output = htmlspecialchars_decode($output, ENT_QUOTES);
-        $output = html_entity_decode($output, ENT_QUOTES, 'UTF-8');
-
-        // remove leading/trailing spaces
-        $output = trim($output);
-
-        return $output;
-
-    } // html2text
-
-    // ****************************************************************************
     function close ($expunge=false)
     // close the mailbox ('expunge' will delete all messages)
     {
@@ -274,7 +225,7 @@ class imap_class
     function _getpart($mbox, $mid, $p, $partno, &$htmlmsg, &$plainmsg, &$charset, &$attachments, &$ids)
     // $partno = '1', '2', '2.1', '2.1.3', etc if multipart, 0 if not multipart
     {
-        if ($p->bytes > 10000000) {
+        if (isset($p->bytes) AND $p->bytes > 10000000) {
             $data = "*** ATTACHMENT TOO LARGE ***";
             $p->bytes = strlen($data);
             $p->encoding = 0;

@@ -188,17 +188,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
     scriptNext($GLOBALS['task_id'], $where);
 } // if
 
+if (!empty($errors)) {
+    // all errors are associated with this table
+    $errors2[$dbobject->getClassName()] = $errors;
+    $errors = $errors2;
+} // if
+
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;
 
-if (!empty($errors)) {
-    // all errors are associated with this table
-	$errors2[$dbobject->getClassName()] = $errors;
-	$errors = $errors2;
-} // if
-
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

@@ -132,7 +132,7 @@ class dict_table_s03 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $menu_prefix = dict_findDBPrefix('menu');
+        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
 
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir';

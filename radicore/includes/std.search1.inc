@@ -60,8 +60,8 @@ if (isset($script_vars['dbobject'])) {
     	$dbobject->sql_selection = $selection;
     } // if
     // get any initial values
-    //$where = $dbobject->initialise($where, $selection);
-    $where = $dbobject->initialise($where);
+    $null = null;
+    $where = $dbobject->initialise($where, $null);
     $fieldarray = $dbobject->fieldarray;
 } // if
 
@@ -111,9 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // merge original data with user's input (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update_associative($fieldarray, $_POST);
-    // ensure that changes are stored inside relevant object
-    $dbobject->setFieldArray($fieldarray);
+    $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
+    // get any data which may contain LOOKUP options
+    $fieldarray = $dbobject->getExtraData($fieldarray);
     // look for an action which is another script
     $errors = childForm($_POST, array('dbobject' => $dbobject));
 
@@ -248,15 +248,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         } else {
                                            $decimal_places = 0;
                                         } // if
-                                        $value = number_format($value, $decimal_places, '.', '');
+                                        $value = number_format((double)$value, $decimal_places, '.', '');
                                     } // if
                             	    break;
                             	default:  // type = 'string'
                             	    if (is_string($value) AND substr_count($value, '%') > 0) {
+                                        // value already contains a wildcard character
                                     	$operator = 'LIKE';
                             	    } else {
                                         if (isset($fieldspec[$field]['control'])) {
-                                            if ($fieldspec[$field]['control'] == 'multidrop' AND is_array($value)) {
+                                            if (isset($fieldspec[$field]['allow_input'])) {
+                                                $operator = 'LIKE';
+                                                if (substr_count($value, '%') == 0) {
+                                                    // no wildcard character, so append one by default
+                                                    $value .= '%';
+                                                } // if
+                                            } elseif ($fieldspec[$field]['control'] == 'multidrop' AND is_array($value)) {
                                                 foreach ($value as $key => $entry) {
                                                 	$value[$key] = addslashes($entry);
                                                 } // foreach
@@ -363,7 +370,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

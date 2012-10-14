@@ -1,4 +1,4 @@
-// file created on July 31, 2010, 8:19 pm
+// file created on January 25, 2012, 9:33 am
     
 // menu details for subsystem AUDIT
 
@@ -11,6 +11,7 @@ $array['audit_dtl(search)']                       = 'Search Audit Detail';
 $array['audit_logon_errors(del)']                 = 'Delete Audit Logon Errors';
 $array['audit_logon_errors(list)']                = 'List Logon Errors';
 $array['audit_logon_errors(search)']              = 'Search Logon Errors';
+$array['audit_ssn(batch)delete']                  = 'Delete Audit data';
 $array['audit_tbl(upd4)']                         = 'Generate SQL';
 
 // navigation button details for subsystem AUDIT
@@ -18,6 +19,7 @@ $array['Audit Trail']                             = 'Audit Trail';
 $array['Audit Trail (2)']                         = 'Audit Trail (2)';
 $array['Audit Trail (exact)']                     = 'Audit Trail (exact)';
 $array['Delete']                                  = 'Delete';
+$array['Delete Audit data']                       = 'Delete Audit data';
 $array['Generate SQL']                            = 'Generate SQL';
 $array['Logon Errors']                            = 'Logon Errors';
 $array['Search']                                  = 'Search';

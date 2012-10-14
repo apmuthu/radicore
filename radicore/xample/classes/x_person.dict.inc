@@ -1,5 +1,5 @@
 <?php
-    // file created on August 10, 2009, 10:14 pm
+    // file created on January 8, 2012, 6:00 pm
     
     // field specifications for table xample.x_person
     $fieldspec['person_id']                 = array('type' => 'string',
@@ -101,8 +101,8 @@
     $fieldspec['fckeditor_test']            = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
-                                                    'cols' => 60,
-                                                    'rows' => 10);
+                                                    'cols' => 80,
+                                                    'rows' => 20);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,

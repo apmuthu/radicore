@@ -1,8 +1,24 @@
-SET search_path TO "workflow";
+--
+-- PostgreSQL database dump
+--
 
--- 
--- Dumping data for table wf_arc
--- 
+-- Dumped from database version 9.1.2
+-- Dumped by pg_dump version 9.1.2
+-- Started on 2012-01-21 08:42:57
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+SET search_path = workflow, pg_catalog;
+
+--
+-- TOC entry 2322 (class 0 OID 21780)
+-- Dependencies: 233
+-- Data for Name: wf_arc; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
 
 INSERT INTO wf_arc (workflow_id, transition_id, place_id, direction, arc_type, pre_condition, created_date, created_user, revised_date, revised_user) VALUES (4, 1, 1, 'IN', 'SEQ', NULL, '2004-04-25 20:56:17', 'AJM', '2006-03-20 11:25:31', 'AJM');
 INSERT INTO wf_arc (workflow_id, transition_id, place_id, direction, arc_type, pre_condition, created_date, created_user, revised_date, revised_user) VALUES (1, 2, 1, 'IN', 'SEQ', NULL, '2005-10-06 18:54:22', 'AJM', NULL, NULL);
@@ -37,9 +53,20 @@ INSERT INTO wf_arc (workflow_id, transition_id, place_id, direction, arc_type, p
 INSERT INTO wf_arc (workflow_id, transition_id, place_id, direction, arc_type, pre_condition, created_date, created_user, revised_date, revised_user) VALUES (5, 2, 3, 'IN', 'SEQ', NULL, '2006-03-20 14:28:46', 'AJM', NULL, NULL);
 INSERT INTO wf_arc (workflow_id, transition_id, place_id, direction, arc_type, pre_condition, created_date, created_user, revised_date, revised_user) VALUES (5, 2, 2, 'OUT', 'SEQ', NULL, '2006-03-20 14:28:58', 'AJM', '2006-05-12 18:06:21', 'AJM');
 
--- 
--- Dumping data for table wf_place
--- 
+
+--
+-- TOC entry 2323 (class 0 OID 21791)
+-- Dependencies: 234
+-- Data for Name: wf_case; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 2324 (class 0 OID 21799)
+-- Dependencies: 235
+-- Data for Name: wf_place; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
 
 INSERT INTO wf_place (workflow_id, place_id, place_type, place_name, place_desc, created_date, created_user, revised_date, revised_user) VALUES (1, 3, '5', 'p1', NULL, '2004-04-12 19:06:04', 'AJM', '2004-04-13 17:11:47', 'AJM');
 INSERT INTO wf_place (workflow_id, place_id, place_type, place_name, place_desc, created_date, created_user, revised_date, revised_user) VALUES (1, 1, '1', 'START', NULL, '2004-04-13 16:47:25', 'AJM', '2004-04-14 12:22:23', 'AJM');
@@ -61,9 +88,20 @@ INSERT INTO wf_place (workflow_id, place_id, place_type, place_name, place_desc,
 INSERT INTO wf_place (workflow_id, place_id, place_type, place_name, place_desc, created_date, created_user, revised_date, revised_user) VALUES (5, 2, '9', 'END', NULL, '2006-03-20 13:58:32', 'AJM', NULL, NULL);
 INSERT INTO wf_place (workflow_id, place_id, place_type, place_name, place_desc, created_date, created_user, revised_date, revised_user) VALUES (5, 3, '5', 'P1', NULL, '2006-03-20 14:22:04', 'AJM', NULL, NULL);
 
--- 
--- Dumping data for table wf_transition
--- 
+
+--
+-- TOC entry 2325 (class 0 OID 21808)
+-- Dependencies: 236
+-- Data for Name: wf_token; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
+
+
+
+--
+-- TOC entry 2326 (class 0 OID 21817)
+-- Dependencies: 237
+-- Data for Name: wf_transition; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
 
 INSERT INTO wf_transition (workflow_id, transition_id, transition_name, transition_desc, transition_trigger, time_limit, task_id, role_id, created_date, created_user, revised_date, revised_user) VALUES (4, 1, 'T1 - Add Person Address', NULL, 'USER', NULL, 'x_person_addr(add)', '', '2004-04-20 16:25:12', 'AJM', '2006-03-20 11:22:43', 'AJM');
 INSERT INTO wf_transition (workflow_id, transition_id, transition_name, transition_desc, transition_trigger, time_limit, task_id, role_id, created_date, created_user, revised_date, revised_user) VALUES (1, 2, 'Add Person Address', NULL, 'USER', NULL, 'x_person_addr(add)', '', '2004-04-13 17:51:02', 'AJM', '2005-10-06 18:53:16', 'AJM');
@@ -80,12 +118,35 @@ INSERT INTO wf_transition (workflow_id, transition_id, transition_name, transiti
 INSERT INTO wf_transition (workflow_id, transition_id, transition_name, transition_desc, transition_trigger, time_limit, task_id, role_id, created_date, created_user, revised_date, revised_user) VALUES (5, 1, 'T1 - Maintain Options', NULL, 'USER', NULL, 'x_pers_opt_xref(link)a', '', '2006-03-20 14:22:56', 'AJM', NULL, NULL);
 INSERT INTO wf_transition (workflow_id, transition_id, transition_name, transition_desc, transition_trigger, time_limit, task_id, role_id, created_date, created_user, revised_date, revised_user) VALUES (5, 2, 'T2 - Add Person Address', NULL, 'USER', NULL, 'x_person_addr(add)', '', '2006-03-20 14:23:37', 'AJM', NULL, NULL);
 
--- 
--- Dumping data for table wf_workflow
--- 
 
-INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (1, 'This is a test of a simple sequence.', 'Add Person -> Add Address -> Update Address.\r\n\r\nThis is just a plain sequence.', 'x_person(add)', 'Y', NULL, '2004-04-10', '9999-12-31', '2004-04-04 00:10:10', 'AJM', '2006-03-21 11:57:40', 'AJM');
+--
+-- TOC entry 2327 (class 0 OID 21827)
+-- Dependencies: 238
+-- Data for Name: wf_workflow; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
+
+INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (1, 'This is a test of a simple sequence.', 'Add Person -> Add Address -> Update Address.
+
+This is just a plain sequence.', 'x_person(add)', 'Y', NULL, '2004-04-10', '9999-12-31', '2004-04-04 00:10:10', 'AJM', '2006-03-21 11:57:40', 'AJM');
 INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (4, 'Conditional routing with a Guard', 'This test uses conditional routing with a Guard (pre-condition).', 'x_person(add)', 'Y', NULL, '2006-03-19', '2006-03-19', '2004-04-20 16:23:27', 'AJM', '2006-03-20 14:51:03', 'AJM');
 INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (5, 'Iterative routing', 'This is an example of iterative routing.', 'x_person(add)', 'Y', NULL, '2006-03-20', '2006-03-20', '2006-03-20 13:58:31', 'AJM', '2006-05-12 18:06:29', 'AJM');
 INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (3, 'This has parallel routing.', 'This is a test of parallel routing.', 'x_person(add)', 'Y', NULL, '2006-03-18', '2006-03-18', '2004-04-23 16:28:42', 'AJM', '2006-03-20 14:50:54', 'AJM');
-INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (2, 'This has a timed split', 'Add Person -> Add Address. Will delete Person if Address is not added within a time limit.\r\n\r\nThis uses an Implicit OR Split and an OR Join.', 'x_person(add)', 'Y', NULL, '2006-02-16', '2006-02-28', '2006-02-16 12:28:10', 'AJM', '2006-03-18 16:37:03', 'AJM');
+INSERT INTO wf_workflow (workflow_id, workflow_name, workflow_desc, start_task_id, is_valid, workflow_errors, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES (2, 'This has a timed split', 'Add Person -> Add Address. Will delete Person if Address is not added within a time limit.
+
+This uses an Implicit OR Split and an OR Join.', 'x_person(add)', 'Y', NULL, '2006-02-16', '2006-02-28', '2006-02-16 12:28:10', 'AJM', '2006-03-18 16:37:03', 'AJM');
+
+
+--
+-- TOC entry 2328 (class 0 OID 21835)
+-- Dependencies: 239
+-- Data for Name: wf_workitem; Type: TABLE DATA; Schema: workflow; Owner: postgres
+--
+
+
+
+-- Completed on 2012-01-21 08:42:58
+
+--
+-- PostgreSQL database dump complete
+--
+

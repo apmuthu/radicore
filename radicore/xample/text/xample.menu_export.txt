@@ -1,4 +1,4 @@
-// file created on August 24, 2011, 12:04 pm
+// file created on January 6, 2012, 11:56 am
     
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                          = 'Auto-Increment';
@@ -72,7 +72,8 @@ $array['x_person(popup)']                         = 'Choose Person';
 $array['x_person(search)']                        = 'Search Person';
 $array['x_person(upd)']                           = 'Update Person';
 $array['x_person(upd)js']                         = 'Update Person (with javascript)';
-$array['x_person(upd)js2']                        = 'Update Person (with javascript)';
+$array['x_person(upd)js2']                        = 'Update Person (with javascript from the fckeditor library)';
+$array['x_person(upd)js3']                        = 'Update Person (with javascript from the tinymce library)';
 $array['x_tree_level_alt(add2)']                  = 'Add Tree Level (Alternative Languages)';
 $array['x_tree_level_alt(del1)']                  = 'Delete Tree Level (Alternative Languages)';
 $array['x_tree_level_alt(enq1)']                  = 'Enquire Tree Level (Alternative Languages)';
@@ -147,56 +148,12 @@ $array['Tree Level']                              = 'Tree Level';
 $array['Tree Structure']                          = 'Tree Structure';
 $array['Unlink Child']                            = 'Unlink Child';
 $array['Update']                                  = 'Update';
+$array['Update (fckeditor)']                      = 'Update (fckeditor)';
 $array['Update (js)']                             = 'Update (js)';
-$array['Update (js2)']                            = 'Update (js2)';
+$array['Update (tinymce)']                        = 'Update (tinymce)';
 $array['Update Seq Number']                       = 'Update Seq Number';
 $array['Upload Picture']                          = 'Upload Picture';
 
 // column details for subsystem XAMPLE
-$array['addr_line_1']                             = 'addr_line_1';
-$array['addr_line_2']                             = 'addr_line_2';
-$array['addr_line_3']                             = 'addr_line_3';
-$array['address_no']                              = 'address_no';
-$array['county']                                  = 'county';
-$array['created_date']                            = 'created_date';
-$array['created_user']                            = 'created_user';
-$array['email_addr']                              = 'email_addr';
-$array['end_date']                                = 'end_date';
-$array['external_code']                           = 'external_code';
-$array['favourite_food']                          = 'favourite_food';
-$array['fax_no']                                  = 'fax_no';
-$array['fckeditor_test']                          = 'fckeditor_test';
-$array['field1']                                  = 'field1';
-$array['field2']                                  = 'field2';
-$array['first_name']                              = 'first_name';
-$array['id']                                      = 'id';
-$array['initials']                                = 'initials';
-$array['language_id']                             = 'language_id';
-$array['last_addr_no']                            = 'last_addr_no';
-$array['last_name']                               = 'last_name';
-$array['nat_ins_no']                              = 'nat_ins_no';
-$array['node_desc']                               = 'node_desc';
-$array['node_id']                                 = 'node_id';
-$array['node_id_snr']                             = 'node_id_snr';
-$array['option_desc']                             = 'option_desc';
-$array['option_id']                               = 'option_id';
-$array['pers_type_desc']                          = 'pers_type_desc';
-$array['pers_type_id']                            = 'pers_type_id';
-$array['person_id']                               = 'person_id';
-$array['picture']                                 = 'picture';
-$array['postcode']                                = 'postcode';
-$array['revised_date']                            = 'revised_date';
-$array['revised_user']                            = 'revised_user';
-$array['star_sign']                               = 'star_sign';
-$array['start_date']                              = 'start_date';
-$array['telephone_no']                            = 'telephone_no';
-$array['town']                                    = 'town';
-$array['tree_level_desc']                         = 'tree_level_desc';
-$array['tree_level_id']                           = 'tree_level_id';
-$array['tree_level_seq']                          = 'tree_level_seq';
-$array['tree_type_desc']                          = 'tree_type_desc';
-$array['tree_type_id']                            = 'tree_type_id';
-$array['value1']                                  = 'value1';
-$array['value2']                                  = 'value2';
 
 // finished

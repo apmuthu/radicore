@@ -10,6 +10,7 @@ $include_path .= PATH_SEPARATOR .'../product';
 $include_path .= PATH_SEPARATOR .'../request';
 $include_path .= PATH_SEPARATOR .'../shipment';
 $include_path .= PATH_SEPARATOR .'../work-effort';
+$include_path .= PATH_SEPARATOR .'../content';
 
 $include_path .= PATH_SEPARATOR .'../wrd';
 if (PATH_SEPARATOR == ';') {

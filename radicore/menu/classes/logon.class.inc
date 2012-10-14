@@ -39,6 +39,7 @@ class logon extends mnu_user
 
         $login_type = $mnu_control->getControlData('login_type');
         if ($login_type == 'EMAIL') {
+            // login using email address
             $this->fieldspec['email_addr']['required'] = 'y';
             if (!isset($logonarray['email_addr'])) {
             	$logonarray['email_addr'] = null;
@@ -46,6 +47,7 @@ class logon extends mnu_user
             unset($this->fieldspec['user_id']['required']);
             unset($logonarray['user_id']);
         } else {
+            // default login is via USER_ID
             $this->fieldspec['user_id']['required'] = 'y';
             if (!isset($logonarray['user_id'])) {
             	$logonarray['user_id'] = null;
@@ -79,6 +81,9 @@ class logon extends mnu_user
             $auth_array['authentication'] = 'INTERNAL';
         } else {
             $auth_array = $mnu_control->getControlData('authentication');
+            if (empty($auth_array)) {
+                $auth_array['authentication'] = 'INTERNAL';  // data missing, so use this default
+            } // if
             if ($auth_array['authentication'] != 'INTERNAL') {
                 // external authentication is turned ON globally, but is it turned off for this USER or ROLE
                 $this->sql_select = 'user_id, mnu_user.role_id'
@@ -183,9 +188,13 @@ class logon extends mnu_user
         	if (!empty($fieldarray['user_timezone']) AND $fieldarray['user_timezone'] != $_SESSION['timezone_server']) {
             	// put this user's time zone in a permanent cookie (for use in the shutdown function)
                 setcookie("timezone_client", $fieldarray['user_timezone'], time()+7776000, '/');
+                // save it so that it can be reproduced when moving between HTTP and HTTPS protocols
+                $_SESSION['cookie_data']['timezone_client'] = $fieldarray['user_timezone'];
+                $_SESSION['cookie_time']['timezone_client'] = time()+7776000;
             } else {
                 // delete this cookie
                 setcookie("timezone_client", '', time()-42000, '/');
+                unset($_SESSION['cookie_data']['timezone_client']);
             } // if
         } // if
 
@@ -326,7 +335,8 @@ class logon extends mnu_user
         if (isset($_SESSION['logon_retries'])) {
             if ($_SESSION['logon_retries']['user_id'] <> $user_id) {
                 // change of user_id, so initialize counter
-                $_SESSION['logon_retries']['count'] = 0;
+                $_SESSION['logon_retries']['user_id'] = $user_id;
+                $_SESSION['logon_retries']['count']   = 0;
             } // if
         } else {
             // first failure, so initialize counter
@@ -355,6 +365,8 @@ class logon extends mnu_user
                     } // if
                     $errors[] = getLanguageText('e0003'); // 'Retry count exceeded.';
                     $errors[] = getLanguageText('e0001'); // 'This user has been disabled.';
+                    unset($_SESSION['logon_retries']);
+                    unset($_SESSION['logon_user_id']);
                 } // if
                 $this->errors = $errors;
             } // if

@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 $table_id = 'dict_relationship';             	    // table id
-$screen   = 'dict_relationship.detail.screen.inc';  // file identifying screen structure
+$screen   = 'dict_relationship.search.screen.inc';  // file identifying screen structure
 
 require 'std.search1.inc';                          // activate page controller
 

@@ -35,6 +35,7 @@ if (isset($_POST['quit'])) {
 // define action buttons
 $act_buttons['copy']       = 'copy';
 $act_buttons['submit']     = 'submit';
+//$act_buttons['submitstay'] = 'submitstay';  // this is usually hidden
 $act_buttons['submitnext'] = 'submitnext';
 $act_buttons['quit']       = 'cancel';
 
@@ -173,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update_associative($fieldarray, $_POST);
+        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
         // look for an action which is another script
@@ -211,45 +212,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     if ($dbobject->numrows > 0) {
                     	$messages[] = getLanguageText('sys0092'); // 'Record updated OK'
                     } // if
-                    if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
-                        // update was OK, no more items, so return to previous screen
-                        scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
-                    } else {
-                        if (isset($_POST['submitnext'])) {
-                            $curitem  = $scrolling[$dbobject->getClassName()]['curitem'];
-                            $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];
-                            if ($curitem < $lastitem) {
-                                // skip to the next item
-                                $curitem++;
-                                $scrolling[$dbobject->getClassName()]['curitem'] = $curitem;
-                                $dbobject->setPageNo($curitem);
-                                $where = $scrolling[$dbobject->getClassName()]['where'];
-                                $fieldarray = $dbobject->getData($where);
-                                $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-                            } else {
-                                // update was OK - return to previous screen
-                                scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
-                            } // if
-                        } else {
-                            // re-read database in case any other values have been changed
+                    if (isset($_POST['submitnext'])) {
+                        $curitem  = $scrolling[$dbobject->getClassName()]['curitem'];
+                        $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];
+                        if ($curitem < $lastitem) {
+                            // skip to the next item
+                            $curitem++;
+                            $scrolling[$dbobject->getClassName()]['curitem'] = $curitem;
+                            $dbobject->setPageNo($curitem);
+                            $where = $scrolling[$dbobject->getClassName()]['where'];
                             $fieldarray = $dbobject->getData($where);
-                        } // if
-                        if ($dbobject->numrows == 0) {
-                            // record cannot be found, so re-read using original $where clause
-                            $where      = $scrolling[$dbobject->getClassName()]['where'];
-                            $fieldarray = $dbobject->getData($where);
-                            // reset 'lastitem' in scroll array
                             $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-                            $script_vars['scrolling'] = $scrolling;
+                        } else {
+                            // no more items, so return to previous screen
+                            scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
                         } // if
-                        // get any extra data and merge with $fieldarray
-                        $fieldarray = $dbobject->getExtraData($fieldarray);
-                        if ($dbobject->errors) {
-                        	$errors = $dbobject->getErrors();
+                    } elseif (isset($_POST['submit'])) {
+                        if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
+                            // update was OK, no more items, so return to previous screen
+                            scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
                         } // if
-                        // rebuild selection criteria using primary key of 1st occurrence
-                        $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
                     } // if
+                    // treat as if 'submitstay' button was pressed and stay on current record
+
+                    // re-read database in case any other values have been changed
+                    $fieldarray = $dbobject->getData($where);
+                    if ($dbobject->numrows == 0) {
+                        // record cannot be found, so re-read using original $where clause
+                        $where      = $scrolling[$dbobject->getClassName()]['where'];
+                        $fieldarray = $dbobject->getData($where);
+                        // reset 'lastitem' in scroll array
+                        $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
+                        $script_vars['scrolling'] = $scrolling;
+                    } // if
+                    // get any extra data and merge with $fieldarray
+                    $fieldarray = $dbobject->getExtraData($fieldarray);
+                    if ($dbobject->errors) {
+                        $errors = $dbobject->getErrors();
+                    } // if
+                    // rebuild selection criteria using primary key of 1st occurrence
+                    $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
                 } // if
             } // if
         } // if
@@ -293,7 +295,8 @@ if (!empty($errors)) {
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

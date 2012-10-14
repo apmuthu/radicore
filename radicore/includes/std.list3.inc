@@ -258,7 +258,7 @@ $outer_data = $dbouter->getExtraData($outer_data);
 
 // get primary key of current row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter);
+$where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
 // load in current data from $outer in case it is needed
 $dbmiddle->setFieldArray($outer_data);
@@ -289,12 +289,14 @@ if ($dbmiddle->getNumRows() == 0) {
     } // if
 } // if
 
-// get any additional data for current record
-$middle_data = $dbmiddle->getExtraData($middle_data);
+if (!empty($middle_data)) {
+    // get any additional data for current record
+    $middle_data = $dbmiddle->getExtraData($middle_data);
+} // if
 
 // get primary key of current row retrieved from middle entity
 $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
-$middle_where = array2where($middle_data, $pkeynames, $dbmiddle);
+$middle_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -368,8 +370,10 @@ if ($dbmiddle->numrows == 0) {
     } // if
 } // if
 
-// get any additional data for current record
-$inner_data = $dbinner->getExtraData($inner_data);
+if (!empty($middle_data)) {
+    // get any additional data for current record
+    $inner_data = $dbinner->getExtraData($inner_data);
+} // if
 
 if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
@@ -395,8 +399,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);
@@ -412,7 +416,8 @@ $xml_objects[][$dbouter->getClassName()]  = &$dbmiddle;
 $xml_objects[][$dbmiddle->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

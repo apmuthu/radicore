@@ -453,7 +453,7 @@ CREATE TABLE mnu_user (
   language_code nvarchar(6) DEFAULT NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',
-  ip_address nvarchar(16) DEFAULT NULL,
+  ip_address nvarchar(40) DEFAULT NULL,
   email_addr nvarchar(50) DEFAULT NULL,
   external_id nvarchar(255) DEFAULT NULL,
   is_external_auth_off char(1) DEFAULT 'N',

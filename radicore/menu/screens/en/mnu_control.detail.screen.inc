@@ -3,14 +3,14 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 
 $structure['tables']['main'] = 'mnu_control';
 
-$structure['main']['columns'][] = array('width' => '30%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '10%');
+$structure['main']['columns'][] = array('width' => '23%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
+$structure['main']['columns'][] = array('width' => '11%');
 
 $structure['main']['fields'][1] = array('default_language' => 'Default Language', 'colspan' => 7);
 $structure['main']['fields'][2] = array('login_type' => 'Login Type', 'colspan' => 7);
@@ -65,5 +65,7 @@ $structure['main']['fields'][13][] = array('field' => 'shutdown_thursday');
 $structure['main']['fields'][13][] = array('field' => 'shutdown_friday');
 $structure['main']['fields'][13][] = array('field' => 'shutdown_saturday');
 $structure['main']['fields'][13][] = array('field' => 'shutdown_sunday');
+
+$structure['main']['fields'][14] = array('audit_delete' => 'AUDIT entries age (years)', 'colspan' => 7);
 
 ?>

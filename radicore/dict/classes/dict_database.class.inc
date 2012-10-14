@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_dataBase extends Default_Table
@@ -16,7 +16,8 @@ class dict_dataBase extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_database';
         $this->dbname      = 'dict';
 
@@ -38,6 +39,22 @@ class dict_dataBase extends Default_Table
         return $fieldarray;
 
     } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if ($fieldarray['rel_count_snr'] == 0) {
+            $fieldarray['rel_count_snr'] = null;
+        } // if
+        if ($fieldarray['rel_count_jnr'] == 0) {
+            $fieldarray['rel_count_jnr'] = null;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
     // ***************************************************************************
     function _cm_getDatabaseLock ()

@@ -291,8 +291,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);
@@ -311,7 +311,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

@@ -191,7 +191,8 @@ $xml_objects[]['root'] = &$db_workitem_role;
 $xml_objects[]['root'] = &$db_workitem_user;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

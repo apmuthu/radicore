@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -52,7 +52,14 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action);
+        if (empty($return_string) AND $return_action == 'search') {
+            $return_string = $search;
+        } // if
+        $dbouter->restart($return_from, $return_action, $return_string);
+        if (isset($scrolling[$dbouter->getClassName()])) {
+            // current item may have been reset
+            $scrolling[$dbouter->getClassName()]['curitem'] = $dbouter->getPageNo();
+        } // if
     } // if
     // get previously retrieved data
     $outer_data = $dbouter->getFieldArray();
@@ -98,8 +105,11 @@ if (isset($script_vars['dbinner'])) {
     // use data from previous instance of this script
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
+        if (empty($return_string) AND $return_action == 'search') {
+            $return_string = $search;
+        } // if
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action);
+        $dbinner->restart($return_from, $return_action, $return_string);
     } // if
     // get previously retrieved data
     $inner_data = $dbinner->getFieldArray();
@@ -107,7 +117,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
-    $dbouter->zone                      = 'inner';
+    $dbinner->zone                      = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -137,6 +147,16 @@ if (!empty($_POST)) {
     $dbinner->setFieldArray($inner_data);
     // look for an action which is another script
     $errors = childForm($_POST, array('dbouter' => $dbouter, 'dbinner' => $dbinner));
+    if (isset($search) AND empty($return_from) AND empty($return_action)) {
+        // load in any search criteria
+        $dbouter->setSqlSearch($search);
+        // see if any action is required when being restarted
+        $dbouter->restart('search', 'search', $search);
+        if (isset($scrolling[$dbouter->getClassName()])) {
+            // current item may have been reset
+            $scrolling[$dbouter->getClassName()]['curitem'] = $dbouter->getPageNo();
+        } // if
+    } // if
 } // if
 
 // look for entered data
@@ -188,6 +208,9 @@ if (isset($_POST['reset'])) {
     //$dbouter->reset($where);
     $dbouter->setPageNo(1);
     $dbouter->_cm_reset($where);
+    if (isset($scrolling[$dbouter->getClassName()])) {
+        $scrolling[$dbouter->getClassName()]['curitem'] = 1;
+    } // if
 } // if
 
 // check to see if we are returning from a child form
@@ -291,7 +314,7 @@ if (isset($search)) {
 
 // get primary key of row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter);
+$where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
@@ -340,9 +363,10 @@ if (count($outer_data) > 0) {
                 unset($act_buttons['submitnext']);
             } // if
         } // if
-
-        // get any additional data for current record
-        $inner_data = $dbinner->getExtraData($inner_data);
+        if (!empty($inner_data)) {
+            // get any additional data for current record
+            $inner_data = $dbinner->getExtraData($inner_data);
+        } // if
     } // if
 
     if ($dbinner->errors) {
@@ -367,8 +391,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);
@@ -387,7 +411,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

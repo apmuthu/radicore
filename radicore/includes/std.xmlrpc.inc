@@ -3,8 +3,8 @@
 // Copyright 2009-2011 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 // Author:  Tony Marston
-// Version: 1.4.0
-// Date:    18-07-2011
+// Version: 1.5.0
+// Date:    04-01-2012
 // *****************************************************************************
 
 // this file contains functions which use PHP's XMLRPC extension
@@ -309,6 +309,8 @@ class XMLRPC_client
     // send a copy of these error details to a log file (or email)
     {
         $mailstring = null;
+        
+        echo $this->errorCode .'<br>'.$this->errorMsg.'<br>';
 
         if (!empty($this->errorMsg)) {
         	$mailstring .= "errorCode: " .$this->errorCode ."\n"
@@ -339,7 +341,12 @@ class XMLRPC_client
 
         // email details to sysadmin
         $headers = "From: XML-RPC Client on {$_SERVER['HTTP_HOST']}\r\n";
-        @error_log("$mailstring\nBacktrace:\n$trace", 1, $_SERVER['SERVER_ADMIN'], $headers);
+        if (defined('ERROR_LOG_MAILTO')) {
+        	$to = ERROR_LOG_MAILTO;
+		} else {
+			$to = $_SERVER['SERVER_ADMIN'];
+        } // if
+        @error_log("$mailstring\nBacktrace:\n$trace", 1, $to, $headers);
 
         // append details to error log
         $errorstring = "<h2>" . date('Y-m-d H:i:s') . "</h2>\n";

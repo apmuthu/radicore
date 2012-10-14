@@ -3,6 +3,9 @@
 textarea {
   width: 100%;
 }
+.label {
+	vertical-align: top;
+}
 
 /* custom classes */
 .divider {

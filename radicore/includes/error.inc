@@ -12,7 +12,7 @@
 // tell system what function to use as the error handler
 set_error_handler('errorHandler');
 
-$xslt_error  = null;
+$GLOBALS['xslt_error']  = null;
 
 if (version_compare(phpversion(), '5.0.0', '<')) {
     // these do not exist in PHP 4, so define them manually
@@ -45,20 +45,37 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
 
+    static $save_errstr;
+
     switch ($errno) {
         case E_USER_WARNING:
         case E_USER_NOTICE:
         case E_WARNING:
             if (isset($errcontext['this']) AND is_object($errcontext['this'])) {
-                if ($errcontext['this'] instanceof pgsql) {
+                if ($errcontext['this'] instanceof mysql) {
                     $errno  = $errcontext['this']->getErrorNo();
                     if ($errno <> 0) {
                         break;
                     } // if
-                    //return;  // exit now if this is PostgreSQL
+                } elseif ($errcontext['this'] instanceof pgsql) {
+                    $errno  = $errcontext['this']->getErrorNo();
+                    if ($errno <> 0) {
+                        break;
+                    } // if
                 } elseif ($errcontext['this'] instanceof oracle) {
-                    $errcontext['this']->error_string = $errstr;
-                    //return;  // exit now if this is Oracle
+                    $errno  = $errcontext['this']->getErrorNo();
+                    if ($errno <> 0) {
+                        if ($errno == 1002) {
+                             // "fetch out of sequence" - IGNORE
+                        } else {
+                            break;
+                        } // if
+                    } // if
+                } elseif ($errcontext['this'] instanceof sqlsrv) {
+                    $errno  = $errcontext['this']->getErrorNo();
+                    if ($errno <> 0) {
+                        break;
+                    } // if
                 } else {
                     // context is an object, but does it have a variable called $error_string?
                     if (method_exists($errcontext['this'], 'getErrorString')) {
@@ -70,6 +87,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
                         } // if
                     } // if
                 } // if
+                if ($errno == 0 AND empty($save_errstr)) {
+                    // save this for later
+                    $save_errstr = $errstr;
+                    break;
+                } // if
+            } elseif (empty($save_errstr)) {
+                // save this for later
+                $save_errstr = $errstr;
             } // if
         case E_NOTICE:
         case E_CORE_WARNING:
@@ -80,6 +105,12 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_USER_DEPRECATED;
             return;
         case E_USER_ERROR:
+            if (!empty($save_errstr)) {
+                // previous error message already saved, so stop here
+//                $errstr = $save_errstr;
+//                $errno = null;
+//                break;
+            } // if
         case E_ERROR:
         case E_PARSE:
         case E_CORE_ERROR:
@@ -303,8 +334,8 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         // continue
     } else {
         if (!empty($_SESSION)) {
-        	session_destroy();
-            session_unset();    // clear current session data
+        	@session_destroy();
+            @session_unset();    // clear current session data
         } // if
     } // if
 

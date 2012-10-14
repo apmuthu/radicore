@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -19,7 +19,8 @@ class mnu_user extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_user';
         $this->dbname      = 'menu';
 
@@ -215,6 +216,24 @@ class mnu_user extends Default_Table
             $this->fieldspec['user_timezone']['nodisplay'] = 'y';
         } // if
 
+        // remove relationships which do not exist in the open source download
+        if (!file_exists('../survey/classes/survey_answer_hdr.class.inc')) {
+            foreach ($this->child_relations as $ix => $relation) {
+                if ($relation['child'] == 'survey_answer_hdr') {
+                    unset($this->child_relations[$ix]);
+                    break;
+                } // if
+            } // foreach
+        } // if
+        if (!file_exists('../party/classes/email_signature.class.inc')) {
+            foreach ($this->child_relations as $ix => $relation) {
+                if ($relation['child'] == 'email_signature') {
+                    unset($this->child_relations[$ix]);
+                    break;
+                } // if
+            } // foreach
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -240,7 +259,6 @@ class mnu_user extends Default_Table
                 unset($originaldata['user_password']);
             } // if
         } // if
-
 
     	// use new_password1 (if it exists) else use user_password
         if (isset($fieldarray['new_password1'])) {

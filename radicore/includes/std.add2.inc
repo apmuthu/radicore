@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update_associative($fieldarray, $_POST);
+        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // get any extra data and merge with $fieldarray
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
@@ -202,7 +202,8 @@ if (!empty($errors)) {
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

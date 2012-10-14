@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_subsystem extends Default_Table
@@ -16,7 +16,8 @@ class mnu_subsystem extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_subsystem';
         $this->dbname      = 'menu';
 
@@ -141,6 +142,59 @@ class mnu_subsystem extends Default_Table
     {
         // no logging for this 'erase'
         $this->audit_logging = false;
+
+        // replace standard code (which is slow) with this hard-coded turbo version
+        $dbobject =& RDCsingleton::getInstance('mnu_task');
+        $selection ="mnu_task.subsys_id='{$fieldarray['subsys_id']}'";
+        $resource = $dbobject->getData_serial($selection);
+
+        $count = 0;
+        $child_count = 0;
+        while ($row = $dbobject->fetchRow($resource)){
+            $from = 'mnu_task
+, help_text
+, mnu_favourite
+, mnu_initial_value_role
+, mnu_initial_value_user
+, menu_snr
+, menu_jnr
+, nav_button_snr
+, nav_button_jnr
+, mnu_role
+, mnu_role_task
+, mnu_role_taskfield
+, mnu_task_field
+, mnu_task_ip_address
+, mnu_todo';
+            $using = 'mnu_task
+LEFT JOIN help_text ON (help_text.task_id=mnu_task.task_id)
+LEFT JOIN mnu_favourite ON (mnu_favourite.task_id=mnu_task.task_id)
+LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task.task_id)
+LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task.task_id)
+LEFT JOIN mnu_menu AS menu_snr ON (menu_snr.menu_id=mnu_task.task_id)
+LEFT JOIN mnu_menu AS menu_jnr ON (menu_jnr.task_id_jnr=mnu_task.task_id)
+LEFT JOIN mnu_nav_button AS nav_button_snr ON (nav_button_snr.task_id_snr=mnu_task.task_id)
+LEFT JOIN mnu_nav_button AS nav_button_jnr ON (nav_button_jnr.task_id_jnr=mnu_task.task_id)
+LEFT JOIN mnu_role ON (mnu_role.start_task_id=mnu_task.task_id)
+LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)
+LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task.task_id)
+LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id)
+LEFT JOIN mnu_task_ip_address ON (mnu_task_ip_address.task_id=mnu_task.task_id)
+LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
+
+            $selection ="mnu_task.task_id='{$row['task_id']}'";
+            $sub_count = $this->_dml_deleteSelection($selection, $from, $using);
+            $child_count = $child_count + $sub_count;
+            $count++;
+        } // while
+
+        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $result = $dbobject->_dml_deleteSelection("record_id='{$fieldarray['subsys_id']}'");
+
+        $this->messages[] = "$count task records have been deleted";
+        $this->messages[] = "$child_count child records have been deleted";
+
+        // LEFT JOIN mnu_control ON (mnu_control.record_id=mnu_subsystem.subsys_id)';
 
         return $fieldarray;
 

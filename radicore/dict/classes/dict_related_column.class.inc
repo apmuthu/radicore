@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_related_column extends Default_Table
@@ -16,7 +16,8 @@ class dict_related_column extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_related_column';
         $this->dbname      = 'dict';
 
@@ -103,10 +104,11 @@ class dict_related_column extends Default_Table
             $columnobj->setOrderBy('column_seq', 'asc');
             $data = $columnobj->getData($where2);
             // convert each row into 'id=id' in the output array
-            $array[' '] = '';  // start with dummy entry
+            $array[' '] = '';  // start with empty entry
             foreach ($data as $row => $column) {
                 $array[$column['column_id']] = $column['column_id'];
             } // foreach
+            $array['NULL'] = 'NULL';  // end with NULL entry in case this column is not used
 
             $this->lookup_data['column_id'] = $array;
         } // if

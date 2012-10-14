@@ -1,39 +1,42 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
 // this version is for MySQL (using the 'improved' functions)
 {
     // member variables
-    var $client_info;           // client info (version number)
-    var $host_info;             // host info (connection)
-    var $server_info;           // server info (version number)
-    var $charset;               // character set
+    var $client_info;                   // client info (version number)
+    var $host_info;                     // host info (connection)
+    var $server_info;                   // server info (version number)
+    var $charset;                       // character set
     var $character_set_client;
     var $character_set_connection;
     var $character_set_database;
     var $character_set_server;
 
-    var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
-    var $errors;                // array of errors
-    var $error_string;          //
-    var $fieldspec = array();   // field specifications (see class constructor)
-    var $lastpage;              // last available page number in current query
-    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
-    var $numrows;               // number of rows retrieved
-    var $pageno;                // requested page number
-    var $primary_key = array(); // array of primary key names
-    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
-    var $rows_per_page;         // page size for multi-row forms
-    var $row_locks;             // SH=shared, EX=exclusive
-    var $row_locks_supp;        // supplemental lock type
-    var $table_locks;           // array of tables to be locked
-    var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of candidate keys
+    var $allow_db_function = false;     // allow a field's value in a database insert/update to contain a function name
+    var $audit_logging;                 // yes/no switch
+    var $dbname;                        // database name
+    var $errors;                        // array of errors
+    var $error_string;                  //
+    var $fieldspec = array();           // field specifications (see class constructor)
+    var $lastpage;                      // last available page number in current query
+    var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
+    var $numrows;                       // number of rows retrieved
+    var $pageno;                        // requested page number
+    var $primary_key = array();         // array of primary key names
+    var $retry_on_duplicate_key;        // field name to be incremented when insert fails
+    var $rows_per_page;                 // page size for multi-row forms
+    var $row_locks;                     // SH=shared, EX=exclusive
+    var $row_locks_supp;                // supplemental lock type
+    var $table_locks;                   // array of tables to be locked
+    var $transaction_level;             // transaction level
+    var $unbuffered_query = false;      // used in getData_serial()
+    var $unique_keys = array();         // array of candidate keys
+    var $update_on_duplicate_key;       // switch to 'update' if insert fails
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -41,11 +44,11 @@ class mysql
     var $sql_groupby;
     var $sql_having;
     var $sql_orderby;
-    var $sql_orderby_seq;       // 'asc' or 'desc'
+    var $sql_orderby_seq;               // 'asc' or 'desc'
     var $sql_union;
-    var $query;                 // completed DML statement
+    var $query;                         // completed DML statement
 
-    var $dbconnect;             // database connection resource
+    var $dbconnect;                     // database connection resource
 
     // ****************************************************************************
     // class constructor
@@ -235,7 +238,8 @@ class mysql
                 $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
                 logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
                 // retrieve current server settings
-                $this->charset     = mysqli_client_encoding($dbconn);
+                //$this->charset     = mysqli_client_encoding($dbconn);
+                $this->charset     = mysqli_character_set_name($dbconn);
                 $this->client_info = mysqli_get_client_info();
                 $this->host_info   = mysqli_get_host_info($dbconn);
                 $this->server_info = mysqli_get_server_info($dbconn);
@@ -262,15 +266,19 @@ class mysql
             return FALSE;
         } // if
 
-        if ($dbname) {
-            if (!mysqli_select_db($dbconn, $dbname)) {
-                if (mysqli_errno($this->dbconnect) == 2006) {
-                    // connection has been lost, so re-connect
-            	    unset($this->dbconnect);
-            	    $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
-            	} else {
-                    return FALSE;
-            	} // if
+        if ($this->unbuffered_query === true) {
+            // skip this next bit to avoid a "commands out of sync" error
+        } else {
+            if ($this->dbname) {
+                if (!mysqli_select_db($dbconn, $this->dbname)) {
+                    if (mysqli_errno($this->dbconnect) == 2006) {
+                        // connection has been lost, so re-connect
+            	        unset($this->dbconnect);
+            	        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+            	    } else {
+                        return FALSE;
+            	    } // if
+                } // if
             } // if
         } // if
 
@@ -312,13 +320,17 @@ class mysql
     } // deleteRecord
 
     // ****************************************************************************
-    function deleteSelection ($dbname, $tablename, $selection)
+    function deleteSelection ($dbname, $tablename, $selection, $from=null, $using=null)
     // delete a selection of records in a single operation.
     {
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        $this->query = "DELETE FROM $tablename WHERE $selection";
+        if (!empty($from) AND !empty($using)) {
+            $this->query = "DELETE FROM $from USING $using \nWHERE $selection";
+        } else {
+            $this->query = "DELETE FROM $tablename WHERE $selection";
+        } // if
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_affected_rows($this->dbconnect);
@@ -361,9 +373,9 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        mysqli_free_result($resource);
+        $result = mysqli_free_result($resource);
 
-        return;
+        return $result;
 
     } // free_result
 
@@ -653,9 +665,14 @@ class mysql
 
         // build the query string and run it
         $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        $this->numrows = mysqli_num_rows($result);
+        if ($this->unbuffered_query === true) {
+            $result = mysqli_real_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $this->numrows = 0;
+            $result = mysqli_use_result($this->dbconnect);
+        } else {
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $this->numrows = mysqli_num_rows($result);
+        } // if
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
@@ -819,6 +836,7 @@ class mysql
                 if (array_key_exists('autoinsert', $spec)) {
     				switch ($spec['type']){
     					case 'datetime':
+                        case 'timestamp':
     						$fieldarray[$field] = getTimeStamp();
     						break;
     					case 'date':
@@ -841,7 +859,7 @@ class mysql
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
-			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
+			    $this->retry_on_duplicate_key = null;       // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
 			    	// value has been supplied manually, so do not auto-generate
 			    } else {
@@ -870,6 +888,13 @@ class mysql
 	            if (is_True($this->no_duplicate_error)) {
 	                // exit without setting an error
 	                return $fieldarray;
+
+                } elseif (is_True($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
 	            } else {
 	            	// set error message for each field within this key
     	            foreach ($this->primary_key as $fieldname) {
@@ -912,14 +937,18 @@ class mysql
             foreach ($fieldarray as $item => $value) {
                 if (!array_key_exists('required',$fieldspec[$item])
                 AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
-                    $this->query .= "$item=NULL, ";
+                    $this->query .= "`$item`=NULL, ";
                 } else {
-                    $this->query .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
+                    $this->query .= "`$item`='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
             } // foreach
 
             // remove trailing comma
             $this->query = rtrim($this->query, ', ');
+            if (substr($this->query, -4) == ' SET') {
+                // no field list, so remove 'SET'
+                $this->query = substr($this->query, 0, strlen($this->query)-4);
+            } // if
 
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $result = mysqli_query($this->dbconnect, $this->query);
@@ -934,9 +963,17 @@ class mysql
                         // too many retries, so turn this feature off
                     	$this->retry_on_duplicate_key = null;
                     } // if
+
+                } elseif ($errno == 1062 AND !empty($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
                 } elseif ($errno == 1062 AND is_True($this->no_duplicate_error)) {
                     // this is a duplicate, but don't fail
                     $this->numrows = 0;
+
                 } else {
             	    trigger_error($this, E_USER_ERROR);
                 } // if
@@ -964,9 +1001,68 @@ class mysql
             } // if
 		} // if
 
+        $this->numrows = 1;  // record has been inserted
+
         return $fieldarray;
 
     } // insertRecord
+
+    // ****************************************************************************
+    function multiQuery ($dbname, $tablename, $query)
+    // perform multiple queries in a single step
+    {
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $single_step = true;  // special code to debug each query separately
+        if ($single_step) {
+            if (!is_array($query)) {
+                // split string into an array of individual queries
+                $array = explode(';', $query);
+                $query = '';
+                foreach ($array as $value) {
+                    if (!empty($value)) {
+                        $query[] = $value.';';  // replace query terminator
+                    } // if
+                } // foreach
+            } // if
+            // execute these statements one at a time
+            foreach ($query as $query_part) {
+                $this->query = $query_part;
+                $result = mysqli_query($this->dbconnect, $this->query);
+                if (!$result) {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } // foreach
+            return true;
+        } // if
+
+        // perform multiple queries in a single step
+
+        if (is_array($query)) {
+            // turn array into one long string
+            $this->query = implode($query);
+        } else {
+            $this->query = $query;
+        } // if
+
+        $result = mysqli_multi_query($this->dbconnect, $this->query);
+        if (!$result) {
+            trigger_error($this, E_USER_ERROR);
+        } // if
+
+        while (mysqli_more_results($this->dbconnect)) {
+            if ($result2 = mysqli_store_result($this->dbconnect)) {
+                $result3 = mysqli_free_result($result2);
+            } // if
+            $result4 = mysqli_next_result($this->dbconnect);
+        } // while
+
+        return $result;
+
+    } // multiQuery
 
     // ****************************************************************************
     function rollback ($dbname)
@@ -1098,6 +1194,12 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
+        if (!empty($this->transaction_level)) {
+            $this->query = $this->transaction_level;
+            $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            logSqlQuery ($dbname, null, $this->query);
+        } // if
+
         $this->query = 'START TRANSACTION';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
@@ -1175,6 +1277,7 @@ class mysql
                 if (array_key_exists('autoupdate', $spec)) {
                     switch ($spec['type']){
     					case 'datetime':
+                        case 'timestamp':
     					    if (empty($fieldarray[$field])) {
     						    $fieldarray[$field] = getTimeStamp();
     					    } // if
@@ -1206,23 +1309,28 @@ class mysql
 
         // build update string from non-pkey fields
         $update = '';
-        $pattern = '/(integer|decimal|numeric|float|real)/i';
+        $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     // null entries are set to NULL, not '' (there is a difference!)
-                    $update .= "$item=NULL,";
-                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                    $update .= "`$item`=NULL,";
+                } elseif (preg_match($pattern1, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     if (strlen($value) == 0) {
-                    	$update .= "$item=NULL,";
+                    	$update .= "`$item`=NULL,";
                     } else {
-                        $update .= "$item=$value,";
+                        $update .= "`$item`=$value,";
                     } // if
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    //$update .= "$item=" .mysqli_real_escape_string($this->dbconnect, $value) .", ";
+                    $update .= "`$item`=$value, ";
                 } else {
-                    // change to the new value
-                    $update .= "$item='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
+                    // change to the new value (with enclosing quotes))
+                    $update .= "`$item`='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
             } // if
         } // foreach
@@ -1391,8 +1499,7 @@ class mysql
 
         $out_array = array();
 
-        // build the query string and run it
-        $this->query = 'SHOW COLUMNS FROM "' .$tablename .'" FROM "' .$dbname .'"';
+        $this->query = "SELECT * FROM information_schema.columns WHERE table_schema='$dbname' AND table_name='$tablename' ORDER BY ordinal_position";
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
@@ -1402,7 +1509,6 @@ class mysql
 
         $colspecs = $this->ddl_getColumnSpecs();
 
-        // convert result set into an associative array for each row
         while ($row = mysqli_fetch_assoc($result)) {
             // initialise all settings
             $columnarray = array();
@@ -1413,157 +1519,152 @@ class mysql
             $columnarray['col_minvalue']        = NULL;
             $columnarray['col_maxvalue']        = NULL;
             $columnarray['col_auto_increment']  = NULL;
+            $columnarray['col_key']             = NULL;
 
-            foreach ($row as $item => $value) {
-                $item = strtolower($item);
-                switch ($item) {
-                	case 'field':
-                		$columnarray['column_id'] = $value;
-                		break;
-                	case 'type':
-                        unset($precision, $scale, $minvalue, $maxvalue);
-                        if (preg_match('/^(enum|set)/i', $value, $regs)) {
-                            $columnarray['col_type'] = $regs[0];
-                            $pos1 = strpos($value, '(');
-                            $value = substr($value, $pos1);
-                            // include a space after each comma otherwise the string is
-                            // treated as a single word in the HTML output
-                            $value = str_replace("','", "', '", $value);
-                            $columnarray['col_values'] = trim($value, '()');
-                        // look for 'type(n,m) other'
-                        } elseif (preg_match('/\(.+\)/', $value, $regs)) {
-                            list($type, $other) = explode($regs[0], $value);
-                            $size               = trim($regs[0], '()');
-                            $columnarray['col_type']    = $type;
-                            $columnarray['col_maxsize'] = $size;
-
-                            // look for 'unsigned' and 'zerofill' in $other
-                            if (preg_match('/unsigned/i', $other)) {
-                                $columnarray['col_unsigned'] = TRUE;
-                            } // if
-                            if (preg_match('/zerofill/i', $other)) {
-                                $columnarray['col_zerofill_bwz'] = 'ZF';
-                            } // if
-
-                            if (strpos($size, ',')) {
-                                // split $size into $precision and $scale
-                                list($precision, $scale) = explode(',', $size);
-                                $columnarray['col_precision'] = $precision;
-                                $columnarray['col_scale']     = $scale;
-                                $columnarray['col_maxsize']   = $precision + 1;
-                                if ($scale > 0) {
-                                    $columnarray['col_maxsize'] = $columnarray['col_maxsize'] + 1;
-                                } // if
-                            } // if
-
-                            $specs = $colspecs[$type];
-                            // look for minimum value in $colspecs
-                            if (isset($specs['minvalue'])) {
-                                $minvalue = $specs['minvalue'];
-                            } else {
-                                if (isset($precision)) {
-                                    // minvalue includes negative sign
-                                    if ($precision > 1) {
-                                        $minvalue = '-' . str_repeat('9', $precision-1);
-                                    } else {
-                                        $minvalue = '-' . str_repeat('9', $precision);
-                                    } // if
-                                    if ($scale > 0) {
-                                        // adjust values to include decimal places
-                                        $minvalue = $minvalue / pow(10, $scale);
-                                    } // if
-                                } // if
-                            } // if
-                            if (isset($minvalue)) {
-                                if (preg_match('/unsigned/i', $other)) {
-                                    $minvalue = 0;
-                                } // if
-                                $columnarray['col_minvalue'] = $minvalue;
-                            } // if
-
-                            // look for maximum value in $colspecs
-                            if (isset($specs['maxvalue'])) {
-                                $maxvalue = $specs['maxvalue'];
-                            } else {
-                                if (isset($precision)) {
-                                    // maxvalue has no positive sign
-                                    $maxvalue = str_repeat('9', $precision);
-                                    if ($scale > 0) {
-                                        // adjust values to include decimal places
-                                        $maxvalue = $maxvalue / pow(10, $scale);
-                                    } // if
-                                } // if
-                            } // if
-                            if (isset($maxvalue)) {
-                                if (preg_match('/unsigned/i', $other)) {
-                                    if ($specs['type']  == 'integer') {
-                                        $maxvalue = ($specs['maxvalue'] * 2) +1;
-                                        //$maxvalue = number_format(($specs['maxvalue'] * 2) +1, 0, '', '');
-                                    } // if
-                                } // if
-                                $columnarray['col_maxvalue'] = $maxvalue;
-                            } // if
-
-                        } else {
-                            // look for 'unsigned' and 'zerofill' after the type
-                            if (preg_match('/unsigned/i', $value, $regs)) {
-                                $value = str_replace($regs[0], '', $value);
-                                $value = trim($value);
-                                $columnarray['col_unsigned'] = TRUE;
-                                $columnarray['col_minvalue'] = 0;
-                            } // if
-                            if (preg_match('/zerofill/i', $value, $regs)) {
-                                $value = str_replace($regs[0], '', $value);
-                                $value = trim($value);
-                                $columnarray['col_zerofill_bwz'] = 'ZF';
-                            } // if
-                            // no size information, so output 'as-is'
-                            $columnarray['col_type'] = $value;
-                            if (isset($colspecs[$value]['size'])) {
-                                // use default size for this column type
-                                $columnarray['col_maxsize'] = $colspecs[$value]['size'];
-                            } // if
-                        } // if
-
-                        if ($columnarray['col_maxsize'] == 1) {
-                            // some columns have the option of being used as BOOLEAN
-                        	if ($columnarray['col_type'] == 'char') {
-                                $columnarray['col_type'] = 'char,boolean';
-                            } elseif ($columnarray['col_type'] == 'tinyint') {
-                                $columnarray['col_type'] = 'tinyint,boolean';
-                            } // if
-                        } // if
-
-                        $columnarray['col_type_native'] = $columnarray['col_type'];
-
-                        if ($columnarray['col_type'] == 'decimal' AND $scale == 0) {
-                        	$columnarray['col_type'] = 'integer';
-                        } // if
-
-                        break;
-                    case 'null':
-                        // is this column allowed to be NULL?
-                		if (is_True($value)) {
-                            $columnarray['col_null'] = 'Y';
-                        } else {
-                            $columnarray['col_null'] = 'N';
-                        } // if
-                		break;
-                    case 'extra':
-                        if (preg_match('/auto_increment/i', $value)) {
-                            $columnarray['col_auto_increment'] = TRUE;
-                        } // if;
-                        break;
-                	default:
-                	    // default is to prefix column name with 'col_'
-                		$columnarray['col_' .strtolower($item)] = $value;
-                } // switch
-            } // foreach
-            if (!isset($columnarray['col_maxsize'])) {
-            	if (isset($colspecs[$columnarray['col_type']]['size'])) {
-            		$columnarray['col_maxsize'] = $colspecs[$columnarray['col_type']]['size'];
-            	} // if
+            $columnarray['column_id']              = strtolower($row['COLUMN_NAME']);
+            $columnarray['column_seq']             = (int)($row['ORDINAL_POSITION']);
+            $columnarray['col_default']            = $row['COLUMN_DEFAULT'];
+            if (!empty($columnarray['col_default'])) {
+                if (preg_match('/^(CURRENT_TIMESTAMP)$/i', $columnarray['col_default'])) {
+                    $columnarray['auto_insert']      = TRUE;
+                    $columnarray['noedit_nodisplay'] = 'NED';
+                } // if
             } // if
+            if (!empty($row['EXTRA'])) {
+                if (preg_match('/(on update CURRENT_TIMESTAMP)$/i', $row['EXTRA'])) {
+                    $columnarray['auto_update']    = TRUE;
+                    $columnarray['noedit_nodisplay'] = 'NED';
+                } // if
+            } // if
+            if (is_True($row['IS_NULLABLE'])) {
+                $columnarray['col_null']           = 'Y';
+            } else {
+                $columnarray['col_null']           = 'N';
+            } // if
+            $columnarray['col_key']                = $row['COLUMN_KEY'];
+            $columnarray['col_comment']            = $row['COLUMN_COMMENT'];
+            if (preg_match('/auto_increment/i', $row['EXTRA'])) {
+                $columnarray['col_auto_increment'] = TRUE;
+            } // if
+            $columnarray['col_type']               = strtolower($row['DATA_TYPE']);
+
+            unset($precision, $scale, $minvalue, $maxvalue);
+            $type  = $columnarray['col_type'];
+            $specs = $colspecs[$type];
+
+            if (isset($specs['size'])) {
+                $columnarray['col_maxsize'] = $specs['size'];
+            } // if
+
+            if ($specs['type'] == 'string') {
+                if (!is_null($row['CHARACTER_MAXIMUM_LENGTH']) AND $row['CHARACTER_MAXIMUM_LENGTH'] > 0) {
+                    $columnarray['col_maxsize'] = $row['CHARACTER_MAXIMUM_LENGTH'];
+                } // if
+            } // if
+
+            if (preg_match('/unsigned/i', $row['COLUMN_TYPE'])) {
+                $columnarray['col_unsigned']       = TRUE;
+            } // if
+
+            if (preg_match('/zerofill/i', $row['COLUMN_TYPE'])) {
+                $columnarray['col_zerofill_bwz']    = 'ZF';
+            } // if
+
+            if (preg_match('/^(enum|set)/i', $row['COLUMN_TYPE'], $regs)) {
+                $columnarray['col_type'] = $regs[0];
+                preg_match('/(?<=\().+(?=\))/', $row['COLUMN_TYPE'], $regs);
+                $value = $regs[0];
+                // include a space after each comma otherwise the string is treated as a single word in the HTML output
+                $value = str_replace("','", "', '", $value);
+                $columnarray['col_values'] = $value;
+            } // if
+
+            // check to see if precision and scale have been specified for numeric types
+            if (preg_match('/(integer|double|numeric|float)/i', $specs['type']) AND preg_match('/(?<=\().+(?=\))/', $row['COLUMN_TYPE'], $regs)) {
+                // extract value between '(' and ')'
+                $extra = $regs[0];
+                if (strpos($extra, ',')) {
+                    list($precision, $scale) = explode(',', $extra);
+                } else {
+                    $precision = $extra;
+                    $scale     = 0;
+                } // if
+                $precision = (int)$precision;
+                $scale     = (int)$scale;
+            } else {
+                if ($row['NUMERIC_PRECISION'] > 0) {
+                    $precision = (int)$row['NUMERIC_PRECISION'];
+                    $scale     = 0;
+                } // if
+                if ($row['NUMERIC_SCALE'] > 0) {
+                    $scale = (int)$row['NUMERIC_SCALE'];
+                } // if
+            } // if
+            if (isset($precision)) {
+                $columnarray['col_precision']   = $precision;
+                $columnarray['col_scale']       = $scale;
+                $columnarray['col_maxsize']     = $precision + 1;
+                if ($scale > 0) {
+                    $columnarray['col_maxsize'] = $columnarray['col_maxsize'] + 1;
+                } // if
+                if ($precision < $row['NUMERIC_PRECISION'] OR $scale > 0) {
+                    // minvalue includes negative sign
+                    if ($precision > 1) {
+                        $minvalue = '-' . str_repeat('9', $precision-1);
+                    } else {
+                        $minvalue = '-' . str_repeat('9', $precision);
+                    } // if
+                    if ($scale > 0) {
+                        // adjust values to include decimal places
+                        $minvalue = $minvalue / pow(10, $scale);
+                    } // if
+                    // maxvalue has no positive sign
+                    $maxvalue = str_repeat('9', $precision);
+                    if ($scale > 0) {
+                        // adjust values to include decimal places
+                        $maxvalue = $maxvalue / pow(10, $scale);
+                    } // if
+                } else {
+                    // look for minimum/maximum values in colspecs
+                    if (isset($specs['minvalue'])) {
+                        $minvalue = $specs['minvalue'];
+                    } // if
+                    if (isset($specs['maxvalue'])) {
+                        $maxvalue = $specs['maxvalue'];
+                    } // if
+                } // if
+            } // if
+            if (isset($minvalue)) {
+                $columnarray['col_minvalue'] = $minvalue;
+                if (is_True($columnarray['col_unsigned'])) {
+                    $columnarray['col_minvalue'] = 0;
+                } // if
+            } // if
+            if (isset($maxvalue)) {
+                $columnarray['col_maxvalue'] = $maxvalue;
+                if (is_True($columnarray['col_unsigned'])) {
+                    if ($maxvalue == $specs['maxvalue']) {
+                        $columnarray['col_maxvalue'] = ($columnarray['col_maxvalue']*2)+1;
+                    } // if
+                } // if
+            } // if
+
+            if ($columnarray['col_type'] == 'char') {
+                if ($columnarray['col_maxsize'] == 1) {
+                    $columnarray['col_type'] = 'char,boolean';
+                } // if
+            } elseif (preg_match('/int/i', $columnarray['col_type'])) {
+                if ($precision == 1 AND $scale == 0) {
+                    $columnarray['col_type'] = 'smallint,boolean';
+                } // if
+            } // if
+
+            if ($columnarray['col_type'] == 'numeric' AND $scale == 0) {
+                $columnarray['col_type'] = 'integer';
+            } // if
+
+            $columnarray['col_type_native'] = $columnarray['col_type'];
+
             $out_array[] = $columnarray;
         } // while
 

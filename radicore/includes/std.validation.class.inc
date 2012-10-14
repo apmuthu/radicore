@@ -182,6 +182,8 @@ END_OF_REGEX;
                 if (isset($fieldspec['autoinsert'])
                  or isset($fieldspec['auto_increment'])) {
                     // value will be filled in later
+                    unset($fieldspec['required']);
+
                 } elseif (isset($fieldspec['optionlist'])) {
                     // get list of options for this field
                     $optionlist =& $this->caller->lookup_data[$fieldspec['optionlist']];
@@ -192,11 +194,17 @@ END_OF_REGEX;
                         // default value found in list, so use it
                     	$fieldvalue = $fieldspec['default'];
                     } // if
+
                 } elseif (isset($fieldspec['control']) and $fieldspec['control'] == 'popup') {
                     // only use default value if it is non-zero
                     if ((int)$fieldspec['default'] != 0) {
                     	$fieldvalue = $fieldspec['default'];
                     } // if
+
+                } elseif ($fieldspec['type'] == 'timestamp' AND $fieldspec['default'] == 'CURRENT_TIMESTAMP') {
+                    // value will be filled in later, so continue
+                    unset($fieldspec['required']);
+
                 } else {
                     // load default value
                     $fieldvalue = $fieldspec['default'];
@@ -378,12 +386,16 @@ END_OF_REGEX;
 
             case 'datetime':
             case 'timestamp':
-                // value must be a combined date and time
-                if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
+                if ($fieldvalue == '0000-00-00 00:00:00') {
+                    // let this through
                 } else {
-                    // set date to internal format
-                    $fieldvalue = $internaldatetime;
+                    // value must be a combined date and time
+                    if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue)) {
+                        $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
+                    } else {
+                        // set date to internal format
+                        $fieldvalue = $internaldatetime;
+                    } // if
                 } // if
                 break;
 

@@ -8,30 +8,31 @@ class oracle
 // this version is for Oracle
 {
     // member variables
-    var $client_encoding;       // character encoding for client
-    var $host_info;             // host info (connection)
-    var $server_encoding;       // character encoding for server
-    var $server_version;        // version number for server
+    var $client_encoding;               // character encoding for client
+    var $host_info;                     // host info (connection)
+    var $server_encoding;               // character encoding for server
+    var $server_version;                // version number for server
 
-    var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
-    var $errors;                // array of errors
-    var $error_string;          //
-    var $fieldspec = array();   // field specifications (see class constructor)
-    var $lastpage;              // last available page number in current query
-    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
-    var $numrows;               // number of rows retrieved
-    var $pageno;                // requested page number
-    var $primary_key = array(); // array of primary key names
-    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
-    var $rows_per_page;         // page size for multi-row forms
-    var $row_locks;             // SH=shared, EX=exclusive
-    var $row_locks_supp;        // supplemental lock type
-    var $schema;                // database name
-    var $stmt;                  // sql statement resource
-    var $table_locks;           // array of tables to be locked
-    var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of candidate keys
+    var $audit_logging;                 // yes/no switch
+    var $dbname;                        // database name
+    var $errors;                        // array of errors
+    var $error_string;                  //
+    var $fieldspec = array();           // field specifications (see class constructor)
+    var $lastpage;                      // last available page number in current query
+    var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
+    var $numrows;                       // number of rows retrieved
+    var $pageno;                        // requested page number
+    var $primary_key = array();         // array of primary key names
+    var $retry_on_duplicate_key;        // field name to be incremented when insert fails
+    var $rows_per_page;                 // page size for multi-row forms
+    var $row_locks;                     // SH=shared, EX=exclusive
+    var $row_locks_supp;                // supplemental lock type
+    var $schema;                        // database name
+    var $stmt;                          // sql statement resource
+    var $table_locks;                   // array of tables to be locked
+    var $transaction_level;             // transaction level
+    var $unique_keys = array();         // array of candidate keys
+    var $update_on_duplicate_key;       // switch to 'update' if insert fails
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -39,17 +40,21 @@ class oracle
     var $sql_groupby;
     var $sql_having;
     var $sql_orderby;
-    var $sql_orderby_seq;       // 'asc' or 'desc'
-    var $query;                 // completed DML statement
+    var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $query;                         // completed DML statement
 
-    var $dbconnect;             // database connection resource
+    var $dbconnect;                     // database connection resource
 
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
     function oracle ($schema=null)
     {
-        $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        if (!empty($schema)) {
+            $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        } else {
+            $result = TRUE;
+        } // if
 
         if (defined('TRANSIX_NO_AUDIT')) {
         	// do nothing
@@ -228,20 +233,13 @@ class oracle
     // ****************************************************************************
     function adjustWhere ($string_in)
     // adjust for differences between MySQL and Oracle.
+    // 'NOW()' to 'SYSTIMESTAMP'
+    // 'DATE_ADD(field1 - INTERVAL $field2 unit)' to "field1 + $field2"
+    // 'DATE_SUB(field1 - INTERVAL $field2 unit)' to "field1 - $field2"
     {
-        $string_out = null;
+        $string_out = $string_in;
 
-        // change 'datefield - INTERVAL interval DAY' to 'datefield - interval'
-        $pattern = '/INTERVAL( )+.+( )+DAY/i';
-
-        if (preg_match($pattern, $string_in, $regs)) {
-            $original = $regs[0];
-            $modified = substr($original, 8);  // strip leading 'INTERVAL'
-            $modified = substr($modified, 0, strlen($modified)-3);  // strip trailing 'DAY'
-        	$string_out = str_replace($original, trim($modified), $string_in);
-        } else {
-            $string_out = $string_in;
-        } // if
+        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
 
         $modified = false;
 
@@ -281,33 +279,45 @@ END_OF_REGEX;
             } else {
                 list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
                 $fieldvalue = trim($fieldvalue);
-                if (preg_match('/date_sub/i', $fieldname)) {
-                    // contains 'date_sub(field1, field2)', so extract 'field1, field2'
+                if (preg_match('/^date_sub/i', $fieldname)) {
+                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
-                    list($field1, $field2) = split(',', $regs[0]);
-                    // replace with 'field1 - field2'
-                    $fieldname = trim($field1).' - '.trim($field2);
-//                    if (substr($fieldvalue, 0, 1) == "'") {
-//                    	// this is a quoted string, so format it into a date
-//                    	$fieldvalue = "TO_DATE($fieldvalue, 'YYYY-MM-DD HH24:MI:SS')";
-//                    } // if
-                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    $field3 = $fieldvalue;
+                    // replace with 'field1 - field2 op $field3'
+                    $fieldname = "($field1 - $field2)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
                     $modified = true;
 
-            	} elseif (preg_match('/date_add/i', $fieldname)) {
-                    // contains 'date_add(field1, field2)', so extract 'field1, field2'
+                } elseif (preg_match('/date_add/i', $fieldname)) {
+                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
-                    list($field1, $field2) = split(',', $regs[0]);
-                    // replace with 'field1 - field2'
-                    $fieldname = trim($field1).' + '.trim($field2);
-//                    if (substr($fieldvalue, 0, 1) == "'") {
-//                    	// this is a quoted string, so format it into a date
-//                    	$fieldvalue = "TO_DATE($fieldvalue, 'YYYY-MM-DD HH24:MI:SS')";
-//                    } // if
-                    $array[$key] = $fieldname.' '.$operator.' '.$fieldvalue;
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    $field3 = $fieldvalue;
+                    // replace with 'field1 + field2 op $field3'
+                    $fieldname = "($field1 + $field2)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
                     $modified = true;
 
-            	} // if
+                } elseif (preg_match('/^date_sub/i', $fieldvalue)) {
+                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
+                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    // replace with 'fieldname op field1 - field2'
+                    $fieldvalue = "($field1 - $field2)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
+                    $modified = true;
+
+                } elseif (preg_match('/^date_add/i', $fieldvalue)) {
+                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
+                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    // replace with 'fieldname op field1 + field2'
+                    $fieldvalue = "($field1 + $field2)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
+                    $modified = true;
+
+                } // if
             } // if
         } // foreach
 
@@ -413,9 +423,18 @@ END_OF_REGEX;
     function connect ($schema=null)
     // establish a connection to the database
     {
-        global $dbhost, $dbusername, $dbuserpass;
+        global $dbhost, $dbusername, $dbuserpass, $dbprefix;
+
+        if (!empty($schema) AND !empty($dbprefix)) {
+             if (!preg_match('/^(' .$dbprefix .')/i', $schema)) {
+                // prefix may be different on different servers
+                $schema = $dbprefix .$schema;
+            } // if
+        } // if
 
         $this->errors = array();
+        $this->query  = '';
+        $this->$schema = $schema;
 
         $dbconn = $this->dbconnect;
 
@@ -438,6 +457,14 @@ END_OF_REGEX;
                 $this->query = "ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS'";
                 $this->stmt  = oci_parse($dbconn, $this->query);
                 $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+                // set CASE INSENSITIVE
+//                $this->query = "ALTER SESSION SET NLS_COMP=LINGUISTIC";
+//                $this->stmt  = oci_parse($dbconn, $this->query);
+//                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+                // set CASE INSENSITIVE
+//                $this->query = "ALTER SESSION SET NLS_SORT=BINARY_CI";
+//                $this->stmt  = oci_parse($dbconn, $this->query);
+//                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
             } // if
         } // if
         if (!$dbconn) {
@@ -511,7 +538,7 @@ END_OF_REGEX;
     } // deleteRecord
 
     // ****************************************************************************
-    function deleteSelection ($schema, $tablename, $selection)
+    function deleteSelection ($schema, $tablename, $selection, $from=null, $using=null)
     // delete a selection of records in a single operation.
     {
         $this->errors = array();
@@ -519,11 +546,18 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        // get count of affected rows as there may be more than one
-        $query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $query);
+        $selection = $this->adjustWhere($selection);
 
-        $this->query = "DELETE FROM $tablename WHERE $selection";
+        if (!empty($from) AND !empty($using)) {
+            $count = 1;
+            //$this->query = "DELETE FROM $from USING $using \nWHERE $selection";
+            return $count;
+        } else {
+            // get count of affected rows as there may be more than one
+            $query = "SELECT count(*) FROM $tablename WHERE $selection";
+            $count = $this->getCount($schema, $tablename, $query);
+            $this->query = "DELETE FROM $tablename WHERE $selection";
+        } // if
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
         	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
@@ -919,6 +953,11 @@ END_OF_REGEX;
     {
         if (isset($this->stmt)) {
         	$array = oci_error($this->stmt);
+        } else {
+            $array = oci_error();
+        } // if
+
+        if (!empty($array)) {
             $errno = $array['code'];
             if (!empty($array['message']) AND empty($this->error_string)) {
             	$this->error_string = $array['message'];
@@ -1077,7 +1116,15 @@ END_OF_REGEX;
 	        if ($count <> 0) {
 	            if (is_True($this->no_duplicate_error)) {
 	                // exit without setting an error
-	            } else {
+                    return $fieldarray;
+
+	            } elseif (is_True($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
+                } else {
 	            	// set error message for each field within this key
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
@@ -1172,9 +1219,17 @@ END_OF_REGEX;
                         // too many retries, so turn this feature off
                     	$this->retry_on_duplicate_key = null;
                     } // if
-            	} elseif ($error_array['code'] == 1 AND is_True($this->no_duplicate_error)) {
+
+            	} elseif ($error_array['code'] == 1 AND is_True($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
+                } elseif ($error_array['code'] == 1 AND is_True($this->no_duplicate_error)) {
             	    // this is a duplicate, but don't fail
                     $this->numrows = 0;
+
             	} else {
             	    trigger_error($this, E_USER_ERROR);
                 } // if
@@ -1465,7 +1520,8 @@ END_OF_REGEX;
 
         // build update string from non-pkey fields
         $update = '';
-        $pattern = '/(integer|decimal|numeric|float|real)/i';
+        $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -1474,15 +1530,18 @@ END_OF_REGEX;
                 } elseif (is_null($value)) {
                     // null entries are set to NULL, not '' (there is a difference!)
                     $update .= "$item=NULL,";
-                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                } elseif (preg_match($pattern1, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     if (strlen($value) == 0) {
                     	$update .= "$item=NULL,";
                     } else {
                         $update .= "$item=$value,";
                     } // if
+                } elseif (preg_match($pattern2, $value)) {
+                    // change to the new value (without enclosing quotes)
+                    $update .= "$item=" .$this->adjustData($value) .", ";
                 } else {
-                    // change to the new value
+                    // change to the new value (with enclosing quotes)
                     $update .= "$item='" .$this->adjustData($value) ."', ";
                 } // if
             } // if

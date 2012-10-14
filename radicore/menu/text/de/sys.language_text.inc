@@ -70,7 +70,7 @@ $array['sys0059'] = "Source directory (%1\$s) does not exist";
 
 $array['sys0060'] = "This application has encountered an unrecoverable error";
 $array['sys0061'] = "The following has been reported to the administrator:";
-$array['sys0062'] = "Uncaught exception fron %1\$s, message = %2\$s";
+$array['sys0062'] = "Uncaught exception from %1\$s, message = %2\$s";
 $array['sys0063'] = "Fatal Error: %1\$s";
 $array['sys0064'] = "SQL query: %1\$s";
 $array['sys0065'] = "Error in line %1\$s of file '%2\$s'.";
@@ -110,7 +110,7 @@ $array['sys0095'] = "Date range has been set to CURRENT";
 $array['sys0096'] = "Date range has been set to HISTORIC";
 $array['sys0097'] = "Date range has been set to FUTURE";
 $array['sys0098'] = "%1\$s records inserted, %2\$s records updated in %3\$s";
-$array['sys0099'] = "Help text for '%1\$s' - '%2\$s'";
+$array['sys0099'] = "Help text for '%1\$s'";
 
 $array['sys0100'] = "** SCRAMBLE1 is not same length as SCRAMBLE2 **";
 $array['sys0101'] = "No value has been supplied for decryption";
@@ -165,7 +165,7 @@ $array['sys0145'] = "This user has a start date which is in the future";
 $array['sys0146'] = "You must change your password.";
 $array['sys0147'] = "";
 $array['sys0148'] = "";
-$array['sys0149'] = "";
+$array['sys0149'] = "Please contact your system administrator for details";
 
 $array['sys0150'] = "Enter e-mail address where password is to be sent";
 $array['sys0151'] = "E-mail address was not found";
@@ -207,7 +207,7 @@ $array['sys0183'] = "SERVER_ADDR: %1\$s";
 $array['sys0184'] = "SERVER_NAME: %1\$s";
 $array['sys0185'] = "HTTP_HOST: %1\$s";
 $array['sys0186'] = "REMOTE_HOST: %1\$s";
-$array['sys0187'] = "";
+$array['sys0187'] = "CURRENT DIRECTORY: %1\$s";
 $array['sys0188'] = "Cannot delete a record in the shared account";
 $array['sys0189'] = "Cannot update a record in the shared account";
 
@@ -218,9 +218,31 @@ $array['sys0193'] = "Start Date must be later than Start Date of previous entry"
 $array['sys0194'] = "End Date must be earlier than End Date of next entry";
 $array['sys0195'] = "Invalid date range - FROM DATE is greater than TO DATE";
 $array['sys0196'] = "Invalid date range - TO DATE is less than FROM DATE";
-$array['sys0197'] = "";
+$array['sys0197'] = "Date cannot be earlier than today";
 $array['sys0198'] = "";
-$array['sys0199'] = "";
+$array['sys0199'] = "No record was found with this identity";
+
+$array['sys0200'] = "IP address '%1\$s' is not valid for this user";
+$array['sys0201'] = "IP address '%1\$s' is not valid for this task";
+$array['sys0202'] = "Cannot find a record on table '%1\$s' with an id of '%2\$s'";
+$array['sys0203'] = "Task '%1\$s' has been added to favourites";
+$array['sys0204'] = "Selection has been set to COMPLETE";
+$array['sys0205'] = "Selection has been set to INCOMPLETE";
+$array['sys0206'] = "";
+$array['sys0207'] = "";
+$array['sys0208'] = "";
+$array['sys0209'] = "";
+
+$array['sys0210'] = "LABEL_PRINT has not been defined in Report Structure File";
+$array['sys0211'] = "LABEL_PRINT in Report Structure File is not a positive number";
+$array['sys0212'] = "";
+$array['sys0213'] = "";
+$array['sys0214'] = "";
+$array['sys0215'] = "";
+$array['sys0216'] = "";
+$array['sys0217'] = "";
+$array['sys0218'] = "";
+$array['sys0219'] = "";
 
 // the following entries are for ACTION buttons
 $array['cancel']     = 'CANCEL';
@@ -327,6 +349,22 @@ $array['xsl_print']             = 'print';
 $array['xsl_noprint']           = 'noprint';
 $array['xsl_logged_in_as']      = 'You are logged in as:';
 $array['xsl_recover_pswd']      = 'recover password';
+$array['xsl_add_to_favourites'] = 'add to favourites';
+$array['xsl_favourites']        = 'Favourites';
+$array['xsl_favourites_user']   = 'Favourites for User';
+
+// the following entries are for ALT text for images
+$array['paperclip.gif']             = 'email has one or more attachments';
+$array['mail-in.gif']               = 'INBOUND email';
+$array['mail-out.gif']              = 'OUTBOUND email';
+$array['mail-seen.gif']             = 'email has been seen';
+$array['mail-unseen.gif']           = 'email has not been seen';
+$array['mail-sent.gif']             = 'email has been sent';
+$array['mail-reply-sent.gif']       = 'email has been sent a reply';
+$array['mail-reply-received.gif']   = 'email has received a reply';
+$array['mail-draft.gif']            = 'email has been composed but not sent';
+$array['note.gif']                  = "this is a note";
+$array['telephone.gif']             = "this is a telephone conversation";
 
 return $array;
 

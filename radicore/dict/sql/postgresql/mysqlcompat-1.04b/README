@@ -1,0 +1,160 @@
+MySQL Compatibility Functions
+=============================
+
+Authors: Chris Kings-Lynne, Gavin Sherry & Others
+Contributor: Michael Fuhr, Radovan Jablonovsky
+
+Introduction
+------------
+
+This project is a collection of functions, aggregates,
+operators and casts that make PostgreSQL mimic MySQL as
+closely as possible.
+
+To use the project, you can either find and install the
+few functions that you need, or run all the .sql files
+to install the complete compatibility environment.
+
+This can be an immense time-saver when porting large applications
+that rely heavily on certain MySQL functions.
+
+Versions of PostgreSQL supported
+--------------------------------
+
+This package has been tested on PostgreSQL 8.1.x, 8.2.x, 8.3.x, 8.4.x, 9.0.x and 9.1.x.
+
+Installation
+------------
+
+First, you must have created a database in PostgreSQL.
+
+Then, a few of the functions are written in the PL/PgSQL
+language handler.  If you use these functions you need
+to install that handler, like this:
+
+  createlang plpgsql <dbname>
+
+Next, load any (or all) of the .sql files into that 
+database, eg:
+ 
+  psql -f all.sql <dbname>
+
+Or, to install a particular subset of functions:
+
+  psql -f datetime.sql <dbname>
+
+Or, if you only want to install a particular function, just
+copy and paste it into psql directly, taking care to install any
+of the function's listed dependencies.
+
+You will see a series of CREATE (and other) tags
+that indicates each successful command.  Read any
+other messages that appear as they may be errors.
+
+Alternatively, you can execute the SQL scripts via
+a GUI tool such as pgAdmin (www.pgadmin.org) or
+phpPgAdmin (phppgadmin.sf.net). 
+
+Uninstall
+---------
+
+The uninstall.sql script contains drop commands for every object
+in this library.  To drop everything for example, run:
+
+  psql -f uninstall.sql <dbname>
+
+Then, if you have no further need for the PL/PgSQL language handler
+you can drop it as follows:
+
+  droplang plpgsql <dbname>
+
+Usage
+-----
+
+If you have followed the installation notes above, then
+all the MySQL compatibility functions, operators and
+aggregates will be installed in the public schema of your
+database.  This means you can use them without any special
+qualification.
+
+Here are some examples:
+
+SELECT true && false;
+=> f
+
+SELECT format(1234.432, 4);
+=> 1,234.4320
+
+General Compatibility Notes
+---------------------------
+
+In some cases (obviously) MySQL is just too different
+from PostgreSQL to allow re-implementation of features.
+
+This usually happens when a MySQL feature would require
+changing the PostgreSQL SQL grammar.
+
+Any function name that begins with '_' in this library
+is a "private" function that should not be called directly.
+
+Here is a list of major incompatibilities:
+
+* Boolean vs. Integer
+
+MySQL has no boolean type, and instead it uses the integer
+values 0 and 1 as boolean results.  PostgreSQL has a true
+boolean type and it can accept 0, 1, true, false, 't' or 'f'
+as values.  However, by default all boolean values are SHOWN
+as either 't' or 'f'.
+
+Since PostgreSQL already has most of MySQL's logical operators
+(eg. OR, AND, etc.) which all return 't' or 'f' to mean true or
+false, then there isn't much point returning 0 or 1 for the
+two or three logical operators that this library implements.
+This is just something you need to deal with during porting.
+
+Tip: PostgreSQL includes a boolean to integer explicit cast, eg:
+
+SELECT true::integer + 1;
+=> 2
+
+* Time vs. Interval
+
+MySQL has no interval type, and hence often confuses 'time'
+with 'interval'.  For example, '123:13:56' is a valid interval
+but is an invalid time.
+
+This library uses the PostgreSQL interval type for many of the
+MySQL functions that require or return times.  In general
+this won't make any difference.
+
+* Intervals
+
+In MySQL, intervals are not quoted, eg:
+
+  SELECT ADDDATE('1998-01-02', INTERVAL 31 DAY);
+
+In PostgreSQL the 31 DAY part needs to be quoted:
+
+  SELECT ADDDATE('1998-01-02', INTERVAL '31 DAY');
+
+* Missing operators
+
+XOR, DIV and MOD named operators cannot be implemented.  Use
+#, / (with integer casts) and % instead.
+
+* Case-sensitive strings
+
+All PostgreSQL strings are case-sensitive.  All MySQL strings are
+case-insensitive by default.  Any functions in this library that
+implement string comparison use CASE-SENSITIVE comparison, just
+like all the other PostgreSQL string functions.
+
+* Failure to find overloaded functions
+
+In some cases (due to the way PostgreSQL works) you will need
+to add explicit casts to some function calls.  An explicit cast
+looks like this:
+
+  SELECT ADDTIME('01:00:00.999999'::interval, '02:00:00.999998');
+

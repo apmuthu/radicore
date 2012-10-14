@@ -140,7 +140,9 @@ if (!empty($_POST)) {
     if (empty($errors) AND empty($search)) {
     	// update this data in the database
         $dblink->startTransaction();
+        $save_pageno = $dblink->pageno;
         $link_data = $dblink->updateLinkData($link_data, $_POST);
+        $dblink->pageno = $save_pageno;
         if ($dblink->errors) {
             $dblink->rollback();
     		// errors are keyed by object name
@@ -164,18 +166,23 @@ if (!empty($_POST)) {
                     $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
                     $dbouter->setPageNo($curitem);
                     $where = $scrolling[$dbouter->getClassName()]['where'];
+                } elseif ($curitem == 1 AND $lastitem == 1 AND $dblink->pageno < $dblink->lastpage) {
+                    // skip to next page of inner entity
+                    $dblink->setPageNo($dblink->pageno+1);
                 } else {
                     // no more items, so return to previous screen
                     scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
                 } // if
+            } elseif (isset($_POST['submitstay'])) {
+                // remain in this screen
             } else {
-                if ($lastitem <= 1) {
-                	if (isset($_POST['submitstay'])) {
-                	    // remain in this  screen
-                	} else {
-                	    // retun to previous screen
-                	    scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
-                	} // if
+                // SUBMIT presed
+                if ($dblink->pageno < $dblink->lastpage) {
+                	// skip to next page of inner entity
+                    $dblink->setPageNo($dblink->pageno+1);
+                } else {
+                	// retun to previous screen
+                	scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
                 } // if
             } // if
             // re-read database in case any values have changed
@@ -328,8 +335,8 @@ $pagination['link']['curpage']  = $dblink->getPageNo();
 $pagination['link']['lastpage'] = $dblink->getLastPage();
 
 // get sort details
-$orderby     = $dblink->getOrderBy();
-$orderby_seq = $dblink->getOrderBySeq($orderby);
+//$orderby     = $dblink->getOrderBy();
+//$orderby_seq = $dblink->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = $where;
@@ -343,7 +350,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dblink;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

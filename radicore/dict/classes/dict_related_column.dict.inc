@@ -1,5 +1,5 @@
 <?php
-    // file created on June 26, 2009, 7:21 pm
+    // file created on June 24, 2012, 8:50 pm
     
     // field specifications for table dict.dict_related_column
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -46,8 +46,7 @@
     $fieldspec['column_id_jnr']             = array('type' => 'string',
                                                     'size' => 64,
                                                     'lowercase' => 'y',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'column_id');
+                                                    'noedit' => 'y');
     
     $fieldspec['seq_in_index']              = array('type' => 'integer',
                                                     'size' => 4,

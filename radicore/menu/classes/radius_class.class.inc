@@ -17,6 +17,10 @@ class radius_class
 
     function radius_class ()
     {
+    	if (!extension_loaded('radius')) {
+    		trigger_error("RADIUS extension is not loaded", E_USER_ERROR);
+    	} // if
+    	
         require 'radius.config.inc';
 
         if (is_array($radserver)) {

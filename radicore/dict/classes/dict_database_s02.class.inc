@@ -18,7 +18,7 @@ class dict_dataBase_s02 extends dict_dataBase
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $menu_prefix = dict_findDBPrefix('menu');
+        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
 
 		if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM

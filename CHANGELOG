@@ -1,5 +1,59 @@
 ﻿RADICORE for PHP - news
 
+2012-10-14, version 1.76.0
+- fixed bug in 'std.csv.class.inc' which prevented column headings being written out to a comma delimited file.
+- updated MNU_USER table in the MENU database to increase the size of the 'ip_address' column from 16 to 40 characters. You will need to run script 'alter_table(2012-06-06).sql' to implement this change.
+- updated AUDIT_LOGON_ERRORS table in the AUDIT database to increase the size of the 'ip_address' column from 16 to 40 characters. You will need to run script 'alter_table(2012-06-08).sql' to implement this change.
+- modified the send_mail() function within 'include.library.inc' so that when sending an HTML message it puts the plain text version before the HTML version. This is because some email clients which cannot display HTML messages don't like it if the HTML version is first.
+- fixed bug when dealing with numbers in locales which have different values for decimal point and thousands separator. Numbers are formatted in the user's locale before being displayed, and reformatted to internal representation (decimal point is '.', thousands separator is NULL) before being validated and written to the database. If a formatted number is included in the screen as 'noedit' then it is not passed back in the $_POST array, and when the $_POST array is merged with the original data the unformatted value is used. When this unformatted value is processed by the 'number_unformat()' function the result is a corrupted. The 'array_update_associative()' function has been modified to ensure that any number in the POST array is correctly unformatted before it is passed to the table object.
+- updated the data dictionary to include screens to view relationship details from the child to its parents as well as from the parent to its children. You will need to run script 'dict.menu_export(2012-06-23).sql' in order to update the contents of your menu database.
+- updated 'mnu_subsystem.class.inc' to make the 'erase' function faster.
+- updated 'std.validation.class.inc' to deal with timestamp fields which are required but empty with a default of CURRENT_TIMESTAMP.
+- updated 'dml.mysqli.class.inc' to change 'ddl_showColumns()' method to use INFORMATION_SCHEMA instead of 'SHOW COLUMNS'.
+- updated 'dml.mysqli.class.inc' to deal with default of CURRENT_TIMESTAMP in timestamp fields.
+- updated TCPDF library to version 5.9.178.
+- fixed bug in 'include.xml.php4/5.inc' which sometimes caused the wrong value for 'orderby_seq' to be loaded into the screen, thus causing the wrong up-arrow/down-arrow image to be displayed next to the sort column.
+- fixed bug in 'std.filepicker1.inc' which caused the sort sequence to toggle between 'ascending' and 'descending' each time the page was automatically refreshed.
+- modified result of clicking on a column heading in a list screen to change the sort sequence so that clicking on a different column will always start at ASCENDING sequence, and will only toggle between ASCENDING and DESCENDING when repeatedly clicking on the same column name.
+- fixed bug in getTimeStamp() when $GLOBALS['server_timezone'] in the config file is set to a different value than the server's timezone.
+- fixed bug when clicking on a hyperlink in the breadcrumbs area to go back to a previous task.
+- updated the $servers directive in the config file to include an entry called 'switch_dbnames'. This can be used when the database name used when importing into the data dictionary and creating the class files is completely different (not just a change in prefix) when deployed on a different server.
+- fixed bug in 'dml.oracle.php5.class.inc' when using $dbprefix to alter database names.
+- fixed bug when using Oracle 11g which stopped with "ORA-01002 Fetch Out of Sequence" error. 
+
+2012-06-03, version 1.75.0
+- fixed bug in 'std.pdf.class.inc' when dealing with a barcode in the multi1-multi9 area.
+- moved methods 'outputPDF_DetailView()', 'outputPDF_LabelView()' and 'outputPDF_ListView()' from 'std.table.class.inc' to 'std.pdf.class.inc' as they are methods for PDF documents and not database tables.
+- moved method 'outputCSV()' from 'std.table.class.inc' to a new file called 'std.csv.class.inc'.
+- updated TCPDF library to version 5.9.157.
+- fixed bug in 'dict_column.class.inc' which set a boolean value of '0' to 'N'.
+- fixed bug in 'include.library.inc' which dealt incorrectly with a boolean value of '0'.
+- updated 'std.xml.php4.inc' and 'std.xml.php5.inc' to have all the functions inside a class called 'radicore_view'.
+- fixed bug in runInBackground() function so that it can detect and report errors such as '401 Authorization Required'.
+- updated 'send_email()' function inside 'include.library.inc' so that it will send an HTML email if the message starts with '<' and ends with '>'.
+
+2012-04-14, version 1.74.0
+- created 'isDirectoryValid()' function to test that a directory is within the 'open_basedir' list before using the 'is_dir()' or 'file_exists()' function.
+- updated 'audit_trn.class.inc' and 'audit_tbl.class.inc' to automatically increment the sequence number if a duplicate is detected during an insert.
+- fixed bug which prevented 'updateSelection()' from working with an update string = "field1=field1+1, field2=field2+1".
+- modified 'updateRecord()' in 'dml.mysql.class.inc' to allow a value of 'function(...)' to be added to the SQL query string as "field1=FUNCTION(...)" instead of "field1='FUNCTION(...)'". This can be turned on by by adding the field name to $this->allow_db_function as in '$this->allow_db_function[] = 'field1';".
+- modified 'std.pdf.class.inc' so that the 'multi1'-'multi9' zones will not stop with the first empty result, and will be processed in the order defined within the structure file (which could be multi1, multi4, multi3, multi2, multi6) instead of sequentially as in multi1, multi2, multi3, multi4, multi5, multi6.
+- updated 'std.multi2.inc' to allow $search value to be input to outer entity via the '_cm_restart()' method.
+
+2012-02-08, version 1.73.0
+- fixed bug in 'dml.pgsql.class.inc' so that the arguments in the DATE_SUB() function are cast to the expected data types.
+- modified LDAP and RADIUS classes (in /menu/classes/) to check that the extension is actually available when the class is instantiated, and abort if not.
+- modified 'error.inc', 'dml.sqlserv.class.inc' and 'dml.oracle.class.inc' to deal with database errors in a more consistent manner.
+- modified code which handles the switching between HTTP and HTTPS protocols.
+- updated XAMPLE prototype to version 2.4.0 to include an example of the TinyMCE javascript library v3.4.7 as well as updating the FCKeditor library to version 2.6.6.
+- modified 'add database' function in Data Dictionary to exclude databases from the server if they have the current dbprefix but exist in the dictionary without the prefix.
+- updated 'std.data_field.xsl' so that a field with properties 'control=multi-line' and 'xml=CDATA' will be displayed as ordinary text without escaping any HTML entities.
+- updated 'std.update4.inc' so that it validates any sort field passed down by the parent script.
+- add new task 'audit_ssn(batch)delete' which will delete entries from the AUDIT database older than 'N' years, where 'N' can be set on the 'Maintain Menu Controls' screen. A navigation button for this task is also available on this screen, but you can also set up a cron job to run this automatically. You will need to run script 'audit.menu_export(2012-01-24).sql' in order to add this task to your system. 
+- fixed bug in 'std.filepicker1.inc' which preventeed it from showing an error message henerated by a child form (usually std.fileupload1.inc).
+- fixed bug in 'dml.sqlsrv.class.inc' when encountering SUBSTR() inside a CONCAT() function.
+- updated 'std.table.class.inc' and 'dml.*.class.inc' to allow the '_cm_deleteSelection()' method to specify FROM and USING arguments to enable a multi-table delete in the format 'DELETE FROM $from USING $using WHERE $selection'.
+
 2011-12-10, version 1.72.0
 - updated 'include.library.inc' so that the 'removeDuplicateFromSelect()' function will not insert a duplicate field reference at the position of the first reference, otherwise it may result in an invalid SQL statement.
 - updated 'dml.pgsql.class.inc' for PostgreSQL version 9.1 where string literals containing the backslash character must now be defined using the escape string syntax (E'...') otherwise an error will be generated.

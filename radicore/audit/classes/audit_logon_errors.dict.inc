@@ -1,11 +1,11 @@
 <?php
-    // file created on September 29, 2009, 2:21 pm
+    // file created on October 3, 2012, 4:37 pm
     
     // field specifications for table audit.audit_logon_errors
     $fieldspec['id']                        = array('type' => 'integer',
-                                                    'size' => 11,
+                                                    'size' => 12,
                                                     'auto_increment' => 'y',
-                                                    'minvalue' => 0,
+                                                    'minvalue' => -2147483648,
                                                     'maxvalue' => 2147483647,
                                                     'pkey' => 'y',
                                                     'required' => 'y');
@@ -17,7 +17,7 @@
                                                     'autoinsert' => 'y');
     
     $fieldspec['ip_address']                = array('type' => 'string',
-                                                    'size' => 16,
+                                                    'size' => 40,
                                                     'required' => 'y',
                                                     'default' => '0.0.0.0');
     

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table extends Default_Table
@@ -16,7 +16,8 @@ class dict_table extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_table';
         $this->dbname      = 'dict';
 
@@ -282,8 +283,11 @@ class dict_table extends Default_Table
         if (!preg_match('/ AS column_count/i', $this->sql_select)) {
         	$this->sql_select .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_column.table_id) AS column_count';
         } // if
-        if (!preg_match('/ AS rel_count/i', $this->sql_select)) {
-            $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_relationship.table_id_snr) AS rel_count';
+        if (!preg_match('/ AS rel_count_snr/i', $this->sql_select)) {
+            $this->sql_select .= ', (SELECT COUNT(table_id_snr) FROM dict_relationship WHERE dict_relationship.database_id_snr=dict_table.database_id AND dict_relationship.table_id_snr=dict_table.table_id GROUP BY dict_relationship.table_id_snr) AS rel_count_snr';
+        } // if
+        if (!preg_match('/ AS rel_count_jnr/i', $this->sql_select)) {
+            $this->sql_select .= ', (SELECT COUNT(table_id_jnr) FROM dict_relationship WHERE dict_relationship.database_id_jnr=dict_table.database_id AND dict_relationship.table_id_jnr=dict_table.table_id GROUP BY dict_relationship.table_id_jnr) AS rel_count_jnr';
         } // if
 
         $pattern_id = getPatternId();

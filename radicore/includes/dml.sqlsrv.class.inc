@@ -8,26 +8,27 @@ class sqlsrv
 // this version is for SQL Server
 {
     // member variables
-    var $client_info = '';      // output from sqlsrv_client_info()
-    var $server_info = '';      // output from sqlsrv_server_info()
+    var $client_info = '';              // output from sqlsrv_client_info()
+    var $server_info = '';              // output from sqlsrv_server_info()
 
-    var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
-    var $errors;                // array of errors
-    var $error_string;          //
-    var $fieldspec = array();   // field specifications (see class constructor)
-    var $lastpage;              // last available page number in current query
-    var $no_duplicate_error;    // if TRUE do not create an error when inserting a duplicate
-    var $numrows;               // number of rows retrieved
-    var $pageno;                // requested page number
-    var $primary_key = array(); // array of primary key names
-    var $retry_on_duplicate_key;    // field name to be incremented when insert fails
-    var $rows_per_page;         // page size for multi-row forms
-    var $row_locks;             // SH=shared, EX=exclusive
-    var $row_locks_supp;        // supplemental lock type
-    var $table_locks;           // array of tables to be locked
-    var $transaction_level;     // transaction level
-    var $unique_keys = array(); // array of candidate keys
+    var $audit_logging;                 // yes/no switch
+    var $dbname;                        // database name
+    var $errors;                        // array of errors
+    var $error_string;                  //
+    var $fieldspec = array();           // field specifications (see class constructor)
+    var $lastpage;                      // last available page number in current query
+    var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
+    var $numrows;                       // number of rows retrieved
+    var $pageno;                        // requested page number
+    var $primary_key = array();         // array of primary key names
+    var $retry_on_duplicate_key;        // field name to be incremented when insert fails
+    var $rows_per_page;                 // page size for multi-row forms
+    var $row_locks;                     // SH=shared, EX=exclusive
+    var $row_locks_supp;                // supplemental lock type
+    var $table_locks;                   // array of tables to be locked
+    var $transaction_level;             // transaction level
+    var $unique_keys = array();         // array of candidate keys
+    var $update_on_duplicate_key;       // switch to 'update' if insert fails
 
     // the following are used to construct an SQL query
     var $sql_select;
@@ -35,10 +36,10 @@ class sqlsrv
     var $sql_groupby;
     var $sql_having;
     var $sql_orderby;
-    var $sql_orderby_seq;       // 'asc' or 'desc'
-    var $query;                 // completed DML statement
+    var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $query;                         // completed DML statement
 
-    var $dbconnect;             // database connection resource
+    var $dbconnect;                     // database connection resource
 
     // ****************************************************************************
     // class constructor
@@ -193,11 +194,11 @@ END_OF_REGEX;
 /
 (?<=concat\()                # 'concat('
 (                            # start choice
- \w+(\.\w+)?                 # 'word' or 'word.word'
- |
  \w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
  |
  '(([^\\\']*(\\\.)?)*)'      # quoted string
+ |
+ \w+(\.\w+)?                 # 'word' or 'word.word'
  |
  ,                           # comma
  |
@@ -252,21 +253,14 @@ END_OF_REGEX;
     // ****************************************************************************
     function adjustWhere ($string_in)
     // certain MySQL expressions have to be converted as they are not valid, such as:
-    // 'datefield - INTERVAL interval DAY' to 'datefield - interval'
+    // 'NOW()' to 'SYSDATETIME()'
+    // 'DATE_ADD(field1 - INTERVAL $field2 unit)' to 'DATEADD(unit, +$field2, $field1)'
+    // 'DATE_SUB(field1 - INTERVAL $field2 unit)' to 'DATEADD(unit, -$field2, $field1)'
     // [\'] (escaped quote) must be changed to [''] (double quote)
     {
-        $string_out = null;
+        $string_out = $string_in;
 
-        $pattern = '/INTERVAL( )+.+( )+DAY/i';  // look for 'INTERVAL field DAY'
-
-        if (preg_match($pattern, $string_in, $regs)) {
-            $original = $regs[0];
-            $modified = substr($original, 8);  // strip leading 'INTERVAL'
-            $modified = substr($modified, 0, strlen($modified)-3);  // strip trailing 'DAY'
-        	$string_out = str_replace($original, trim($modified), $string_in);
-        } else {
-            $string_out = $string_in;
-        } // if
+        $string_out = preg_replace('/now\(\)/i', 'SYSDATETIME()', $string_out);
 
         $modified = false;
 
@@ -311,24 +305,42 @@ END_OF_REGEX;
                     $array[$key] = $fieldname.$operator.$fieldvalue;
                 	$modified = true;
 
-                } elseif (preg_match('/date_sub/i', $fieldname)) {
-                    // contains 'date_sub(field1, field2)', so extract 'field1, field2'
+                } elseif (preg_match('/^date_sub/i', $fieldname)) {
+                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
-                    list($field1, $field2) = split(',', $regs[0]);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
                     $field3 = $fieldvalue;
-                    // replace with 'DATEDIFF(day, field3, field1) op $field2'
-                    $fieldname = "DATEDIFF(day, " .trim($field3).', '.trim($field1) .")";
-                    $array[$key] = $fieldname.' '.$operator.' '.trim($field2);
+                    // replace with 'DATEADD(unit, field2*-1, field1) op $field3'
+                    $fieldname = "DATEADD($unit, $field2*-1, $field1)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
                     $modified = true;
 
             	} elseif (preg_match('/date_add/i', $fieldname)) {
-                    // contains 'date_add(field1, field2)', so extract 'field1, field2'
+                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
-                    list($field1, $field2) = split(',', $regs[0]);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
                     $field3 = $fieldvalue;
-                    // replace with 'DATEDIFF(day, field1, field3) op $field2'
-                    $fieldname = "DATEDIFF(day, " .trim($field1).', '.trim($field3) .")";
-                    $array[$key] = $fieldname.' '.$operator.' '.trim($field2);
+                    // replace with 'DATEADD(unit, field2, field1) op $field3'
+                    $fieldname = "DATEADD($unit, $field2, $field1)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
+                    $modified = true;
+
+            	} elseif (preg_match('/^date_sub/i', $fieldvalue)) {
+                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
+                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    // replace with 'fieldname op DATEADD(unit, field2*-1, field1)'
+                    $fieldvalue = "DATEADD($unit, $field2*-1, $field1)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
+                    $modified = true;
+
+            	} elseif (preg_match('/^date_add/i', $fieldvalue)) {
+                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
+                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    // replace with 'fieldname op DATEADD(unit, field2, field1)'
+                    $fieldvalue = "DATEADD($unit, $field2, $field1)";
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
                     $modified = true;
 
             	} // if
@@ -523,7 +535,7 @@ END_OF_REGEX;
     } // deleteRecord
 
     // ****************************************************************************
-    function deleteSelection ($dbname, $tablename, $selection)
+    function deleteSelection ($dbname, $tablename, $selection, $from=null, $using=null)
     // delete a selection of records in a single operation.
     {
         $this->errors = array();
@@ -531,7 +543,13 @@ END_OF_REGEX;
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        $this->query = "DELETE FROM $tablename WHERE $selection";
+        $selection = $this->adjustWhere($selection);
+
+        if (!empty($from) AND !empty($using)) {
+            $this->query = "DELETE FROM $from USING $using WHERE $selection";
+        } else {
+            $this->query = "DELETE FROM $tablename WHERE $selection";
+        } // if
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = sqlsrv_rows_affected($result);
@@ -554,7 +572,6 @@ END_OF_REGEX;
     function fetchRow ($dbname, $result)
     // Fetch a row from the given result set (created with getData_serial() method).
     {
-        //DebugBreak();
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
@@ -694,9 +711,6 @@ END_OF_REGEX;
             // count the rows that satisfy this query
             $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
             $this->numrows = $this->getCount($dbname, $tablename, $query);
-
-            // write query to log file, if option is turned on
-            logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
             if ($this->numrows <= 0) {
                 $this->pageno = 0;
@@ -914,8 +928,7 @@ END_OF_REGEX;
     {
         $errno = null;
 
-        if ($this->dbconnect) {
-            $errors = sqlsrv_errors();
+        if ($errors = sqlsrv_errors()) {
             $errno  = $errors[0]['code'];
         } // if
 
@@ -933,8 +946,7 @@ END_OF_REGEX;
             $string = $this->error_string;
             $this->error_string = null;
 
-		} elseif ($this->dbconnect) {
-            $errors = sqlsrv_errors();
+		} elseif ($errors = sqlsrv_errors()) {
             if (is_array($errors)) {
             	foreach ($errors as $error) {
                     if (empty($string)) {
@@ -1071,13 +1083,19 @@ END_OF_REGEX;
 	        // find out if a record with this primary key already exists
 	        $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
 	        $count = $this->getCount($dbname, $tablename, $query);
-
 	        // Is this primary key taken?
 	        if ($count <> 0) {
 	            if (is_True($this->no_duplicate_error)) {
 	                // exit without setting an error
 	                return $fieldarray;
-	            } else {
+
+	            } elseif (is_True($this->update_on_duplicate_key)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
+                } else {
 	            	// set error message for each field within this key
     	            foreach ($this->primary_key as $fieldname) {
     	                $this->errors[$fieldname] = getLanguageText('sys0002'); // 'A record already exists with this ID.'
@@ -1163,9 +1181,17 @@ END_OF_REGEX;
                         // too many retries, so turn this feature off
                     	$this->retry_on_duplicate_key = null;
                     } // if
+
+                } elseif ($errno == 23505 AND is_True($this->no_duplicate_error)) {
+                    // switch to 'update'
+                    $old_array = where2array($primary_key);
+                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                    return $fieldarray;
+
                 } elseif ($errno == 23505 AND is_True($this->no_duplicate_error)) {
                     // this is a duplicate, but don't fail
                     $this->numrows = 0;
+
                 } else {
             	    trigger_error($this, E_USER_ERROR);
                 } // if
@@ -1430,7 +1456,8 @@ END_OF_REGEX;
 
         // build update string from non-pkey fields
         $update = '';
-        $pattern = '/(integer|decimal|numeric|float|real)/i';
+        $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -1453,13 +1480,16 @@ END_OF_REGEX;
                     	// enclose array in curly braces
                     	$update .= "$item='{" .$string1 ."}', ";
                     } // if
-                } elseif (preg_match($pattern, $fieldspec[$item]['type'], $match)) {
+                } elseif (preg_match($pattern1, $fieldspec[$item]['type'], $match)) {
                     // do not enclose numbers in quotes (this also allows 'value=value+1'
                     if (strlen($value) == 0) {
                     	$update .= "$item=NULL,";
                     } else {
                         $update .= "$item=$value,";
                     } // if
+                } elseif (preg_match($pattern2, $value)) {
+                    // change to the new value (without enclosing quotes)
+                    $update .= "$item=" .$this->adjustData($value) .", ";
                 } else {
                     // change to the new value
                     $update .= "$item='" .$this->adjustData($value) ."', ";

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table_key extends Default_Table
@@ -18,7 +18,8 @@ class dict_table_key extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_table_key';
         $this->dbname      = 'dict';
 
@@ -122,7 +123,7 @@ class dict_table_key extends Default_Table
             return $fieldarray;
         } // if
 
-        // get any existing data for this table
+        // get any existing dictionary data for this table
         $this->sql_orderby = 'key_name, seq_in_index';
         $old_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
 
@@ -134,8 +135,8 @@ class dict_table_key extends Default_Table
 
         // obtain a list of current column definitions from the database engine
         $fieldarray = array();
-        $dbprefix = dict_findDBPrefix($dbname);
-        $db_data = $this->_ddl_showTableKeys($dbprefix.$dbname, $tablename);
+        list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
+        $db_data = $this->_ddl_showTableKeys($dbprefix.$server_name, $tablename);
 
         // construct a smaller array of column names
         $db_data_cols = array();

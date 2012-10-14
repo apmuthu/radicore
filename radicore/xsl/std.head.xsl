@@ -29,8 +29,8 @@
       <meta http-equiv="refresh">
         <xsl:attribute name="content">
           <xsl:value-of select="/root/params/screen_refresh" />
-          <xsl:text>;</xsl:text>
-          <xsl:value-of select="concat($script,'?',$session)"/>
+          <xsl:text>;url=</xsl:text>
+          <xsl:value-of select="concat($script,'?',$session,'&amp;refresh=1')"/>
         </xsl:attribute>
       </meta>
     </xsl:if>

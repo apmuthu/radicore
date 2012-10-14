@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update_associative($fieldarray, $_POST);
+    $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
     // ensure that changes are stored inside relevant object
     $dbobject->setFieldArray($fieldarray);
     // look for an action which is another script
@@ -132,7 +132,8 @@ if (!empty($msg) AND !is_array($msg)) {
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

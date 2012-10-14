@@ -1,32 +1,29 @@
 <?php
-    // file created on October 9, 2006, 10:30 am
+    // file created on October 3, 2012, 4:37 pm
     
     // field specifications for table audit.audit_tbl
     $fieldspec['session_id']                = array('type' => 'integer',
-                                                    'size' => 20,
+                                                    'size' => 21,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 9.2233720368548e+018,
+                                                    'maxvalue' => 1.84467440737096e19,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['tran_seq_no']               = array('type' => 'integer',
-                                                    'size' => 6,
+                                                    'size' => 7,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 32767,
+                                                    'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['table_seq_no']              = array('type' => 'integer',
-                                                    'size' => 6,
+                                                    'size' => 7,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 32767,
+                                                    'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['base_name']                 = array('type' => 'string',
@@ -69,6 +66,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'session_id, tran_seq_no, table_seq_no';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

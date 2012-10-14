@@ -1,5 +1,5 @@
 <?php
-    // file created on October 9, 2006, 10:30 am
+    // file created on October 3, 2012, 4:37 pm
     
     // field specifications for table audit.php_session
     $fieldspec['session_id']                = array('type' => 'string',
@@ -10,6 +10,7 @@
     $fieldspec['user_id']                   = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
+                                                    'default' => 'UNKNOWN',
                                                     'uppercase' => 'y');
     
     $fieldspec['date_created']              = array('type' => 'datetime',
@@ -42,6 +43,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

@@ -107,7 +107,7 @@ if (!empty($_POST)) {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
     $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
-    $outer_data = array_update_associative($outer_data, $outer_post);
+    $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
     $dbouter->setFieldArray($outer_data);
     // repeat for the inner entity
     $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
@@ -274,7 +274,8 @@ $xml_objects[]['root'] = &$dbouter;
 $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

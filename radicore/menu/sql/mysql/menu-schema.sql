@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Dec 29, 2010 at 11:58 AM
+-- Generation Time: Jun 6, 2012 at 16:31 AM
 -- Server version: 5.1.54
 -- PHP Version: 5.2.16
 
@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `language_code` varchar(6) COLLATE utf8_unicode_ci DEFAULT NULL,
   `start_date` date NOT NULL DEFAULT '2000-01-01',
   `end_date` date DEFAULT '9999-12-31',
-  `ip_address` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `ip_address` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
   `email_addr` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `external_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `is_external_auth_off` char(1) COLLATE utf8_unicode_ci DEFAULT 'N',

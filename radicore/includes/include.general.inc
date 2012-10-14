@@ -1,15 +1,16 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic settings
 
 $transaction_has_started = false;
-if (!isset($use_HTTPS)) {
-	$use_HTTPS = false;
+if (!isset($GLOBALS['use_https'])) {
+	$GLOBALS['use_https'] = false;
 } // if
+$GLOBALS['classdir'] = null;
 
 $alt_config = str_replace("\\", '/', realpath('../../INCLUDES/config.inc'));
 
@@ -21,7 +22,14 @@ if (@fopen('config.local.inc', 'r', true)) {
     // found 'live' version in current include_path
 	require_once 'config.inc';
 
-} elseif (substr($alt_config, 0, strlen($_SERVER['DOCUMENT_ROOT'])) == $_SERVER['DOCUMENT_ROOT']
+} elseif ($_SERVER['SERVER_NAME'] == 'local.transix.net'
+      AND $_SERVER['DOCUMENT_ROOT'] == 'F:/Apache2/HTDOCS/radicore'
+      AND file_exists($alt_config)) {
+    // found in a higher directory within DOCUMENT_ROOT
+    require_once $alt_config;
+
+} elseif ($_SERVER['SERVER_NAME'] == 'localhost'
+      AND $_SERVER['DOCUMENT_ROOT'] == 'F:/Apache2/HTDOCS'
       AND file_exists($alt_config)) {
     // found in a higher directory within DOCUMENT_ROOT
     require_once $alt_config;
@@ -32,46 +40,18 @@ if (@fopen('config.local.inc', 'r', true)) {
 } // if
 unset($alt_config);
 
-// look for an optional INCLUDE file for the current subsystem
-$attempt = array();
-if (!empty($GLOBALS['project_code'])) {
-	$attempt[] = "./include.subsystem.{$GLOBALS['project_code']}.inc";
+require_once 'include.library.inc';
+
+if (isset($GLOBALS['project_code']) AND !empty($GLOBALS['project_code'])) {
+    // look for an optional INCLUDE file for the current subsystem + project
+    $result = includeSubsystemPath ($GLOBALS['project_code']);
+} else {
+    // look for an optional INCLUDE file for the current subsystem
+    $result = includeSubsystemPath ();
 } // if
-$attempt[] = './include.subsystem.inc';
-$attempt[] = './include.subsystem.inc.default';
-foreach ($attempt as $fn) {
-	if (file_exists($fn)) {
-		require($fn);
-		break;
-	} // if
-} // foreach
-unset($attempt, $fn);
 
-// modify INCLUDE_PATH for standard subsystems
-$include_path = ini_get('include_path');
-if (is_dir('./transix/menu')) {
-    $include_path .= PATH_SEPARATOR .'./transix/menu';
-    $include_path .= PATH_SEPARATOR .'./transix/audit';
-    $include_path .= PATH_SEPARATOR .'./transix/workflow';
-
-} elseif (is_dir('../radicore/menu')) {
-    $include_path .= PATH_SEPARATOR .'../radicore/menu';
-    $include_path .= PATH_SEPARATOR .'../radicore/audit';
-    $include_path .= PATH_SEPARATOR .'../radicore/workflow';
-
-} elseif (is_dir('../menu')) {
-    $include_path .= PATH_SEPARATOR .'../menu';
-    $include_path .= PATH_SEPARATOR .'../audit';
-    $include_path .= PATH_SEPARATOR .'../workflow';
-
-} elseif (ini_get('open_basedir') == false AND is_dir('../../radicore/menu')) {
-    $include_path .= PATH_SEPARATOR .'../../radicore/menu';
-    $include_path .= PATH_SEPARATOR .'../../radicore/audit';
-    $include_path .= PATH_SEPARATOR .'../../radicore/workflow';
-} // if
-ini_set('include_path', $include_path);
-
-unset($include_path);
+// modify INCLUDE_PATH for standard TRANSIX subsystems
+$result = includeTransixPath ();
 
 require_once 'error.inc';
 require_once 'language_detection.inc';
@@ -93,14 +73,12 @@ if (extension_loaded('mbstring')) {
 	ini_set('mbstring.internal_encoding', 'UTF-8');
 } // if
 
-require_once 'include.library.inc';
-
 if (isset($_SERVER['SERVER_PROTOCOL'])) {
-    $protocol = 'HTTP://';
+    $GLOBALS['protocol'] = 'HTTP://';
     require_once 'include.session.inc';
 } else {
     // this is being run in batch/cli mode, not from a web server
-    $protocol = '';
+    $GLOBALS['protocol'] = '';
 } // if
 
 $handler = setSessionHandler();

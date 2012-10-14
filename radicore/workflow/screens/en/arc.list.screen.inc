@@ -10,10 +10,10 @@ $structure['outer']['fields'][] = array('workflow_name' => 'Workflow Name');
 $structure['tables']['inner'] = 'wf_arc';
 
 $structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => 100);
-$structure['inner']['columns'][] = array('width' => 100);
-$structure['inner']['columns'][] = array('width' => 200);
-$structure['inner']['columns'][] = array('width' => 75);
+$structure['inner']['columns'][] = array('width' => 125);
+$structure['inner']['columns'][] = array('width' => 125);
+$structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => 125);
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('place_name' => 'Place Name');

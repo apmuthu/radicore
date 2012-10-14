@@ -1,5 +1,5 @@
 <?php
-    // file created on August 25, 2009, 10:46 am
+    // file created on January 15, 2012, 4:39 pm
     
     // field specifications for table menu.mnu_language
     $fieldspec['language_id']               = array('type' => 'string',
@@ -50,6 +50,12 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
+    $this->child_relations[]                = array('child' => 'content_alt',
+                                                    'dbname' => 'content',
+                                                    'subsys_dir' => 'content',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
     $this->child_relations[]                = array('child' => 'email_text_alt',
                                                     'dbname' => 'invoice',
                                                     'subsys_dir' => 'invoice',

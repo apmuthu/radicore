@@ -1485,6 +1485,15 @@
         <xsl:when test="$item/@hidecontrol">
           <input type="hidden" name="{name($item)}" value="{$item}" />
         </xsl:when>
+        
+        <xsl:when test="$item/@CDATA">
+          <!-- output as pre-formatted text without escaping '<' and '>' characters -->
+          <!--<xsl:value-of select="$item" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item" />
+          </xsl:call-template>
+          
+        </xsl:when>
 
         <xsl:otherwise>
           <xsl:variable name="name">
@@ -1506,9 +1515,9 @@
               <xsl:attribute name="class"><xsl:value-of select="$item/@css_class" /></xsl:attribute>
             </xsl:if>
             <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+            <xsl:attribute name="id">  <xsl:value-of select="$name"/></xsl:attribute>
             <xsl:attribute name="rows"><xsl:value-of select="$rows"/></xsl:attribute>
             <xsl:attribute name="cols"><xsl:value-of select="$cols"/></xsl:attribute>
-            <xsl:attribute name="id"><xsl:value-of   select="$name"/></xsl:attribute>
 
             <!-- under certain conditions set this field to read only -->
             <xsl:if test="$mode='list' or $mode='read' or $mode='delete'
@@ -1523,11 +1532,6 @@
 
             <!-- now insert the item value -->
             <xsl:value-of select="$item"/>
-            <!--<xsl:call-template name="replace">
-              <xsl:with-param name="text" select="$item"/>
-              <xsl:with-param name="replace" select="'&amp;nbsp;'"/>
-              <xsl:with-param name="by" select="'&#160;'"/>
-            </xsl:call-template>-->
 
           </textarea>
         </xsl:otherwise>

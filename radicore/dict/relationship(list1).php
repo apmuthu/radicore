@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 $table_id = 'dict_relationship';    	            // table name
-$screen   = 'dict_relationship.list.screen.inc';    // file identifying screen structure
+$screen   = 'dict_relationship.list1.screen.inc';   // file identifying screen structure
 
 require 'std.list1.inc';                            // activate page controller
 

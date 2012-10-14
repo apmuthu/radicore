@@ -165,10 +165,12 @@ if (!empty($_FILES) and empty($errors)) {
             } // if
             if (!empty($fileobject->resize_array)) {
                 foreach ($fileobject->resize_array as $key => $spec) {
-                    $destination = $spec['directory'];
-                    $width       = $spec['width'];
-                    $height      = $spec['height'];
-                    $messages[]  = resizeImage($uploadfile, $destination, $width, $height);
+                    if (isset($spec['directory']) AND isset($spec['width']) AND isset($spec['height'])) {
+                        $destination = $spec['directory'];
+                        $width       = $spec['width'];
+                        $height      = $spec['height'];
+                        $messages[]  = resizeImage($uploadfile, $destination, $width, $height);
+                    } // if
                 } // foreach
             } // if
             // allow uploaded file to be processed
@@ -177,6 +179,9 @@ if (!empty($_FILES) and empty($errors)) {
             	$uploadfile = $result;
             } // if
             $errors = $fileobject->getErrors();
+            if (!empty($fileobject->messages)) {
+                $messages = array_merge($messages, $fileobject->messages);
+            } // if
             if (empty($errors)) {
                 if (isset($_POST['submitstay'])) {
 
@@ -185,7 +190,7 @@ if (!empty($_FILES) and empty($errors)) {
                     $prev_script = getPreviousScript();
                     $prev_task   = getPreviousTask($prev_script);
                     $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
-                    scriptPrevious($errors, $messages, 'choose');
+                    $errors = scriptPrevious($errors, $messages, 'choose');
                 } // if
             } else {
                 @unlink($uploadfile);
@@ -225,7 +230,8 @@ $script_vars = updateScriptVars ($script_vars);
 $xml_objects[]['root'] = &$fileobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

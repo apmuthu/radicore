@@ -456,7 +456,7 @@ class dict_table_s04 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $menu_prefix = dict_findDBPrefix('menu');
+        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
 
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
@@ -927,11 +927,16 @@ class dict_table_s04 extends dict_table
     			    break;
 
 				case 'list2':
+                    $fieldarray['inner_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['inner_table']));
+                    $fieldarray['outer_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['outer_table']));
 				    $task_data['task_desc']   = getLanguageText('t0007', $fieldarray['inner_table'], $fieldarray['outer_table']);  // 'List X by Y'
 					$task_data['button_text'] = $fieldarray['table_desc'];
         			break;
 
 				case 'list3':
+                    $fieldarray['inner_table']  = ucwords(str_ireplace('_', ' ', $fieldarray['inner_table']));
+                    $fieldarray['middle_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['middle_table']));
+                    $fieldarray['outer_table']  = ucwords(str_ireplace('_', ' ', $fieldarray['outer_table']));
 				    $task_data['task_desc']   = getLanguageText('t0008', $fieldarray['inner_table'], $fieldarray['middle_table'], $fieldarray['outer_table']);  // 'List X by Y by Z'
 					$task_data['button_text'] = $fieldarray['table_desc'];
         			break;
@@ -1277,7 +1282,8 @@ class dict_table_s04 extends dict_table
                     		$rowdata   = $object->getData_raw("database_id='$database_id' AND table_id='$table_id'");
                     		$percent = round(100 / count($rowdata), 2);
                     		for ($i = 0; $i < count($rowdata); $i++) {
-                    		    $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '$percent%');\n";
+                    		    //$string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '$percent%');\n";
+                                $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '*');\n";
                     		} // for
                     	} else {
                     	    // these columns are displayed down the page (vertical) so only 2 entries are needed

@@ -13,9 +13,11 @@ php_value magic_quotes_gpc 0
 php_value magic_quotes_runtime 0
 php_value magic_quotes_sybase 0
 php_value session.use_cookies 1
-php_value session.use_only_cookies 0
-php_value session.use_trans_sid 1
+php_value session.use_only_cookies 1
+php_value session.use_trans_sid 0
 php_value session.gc_maxlifetime 14400
 php_value arg_separator.output "&amp;"
 php_value url_rewriter.tags "a=href,area=href,frame=src,input=src,fieldset="
 php_value always_populate_raw_post_data 1
+
+php_value error_log phperror.log

@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 $table_id = 'dict_table_key';               	// name of inner table
-$screen   = 'dict_table_key.list.screen.inc';	// file identifying screen structure
+$screen   = 'dict_table_key.list1.screen.inc';	// file identifying screen structure
 
 $sql_select = '';
 $sql_from   = '';

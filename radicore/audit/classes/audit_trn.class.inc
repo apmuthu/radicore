@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_trn extends Default_Table
@@ -12,7 +12,8 @@ class audit_trn extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'audit';
         $this->tablename   = 'audit_trn';
 
@@ -37,6 +38,8 @@ class audit_trn extends Default_Table
             $select = "SELECT max(tran_seq_no) FROM $this->tablename WHERE session_id='$session_id'";
             $count = $this->getCount($select);
             $fieldarray['tran_seq_no'] = $count + 1;
+            // try incrementing this value if a duplicate is detected
+            $this->retry_on_duplicate_key = 'tran_seq_no';
             // fill in other data
             $fieldarray['task_id']  = $GLOBALS['task_id'];
             $fieldarray['trn_date'] = getTimeStamp('date');

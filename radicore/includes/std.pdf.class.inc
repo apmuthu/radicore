@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // are we using PHP 5, or something earlier?
@@ -18,7 +18,7 @@ class PDF extends TCPDF
     var $previous_row;              // used by the printFooter() method
     var $dbobject;                  // the database object from which this is being activated
     var $default_padding;           // default padding betwe tex and cell border
-    var $destination = 'I';         // I=Inline (browser), D=Download (browser), F=Filename (on server), S=String
+    var $pdf_destination = 'I';     // I=Inline (browser), D=Download (browser), F=Filename (on server), S=String
     var $fieldarray = array();      // array of field data
     var $filename = '';             // filename (if destination = D or F)
     var $last_height;               // last line height
@@ -36,12 +36,19 @@ class PDF extends TCPDF
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function PDF ($structure)
+    function PDF ($structure, &$dbobject, $pdfout=null)
     // validate contents of $report structure file
     {
         if (file_exists('pdf.styles.inc')) {
             // load file of print styles
         	require 'pdf.styles.inc';
+            // include additional project styles (optional)
+            if (!empty($GLOBALS['project_code'])) {
+                $fname = 'pdf.styles.'.$GLOBALS['project_code'].'.inc';
+                if (file_exists($fname)) {
+                    include $fname;
+                } // in
+            } // if
         	foreach ($style as $key => $value) {
         	    if (isset($style[$key]['font']) AND is_array($style[$key]['font'])) {
         	    	// change all occurrences of 'marginX' to 'margin_X'
@@ -53,7 +60,21 @@ class PDF extends TCPDF
 
         $structure['pdf'] = $this->addUnderscore($structure['pdf']);
 
-        $this->validateStructure($structure);
+        $structure = $this->validateStructure($structure);
+
+        // make sure that the two objects can communicate with each other
+        $this->dbobject      =& $dbobject;
+        $this->dbobject->pdf =& $this;
+
+        $this->report_structure     =& $structure;
+        $dbobject->report_structure =& $structure;
+
+        if (!empty($pdfout)) {
+            $this->pdf_filename = $pdfout;
+        } // if
+
+        $dbobject->pdf_destination =& $this->pdf_destination;
+        $dbobject->pdf_filename    =& $this->pdf_filename;
 
         return;
 
@@ -120,6 +141,88 @@ class PDF extends TCPDF
     } // addUnderscore
 
     // ****************************************************************************
+    function adjustColumnWidths ($columns)
+    // examine all column widths to turn pecentages into numbers.
+    {
+        $width_used = 0;
+        $col_remainder = array();  // columns which have width set to '*'
+
+        foreach ($columns as $colnum => $coldata) {
+            if (is_array($coldata)) {
+                if (array_key_exists('width', $coldata)) {
+                    if (preg_match('/^(\*)$/', $coldata['width'])) {
+                        // width is '*', to be set to remainder after all other columns have been done
+                        $col_remainder[] = $colnum;
+                    } else {
+                        if (preg_match('/(%)$/', $coldata['width'])) {
+                            // contains a percentage, so turn it into a number
+                            $percent = substr($coldata['width'], 0, -1);  // strip off trailing '%' character
+                            $coldata['width'] = $this->printable_width * ($percent / 100);
+                            // update input array - this is required for PHP 4
+                            $columns[$colnum]['width'] = $coldata['width'];
+                        } // if
+                        // accumulate total width used
+                        $width_used += $coldata['width'];
+                    } // if
+                } // if
+            } // if
+        } // foreach
+
+        if (!empty($col_remainder)) {
+            // divide the remainder by the number of columns
+            $remainder = ($this->printable_width - $width_used) / count($col_remainder);
+            // set all specified columns to take up the remainder equally
+            foreach ($col_remainder as $colnum) {
+                $columns[$colnum]['width'] = $remainder;
+            } // foreach
+        } // if
+
+        return $columns;
+
+    } // adjustColumnWidths
+
+    // ****************************************************************************
+    function adjustColumnWidthsDetailView ($structure)
+    // examine all column widths to turn pecentages into numbers.
+    {
+        if (!empty( $structure['columns'])) {
+            $structure['columns'] = $this->adjustColumnWidths($structure['columns']);
+        } // if
+
+        if (array_key_exists('body', $structure)) {
+            foreach ($structure['body']['fields'] as $column => $columndata) {
+                if (is_string(key($columndata))) {
+                    // not indexed by cell number, so assume 'fieldname' => 'labeltext'
+                } else {
+                    // examine column widths for percentages and turn them into numbers
+                    $columndata = $this->adjustColumnWidths($columndata);
+                } // if
+                $structure['body']['fields'][$column] = $columndata;
+            } // foreach
+        } // if
+
+        // examine any optional additional entries named 'multi1' to 'multi99'
+        for ($i = 1; $i <= 100; $i++) {
+            $zone = 'multi' .$i;
+            if (!array_key_exists($zone, $structure)) {
+                break;  // not found, so stop processing
+            } // if
+            foreach ($structure[$zone]['fields'] as $column => $columndata) {
+                if (is_string(key($columndata))) {
+                    // not indexed by cell number, so assume 'fieldname' => 'labeltext'
+                } else {
+                    // examine column widths for percentages and turn them into numbers
+                    $columndata = $this->adjustColumnWidths($columndata);
+                } // if
+                $structure[$zone]['fields'][$column] = $columndata;
+            } // foreach
+        } // for
+
+        return $structure;
+
+    } // adjustColumnWidthsDetailView
+
+    // ****************************************************************************
     function Cell ($w, $h=0, $txt='', $border=0, $ln=0, $align='', $fill=0, $link='', $stretch=0, $ignore_min_height=false, $calign='T', $valign='M')
     // this is a wrapper for the parent method
     {
@@ -136,12 +239,10 @@ class PDF extends TCPDF
     } // Cell
 
     // ****************************************************************************
-    function detailView (&$object, $resource)
+    function detailView (&$dbobject, $resource)
     // output data in DETAIL view (one record per page, labels on left, data on right)
     {
-        $this->dbobject =& $object;
-
-        $this->structure =& $object->report_structure;
+        $this->structure  =& $this->report_structure;
 
         // examine column widths for percentages and turn them into numbers
         $this->structure = $this->adjustColumnWidthsDetailView($this->structure);
@@ -160,26 +261,28 @@ class PDF extends TCPDF
             $this->print_footer = true;
         } // if
 
-        $fieldspec = $object->fieldspec;
+        $fieldspec = $dbobject->fieldspec;
 
         $first_body_line = true;
         $border = 1;
         $fill = 1;
 
         // add each row to the document in a separate page
-        while ($fieldarray = $object->fetchRow($resource)) {
-            if ($object->errors) return;
+        while ($fieldarray = $dbobject->fetchRow($resource)) {
+            if ($dbobject->errors) return;
 
             if (empty($this->structure)) {
+                $save->destination = $this->pdf_destination;
                 // reload report structure in the customer's language
                 $this->structure = getFileStructure($GLOBALS['report'], './reports');
-            	$this->validateStructure($this->structure);
+            	$this->structure = $this->validateStructure($this->structure);
             	$this->structure = $this->adjustColumnWidthsDetailView($this->structure);
+                $this->pdf_destination = $save->destination;
             } // if
 
             // perform any formatting on retrieved data
             $style_array = array();
-            $fieldarray_formatted = $object->formatData($fieldarray, $style_array);
+            $fieldarray_formatted = $dbobject->formatData($fieldarray, $style_array);
             $fieldarray_formatted = array_change_key_case($fieldarray_formatted, CASE_LOWER);
             $this->fieldarray = $fieldarray_formatted;  // make this accessible to Header() method
             $this->AddPage();      // start a new page for each record
@@ -337,13 +440,20 @@ class PDF extends TCPDF
             } // if
 
             // examine any optional additional entries named 'multi1' to 'multi99'
-            for ($i = 1; $i <= 100; $i++) {
-                $zone = 'multi' .$i;
-                if (!array_key_exists($zone, $this->structure)) {
-                	break;  // not found, so stop processing
+//            for ($i = 1; $i <= 100; $i++) {
+//                $zone = 'multi' .$i;
+//                if (!array_key_exists($zone, $this->structure)) {
+//                	break;  // not found, so stop processing
+//                } // if
+//                $this->detailView_multi($dbobject, $zone, $fieldarray);
+//            } // for
+            // (perform them in the order in which they were defined in the structure file)
+            foreach ($this->structure as $zone => $zone_spec) {
+                if (preg_match('/(?<=multi)[0-9]{1,2}/i', $zone, $regs)) {
+                    $zone_no = $regs[0];
+                    $this->detailView_multi($dbobject, $zone, $fieldarray);
                 } // if
-                $this->detailView_multi($object, $zone, $fieldarray);
-            } // for
+            } // foreach
 
             $first_body_line = true;
 
@@ -354,14 +464,14 @@ class PDF extends TCPDF
     } // detailView
 
     // ****************************************************************************
-    function detailView_multi (&$object, $zone, $current_row)
+    function detailView_multi (&$dbobject, $zone, $current_row)
     // append additional data to the current page, where this additional data is
     // obtained by making callbacks to the database object.
     {
         // obtain a number of rows of data for this named area
-        $newdata = $object->_cm_output_multi($zone, $current_row);
+        $newdata = $dbobject->_cm_output_multi($zone, $current_row);
 
-        $fieldspec = $object->fieldspec;
+        $fieldspec = $dbobject->fieldspec;
 
         $border = 1;
         $fill   = 1;
@@ -372,12 +482,19 @@ class PDF extends TCPDF
             // process each row, which may produce multiple lines of output
             foreach ($newdata as $rownum => $fieldarray) {
                 $style_array = array();
-                $fieldarray = $object->formatData($fieldarray, $style_array);
+                $fieldarray = $dbobject->formatData($fieldarray, $style_array);
                 // construct a row of cells which are to be printed
                 foreach ($this->structure[$zone]['fields'] as $column => $columndata) {
                     $print_array = array();
                     // construct $cellspec for each cell, then add it to $print_array
                     foreach ($columndata as $cellno => $cellspec) {
+                        if (empty($cellspec['field'])) {
+                            $fieldname = null;
+                        } else {
+                            if (array_key_exists($fieldname, $style_array)) {
+                                $cellspec['style'] = $style_array[$fieldname];
+                            } // if
+                        } // if
                         // change all occurrences of 'marginX' to 'margin_X'
                         $cellspec = $this->addUnderscore($cellspec);
                         if (!empty($cellspec['align'])) {
@@ -388,6 +505,13 @@ class PDF extends TCPDF
                         if (array_key_exists('label', $cellspec)) {
                             $cellspec['default_style'] = $this->structure['label']['style'];
                             $cellspec['text'] = getLanguageText($cellspec['label']);
+
+                        } elseif (array_key_exists('barcode', $cellspec)) {
+                            if (array_key_exists($cellspec['barcode'], $fieldarray)) {
+                                $cellspec['barcode'] = $fieldarray[$cellspec['barcode']];
+                            } else {
+                                $cellspec['barcode'] = '';
+                            } // if
 
                         } elseif (array_key_exists('field', $cellspec)) {
                             $cellspec['default_style'] = $this->structure['data']['style'];
@@ -406,14 +530,6 @@ class PDF extends TCPDF
                     	        // carry this specification change across
                     		    $cellspec['fieldspec']['notext'] = 'y';
                     	    } // if
-
-                        } elseif (array_key_exists('barcode', $cellspec)) {
-                            //$cellspec['default_style'] = $this->structure['label']['style'];
-                            if (array_key_exists($cellspec['barcode'], $fieldarray)) {
-                        	    $cellspec['barcode'] = $fieldarray[$cellspec['barcode']];
-                            } else {
-                                $cellspec['barcode'] = '';
-                            } // if
 
                         } else {
                             $cellspec['text'] = '';
@@ -653,37 +769,23 @@ class PDF extends TCPDF
             	$draw    = null;     // line width for borders
 
             	if (isset($attributes['barcode_style'])) {
-            		$result = $this->setBarcodeStyle($celldata['barcode_style']);
-        	        $attributes = array_merge($attributes, $result);
+            		$result = $this->setBarcodeStyle($attributes['barcode_style']);
+        	        $attributes = array_merge($result, $attributes);
             	} else {
             	    // set default style for whole title
             	    $attributes['default_style'] = $this->structure['title']['style'];
                 	$result = $this->setPrintStyle($attributes['default_style']);
                 	$count = extract($result, EXTR_IF_EXISTS);
                     if (isset($attributes['style'])) {
+                        // override with attributes from specified style
                     	$result = $this->setPrintStyle($attributes['style']);
                     	$count = extract($result, EXTR_IF_EXISTS);
                     } // if
-
-                    if (empty($attributes['halign'])) {
-                        // not supplied, so use definition from style
-                    	$attributes['halign'] = $halign;
-                    } // if
-                    if (empty($attributes['valign'])) {
-                        // not supplied, so use definition from style
-                    	$attributes['valign'] = $valign;
-                    } // if
-                    if (empty($attributes['stretch'])) {
-                        // not supplied, so use definition from style
-                    	$attributes['stretch'] = $stretch;
-                    } // if
             	} //if
 
-            	if (empty($attributes['height'])) {
-            	    // not supplied, so use definition from style
-            	    $attributes['height'] = $height;
-            	} // if
-            	$height            = $attributes['height'];
+            	// override individual attributes (if they have been specified)
+                $count = extract($attributes, EXTR_IF_EXISTS);
+
                 $this->last_height = $height;
 
             	if (isset($attributes['image'])) {
@@ -740,7 +842,7 @@ class PDF extends TCPDF
 
         	    if (isset($attributes['border'])) {
         	    	$border = strtoupper($attributes['border']);
-        	        if ($border == 'Y') {
+        	        if (is_True($border)) {
         	        	$border = 1;
         	        } // if
         	    } else {
@@ -748,10 +850,12 @@ class PDF extends TCPDF
         	    } // if
 
         	    $fill = 1;
-        	    if (empty($this->style[$attributes['default_style']]['fillcolour'])) {
-        	        $fill = false;  // no fill colour specified, so turn fill off
-        	    } // if
-        	    if (isset($celldata['style'])) {
+                if (isset($attributes['default_style'])) {
+                    if (empty($this->style[$attributes['default_style']]['fillcolour'])) {
+        	            $fill = false;  // no fill colour specified, so turn fill off
+        	        } // if
+                } // if
+        	    if (isset($attributes['style'])) {
         	        if (!empty($this->style[$attributes['style']]['fillcolour'])) {
         	        	// style override has been supplied, so force background colour to be filled in
         	            $fill = true;
@@ -831,10 +935,10 @@ class PDF extends TCPDF
                 	    		break;
                 	    	case 'date':
                 	    	    // get date in user-defined format
-                                $text = $dateobj->getExternalDate(date('Y-m-d'));
+                                $text = $dateobj->getExternalDate(getTimeStamp('date'));
                 	    	    break;
                 	    	case 'time':
-                                $text = date('H:i:s');
+                                $text = getTimeStamp('time');
                                 break;
                 	    	default:
                 	    	    $text = ' ';
@@ -897,12 +1001,10 @@ class PDF extends TCPDF
     } // Header
 
     // ****************************************************************************
-    function labelView (&$object, $resource)
+    function labelView (&$dbobject, $resource)
     // output data in LABEL view (one label per record, several labels per page)
     {
-        $this->dbobject =& $object;
-
-        $this->structure =& $object->report_structure;
+        $this->structure =& $this->report_structure;
 
         if (!isset($this->structure['pdf']['label_print'])) {
             // "LABEL_PRINT has not been defined in report structure file"
@@ -923,27 +1025,27 @@ class PDF extends TCPDF
     	// set bottom margin to be same as top margin
     	$this->SetAutoPageBreak(true, $this->tMargin);
 
-        $fieldspec = $object->fieldspec;
+        $fieldspec = $dbobject->fieldspec;
 
         $border = 1;  // assume ON unless turned OFF
         $fill   = 1;  // assume ON unless turned OFF
         $last_page = false;
 
         // add print a line of labels where each label comes from a different record
-        while ($fieldarray = $object->fetchRow($resource) OR !$last_page) {
-            if ($object->errors) return;
+        while ($fieldarray = $dbobject->fetchRow($resource) OR !$last_page) {
+            if ($dbobject->errors) return;
 
             if (empty($this->structure)) {
                 // reload report structure in the customer's language
                 $this->structure = getFileStructure($GLOBALS['report'], './reports');
-            	$this->validateStructure($this->structure);
+            	$this->structure = $this->validateStructure($this->structure);
             	$this->structure = $this->adjustColumnWidthsDetailView($this->structure);
             } // if
 
             if (empty($fieldarray) AND !$last_page) {
                 $last_page = true;
             	// look to see if there are any unprinted labels
-            	$fieldarray = $object->_cm_post_lastRow();
+            	$fieldarray = $dbobject->_cm_post_lastRow();
             	if (empty($fieldarray)) {
             		break;  // no more labels, so stop printing now
             	} // if
@@ -951,7 +1053,7 @@ class PDF extends TCPDF
 
             // perform any formatting on retrieved data
             $style_array = array();
-            $fieldarray_formatted = $object->formatData($fieldarray, $style_array);
+            $fieldarray_formatted = $dbobject->formatData($fieldarray, $style_array);
             $fieldarray_formatted = array_change_key_case($fieldarray_formatted, CASE_LOWER);
             $this->fieldarray = $fieldarray_formatted;  // make this accessible to Header() method
 
@@ -1034,12 +1136,10 @@ class PDF extends TCPDF
     } // labelView
 
     // ****************************************************************************
-    function listView (&$object, $resource)
+    function listView (&$dbobject, $resource)
     // output data in LIST view (column heading, then one row per record)
     {
-        $this->dbobject =& $object;
-
-        $this->structure =& $object->report_structure;
+        $this->structure  =& $this->report_structure;
 
         // examine column widths for percentages and turn them into numbers
         $this->structure['columns'] = $this->adjustColumnWidths($this->structure['columns']);
@@ -1080,34 +1180,34 @@ class PDF extends TCPDF
 
         $previous_row = array();                      // initialise previous row
         $style_array  = array();
-        $current_row = $object->fetchRow($resource);  // read first row
+        $current_row = $dbobject->fetchRow($resource);  // read first row
         // add each row to the document
         do {
-            if ($object->errors) return;
+            if ($dbobject->errors) return;
 
             if (empty($this->structure)) {
                 // reload report structure in the customer's language
                 $this->structure = getFileStructure($GLOBALS['report'], './reports');
-            	$this->validateStructure($this->structure);
+            	$this->structure = $this->validateStructure($this->structure);
             } // if
 
             $this->fieldarray = $current_row;  // make this data accessible to Header() method
 
-            if (method_exists($object, '_cm_ListView_pre_print')) {
+            if (method_exists($dbobject, '_cm_ListView_pre_print')) {
                 // **** THIS METHOD IS DEPRECATED (but left in for backwards compatibility) ****
             	// find out if any rows need to be printed before this one
-                $before = $object->_cm_ListView_pre_print($previous_row, $current_row);
+                $before = $dbobject->_cm_ListView_pre_print($previous_row, $current_row);
                 if (!empty($before)) {
-                	$fill = $this->listView_print($before, $border, $fill, $style_array, $object);
+                	$fill = $this->listView_print($before, $border, $fill, $style_array, $dbobject);
                 } // if
 
                 // print current row
-                $fill = $this->listView_print($current_row, $border, $fill, $style_array, $object);
+                $fill = $this->listView_print($current_row, $border, $fill, $style_array, $dbobject);
 
                 $previous_row = $current_row;
                 $this->previous_row = $previous_row;  // save for printFooter()
                 if (!empty($current_row)) {
-                	$current_row = $object->fetchRow($resource);
+                	$current_row = $dbobject->fetchRow($resource);
                     if (empty($current_row)) {
                         // save last row for possible use in Header() method
                     	$last_row = $previous_row;
@@ -1119,19 +1219,19 @@ class PDF extends TCPDF
                     $this->fieldarray = $current_row;  // make this data accessible to Header() method
 
                     // find out if any rows need to be printed before this one
-                    $before = $object->_cm_ListView_print_before($previous_row, $current_row);
+                    $before = $dbobject->_cm_ListView_print_before($previous_row, $current_row);
                     if (!empty($before)) {
-                    	$fill = $this->listView_print($before, $border, $fill, $style_array, $object);
+                    	$fill = $this->listView_print($before, $border, $fill, $style_array, $dbobject);
                     } // if
 
                 	// print current row
-                    $fill = $this->listView_print($current_row, $border, $fill, $style_array, $object);
+                    $fill = $this->listView_print($current_row, $border, $fill, $style_array, $dbobject);
 
                     // read next row for comparison in 'print_after' method
                     $previous_row = $current_row;
                     $this->previous_row = $previous_row;  // save for printFooter()
                     if (!empty($current_row)) {
-                    	$next_row = $object->fetchRow($resource);
+                    	$next_row = $dbobject->fetchRow($resource);
                         if (empty($next_row)) {
                             // save last row for possible use in Header() method
                         	$last_row = $previous_row;
@@ -1139,9 +1239,9 @@ class PDF extends TCPDF
                     } // if
 
                     // find out if any rows need to be printed after this one
-                    $after = $object->_cm_ListView_print_after($current_row, $next_row);
+                    $after = $dbobject->_cm_ListView_print_after($current_row, $next_row);
                     if (!empty($after)) {
-                    	$fill = $this->listView_print($after, $border, $fill, $style_array, $object);
+                    	$fill = $this->listView_print($after, $border, $fill, $style_array, $dbobject);
                     } // if
 
                     $current_row = $next_row;
@@ -1157,7 +1257,7 @@ class PDF extends TCPDF
         $this->fieldarray   = $last_row;  // make this data accessible to Header() method
 
         // look for a line of totals to be printed (optional)
-        $fieldarray = $object->_cm_ListView_total();
+        $fieldarray = $dbobject->_cm_ListView_total();
         if (!empty($fieldarray)) {
             $this->Ln($this->last_height);  // line break
             $print_array = array();
@@ -1255,7 +1355,7 @@ class PDF extends TCPDF
     } // listView_assemble_row
 
     // ****************************************************************************
-    function listView_print($rows, $border, $fill, $style_array, $object=null)
+    function listView_print($rows, $border, $fill, $style_array, $dbobject=null)
     // print a line for each entry in $rows
     {
         if (!is_int(key($rows))) {
@@ -1265,10 +1365,10 @@ class PDF extends TCPDF
         } // if
 
         foreach ($rows as $rowdata) {
-            if (is_object($object)) {
+            if (is_object($dbobject)) {
             	// format current row
                 $style_array = array();
-                $rowdata = $object->formatData($rowdata, $style_array);
+                $rowdata = $dbobject->formatData($rowdata, $style_array);
             } // if
             // assemble a row of column details
             $print_array = array();
@@ -1300,7 +1400,7 @@ class PDF extends TCPDF
         if (is_null($this->k)) {
             $this->setPageUnit($this->pdfunit);
         } // if
-        
+
         return $mm * 2.8346 / $this->k;
 
     } // millimeters2units
@@ -1327,84 +1427,228 @@ class PDF extends TCPDF
     } // MultiCell
 
     // ****************************************************************************
-    function adjustColumnWidths ($columns)
-    // examine all column widths to turn pecentages into numbers.
+    function outputPDF_DetailView ($resource)
+    // read database resource and output all records to a PDF file in DETAIL view
+    // using the layout defined in the $structure
     {
-        $width_used = 0;
-        $col_remainder = array();  // columns which have width set to '*'
+        $dbobject =& $this->dbobject;
 
-        foreach ($columns as $colnum => $coldata) {
-            if (is_array($coldata)) {
-                if (array_key_exists('width', $coldata)) {
-                	if (preg_match('/^(\*)$/', $coldata['width'])) {
-                	    // width is '*', to be set to remainder after all other columns have been done
-                    	$col_remainder[] = $colnum;
-                	} else {
-                	    if (preg_match('/(%)$/', $coldata['width'])) {
-                            // contains a percentage, so turn it into a number
-                        	$percent = substr($coldata['width'], 0, -1);  // strip off trailing '%' character
-                            $coldata['width'] = $this->printable_width * ($percent / 100);
-                	        // update input array - this is required for PHP 4
-                	        $columns[$colnum]['width'] = $coldata['width'];
-                        } // if
-                	    // accumulate total width used
-                	    $width_used += $coldata['width'];
-                    } // if
-                } // if
+        // allow filename to be customised
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_pre_output')) {
+                $this->pdf_filename = $dbobject->custom_processing_object->_cm_pre_output($this->pdf_filename);
             } // if
-        } // foreach
-
-        if (!empty($col_remainder)) {
-            // divide the remainder by the number of columns
-        	$remainder = ($this->printable_width - $width_used) / count($col_remainder);
-        	// set all specified columns to take up the remainder equally
-        	foreach ($col_remainder as $colnum) {
-        		$columns[$colnum]['width'] = $remainder;
-        	} // foreach
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $this->pdf_filename = $dbobject->_cm_pre_output($this->pdf_filename);
         } // if
 
-        return $columns;
+        if (preg_match('/(F|D)/i', $dbobject->pdf_destination)) {
+            if (empty($this->pdf_filename)) {
+                // set default file name for PDF output
+                $this->pdf_filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
+            } // if
+        } // if
 
-    } // adjustColumnWidths
+        // format data using DETAIL view
+        $this->detailView($dbobject, $resource);
+        if ($dbobject->errors) {
+            return $dbobject->pdf_destination;
+        } // if
+
+        $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
+
+        // output the completed document
+        $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
+        if (!empty($this->error)) {
+            $this->errors[] = 'PDF error: ' .$this->error;
+        } // if
+
+        if (preg_match('/(F)/i', $dbobject->pdf_destination)) {
+            // "File x created"
+            $this->messages[] = getLanguageText('sys0135', $dbobject->pdf_filename);
+        } // if
+
+        // perform any post processing, which may involve a database update
+        if ($dbobject->dbname != 'default' AND !isset($GLOBALS['batch'])) {
+            $dbobject->startTransaction();
+        } // if
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
+                $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $string = $dbobject->_cm_post_output($string, $dbobject->pdf_filename);
+        } // if
+
+        // reset language it case it was changed
+        $GLOBALS['party_language'] = $_SESSION['user_language'];
+
+        if ($dbobject->dbname != 'default' AND !isset($GLOBALS['batch'])) {
+            if (empty($dbobject->errors)) {
+                $this->errors = $dbobject->commit();
+            } // if
+            if (!empty($this->errors)) {
+                $dbobject->rollback();
+            } // if
+        } // if
+
+        return $string;
+
+    } // outputPDF_DetailView
 
     // ****************************************************************************
-    function adjustColumnWidthsDetailView ($structure)
-    // examine all column widths to turn pecentages into numbers.
+    function outputPDF_LabelView ($resource)
+    // read database resource and output all records to a PDF file in LABEL view
+    // using the layout defined in the report structure
     {
-        $structure['columns'] = $this->adjustColumnWidths($structure['columns']);
+        $dbobject =& $this->dbobject;
 
-        if (array_key_exists('body', $structure)) {
-            foreach ($structure['body']['fields'] as $column => $columndata) {
-                if (is_string(key($columndata))) {
-                    // not indexed by cell number, so assume 'fieldname' => 'labeltext'
-                } else {
-                    // examine column widths for percentages and turn them into numbers
-                    $columndata = $this->adjustColumnWidths($columndata);
-                } // if
-                $structure['body']['fields'][$column] = $columndata;
-            } // foreach
+        // allow filename to be customised
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_pre_output')) {
+                $this->pdf_filename = $dbobject->custom_processing_object->_cm_pre_output($this->pdf_filename);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $this->pdf_filename = $dbobject->_cm_pre_output($this->pdf_filename);
         } // if
 
-        // examine any optional additional entries named 'multi1' to 'multi99'
-        for ($i = 1; $i <= 100; $i++) {
-            $zone = 'multi' .$i;
-            if (!array_key_exists($zone, $structure)) {
-            	break;  // not found, so stop processing
+        if (preg_match('/(F|D)/i', $dbobject->pdf_destination)) {
+            if (empty($this->pdf_filename)) {
+                // set default file name for PDF output
+                $this->pdf_filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
             } // if
-            foreach ($structure[$zone]['fields'] as $column => $columndata) {
-                if (is_string(key($columndata))) {
-                    // not indexed by cell number, so assume 'fieldname' => 'labeltext'
-                } else {
-                    // examine column widths for percentages and turn them into numbers
-                    $columndata = $this->adjustColumnWidths($columndata);
-                } // if
-                $structure[$zone]['fields'][$column] = $columndata;
-            } // foreach
-        } // for
+        } // if
 
-        return $structure;
+        // format data using LABEL view
+        $this->labelView($dbobject, $resource);
+        if ($dbobject->errors) {
+            return $dbobject->pdf_destination;
+        } // if
 
-    } // adjustColumnWidthsDetailView
+        $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
+
+        // output the completed document
+        $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
+        if (!empty($this->error)) {
+            $this->errors[] = 'PDF error: ' .$this->error;
+        } // if
+
+        if (preg_match('/(F)/i', $dbobject->pdf_destination)) {
+            // "File x created"
+            $this->messages[] = getLanguageText('sys0135', $dbobject->pdf_filename);
+        } // if
+
+        // perform any post processing, which may involve a database update
+        if ($dbobject->dbname != 'default') {
+            $dbobject->startTransaction();
+        } // if
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
+                $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $string = $dbobject->_cm_post_output($string, $this->pdf_filename);
+        } // if
+
+        // reset language it case it was changed
+        $GLOBALS['party_language'] = $_SESSION['user_language'];
+
+        if ($dbobject->dbname != 'default') {
+            if (empty($dbobject->errors)) {
+                $this->errors = $dbobject->commit();
+            } // if
+            if (!empty($this->errors)) {
+                $dbobject->rollback();
+            } // if
+        } // if
+
+        return $string;
+
+    } // outputPDF_LabelView
+
+    // ****************************************************************************
+    function outputPDF_ListView ($resource)
+    // read database resource and output all records to a PDF file in LIST view
+    // using the layout defined in the report structure
+    {
+        $dbobject =& $this->dbobject;
+
+        // allow filename to be customised
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_pre_output')) {
+                $this->pdf_filename = $dbobject->custom_processing_object->_cm_pre_output($this->pdf_filename);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $this->pdf_filename = $dbobject->_cm_pre_output($this->pdf_filename);
+        } // if
+
+        if (preg_match('/(F|D)/i', $dbobject->pdf_destination)) {
+            if (empty($this->pdf_filename)) {
+                // set default file name for PDF output
+                $this->pdf_filename = basename($_SERVER['PHP_SELF'], '.php') .'.pdf';
+            } // if
+        } // if
+
+        // format data using LIST view
+        $this->listView($dbobject, $resource);
+        if ($dbobject->errors) {
+            return $dbobject->pdf_destination;
+        } // if
+
+        // reset locale to user's language, not customer's language
+        $locale = saveLocaleFormat($_SESSION['user_language_array'][0][2]);
+
+        $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
+
+        // output the completed document
+        $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
+        if (!empty($this->error)) {
+            $this->errors[] = 'PDF error: ' .$this->error;
+        } // if
+
+        if (preg_match('/(F)/i', $dbobject->pdf_destination)) {
+            // "File x created"
+            $this->messages[] = getLanguageText('sys0135', $dbobject->pdf_filename);
+        } // if
+
+        // perform any post processing, which may involve a database update
+        $dbobject->startTransaction();
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
+                $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $string = $dbobject->_cm_post_output($string, $dbobject->pdf_filename);
+        } // if
+
+        if (empty($dbobject->errors)) {
+            $this->errors = $dbobject->commit();
+        } // if
+        if (!empty($this->errors)) {
+            $dbobject->rollback();
+        } // if
+
+        return $string;
+
+    } // outputPDF_ListView
 
     // ****************************************************************************
     function printBarcode ($celldata)
@@ -1675,6 +1919,10 @@ class PDF extends TCPDF
         if (isset($celldata['ignore_min_height']) OR $last_height <> 0) {
             // do not automatically adjust line height to fit font size
             $ignore_min_height = true;
+            //if ($last_height <= $height) {
+            //    // ensure last_height is set to this font's height
+            //    $this->last_height = $height;
+            //} // if
         } else {
         	$ignore_min_height = false;
         } // if
@@ -1914,6 +2162,8 @@ class PDF extends TCPDF
     function printFooter ($zone)
     // print a line in the page footer
     {
+        $this->last_height = 0;
+
         $dateobj =& RDCsingleton::getInstance('date_class');
 
         foreach ($this->structure[$zone] as $element => $attributes) {
@@ -1989,14 +2239,14 @@ class PDF extends TCPDF
             	    		break;
             	    	case 'date':
             	    	    // get date in user-defined format
-            	    	    $date = date('Y-m-d');
+            	    	    $date = getTimeStamp('date');
             	    	    if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
             	    	        $date = convertTZdate($date, null, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
             	    	    } // if
             	    	    $text = $dateobj->getExternalDate($date);
             	    	    break;
             	    	case 'time':
-                            $time = date('H:i:s');
+                            $time = getTimeStamp('time');
                             if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
                                 $time = convertTZtime(null, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
                             } // if
@@ -2277,6 +2527,30 @@ class PDF extends TCPDF
     } // printRow
 
     // ****************************************************************************
+    function setBarcodeStyle ($style)
+    // set barcode style (font, colours, etc)
+    {
+        $result = array();
+        if (!array_key_exists($style, $this->style)) {
+            return $result;
+        } // if
+
+        $result = $this->style[$style];
+
+        if (isset($this->style[$style]['drawcolour'])) {
+            if (!empty($this->style[$style]['drawcolour'])) {
+                $this->SetDrawColor($this->style[$style]['drawcolour'][0], $this->style[$style]['drawcolour'][1], $this->style[$style]['drawcolour'][2]);
+            } else {
+                $this->DrawColor = null;
+                unset($result['draw']);
+            } // if
+        } // if
+
+        return $result;
+
+    } // setBarcodeStyle
+
+    // ****************************************************************************
     function setFooter ()
     // override the method in the parent class (which is corrupt!)
     {
@@ -2307,30 +2581,6 @@ class PDF extends TCPDF
     } // setHeader
 
     // ****************************************************************************
-    function setBarcodeStyle ($style)
-    // set barcode style (font, colours, etc)
-    {
-        $result = array();
-        if (!array_key_exists($style, $this->style)) {
-            return $result;
-        } // if
-
-        $result = $this->style[$style];
-
-        if (isset($this->style[$style]['drawcolour'])) {
-            if (!empty($this->style[$style]['drawcolour'])) {
-            	$this->SetDrawColor($this->style[$style]['drawcolour'][0], $this->style[$style]['drawcolour'][1], $this->style[$style]['drawcolour'][2]);
-            } else {
-                $this->DrawColor = null;
-                unset($result['draw']);
-            } // if
-        } // if
-
-        return $result;
-
-    } // setBarcodeStyle
-
-    // ****************************************************************************
     function setPrintStyle ($style)
     // set print style (font, colours, etc)
     {
@@ -2354,9 +2604,9 @@ class PDF extends TCPDF
         if (isset($this->style[$style]['font']['height'])) {
         	// set line height for cells which use this font
             $result['height'] = $this->style[$style]['font']['height'];
-            if ($result['height'] > $this->last_height) {
-            	$this->last_height = $result['height'];
-            } // if
+//            if ($result['height'] > $this->last_height) {
+//            	$this->last_height = $result['height'];
+//            } // if
         } // if
 
         if (isset($this->style[$style]['font']['draw'])) {
@@ -2490,9 +2740,9 @@ class PDF extends TCPDF
         } // if
 
         if (isset($structure['pdf']['destination'])) {
-        	$this->destination = $structure['pdf']['destination'];
+        	$this->pdf_destination = $structure['pdf']['destination'];
         } else {
-            $this->destination = 'I';
+            $this->pdf_destination = 'I';
         } // if
 
         $this->units = $units;
@@ -2547,7 +2797,7 @@ class PDF extends TCPDF
 
         $this->printable_width = $this->w - ($this->lMargin + $this->rMargin);
 
-        return;
+        return $structure;
 
     } // validateStructure
 

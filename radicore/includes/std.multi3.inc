@@ -110,7 +110,7 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle = new $middle_table;
     // indicate that this object was started from a page controller
     $dbmiddle->initiated_from_controller = true;
-    $dbouter->zone                      = 'middle';
+    $dbmiddle->zone                      = 'middle';
     $dbmiddle->sql_select  = &$middle_sql_select;
     $dbmiddle->sql_from    = &$middle_sql_from;
     $dbmiddle->sql_where   = &$middle_sql_where;
@@ -149,7 +149,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
-    $dbouter->zone                      = 'inner';
+    $dbinner->zone                      = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -282,7 +282,7 @@ $dbmiddle->setFieldArray($outer_data);
 
 // get primary key of 1st row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter);
+$where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
@@ -307,15 +307,17 @@ if ($dbmiddle->getNumRows() < 1) {
     unset($act_buttons['submit']);
 } // if
 
-// get any additional data for current record
-$middle_data = $dbmiddle->getExtraData($middle_data);
-if ($dbmiddle->errors) {
-	$errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+if (!empty($middle_data)) {
+    // get any additional data for current record
+    $middle_data = $dbmiddle->getExtraData($middle_data);
+    if ($dbmiddle->errors) {
+	    $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+    } // if
 } // if
 
 // get primary key of row retrieved from middle entity
 $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
-$middle_where = array2where($middle_data, $pkeynames, $dbmiddle);
+$middle_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -384,10 +386,12 @@ if (count($middle_data) > 0) {
             unset($act_buttons['submit']);
         } // if
 
-        // get any additional data for current record
-        $inner_data = $dbinner->getExtraData($inner_data);
-        if ($dbinner->errors) {
-        	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
+        if (!empty($inner_data)) {
+            // get any additional data for current record
+            $inner_data = $dbinner->getExtraData($inner_data);
+            if ($dbinner->errors) {
+        	    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
         } // if
     } // if
 } // if
@@ -402,8 +406,8 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // get sort details
-$orderby     = $dbinner->getOrderBy();
-$orderby_seq = $dbinner->getOrderBySeq($orderby);
+//$orderby     = $dbinner->getOrderBy();
+//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = $where;
@@ -424,7 +428,8 @@ $xml_objects[][$dbouter->getClassName()]  = &$dbmiddle;
 $xml_objects[][$dbmiddle->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

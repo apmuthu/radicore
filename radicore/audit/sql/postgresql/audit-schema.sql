@@ -55,7 +55,7 @@ ALTER TABLE audit.audit_fld OWNER TO postgres;
 CREATE TABLE audit_logon_errors (
     id integer NOT NULL,
     err_timestamp timestamp without time zone NOT NULL,
-    ip_address character varying(16) NOT NULL,
+    ip_address character varying(40) NOT NULL,
     user_id character varying(16),
     user_password character varying(16) NOT NULL,
     email_addr character varying(50)

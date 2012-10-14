@@ -57,6 +57,7 @@ $array['audit_dtl(search)']                       = 'Search Audit Detail';
 $array['audit_logon_errors(del)']                 = 'Delete Audit Logon Errors';
 $array['audit_logon_errors(list)']                = 'List Logon Errors';
 $array['audit_logon_errors(search)']              = 'Search Logon Errors';
+$array['audit_ssn(batch)delete']                  = 'Delete Audit data';
 $array['audit_tbl(upd4)']                         = 'Generate SQL';
 
 // navigation button details for subsystem AUDIT
@@ -65,7 +66,7 @@ $array['Audit Trail (2)']               = 'Audit Trail (2)';
 $array['Audit Trail (exact)']           = 'Audit Trail (exact)';
 $array['Logon Errors']                  = 'Logon Errors';
 
-// field names for subsystem XXX
+// field names for subsystem AUDIT
 $array['']     = '';
 $array['']     = '';
 $array['']     = '';

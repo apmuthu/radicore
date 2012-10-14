@@ -52,9 +52,11 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
         // create object for retrieving task details
         $taskobj =& RDCsingleton::getInstance('mnu_task');
+        $task_prefix = $taskobj->dbprefix;
 
         // create object for retrieving dictionary details
         $dictobj =& RDCsingleton::getInstance('dict_column');
+        $dict_prefix = $dictobj->dbprefix;
 
 		$subsys_id   = $rowdata['subsys_id'];
         $subsys_dir  = $rowdata['subsys_dir'];
@@ -84,7 +86,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
 		// process field (column) names
     	$dictobj->sql_select = 'column_id, column_desc';
-    	$dictobj->sql_from   = 'dict_column LEFT JOIN dict_database ON (dict_database.database_id=dict_column.database_id)';
+    	$dictobj->sql_from   = 'dict_column LEFT JOIN "'.$dict_prefix.'dict".dict_database ON (dict_database.database_id=dict_column.database_id)';
     	$dictobj->sql_orderby = 'dict_column.column_id';
         $data = $dictobj->getData("subsys_id='$subsys_id'");
 		$this->_createFieldDesc($data, $subsys_id);

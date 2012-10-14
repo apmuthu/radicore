@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_file extends Default_Table
@@ -14,7 +14,8 @@ class mnu_file extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_file';
         $this->dbname      = 'menu';
 
@@ -84,7 +85,9 @@ class mnu_file extends Default_Table
     // perform any initialisation before displaying the File Picker screen.
     {
         // identify the subdirectory which contains the files
-        $this->picker_subdir      = '../logs';
+        if (empty($this->picker_subdir)) {
+            $this->picker_subdir      = '../logs';
+        } // if
 
         // identify the file types that may be picked
         $this->picker_filetypes   = array('txt', 'html', 'htm', 'log', 'err', 'csv', 'pdf');

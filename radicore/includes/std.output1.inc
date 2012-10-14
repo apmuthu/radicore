@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output1.inc
@@ -71,13 +71,16 @@ if (isset($search)) {
 // get data from the database
 $resource = $dbobject->getData_serial($where);
 
-if (isset($stdout)) {
-    $output = "<p>".$dbobject->numrows ." records read</p>\n";
-	$result = fwrite($stdouth, $output);
-} // if
-
-if ($dbobject->getNumRows() <= 0) {
-    scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+if ($dbobject->unbuffered_query === true) {
+    // no count is avaiable
+} else {
+    if (isset($stdout)) {
+        $output = "<p>".$dbobject->numrows ." records read</p>\n";
+        $result = fwrite($stdouth, $output);
+    } // if
+    if ($dbobject->getNumRows() <= 0) {
+        scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    } // if
 } // if
 
 if (empty($csvout)) {
@@ -91,8 +94,12 @@ if (empty($csvout)) {
 //    } // if
 //} // if
 
+// create an instance of the CSV object
+require_once 'std.csv.class.inc';
+$csv = new CSV($dbobject);
+
 // transform output to CSV format
-$output = $dbobject->outputCSV($resource);
+$output = $csv->outputCSV($resource);
 
 if (!isset($GLOBALS['batch'])) {
     // send to client browser
@@ -105,15 +112,17 @@ if (!isset($GLOBALS['batch'])) {
 	unset($_SESSION['pages'][getSelf()]);
 } else {
     // write to disk file
-    if (!empty($output)) {
+    if (!empty($output) AND !empty($csvout)) {
     	if (!$result = fwrite($csvouth, $output)) {
             trigger_error("Cannot write to file $csvout", E_USER_ERROR);
         } // if
     } // if
     fclose($csvouth);
     sleep(1);
-    $filesize = filesize($csvout);
-    echo "<p>" .$filesize .' bytes written to file ' .$csvout ."</p>\n";
+    if (!empty($csvout)) {
+        $filesize = filesize($csvout);
+        echo "<p>" .$filesize .' bytes written to file ' .$csvout ."</p>\n";
+    } // if
     if (isset($settings['return']) AND is_True($settings['return'])) {
     	scriptPrevious($dbobject->getErrors());
     } // if

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -18,7 +18,8 @@ class dict_column extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_column';
         $this->dbname      = 'dict';
 
@@ -308,11 +309,19 @@ class dict_column extends Default_Table
             	    // default to 'radio group'
             	    $fieldarray['control'] = 'radio';
             	} // if
-            	if (empty($fieldarray['boolean_true'])) {
-            		$fieldarray['boolean_true'] = 'Y';
+            	if (is_null($fieldarray['boolean_true'])) {
+                    if (preg_match('/int/i', $fieldarray['col_type_native'])) {
+                        $fieldarray['boolean_true'] = '1';
+                    } else {
+            		    $fieldarray['boolean_true'] = 'Y';
+                    } // if
             	} // if
-            	if (empty($fieldarray['boolean_false'])) {
-            		$fieldarray['boolean_false'] = 'N';
+            	if (is_null($fieldarray['boolean_false'])) {
+                    if (preg_match('/int/i', $fieldarray['col_type_native'])) {
+            		    $fieldarray['boolean_false'] = '0';
+                    } else {
+                        $fieldarray['boolean_false'] = 'N';
+                    } // if
             	} // if
             } // if
         } // if

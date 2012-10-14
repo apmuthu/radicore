@@ -218,9 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if (!empty($_POST) AND !isset($_POST['delete'])) {
     // merge original data with POSTed data (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update_associative($fieldarray, $_POST);
+    $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
     // check that primary key contains no wildcard characters
-    $errors = isPkeyComplete($fieldarray, $dbobject->getPkeyNames());
+    list($where1, $errors) = isPkeyComplete($fieldarray, $dbobject->getPkeyNames());
     if (empty($errors)) {
         // set $where to primary key of current record
         $pkeynames = $dbobject->getPkeyNamesAdjusted();
@@ -352,7 +352,8 @@ $messages = array_merge($messages, $dbobject->getMessages());
 $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
-buildXML($xml_objects, $errors, $messages);
+$view = new radicore_view($screen_structure);
+$view->buildXML($xml_objects, $errors, $messages);
 exit;
 
 ?>

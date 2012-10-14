@@ -5,9 +5,9 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-$outer_table = 'dict_database';                     // name of outer table
-$inner_table = 'dict_relationship';                 // name of inner table
-$screen   = 'dict_relationship.list3.screen.inc';   // file identifying screen structure
+$outer_table = 'dict_table';                        // name of outer table
+$inner_table = 'dict_relationship_snr';             // name of inner table
+$screen   = 'dict_relationship.list2b.screen.inc';  // file identifying screen structure
 
 require 'std.list2.inc';                            // activate page controller
 

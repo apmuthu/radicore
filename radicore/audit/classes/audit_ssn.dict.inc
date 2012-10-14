@@ -1,12 +1,12 @@
 <?php
-    // file created on December 12, 2006, 6:01 pm
+    // file created on October 3, 2012, 4:37 pm
     
     // field specifications for table audit.audit_ssn
     $fieldspec['session_id']                = array('type' => 'integer',
-                                                    'size' => 20,
+                                                    'size' => 21,
                                                     'auto_increment' => 'y',
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 9.2233720368548e+018,
+                                                    'maxvalue' => 1.84467440737096e19,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
                                                     'noedit' => 'y');
@@ -25,7 +25,7 @@
                                                     'noedit' => 'y');
     
     $fieldspec['ssn_time']                  = array('type' => 'time',
-                                                    'size' => 8,
+                                                    'size' => 10,
                                                     'required' => 'y',
                                                     'default' => '00:00:00',
                                                     'noedit' => 'y');
@@ -49,6 +49,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'ssn_date, ssn_time';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

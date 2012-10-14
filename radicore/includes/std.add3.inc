@@ -27,8 +27,8 @@ $dbobject = new $table_id;
 $dbobject->initiated_from_controller = true;
 
 // perform initialisation, check workflow, etc
-//$where = $dbobject->initialise($where, $selection);
-$where = $dbobject->initialise($where);
+$null = null;
+$where = $dbobject->initialise($where, $null);
 if ($dbobject->errors) {
     $messages = array_merge($messages, $dbobject->getMessages());
     $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);

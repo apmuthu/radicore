@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -18,7 +18,8 @@ class mnu_control extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_control';
         $this->dbname      = 'menu';
 
@@ -34,15 +35,23 @@ class mnu_control extends Default_Table
     function getControlData ($field_id, $user_data=null)
     // return one or more specified values from the control table.
     {
+        $classdir = $GLOBALS['classdir'];  // save
+        if (getcwd() != dirname($this->dirname)) {
+            // switch to correct directory for retrieving message text
+            $GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
+        $result = null;
+
         switch (strtoupper($field_id)) {
             case 'PSWD_ENCRYPT':
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_ENCRYPT'";
                 $data = $this->getData_raw($where);
 
                 if (is_True($data[0]['field_value'])) {
-                    return true;
+                    $result = true;
                 } else {
-                    return false;
+                    $result = false;
                 } // if
         		break;
 
@@ -51,9 +60,9 @@ class mnu_control extends Default_Table
                 $data = $this->getData_raw($where);
 
                 if (is_True($data[0]['field_value'])) {
-                    return true;
+                    $result = true;
                 } else {
-                    return false;
+                    $result = false;
                 } // if
         		break;
 
@@ -66,14 +75,14 @@ class mnu_control extends Default_Table
                     $data[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
 
-                return $data;
+                $result = $data;
         	    break;
 
         	case 'PSWD_RETRIES';
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_RETRIES'";
                 $data = $this->getData_raw($where);
 
-                return $data[0]['field_value'];
+                $result = $data[0]['field_value'];
         	    break;
 
         	case 'PSWD_CHANGE';
@@ -83,6 +92,7 @@ class mnu_control extends Default_Table
                 switch ($data[0]['field_value']) {
                     case 'AR':
                         // no change is required
+                        $result = false;
                         break;
 
                     case 'AD';
@@ -93,7 +103,7 @@ class mnu_control extends Default_Table
                         // compare with date in passed data
                         $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
                         if ($due_date < strtotime('now')) {
-                            return true; // password must be changed
+                            $result = true; // password must be changed
                         } // if
                         break;
 
@@ -104,7 +114,7 @@ class mnu_control extends Default_Table
                         $count = $data[0]['field_value'];
                         // compare with count in passed data
                         if ($user_data['pswd_count'] > $count) {
-                            return true; // password must be changed
+                            $result = true; // password must be changed
                         } // if
                         break;
 
@@ -112,8 +122,7 @@ class mnu_control extends Default_Table
                         break;
                 } // if
 
-                return false; // password does not need to be changed
-        	    break;
+                break;
 
         	case 'PSWD_EXPIRES';
         	    // identify if/when the current password will expire
@@ -123,6 +132,7 @@ class mnu_control extends Default_Table
                 switch ($data[0]['field_value']) {
                     case 'AR':
                         // no change is required
+                        $result = false;
                         break;
 
                     case 'AD';
@@ -142,7 +152,7 @@ class mnu_control extends Default_Table
                         if ($diff_days > 0) {
                             if ($diff_days <= $limit) {
                                 // "Your password will expire in N days"
-                                return getLanguageText('e0040', $diff_days);
+                                $result = getLanguageText('e0040', $diff_days);
                             } // if
                         } // if
                         break;
@@ -163,7 +173,7 @@ class mnu_control extends Default_Table
                         if ($diff_count > 0) {
                             if ($diff_count <= $limit) {
                                 // "Your password will expire in N logons"
-                                return getLanguageText('e0041', $diff_count);
+                                $result = getLanguageText('e0041', $diff_count);
                             } // if
                         } // if
                         break;
@@ -172,8 +182,7 @@ class mnu_control extends Default_Table
                         break;
                 } // if
 
-                return; // no message
-        	    break;
+                break;
 
         	case 'DEFAULT_LANGUAGE':
                 $where = "record_id='SYSTEM' AND field_id='DEFAULT_LANGUAGE'";
@@ -184,7 +193,7 @@ class mnu_control extends Default_Table
                 	$result = 'en';
                 } // if
 
-                return strtolower($result);
+                $result = strtolower($result);
                 break;
 
         	case 'LOGIN_TYPE':
@@ -196,49 +205,53 @@ class mnu_control extends Default_Table
                 	$result = 'USER';
                 } // if
 
-                return $result;
                 break;
 
         	case 'AUTHENTICATION':
                 $where = "record_id='SYSTEM' AND field_id LIKE 'AUTHENTICATION%'";
                 $rowdata = $this->getData_raw($where);
                 // turn multiple rows into a single associative array
-                $data = array();
                 foreach ($rowdata as $row) {
-                	$data[strtolower($row['field_id'])] = $row['field_value'];
+                	$result[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
 
-                return $data;
                 break;
 
         	case 'PAGINATION':
                 $where = "record_id='SYSTEM' AND field_id IN ('PAGINATION_WIDTH','SCROLLING_WIDTH')";
                 $rowdata = $this->getData_raw($where);
                 // turn multiple rows into a single associative array
-                $data = array();
                 foreach ($rowdata as $row) {
-                	$data[strtolower($row['field_id'])] = $row['field_value'];
+                	$result[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
 
-                return $data;
                 break;
 
         	case 'SHUTDOWN':
                 $where = "record_id='SYSTEM' AND field_id LIKE 'SHUTDOWN%'";
                 $rowdata = $this->getData_raw($where);
                 // turn multiple rows into a single associative array
-                $data = array();
                 foreach ($rowdata as $row) {
-                	$data[strtolower($row['field_id'])] = $row['field_value'];
+                	$result[strtolower($row['field_id'])] = $row['field_value'];
                 } // foreach
 
-                return $data;
                 break;
 
-        	default:
-        	    return getLanguageText('e0004', $field_id); // 'Invalid value for field_id';
+        	case 'AUDIT_DELETE';
+                $where = "record_id='SYSTEM' AND field_id='AUDIT_DELETE'";
+                $data = $this->getData_raw($where);
+
+                $result = $data[0]['field_value'];
+                break;
+
+            default:
+        	    $result = getLanguageText('e0004', $field_id); // 'Invalid value for field_id';
         	    break;
         } // switch
+
+        $GLOBALS['classdir'] = $classdir;  // restore
+
+        return $result;
 
     } // getControlData
 
@@ -387,6 +400,13 @@ class mnu_control extends Default_Table
                                                         'control' => 'checkbox',
                                                         'label' => $day_names['sun'],
                                                         'align_lr' => 'left');
+
+            // define lockout times between which system is unavailable
+            $fieldspec['audit_delete']          = array('type' => 'integer',
+                                                        'size' => 2,
+                                                        'unsigned' => 'y',
+                                                        'minvalue' => 1,
+                                                        'maxvalue' => 99);
 
             $this->fieldspec = $fieldspec;
         } // if
@@ -623,7 +643,9 @@ class mnu_control extends Default_Table
 
         // turn multiple rows into a single associative array
         foreach ($rowdata as $row => $data) {
-            $fieldarray[0][strtolower($data['field_id'])] = $data['field_value'];
+            if (isset($data['field_id']) AND isset($data['field_value'])) {
+                $fieldarray[0][strtolower($data['field_id'])] = $data['field_value'];
+            } // if
         } // foreach
 
         // get list of (virtual) fields in this table
@@ -636,8 +658,11 @@ class mnu_control extends Default_Table
         if (!empty($where_array['field_id'])) {
             // only a single field was specified, so create a null value if not found
             $fieldname = strtolower($where_array['field_id']);
-        	if (!array_key_exists($fieldname, $fieldarray[0])) {
-                $fieldarray[0][$fieldname] = null;
+            if (strpos($fieldname, '%') === FALSE) {
+                // does not contain wildcard operator, so LIKE was not used
+        	    if (!array_key_exists($fieldname, $fieldarray[0])) {
+                    $fieldarray[0][$fieldname] = null;
+                } // if
             } // if
         } else {
             // insert any missing fields from $fieldspec
@@ -683,6 +708,9 @@ class mnu_control extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+        // ensure that any 'field IN (...)' statements are not converted to 'field=(...)'
+        $where_array = where2array($where,null,false);
+
         if (empty($where_array['record_id'])) {
         	$where_array['record_id'] = $this->record_id;
         } // if
