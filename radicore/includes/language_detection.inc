@@ -86,6 +86,67 @@ function get_languages($input)
 } // get_languages
 
 // ****************************************************************************
+function getBrowserLanguage ($directory)
+// find a subdirectory which corresponds with a language defined in the browser.
+{
+    $found = array();
+    if (is_dir($directory)) {
+        // build an array of subdirectory names for specified $directory
+        $dir = dir($directory);
+        while (false !== ($entry = $dir->read())) {
+            if ($entry == '.' or $entry == '..') {
+                // ignore
+            } else {
+                if (is_dir("$directory/$entry")) {
+                   $found[] = $entry;
+                } // if
+            } // if
+        } // if
+        $dir->close();
+    } // if
+
+    if (!empty($found)) {
+        if (isset($_SESSION['user_language_array'])) {
+            // scan $user_language_array looking for a matching entry
+            $found_lang = matchBrowserLanguage ($_SESSION['user_language_array'], $found);
+            if (!empty($found_lang)) {
+                return $found_lang;
+            } // if
+        } // if
+    } // if
+
+    return FALSE;
+
+} // getBrowserLanguage
+
+// ****************************************************************************
+function matchBrowserLanguage ($browser_array, $language_array)
+// match browser language with an entry in $language_array
+{
+    foreach ($browser_array as $browser_language) {
+        // look for full language abbreviation (after replacing hyphen with underscore)
+        $test_language = str_replace('-', '_', strtolower($browser_language[0]));
+        foreach ($language_array as $supported_language) {
+            $supported_language = str_replace('-', '_', $supported_language);
+            if ($test_language == strtolower($supported_language)) {
+                return $test_language;
+            } // if
+        } // foreach
+        // look for primary language (after replacing hyphen with underscore)
+        $test_language = str_replace('-', '_', strtolower($browser_language[1]));
+        foreach ($language_array as $supported_language) {
+            $supported_language = str_replace('-', '_', $supported_language);
+            if ($test_language == strtolower($supported_language)) {
+                return $test_language;
+            } // if
+        } // foreach
+    } // foreach
+
+    return false;
+
+} // matchBrowserLanguage
+
+// ****************************************************************************
 function rdc_setLocale ($language_string)
 // set the locale according to the language string.
 {
@@ -136,5 +197,34 @@ function rdc_setLocale ($language_string)
     return $locale;
 
 } // rdc_setLocale
+
+// ****************************************************************************
+function saveLocaleFormat ($language, $user_language_array=null)
+// store locale data based on user's preferred language.
+{
+    if (empty($user_language_array)) {
+        $user_language_array = get_languages($language);
+    } // if
+
+    $locale = rdc_setLocale($user_language_array[0][2]);
+
+    $localeconv = localeconv();
+    if ($localeconv['thousands_sep'] == chr(160)) {
+        // change non-breaking space into ordinary space
+        $localeconv['thousands_sep'] = chr(32);
+    } // if
+
+    $GLOBALS['localeconv']['decimal_point'] = $localeconv['decimal_point'];
+    $GLOBALS['localeconv']['thousands_sep'] = $localeconv['thousands_sep'];
+    $GLOBALS['localeconv']['p_cs_precedes'] = $localeconv['p_cs_precedes'];
+    $GLOBALS['localeconv']['n_cs_precedes'] = $localeconv['n_cs_precedes'];
+    //$GLOBALS['localeconv']['currency_symbol'] = $localeconv['currency_symbol'];
+
+    // set to locale where decimal point is '.' (as used internally)
+    $internal_locale = rdc_setLocale("English (United Kingdom) [en_GB]");
+
+    return $locale;
+
+} // saveLocaleFormat
 
 ?>

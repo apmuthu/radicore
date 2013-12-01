@@ -1,22 +1,17 @@
 -- phpMyAdmin SQL Dump
--- version 3.3.8
+-- version 3.4.9
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jun 6, 2012 at 16:31 AM
--- Server version: 5.1.54
--- PHP Version: 5.2.16
+-- Generation Time: Apr 22, 2013 at 02:24 PM
+-- Server version: 5.5.31
+-- PHP Version: 5.4.14
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+SET time_zone = "+00:00";
 
 --
--- Database: `menu`
+-- Database: `test_menu`
 --
 
 -- --------------------------------------------------------
@@ -38,6 +33,23 @@ CREATE TABLE IF NOT EXISTS `help_text` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `help_text_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `help_text_alt` (
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `help_text` text COLLATE utf8_unicode_ci,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`task_id`,`language_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mnu_account`
 --
 
@@ -50,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `mnu_account` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`rdcaccount_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -181,7 +193,7 @@ CREATE TABLE IF NOT EXISTS `mnu_motd` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`motd_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -333,6 +345,24 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `mnu_task_alt`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_task_alt` (
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `task_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `button_text` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`task_id`,`language_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `mnu_task_field`
 --
 
@@ -362,6 +392,56 @@ CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`task_id`,`ip_address`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mnu_time_limit_role`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_time_limit_role` (
+  `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `scheduled_start_time` time NOT NULL DEFAULT '09:00:00' COMMENT 'Scheduled start time',
+  `scheduled_end_time` time NOT NULL DEFAULT '17:00:00' COMMENT 'Scheduled start time',
+  `scheduled_monday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Monday?',
+  `scheduled_tuesday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Tuesday?',
+  `scheduled_wednesday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Wednesday?',
+  `scheduled_thursday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Thursday?',
+  `scheduled_friday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Friday?',
+  `scheduled_saturday` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Scheduled on Saturday?',
+  `scheduled_sunday` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Scheduled on Sunday?',
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`role_id`,`seq_no`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `mnu_time_limit_user`
+--
+
+CREATE TABLE IF NOT EXISTS `mnu_time_limit_user` (
+  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `scheduled_start_time` time NOT NULL DEFAULT '09:00:00' COMMENT 'Scheduled start time',
+  `scheduled_end_time` time NOT NULL DEFAULT '17:00:00' COMMENT 'Scheduled start time',
+  `scheduled_monday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Monday?',
+  `scheduled_tuesday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Tuesday?',
+  `scheduled_wednesday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Wednesday?',
+  `scheduled_thursday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Thursday?',
+  `scheduled_friday` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT 'Scheduled on Friday?',
+  `scheduled_saturday` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Scheduled on Saturday?',
+  `scheduled_sunday` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Scheduled on Sunday?',
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`user_id`,`seq_no`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
 
 -- --------------------------------------------------------
 
@@ -441,3 +521,5 @@ CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`,`ip_address`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
+
+-- --------------------------------------------------------

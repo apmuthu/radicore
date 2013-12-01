@@ -1,3 +1,0 @@
-This will allow global settings on the MENU CONTROL table to be viewed.
-
-Refer to <a href="%root%/mnu_control(upd3).html">Update Menu Control data</a> for full details.

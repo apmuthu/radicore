@@ -71,10 +71,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    if (!is_string(key($outer_data))) {
-        // indexed by row, so use first row only
-        $outer_data = $outer_data[key($outer_data)];
-    } // if
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -121,6 +117,8 @@ if (isset($script_vars['dbinner'])) {
         // see if any action is required when being restarted
         $dbinner->restart($return_from, $return_action);
     } // if
+    // get data from this instance
+    $inner_data = $dbinner->getFieldArray();
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -158,7 +156,10 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+    $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
 } // if
 
 if (isset($scrolling)) {
@@ -191,9 +192,7 @@ if (empty($where)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    //$dbouter->reset($where);
-    $dbouter->setPageNo(1);
-    $dbouter->_cm_reset($where);
+    $where = $dbouter->reset($where);
 } // if
 
 // get data for the outer table
@@ -227,13 +226,17 @@ if ($dbouter->getNumRows() < 1) {
         $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $where;
         scriptPrevious($errors, $messages, 'choose');
     } // if
-    if (count($page_stack) > 2) {
-        // 'Nothing retrieved from database table $outer'
-        scriptPrevious(getLanguageText('sys0090', strtoupper($dbouter->getTableName())));
-    } else {
-        // 'Nothing retrieved from database table $outer'
-        $messages[] = getLanguageText('sys0090', strtoupper($dbouter->getTableName()));
-    } // if
+    if ($dbouter->allow_empty_where == TRUE) {
+    	// this task is allowed to have blank selection and zero records
+	} else {
+	    if (count($page_stack) > 2) {
+	        // 'Nothing retrieved from database table $outer'
+	        scriptPrevious(getLanguageText('sys0090', strtoupper($dbouter->getTableName())));
+	    } else {
+	        // 'Nothing retrieved from database table $outer'
+	        $messages[] = getLanguageText('sys0090', strtoupper($dbouter->getTableName()));
+	    } // if
+	} // if
 } // if
 
 // get any additional data for current record
@@ -289,10 +292,11 @@ if (isset($_POST['reset'])) {
     $dbinner->reset($inner_where);
 } // if
 
-// load in current data from $outer in case it is needed
-$dbinner->setFieldArray($outer_data);
-
-if (!empty($outer_data)) {
+if (empty($outer_data)) {
+    $inner_data = $dbinner->setFieldArray(null);
+} else {
+    // load in current data from $outer in case it is needed
+    $dbinner->setFieldArray($outer_data);
     // get data for the inner entity from the database
 	$inner_data = $dbinner->getData($inner_where);
 
@@ -319,10 +323,10 @@ if ($dbinner->getNumRows() == 0) {
     } // if
 } // if
 
-if (!empty($inner_data)) {
+//if (!empty($inner_data)) {
     // get any additional data for current record
     $inner_data = $dbinner->getExtraData($inner_data);
-} // if
+//} // if
 
 if ($dbinner->errors) {
     $errors[$dbinner->getClassName()] = $dbinner->getErrors();

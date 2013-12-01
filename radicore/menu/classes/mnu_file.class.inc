@@ -63,7 +63,12 @@ class mnu_file extends Default_Table
         $this->skip_getdata = true;
 
         // identify the subdirectory which contains the files
-        $this->picker_subdir = '../logs';
+        $where_array = where2array($where);
+        if (isset($where_array['folder'])) {
+            $this->picker_subdir = rtrim($where_array['folder'], '/');
+        } else {
+            $this->picker_subdir = '../logs';
+        } // if
 
         return $where;
 
@@ -81,7 +86,7 @@ class mnu_file extends Default_Table
     } // _cm_initialiseFileDownload
 
     // ****************************************************************************
-    function _cm_initialiseFilePicker ($fieldarray)
+    function _cm_initialiseFilePicker ($fieldarray, $search)
     // perform any initialisation before displaying the File Picker screen.
     {
         // identify the subdirectory which contains the files

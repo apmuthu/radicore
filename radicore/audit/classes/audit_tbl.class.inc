@@ -34,14 +34,10 @@ class audit_tbl extends Default_Table
     function auditDelete ($dbname, $tablename, $fieldspec, $where, $oldarray)
     // add a record to the audit trail for a DELETE.
     {
-        $dbprefix = $GLOBALS['dbprefix'];  // save
-
         $newarray = array();
 
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
-
-        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -51,8 +47,6 @@ class audit_tbl extends Default_Table
     function auditDeleteSelection ($dbname, $tablename, $fieldspec, $selection)
     // add a record to the audit trail for a DELETE of a selection of records.
     {
-        $dbprefix = $GLOBALS['dbprefix'];  // save
-
         $newarray = array();
         $oldarray = array();
 
@@ -66,8 +60,6 @@ class audit_tbl extends Default_Table
             $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
         } // foreach
 
-        $GLOBALS['dbprefix'] = $dbprefix;  // restore
-
         return;
 
     } // auditDeleteSelection
@@ -76,14 +68,10 @@ class audit_tbl extends Default_Table
     function auditInsert ($dbname, $tablename, $fieldspec, $where, $newarray)
     // add a record to the audit trail for an INSERT.
     {
-        $dbprefix = $GLOBALS['dbprefix'];  // save
-
         $oldarray = array();
 
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
-
-        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -93,12 +81,8 @@ class audit_tbl extends Default_Table
     function auditUpdate ($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray)
     // add a record to the audit trail for an UPDATE.
     {
-        $dbprefix = $GLOBALS['dbprefix'];  // save
-
         // use the general-purpose method
         $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
-
-        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -108,8 +92,6 @@ class audit_tbl extends Default_Table
     function auditUpdateSelection ($dbname, $tablename, $fieldspec, $selection, $replace)
     // add a record to the audit trail for an UPDATE of a selection of records.
     {
-        $dbprefix = $GLOBALS['dbprefix'];  // save
-
         $oldarray = where2array($selection);
 
         // turn $replace string into an array of 'item=value' pairs
@@ -124,8 +106,6 @@ class audit_tbl extends Default_Table
             // add record details to audit database
             $this->auditWrite($dbname, $tablename, $fieldspec, $where, $newarray, $oldarray);
         } // foreach
-
-        $GLOBALS['dbprefix'] = $dbprefix;  // restore
 
         return;
 
@@ -351,7 +331,7 @@ class audit_tbl extends Default_Table
                 } // if
             } // if
         	if ($GLOBALS['mode'] == 'search') {
-        	    if (isset($_SESSION['search'][$this->tablename])) {
+        	    if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$this->tablename])) {
         	        // previous search criteria exists, so don't change it
         	    } else {
                     // set initial values in screen

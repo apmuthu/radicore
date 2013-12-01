@@ -81,10 +81,10 @@ $structure['main']['fields'][26][] = array('field' => 'image_width');
 $structure['main']['fields'][26][] = array('label' => 'Image Height');
 $structure['main']['fields'][26][] = array('field' => 'image_height', 'colspan' => 3);
 
-$structure['main']['fields'][27][] = array('label' => 'True');
-$structure['main']['fields'][27][] = array('field' => 'boolean_true');
 $structure['main']['fields'][27][] = array('label' => 'False');
-$structure['main']['fields'][27][] = array('field' => 'boolean_false', 'colspan' => 3);
+$structure['main']['fields'][27][] = array('field' => 'boolean_false');
+$structure['main']['fields'][27][] = array('label' => 'True');
+$structure['main']['fields'][27][] = array('field' => 'boolean_true', 'colspan' => 3);
 
 $structure['main']['fields'][28] = array('control' => 'Control', 'colspan' => 5);
 

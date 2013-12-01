@@ -36,9 +36,11 @@ class mnu_role extends Default_Table
         if (!isset($_SESSION['role_id'])) {
             // not found, so assume user has global access
             $array = array('role_id' => 'GLOBAL', 'global_access' => true);
+
         } elseif (isset($_SESSION['global_access'])) {
             $array['role_id']       = $_SESSION['role_id'];
             $array['global_access'] = $_SESSION['global_access'];
+
         } else {
             // look for security class from logon screen
             $role_id = $_SESSION['role_id'];
@@ -80,10 +82,11 @@ class mnu_role extends Default_Table
             if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
                 $this->fieldspec['selected'] = array('type' => 'boolean');
+                unset($fieldarray['role_id']);
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['role_id']['noedit']);
-            unset($fieldarray['role_id']);
+            //unset($fieldarray['role_id']);
         } // if
 
         return $fieldarray;
@@ -267,6 +270,9 @@ class mnu_role extends Default_Table
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)movedown');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)moveup');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)reseq');
+
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_task(popup1)a');
+        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_task(search)');
 
         $dbobject =& RDCsingleton::getInstance('mnu_role_task');
         $access = $dbobject->insertMultiple($access);

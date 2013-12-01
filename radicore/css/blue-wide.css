@@ -26,31 +26,31 @@ input.submit, input.button {
   background-color: transparent;
   font-size: 100%;
   color: black;
-} 
+}
 input.text {
   background-color: white;
   border: #000000 1px solid;
   font-size: 100%;
   color: black;
-} 
+}
 input.password {
   background-color: white;
   border: #000000 1px solid;
   font-size: 100%;
   color: black;
-} 
+}
 select {
   background-color: white;
   border: #000000 1px solid;
   font-size: 100%;
   color: black;
-} 
+}
 select option {
   background-color: white;
   border: #000000 1px solid;
   font-size: 100%;
   color: black;
-} 
+}
 select.dropdown {
   background-color: white;
   border: #000000 1px solid;
@@ -73,7 +73,7 @@ pre.textarea {
   font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 1em;
   height: 5em;
-  border: 1px solid gray; 
+  border: 1px solid gray;
   background-color: white;
 	overflow: auto;
 }
@@ -177,7 +177,7 @@ div.actionbar p {
 div.body {
   border-left: 1px solid black;
   border-right: 1px solid black;
-  border-bottom: 1px solid black; 
+  border-bottom: 1px solid black;
   text-align: left;
   padding: 1px;
   background: white;
@@ -286,6 +286,8 @@ div.main td.label {
   font-weight: bold;
   color: black;
   background: #77aadd;
+  padding:3px;
+  padding-right:5px;
 }
 
 /* fileupload */
@@ -295,8 +297,8 @@ div.uploadbg {
   background: #cccccc;
 }
 div.upload {
-  width: 500px; 
-  margin-left: auto; 
+  width: 500px;
+  margin-left: auto;
   margin-right: auto;
   background: #dddddd;
   padding: 20px;
@@ -314,26 +316,26 @@ div.upload {
   padding-top: 0px;
   padding-bottom: 0px;
   padding-left: 0px;
-  padding-right: 1px; 
-  margin: 0px; 
+  padding-right: 1px;
+  margin: 0px;
   list-style-type: none;
 }
 #menubar li {
-  background: url(blue/left.gif) no-repeat left top; 
+  background: url(blue/left.gif) no-repeat left top;
   padding-top: 0px;
   padding-bottom: 0px;
-  padding-left: 4px; 
+  padding-left: 4px;
   padding-right: 0px;
   margin: 0px;
   float: left;
 }
 #menubar a {
   background: url(blue/right.gif) no-repeat right top;
-  padding-top: 5px; 
-  padding-bottom: 4px; 
-  padding-left: 6px; 
-  padding-right: 10px; 
-  display: block; 
+  padding-top: 5px;
+  padding-bottom: 4px;
+  padding-left: 6px;
+  padding-right: 10px;
+  display: block;
   color: black;
   text-decoration: none;
   white-space: nowrap;
@@ -381,9 +383,9 @@ div.upload {
   list-style-type: none;
 }
 #menustack li {
-  padding: 0px; 
+  padding: 0px;
   margin: 0px;
-  float: left; 
+  float: left;
   display: block;
   text-decoration: none;
   white-space: nowrap;
@@ -427,6 +429,8 @@ div.middle td.label {
   font-style: italic;
   color: white;
   background: #3344ff;
+  padding:3px;
+  padding-right:5px;
 }
 
 /* errmsg */
@@ -519,17 +523,19 @@ div.outer tr {
   color: black;
   background: #aadfee;
 }
+div.outer td {
+  padding-left: 3px;
+  /* text-align: left; */
+  /* vertical-align: middle; */
+}
 div.outer td.label {
   text-align: right;
   font-style: italic;
   font-weight: bold;
   color: black;
   background: #77aadd;
-}
-div.outer td {
-  padding-left: 3px;
-  /* text-align: left; */
-  /* vertical-align: middle; */
+  padding:3px;
+  padding-right:5px;
 }
 
 /* pagination */

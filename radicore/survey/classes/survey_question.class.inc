@@ -224,14 +224,14 @@ class survey_question extends Default_Table
                 $next['where']   = $where;
                 $next['action']  = 'OK';
                 // this is processed by scriptnext() and scriptprevious()
-                append2ScriptSequence($next);
+                $_SESSION['script_sequence'][] = $next;
                 break;
             case 'N':
                 $next['task_id'] = 'srv_number_option(multi)';
                 $next['where']   = $where;
                 $next['action']  = 'OK';
                 // this is processed by scriptnext() and scriptprevious()
-                append2ScriptSequence($next);
+                $_SESSION['script_sequence'][] = $next;
                 break;
             default:
                 ;
@@ -241,7 +241,7 @@ class survey_question extends Default_Table
         $next['where']   = $where;
         unset($next['action']);
         // this is processed by scriptnext() and scriptprevious()
-        append2ScriptSequence($next);
+        $_SESSION['script_sequence'][] = $next;
 
         return $fieldarray;
 

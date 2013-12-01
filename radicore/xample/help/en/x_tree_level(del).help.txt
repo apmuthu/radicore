@@ -1,2 +1,0 @@
-This will display a record from the TREE LEVEL table and allow it to be deleted.
-For a description of screens of type DELETE 1 <a href="%root%/php-mysql/dialog-types.html#delete1">click here</a>.

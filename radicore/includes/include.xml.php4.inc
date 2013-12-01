@@ -46,8 +46,11 @@ class radicore_view
         $screen_structure =& $this->structure;
 
         // get object name to use as node name in XML file
-        if (preg_match('/(filepicker|fileupload)/i', getPatternId())) {
-    	    $objectname = getPatternId();
+        $pattern_id = getPatternId();
+        if (preg_match('/^(filepicker)/i', getPatternId(), $regs)) {
+            $objectname = 'filepicker';
+        } elseif (preg_match('/^(fileupload)/i', getPatternId(), $regs)) {
+            $objectname = 'fileupload';
         } else {
             $objectname = $dbobject->getClassName();
         } // if
@@ -95,6 +98,9 @@ class radicore_view
 
         // get data array for current object (indexed by rownum)
         $objectdata = $dbobject->getFieldArray();
+        if (!is_long(key($objectdata))) {
+            $objectdata = array($objectdata);  // convert from associative to indexed
+        } // if
 
         // process the data one row at a time
         foreach ($objectdata as $rownum => $rowdata) {
@@ -167,7 +173,7 @@ class radicore_view
                                 if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
                                     if (array_key_exists($fieldname, $object_errors[$rownum])) {
                                         $child->set_attribute('error', $object_errors[$rownum][$fieldname]);
-                                        if (array_search($fieldname, $screen_fields)) {
+                                        if (array_search($fieldname, $screen_fields) !== FALSE) {
                                             // field is in the screen, so delete this message
                                             unset($object_errors[$rownum][$fieldname]);
                                             if (empty($object_errors[$rownum])) {
@@ -180,6 +186,12 @@ class radicore_view
                         } // if
 
                         if (isset($spec['type'])) {
+                            if ($spec['type'] == 'integer' AND isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
+                                // type should have been set to TINYINT, but was not
+                                $spec['type']  = 'boolean';
+                                $spec['true']  = 1;
+                                $spec['false'] = 0;
+                            } // if
                             if ($spec['type'] == 'boolean') {
                                 if (!isset($spec['control'])) {
                                     // no 'control' set, so default to radiogroup
@@ -307,6 +319,9 @@ class radicore_view
                                     $spec['label'] = convertEncoding($spec['label'], 'UTF-8');
                             	    $child->set_attribute('label', $spec['label']);
                                 } // if
+                                if (isset($spec['align_hv'])) {
+                                    $child->set_attribute('align_hv', strtolower($spec['align_hv']));
+                                } // if
                                 if (isset($spec['align_lr'])) {
                             	    $child->set_attribute('align_lr', strtolower($spec['align_lr']));
                                 } // if
@@ -414,6 +429,9 @@ class radicore_view
                             // option for submit buttons
                             if ($spec['control'] == 'button') {
                                 $child->set_attribute('control', 'button');
+                                if (isset($spec['subtype'])) {
+                                    $child->set_attribute('subtype', $spec['subtype']);
+                                } // if
                                 if (isset($spec['task_id'])) {
                                     if (substr($spec['task_id'], 0, 2) == '%%') {
                                         // extract name of field which contains task_id
@@ -481,7 +499,7 @@ class radicore_view
                 } // foreach
             } // if
 
-            if (array_key_exists($rownum, $object_errors)) {
+            if (array_key_exists($rownum, $object_errors) AND is_array($object_errors[$rownum])) {
 			    // there are errors that have not been extracted yet, so transfer them to general message area
 		        foreach ($object_errors as $key1 => $value1){
 		            if (is_array($value1)) {
@@ -490,10 +508,10 @@ class radicore_view
 		                        foreach ($value2 as $key3 => $value3) {
 		                            if (is_array($value3)) {
 		                        	    foreach ($value3 as $key4 => $value4) {
-		                        	        $errors[] = "[$key1] [$key2] [$key3] [$key4] $value4";
-		                        	    } // foreach
-		                            } else {
-		                                $errors[] = "[$key1] [$key2] [$key3] $value3";
+		                        	        $errors[] = "[$rownum] [$key1] [$key2] [$key3] [$key4] $value4";
+                                        } // foreach
+                                    } else {
+                                        $errors[] = "[$rownum] [$key1] [$key2] [$key3] $value3";
 		                            } // if
 		                        } // foreach
 		                    } else {
@@ -502,7 +520,7 @@ class radicore_view
         		            	    $errors[] = "[$key2] $value2";
 		                        } else {
         		                    // prefix with object name or row number
-        		            	    $errors[] = "[$key1] [$key2] $value2";
+        		            	    $errors[] = "[$rownum] [$key1] [$key2] $value2";
 		                        } // if
 		                    } // if
 		                } // foreach
@@ -512,18 +530,36 @@ class radicore_view
 			                $errors[] = $value1;
 		                } else {
 		                    // prefix with fieldname
-    					    $errors[] = "[$key1] $value1";
+    					    $errors[] = "[$rownum] [$key1] $value1";
 		                } // if
 		            } // if
 			    } // foreach
+                unset($object_errors[$rownum]);  // finished with these errors, so remove them
 		    } else {
-                if (!empty($object_errors)) {
-                    $key = key($object_errors);
-                    $errors[$key] = $object_errors[$key];
-                } // if
+//                if (!empty($object_errors)) {
+//                    foreach ($object_errors as $key => $value) {
+//                        if (is_long($key) AND array_key_exists($key, $errors)) {
+//                            $errors[] = $object_errors[$key];
+//                        } else {
+//                            $errors[$key] = $object_errors[$key];
+//                        } // if
+//                    } // foreach
+//                    //$key = key($object_errors);
+//                    //$errors[$key] = $object_errors[$key];
+//                } // if
 		        //$errors = array_merge($errors, $object_errors);
 		    } // if
         } // foreach
+
+        if (!empty($object_errors)) {
+            foreach ($object_errors as $key => $value) {
+                if (is_long($key) AND array_key_exists($key, $errors)) {
+                    $errors[] = $object_errors[$key];
+                } else {
+                    $errors[$key] = $object_errors[$key];
+                } // if
+            } // foreach
+        } // if
 
         // extract any lookup tables from the current object
         list($lookup, $lookup_css) = $dbobject->getLookupData();
@@ -612,7 +648,7 @@ class radicore_view
             foreach ($optionlist as $id => $optvalue) {
                 $child = $doc->create_element('option');
                 $child = $occ->append_child($child);
-                $child->set_attribute('id', $id);
+                $child->set_attribute('key', $id);
 
                 if (array_key_exists($lookupname, $lookup_css)) {
             	    if (array_key_exists($id, $lookup_css[$lookupname])) {
@@ -656,16 +692,20 @@ class radicore_view
         $orderby     = $this->orderby;
         $orderby_seq = $this->orderby_seq;
 
+        $PHP_SELF = $_SERVER['PHP_SELF'];
         if (is_True($_SERVER['HTTPS'])) {
             $protocol = 'HTTPS://';
-            if (strlen($GLOBALS['https_server']) > 0) {
-        	    $xsl_params['script'] = $protocol .$GLOBALS['https_server'] .$_SERVER['PHP_SELF'];
-            } else {
-                $xsl_params['script'] = $protocol .$_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+            if (!empty($GLOBALS['https_server_suffix'])) {
+                // if path name begins with https_server_suffix it must be stripped off
+                $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
+                if (preg_match($pattern, $PHP_SELF, $regs)) {
+                    $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
+                } // if
             } // if
+            $xsl_params['script'] = $protocol .$GLOBALS['https_server'] .$PHP_SELF;
         } else {
             $protocol = 'HTTP://';
-            $xsl_params['script'] = $protocol . $_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
+            $xsl_params['script'] = $protocol .$_SERVER['HTTP_HOST'] .$_SERVER['PHP_SELF'];
         } // if
 
         $xsl_params['script_short'] = basename($_SERVER['PHP_SELF'], '.php');
@@ -677,13 +717,20 @@ class radicore_view
         $xsl_params['session_name'] = session_name();
         //$xsl_params['session_id']   = session_id();
 
-        $xsl_params['title'] = getLanguageText($task_id);
+        //$xsl_params['title'] = getLanguageText($task_id);
+        $dbobject =& RDCsingleton::getInstance('mnu_task');
+        $task_data = $dbobject->getData("task_id='$task_id'");
+        if(!empty($task_data)) {
+            $task_data = $task_data[0];
+            $xsl_params['title'] = $task_data['task_desc'];
+        } else {
+            $xsl_params['title'] = $title;
+        } // if
 
         if ($handle = fopen('version.txt', "r")) {
             $version = trim(fread($handle, 40));
             // remove any BOM (Byte Order Mark) from UTF-8 files
-            $version = preg_replace('/^\xEF\xBB\xBF/', '', $version);
-            $xsl_params['version'] = $version;
+            $xsl_params['version'] = removeBOM($version);
             fclose($handle);
         } // if
 
@@ -705,6 +752,7 @@ class radicore_view
         $xsl_params['text']['print']             = getLanguageText('xsl_print');
         $xsl_params['text']['noprint']           = getLanguageText('xsl_noprint');
         $xsl_params['text']['add-to-favourites'] = getLanguageText('xsl_add_to_favourites');
+        $xsl_params['text']['quick-search']      = getLanguageText('xsl_quick_search');
 
         if (file_exists('../css/xsl_params.inc')) {
             // include overrides from optional file
@@ -747,12 +795,12 @@ class radicore_view
 
         $dir = getParentDIR();
 
-        if (!empty($GLOBALS['http_server'])) {
-    	    $xsl_params['help_root'] = 'HTTP://' .$GLOBALS['http_server'] .$dir .dirname(getSelf());
-            $xsl_params['doc_root']  = $protocol .$GLOBALS['http_server'] .$dir;
+        if (is_True($_SERVER['HTTPS'])) {
+            $xsl_params['help_root'] = 'HTTP://'  .$GLOBALS['http_server'] .dirname($PHP_SELF);
+            $xsl_params['doc_root']  = 'HTTPS://' .$GLOBALS['https_server'] .$dir;
         } else {
             $xsl_params['help_root'] = 'HTTP://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
-            $xsl_params['doc_root']  = $protocol .$_SERVER['HTTP_HOST'] .$dir;
+            $xsl_params['doc_root']  = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir;
         } // if
 
         // insert sort details
@@ -1019,6 +1067,11 @@ class radicore_view
         } else {
             $fname = 'header.txt';
         } // if
+        // try looking in language subdirectory first
+        $fname = './text/'.$GLOBALS['output_language'].'/'.$fname;
+        if (!file_exists($fname)) {
+            $fname = basename($fname);  // fall back to subsystem root
+        } // if
         if (file_exists($fname)) {
             $header = file_get_contents($fname);
             if (!empty($header)) {
@@ -1036,6 +1089,11 @@ class radicore_view
     	    $fname = $script .'_footer.txt';
         } else {
             $fname = 'footer.txt';
+        } // if
+        // try looking in language subdirectory first
+        $fname = './text/'.$GLOBALS['output_language'].'/'.$fname;
+        if (!file_exists($fname)) {
+            $fname = basename($fname);  // fall back to subsystem root
         } // if
         if (file_exists($fname)) {
             $footer = file_get_contents($fname);
@@ -1160,26 +1218,22 @@ class radicore_view
         if (is_True($_SERVER['HTTPS'])) {
             // use one or the other of these, whichever is available
             if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
-        	    $dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
+                $dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
             } else {
                 $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
             } // if
             $filename = $dir .'/xsl/' .$xsl_file;
-            //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
-
-            $xsl_url = 'HTTPS://' .$GLOBALS['https_server']
-                                  .$GLOBALS['https_server_suffix']
-                                  .getParentDIR()
-                                  .'/xsl/' .$xsl_file;
         } else {
-            $dir = getParentDIR();
-            $filename = $_SERVER['DOCUMENT_ROOT'] .$dir .'/xsl/' .$xsl_file;
-            $xsl_url = 'HTTP://' .$_SERVER['HTTP_HOST'] .$dir .'/xsl/' .$xsl_file;
+            $filename = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/xsl/' .$xsl_file;
         } // if
+        //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
+
         if (!file_exists($filename)) {
             // "File name 'X' does not exist"
             trigger_error(getLanguageText('sys0057', $filename), E_USER_ERROR);
         } // if
+
+        $xsl_url = $GLOBALS['url_files'].getParentDIR().'/xsl/' .$xsl_file;
 
         if (is_true($_SESSION['XSLT_client_side'])) {
     	    $pi = $xml_doc->create_processing_instruction('xml-stylesheet', 'type="text/xsl" href="' .$xsl_url .'"');
@@ -1248,7 +1302,7 @@ class radicore_view
         } // foreach
 
         // identify global CSS file and add it to the front of this array
-        $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'] .'.css';
+        $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'];
         array_unshift($css_files, $default_css);
 
         // find out if there is a browser-specific CSS file
@@ -1261,16 +1315,15 @@ class radicore_view
         } // if
 
         foreach ($css_files as $filenum => $filename) {
-            // prepend each file with protocol and domain name
-            if (is_True($_SERVER['HTTPS'])) {
-                if (strlen($GLOBALS['https_server']) > 0) {
-            	    $css_files[$filenum] = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'] .$filename;
-                } else {
-                    $css_files[$filenum] = 'HTTPS://' .$_SERVER['HTTP_HOST'] .$filename;
+            if (!empty($GLOBALS['https_server_suffix'])) {
+                // if path name begins with https_server_suffix it must be stripped off
+                $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
+                if (preg_match($pattern, $filename, $regs)) {
+                    $filename = substr($filename, strlen($GLOBALS['https_server_suffix']));
                 } // if
-            } else {
-                $css_files[$filenum] = 'HTTP://' . $_SERVER['HTTP_HOST'] .$filename;
             } // if
+            //echo "filenum=$filenum, filename=$filename<br>";
+            $css_files[$filenum] = $GLOBALS['url_files'].$filename;
             if (!preg_match('/(\.css)$/i', $css_files[$filenum], $regs)) {
                 // file name does not end with '.css', so append it
                 $css_files[$filenum] = $css_files[$filenum] .".css";
@@ -1310,18 +1363,16 @@ class radicore_view
                     $head->set_attribute('type', 'file');
                     $head = $occ->append_child($head);
 
-                    $url = $entry[key($entry)];
-                    if (strtoupper(substr($url, 0, 4)) != 'HTTP') {
-            		    if (is_True($_SERVER['HTTPS'])) {
-                            if (strlen($GLOBALS['https_server']) > 0) {
-                        	    $url = 'HTTPS://' .$GLOBALS['https_server'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
-                            } else {
-                                $url = 'HTTPS://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
-                            } // if
-                        } else {
-                            $url = 'HTTP://' . $_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']) .'/' .$url;
+                    $PHP_SELF = $_SERVER['PHP_SELF'];
+                    if (!empty($GLOBALS['https_server_suffix'])) {
+                        // if path name begins with https_server_suffix it must be stripped off
+                        $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
+                        if (preg_match($pattern, $PHP_SELF, $regs)) {
+                            $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
                         } // if
                     } // if
+
+                    $url = $GLOBALS['url_files'] .dirname($PHP_SELF) .'/' .$entry[key($entry)];
 
                     $head  = $occ->append_child($head);
                     $value = $doc->create_text_node($url);
@@ -1444,13 +1495,17 @@ class radicore_view
             $child->set_attribute('context_preselect', "{$button['context_preselect']}");
             $child = $occ->append_child($child);
 
-            // convert text into output language
+            // convert button text into output language
             $button['button_text'] = getLanguageText($button['button_text']);
-
             $button['button_text'] = convertEncoding($button['button_text'], 'UTF-8');
 
             $value = $doc->create_text_node(trim($button['button_text']));
             $value = $child->append_child($value);
+
+            // convert task description into output language
+            $button['task_desc'] = $button['task_desc'];
+            $button['task_desc'] = convertEncoding($button['task_desc'], 'UTF-8');
+            $child->set_attribute('title', $button['task_desc']);
         } // foreach
 
         return;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.enquire1.inc
@@ -49,10 +49,6 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
-    if (!is_string(key($fieldarray))) {
-        // indexed by row, so use first row only
-        $fieldarray = $fieldarray[key($fieldarray)];
-    } // if
 } else {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -117,6 +113,8 @@ if ($dbobject->errors) {
 	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
 } // if
 
+$messages = array_merge($messages, $dbobject->getMessages());
+
 // set variables to be included in XML output
 $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
 $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
@@ -137,7 +135,10 @@ if (!empty($_POST)) {
         $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject));
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
     } // endif
 } // if
 

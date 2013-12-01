@@ -1,0 +1,6 @@
+[22-Mar-2013 23:32:07 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:07 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:09 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:09 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:10 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:10 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39

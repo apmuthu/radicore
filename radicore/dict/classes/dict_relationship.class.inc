@@ -36,7 +36,7 @@ class dict_relationship extends Default_Table
             if (isset($fieldarray['table_id_jnr'])) {
                 // in SEARCH mode set control to POPUP
                 $this->fieldspec['table_id_snr']['control']       = 'popup';
-                $this->fieldspec['table_id_snr']['task_id']       = 'dict_table(popup1)snr';
+                $this->fieldspec['table_id_snr']['task_id']       = 'dict_table(popup2)snr';
                 $this->fieldspec['table_id_snr']['foreign_field'] = 'table_id_snr';
                 // remove NOEDIT switch
                 unset($this->fieldspec['table_id_snr']['noedit']);
@@ -44,13 +44,18 @@ class dict_relationship extends Default_Table
             } elseif (isset($fieldarray['table_id_snr'])) {
                 // in SEARCH mode set control to POPUP
                 $this->fieldspec['table_id_jnr']['control']       = 'popup';
-                $this->fieldspec['table_id_jnr']['task_id']       = 'dict_table(popup1)jnr';
+                $this->fieldspec['table_id_jnr']['task_id']       = 'dict_table(popup2)jnr';
                 $this->fieldspec['table_id_jnr']['foreign_field'] = 'table_id_jnr';
                 // remove NOEDIT switch
                 unset($this->fieldspec['table_id_jnr']['noedit']);
             } // if
             // change from DROPDOWN to TEXT field
             unset($this->fieldspec['parent_field']['control']);
+        } // if
+
+        if ($GLOBALS['task_id'] == 'dict_related_column(multi4)a' OR $GLOBALS['task_id'] == 'dict_related_column(multi4)b') {
+            // insert some javascript to submit form when a different value is selected in this dropdown list
+            $this->fieldspec['key_name']['javascript'] = array('onchange' => 'this.form.submit();');
         } // if
 
 		return $fieldarray;
@@ -173,6 +178,16 @@ class dict_relationship extends Default_Table
             $this->lookup_data['rel_type'] = $array;
         } // if
 
+        //if (!array_key_exists('key_name', $this->lookup_data)) {
+            if (!empty($fieldarray['database_id_snr']) AND !empty($fieldarray['table_id_snr'])) {
+                $array = $this->_showKeyNames($fieldarray['database_id_snr'], $fieldarray['table_id_snr']);
+            } else {
+                // get the names of all unique keys
+                $array = $this->getValRep('key_name');
+            } // if
+            $this->lookup_data['key_name'] = $array;
+        //} // if
+
         $pattern_id = getPatternId();
 
         if (preg_match('/^(list1)$/i', $pattern_id)
@@ -203,6 +218,12 @@ class dict_relationship extends Default_Table
 //            $array['DEL'] = 'CASCADE';
 //            $array['NUL'] = 'NULLIFY';
             $array = getLanguageArray('rel_type');
+            return $array;
+        } // if
+
+        if ($item == 'key_name') {
+            // provide values for dropdown list
+            $array['PRIMARY'] = 'PRIMARY';
             return $array;
         } // if
 
@@ -304,13 +325,13 @@ class dict_relationship extends Default_Table
     {
         switch ($popupname) {
             // replace $where string for this popup
-        	case 'dict_table(popup1)':
+        	case 'dict_table(popup2)':
         		$where = "database_id='{$fieldarray['database_id_jnr']}'";
         		break;
-        	case 'dict_table(popup1)snr':
+        	case 'dict_table(popup2)snr':
         		$where = "database_id='{$fieldarray['database_id_snr']}'";
         		break;
-        	case 'dict_column(popup1)':
+        	case 'dict_column(popup2)':
         		$where = "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'";
         		break;
         	default:
@@ -337,13 +358,13 @@ class dict_relationship extends Default_Table
     {
         switch ($return_from) {
             // move returned value to the correct field
-            case 'dict_table(popup1)':
+            case 'dict_table(popup2)':
 //                $fieldarray['database_id_jnr'] = $select_array['database_id'];
 //                $fieldarray['table_id_jnr']    = $select_array['table_id'];
 //                unset($select_array['database_id']);
 //                unset($select_array['table_id']);
                 break;
-            case 'dict_table(popup1)snr':
+            case 'dict_table(popup2)snr':
 //                $fieldarray['database_id_snr'] = $select_array['database_id'];
 //                $fieldarray['table_id_snr']    = $select_array['table_id'];
 //                unset($select_array['database_id']);
@@ -434,6 +455,28 @@ class dict_relationship extends Default_Table
     } // _cm_pre_output
 
     // ****************************************************************************
+    function _cm_updateFieldarray ($fieldarray, $postarray, $rownum)
+    // allow object to deal with any changes POSTed from the form.
+    // $fieldarray contains current data from one row.
+    // $postarray contains any changes made in the form for this row.
+    // $rownum identifies which row is being processed
+    {
+        if (is_object($this->child_object) AND $this->child_object instanceof dict_related_column) {
+            if (isset($postarray['key_name']) AND isset($fieldarray['key_name']) AND $postarray['key_name'] != $fieldarray['key_name']) {
+                // name of key has changed, so replace data on DICT_RELATED_COLUMN table
+                $fieldarray['key_name'] = $postarray['key_name'];  // change to this value
+                $result = $this->_setRelatedColumns($fieldarray);
+                if ($result == false) {
+                    return $fieldarray;
+                } // if
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_updateFieldarray
+
+    // ****************************************************************************
     function _cm_validateInsert ($fieldarray)
     // perform custom validation before insert.
     {
@@ -442,6 +485,60 @@ class dict_relationship extends Default_Table
         return $fieldarray;
 
     } // _cm_validateInsert
+
+    // ****************************************************************************
+    function _showKeyNames ($dbname, $tablename)
+    // identify the names of all unique keys in this table (for the dropdown list).
+    {
+        $key_names = array();
+
+        $dbobject =& RDCsingleton::getInstance('dict_table_key');
+        $where = "database_id='$dbname' AND table_id='$tablename' AND is_unique='Y'";
+        $data = $dbobject->getData($where);
+
+        foreach ($data as $entry) {
+            $key_name = $entry['key_name'];
+            $key_names[$key_name] = $key_name;
+        } // foreach
+
+        return $key_names;
+
+    } // _showKeyNames
+
+    // ****************************************************************************
+    function _setRelatedColumns ($reldata)
+    // create entries on the DICT_RELATED_COLUMN table for this relationship.
+    {
+        if (is_string($reldata)) {
+            $where_array = where2array($reldata);
+            $where       = $reldata;
+        } else {
+            $where_array = $reldata;
+            $where       = array2where($reldata);
+        } // if
+
+        $relOBJ =& RDCsingleton::getInstance('dict_related_column');
+        $relOBJ->startTransaction();
+        $where2 = array2where($where_array, array('database_id_snr','table_id_snr','database_id_jnr','table_id_jnr','seq_no'));
+        $del = $relOBJ->deleteSelection($where2);
+        if (empty($relOBJ->errors)) {
+            $where2 = array2where($where_array, array('database_id_snr','table_id_snr','database_id_jnr','table_id_jnr','seq_no','key_name'));
+            $colarray = $relOBJ->getInitialDataMultiple($where2);
+            $colarray = $relOBJ->insertMultiple($colarray);
+        } // if
+        if ($relOBJ->errors) {
+            $this->errors[$relOBJ->getClassName()] = $relOBJ->getErrors();
+            $relOBJ->rollback();
+            return false;
+        } else {
+            $relOBJ->commit();
+        } // if
+
+        $this->setChildData($colarray);  // put this amended data into the child object
+
+        return $where_array;
+
+    } // _setRelatedColumns
 
 // ****************************************************************************
 } // end class

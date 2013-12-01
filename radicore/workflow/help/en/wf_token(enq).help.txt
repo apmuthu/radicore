@@ -1,3 +1,0 @@
-This will display the contents of a record from the WF_TOKEN table.
-
-Refer to <a href="%root%/wf_token(enq).html">Enquire Workflow Token</a> for full details.

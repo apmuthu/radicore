@@ -10,6 +10,8 @@ class dict_dataBase_s01 extends dict_dataBase
     // this class is used to import existing database names
     // ****************************************************************************
 
+    var $database_names;			// an array of database names which can be imported [server_name=dict_name]
+    
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
@@ -60,6 +62,8 @@ class dict_dataBase_s01 extends dict_dataBase
     {
         if (array_key_exists('database_id', $this->lookup_data)) {
             // already there, so don't build it again
+            // swap server name with dictionary name
+            $fieldarray['database_id'] = $this->database_names[$fieldarray['database_id']];
         	return $fieldarray;
         } // if
 
@@ -72,22 +76,32 @@ class dict_dataBase_s01 extends dict_dataBase
         if (!empty($servers)) {
             // there are different databases on different servers
         	foreach ($servers as $server) {
-        		$dbprefix = $server['dbprefix'];
                 if (!empty($server['switch_dbnames'])) {
+                	$dbprefix = '';  // cannot use this option at the same time
                     // flip from 'dictName=serverName' to 'serverName=dictName'
-                    $server['switch_dbnames'] = array_flip($server['switch_dbnames']);
+                    $temp = array_flip($server['switch_dbnames']);
                     // accumulate results
-                    $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
+                    $switch_dbnames = array_merge($switch_dbnames, $temp);
+				} else {
+					$dbprefix = $server['dbprefix'];
                 } // if
-        		$dbnames = $this->_loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
+        		$dbnames = $this->_loadDatabases ($server['dbhost'], $dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
                 if (!empty($dbprefix)) {
                     $dbprefix_exclude[] = $dbprefix;
                 } // if
         	} // foreach
         } else {
             // all databases are within the same server
-            $dbprefix = $GLOBALS['dbprefix'];
-            $dbnames = $this->_loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
+            if (!empty($GLOBALS['switch_dbnames'])) {
+                $dbprefix = '';  // cannot use this option at the same time
+                // flip from 'dictName=serverName' to 'serverName=dictName'
+                $temp = array_flip($GLOBALS['switch_dbnames']);
+                // accumulate results
+                $switch_dbnames = array_merge($switch_dbnames, $temp);
+			} else {
+				$dbprefix = $GLOBALS['dbprefix'];
+            } // if
+            $dbnames = $this->_loadDatabases (null, $dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames);
             if (!empty($dbprefix)) {
                 $dbprefix_exclude[] = $dbprefix;
             } // if
@@ -99,8 +113,16 @@ class dict_dataBase_s01 extends dict_dataBase
             return $fieldarray;
         } // if
 
-        asort($dbnames);  // sort into ascending sequence
-        $this->lookup_data['database_id'] = $dbnames;
+        ksort($dbnames);  // sort into ascending sequence on server name
+        $this->database_names = $dbnames;				// this is for internal use
+        $this->lookup_data['database_id'] = $dbnames;	// this is for the dropdown list
+        
+        if (!empty($switch_dbnames)) {
+        	foreach ($switch_dbnames as $dbname_server => $dbname_dict) {
+        		// show that there is a difference between the server name and the dictionary name
+        		$this->lookup_data['database_id'][$dbname_server] = "$dbname_server ($dbname_dict)";
+        	} // foreach
+        } // if
 
         return $fieldarray;
 
@@ -133,51 +155,190 @@ class dict_dataBase_s01 extends dict_dataBase
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _loadDatabases ($dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames)
+    function _loadDatabases ($dbhost, $dbnames, $dbprefix, $dbprefix_exclude, $switch_dbnames)
     // find databases which have this $dbprefix and load their names into $dbnames.
     {
+    	if (!empty($dbhost)) {
+    		$DDL =& $this->_getDBMSengineByHost($dbhost);
+		} else {
+			$DDL =& $this->_getDBMSengine($this->dbname);
+    	} // if
+    	
         // get list of all database names from the database server
-        $array  = $this->_ddl_showDatabases($dbprefix);
+        //$array  = $this->_ddl_showDatabases($dbprefix);
+        $array = $DDL->ddl_showDatabases($dbprefix);
 
         // filter out those databases that already exist in DICT database
         $i = 0;
         $prefix_len = strlen($dbprefix);
-        foreach ($array as $row => $dbname) {
-            $dbname = strtolower($dbname);
-            if (!empty($dbprefix)) {
-                // remove server prefix from dbname
-                if (preg_match('/^(' .$dbprefix .')/i', $dbname)) {
-        			$dbname = substr($dbname, $prefix_len);
-                    $array[$row] = $dbname;
-                } // if
+        foreach ($array as $row => $dbname_server) {
+            $dbname_server = strtolower($dbname_server);
+            $dbname_dict   = $dbname_server;
+            if (preg_match('/(information_schema|mysql|performance_schema)/i', $dbname_server)) {
+            	// ignore this entry
             } else {
-                foreach ($dbprefix_exclude as $e_dbprefix) {
-                    // this prefix has already been processed, so exclude any entries which use it
-                    if (substr($dbname, 0, strlen($e_dbprefix)) == $e_dbprefix) {
-                        $dbname = substr($dbname, strlen($e_dbprefix));
-                        $array[$row] = $dbname;
-                        break;
-                    } // if
-                } // foreach
-            } // if
-            if (!empty($switch_dbnames)) {
-                if (array_key_exists($dbname, $switch_dbnames)) {
-                    // name in the dictionary is different from the name on the server
-                    $dbname = $switch_dbnames[$dbname];
-                } // if
-            } // if
-        	$count = $this->getCount("database_id='$dbname'");
-            if ($count == 0) {
-                if (!array_key_exists($dbname, $dbnames)) {
-                    // this is new, so store details in return array
-                    $dbnames[$dbname] = $dbprefix.$dbname;
-                } // if
-            } // if
+	            if (!empty($dbprefix)) {
+	                // remove server prefix from dbname
+	                if (preg_match('/^(' .$dbprefix .')/i', $dbname_server)) {
+        				$dbname_dict = substr($dbname_server, $prefix_len);
+	                } // if
+	            } else {
+	                foreach ($dbprefix_exclude as $e_dbprefix) {
+	                    // this prefix has already been processed, so exclude any entries which use it
+	                    if (substr($dbname_server, 0, strlen($e_dbprefix)) == $e_dbprefix) {
+	                        $dbname_dict = substr($dbname_server, strlen($e_dbprefix));
+	                        break;
+	                    } // if
+	                } // foreach
+	            } // if
+	            if (!empty($switch_dbnames)) {
+	                if (array_key_exists($dbname_server, $switch_dbnames)) {
+	                    // name in the dictionary is different from the name on the server
+	                    $dbname_dict = $switch_dbnames[$dbname_server];
+	                } // if
+	            } // if
+	            // check to see if this dbname is already in the dictionary database
+        		$count = $this->getCount("database_id='$dbname_dict'");
+	            if ($count == 0) {
+	                if (!array_key_exists($dbname_server, $dbnames)) {
+	                    // this is new, so store details in return array
+	                    $dbnames[$dbname_server] = $dbname_dict;
+	                } // if
+	            } // if
+			} // if
         } // foreach
 
         return $dbnames;
 
     } // _loadDatabases
+    
+    // ****************************************************************************
+    function &_getDBMSengineByHost ($dbhost)
+    // obtain the object that deals with the database engine for this table.
+    {
+        $engine = null;
+        $args   = array('dbname' => $dbname);
+
+        // multi-server option
+        // find out which server deals with this dbhost
+        foreach ($GLOBALS['servers'] as $servernum => $server) {
+        	if (empty($server['dbnames'])) {
+        	    // DBNAMES entry missing
+        	    trigger_error($this->getLanguageText('sys0170', 'DBNAMES'), E_USER_ERROR);
+        	} else {
+        	    $dbname_array = explode(',', $server['dbnames']);
+                $dbname_array = array_map('trim', $dbname_array);
+        	} // if
+            if (!empty($server['switch_dbnames']) AND is_array($server['switch_dbnames'])) {
+                // database name in the class file may be switched to a different name on the server
+                $switch_dbnames = $server['switch_dbnames'];
+            } else {
+                $switch_dbnames = array();
+            } // if
+            if ($server['dbhost'] == $dbhost) {
+                if (!isset($server['dbengine'])) {
+                    trigger_error($this->getLanguageText('sys0170', 'DBENGINE'), E_USER_ERROR);
+                } else {
+                    $engine = $server['dbengine'];
+                } // if
+                if (!isset($server['dbhost'])) {
+                    trigger_error($this->getLanguageText('sys0170', 'DBHOST'), E_USER_ERROR);
+                } else {
+                    $args['dbhost'] = $server['dbhost'];
+                } // if
+                if (!isset($server['dbusername'])) {
+                    trigger_error($this->getLanguageText('sys0170', 'DBUSERNAME'), E_USER_ERROR);
+                } else {
+                    $args['dbusername'] = $server['dbusername'];
+                } // if
+                if (!isset($server['dbuserpass'])) {
+                    trigger_error($this->getLanguageText('sys0170', 'DBUSERPASS'), E_USER_ERROR);
+                } else {
+                    $args['dbuserpass'] = $server['dbuserpass'];
+                } // if
+                if (!empty($server['dbport'])) {
+                    $args['dbport'] = $server['dbport'];
+                } // if
+                if (!empty($server['dbsocket'])) {
+                    $args['dbsocket'] = $server['dbsocket'];
+                } // if
+                if (!isset($server['dbprefix'])) {
+                    trigger_error($this->getLanguageText('sys0170', 'DBPREFIX'), E_USER_ERROR);
+                } else {
+                    $args['dbprefix'] = $server['dbprefix'];
+                } // if
+                if (!empty($server['ssl_key'])) {
+                    $args['ssl_key'] = $server['ssl_key'];
+                } // if
+                if (!empty($server['ssl_cert'])) {
+                    $args['ssl_cert'] = $server['ssl_cert'];
+                } // if
+                if (!empty($server['ssl_ca'])) {
+                    $args['ssl_ca'] = $server['ssl_ca'];
+                } // if
+                if (!empty($server['ssl_capath'])) {
+                    $args['ssl_capath'] = $server['ssl_capath'];
+                } // if
+                if (!empty($server['ssl_cipher'])) {
+                    $args['ssl_cipher'] = $server['ssl_cipher'];
+                } // if
+                // these are options for non-MySQL databases
+                if (isset($server['PGSQL_dbname'])) {
+                    $args['PGSQL_dbname'] =& $server['PGSQL_dbname'];
+                } // if
+                if (isset($server['SQLSRV_schema'])) {
+                    $args['SQLSRV_schema'] =& $server['SQLSRV_schema'];
+                } // if
+                if (isset($server['serverName'])) {
+                    $args['serverName'] =& $server['serverName'];
+                } // if
+                if (isset($server['connectionInfo'])) {
+                    $args['connectionInfo'] =& $server['connectionInfo'];
+                } // if
+                break; // so stop here
+            } // if
+        } // foreach
+        if (empty($engine)) {
+        	// "entry missing for database 'X'"
+        	trigger_error($this->getLanguageText('sys0171', $dbname), E_USER_ERROR);
+        } // if
+
+        if (empty($engine)) {
+        	trigger_error("No value has been supplied for DBMS engine", E_USER_ERROR);
+        } // if
+
+        if (!class_exists($engine)) {
+            // load class definition for this database engine
+            if ($engine == 'mysql') {
+                if (extension_loaded('mysqli')) {
+                    // use 'improved' mysql functions
+                    require_once "dml.mysqli.class.inc";
+                } else {
+                    // use standard mysql functions
+                    require_once "dml.mysql.class.inc";
+                } // if
+            } elseif ($engine == 'oracle') {
+                if (version_compare(phpversion(), '5.0.0', '<')) {
+                    // use old api's
+                    require_once "dml.oracle.php4.class.inc";
+                } else {
+                    // use new api's
+                    require_once "dml.oracle.php5.class.inc";
+                } // if
+            } else {
+                require_once "dml.$engine.class.inc";
+            } // if
+        } // if
+
+        if (isset($servernum)) {
+            $DML =& RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true, $unbuffered_query);
+        } else {
+            $DML =& RDCsingleton::getInstance($engine, $args, true, $unbuffered_query);
+        } // if
+
+        return $DML;
+
+    } // _getDBMSengineByHost
 
 // ****************************************************************************
 } // end class

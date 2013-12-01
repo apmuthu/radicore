@@ -7,9 +7,10 @@
 class validation_class
 {
     // member variables
-    var $caller;            // details of calling object
-    var $dateobj;           // date object
-    var $errors;            // array of error messages
+    var $caller;                    // details of calling object
+    var $dateobj;                   // date object
+    var $errors;                    // array of error messages
+    var $fields_not_for_trimming;   // array of field names which are not to be trimmed
 
     // ****************************************************************************
     // class constructor
@@ -134,14 +135,31 @@ END_OF_REGEX;
     function validateField ($fieldname, $fieldvalue, $fieldspec)
     // standard function for validating database fields.
     {
-        // find user-friendly version of $fieldname
-        $translated_fieldname = getLanguageText($fieldname);
+        $classdir = $GLOBALS['classdir'];   // save
 
+        // find user-friendly version of $fieldname
+        $callingOBJ =& $this->caller;
+        $GLOBALS['classdir'] = dirname($callingOBJ->dirname);
+        $translated_fieldname = $callingOBJ->getLanguageText($fieldname);
         $this->dateobj =& RDCsingleton::getInstance('date_class');
+
+        $GLOBALS['classdir'] = $classdir;   // restore
+
+        if (!is_array($this->fields_not_for_trimming)) {
+            if (is_string($this->fields_not_for_trimming)) {
+                $this->fields_not_for_trimming = array($this->fields_not_for_trimming);
+            } else {
+                $this->fields_not_for_trimming = array();
+            } // if
+        } // if
+        // ensure all names are in lower case
+        foreach ($this->fields_not_for_trimming as $key => $value) {
+        	$this->fields_not_for_trimming[$key] = strtolower($value);
+        } // foreach
 
         if ($fieldspec['type'] == 'enum') {
             // get enum array for this field
-            $enum = $this->caller->getValRep($fieldname);
+            $enum = $callingOBJ->getValRep($fieldname);
             // if we already have the value do not replace it
             if (!in_array($fieldvalue, $enum)) {
                 // replace index number with text value
@@ -149,7 +167,7 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (preg_match('/(set|array|varray)/i',$fieldspec['type'])) {
+        if (preg_match('/(set|array|varray)/i', $fieldspec['type'])) {
             // convert $fieldvalue array into a string with comma separator
             if (is_array($fieldvalue)) {
                 foreach ($fieldvalue as $key => $value) {
@@ -161,8 +179,14 @@ END_OF_REGEX;
             } // if
         } // if
 
-        // trim any leading or trailing spaces
-        $fieldvalue = trim($fieldvalue);
+        if (in_array($fieldname, $this->fields_not_for_trimming)) {
+            // do not trim() this field
+        } else {
+            if (strlen($fieldvalue) > 0) {
+                // trim any leading or trailing spaces
+                $fieldvalue = trim($fieldvalue);
+            } // if
+        } // if
 
         if (strlen($fieldvalue) == 0) {
             // value is empty, but is there a default which can be inserted?
@@ -170,9 +194,9 @@ END_OF_REGEX;
             	// this table is split by account, so insert user's account_id
             	if (isset($_SESSION['rdcaccount_id']) AND $_SESSION['rdcaccount_id'] > 1) {
             	    $fieldvalue = $_SESSION['rdcaccount_id'];
-            	} elseif ($this->caller->tablename == 'mnu_account') {
+            	} elseif ($callingOBJ->tablename == 'mnu_account') {
             	    // value will be generated automatically
-            	} elseif ($this->caller->tablename == 'mnu_user') {
+            	} elseif ($callingOBJ->tablename == 'mnu_user') {
             	    // value is optional
             	} else {
             	    // default to the shared account
@@ -186,7 +210,7 @@ END_OF_REGEX;
 
                 } elseif (isset($fieldspec['optionlist'])) {
                     // get list of options for this field
-                    $optionlist =& $this->caller->lookup_data[$fieldspec['optionlist']];
+                    $optionlist =& $callingOBJ->lookup_data[$fieldspec['optionlist']];
                     if (empty($optionlist)) {
                         // no options found, so use default value
                     	$fieldvalue = $fieldspec['default'];
@@ -220,7 +244,7 @@ END_OF_REGEX;
                     // value will be filled in later, so continue
                 } else {
                     // '$fieldname cannot be blank'
-                    $this->errors[$fieldname] = getLanguageText('sys0020', $translated_fieldname);
+                    $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0020', $translated_fieldname);
                 } // if
             } // if
             if (preg_match('/(date|datetime|timestamp)/i', $fieldspec['type'])) {
@@ -248,9 +272,17 @@ END_OF_REGEX;
                 if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
                     // remove thousands separator and ensure decimal point is '.'
                     $fieldvalue = number_unformat($fieldvalue, '.', ',');
+                    if (preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
+                        // assume value is in format 'field+1', so let it through
+                    } elseif (array_key_exists('scale', $fieldspec)) {
+                        if (is_numeric($fieldvalue)) {
+                            // round to the correct number of decimal places
+                            $fieldvalue = number_format($fieldvalue, $fieldspec['scale'], '.', '');
+                        } // if
+                    } // if
                 } // if
                 if (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
-                	if (strlen($fieldvalue) > $size) {
+                	if (is_numeric($fieldvalue) AND strlen($fieldvalue) > $size) {
                 	    // reduce huge number to scientific notation
                 		$fieldvalue = sprintf('%e', $fieldvalue);
                 	} // if
@@ -262,11 +294,11 @@ END_OF_REGEX;
                         $encoding = mb_detect_encoding($fieldvalue);
                         if (mb_strlen($fieldvalue, $encoding) > $size) {
                         	// '$fieldname cannot be > $size characters
-                            $this->errors[$fieldname] = getLanguageText('sys0021', $translated_fieldname, $size);
+                            $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                         } // if
                     } else {
                         // '$fieldname cannot be > $size characters
-                        $this->errors[$fieldname] = getLanguageText('sys0021', $translated_fieldname, $size);
+                        $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                     } // if
                 } // if
             } // if
@@ -284,7 +316,7 @@ END_OF_REGEX;
         switch ($fieldspec['type']) {
             case '':
                 // this points to an error in the dictionary export function
-                $this->errors[$fieldname] = getLanguageText('sys0036', 'null');
+                $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0036', 'null');
                 break;
 
             case 'enum':
@@ -332,11 +364,11 @@ END_OF_REGEX;
                             $try = $fieldvalue;
                             if (!file_exists($try)) {
                                 // 'Filename does not exist'
-                                if (!empty($this->caller->picker_subdir)) {
-                                	$try = $this->caller->picker_subdir .'/' .$fieldvalue;
+                                if (!empty($callingOBJ->picker_subdir)) {
+                                	$try = $callingOBJ->picker_subdir .'/' .$fieldvalue;
                                 } // if
                                 if (!file_exists($try)) {
-                                    $this->errors[$fieldname] = getLanguageText('sys0057', $fieldvalue);
+                                    $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0057', $fieldvalue);
                                 } // if
                             } // if
                             break;
@@ -346,7 +378,7 @@ END_OF_REGEX;
                             break;
                         default:
                             // '$fieldname: specification for subtype is invalid'
-                            $this->errors[$fieldname] = getLanguageText('sys0037', $translated_fieldname, 'subtype');
+                            $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0037', $translated_fieldname, 'subtype');
                     } // switch
                 } // if
 
@@ -364,9 +396,14 @@ END_OF_REGEX;
                                 break;
                             default:
                                 // '$fieldname: specification for hash is invalid'
-                                $this->errors[$fieldname] = getLanguageText('sys0037', $translated_fieldname, 'hash');
+                                $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0037', $translated_fieldname, 'hash');
                         } // switch
                     } // if
+                } // if
+
+                if (isset($fieldspec['control']) AND $fieldspec['control'] == 'multiline') {
+                    // replace CRLF with LF as it sometimes results in two linefeeds
+                    $fieldvalue = str_replace("\r\n", "\n", $fieldvalue);
                 } // if
 
                 break;
@@ -411,7 +448,12 @@ END_OF_REGEX;
 
             default:
                 // perform validation if field type is numeric (integer, decimal)
+                $ini_precision = ini_get('precision');
+                if (isset($fieldspec['size']) AND $fieldspec['size'] > $ini_precision) {
+                    ini_set('precision', $fieldspec['size']);
+                } // if
                 $fieldvalue = $this->validateNumber($fieldname, $fieldvalue, $fieldspec);
+                ini_set('precision', $ini_precision);
         } // switch
 
         return $fieldvalue;
@@ -427,6 +469,8 @@ END_OF_REGEX;
         $this->errors = array();
 
         $this->caller = &$caller;
+
+        $this->fields_not_for_trimming = $caller->fields_not_for_trimming;
 
         // create array to hold data which has been formatted for the database
         $insertarray = array();
@@ -460,6 +504,8 @@ END_OF_REGEX;
     function validateNumber ($field, $value, $spec)
     // if $spec identifies $field as a number then check that $value is within range.
     {
+        $callingOBJ =& $this->caller;
+
         if (preg_match("/^$field"."[+-][1-9]+/i", $value)) {
             // assume value is in format 'field+1', so let it through
             return $value;
@@ -473,7 +519,7 @@ END_OF_REGEX;
             $number = floor($number); // remove any decimal places
             if ((string)$value <> (string)$number) {
                 // 'Value is not a whole number'
-                $this->errors[$field] = getLanguageText('sys0029');
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0029');
                 return $value;
             } // if
 
@@ -486,7 +532,7 @@ END_OF_REGEX;
 
             if ($number < $minvalue) {
                 // 'Value is below minimum value'
-                $this->errors[$field] = getLanguageText('sys0024', $minvalue);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0024', $minvalue);
             } // if
 
             if (isset($spec['maxvalue'])) {
@@ -503,7 +549,7 @@ END_OF_REGEX;
 
             if ($number > $maxvalue) {
                 // 'Value is above maximum value'
-                $this->errors[$field] = getLanguageText('sys0025', $maxvalue);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0025', $maxvalue);
             } // if
 
             if (isset($spec['zerofill'])) {
@@ -522,7 +568,7 @@ END_OF_REGEX;
             // input must at least be numeric to begin with
             if (!is_numeric(trim($value))) {
                 // 'value is not numeric'
-                $this->errors[$field] = getLanguageText('sys0023', $value);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0023', $value);
                 return $value;
             } // if
 
@@ -533,7 +579,7 @@ END_OF_REGEX;
                 $precision = (int)$spec['size'];
             } else {
                 // 'Specification missing for PRECISION'
-                $this->errors[$field] = getLanguageText('sys0026');
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0026');
                 return $value;
             } // if
 
@@ -567,7 +613,7 @@ END_OF_REGEX;
 
             if ($value < $minvalue) {
                 // 'Value is below minimum value'
-                $this->errors[$field] = getLanguageText('sys0024', $minvalue);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0024', $minvalue);
             } // if
 
             if (isset($spec['maxvalue'])) {
@@ -577,7 +623,7 @@ END_OF_REGEX;
 
             if ($value > $maxvalue) {
                 // 'Value is above maximum value'
-                $this->errors[$field] = getLanguageText('sys0025', $maxvalue);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0025', $maxvalue);
             } // if
 
             // set to internal format
@@ -605,7 +651,7 @@ END_OF_REGEX;
 
             if (!is_numeric($value)) {
                 // "Value is not a number";
-                $this->errors[$field] = getLanguageText('sys0022', $value);
+                $this->errors[$field] = $callingOBJ->getLanguageText('sys0022', $value);
                 return $value;
             } // if
 
@@ -618,7 +664,7 @@ END_OF_REGEX;
                 $numberlen = strlen($number);
                 if ($valuelen > $numberlen) {
                     // "Value has too many digits";
-                    $this->errors[$field] = getLanguageText('sys0027');
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0027');
                     return $number;
                 } // if
             } // if
@@ -626,7 +672,7 @@ END_OF_REGEX;
             if (isset($spec['unsigned'])) {
                 if ($number < 0) {
                     // "Value cannot be negative";
-                    $this->errors[$field] = getLanguageText('sys0028');
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0028');
                     return $value;
                 } // if
             } // if
@@ -636,7 +682,7 @@ END_OF_REGEX;
         } // if
 
         // "Unknown value for 'type': {$spec['type']}";
-        $this->errors[$field] = getLanguageText('sys0036', $spec['type']);
+        $this->errors[$field] = $callingOBJ->getLanguageText('sys0036', $spec['type']);
 
         return $value;
 
@@ -651,6 +697,8 @@ END_OF_REGEX;
         $this->errors = array();
 
         $this->caller = &$caller;
+
+        $this->fields_not_for_trimming = $caller->fields_not_for_trimming;
 
         // create array to hold data which has been formatted for the database
         $updatearray = array();

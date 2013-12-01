@@ -1,0 +1,3 @@
+<hr />
+<p>A full description of the Audit System is available in the <a href="%root%/appendixl.html">Appendix L of the User Guide</a>.</p>
+<p>The design of this Audit System is explained in <a href="http://www.tonymarston.net/php-mysql/auditlog.html">Creating an Audit Log with an online viewing facility.</a>.</p>

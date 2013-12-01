@@ -1,5 +1,5 @@
 <?php
-    // file created on June 26, 2009, 7:21 pm
+    // file created on October 26, 2013, 5:52 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -16,7 +16,7 @@
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'dict_table(popup1)',
+                                                    'task_id' => 'dict_table(popup2)',
                                                     'foreign_field' => 'table_desc');
     
     $fieldspec['column_id']                 = array('type' => 'string',
@@ -65,17 +65,18 @@
     $fieldspec['user_size']                 = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 1.844674407371e+019,
+                                                    'maxvalue' => 1.844674407371e19,
                                                     'required' => 'y');
     
     $fieldspec['col_maxsize']               = array('type' => 'integer',
                                                     'size' => 20,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 1.844674407371e+019,
+                                                    'maxvalue' => 1.844674407371e19,
                                                     'required' => 'y',
                                                     'noedit' => 'y');
     
     $fieldspec['col_null']                  = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'Y',
                                                     'true' => 'Y',
@@ -84,6 +85,7 @@
                                                     'optionlist' => 'col_null');
     
     $fieldspec['is_required']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -101,6 +103,7 @@
                                                     'size' => 40);
     
     $fieldspec['col_auto_increment']        = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -109,6 +112,7 @@
                                                     'optionlist' => 'col_auto_increment');
     
     $fieldspec['col_unsigned']              = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -168,6 +172,7 @@
                                                     'optionlist' => 'upper_lowercase');
     
     $fieldspec['is_password']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -176,6 +181,7 @@
                                                     'optionlist' => 'is_password');
     
     $fieldspec['auto_insert']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -184,6 +190,7 @@
                                                     'optionlist' => 'auto_insert');
     
     $fieldspec['auto_update']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -192,6 +199,7 @@
                                                     'optionlist' => 'auto_update');
     
     $fieldspec['infinityisnull']            = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -215,6 +223,7 @@
                                                     'maxvalue' => 65535);
     
     $fieldspec['is_boolean']                = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -256,12 +265,14 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['align_hv']                  = array('type' => 'string',
+                                                    'type_native' => 'char',
                                                     'size' => 1,
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'align_hv');
     
     $fieldspec['align_lr']                  = array('type' => 'string',
+                                                    'type_native' => 'char',
                                                     'size' => 1,
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
@@ -347,6 +358,8 @@
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'task_desc',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

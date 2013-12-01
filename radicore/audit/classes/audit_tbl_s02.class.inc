@@ -127,13 +127,13 @@ class audit_tbl_s02 extends audit_tbl
 
         $fname = './sql/audit_export.sql';
         if (!$fp = fopen($fname, 'a+')) {
-            $this->errors[] = getLanguageText('sys0076', $fname); // 'Cannot open file $fname'
+            $this->errors[] = $this->getLanguageText('sys0076', $fname); // 'Cannot open file $fname'
         } else {
             if (fwrite($fp, $output) === false) {
-                $this->errors[] = getLanguageText('sys0055', $fname); // 'Cannot write to file $fname'
+                $this->errors[] = $this->getLanguageText('sys0055', $fname); // 'Cannot write to file $fname'
             } // if
             fclose($fp);
-            $this->messages[] = getLanguageText('sys0093', $fname); // 'Data exported to $fname'
+            $this->messages[] = $this->getLanguageText('sys0093', $fname); // 'Data exported to $fname'
         } // if
 
         // do not display update count as there is none

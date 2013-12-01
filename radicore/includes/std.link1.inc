@@ -43,10 +43,10 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['reset']      = 'reset';
-$act_buttons['submit']     = 'submit';
+$act_buttons['submitBtn']  = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
 $act_buttons['submitstay'] = 'submitstay';
 $act_buttons['submitnext'] = 'submitnext';
+$act_buttons['reset']      = 'reset';
 $act_buttons['quit']       = 'cancel';
 
 // create a class instance for the OUTER database table
@@ -136,7 +136,10 @@ if (!empty($_POST)) {
     // ensure that changes are stored inside relevant object
     $dblink->setFieldArray($link_data);
     // look for an action which is another script
-    $errors = childForm($_POST, array('dblink' => $dblink));
+    $child_errors = childForm($_POST, array('dblink' => $dblink));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
     if (empty($errors) AND empty($search)) {
     	// update this data in the database
         $dblink->startTransaction();
@@ -160,15 +163,15 @@ if (!empty($_POST)) {
             $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
             $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
             if (isset($_POST['submitnext'])) {
-                // skip to the next item (if there is one)
-                if ($curitem < $lastitem) {
+                if ($dblink->pageno < $dblink->lastpage) {
+                    // skip to next page of inner entity
+                    $dblink->setPageNo($dblink->pageno+1);
+                } elseif ($curitem < $lastitem) {
+                    // skip to next page of outer entity
                     $curitem++;
                     $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
                     $dbouter->setPageNo($curitem);
                     $where = $scrolling[$dbouter->getClassName()]['where'];
-                } elseif ($curitem == 1 AND $lastitem == 1 AND $dblink->pageno < $dblink->lastpage) {
-                    // skip to next page of inner entity
-                    $dblink->setPageNo($dblink->pageno+1);
                 } else {
                     // no more items, so return to previous screen
                     scriptPrevious($errors, $messages, 'OK', $dbouter->getInstruction());
@@ -292,7 +295,7 @@ $link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec()
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dblink->reset($link_where);
+    $link_where = $dblink->reset($link_where);
 } // if
 
 if (count($outer_data) > 0) {
@@ -315,7 +318,7 @@ if (count($outer_data) > 0) {
 
         if ($dblink->getNumRows() == 0) {
             $errors[] = getLanguageText('sys0088', $link_table); // "No entries found on $link_table"
-            unset($act_buttons['submit']);
+            unset($act_buttons['submitBtn']);
             unset($act_buttons['submitstay']);
             unset($act_buttons['submitnext']);
         } // if

@@ -63,7 +63,6 @@ class help_text extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //DebugBreak();
         if (isset($_POST['retrieve'])) {
             if (isset($where_array['help_text'])) {
             	unset($where_array['help_text']);
@@ -72,10 +71,13 @@ class help_text extends Default_Table
             return $where;
         } // if
 
-        if (empty($this->sql_select)) {
-            $this->sql_select = 'help_text.*, task_desc';
-            $this->sql_from   = 'help_text '
-                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id=help_text.task_id) ';
+        if (empty($this->sql_from)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_from    = null;
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_union   = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
         } // if
 
         return $where;

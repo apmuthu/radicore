@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update3.inc
@@ -34,8 +34,8 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit'] = 'submit';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
+$act_buttons['quit']      = 'cancel';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -78,14 +78,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } else {
         // get data from the database
         $fieldarray = $dbobject->getData($where);
+        $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
             // some sort of error - return to previous script
             scriptprevious($dbobject->getErrors(), $messages);
-        } // if
-        // get any extra data and merge with $fieldarray
-        $fieldarray = $dbobject->getExtraData($fieldarray);
-        if ($dbobject->errors) {
-        	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
     } // if
 
@@ -95,31 +91,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $script_vars = updateScriptVars ($script_vars);
 } // if
 
-// look for entered data
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // merge original data with POSTed data (so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed).
-    $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
-    // ensure that changes are stored inside relevant object
-    $dbobject->setFieldArray($fieldarray);
-    // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject));
+if (!empty($_POST)) {
+    // merge user's input with original data so that fields which were displayed
+    // but not POSTed are sent back if any errors are displayed.
+    // this also deals with a javascript 'submit()'.
+    $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
+    if ($dbobject->errors) {
+        $errors = $dbobject->getErrors();
+    } // if
     if (empty($errors)) {
-        $dbobject->startTransaction();
-        // update this data in the database
-        $msg = $dbobject->updateSelection($fieldarray, null);
-        if ($dbobject->errors) {
-			// errors are keyed by object name
-		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-		} // if
-        if (empty($errors)) {
-            $errors = $dbobject->commit();
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
+    } // if
+    if (empty($errors)) {
+        // identify if one of the 'submit' buttons has been pressed
+        $submit_button = check_submit_button ($act_buttons, $_POST);
+        if (!empty($submit_button)) {
+            $dbobject->startTransaction();
+            // update this data in the database
+            $msg = $dbobject->updateSelection($fieldarray, null);
+            if ($dbobject->errors) {
+		        // errors are keyed by object name
+		        $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+	        } // if
             if (empty($errors)) {
-                // update was OK - return to previous screen
-                scriptPrevious(null, $msg, 'OK', $dbobject->getInstruction());
+                $errors = $dbobject->commit();
+                if (empty($errors)) {
+                    // update was OK - return to previous screen
+                    scriptPrevious(null, $msg, 'OK', $dbobject->getInstruction());
+                } // if
+            } else {
+                $dbobject->rollback();
             } // if
-        } else {
-            $dbobject->rollback();
         } // if
     } // if
 } // if

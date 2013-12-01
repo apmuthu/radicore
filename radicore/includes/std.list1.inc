@@ -62,7 +62,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action);
+        $dbobject->restart($return_from, $return_action, $return_string);
     } // if
     // refetch data for lookup lists in case they have changed
     $null = $dbobject->setLookupData($where);
@@ -94,7 +94,10 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject));
+    $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
 } // if
 
 if (isset($_SESSION['rowsperpage'])) {
@@ -129,7 +132,7 @@ if (isset($instruction)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbobject->reset($where);
+    $where = $dbobject->reset($where);
 } // if
 
 // get data from the database

@@ -1,3 +1,0 @@
-This will allow a record to be added to the WF_ARC table for a selected WORKFLOW.
-
-Refer to <a href="%root%/wf_arc(add).html">Add Workflow Arc</a> for full details.

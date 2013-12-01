@@ -1,3 +1,0 @@
-This will list records on the WF_ARC table for a selected WORKFLOW.
-
-Refer to <a href="%root%/wf_arc(list).html">List Workflow Arc</a> for full details.

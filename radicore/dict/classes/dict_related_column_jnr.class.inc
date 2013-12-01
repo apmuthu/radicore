@@ -43,6 +43,30 @@ class dict_related_column_jnr extends dict_related_column
     } // _cm_getPkeyNames
 
     // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        if (!empty($fieldarray['key_name'])) {
+
+        } // if
+
+//        if (empty($this->sql_from)) {
+//            // construct default SELECT and FROM clauses using parent relations
+//            $this->sql_from    = null;
+//            $this->sql_groupby = null;
+//            $this->sql_having  = null;
+//            $this->sql_union   = null;
+//            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+//        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
+
+    // ****************************************************************************
     function _cm_pre_updateMultiple ($fieldarray)
     // perform custom processing before multiple database records are updated.
     {

@@ -1,3 +1,0 @@
-This will display the contents of a record from the DICT_COLUMN table.
-
-Refer to <a href="%root%/dict_column(enq1).html">Enquire Columns</a> for full details.

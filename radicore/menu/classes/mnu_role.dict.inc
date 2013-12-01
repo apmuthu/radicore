@@ -1,5 +1,5 @@
 <?php
-    // file created on May 6, 2009, 2:48 pm
+    // file created on April 25, 2013, 7:05 am
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -85,6 +85,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_time_limit_role',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('role_id' => 'role_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_user',
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
@@ -104,6 +108,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'parent_field' => 'task_desc AS start_task_desc',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('start_task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

@@ -1,4 +1,0 @@
-This will allow the contents of PERS_OPT_XREF to be maintained. This table links PERSON to OPTION in a many-to-many relationship.
-This will show the selected PERSON at the top of the screen. Below it will show all available entries for OPTION, and the SELECT box will be checked if an entry currently exists on PERS_OPT_XREF for this combination of PERSON and OPTION.
-To alter the contents of the database simply change the relevant SELECT box to ON or OFF, then press the SUBMIT button.
-For a description of screens of type LINK 1 <a href="%root%/php-mysql/dialog-types.html#link1">click here</a>.

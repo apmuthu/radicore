@@ -1,5 +1,0 @@
-This will list records on the TREE_TYPE table.
-For a description of screens of type LIST 1 <a href="%root%/php-mysql/dialog-types.html#list1">click here</a>.
-You can view and maintain the Levels and Nodes within a Tree Type by pressing the 'Tree Level' button.
-You can view the entire structure by pressing the 'Tree Structure' button.
-For an overview on tree structures please read <a href="%root%/php-mysql/tree-structure.html">A Flexible Tree Structure</a>.

@@ -144,6 +144,10 @@ class survey_answer_dtl extends Default_Table
                 $lock_array = array();
         } // switch
 
+        // turn all database locking OFF
+        $GLOBALS['lock_tables'] = FALSE;
+        $lock_array = array();
+
         return $lock_array;
 
     } // _cm_getDatabaseLock

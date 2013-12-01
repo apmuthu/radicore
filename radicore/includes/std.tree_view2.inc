@@ -59,6 +59,8 @@ if (isset($script_vars['dbinner'])) {
         // see if any action is required when being restarted
         $dbinner->restart($return_from, $return_action);
     } // if
+    // get current data from this instance
+    $inner_data = $dbinner->getFieldArray();
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
@@ -68,7 +70,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_where   = &$inner_sql_where;
     $dbinner->sql_groupby = &$inner_sql_groupby;
     $dbinner->sql_having  = &$inner_sql_having;
-    $null = $dbinner->initialise($original_where, $original_selection);
+    $null = $dbinner->initialise($where, $selection);
 } // if
 
 // the 'choose' button should only be available in popup screens
@@ -85,12 +87,13 @@ if (isset($script_vars['dbouter'])) {
         // see if any action is required when being restarted
         $dbouter->restart($return_from, $return_action);
     } // if
-    // get data from previous instance
+    // get current data from this instance
     $outer_data = $dbouter->getFieldArray();
 } else {
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
+    $dbouter->setRowsPerPage(1);  // scroll through one item at a time
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -100,8 +103,6 @@ if (isset($script_vars['dbouter'])) {
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } // if
-    // scroll through one item at a time
-    $dbouter->setRowsPerPage(1);
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
@@ -118,7 +119,10 @@ if (isset($script_vars['dbouter'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+    $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
 } // if
 
 if (isset($scrolling)) {

@@ -1,5 +1,0 @@
-This will allow the contents of the INITIAL_VALUE_ROLE table to be maintained for a particular task.
-
-These values are used during the creation of new records.
-
-Refer to <a href="%root%/mnu_initial_value_role(multi3)a.html">Maintain Initial Values (Role) by Task</a> for full details.

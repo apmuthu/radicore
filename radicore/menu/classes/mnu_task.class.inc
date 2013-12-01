@@ -6,7 +6,7 @@
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
 {
-    var $count;         // record count for PDF output
+    var $count = 0;                 // record count for PDF output
 
     // ****************************************************************************
     // class constructor
@@ -125,7 +125,7 @@ class mnu_task extends Default_Table
             $pattern_id  = getPatternId($prev_script);
             if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
-                $this->fieldspec['selected'] = array('type' => 'boolean');
+                $this->fieldspec['selected'] = array('type' => 'boolean', 'nondb' => 'y');
             } // if
 
             switch (basename($prev_script)) {
@@ -545,6 +545,8 @@ class mnu_task extends Default_Table
             unset($this->fieldspec['subsys_id']['optionlist']);
             unset($this->fieldspec['pattern_id']['optionlist']);
         } // if
+
+        $this->pdf->setFontSubsetting(false);
 
         return $filename;
 

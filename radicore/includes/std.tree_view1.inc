@@ -74,7 +74,10 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject));
+    $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
 } // if
 
 // look for optional instructions from previous script

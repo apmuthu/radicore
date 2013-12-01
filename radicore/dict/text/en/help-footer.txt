@@ -1,0 +1,5 @@
+<hr />
+
+<p>A full description of the Data Dictionary is available in the <a href="%root%/appendixn.html">Appendix N of the User Guide</a>.</p>
+
+<p>The design of this Data Dictionary is explained in <a href="http://www.tonymarston.net/php-mysql/data-dictionary.html">A Data Dictionary for PHP Applications</a>.</p>

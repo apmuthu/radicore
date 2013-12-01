@@ -1,3 +1,0 @@
-This will list records on the WF_TOKEN table for a selected WORKFLOW CASE.
-
-Refer to <a href="%root%/wf_token(list)2.html">List Token within Case</a> for full details.

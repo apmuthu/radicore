@@ -116,6 +116,10 @@ class x_person extends Default_Table
                 $lock_array = array();
         } // switch
 
+        // turn all database locking OFF
+        $GLOBALS['lock_tables'] = FALSE;
+        $lock_array = array();
+
         return $lock_array;
 
     } // _cm_getDatabaseLock
@@ -209,7 +213,7 @@ class x_person extends Default_Table
         } // if
 
         if (!empty($this->sql_search)) {
-        	$search_array = where2array($this->sql_search);
+        	$search_array = where2array($this->sql_search, false, false);
         	if (!empty($search_array['county'])) {
         		$search_array[] = "AND EXISTS (SELECT county"
         		                            ." FROM x_person_addr"

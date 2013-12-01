@@ -74,16 +74,19 @@ class dict_table_s04 extends dict_table
         } // if
 
         if (!isset($this->fieldspec['outer_table'])) {
-            $this->fieldspec['outer_table']     = array('type' => 'string',
-                                                        'size' => 80,
-                                                        'required' => 'y',
-                                                        'control' => 'dropdown',
-                                                        'optionlist' => 'table_id_outer');
+            $this->fieldspec['outer_table']         = array('type' => 'string',
+                                                            'size' => 80,
+                                                            'required' => 'y',
+                                                            'control' => 'dropdown',
+                                                            'optionlist' => 'table_id_outer');
+            $this->fieldspec['outer_table_alias']   = array('type' => 'string',
+                                                            'size' => 40,
+                                                            'lowercase' => 'y');
             $this->fieldspec['database_id_outer']   = array('type' => 'string',
                                                             'size' => 80,
                                                             'required' => 'y',
                                                             'control' => 'popup',
-                                                            'task_id' => 'dict_database(popup1)',
+                                                            'task_id' => 'dict_database(popup1)outer',
                                                             'foreign_field' => 'database_id_outer');
             $this->parent_relations[]               = array('parent' => 'dict_database',
                                                             'parent_field' => 'database_desc AS outer_database_desc',
@@ -100,11 +103,23 @@ class dict_table_s04 extends dict_table
         } // if
 
         if (!isset($this->fieldspec['middle_table'])) {
-            $this->fieldspec['middle_table']    = array('type' => 'string',
-                                                        'size' => 80,
-                                                        'required' => 'y',
-                                                        'control' => 'dropdown',
-                                                        'optionlist' => 'table_id');
+            $this->fieldspec['middle_table']        = array('type' => 'string',
+                                                            'size' => 80,
+                                                            'required' => 'y',
+                                                            'control' => 'dropdown',
+                                                            'optionlist' => 'table_id_middle');
+            $this->fieldspec['middle_table_alias']  = array('type' => 'string',
+                                                            'size' => 40,
+                                                            'lowercase' => 'y');
+            $this->fieldspec['database_id_middle']  = array('type' => 'string',
+                                                            'size' => 80,
+                                                            'required' => 'y',
+                                                            'control' => 'popup',
+                                                            'task_id' => 'dict_database(popup1)middle',
+                                                            'foreign_field' => 'database_id_middle');
+            $this->parent_relations[]               = array('parent' => 'dict_database',
+                                                            'parent_field' => 'database_desc AS middle_database_desc',
+                                                            'fields' => array('database_id_middle' => 'database_id'));
         } // if
 
         if (!isset($this->fieldspec['inner_table'])) {
@@ -116,9 +131,9 @@ class dict_table_s04 extends dict_table
         } // if
 
         if (!isset($this->fieldspec['inner_table_alias'])) {
-            $this->fieldspec['inner_table_alias'] = array('type' => 'string',
-                                                          'size' => 40,
-                                                          'lowercase' => 'y');
+            $this->fieldspec['inner_table_alias']   = array('type' => 'string',
+                                                            'size' => 40,
+                                                            'lowercase' => 'y');
         } // if
 
         if (!isset($this->fieldspec['popup_task_id'])) {
@@ -181,6 +196,22 @@ class dict_table_s04 extends dict_table
             // merge the three arrays into one
             $this->lookup_data['table_id_outer'] = array_merge($array1, $array2, $array3);
             ksort($this->lookup_data['table_id_outer']);
+        } // if
+
+        if (isset($fieldarray['database_id_middle'])) {
+            $database_id = $fieldarray['database_id_middle'];
+            // get list of tables from current database
+            $dbobject =& RDCsingleton::getInstance('dict_table');
+            $array1    = $dbobject->getValRep('table_id', "database_id='$database_id'");
+
+            // get alias names from any relationships
+            $dbobject =& RDCsingleton::getInstance('dict_relationship');
+            $array2   = $dbobject->getValRep('table_alias_snr', "database_id_snr='$database_id'");
+            $array3   = $dbobject->getValRep('table_alias_jnr', "database_id_jnr='$database_id'");
+
+            // merge the three arrays into one
+            $this->lookup_data['table_id_middle'] = array_merge($array1, $array2, $array3);
+            ksort($this->lookup_data['table_id_middle']);
         } // if
 
 		return $fieldarray;
@@ -276,7 +307,11 @@ class dict_table_s04 extends dict_table
 
         	case 'list3':
         	    $fieldarray['child_forms'] = getLanguageText('t0004');  // 'Add2, Delete1, Enqire1, Search, Update1';
-        	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
+                $fieldarray['database_id_outer'] = $fieldarray['database_id'];
+                $fieldarray['database_id_middle'] = $fieldarray['database_id'];
+                $fieldarray['outer_table_alias'] = ''; // ensure this field is displayed
+                $fieldarray['middle_table_alias'] = ''; // ensure this field is displayed
+                $fieldarray['inner_table_alias'] = ''; // ensure this field is displayed
         	    break;
 
         	case 'link1':
@@ -310,11 +345,25 @@ class dict_table_s04 extends dict_table
 
         	case 'add5':
         	case 'multi4':
-        	    $fieldarray['inner_table_alias'] = '';   // ensure this field is displayed
+                $fieldarray['inner_table_alias'] = '';   // ensure this field is displayed
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
             	break;
 
-        	case 'popup2':
+        	case 'multi5':
+                $fieldarray['outer_table_alias'] = '';   // ensure this field is displayed
+                $fieldarray['inner_table_alias'] = '';   // ensure this field is displayed
+                $fieldarray['database_id_outer'] = $fieldarray['database_id'];
+                break;
+
+            case 'multi6':
+                $fieldarray['outer_table_alias']  = '';   // ensure this field is displayed
+                $fieldarray['middle_table_alias'] = '';   // ensure this field is displayed
+                $fieldarray['inner_table_alias']  = '';   // ensure this field is displayed
+                $fieldarray['database_id_outer']  = $fieldarray['database_id'];
+                $fieldarray['database_id_middle'] = $fieldarray['database_id'];
+                break;
+
+            case 'popup2':
         	case 'popup4':
         	case 'tree2':
         	    $fieldarray['inner_table_alias'] = ''; // ensure this field is displayed
@@ -371,6 +420,8 @@ class dict_table_s04 extends dict_table
         			case 'multi2':
         			case 'multi3':
         			case 'multi4':
+                    case 'multi5':
+                    case 'multi6':
         			case 'popup2':
         			case 'popup4':
         			case 'timetable1':
@@ -456,14 +507,19 @@ class dict_table_s04 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
+        //list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
+
+        // find out if tables in the 'menu' database need to be qualified
+        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
 
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
-        	                  . 'LEFT JOIN ' .$menu_prefix .'menu.mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
-        	                  . 'LEFT JOIN ' .$menu_prefix ."menu.mnu_pattern ON (mnu_pattern.pattern_id='$this->pattern_id')";
+        	                  . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
+        	                  . 'LEFT JOIN ' .$menuDB ."mnu_pattern ON (mnu_pattern.pattern_id='".$this->pattern_id."')";
+                              //. 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
+                              //. 'LEFT JOIN "' .$menu_prefix ."menu\".mnu_pattern ON (mnu_pattern.pattern_id='$this->pattern_id')";
         } // if
 
         return $where;
@@ -542,32 +598,84 @@ class dict_table_s04 extends dict_table
             } // if
         } // if
 
-        // if more than one database table is involved, check that they are related
-        if (isset($fieldarray['outer_table'])) {
-        	if (isset($fieldarray['middle_table'])) {
-                $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['middle_table'], $fieldarray['database_id']);
-        	    if ($error) {
-        	    	$this->errors['outer_table'] = $error;
+        if (!empty($fieldarray['tablename']) AND !empty($fieldarray['table_alias'])) {
+            if ($fieldarray['tablename'] == $fieldarray['table_alias']) {
+                // Alias name must not be the same as the table name
+                $this->errors['table_alias'] = getLanguageText('e0045');
+            } // if
+        } // if
+
+        if (!empty($fieldarray['outer_table']) AND !empty($fieldarray['outer_table_alias'])) {
+            if ($fieldarray['outer_table'] == $fieldarray['outer_table_alias']) {
+                // Alias name must not be the same as the table name
+                $this->errors['outer_table_alias'] = getLanguageText('e0045');
+            } // if
+        } // if
+
+        if (!empty($fieldarray['middle_table']) AND !empty($fieldarray['middle_table_alias'])) {
+            if ($fieldarray['middle_table'] == $fieldarray['middle_table_alias']) {
+                // Alias name must not be the same as the table name
+                $this->errors['middle_table_alias'] = getLanguageText('e0045');
+            } // if
+        } // if
+
+        if (!empty($fieldarray['inner_table']) AND !empty($fieldarray['inner_table_alias'])) {
+            if ($fieldarray['inner_table'] == $fieldarray['inner_table_alias']) {
+                // Alias name must not be the same as the table name
+                $this->errors['inner_table_alias'] = getLanguageText('e0045');
+            } // if
+        } // if
+
+        if (preg_match('/^(multi5)$/i', $fieldarray['pattern_id'])) {
+            // unrelated tables are allowed, but if same table is used for both outer and inner one of them must be aliased
+            if ($fieldarray['outer_table'] == $fieldarray['inner_table']) {
+                if (empty($fieldarray['outer_table_alias']) AND empty($fieldarray['inner_table_alias'])) {
+                    // Table name is used more than once, so one must be aliased
+                    $this->errors['outer_table_alias'] = getLanguageText('e0044', $fieldarray['inner_table']);
+                    $this->errors['inner_table_alias'] = getLanguageText('e0044', $fieldarray['inner_table']);
+                } // if
+            } // if
+        } if (preg_match('/^(multi6)$/i', $fieldarray['pattern_id'])) {
+            // unrelated tables are allowed, but if same table is used for outer, middle and inner one of them must be aliased
+            if ($fieldarray['outer_table'] == $fieldarray['middle_table']) {
+                if (empty($fieldarray['outer_table_alias']) AND empty($fieldarray['middle_table_alias'])) {
+                    // Table name is used more than once, so one must be aliased
+                    $this->errors['outer_table_alias'] = getLanguageText('e0044', $fieldarray['middle_table']);
+                    $this->errors['middle_table_alias'] = getLanguageText('e0044', $fieldarray['middle_table']);
+                } // if
+            } // if
+            $error = $this->_checkRelationship($fieldarray['middle_table'], $fieldarray['database_id_middle'], $fieldarray['inner_table'], $fieldarray['database_id']);
+            if ($error) {
+                $this->errors['middle_table'] = $error;
+            } // if
+        } else {
+            // if more than one database table is involved, check that they are related
+            if (isset($fieldarray['outer_table'])) {
+        	    if (isset($fieldarray['middle_table'])) {
+                    $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['middle_table'], $fieldarray['database_id_middle']);
+        	        if ($error) {
+        	    	    $this->errors['outer_table'] = $error;
+        	        } // if
+    	            $error = $this->_checkRelationship($fieldarray['middle_table'], $fieldarray['database_id_middle'], $fieldarray['inner_table'], $fieldarray['database_id']);
+        	        if ($error) {
+        	    	    $this->errors['middle_table'] = $error;
+        	        } // if
+        	    } elseif (isset($fieldarray['link_table'])) {
+                    $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['link_table'], $fieldarray['database_id']);
+        	        if ($error) {
+        	    	    $this->errors['outer_table'] = $error;
+        	        } // if
+    	            $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id'], $fieldarray['link_table'], $fieldarray['database_id']);
+        	        if ($error) {
+        	    	    $this->errors['inner_table'] = $error;
+        	        } // if
+        	    } else {
+        	        $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['inner_table'], $fieldarray['database_id']);
+        	        if ($error) {
+        	    	    $this->errors['outer_table'] = $error;
+        	        } // if
         	    } // if
-    	        $error = $this->_checkRelationship($fieldarray['middle_table'], $fieldarray['database_id'], $fieldarray['inner_table'], $fieldarray['database_id']);
-        	    if ($error) {
-        	    	$this->errors['middle_table'] = $error;
-        	    } // if
-        	} elseif (isset($fieldarray['link_table'])) {
-                $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['link_table'], $fieldarray['database_id']);
-        	    if ($error) {
-        	    	$this->errors['outer_table'] = $error;
-        	    } // if
-    	        $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id'], $fieldarray['link_table'], $fieldarray['database_id']);
-        	    if ($error) {
-        	    	$this->errors['inner_table'] = $error;
-        	    } // if
-        	} else {
-        	    $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['inner_table'], $fieldarray['database_id']);
-        	    if ($error) {
-        	    	$this->errors['outer_table'] = $error;
-        	    } // if
-        	} // if
+            } // if
         } // if
 
         if (!empty($this->errors)) {
@@ -783,19 +891,12 @@ class dict_table_s04 extends dict_table
 
         // replace table/task names with appropriate values
         if (!empty($fieldarray['table_id'])) {
-            if (!empty($fieldarray['table_id_alias'])) {
-            	$string = str_replace("#tablename#", $fieldarray['table_id_alias'], $string);
-            	// create subclass for this alias name
-            	$this->_writeClassFile ($fieldarray['table_id'], $fieldarray['table_id_alias']);
-            } elseif (!empty($fieldarray['inner_table_alias'])) {
-            	$string = str_replace("#tablename#", $fieldarray['inner_table_alias'], $string);
-            	// create subclass for this alias name
-            	$this->_writeClassFile ($fieldarray['table_id'], $fieldarray['inner_table_alias']);
-            } else {
-                $string = str_replace("#tablename#", $fieldarray['table_id'], $string);
-            } // if
             if (!empty($fieldarray['table_alias'])) {
-            	$string = str_replace("#table_id_alias#", $fieldarray['table_alias'], $string);
+            	$string = str_replace("#tablename#", $fieldarray['table_alias'], $string);
+            	// create subclass for this alias name
+            	$this->_writeClassFile ($fieldarray['table_id'], $fieldarray['table_alias']);
+            } else {
+            	$string = str_replace("#tablename#", $fieldarray['table_id'], $string);
             } // if
         } // if
         if (!empty($fieldarray['outer_table'])) {
@@ -899,11 +1000,13 @@ class dict_table_s04 extends dict_table
         			break;
 
 				case 'filedownload':
+                case 'filedownload2':
 				    $task_data['task_desc']   = getLanguageText('File Download');
 					$task_data['button_text'] = getLanguageText('File Download');
         			break;
 
 				case 'filepicker':
+                case 'filepicker2':
 				    $task_data['task_desc']   = getLanguageText($fieldarray['table_id'] .' File Picker');
 					$task_data['button_text'] = getLanguageText('File Picker');
         			break;
@@ -949,7 +1052,13 @@ class dict_table_s04 extends dict_table
     		        $task_data['button_text'] = getLanguageText('Maintain') .' ' .$fieldarray['table_desc'];
 					break;
 
-				case 'output1':
+				case 'multi5':
+                case 'multi6':
+                    $task_data['task_desc']   = getLanguageText('Select/Display') .' ' .$fieldarray['table_desc'];
+                    $task_data['button_text'] = getLanguageText('Select/Display') .' ' .$fieldarray['table_desc'];
+                    break;
+
+                case 'output1':
 					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
@@ -1210,7 +1319,11 @@ class dict_table_s04 extends dict_table
         } // if
         if (!empty($fieldarray['middle_table'])) {
             $search_array[]  = '#middle_table#';
-            $replace_array[] = $fieldarray['middle_table'];
+            if (!empty($fieldarray['middle_table_alias'])) {
+                $replace_array[] = $fieldarray['middle_table_alias'];
+            } else {
+                $replace_array[] = $fieldarray['middle_table'];
+            } // if
         } // if
         if (!empty($fieldarray['inner_table'])) {
             $search_array[]  = '#inner_table#';
@@ -1222,7 +1335,7 @@ class dict_table_s04 extends dict_table
         } // if
 
         $string_out = '';
-        if ($pattern_id == 'filepicker') {
+        if (preg_match('/filepicker/i', $pattern_id)) {
             // there is no text to replace in this file
         	while (!feof($handle)) {
                 $string_in = fgets($handle);

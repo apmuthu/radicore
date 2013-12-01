@@ -1,3 +1,0 @@
-This will list records on the DICT_RELATIONSHIP table.
-
-Refer to <a href="%root%/dict_relationship(list1).html">List Relationships</a> for full details.

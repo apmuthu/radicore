@@ -113,11 +113,10 @@ class survey_answer_hdr extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
-    // if a popup button has been pressed the contents of $where may need to
+    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where amy need to
     // be altered before the popup screen is called.
-    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
-    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered.
     {
         //DebugBreak();
         if ($popupname == 'mnu_user(popup1)') {
@@ -196,7 +195,7 @@ class survey_answer_hdr extends Default_Table
         $next['where']   = $where;
 
         // this is processed by scriptnext() and scriptprevious()
-        append2ScriptSequence($next);
+        $_SESSION['script_sequence'][] = $next;
 
         return $fieldarray;
 

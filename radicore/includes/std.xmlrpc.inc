@@ -185,11 +185,11 @@ class XMLRPC_client
             // strip http headers from the response
     		$pos = strpos($response, "\r\n\r\n");
     		if ($pos === false) {
-    		    $this->responsehdr = $response;
+    		    $this->responseHdr = $response;
     		    $response          = null;
     		} else {
     		    $pos = $pos+4;
-    		    $this->responsehdr = substr($response, 0, $pos);
+    		    $this->responseHdr = substr($response, 0, $pos);
     		    $response          = substr($response, $pos);
     		    if (!preg_match('/^(<\?xml)/i', $response)) {
     		        // does not begin with '<?xml', so something must be wrong
@@ -198,9 +198,13 @@ class XMLRPC_client
                     return false;
     		    } // if
     		} // if
-        } elseif (!preg_match('/^(<\?xml)/i', $response)) {
+        } else {
+            $this->responseHdr = get_headers($this->config['API_Endpoint'], 1);
+        } // if
+
+        if (!preg_match('/^(<\?xml)/i', $response)) {
             // does not begin with '<?xml', so something must be wrong
-            $this->responsehdr = $response;
+            $this->responseHdr = $response;
     		$response          = null;
         } // if
 
@@ -209,19 +213,25 @@ class XMLRPC_client
         if (empty($response)) {
         	$response['faultCode']   = -9998;
         	$response['faultString'] = 'Error - response from server is empty';
-        	if (!empty($this->responsehdr)) {
-        		$response['faultString'] .= ': ' .$this->responsehdr;
+        	if (!empty($this->responseHdr)) {
+        		$response['faultString'] .= ': ' .$this->responseHdr;
         	} // if
         } else {
-            // convert XML document into either a string or an array
-    		$response = xmlrpc_decode($response);
-    		if (is_array($response)) {
-    			$response = $this->convert_types($response);
-    		} elseif (empty($response)) {
-    			$this->errorCode = 'Server: Invalid Response';
-    	        $this->errorMsg  = 'Response is empty';
+            if (preg_match('/<\?xml.+?\?>/i', $response, $regs)) {
+                // convert XML document into either a string or an array
+    		    $response = xmlrpc_decode($response);
+    		    if (is_array($response)) {
+    			    $response = $this->convert_types($response);
+    		    } elseif (empty($response)) {
+    			    $this->errorCode = 'Server: Invalid Response';
+    	            $this->errorMsg  = 'Response is empty';
+                    return false;
+    		    } // if
+            } else {
+                $this->errorCode = 'Server: Invalid Response';
+                $this->errorMsg  = 'Response is not XML';
                 return false;
-    		} // if
+            } // if
         } // if
 
         if (is_string($response)) {
@@ -293,8 +303,8 @@ class XMLRPC_client
         if (!empty($this->request)) {
         	$string .= "<p>Request: <pre>" .htmlspecialchars($this->request) ."</pre></p>";
         } // if
-        if (!empty($this->responsehdr)) {
-            $string .= "<p>Response Hdr: <br>" .nl2br($this->responsehdr) ."</p>";
+        if (!empty($this->responseHdr)) {
+            $string .= "<p>Response Hdr: <br>" .nl2br($this->responseHdr) ."</p>";
         } // if
         if (!empty($this->responseXML)) {
             $string .= "<p>Response: <pre>" .htmlspecialchars($this->responseXML) ."</pre></p>";
@@ -309,7 +319,7 @@ class XMLRPC_client
     // send a copy of these error details to a log file (or email)
     {
         $mailstring = null;
-        
+
         echo $this->errorCode .'<br>'.$this->errorMsg.'<br>';
 
         if (!empty($this->errorMsg)) {
@@ -322,8 +332,8 @@ class XMLRPC_client
         if (!empty($this->request)) {
         	$mailstring .= "Request:\n" .$this->request ."\n";
         } // if
-        if (!empty($this->responsehdr)) {
-            $mailstring .= "Response Hdr:\n" .$this->responsehdr ."\n";
+        if (!empty($this->responseHdr)) {
+            $mailstring .= "Response Hdr:\n" .$this->responseHdr ."\n";
         } // if
         if (!empty($this->responseXML)) {
             $mailstring .= "Response:\n" .$this->responseXML ."\n";

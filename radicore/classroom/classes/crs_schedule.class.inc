@@ -284,7 +284,7 @@ class crs_schedule extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null)
     // get Value/Representation list as an associative array.
     {
         // provide values for dropdown list

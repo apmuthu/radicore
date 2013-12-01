@@ -1,3 +1,0 @@
-This will show the details of any logon attemps which failed.
-
-Refer to <a href="%root%/audit_logon_errors(list).html">List Logon Errors</a> for full details.

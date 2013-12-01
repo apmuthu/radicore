@@ -1,5 +1,0 @@
-This will allow search criteria to be entered for the SUBSYSTEM table.
-
-Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
-
-Refer to <a href="%root%/mnu_subsystem(search).html">Search Subsystem</a> for full details.

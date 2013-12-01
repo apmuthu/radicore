@@ -24,7 +24,7 @@ $array['sys0017'] = "Must not use wildcard character (%%) in primary key";
 $array['sys0018'] = "Primary key (%1\$s) is not complete - check selection";
 $array['sys0019'] = "Missing 'AND' after 'BETWEEN' in WHERE clause";
 
-$array['sys0020'] = "%1\$s cannot be blank.";
+$array['sys0020'] = "%1\$s Eine Angabe in diesem Feld ist erforderlich.";
 $array['sys0021'] = "%1\$s cannot be greater than %2\$d characters.";
 $array['sys0022'] = "Value (%1\$s) is not a number";
 $array['sys0023'] = "Value (%1\$s) is not numeric";
@@ -84,7 +84,7 @@ $array['sys0071'] = "Could not create %1\$s process.";
 $array['sys0072'] = "XSL transformation failed.";
 $array['sys0073'] = "Page Stack:";
 $array['sys0074'] = "XSL file has not been defined";
-$array['sys0075'] = "";
+$array['sys0075'] = "Backtrace:";
 $array['sys0076'] = "Cannot open file %1\$s";
 $array['sys0077'] = "Directory '%1\$s' does not exist";
 $array['sys0078'] = "Locale is not defined in string '%1\$s'";
@@ -121,7 +121,7 @@ $array['sys0105'] = "Key contains an invalid character (%1\$s)";
 $array['sys0106'] = "";
 $array['sys0107'] = "";
 $array['sys0108'] = "";
-$array['sys0109'] = "";
+$array['sys0109'] = "Role Id: %1\$s";
 
 $array['sys0110'] = "Name of child field missing in relationship with %1\$s";
 $array['sys0111'] = "Press SUBMIT to erase this entry, and ALL child entries, from the database.";
@@ -163,8 +163,8 @@ $array['sys0143'] = "This user has been disabled.";
 $array['sys0144'] = "This user has an end date which is in the past";
 $array['sys0145'] = "This user has a start date which is in the future";
 $array['sys0146'] = "You must change your password.";
-$array['sys0147'] = "";
-$array['sys0148'] = "";
+$array['sys0147'] = "Your authorised time period will expire at %1\$s";
+$array['sys0148'] = "Your authorised time period has expired";
 $array['sys0149'] = "Please contact your system administrator for details";
 
 $array['sys0150'] = "Enter e-mail address where password is to be sent";
@@ -236,13 +236,24 @@ $array['sys0209'] = "";
 $array['sys0210'] = "LABEL_PRINT has not been defined in Report Structure File";
 $array['sys0211'] = "LABEL_PRINT in Report Structure File is not a positive number";
 $array['sys0212'] = "";
-$array['sys0213'] = "";
-$array['sys0214'] = "";
-$array['sys0215'] = "";
+$array['sys0213'] = "Temporary folder has not been defined";
+$array['sys0214'] = "SETTINGS value is empty";
+$array['sys0215'] = "SETTINGS does not contain a value for '%1\$s'";
 $array['sys0216'] = "";
 $array['sys0217'] = "";
-$array['sys0218'] = "";
-$array['sys0219'] = "";
+$array['sys0218'] = "Start Time cannot be later than End Time";
+$array['sys0219'] = "End Time cannot be earlier than Start Time";
+
+$array['sys0220'] = "Minimum value cannot be greater than Maximum value";
+$array['sys0221'] = "Maximum value cannot be less than Minimum value";
+$array['sys0222'] = "Invalid value for '%1\$s'";
+$array['sys0223'] = "";
+$array['sys0224'] = "";
+$array['sys0225'] = "";
+$array['sys0226'] = "";
+$array['sys0227'] = "";
+$array['sys0228'] = "";
+$array['sys0229'] = "";
 
 // the following entries are for ACTION buttons
 $array['cancel']     = 'CANCEL';

@@ -1,3 +1,0 @@
-This will list records on the ACCOUNT table.
-
-Refer to <a href="%root%/mnu_account(list1).html">List Account</a> for full details.

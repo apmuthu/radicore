@@ -71,7 +71,7 @@
 
   <!-- create a hidden field for session_name -->
   <xsl:if test="$session_name">
-    <input type="hidden" name="session_name" value="{$session_name}" />
+    <div><input type="hidden" name="session_name" value="{$session_name}" /></div>
   </xsl:if>
 
   <xsl:if test="not($print-preview) and string-length($script_time) > 0">
@@ -475,7 +475,7 @@
       <p class="withoutselection">
         <xsl:for-each select="/root/navbar/*[@context_preselect='N']">
             <!-- create a button for each element within navbar -->
-            <input class="submit" type="submit" name="{@id}" value="{node()}" />
+            <input class="submit" type="submit" name="{@id}" title="{@title}" value="{node()}" />
             <xsl:text> </xsl:text>
         </xsl:for-each>
       </p>
@@ -569,7 +569,7 @@
       <p class="withselection">
         <xsl:for-each select="/root/navbar/*[@context_preselect='Y']">
             <!-- create a button for each element within navbar -->
-            <input class="submit" type="submit" name="{@id}" value="{node()}" />
+          <input class="submit" type="submit" name="{@id}" title="{@title}" value="{node()}" />
             <xsl:text> </xsl:text>
         </xsl:for-each>
       </p>

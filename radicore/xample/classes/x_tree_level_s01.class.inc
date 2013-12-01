@@ -24,17 +24,16 @@ class x_tree_level_s01 extends x_tree_level
         $tree_level_id     = $fieldarray['tree_level_id'];
         $tree_level_id_jnr = $fieldarray['tree_level_id_jnr'];
 
-        // create a new object to deal with child nodes
-        $dbobject =& RDCsingleton::getInstance('x_tree_level');
-
-        $dbobject->sql_select = "x_tree_level.tree_type_id, x_tree_level.tree_level_id, t2.tree_level_id as tree_level_id_jnr";
-        $dbobject->sql_from = "x_tree_level "
+        // check to see if the level below this one has changed
+        $dblevel =& RDCsingleton::getInstance('x_tree_level');
+        $dblevel->sql_select = "x_tree_level.tree_type_id, x_tree_level.tree_level_id, t2.tree_level_id as tree_level_id_jnr";
+        $dblevel->sql_from = "x_tree_level "
                             . "LEFT JOIN x_tree_level AS t2 ON (t2.tree_type_id = x_tree_level.tree_type_id AND t2.tree_level_seq = (x_tree_level.tree_level_seq +1))";
         $where  = "x_tree_level.tree_type_id='$tree_type_id' AND x_tree_level.tree_level_id='$tree_level_id'";
-        $newdata = $this->_dml_getdata($where);
+        $leveldata = $dblevel->getdata($where);
 
-        if ($newdata[0]['tree_level_id_jnr'] <> $tree_level_id_jnr) {
-            // child level has changed, so update all nodes in previous child level
+        if ($leveldata[0]['tree_level_id_jnr'] <> $tree_level_id_jnr) {
+            // child level has changed, so update all nodes in previous child level to make them orphans
             $dbnode =& RDCsingleton::getInstance('x_tree_node');
             $where = "tree_type_id='$tree_type_id' AND tree_level_id='$tree_level_id_jnr'";
             $replace = 'node_id_snr=NULL';
@@ -85,6 +84,10 @@ class x_tree_level_s01 extends x_tree_level
             default:
                 $lock_array = array();
         } // switch
+
+        // turn all database locking OFF
+        $GLOBALS['lock_tables'] = FALSE;
+        $lock_array = array();
 
         return $lock_array;
 

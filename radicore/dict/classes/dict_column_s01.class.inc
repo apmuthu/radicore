@@ -63,27 +63,33 @@ class dict_column_s01 extends dict_column
     {
         // extract database and table names
         if (!is_string(key($fieldarray))) {
-            $fieldarray = $fieldarray[0];
+            $fieldarray = $fieldarray[0];  // use first entry from indexed array
         } // if
 
-        $dbname    =& $fieldarray['database_id'];
-        $tablename =& $fieldarray['table_id'];
+        $dbname_dict =& $fieldarray['database_id'];
+        $tablename   =& $fieldarray['table_id'];
 
-        if (empty($dbname) OR empty($tablename)) {
+        if (empty($dbname_dict) OR empty($tablename)) {
             // 'Database and/or Table id is missing - please check selection'
             $this->errors[] = getLanguageText('e0019');
             return $fieldarray;
         } // if
 
-        list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
+        list($dbprefix, $dbname_server) = dict_findDBPrefix($dbname_dict);
+        if ($dbname_server != $dbname_dict) {
+        	// database name have been switched
+        } elseif (!empty($dbprefix)) {
+        	// server name requires a prefix
+        	$dbname_server = $dbprefix.$dbname_dict;
+	    } // if
 
         // save these for _cm_getDatabaseLock() method
-        $this->target_dbname    = $dbname;
+        $this->target_dbname    = $dbname_dict;
         $this->target_tablename = $tablename;
 
         // get any existing dictionary data for this table
         $this->sql_orderby      = 'column_seq';
-        $dict_data  = $this->getData("database_id='$dbname' AND table_id='$tablename'");
+        $dict_data  = $this->getData("database_id='$dbname_dict' AND table_id='$tablename'");
 
         // construct a smaller array of column names and sequence numbers
         $dict_data_cols = array();
@@ -96,11 +102,7 @@ class dict_column_s01 extends dict_column
         $this->update_array = array();
 
         // obtain a list of current column definitions from the database server
-        if ($server_name != $dbname AND !empty($dbprefix)) {
-            $db_data = $this->_ddl_showColumns($server_name, $tablename);
-        } else {
-            $db_data = $this->_ddl_showColumns($dbprefix.$dbname, $tablename);
-        } // if
+        $db_data = $this->_ddl_showColumns($dbname_server, $tablename);
 
         // construct a smaller array of column names
         $db_data_cols = array();
@@ -111,33 +113,53 @@ class dict_column_s01 extends dict_column
         } // foreach
 
         // construct array of static (common) data
-        $static['database_id'] = $dbname;
+        $static['database_id'] = $dbname_dict;
         $static['table_id']    = $tablename;
 
         // compare contents of dictionary and the physical database
         foreach ($dict_data_cols as $columnid => $ix) {
             if (array_key_exists($columnid, $db_data_cols)) {
                 // entry to be updated
-                $col_type_old    = $dict_data[$ix]['col_type'];
-                $col_maxsize_old = $dict_data[$ix]['col_maxsize'];
-                $update = array_merge($dict_data[$ix], $db_data[$db_data_cols[$columnid]]);
+                $db_ix               = $db_data_cols[$columnid];
+                $col_type            = $db_data[$db_ix]['col_type'];
+                $col_type_native     = $db_data[$db_ix]['col_type_native'];
+                $col_type_old        = $dict_data[$ix]['col_type'];
+                //$col_type_native_old = $dict_data[$ix]['col_type_native'];
+                $col_maxsize_old     = $dict_data[$ix]['col_maxsize'];
+                $user_size_old       = $dict_data[$ix]['user_size'];
+                $update = array_merge($dict_data[$ix], $db_data[$db_ix]);
 
                 // check for fields which may have a choice of types in a comma-delimited list
-                if (strpos($update['col_type_native'], ',')) {
-                	$type_array = explode(',', $update['col_type_native']);
+                if (strpos($col_type_native, ',')) {
+                	$type_array = explode(',', $col_type_native);
                 	if (in_array($col_type_old, $type_array)) {
                 	    // existing col_type is in this list, so keep it
-                		$update['col_type'] = $col_type_old;
+                        $update['col_type'] = $col_type_old;
                 	} else {
                 	    // not there, so default to first entry in array
                 	    $update['col_type'] = $type_array[0];
                 	} // if
                 } // if
 
+                if (!preg_match('/boolean/i', $col_type_native)) {
+                    $update['is_boolean']    = null;
+                    $update['boolean_true']  = null;
+                    $update['boolean_false'] = null;
+                } // if
+
                 if (isset($update['col_maxsize'])) {
-                	if ($col_maxsize_old != $update['col_maxsize']) {
-                	    // size has changed, so replace user's value
-                    	$update['user_size'] = $update['col_maxsize'];
+                    if ($update['col_maxsize'] <> $col_maxsize_old) {
+                        // size has changed
+                        if ($col_maxsize_old == $user_size_old) {
+                            // replace old size with new size
+                            $update['user_size'] = $update['col_maxsize'];
+                        } else {
+                            // user size was different
+                            if ($user_size_old > $update['col_maxsize']) {
+                                // old value is now too large, so it must be replaced
+                                $update['user_size'] = $update['col_maxsize'];
+                            } // if
+                        } // if
                     } // if
                 } // if
 
@@ -154,8 +176,9 @@ class dict_column_s01 extends dict_column
                     $update['user_maxvalue'] = $update['col_maxvalue'];
                 } // if
 
-                if (empty($db_data[$db_data_cols[$columnid]]['col_comment'])) {
-                    $update['col_comment'] = $dict_data[$ix]['col_comment'];
+                if (!empty($dict_data[$ix]['col_comment'])) {
+                    // do not overwrite previous comment
+                    unset($update['col_comment']);
                 } // if
 
                 if (is_True($update['col_null'])) {
@@ -180,7 +203,11 @@ class dict_column_s01 extends dict_column
         	// insert details of new column/field
             $seq = $row+1;
             $insert_array[$seq]['column_desc']   = ucwords(strtolower(str_replace('_', ' ', $columndata['column_id'])));
-            $insert_array[$seq]['user_size']     = $columndata['col_maxsize'];
+            if (isset($columndata['user_size'])) {
+                $insert_array[$seq]['user_size'] = $columndata['user_size'];
+            } else {
+                $insert_array[$seq]['user_size'] = $columndata['col_maxsize'];
+            } // if
             $insert_array[$seq]['user_minvalue'] = $columndata['col_minvalue'];
             $insert_array[$seq]['user_maxvalue'] = $columndata['col_maxvalue'];
             $insert_array[$seq]['is_required']   = $columndata['col_null'];

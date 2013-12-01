@@ -66,7 +66,7 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = unserialize($script_vars['fileobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $fileobject->restart($return_from, $return_action);
+        $fileobject->restart($return_from, $return_action, $return_string);
     } // if
 } else {
     $fileobject = new $table_id;
@@ -79,7 +79,8 @@ if (isset($script_vars['fileobject'])) {
     $fileobject->xsl_params['noshow'] = 'y';
     // perform any initialisation
     $where = $fileobject->initialise($where, $selection);
-    $fileobject->initialiseFilePicker($where);
+    if (!isset($search)) $search = null;
+    $fileobject->initialiseFilePicker($where, $search);
     if ($fileobject->errors) {
     	scriptPrevious($fileobject->getErrors());
     } // if
@@ -102,10 +103,19 @@ if (isset($_GET['select'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
+    $child_errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
+} // if
+
+if (isset($_POST['reset'])) {
+    // re-initialise all settings to start afresh
+    $where = $fileobject->reset($where);
 } // if
 
 $subdir   = $fileobject->picker_subdir;
+$messages[] = getLanguageText('sys0187', $subdir);
 $filemask = $fileobject->picker_filetypes;
 if (!isset($errors)) $errors = array();
 
@@ -117,13 +127,9 @@ if (!empty($fileobject->image_height)) {
 	$fileobject->xsl_params['image_height'] = $fileobject->image_height;
 } // if
 
-if (isset($_POST['reset'])) {
-    // re-initialise all settings to start afresh
-    $fileobject->reset($where);
-} // if
-
 if (!empty($search)) {
-	$search_array = where2array($search);
+    $pattern = null;
+    $search_array = where2array($search);
 	if (!empty($search_array['filename'])) {
 	    $pattern = $search_array['filename'];
 	    if (substr_count($pattern, '%') > 1) {
@@ -152,29 +158,31 @@ $filename = array();
 $filedate = array();
 $filesize = array();
 
-while (false !== ($file = readdir($this_dir))) {
-    // only files of right type are appended to array
-    if (preg_match('/'.$filemask.'/i', $file, $regs)) {
-        if (!empty($pattern)) {
-            if (preg_match('/'.$pattern.'/i', $file)) {
-            	$file_list[$rownum]['file'] = $file;  // display filename without the directory name
+if (is_resource($this_dir)) {
+    while (false !== ($file = readdir($this_dir))) {
+        // only files of right type are appended to array
+        if (preg_match('/'.$filemask.'/i', $file, $regs)) {
+            if (!empty($pattern)) {
+                if (preg_match('/'.$pattern.'/i', $file)) {
+            	    $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+                } // if
+            } else {
+                $file_list[$rownum]['file'] = $file;  // display filename without the directory name
             } // if
-        } else {
-            $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+            if (array_key_exists($rownum, $file_list)) {
+                $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
+                $file_list[$rownum]['size'] = filesize("$subdir/$file");
+                // set up arrays for sorting
+                $filename[$rownum] = strtolower($file);
+                $filedate[$rownum] = $file_list[$rownum]['date'];
+                $filesize[$rownum] = $file_list[$rownum]['size'];
+                $rownum++;
+            } // if
         } // if
-        if (array_key_exists($rownum, $file_list)) {
-            $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
-            $file_list[$rownum]['size'] = filesize("$subdir/$file");
-            // set up arrays for sorting
-            $filename[$rownum] = strtolower($file);
-            $filedate[$rownum] = $file_list[$rownum]['date'];
-            $filesize[$rownum] = $file_list[$rownum]['size'];
-            $rownum++;
-        } // if
-    } // if
-} // endwhile
+    } // endwhile
 
-closedir($this_dir);
+    closedir($this_dir);
+} // if
 
 if (count($file_list) == 0) {
     $messages[] = getLanguageText('sys0089'); // 'Nothing was found matching this profile'
@@ -187,6 +195,7 @@ if (count($file_list) == 0) {
 } // if
 
 if (isset($_GET['orderby'])) {
+    $fileobject->prev_sql_orderby = $fileobject->sql_orderby;
 	$fileobject->setOrderBy($_GET['orderby'], $fileobject->sql_orderby_seq);
 } // if
 $orderby = $fileobject->getOrderBy();

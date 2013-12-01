@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -58,29 +58,7 @@
             <!-- identify whether this is with or without the 'quicksearch' option -->
             <xsl:when test="/root/lookup/quicksearch_field">
               <xsl:attribute name="class">title with_quicksearch</xsl:attribute>
-              <!-- create an area for the QuickSearch option -->
-              <div class="quicksearch">
-                <form method="post" action="{$script}">
-                  <!-- add a dropdown list for the selectable field names -->
-                  <select class="dropdown" name="quicksearch_field">
-                    <xsl:for-each select="/root/lookup/quicksearch_field/option">
-                      <option value="{@id}" >
-                        <xsl:if test="@id=/root/params/quicksearch_default">
-                          <xsl:attribute name="selected">selected</xsl:attribute>
-                        </xsl:if>
-                        <xsl:value-of select="node()"/>
-                      </option>
-                    </xsl:for-each>
-                  </select>
-                  <!-- add a text box and a submit button to fire the search-->
-                  <input name="quicksearch_value" type="text" value="" size="20" />
-                  <input class="submit" type="submit" name="quicksearch" value="Search" />
-                  <!-- create a hidden field for session_name -->
-                  <xsl:if test="$session_name">
-                    <input type="hidden" name="session_name" value="{$session_name}" />
-                  </xsl:if>
-                </form>
-              </div> <!-- quicksearch -->
+              <xsl:call-template name="quicksearch"></xsl:call-template>
             </xsl:when>
             <xsl:otherwise>
               <xsl:attribute name="class">title without_quicksearch</xsl:attribute>
@@ -90,7 +68,7 @@
           <h1 class="title"><xsl:value-of select="$title"/></h1>
         </div> <!-- title -->
           
-        <form method="post" action="{$script}">
+        <form id="{/root/params/script_short}" method="post" action="{$script}">
   
           <div class="outer">
   

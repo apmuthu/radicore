@@ -1,21 +1,29 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
 // this version is for PostgreSQL
 {
-    // member variables
+    // connection settings
+    var $dbhost;
+    var $dbname;                        // database name
+    var $schema;                        // schema name
+    var $dbusername;
+    var $dbuserpass;
+    var $dbprefix;
+    var $dbport;
+    var $dbsocket;
+
+    // server settings
     var $client_encoding;               // character encoding for client
     var $host_info;                     // host info (connection)
     var $server_encoding;               // character encoding for server
     var $server_version;                // version number for server
 
     var $audit_logging;                 // yes/no switch
-    var $dbname;                        // database name
-    var $schema;                        // schema name
     var $errors;                        // array of errors
     var $error_string;                  //
     var $fieldspec = array();           // field specifications (see class constructor)
@@ -47,17 +55,28 @@ class pgsql
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function pgsql ($schema=null)
+    function pgsql ($args=null)
     {
-        global $PGSQL_dbname;
-
-        if (!empty($PGSQL_dbname)) {
-            $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        if (is_string($args)) {
+            $schema             = $args;
         } else {
-            trigger_error('No value supplied for $PGSQL_dbname', E_USER_ERROR);
+            $this->dbname       =& $args['PGSQL_dbname'];
+            $schema             =& $args['dbname'];
+            $this->dbhost       =& $args['dbhost'];
+            $this->dbusername   =& $args['dbusername'];
+            $this->dbuserpass   =& $args['dbuserpass'];
+            $this->dbprefix     =& $args['dbprefix'];
+            $this->dbport       =& $args['dbport'];
+            $this->dbsocket     =& $args['dbsocket'];
         } // if
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (!empty($this->dbname)) {
+            $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        } else {
+            trigger_error('No value supplied for PGSQL_dbname', E_USER_ERROR);
+        } // if
+
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
         } else {
             if (!class_exists('audit_tbl')) {
@@ -307,9 +326,9 @@ END_OF_REGEX;
         logSqlQuery ($schema, null, 'COMMIT');
         $this->query = '';
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
-        } else {
+	    } else {
             $auditobj =& RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
@@ -322,19 +341,16 @@ END_OF_REGEX;
     function connect ($schema=null)
     // establish a connection to the database
     {
-        global $dbhost, $dbusername, $dbuserpass, $PGSQL_dbname, $dbport, $dbsocket;
-
         $this->errors = array();
         $this->query  = '';
-        $this->dbname = $PGSQL_dbname;
 
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
-            if (!empty($dbport)) {
-            	$string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname port=$dbport ";
+            if (!empty($this->dbport)) {
+            	$string = "host={$this->dbhost} user={$this->dbusername} password={$this->dbuserpass} dbname={$this->dbname} port={$this->dbport} ";
             } else {
-                $string = "host=$dbhost user=$dbusername password=$dbuserpass dbname=$PGSQL_dbname ";
+                $string = "host={$this->dbhost} user={$this->dbusername} password={$this->dbuserpass} dbname={$this->dbname} ";
             } // if
             $dbconn = pg_connect($string);
             if ($dbconn) {
@@ -412,11 +428,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $fieldarray;
@@ -446,11 +466,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $count;
@@ -1058,11 +1082,15 @@ END_OF_REGEX;
             logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
 		} // if
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         $this->numrows = 1;  // record has been inserted
@@ -1089,9 +1117,9 @@ END_OF_REGEX;
         logSqlQuery ($schema, null, 'ROLLBACK');
         $this->query = '';
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
-        } else {
+	    } else {
             $auditobj =& RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
@@ -1354,11 +1382,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging)) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $fieldarray;
@@ -1383,11 +1415,15 @@ END_OF_REGEX;
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
         if ($count > 0) {
-            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-                $auditobj =& RDCsingleton::getInstance('audit_tbl');
-                // add record details to audit database
-                $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
-                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            if ($this->audit_logging) {
+            	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        			// do nothing
+		        } else {
+	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                // add record details to audit database
+	                $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
+	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+				} // if
             } // if
         } // if
 
@@ -1732,14 +1768,14 @@ END_OF_REGEX;
                 $columnarray['col_maxvalue'] = (string)$maxvalue;
             } // if
 
-            if ($columnarray['col_maxsize'] == 1) {
-                // some columns have the option of being used as BOOLEAN
-            	if ($columnarray['col_type'] == 'char') {
-                    $columnarray['col_type'] = 'char,boolean';
-                } // if
-            } elseif ($columnarray['col_type'] == 'smallint') {
-                $columnarray['col_type'] = 'smallint,boolean';
-            } // if
+            // some columns have the option of being used as BOOLEAN
+//            if ($columnarray['col_maxsize'] == 1) {
+//            	if ($columnarray['col_type'] == 'char') {
+//                    $columnarray['col_type'] = 'char,boolean';
+//                } // if
+//            } elseif ($columnarray['col_type'] == 'smallint') {
+//                $columnarray['col_type'] = 'smallint,boolean';
+//            } // if
 
             $columnarray['col_type_native'] = $columnarray['col_type'];
 
@@ -1958,6 +1994,13 @@ END_OF_REGEX;
         return $object_vars;
 
     } // __sleep
+
+    // ****************************************************************************
+    function __toString()
+    // this is for use by the error handler
+    {
+        return $this->getErrorString();
+    } // __toString
 
 // ****************************************************************************
 } // end class

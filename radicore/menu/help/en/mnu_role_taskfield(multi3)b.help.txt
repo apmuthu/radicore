@@ -1,3 +1,0 @@
-This will show the contents of the ROLE TASK FIELD table for a selected Role and allow changes to be made.
-
-Refer to <a href="%root%/mnu_role_taskfield(multi3)b.html">Maintain Field Access via Role</a> for full details.

@@ -1,5 +1,0 @@
-This will list records on the WF_WORKFLOW table and allow one or more to be selected.
-
-After selecting records please press the CHOOSE button.
-
-Refer to <a href="%root%/wf_workflow(popup).html">Choose Workflow Process</a> for full details.

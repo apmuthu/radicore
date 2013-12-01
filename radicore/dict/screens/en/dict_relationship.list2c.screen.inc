@@ -12,11 +12,11 @@ $structure['outer']['fields'][1][] = array('field' => 'database_id');
 $structure['tables']['inner'] = 'dict_relationship_jnr';
 
 $structure['inner']['columns'][] = array('width' => 5);
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '25%');
-$structure['inner']['columns'][] = array('width' => '20%');
-$structure['inner']['columns'][] = array('width' => '25%');
-$structure['inner']['columns'][] = array('width' => '10%');
+$structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => 175);
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('database_id_snr' => 'Database Id (snr)');

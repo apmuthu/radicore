@@ -1,3 +1,0 @@
-This will allow the contents of the HELP TEXT table to be maintained.
-
-Refer to <a href="%root%/mnu_help_text(multi1).html">Maintain Help Text</a> for full details.

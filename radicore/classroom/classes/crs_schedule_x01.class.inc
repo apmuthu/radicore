@@ -28,7 +28,7 @@ class crs_schedule_x01 extends crs_schedule
     } // _cm_changeConfig
 
     // ***************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
     {
         $fieldarray['day_name'] = $fieldarray['day_no'];
@@ -130,7 +130,6 @@ class crs_schedule_x01 extends crs_schedule
         	$schedule_id = $_SESSION['crs_schedule_id'];
         } else {
             // get current schedule_id
-            //require_once 'classes/crs_schedule_hdr.class.inc';
             $dbobject =& RDCsingleton::getInstance('crs_schedule_hdr');
             $dbobject->sql_select = 'schedule_id';
             $data = $dbobject->getData("is_active='" .$dbobject->fieldspec['is_active']['true'] ."'");

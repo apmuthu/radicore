@@ -12,7 +12,9 @@ del4.php
 enq1.php
 erase1.php
 filedownload.php
+filedownload2.php
 filepicker.php
+filepicker2.php
 fileupload.php
 link1.php
 list1.php
@@ -24,6 +26,8 @@ multi1.php
 multi2.php
 multi3.php
 multi4.php
+multi5.php
+multi6.php
 output1.php
 output2.php
 output3.php
@@ -53,7 +57,8 @@ del4.screen.inc
 detail1.screen.inc
 erase1.screen.inc
 filepicker.screen.inc
-fileupload1.screen.inc
+filepicker2.screen.inc
+fileupload.screen.inc
 link1.screen.inc
 list1.screen.inc
 list2.screen.inc
@@ -62,6 +67,8 @@ multi1.screen.inc
 multi2.screen.inc
 multi3.screen.inc
 multi4.screen.inc
+multi5.screen.inc
+multi6.screen.inc
 output4.screen.inc
 popup1.screen.inc
 popup2.screen.inc

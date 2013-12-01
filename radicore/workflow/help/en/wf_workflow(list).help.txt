@@ -1,3 +1,0 @@
-This will list records on the WF_WORKFLOW table.
-
-Refer to <a href="%root%/wf_workflow(list).html">List Workflow Process</a> for full details.

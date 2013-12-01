@@ -37,8 +37,8 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit'] = 'submit';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
+$act_buttons['quit']      = 'cancel';
 
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
@@ -51,10 +51,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
-    if (!is_string(key($outer_data))) {
-        // indexed by row, so use first row only
-        $outer_data = $outer_data[key($outer_data)];
-    } // if
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -91,7 +87,10 @@ if (isset($script_vars['dbouter'])) {
 // look for SUBMIT button
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbouter'=> $dbouter));
+    $child_errors = childForm($_POST, array('dbouter'=> $dbouter));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
     if (empty($errors)) {
         $dbouter->startTransaction();
         // delete this record from the database
@@ -166,9 +165,7 @@ if (empty($where)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    //$dbouter->reset($where);
-    $dbouter->setPageNo(1);
-    $dbouter->_cm_reset($where);
+    $where = $dbouter->reset($where);
 } // if
 
 // get data for the outer table
@@ -279,7 +276,7 @@ if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
 
 if ($errors) {
     // remove the 'submit' button
-    unset($act_buttons['submit']);
+    unset($act_buttons['submitBtn']);
 } else {
     $messages[] = getLanguageText('sys0086'); // 'Press SUBMIT to confirm deletion.'
     $messages   = array_unique($messages);

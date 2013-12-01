@@ -8,7 +8,7 @@ class x_person_s04 extends x_person
 {
     // ****************************************************************************
     // this class is for use by script: person_output(pdf)3.php
-    // it demonstrates the creation of a complex invoice laout via PDF
+    // it demonstrates the creation of a complex invoice layout via PDF
     // ****************************************************************************
 
     var $total_price;       //

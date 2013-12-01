@@ -1,3 +1,0 @@
-This will display the contents of a record from the WF_PLACE table.
-
-Refer to <a href="%root%/wf_place(enq).html">Enquire Workflow Place</a> for full details.

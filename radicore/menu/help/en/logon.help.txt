@@ -1,7 +1,0 @@
-Welcome to the RADICORE Menu & Security system.
-
-You must enter a valid user id and password before you can continue any further.
-
-The password field is case-sensitive, so watch out for the 'caps lock' key.
-
-Refer to <a href="%root%/mnu_logon.html">Logon screen</a> for full details.

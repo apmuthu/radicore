@@ -10,8 +10,8 @@
 -- Database: `survey`
 -- 
 
-CREATE DATABASE survey ;
-USE survey ;
+-- CREATE DATABASE survey ;
+-- USE survey ;
 
 -- --------------------------------------------------------
 

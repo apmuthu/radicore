@@ -14,7 +14,7 @@ input.submit, input.button {
   color: white;
   background-color: #337733;
   font-weight: bold;
-  font-size: 100%px;
+  font-size: 100%;
 }
 .radio input {
   background-color: transparent;
@@ -71,7 +71,7 @@ pre.textarea {
   font-family: Verdana, Arial, Helvetica, sans-serif;
   font-size: 1em;
   height: 5em;
-  border: 1px solid gray; 
+  border: 1px solid gray;
   background-color: white;
 	overflow: auto;
 }
@@ -173,7 +173,7 @@ div.actionbar p {
 div.body {
   border-left: 1px solid black;
   border-right: 1px solid black;
-  border-bottom: 1px solid black; 
+  border-bottom: 1px solid black;
   text-align: left;
   padding: 1px;
   background: white;
@@ -291,8 +291,8 @@ div.uploadbg {
   background: #cccccc;
 }
 div.upload {
-  width: 500px; 
-  margin-left: auto; 
+  width: 500px;
+  margin-left: auto;
   margin-right: auto;
   background: #dddddd;
   padding: 20px;
@@ -310,26 +310,26 @@ div.upload {
   padding-top: 0px;
   padding-bottom: 0px;
   padding-left: 0px;
-  padding-right: 1px; 
-  margin: 0px; 
+  padding-right: 1px;
+  margin: 0px;
   list-style-type: none;
 }
 #menubar li {
-  background: url(emerald/left.gif) no-repeat left top; 
+  background: url(emerald/left.gif) no-repeat left top;
   padding-top: 0px;
   padding-bottom: 0px;
-  padding-left: 4px; 
+  padding-left: 4px;
   padding-right: 0px;
   margin: 0px;
   float: left;
 }
 #menubar a {
   background: url(emerald/right.gif) no-repeat right top;
-  padding-top: 5px; 
-  padding-bottom: 4px; 
-  padding-left: 6px; 
-  padding-right: 10px; 
-  display: block; 
+  padding-top: 5px;
+  padding-bottom: 4px;
+  padding-left: 6px;
+  padding-right: 10px;
+  display: block;
   color: #765;
   text-decoration: none;
   white-space: nowrap;
@@ -377,9 +377,9 @@ div.upload {
   list-style-type: none;
 }
 #menustack li {
-  padding: 0px; 
+  padding: 0px;
   margin: 0px;
-  float: left; 
+  float: left;
   display: block;
   text-decoration: none;
   white-space: nowrap;

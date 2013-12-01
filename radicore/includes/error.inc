@@ -67,6 +67,8 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
                     if ($errno <> 0) {
                         if ($errno == 1002) {
                              // "fetch out of sequence" - IGNORE
+                             $save_errstr = null;
+                             $errcontext['this']->error_string = null;
                         } else {
                             break;
                         } // if
@@ -92,6 +94,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
                     $save_errstr = $errstr;
                     break;
                 } // if
+            } elseif (isset($GLOBALS['batch']) AND preg_match('/^(require)/i', $errstr)) {
+                // detected a failed 'require()' in a batch job, so abort now
+                break;
             } elseif (empty($save_errstr)) {
                 // save this for later
                 $save_errstr = $errstr;
@@ -105,12 +110,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_USER_DEPRECATED;
             return;
         case E_USER_ERROR:
-            if (!empty($save_errstr)) {
-                // previous error message already saved, so stop here
-//                $errstr = $save_errstr;
-//                $errno = null;
-//                break;
-            } // if
         case E_ERROR:
         case E_PARSE:
         case E_CORE_ERROR:
@@ -133,6 +132,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         } // if
         if (method_exists($errcontext['this'], 'getErrorString')) {
             $errstr = $errcontext['this']->getErrorString();
+            if (empty($errstr)) {
+                $errstr = $save_errstr;
+            } // if
         } // if
         if (method_exists($errcontext['this'], 'getErrorString2')) {
             $errstr2 = $errcontext['this']->getErrorString2();
@@ -156,13 +158,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     	define('RDC_WITHIN_ERROR_HANDLER', true);
     } // if
 
-    $errorstring = "<h2>" . date('Y-m-d H:i:s') . "</h2>\n";
+    $errorstring = "<div class='error'>\n";
+    $errorstring .= "<h2>" . date('Y-m-d H:i:s') . "</h2>\n";
     //$errorstring .= "<p>Fatal Error: $errstr (# $errno).</p>\n";
     $errorstring .= "<p>" .getLanguageText('sys0063', $errstr);
     if (!empty($errno)) {
     	$errorstring .= " (# $errno)";
     } // if
-    $errorstring .= ".</p>\n";
+    $errorstring .= "</p>\n";
     if (!empty($query)) {
         //$errorstring .= "<p>SQL query: $query</p>\n";
         $errorstring .= "<p>" .getLanguageText('sys0064', $query) ."</p>\n";
@@ -194,7 +197,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         //$errorstring .= "<p>User Id: {$_SESSION['logon_user_id']}</p>\n";
         $errorstring .= "<p>" .getLanguageText('sys0067', $logon_user_id) ."</p>\n";
     } // if
-
+    if (isset($_SESSION['role_id'])) {
+        //$errorstring .= "<p>Role Id: {$_SESSION['role_id']}</p>\n";
+        $errorstring .= "<p>" .getLanguageText('sys0109', $_SESSION['role_id']) ."</p>\n";
+    } // if
     if (!empty($_SERVER['REMOTE_ADDR'])) {
     	//$errorstring .= "<p>REMOTE_ADDR: {$_SERVER['REMOTE_ADDR']}</p>\n";
         $errorstring .= "<p>" .getLanguageText('sys0068', $_SERVER['REMOTE_ADDR']) ."</p>\n";
@@ -207,19 +213,20 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     	//$errorstring .= "<p>REQUEST_URI: {$_SERVER['REQUEST_URI']}</p>\n";
         $errorstring .= "<p>" .getLanguageText('sys0069', $_SERVER['REQUEST_URI']) ."</p>\n";
     } // if
+    $errorstring .= "</div>\n";
 
     global $page_stack;
     //$history = "<p>" .'Page Stack:' ."</p>\n";
-    $history = "<p>" .getLanguageText('sys0073') ."</p>\n";
-    $history .= "<pre>\n";
+    $history  = "<p>" .getLanguageText('sys0073') ."</p>\n";
     $ix = 0;
     if ($page_stack) {
+        $history .= "<pre>\n";
         foreach ($page_stack as $script => $text) {
         	$history .= '  [' .$ix .'] ' .$script ."\n";
         	$ix++;
         } // foreach
+        $history .= "</pre>\n";
     } // if
-    $history .= "\n</pre>\n";
 
     // retrieve and format debug_backtrace for output
     if (isset($errcontext['exception'])) {
@@ -227,7 +234,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } else {
         $result = debug_backtrace();
     } // if
-    $trace = null;
+    //$trace_hdg = "<p>Backtrace:</p>\n";
+    $trace_hdg  = "<p>" .getLanguageText('sys0075') ."</p>\n";
+    $trace     = null;
     foreach ($result as $level => $string) {
         $trace .= "$level: array =\n";
         if (is_array($string)) {
@@ -235,11 +244,12 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         } // if
     } // foreach
 
-    //$trace = "<pre>\n" .$trace ."\n</pre>\n";
-
-    // remove all html tags
-    $search = array('<br>', '<p>', '</p>', '<h2>', '</h2>');
-    $mailstring = str_replace($search, '', "$errorstring $history");
+    // remove all html tags for email message
+    $search = array('<br>', '<p>', '</p>', '<pre>', '</pre>');
+    $mailstring  = strip_tags($errorstring);
+    $mailstring .= str_replace($search, '', $history);
+    $mailstring .= str_replace($search, '', $trace_hdg);
+    $mailstring .= $trace;
     if (defined('ERROR_LOG_MAILTO')) {
     	$mailto = ERROR_LOG_MAILTO;
     } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
@@ -250,14 +260,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     // Send the error to the administrator by email
     $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
     $headers .= "\nContent-Type: text/plain; charset=UTF-8";
-    @error_log("$mailstring <pre>\n$trace\n</pre>\n", 1, $mailto, $headers);
+    @error_log($mailstring, 1, $mailto, $headers);
 
-    //echo "<h2>This application has encountered an unrecoverable error</h2>\n";
-    $header = "<h2>" .getLanguageText('sys0060') ."</h2>\n";
+    //echo "<h1>This application has encountered an unrecoverable error</h1>\n";
+    $header = "<h1>" .getLanguageText('sys0060') ."</h1>\n";
     //echo "<p>The following has been reported to the administrator:</p>\n";
     $header .= "<p>"  .getLanguageText('sys0061') ."</p>\n";
 
-    $errorstring = "$header\n<b><font color='red'>\n$errorstring\n</font></b>";
+    $errorstring = $header .$errorstring;
 
     if (function_exists('XMLRPC_errorhandler')) {
         // this is within an XML-RPC or SOAP server, so skip next bit
@@ -265,12 +275,31 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAME'])
         OR  preg_match('/^(local\.)/i', $_SERVER['SERVER_NAME'])
         OR (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'batch')) {
-            echo $errorstring;
+?>
+<!DOCTYPE HTML SYSTEM>
+<HTML>
+<HEAD>
+<TITLE>RADICORE</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=utf-8">
+<STYLE type="text/css">
+<!--
+  .error h2, .error p {
+    color: red;
+    font-weight: bold;
+  }
+-->
+</STYLE>
+</HEAD>
+<BODY>
+<?php echo $errorstring."\n"; ?>
+</BODY>
+</HTML>
+<?php
         } else {
             //echo "<p>This application has encountered an unrecoverable error</p>";
             echo '<p>' .getLanguageText('sys0060') .'<br>';
             //echo "<p>Please contact your system administrator for details</p>";
-            echo getLanguageText('sys0149') .'</p>';
+            echo getLanguageText('sys0149') ."</p>\n";
         } // if
     } // if
 
@@ -284,20 +313,18 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } // if
 
     // remove line breaks
-    $errorstring = str_replace("\n", "", $errorstring);
-    $errorstring .= "\n"; // except the last one
+    //$errorstring = str_replace("\n", "", $errorstring);
+    //$errorstring .= "\n"; // except the last one
 
     // add message to log file
     if (defined('ERROR_LOG')) {
-    	$logfile = ERROR_LOG;
-    } elseif (dirname($_SERVER['SCRIPT_FILENAME']) == $_SERVER['DOCUMENT_ROOT']) {
-        // this is the highest directory, so use it
-    	$logfile = 'errorlog.html';
+    	$logfile = ERROR_LOG;  // write into specified file
+    } elseif (defined('ERROR_LOG_DIR')) {
+    	$logfile = ERROR_LOG_DIR.'/errorlog.html';  // write into specified directory
     } else {
-        // write into parent directory
-        $logfile = '../errorlog.html';
+        $logfile = $_SERVER['DOCUMENT_ROOT'].'/error_logs/errorlog.html';  // write into default file
     } // if
-    error_log("$errorstring $history <pre>\n" .htmlspecialchars($trace, ENT_COMPAT, 'UTF-8') ."\n</pre>", 3, $logfile);
+    error_log("$errorstring\n$history\n$trace_hdg<pre>\n" .htmlspecialchars($trace, ENT_COMPAT, 'UTF-8') ."\n</pre>", 3, $logfile);
 
     // rollback any incomplete transaction
     if (isset($errcontext['this'])) {
@@ -305,10 +332,14 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
             if (method_exists($errcontext['this'], 'rollback')) {
                 if (isset($errcontext['this']->schema)) {
                 	$dbname = $errcontext['this']->schema;
-                } else {
+                } elseif (isset($errcontext['this']->dbname)) {
                     $dbname = $errcontext['this']->dbname;
+                } else {
+                    $dbname = null;
                 } // if
-                $errcontext['this']->rollback($dbname);
+                if (!empty($dbname)) {
+                    $errcontext['this']->rollback($dbname);
+                } // if
             } // if
         } // if
     } // if
@@ -385,6 +416,10 @@ if (version_compare(phpversion(), '5.0.0', '>=')) {
     {
         //$string = 'Uncaught exception from ' .get_class($exception) .', message = ' .$exception->getMessage();
         $string = getLanguageText('sys0062', get_class($exception), $exception->getMessage());
+
+        $string .= ', code='.$exception->getCode();
+        $string .= ', file='.$exception->getFile();
+        $string .= ', line='.$exception->getLine();
 
         trigger_error($string, E_USER_ERROR);
 

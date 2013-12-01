@@ -1,3 +1,0 @@
-This will list entries from the Audit Log.
-
-Refer to <a href="%root%/audit_dtl(list)2.html">List Audit Details</a> for full details.

@@ -7,14 +7,20 @@
 class oracle
 // this version is for Oracle
 {
-    // member variables
+    // connection settings
+    var $dbhost;
+    var $schema;                        // schema name
+    var $dbusername;
+    var $dbuserpass;
+    var $dbprefix;
+
+    // server settings
     var $client_encoding;               // character encoding for client
     var $host_info;                     // host info (connection)
     var $server_encoding;               // character encoding for server
     var $server_version;                // version number for server
 
     var $audit_logging;                 // yes/no switch
-    var $dbname;                        // database name
     var $errors;                        // array of errors
     var $error_string;                  //
     var $fieldspec = array();           // field specifications (see class constructor)
@@ -27,7 +33,6 @@ class oracle
     var $rows_per_page;                 // page size for multi-row forms
     var $row_locks;                     // SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
-    var $schema;                        // database name
     var $stmt;                          // sql statement resource
     var $table_locks;                   // array of tables to be locked
     var $transaction_level;             // transaction level
@@ -48,15 +53,25 @@ class oracle
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function oracle ($schema=null)
+    function oracle ($args=null)
     {
+        if (is_string($args)) {
+            $schema           = $args;
+        } else {
+            $schema           =& $args['dbname'];
+            $this->dbhost     =& $args['dbhost'];
+            $this->dbusername =& $args['dbusername'];
+            $this->dbuserpass =& $args['dbuserpass'];
+            $this->dbprefix   =& $args['dbprefix'];
+        } // if
+
         if (!empty($schema)) {
             $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = TRUE;
         } // if
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
         } else {
             if (!class_exists('audit_tbl')) {
@@ -408,9 +423,9 @@ END_OF_REGEX;
         logSqlQuery ($schema, null, 'COMMIT');
         $this->query = '';
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
-        } else {
+	    } else {
             $auditobj =& RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
@@ -423,24 +438,22 @@ END_OF_REGEX;
     function connect ($schema=null)
     // establish a connection to the database
     {
-        global $dbhost, $dbusername, $dbuserpass, $dbprefix;
-
-        if (!empty($schema) AND !empty($dbprefix)) {
-             if (!preg_match('/^(' .$dbprefix .')/i', $schema)) {
+        if (!empty($schema) AND !empty($this->dbprefix)) {
+             if (!preg_match('/^(' .$this->dbprefix .')/i', $schema)) {
                 // prefix may be different on different servers
-                $schema = $dbprefix .$schema;
+                $schema = $this->dbprefix .$schema;
             } // if
         } // if
 
         $this->errors = array();
         $this->query  = '';
-        $this->$schema = $schema;
+        $this->schema = $schema;
 
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
-            //$dbconn = oci_pconnect($dbusername, $dbuserpass, $dbhost, 'UTF8');
-            $dbconn = oci_connect($dbusername, $dbuserpass, $dbhost, 'UTF8');
+            //$dbconn = oci_pconnect($this->dbusername, $this->dbuserpass, $this->dbhost, 'UTF8');
+            $dbconn = oci_connect($this->dbusername, $this->dbuserpass, $this->dbhost, 'UTF8');
             if ($dbconn) {
                 $this->server_info = oci_server_version ($dbconn);
                 // get name of current database
@@ -490,8 +503,8 @@ END_OF_REGEX;
         } // if
 
         $this->query     = '';
-        $this->schema    = $schema;
         $this->dbconnect = $dbconn;
+        $this->schema    = $schema;
         return TRUE;
 
     } // connect
@@ -526,11 +539,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $fieldarray;
@@ -568,11 +585,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $count);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $count;
@@ -812,7 +833,10 @@ END_OF_REGEX;
                 			$row[$fieldname] = substr($fieldvalue, 0, 10);
                 			break;
                 		case 'time':
-                			$row[$fieldname] = substr($fieldvalue, 11, 8);
+                            if (strlen($fieldvalue) > 8) {
+                                // this is a DATETIME column, so extract TIME portion
+                                $row[$fieldname] = substr($fieldvalue, 11, 8);
+                            } // if
                 			break;
                 		case 'string':
                 		    // replace '\r\n' with carriage return + new line
@@ -1079,7 +1103,16 @@ END_OF_REGEX;
     				} // switch
                 } // if
             } else {
-                if ($spec['type'] == 'string' AND $spec['size'] > 4000) {
+                if ($spec['type_native'] == 'datetime') {
+                    // this column requires both date and time
+                    if ($spec['type'] == 'date') {
+                        // only date input, so append dummy time
+                        $fieldarray[$field] .= ' 00:00:00';
+                    } elseif ($spec['type'] == 'time') {
+                        // only time input, so prepend dummy date
+                        $fieldarray[$field] = '2000-01-01 '.$fieldarray[$field];
+                    } // if
+                } elseif ($spec['type'] == 'string' AND $spec['size'] > 4000) {
                     // special processing required for LOBs (large objects)
                     if (isset($fieldarray[$field])) {
                     	//$lob_names[$field] = $this->adjustData($fieldarray[$field]);
@@ -1104,12 +1137,12 @@ END_OF_REGEX;
 			} // if
 		} // foreach
 
-		if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
-	        // build 'where' string using values for primary key
-	        $where = $this->buildKeyString ($fieldarray, $this->primary_key);
+        // build 'where' string using values for primary key
+        $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 
+		if (empty($auto_increment) AND empty($this->retry_on_duplicate_key)) {
 	        // find out if a record with this primary key already exists
-	        $query = "SELECT count(*) FROM $tablename WHERE $where";
+	        $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
 	        $count = $this->getCount($schema, $tablename, $query);
 
 	        // Is this primary key taken?
@@ -1264,11 +1297,15 @@ END_OF_REGEX;
         } // if
 
         if ($this->numrows > 0) {
-            if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-                $auditobj =& RDCsingleton::getInstance('audit_tbl');
-                // add record details to audit database
-                $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
-                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            if ($this->audit_logging) {
+            	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        			// do nothing
+		        } else {
+	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                // add record details to audit database
+	                $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
+	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+				} // if
             } // if
         } // if
 
@@ -1293,9 +1330,9 @@ END_OF_REGEX;
         logSqlQuery ($schema, null, 'ROLLBACK');
         $this->query = '';
 
-        if (defined('TRANSIX_NO_AUDIT')) {
+        if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
-        } else {
+	    } else {
             $auditobj =& RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
@@ -1506,7 +1543,16 @@ END_OF_REGEX;
     						// do nothing
     				} // switch
                 } else {
-                    if ($spec['type'] == 'string' AND $spec['size'] > 4000) {
+                    if ($spec['type_native'] == 'datetime') {
+                        // this column requires both date and time
+                        if ($spec['type'] == 'date') {
+                            // only date input, so append dummy time
+                            $fieldarray[$field] .= ' 00:00:00';
+                        } elseif ($spec['type'] == 'time') {
+                            // only time input, so prepend dummy date
+                            $fieldarray[$field] = '2000-01-01 '.$fieldarray[$field];
+                        } // if
+                    } elseif ($spec['type'] == 'string' AND $spec['size'] > 4000) {
                         // special processing required for LOBs (large objects)
                         if (isset($fieldarray[$field])) {
                         	//$lob_names[$field] = $this->adjustData($fieldarray[$field]);
@@ -1587,11 +1633,15 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
-            // add record details to audit database
-            $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
-            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+        if ($this->audit_logging) {
+        	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        		// do nothing
+	        } else {
+	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            // add record details to audit database
+	            $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
+	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+			} // if
         } // if
 
         return $fieldarray;
@@ -1624,10 +1674,14 @@ END_OF_REGEX;
 
         if ($count > 0) {
             if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
-                $auditobj =& RDCsingleton::getInstance('audit_tbl');
-                // add record details to audit database
-                $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
-                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+            	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
+        			// do nothing
+		        } else {
+	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                // add record details to audit database
+	                $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
+	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
+				} // if
             } // if
         } // if
 
@@ -1670,9 +1724,7 @@ END_OF_REGEX;
                                             'scale' => 0);
         $colspecs['float']          = array('name' => 'FLOAT',
                                             'type' => 'numeric',
-                                            'size' => 22,
-                                            'precision' => 38,
-                                            'scale' => 126);
+                                            'size' => 22);
         $colspecs['clob']           = array('name' => 'CLOB',
                                             'type' => 'string',
                                             'size' => 4294967295);
@@ -1688,13 +1740,13 @@ END_OF_REGEX;
         // allow DATE type to be re-specfied as DATE, TIME or DATETIME
         $colspecs['date']           = array('name' => 'DATE',
                                             'type' => 'date',
-                                            'size' => 12);
+                                            'size' => 19);
         $colspecs['time']           = array('name' => 'TIME',
                                             'type' => 'time',
                                             'size' => 8);
         $colspecs['datetime']       = array('name' => 'DATETIME',
                                             'type' => 'datetime',
-                                            'size' => 20);
+                                            'size' => 19);
 
         // miscellaneous data types
         $colspecs['long']           = array('name' => 'LONG',
@@ -1867,9 +1919,20 @@ END_OF_REGEX;
                 	    break;
                 	case 'data_type':
                 	    switch ($value) {
-                	    	case 'DATE';
-                	    	    $columnarray['col_type'] = 'date,time,datetime';
+                            case 'DATE';
+                                // default is 'datetime', but can be used as 'date' only or 'time' only
+                	    	    $columnarray['col_type_native'] = 'datetime,date,time';
+                                $columnarray['col_type'] = 'date';
                 	    	    break;
+                            case 'TIME';
+                                $columnarray['col_type'] = 'time';
+                                break;
+                            case 'DATETIME';
+                                $columnarray['col_type'] = 'datetime';
+                                break;
+                            case 'TIMESTAMP';
+                                $columnarray['col_type'] = 'timestamp';
+                                break;
                             case 'TIMESTAMP WITH TIME ZONE';
                 	    	    $columnarray['col_type'] = 'timestamp_tz';
                 	            break;
@@ -1928,7 +1991,7 @@ END_OF_REGEX;
                         break;
                     case 'data_scale':
                         if ($specs['type'] == 'numeric') {
-                            $scale                    = $value;
+                            $scale = $value;
                         } // if
                         break;
                     default:
@@ -1936,9 +1999,9 @@ END_OF_REGEX;
                 } // switch
             } // foreach
 
-            // the generic NUMBER can be converted into INTEGER, DECIMAL or FLOAT
             if ($columnarray['col_type'] == 'number') {
-            	if (empty($precision) AND empty($scale)) {
+                // the generic NUMBER can be converted into INTEGER, DECIMAL or FLOAT
+            	if (strlen($precision) == 0 AND empty($precision) AND strlen($scale) == 0 AND empty($scale)) {
                 	$columnarray['col_type']      = 'float';
                 	$specs                        = $colspecs['float'];
                 	$precision                    = $specs['precision'];
@@ -1967,14 +2030,16 @@ END_OF_REGEX;
                 } // if
             } // if
 
-            // a CHAR(1) column has the option of being used as BOOLEAN
-            if ($columnarray['col_maxsize'] == 1) {
-                if ($columnarray['col_type'] == 'char') {
-                    $columnarray['col_type'] = 'char,boolean';
-            	} // if
+            if ($columnarray['col_type'] == 'char') {
+                if ($columnarray['col_maxsize'] == 1) {
+                    // this can also be used as 'boolean'
+                    $columnarray['col_type_native'] = $columnarray['col_type'].',boolean';
+                } // if
             } // if
 
-            $columnarray['col_type_native'] = $columnarray['col_type'];
+            if (!isset($columnarray['col_type_native'])) {
+                $columnarray['col_type_native'] = $columnarray['col_type'];
+            } // if
 
             // look for minimum value in $colspecs
             if (isset($specs['minvalue'])) {
@@ -2010,6 +2075,12 @@ END_OF_REGEX;
                 $columnarray['col_maxvalue'] = (string)$maxvalue;
             } // if
 
+            if ($columnarray['col_type'] == 'float') {
+                // the numbers are too large to store, so don't bother
+                $columnarray['col_minvalue'] = null;
+                $columnarray['col_maxvalue'] = null;
+            } // if
+
             $out_array[] = $columnarray;
         } // while
 
@@ -2029,7 +2100,7 @@ END_OF_REGEX;
         $array = array();
 
         // build the query string and run it
-        $this->query = "SELECT username FROM sys.all_users WHERE username NOT IN ('CTXSYS','DBSNMP','FLOWS_020100','FLOWS_FILES','MDSYS','OUTLN','SYS','SYSTEM','TSMSYS','XDB') AND EXISTS (SELECT * FROM sys.all_tables WHERE all_tables.owner=all_users.username) ORDER BY username";
+        $this->query = "SELECT username FROM sys.all_users WHERE username NOT IN ('APEX_040000','CTXSYS','DBSNMP','FLOWS_020100','FLOWS_FILES','MDSYS','OUTLN','SYS','SYSTEM','TSMSYS','XDB') AND EXISTS (SELECT * FROM sys.all_tables WHERE all_tables.owner=all_users.username) ORDER BY username";
         $statement  = oci_parse($this->dbconnect, $this->query);
         $this->stmt = $statement;
         $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
@@ -2213,6 +2284,13 @@ END_OF_REGEX;
         return $object_vars;
 
     } // __sleep
+
+    // ****************************************************************************
+    function __toString()
+    // this is for use by the error handler
+    {
+        return $this->getErrorString();
+    } // __toString
 
 // ****************************************************************************
 } // end class

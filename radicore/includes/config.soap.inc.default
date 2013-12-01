@@ -4,8 +4,7 @@
 // configuration details for SOAP web services
 
 // 'location' is used by the client to identify the address of the server
-//$location = 'http://localhost/radicore/SOAP/server.php';
-$location = 'http://127.0.0.1/radicore/SOAP/server.php';
+$location = 'http://localhost/radicore/SOAP/server.php';
 
 $service  = 'radicore_v1';  // format = name + version number
 $uri      = 'urn:'.$service;

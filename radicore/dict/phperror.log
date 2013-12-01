@@ -1,1 +1,7 @@
 [10-Sep-2012 13:44:16 UTC] PHP Fatal error:  Maximum execution time of 60 seconds exceeded in F:\Apache2\HTDOCS\radicore\includes\include.library.inc on line 5434
+[29-Nov-2012 14:57:52 Europe/London] PHP Fatal error:  Call to undefined function issset() in F:\Apache2\HTDOCS\radicore\dict\classes\dict_column.class.inc on line 408
+[26-May-2013 17:21:44 Europe/London] PHP Fatal error:  Call to undefined function stelen() in F:\Apache2\HTDOCS\radicore\includes\dml.mysqli.class.inc on line 1636
+[27-Sep-2013 09:11:24 Europe/London] PHP Fatal error:  Maximum execution time of 60 seconds exceeded in F:\Apache2\HTDOCS\radicore\includes\include.library.inc on line 5631
+[27-Sep-2013 09:13:29 Europe/London] PHP Fatal error:  Maximum execution time of 60 seconds exceeded in F:\Apache2\HTDOCS\radicore\includes\dml.mysqli.class.inc on line 436
+[27-Sep-2013 09:16:28 Europe/London] PHP Fatal error:  Maximum execution time of 60 seconds exceeded in F:\Apache2\HTDOCS\radicore\includes\include.library.inc on line 5631
+[27-Oct-2013 18:29:49 Europe/London] PHP Fatal error:  Call to a member function getErrors() on a non-object in F:\Apache2\HTDOCS\radicore\dict\classes\dict_relationship.class.inc on line 204

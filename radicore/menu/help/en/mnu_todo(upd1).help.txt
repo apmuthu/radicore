@@ -1,3 +1,0 @@
-This will display the contents of a record from the ToDo table and allow it to be updated. 
-
-Refer to <a href="%root%/mnu_todo(upd1).html">Update ToDo</a> for full details.

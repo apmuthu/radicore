@@ -10,8 +10,8 @@
 -- Database: `product`
 -- 
 
-CREATE DATABASE product ;
-USE product ;
+-- REATE DATABASE product ;
+-- USE product ;
 
 -- --------------------------------------------------------
 
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `container` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`facility_id`,`container_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `container_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`container_type_id`)
-) TYPE=MyISAM AUTO_INCREMENT=9 ;
+) ENGINE=MyISAM AUTO_INCREMENT=9 ;
 
 -- --------------------------------------------------------
 
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `facility` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`facility_id`)
-) TYPE=MyISAM AUTO_INCREMENT=3 ;
+) ENGINE=MyISAM AUTO_INCREMENT=3 ;
 
 -- --------------------------------------------------------
 
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `facility_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`facility_type_id`)
-) TYPE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=4 ;
+) ENGINE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=4 ;
 
 -- --------------------------------------------------------
 
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `good_identification` (
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`identity_type_id`),
   UNIQUE KEY `identity_type_id` (`identity_type_id`,`id_value`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `good_identity_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`identity_type_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS `inventory_item` (
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`inventory_item_id`),
   UNIQUE KEY `serial_no` (`product_id`,`serial_no`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `inventory_item_status` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`inv_item_status_id`)
-) TYPE=MyISAM AUTO_INCREMENT=6 ;
+) ENGINE=MyISAM AUTO_INCREMENT=6 ;
 
 -- --------------------------------------------------------
 
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `inventory_item_status_hist` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`inventory_item_id`,`seq_no`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -193,7 +193,7 @@ CREATE TABLE IF NOT EXISTS `inventory_item_variance` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`inventory_item_id`,`seq_no`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -209,7 +209,7 @@ CREATE TABLE IF NOT EXISTS `inventory_variance_reason` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`inv_var_reason_id`)
-) TYPE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=5 ;
+) ENGINE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=5 ;
 
 -- --------------------------------------------------------
 
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS `lot` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`lot_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -256,7 +256,7 @@ CREATE TABLE IF NOT EXISTS `price_component` (
   KEY `product_id` (`product_id`),
   KEY `prod_feature_id` (`prod_feature_id`),
   KEY `prod_cat_id` (`prod_cat_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -277,7 +277,7 @@ CREATE TABLE IF NOT EXISTS `prod_cat_class` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`prod_cat_id`,`seq_no`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -293,7 +293,7 @@ CREATE TABLE IF NOT EXISTS `prod_cat_rollup` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`prod_cat_id_snr`,`prod_cat_id_jnr`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -313,7 +313,7 @@ CREATE TABLE IF NOT EXISTS `prod_feature_applicability` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`prod_feature_id`,`seq_no`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -331,7 +331,7 @@ CREATE TABLE IF NOT EXISTS `prod_feature_interaction` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`,`prod_feature_id_snr`,`prod_feature_id_jnr`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS `product` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`product_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -372,7 +372,7 @@ CREATE TABLE IF NOT EXISTS `product_category` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`prod_cat_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -391,7 +391,7 @@ CREATE TABLE IF NOT EXISTS `product_feature` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`prod_feature_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -408,7 +408,7 @@ CREATE TABLE IF NOT EXISTS `product_feature_category` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`prod_feature_cat_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -426,7 +426,7 @@ CREATE TABLE IF NOT EXISTS `unit_of_measure` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`uom_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -442,7 +442,7 @@ CREATE TABLE IF NOT EXISTS `uom_category` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`uom_cat_id`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;
 
 -- --------------------------------------------------------
 
@@ -459,4 +459,4 @@ CREATE TABLE IF NOT EXISTS `uom_conversion` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`uom_id_from`,`uom_id_to`)
-) TYPE=MyISAM;
+) ENGINE=MyISAM;

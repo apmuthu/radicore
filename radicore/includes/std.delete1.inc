@@ -33,9 +33,9 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit'] = 'submit';
-$act_buttons['copy']   = 'copy';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
+$act_buttons['copy']      = 'copy';
+$act_buttons['quit']      = 'cancel';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -48,10 +48,6 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    if (!is_string(key($fieldarray))) {
-        // indexed by row, so use first row only
-        $fieldarray = $fieldarray[key($fieldarray)];
-    } // if
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -87,7 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $messages = copyForm($_POST, $dbobject);
     } else {
         // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject));
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
         if (empty($errors)) {
             $dbobject->startTransaction();
             // delete this record from the database
@@ -131,7 +130,7 @@ if (empty($errors)) {
         $errors = $dbobject->getErrors();
         if ($dbobject->numrows > 1) {
             // multiple rows, so display error message with this screen
-        	unset($act_buttons['submit']);
+        	unset($act_buttons['submitBtn']);
         } else {
             // single row, so return to previous script before displaying error message
             $messages = array_merge($messages, $dbobject->getMessages());
@@ -171,7 +170,7 @@ if (!empty($dbobject->messages)) {
 
 if ($errors) {
     // remove the 'submit' button
-    unset($act_buttons['submit']);
+    unset($act_buttons['submitBtn']);
 } else {
     $messages[] = getLanguageText('sys0086'); // 'Press SUBMIT to confirm deletion.'
     $messages   = array_unique($messages);

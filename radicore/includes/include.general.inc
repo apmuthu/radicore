@@ -12,6 +12,7 @@ if (!isset($GLOBALS['use_https'])) {
 } // if
 $GLOBALS['classdir'] = null;
 
+// look for a file which is not in the include_path but is in a higher directory
 $alt_config = str_replace("\\", '/', realpath('../../INCLUDES/config.inc'));
 
 if (@fopen('config.local.inc', 'r', true)) {
@@ -22,16 +23,8 @@ if (@fopen('config.local.inc', 'r', true)) {
     // found 'live' version in current include_path
 	require_once 'config.inc';
 
-} elseif ($_SERVER['SERVER_NAME'] == 'local.transix.net'
-      AND $_SERVER['DOCUMENT_ROOT'] == 'F:/Apache2/HTDOCS/radicore'
-      AND file_exists($alt_config)) {
-    // found in a higher directory within DOCUMENT_ROOT
-    require_once $alt_config;
-
-} elseif ($_SERVER['SERVER_NAME'] == 'localhost'
-      AND $_SERVER['DOCUMENT_ROOT'] == 'F:/Apache2/HTDOCS'
-      AND file_exists($alt_config)) {
-    // found in a higher directory within DOCUMENT_ROOT
+} elseif (file_exists($alt_config)) {
+    // found in a higher directory
     require_once $alt_config;
 
 } else {
@@ -81,7 +74,9 @@ if (isset($_SERVER['SERVER_PROTOCOL'])) {
     $GLOBALS['protocol'] = '';
 } // if
 
-$handler = setSessionHandler();
-unset($handler);
+if (!defined('NO_SESSION_HANDLER')) {
+	$handler = setSessionHandler();
+	unset($handler);
+} // if
 
 ?>

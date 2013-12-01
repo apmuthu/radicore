@@ -35,8 +35,8 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit']     = 'submit';
-$act_buttons['quit']       = 'cancel';
+$act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
+$act_buttons['quit']      = 'cancel';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -49,14 +49,11 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    if (!is_string(key($fieldarray))) {
-        // indexed by row, so use first row only
-        $fieldarray = $fieldarray[key($fieldarray)];
-    } // if
 } else {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
+    $dbobject->setRowsPerPage(1);  // scroll through one item at a time
     $dbobject->sql_select  = &$sql_select;
     $dbobject->sql_from    = &$sql_from;
     $dbobject->sql_where   = &$sql_where;
@@ -100,46 +97,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // look for LIMIT and OFFSET values
     $rdc_limit  =& $_POST['rdc_limit'];
     $rdc_offset =& $_POST['rdc_offset'];
-
-    // get data from the database
-    $resource = $dbobject->getData_serial($where, $rdc_limit, $rdc_offset);
-
-    if ($dbobject->getNumRows() <= 0) {
-        scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+    if (strlen($rdc_limit) < 1 OR !is_numeric($rdc_limit) OR $rdc_limit < 1) {
+        // LIMIT must be a number which is greater than or equal to 1
+        $errors['rdc_limit'] = getLanguageText('sys0223');
+    } // if
+    if (strlen($rdc_offset) < 1 OR !is_numeric($rdc_limit) OR $rdc_limit < 0) {
+        // OFFSET must be a number which is greater than or equal to 0
+        $errors['rdc_offset'] = getLanguageText('sys0224');
     } // if
 
-    if (empty($csvout)) {
-        // set default value
-    	$csvout = $table_id .'.csv';
-    } // if
+    if (empty($errors)) {
+        // get data from the database
+        $resource = $dbobject->getData_serial($where, $rdc_limit, $rdc_offset);
 
-    // create an instance of the CSV object
-    require_once 'std.csv.class.inc';
-    $csv = new CSV($dbobject);
+        if ($dbobject->getNumRows() <= 0) {
+            scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+        } // if
 
-    // transform output to CSV format
-    $output = $csv->outputCSV($resource, $_POST);
-    $errors = $dbobject->getErrors();
-    $messages = $dbobject->getMessages();
+        if (empty($csvout)) {
+            // set default value
+    	    $csvout = $table_id .'.csv';
+        } // if
 
-    if (!empty($output)) {
-    	// download to client browser
-        header("Content-type: text/comma-separated-values");
-        header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-        header("Content-Disposition: attachment; filename=" .$csvout);
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-        header('Pragma: public');
-        echo $output;
-    } // if
-    //unset($_SESSION['pages'][getSelf()]);
-    //scriptPrevious($errors, $messages);
-    exit;
+        // create an instance of the CSV object
+        require_once 'std.csv.class.inc';
+        $csv = new CSV($dbobject);
+
+        // transform output to CSV format
+        $output = $csv->outputCSV($resource, $_POST);
+        $errors = $dbobject->getErrors();
+        $messages = $dbobject->getMessages();
+
+        if (!empty($output)) {
+    	    // download to client browser
+            header("Content-type: text/comma-separated-values");
+            header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header("Content-Disposition: attachment; filename=" .$csvout);
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Pragma: public');
+            echo $output;
+        } // if
+        //unset($_SESSION['pages'][getSelf()]);
+        //scriptPrevious($errors, $messages);
+        exit;
+    } //if
 } // if
 
 $mode = 'update';      // identify mode for building the screen
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+//if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $fieldarray = $dbobject->getColumnNames($where);
+//} // if
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $objectdata = getPostArray($_POST, $dbobject->getFieldSpec());
+    $fieldarray = array_merge($fieldarray, $objectdata);
+    $dbobject->setFieldArray($fieldarray);
 } // if
 
 // save these variables for later in the same session

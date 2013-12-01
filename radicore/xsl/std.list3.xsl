@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -30,6 +30,7 @@
 <xsl:variable name="middle" select="/root/structure/middle/@id"/>
 <xsl:variable name="inner" select="/root/structure/inner/@id"/>
 <xsl:variable name="numrows" select="/root/pagination/page[@id='inner']/@numrows"/>
+<xsl:variable name="middle_count" select="/root/*[name()=$outer][1]/*[name()=$middle]"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
@@ -44,7 +45,7 @@
     
     <xsl:call-template name="body-head" />
 
-    <form method="post" action="{$script}">
+    <form id="{/root/params/script_short}" method="post" action="{$script}">
   
       <div class="universe">
   
@@ -68,7 +69,7 @@
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_vertical">
                   <xsl:with-param name="zone"   select="'outer'"/>
-                  <xsl:with-param name="noedit" select="'y'"/>
+                  <xsl:with-param name="noedit" select="string(/root/params/outer_noedit)"/>
                 </xsl:call-template>
               </xsl:for-each>
             </table>
@@ -83,17 +84,56 @@
           <div class="middle">
   
             <!-- This is the MIDDLE table -->
+            <!-- which can display either one row (the default) or multiple rows at a time -->
             <table>
-              <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]">
-                <!-- display all the fields in the current row -->
-                <xsl:call-template name="display_vertical">
-                  <xsl:with-param name="zone"   select="'middle'"/>
-                  <xsl:with-param name="noedit" select="'y'"/>
-                </xsl:call-template>
-              </xsl:for-each>
+              <xsl:choose>
+                <xsl:when test="/root/params/middle_multiple = 'y'">
+                  <!-- allow this area to show multiple rows -->
+                  
+                  <!-- set up column widths -->
+                  <xsl:call-template name="column_group">
+                    <xsl:with-param name="zone" select="'middle'"/>
+                  </xsl:call-template>
+                  
+                  <thead>
+                    <!-- set up column headings -->
+                    <xsl:call-template name="column_headings">
+                      <xsl:with-param name="zone"   select="'middle'"/>
+                      <xsl:with-param name="nosort" select="string(/root/params/middle_nosort)"/>
+                    </xsl:call-template>
+                  </thead>
+                  
+                  <tbody>
+                    <!-- process each non-empty row in the MIDDLE table of the XML file -->
+                    <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][count(*)&gt;0]">
+                      
+                      <!-- display all the fields in the current row -->
+                      <xsl:call-template name="display_horizontal">
+                        <xsl:with-param name="zone"     select="'middle'"/>
+                        <xsl:with-param name="currocc"  select="." />
+                        <xsl:with-param name="multiple" select="'y'"/>
+                        <xsl:with-param name="noedit"   select="string(/root/params/middle_noedit)"/>
+                      </xsl:call-template>
+                      
+                    </xsl:for-each>
+                  </tbody>
+                </xsl:when>
+                
+                <xsl:otherwise>
+                  <!-- display a single row only -->
+                  
+                  <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]">
+                    <!-- display all the fields in the current row -->
+                    <xsl:call-template name="display_vertical">
+                      <xsl:with-param name="zone"   select="'middle'"/>
+                      <xsl:with-param name="noedit" select="string(/root/params/middle_noedit)"/>
+                    </xsl:call-template>
+                  </xsl:for-each>
+                </xsl:otherwise>
+              </xsl:choose>
             </table>
-  
-            <!-- insert the scrolling links for outer table -->
+            
+            <!-- insert the scrolling links for middle table -->
             <xsl:call-template name="scrolling" >
               <xsl:with-param name="object" select="$middle"/>
             </xsl:call-template>
@@ -119,13 +159,13 @@
                 <!-- set up column headings -->
                 <xsl:call-template name="column_headings">
                   <xsl:with-param name="zone"   select="'inner'"/>
-                  <xsl:with-param name="nosort" select="/root/params/nosort"/>
+                  <xsl:with-param name="nosort" select="string(/root/params/nosort)"/>
                 </xsl:call-template>
               </thead>
   
               <tbody>
-                <!-- process each non-empty row in the INNER/CHILD table of the XML file -->
-                <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]/*[name()=$inner][count(*)&gt;0]">
+                <!-- process each non-empty row in the INNER table of the XML file -->
+                <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][$middle_count]/*[name()=$inner][count(*)&gt;0]">
   
                   <!-- display all the fields in the current row -->
                   <xsl:call-template name="display_horizontal">

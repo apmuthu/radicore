@@ -1,3 +1,0 @@
-This will display the contents of a record from the WF_WORKFLOW table.
-
-Refer to <a href="%root%/wf_workflow(enq).html">Enquire Workflow Process</a> for full details.

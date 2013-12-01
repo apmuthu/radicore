@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -52,11 +52,15 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
         // create object for retrieving task details
         $taskobj =& RDCsingleton::getInstance('mnu_task');
-        $task_prefix = $taskobj->dbprefix;
+        //$task_prefix = $taskobj->dbprefix;
 
         // create object for retrieving dictionary details
         $dictobj =& RDCsingleton::getInstance('dict_column');
-        $dict_prefix = $dictobj->dbprefix;
+        //$dict_prefix = $dictobj->dbprefix;
+
+        // find out if tables in the 'dict' database need to be qualified
+        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
+        $dictDB = $this->_qualify_dbname($this->dbname, 'dict');
 
 		$subsys_id   = $rowdata['subsys_id'];
         $subsys_dir  = $rowdata['subsys_dir'];
@@ -71,11 +75,11 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $this->_createMenuDesc($data, $subsys_id);
 
 		// process task descriptions
-    	$taskobj->sql_select = 'task_id, task_desc';
-    	$taskobj->sql_from   = 'mnu_task';
-    	$taskobj->sql_orderby = 'task_id';
-        $data = $taskobj->getData("subsys_id='$subsys_id' AND task_type='PROC'");
-		$this->_createTaskDesc($data, $subsys_id);
+//    	$taskobj->sql_select = 'task_id, task_desc';
+//    	$taskobj->sql_from   = 'mnu_task';
+//    	$taskobj->sql_orderby = 'task_id';
+//      $data = $taskobj->getData("subsys_id='$subsys_id' AND task_type='PROC'");
+//		$this->_createTaskDesc($data, $subsys_id);
 
 		// process navigation buttons
     	$taskobj->sql_select = 'task_id_snr, task_id_jnr, mnu_nav_button.button_text';
@@ -86,8 +90,9 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
 		// process field (column) names
     	$dictobj->sql_select = 'column_id, column_desc';
-    	$dictobj->sql_from   = 'dict_column LEFT JOIN "'.$dict_prefix.'dict".dict_database ON (dict_database.database_id=dict_column.database_id)';
-    	$dictobj->sql_orderby = 'dict_column.column_id';
+    	//$dictobj->sql_from   = 'dict_column LEFT JOIN "'.$dict_prefix.'dict".dict_database ON (dict_database.database_id=dict_column.database_id)';
+    	$dictobj->sql_from   = 'dict_column LEFT JOIN '.$dictDB.'dict_database ON (dict_database.database_id=dict_column.database_id)';
+        $dictobj->sql_orderby = 'dict_column.column_id';
         $data = $dictobj->getData("subsys_id='$subsys_id'");
 		$this->_createFieldDesc($data, $subsys_id);
 
@@ -100,11 +105,11 @@ class mnu_subsystem_s01 extends mnu_subsystem
         // (2) create file '/help/<task_id>.help.txt'
 
         // process help text
-    	$taskobj->sql_select = 'mnu_task.task_id, help_text';
-    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN help_text ON (mnu_task.task_id=help_text.task_id)';
-    	$taskobj->sql_orderby = 'mnu_task.task_id';
-        $data = $taskobj->getData("subsys_id='$subsys_id'");
-		$this->_createHelpText($data, $subsys_dir);
+//    	$taskobj->sql_select = 'mnu_task.task_id, help_text';
+//    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN help_text ON (mnu_task.task_id=help_text.task_id)';
+//    	$taskobj->sql_orderby = 'mnu_task.task_id';
+//      $data = $taskobj->getData("subsys_id='$subsys_id'");
+//		$this->_createHelpText($data, $subsys_dir);
 
 		// (3) create file 'sql/<subsys>.menu_export.sql'
 
@@ -252,14 +257,14 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $output = $this->_exportSqlData('mnu_subsystem', $data, $output);
 
         if ($subsys_id == 'MENU') {
-            // export contents of MNU_language
+            // export contents of MNU_LANGUAGE
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_language';
         	$taskobj->sql_orderby = 'language_id';
             $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_language', $data, $output);
 
-            // export contents of MNU_pattern
+            // export contents of MNU_PATTERN
         	$taskobj->sql_select = '*';
         	$taskobj->sql_from   = 'mnu_pattern';
         	$taskobj->sql_orderby = 'pattern_id';
@@ -273,29 +278,36 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_role', $data, $output);
 
-            // export contents of MNU_ROLE for entries used by this subsystem
-        	$taskobj->sql_select = 'DISTINCT role_id';
-        	$taskobj->sql_from   = 'mnu_role_task '
-        	                     . 'left join mnu_task ON (mnu_role_task.task_id=mnu_task.task_id)';
-        	$taskobj->sql_orderby = 'role_id';
-            $data = $taskobj->getData_raw("mnu_task.subsys_id='$subsys_id'");
+            // export contents of MNU_TIME_LIMIT_ROLE
+            $taskobj->sql_select = '*';
+            $taskobj->sql_from   = 'mnu_time_limit_role';
+            $taskobj->sql_orderby = 'role_id';
+            $data = $taskobj->getData_raw(null);
+            $output = $this->_exportSqlData('mnu_time_limit_role', $data, $output);
 
-            if (count($data) > 0) {
-                // extract details of all roles which are actually used
-                $range = null;
-                foreach ($data as $row) {
-                	if (empty($range)) {
-                		$range = "'" .$row['role_id'] ."'";
-                	} else {
-                	    $range .= ",'" .$row['role_id'] ."'";
-                	} // if
-                } // foreach
-            	$taskobj->sql_select = '*';
-            	$taskobj->sql_from   = 'mnu_role';
-            	$taskobj->sql_orderby = 'role_id';
-                $data = $taskobj->getData_raw("role_id IN ($range)");
-                $output = $this->_exportSqlData('mnu_role', $data, $output);
-            } // if
+            // export contents of MNU_ROLE for entries used by this subsystem
+//        	$taskobj->sql_select = 'DISTINCT role_id';
+//        	$taskobj->sql_from   = 'mnu_role_task '
+//        	                     . 'left join mnu_task ON (mnu_role_task.task_id=mnu_task.task_id)';
+//        	$taskobj->sql_orderby = 'role_id';
+//            $data = $taskobj->getData_raw("mnu_task.subsys_id='$subsys_id'");
+//
+//            if (count($data) > 0) {
+//                // extract details of all roles which are actually used
+//                $range = null;
+//                foreach ($data as $row) {
+//                	if (empty($range)) {
+//                		$range = "'" .$row['role_id'] ."'";
+//                	} else {
+//                	    $range .= ",'" .$row['role_id'] ."'";
+//                	} // if
+//                } // foreach
+//            	$taskobj->sql_select = '*';
+//            	$taskobj->sql_from   = 'mnu_role';
+//            	$taskobj->sql_orderby = 'role_id';
+//                $data = $taskobj->getData_raw("role_id IN ($range)");
+//                $output = $this->_exportSqlData('mnu_role', $data, $output);
+//            } // if
         } // if
 
         // export contents of MNU_TASK for this subsystem (where type = 'PROC')
@@ -307,6 +319,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
         	$output = $this->_exportSqlData('mnu_task', $task_data, $output);
         	$task_id = $task_data['task_id'];
 
+            // export the contents of MNU_TASK_ALT for this task
+            $taskobj->sql_select = 'mnu_task_alt.*';
+            $taskobj->sql_from   = 'mnu_task_alt';
+            $taskobj->sql_orderby = 'language_id';
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('mnu_task_alt', $data2, $output);
+
         	// export the contents of MNU_NAV_BUTTON for this task (2 passes)
         	$taskobj->sql_select = 'mnu_nav_button.*';
         	$taskobj->sql_from   = 'mnu_nav_button';
@@ -314,8 +333,8 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data2 = $taskobj->getData_raw("task_id_snr='$task_id'");  // 1st pass
             $output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
 
-            $data2 = $taskobj->getData_raw("task_id_jnr='$task_id'");  // 2nd pass
-            $output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
+            //$data2 = $taskobj->getData_raw("task_id_jnr='$task_id'");  // 2nd pass
+            //$output = $this->_exportSqlData('mnu_nav_button', $data2, $output);
 
             // export the contents of MNU_TASK_FIELD for this task
         	$taskobj->sql_select = 'mnu_task_field.*';
@@ -352,6 +371,20 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_task_ip_address', $data2, $output);
 
+            // export the contents of HELP_TEXT for this task
+            $taskobj->sql_select = 'help_text.*';
+            $taskobj->sql_from   = 'help_text';
+            $taskobj->sql_orderby = 'help_text.task_id';
+            $data = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('help_text', $data, $output);
+
+            // export the contents of HELP_TEXT_ALT for this task
+            $taskobj->sql_select = 'help_text_alt.*';
+            $taskobj->sql_from   = 'help_text_alt';
+            $taskobj->sql_orderby = 'help_text_alt.task_id, help_text_alt.language_id';
+            $data = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('help_text_alt', $data, $output);
+
         } // foreach
 
         // export contents of MNU_TASK for this subsystem (where type = 'MENU')
@@ -380,13 +413,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
     	$taskobj->sql_orderby = 'menu_id, sort_seq';
         $data = $taskobj->getData_raw("SNR.subsys_id != '$subsys_id' AND JNR.subsys_id='$subsys_id'");
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
-
-        // export the contents of HELP_TEXT for this subsystem
-    	$taskobj->sql_select = 'help_text.*';
-    	$taskobj->sql_from   = 'help_text LEFT JOIN mnu_task ON (mnu_task.task_id=help_text.task_id)';
-    	$taskobj->sql_orderby = 'help_text.task_id';
-        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
-        $output = $this->_exportSqlData('help_text', $data, $output);
 
         if ($subsys_id == 'MENU') {
 			// export contents of MNU_CONTROL where record_id='SYSTEM'
@@ -447,6 +473,13 @@ class mnu_subsystem_s01 extends mnu_subsystem
             	$userobj->sql_orderby = 'user_id,sort_seq';
                 $data2 = $userobj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_favourite', $data2, $output);
+
+                // export the contents of MNU_TIME_LIMIT_USER for this user
+                $userobj->sql_select = 'mnu_time_limit_user.*';
+                $userobj->sql_from   = 'mnu_time_limit_user';
+                $userobj->sql_orderby = 'user_id,seq_no';
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $output = $this->_exportSqlData('mnu_time_limit_user', $data2, $output);
 
             } // foreach
 

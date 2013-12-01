@@ -59,6 +59,16 @@ class dict_column extends Default_Table
         $type     = $fieldarray['col_type'];
         $colspecs = $this->_cm_getColSpecs($type, $fieldarray);
 
+        if (preg_match('/(int|char)/i', $fieldarray['col_type'])) {
+            if ($fieldarray['user_size'] == 1) {
+                $fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
+            } // if
+        } elseif (preg_match('/^(bit)$/i', $fieldarray['col_type'])) {
+            $fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
+            $fieldarray['col_maxsize'] = 1;
+            $fieldarray['user_size']   = 1;
+        } // if
+
         if (preg_match('/^(enum|set)$/i', $type)) {
             unset($this->fieldspec['col_values']['nodisplay']);
         } else {
@@ -202,7 +212,7 @@ class dict_column extends Default_Table
         } else {
             $fieldarray['control'] = null;
         } // if
-        if (isset($colspecs['optionlist'])) {
+        if (isset($colspecs['optionlist']) AND !preg_match('/(checkbox)/i', $fieldarray['control'])) {
             unset($this->fieldspec['optionlist']['nodisplay']);
         } else {
             $fieldarray['optionlist'] = null;
@@ -225,11 +235,13 @@ class dict_column extends Default_Table
         if (isset($colspecs['align_hv'])) {
             unset($this->fieldspec['align_hv']['nodisplay']);
         } else {
+            $this->fieldspec['align_hv']['nodisplay'] = 'y';
             $fieldarray['align_hv'] = null;
         } // if
         if (isset($colspecs['align_lr'])) {
             unset($this->fieldspec['align_lr']['nodisplay']);
         } else {
+            $this->fieldspec['align_lr']['nodisplay'] = 'y';
             $fieldarray['align_lr'] = null;
         } // if
         if (isset($colspecs['multi_cols'])) {
@@ -310,19 +322,31 @@ class dict_column extends Default_Table
             	    $fieldarray['control'] = 'radio';
             	} // if
             	if (is_null($fieldarray['boolean_true'])) {
-                    if (preg_match('/int/i', $fieldarray['col_type_native'])) {
-                        $fieldarray['boolean_true'] = '1';
+                    if (preg_match('/(int|bit)/i', $fieldarray['col_type_native'])) {
+                        $fieldarray['boolean_true']  = '1';
                     } else {
-            		    $fieldarray['boolean_true'] = 'Y';
+            		    $fieldarray['boolean_true']  = 'Y';
                     } // if
             	} // if
             	if (is_null($fieldarray['boolean_false'])) {
-                    if (preg_match('/int/i', $fieldarray['col_type_native'])) {
+                    if (preg_match('/(int|bit)/i', $fieldarray['col_type_native'])) {
             		    $fieldarray['boolean_false'] = '0';
                     } else {
                         $fieldarray['boolean_false'] = 'N';
                     } // if
             	} // if
+                if ($fieldarray['col_type'] == 'boolean') {
+                    $fieldarray['user_minvalue'] = null;
+                    $fieldarray['user_maxvalue'] = null;
+                } // if
+            } // if
+            if (preg_match('/int|double|float|number|numeric/i', $fieldarray['col_type'])) {
+                if (is_null($fieldarray['user_minvalue'])) {
+                    $fieldarray['user_minvalue'] = $fieldarray['col_minvalue'];
+                } // if
+                if (is_null($fieldarray['user_maxvalue'])) {
+                    $fieldarray['user_maxvalue'] = $fieldarray['col_maxvalue'];
+                } // if
             } // if
         } // if
 
@@ -372,24 +396,34 @@ class dict_column extends Default_Table
         } // if
 
         if (isset($fieldarray['align_hv'])) {
-           if (!preg_match('/(radio|m_checkbox)/i', $fieldarray['control'])) {
-                // "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'"
-                $this->errors['align_hv'] = getLanguageText('e0007');
+            if (isset($this->fieldspec['align_hv']['nodisplay'])) {
+                $fieldarray['align_hv'] = null;
+            } else {
+                if (!preg_match('/(radio|m_checkbox)/i', $fieldarray['control'])) {
+                    // "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'"
+                    $this->errors['align_hv'] = getLanguageText('e0007');
+                } // if
             } // if
         } // if
         if (isset($fieldarray['align_lr'])) {
-            if (preg_match('/(radio|checkbox|m_checkbox)/i', $fieldarray['control'])) {
-                // this is valid
+            if (isset($this->fieldspec['align_lr']['nodisplay'])) {
+                $fieldarray['align_lr'] = null;
             } else {
-                // "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'"
-                $this->errors['align_lr'] = getLanguageText('e0030');
-            } // if
-            if (preg_match('/(radio|checkbox)/i', $fieldarray['control'])) {
-                // skip the next bit
-            } else {
-                if (empty($fieldarray['checkbox_label'])) {
-                	// "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
-                    $this->errors['align_lr'] = getLanguageText('e0033');
+                if (preg_match('/(radio|checkbox|m_checkbox)/i', $fieldarray['control'])) {
+                    // this is valid
+                } else {
+                    // "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'"
+                    //$this->errors['align_lr'] = getLanguageText('e0030');
+                    $fieldarray['align_lr'] = null;
+                } // if
+                if (preg_match('/(radio|checkbox)/i', $fieldarray['control'])) {
+                    // skip the next bit
+                } else {
+                    if (empty($fieldarray['checkbox_label'])) {
+                	    // "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
+                        //$this->errors['align_lr'] = getLanguageText('e0033');
+                        $fieldarray['align_lr'] = null;
+                    } // if
                 } // if
             } // if
         } // if
@@ -423,7 +457,8 @@ class dict_column extends Default_Table
         if (isset($fieldarray['checkbox_label'])) {
             if ($fieldarray['control'] != 'checkbox') {
                 // "Invalid unless CONTROL = 'checkbox'"
-                $this->errors['checkbox_label'] = getLanguageText('e0032');
+                //$this->errors['checkbox_label'] = getLanguageText('e0032');
+                $fieldarray['checkbox_label'] = null;
             } // if
         } // if
 
@@ -557,8 +592,11 @@ class dict_column extends Default_Table
                 $colspecs['is_required']    = 'y';
                 $colspecs['control']        = '?';
                 $colspecs['optionlist']     = '?';
-                $colspecs['align_lr']       = '?';
-                $colspecs['checkbox_label'] = '?';
+                break;
+            case 'bit':
+                $colspecs['is_required']    = 'y';
+                $colspecs['control']        = '?';
+                $colspecs['optionlist']     = '?';
         		break;
         	case 'binary':
         	    $colspecs['user_size']           = 'y';
@@ -577,8 +615,6 @@ class dict_column extends Default_Table
                     $colspecs['optionlist']      = '?';
                     $colspecs['task_id']         = '?';
                     $colspecs['foreign_field']   = '?';
-                    $colspecs['align_hv']        = '?';
-                    $colspecs['align_lr']        = '?';
                     $colspecs['multi_cols']      = '?';
                     $colspecs['multi_rows']      = '?';
                 } else {
@@ -645,8 +681,6 @@ class dict_column extends Default_Table
                 $colspecs['auto_update']        = 'y';
                 $colspecs['control']            = '?';
                 $colspecs['optionlist']         = '?';
-                $colspecs['align_hv']           = '?';
-                $colspecs['align_lr']           = '?';
                 $colspecs['task_id']            = '?';
                 $colspecs['foreign_field']      = '?';
                 $colspecs['minvalue']           = '?';
@@ -667,9 +701,17 @@ class dict_column extends Default_Table
             	case 'multidrop':
                     $colspecs['multi_rows'] = 'y';
             	    break;
+                case 'checkbox';
+                    $colspecs['align_lr']       = 'y';
+                    $colspecs['checkbox_label'] = 'y';
+                    break;
             	case 'm_checkbox':
             	    $colspecs['align_lr']   = 'y';
             	    $colspecs['align_hv']   = 'y';
+                    break;
+                case 'radio':
+                    $colspecs['align_lr']   = 'y';
+                    $colspecs['align_hv']   = 'y';
             	default:
             	    break;
             } // switch
@@ -913,7 +955,7 @@ class dict_column extends Default_Table
         //DebugBreak();
         switch ($popupname) {
             // replace $where string for this popup
-        	case 'dict_table(popup1)':
+        	case 'dict_table(popup2)':
         		$where = "database_id='{$fieldarray['database_id']}'";
         		break;
         	default:
@@ -1070,7 +1112,7 @@ class dict_column extends Default_Table
                 $this->errors['user_size'] = getLanguageText('e0017', $fieldarray['col_maxsize']);
             } // if
         } // if
-        if (strlen($fieldarray['user_minvalue']) > 0) {
+        if (strlen($fieldarray['user_minvalue']) > 0 AND strlen($fieldarray['col_minvalue']) > 0 ) {
             $user_value = (float)$fieldarray['user_minvalue'];
             $col_value  = (float)$fieldarray['col_minvalue'];
             if ($user_value < $col_value) {
@@ -1078,7 +1120,7 @@ class dict_column extends Default_Table
                 $this->errors['user_minvalue'] = getLanguageText('e0018', $fieldarray['col_minvalue']);
             } // if
         } // if
-        if (strlen($fieldarray['user_maxvalue']) > 0) {
+        if (strlen($fieldarray['user_maxvalue']) > 0 AND strlen($fieldarray['col_maxvalue']) > 0 ) {
             $user_value = (float)$fieldarray['user_maxvalue'];
             $col_value  = (float)$fieldarray['col_maxvalue'];
             if ($user_value > $col_value) {

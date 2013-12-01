@@ -44,7 +44,7 @@
     
     <xsl:call-template name="body-head" />
 
-    <form method="post" action="{$script}">
+    <form id="{/root/params/script_short}" method="post" action="{$script}">
   
       <div class="universe">
   

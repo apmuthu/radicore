@@ -10,8 +10,8 @@
 -- Database: `classroom`
 -- 
 
-CREATE DATABASE classroom ;
-USE classroom ;
+-- CREATE DATABASE classroom ;
+-- USE classroom ;
 
 -- --------------------------------------------------------
 

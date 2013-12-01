@@ -1,5 +1,0 @@
-This will allow the contents of the Audit Log to be viewed for selected objects.
-
-This version will select those Audit Log entries where the the primary key of the selected object is contained with the PKEY value of the audited occurrence. This will include entries from subordinate (child) tables which contain the same field names within their primary keys.
-
-Refer to <a href="%root%/audit_dtl(list)3.html">List Audit Details for a selected Object</a> for full details.

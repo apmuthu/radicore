@@ -81,8 +81,8 @@ if (isset($script_vars['dbouter'])) {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
-    $dbouter->initiated_from_controller = true;
-    $dbouter->zone                      = 'outer';
+    $dbouter->initiated_from_controller  = true;
+    $dbouter->zone                       = 'outer';
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -91,7 +91,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
-    } //if
+    } // if
     // scroll through one item at a time
     $dbouter->setRowsPerPage(1);
     // check that primary key is complete
@@ -125,8 +125,8 @@ if (isset($script_vars['dbmiddle'])) {
     // create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
     // indicate that this object was started from a page controller
-    $dbmiddle->initiated_from_controller = true;
-    $dbmiddle->zone                      = 'middle';
+    $dbmiddle->initiated_from_controller   = true;
+    $dbmiddle->zone                        = 'middle';
     $dbmiddle->sql_select  = &$middle_sql_select;
     $dbmiddle->sql_from    = &$middle_sql_from;
     $dbmiddle->sql_where   = &$middle_sql_where;
@@ -162,8 +162,8 @@ if (isset($script_vars['dbinner'])) {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
-    $dbinner->initiated_from_controller = true;
-    $dbinner->zone                      = 'inner';
+    $dbinner->initiated_from_controller  = true;
+    $dbinner->zone                       = 'inner';
     $dbinner->sql_select       = &$inner_sql_select;
     $dbinner->sql_from         = &$inner_sql_from;
     $dbinner->sql_where        = &$inner_sql_where;
@@ -188,7 +188,20 @@ if (isset($_POST['choose'])) {
 
 if (!empty($_POST)) {
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner));
+    $child_errors = childForm($_POST, array('dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
+} // if
+
+if (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $where = $dbouter->reset($where);
+    $outer_data = $dbouter->getFieldArray();
+    $where = $dbmiddle->reset($where);
+    $middle_data = $dbmiddle->getFieldArray();
+    $where = $dbinner->reset($where);
+    $inner_data = $dbinner->getFieldArray();
 } // if
 
 if (isset($scrolling)) {
@@ -201,8 +214,6 @@ if (isset($scrolling)) {
         if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
             // set index number of item to be read from current $where list
             $dbouter->setPageNo($_GET['item']);
-        } else {
-            $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
         } // if
     } // if
 } // if
@@ -216,13 +227,6 @@ if (empty($where)) {
     } else {
         scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
     } // if
-} // if
-
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    //$dbouter->reset($where);
-    $dbouter->setPageNo(1);
-    $dbouter->_cm_reset($where);
 } // if
 
 // get data from the outer table
@@ -239,7 +243,6 @@ if ($dbouter->errors) {
     } // if
 } // if
 
-$messages = array_merge($messages, $dbouter->getMessages());
 if ($dbouter->getNumRows() < 1) {
     if (count($page_stack) > 2) {
         scriptPrevious(getLanguageText('sys0090', strtoupper($dbouter->getTableName()))); // 'Nothing retrieved from database table $outer'
@@ -260,36 +263,29 @@ $outer_data = $dbouter->getExtraData($outer_data);
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
 $where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
-// load in current data from $outer in case it is needed
-$dbmiddle->setFieldArray($outer_data);
-
-if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
-    // set index number of item to be read from current $where list
-    $dbmiddle->setPageNo($_GET['item']);
-} // if
-
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    //$dbmiddle->reset($where);
-    $dbmiddle->setPageNo(1);
-    $dbmiddle->_cm_reset($where);
-} // if
-
-// get data from the middle table
-$middle_data = $dbmiddle->getData($where);
-if ($dbmiddle->errors) {
-    // errors are keyed by object name
-    $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
-} // if
-if ($dbmiddle->getNumRows() == 0) {
-    $errors[] = getLanguageText('sys0088', strtoupper($middle_table)); // 'No entries found on $middle_table'
-    if (array_key_exists('choose', $act_buttons)) {
-        // this is unusable, so remove it
-        unset($act_buttons['choose']);
+if (empty($outer_data)) {
+    $dbmiddle->setFieldArray(null);
+    $middle_data = array();
+} else {
+    // load in current data from $outer in case it is needed
+    $dbmiddle->setFieldArray($outer_data);
+    if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
+        // set index number of item to be read from current $where list
+        $dbmiddle->setPageNo($_GET['item']);
     } // if
-} // if
-
-if (!empty($middle_data)) {
+    // get data from the middle table
+    $middle_data = $dbmiddle->getData($where);
+    if ($dbmiddle->errors) {
+        // errors are keyed by object name
+        $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+    } // if
+    if ($dbmiddle->getNumRows() == 0) {
+        $errors[] = getLanguageText('sys0088', strtoupper($middle_table)); // 'No entries found on $middle_table'
+        if (array_key_exists('choose', $act_buttons)) {
+            // this is unusable, so remove it
+            unset($act_buttons['choose']);
+        } // if
+    } // if
     // get any additional data for current record
     $middle_data = $dbmiddle->getExtraData($middle_data);
 } // if
@@ -336,11 +332,6 @@ if (isset($_GET['page'])) {
 // merge OUTER and MIDDLE where to get selection criteria for INNER
 $inner_where = mergeWhere($where, $middle_where);
 
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $dbinner->reset($inner_where);
-} // if
-
 if ($dbmiddle->numrows == 0) {
     $dbinner->setFieldArray(null);
     $inner_data = array();
@@ -370,10 +361,9 @@ if ($dbmiddle->numrows == 0) {
     } // if
 } // if
 
-if (!empty($middle_data)) {
-    // get any additional data for current record
-    $inner_data = $dbinner->getExtraData($inner_data);
-} // if
+$messages = array_merge($messages, $dbouter->getMessages());
+$messages = array_merge($messages, $dbmiddle->getMessages());
+$messages = array_merge($messages, $dbinner->getMessages());
 
 if (isset($_GET['action'])) {
     $fieldarray = $dbinner->setAction($_GET['action']);
@@ -397,10 +387,6 @@ if ($dbinner->getNumRows() == 1 AND isset($act_buttons['choose'])) {
 $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
-
-// get sort details
-//$orderby     = $dbinner->getOrderBy();
-//$orderby_seq = $dbinner->getOrderBySeq($orderby);
 
 // save these variables for later in the same session
 $script_vars['where']     = unqualifyWhere($where);

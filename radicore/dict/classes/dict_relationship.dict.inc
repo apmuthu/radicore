@@ -1,5 +1,5 @@
 <?php
-    // file created on June 24, 2012, 8:22 pm
+    // file created on October 27, 2013, 3:18 pm
     
     // field specifications for table dict.dict_relationship
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -16,7 +16,7 @@
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'dict_table(popup1)snr',
+                                                    'task_id' => 'dict_table(popup2)snr',
                                                     'foreign_field' => 'table_id_snr',
                                                     'noedit' => 'y');
     
@@ -34,11 +34,12 @@
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
-                                                    'task_id' => 'dict_table(popup1)',
+                                                    'task_id' => 'dict_table(popup2)',
                                                     'foreign_field' => 'table_id_jnr',
                                                     'noedit' => 'y');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
+                                                    'type_native' => 'tinyint',
                                                     'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
@@ -67,6 +68,7 @@
     $fieldspec['rel_type']                  = array('type' => 'string',
                                                     'size' => 3,
                                                     'required' => 'y',
+                                                    'default' => 'IGN',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'rel_type');
     
@@ -82,6 +84,13 @@
     
     $fieldspec['calc_field']                = array('type' => 'string',
                                                     'size' => 255);
+    
+    $fieldspec['key_name']                  = array('type' => 'string',
+                                                    'size' => 64,
+                                                    'required' => 'y',
+                                                    'default' => 'PRIMARY',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'key_name');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,

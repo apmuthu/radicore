@@ -1,3 +1,0 @@
-This will list records on the TASK_IP_ADDRESS table for a selected Task.
-
-Refer to <a href="%root%/mnu_task_ip_address(list2).html">List IP Address by Task</a> for full details.

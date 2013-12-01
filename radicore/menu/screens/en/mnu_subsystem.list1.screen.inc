@@ -15,6 +15,6 @@ $structure['main']['fields'][] = array('subsys_id' => 'ID');
 $structure['main']['fields'][] = array('subsys_desc' => 'Description');
 $structure['main']['fields'][] = array('subsys_dir' => 'Directory');
 $structure['main']['fields'][] = array('task_prefix' => 'Task Prefix');
-$structure['main']['fields'][] = array('count' => 'Count');
+$structure['main']['fields'][] = array('task_count' => 'Tasks');
 
 ?>

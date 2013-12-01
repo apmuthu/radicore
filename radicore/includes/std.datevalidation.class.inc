@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
@@ -61,10 +61,13 @@ class date_class {
         		break;
 
         	case 'ymd':
-        	default:
         	    $mm     = (int)$mm;
         	    $output = "$ccyy $monthalpha[$mm] $dd";
         		break;
+            case 'yyyy-mm-dd':
+            default:
+                $output = "$ccyy-$mm-$dd";
+                break;
         } // switch
 
         return $output;

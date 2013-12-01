@@ -1,3 +1,0 @@
-This is the first page the user sees after passing through the logon screen. It is also the page that is shown whenever the user selects an option from the menu bar instead of the navigation bar.
-
-Refer to <a href="%root%/mnu_menu.html">Menu/Home Page</a> for full details.

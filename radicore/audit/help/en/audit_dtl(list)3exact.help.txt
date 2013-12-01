@@ -1,5 +1,0 @@
-This will allow the contents of the Audit Log to be viewed for selected objects.
-
-This version will select only those Audit Log entries where the the primary key of the selected object is as exact match with the PKEY value of the audited occurrence. 
-
-Refer to <a href="%root%/audit_dtl(list)3.html">List Audit Details for a selected Object</a> for full details.

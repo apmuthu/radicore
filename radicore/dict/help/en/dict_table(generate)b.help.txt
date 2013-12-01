@@ -1,3 +1,0 @@
-This is the second screen in a two-screen process that will generate the scripts necessary to access the selected database table using a particular transaction pattern.
-
-Refer to <a href="%root%/dict_table(generate)a.html">Generate PHP Scripts (b)</a> for full details.

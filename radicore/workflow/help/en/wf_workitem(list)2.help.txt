@@ -1,3 +1,0 @@
-This will list records on the WF_WORKITEM table for a selected WORKFLOW CASE.
-
-Refer to <a href="%root%/wf_workitem(list)2.html">List Workitem within Case</a> for full details.

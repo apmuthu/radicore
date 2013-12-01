@@ -264,10 +264,6 @@ div.workitem_user p {
 }
 
 /* IMG */
-img {
-  margin: 0;
-  padding:0;
-}
 img.bottom {
 }
 img.middle {
@@ -295,25 +291,12 @@ select option {
 textarea {
 }
 
-pre.textarea {
-}
-pre.height_10 {
-}
-pre.height_15 {
-}
-pre.height_20 {
-}
-pre.height_30 {
-}
-
 /* generic classes */
 .border0 {
 }
 .center {
 }
 .error {
-}
-.fullwidth {
 }
 .justify {
 }

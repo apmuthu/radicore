@@ -32,7 +32,7 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['submit']     = 'submit';
+$act_buttons['submitBtn']  = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
 $act_buttons['submitstay'] = 'submitstay';
 $act_buttons['quit'] 	   = 'cancel';
 

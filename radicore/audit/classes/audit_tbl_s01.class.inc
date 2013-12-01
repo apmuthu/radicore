@@ -44,7 +44,7 @@ class audit_tbl_s01 extends audit_tbl
     {
         if (empty($rowdata) AND $this->select_count <= 1) {
             // Nothing retrieved from database table
-        	$this->errors[] = getLanguageText('sys0090', strtoupper($this->tablename));
+        	$this->errors[] = $this->getLanguageText('sys0090', strtoupper($this->tablename));
         	scriptPrevious($this->errors);
         } // if
 

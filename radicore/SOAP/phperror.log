@@ -1,0 +1,8 @@
+[22-Mar-2013 23:30:14 Europe/London] PHP Warning:  Creating default object from empty value in F:\Apache2\HTDOCS\radicore\includes\nusoap.php on line 77
+[22-Mar-2013 23:32:02 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:02 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:03 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:03 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:05 Europe/London] PHP Warning:  require_once(config.inc): failed to open stream: No such file or directory in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[22-Mar-2013 23:32:05 Europe/London] PHP Fatal error:  require_once(): Failed opening required 'config.inc' (include_path='.;F:\Apache2\HTDOCS\RADICORE\INCLUDES') in F:\Apache2\HTDOCS\radicore\includes\include.general.inc on line 39
+[23-Mar-2013 00:06:41 Europe/London] PHP Warning:  Creating default object from empty value in F:\Apache2\HTDOCS\radicore\includes\nusoap.php on line 77

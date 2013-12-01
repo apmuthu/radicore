@@ -60,8 +60,11 @@ $array['no_audit']              = array('NAL' => 'NOAUDIT');
 $array['no_search']             = array('NSR' => 'NOSEARCH');
 
 $array['rel_type']              = array('RES' => 'RESTRICTED',
-                                        'DEL' => 'CASCADE',
-                                        'NUL' => 'NULLIFY');
+                                        'DEL' => 'CASCADE (framework)',
+                                        'NUL' => 'NULLIFY (framework)',
+                                        'DEX' => 'CASCADE (FK constraint)',
+                                        'NUX' => 'NULLIFY (FK constraint)',
+                                        'IGN' => 'IGNORE - No action');
 
 $array['col_subtype']           = array('filename' => 'FILE NAME',
                                         'email'    => 'E-MAIL',

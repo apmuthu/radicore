@@ -21,12 +21,19 @@ $structure['main']['fields'][] = array('task_id' => 'Task ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('script_id' => 'Script ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('tablename' => 'Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('table_alias' => 'Table Alias', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('database_id_outer' => 'Outer Database', 'colspan' => 3);
 $structure['main']['fields'][] = array('outer_table' => 'Outer Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('outer_table_alias' => 'Outer Table Alias', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('link_table' => 'Link Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('database_id_middle' => 'Middle Database', 'colspan' => 3);
 $structure['main']['fields'][] = array('middle_table' => 'Middle Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('middle_table_alias' => 'Middle Table Alias', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('inner_table' => 'Inner Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('inner_table_alias' => 'Inner Table Alias', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('screen_file' => 'Screen Structure', 'colspan' => 3);
 $structure['main']['fields'][] = array('report_file' => 'Report Structure', 'colspan' => 3);
 $structure['main']['fields'][] = array('child_forms' => 'Child Forms', 'colspan' => 3);

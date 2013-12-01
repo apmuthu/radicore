@@ -27,6 +27,8 @@ $structure['main']['fields'][] = array('rel_type' => 'Relationship Type', 'colsp
 $structure['main']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['main']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);
 $structure['main']['fields'][] = array('calc_field' => 'Calculated Field', 'colspan' => 3);
+$structure['main']['fields'][] = array('key_name' => 'Key Name', 'colspan' => 3);
+
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 3);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 3);

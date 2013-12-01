@@ -83,7 +83,7 @@ if ($dbobject->unbuffered_query === true) {
     } // if
 } // if
 
-if (empty($csvout)) {
+if (!isset($csvout)) {
     // set default value
 	$csvout = $table_id .'.csv';
 } // if

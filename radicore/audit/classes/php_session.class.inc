@@ -139,18 +139,6 @@ class php_session extends Default_Table
     function gc ($max_lifetime)
     // perform garbage collection.
     {
-//        if ($max_lifetime < 14400) {
-//            $message = "max_lifetime=".$max_lifetime."\n";
-//            $message.= "request_uri=".$_SERVER['REQUEST_URI']."\n";
-//            $message.= "server_name=".$_SERVER['SERVER_NAME']."\n";
-//            $message.= "server_address=".$_SERVER['SERVER_ADDR']."\n";
-//            $message.= "remote_address=".$_SERVER['REMOTE_ADDR']."\n";
-//            $mailto = 'tony@marston-home.demon.co.uk';
-//            $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
-//            $headers .= "\nContent-Type: text/plain; charset=UTF-8";
-//            @error_log("$message\n", 1, $mailto, $headers);
-//        } // if
-
         $count = $this->_dml_deleteSelection("last_updated < DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND)");
         //$count = $this->_dml_deleteSelection("DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND) > last_updated");
         //$count = $this->_dml_deleteSelection("DATE_SUB(last_updated, INTERVAL $max_lifetime SECOND) < now()");

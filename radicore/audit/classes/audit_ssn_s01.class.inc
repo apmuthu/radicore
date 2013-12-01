@@ -44,7 +44,7 @@ class audit_ssn_s01 extends audit_ssn
         } // while
 
         // $count rows were deleted
-        return getLanguageText('sys0004', $count, strtoupper($this->tablename));
+        return $this->getLanguageText('sys0004', $count, strtoupper($this->tablename));
 
     } // _cm_deleteSelection
 

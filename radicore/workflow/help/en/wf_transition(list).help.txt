@@ -1,3 +1,0 @@
-This will list records on the WF_TRANSITION table for a selected WORKFLOW.
-
-Refer to <a href="%root%/wf_transition(list).html">List Workflow Transition</a> for full details.

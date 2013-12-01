@@ -287,10 +287,11 @@ class mnu_user extends Default_Table
                 return $fieldarray;
             } else {
                 if (is_True($this->pswd_encrypt)) {
-                    // replace string with encrypted version
+                    // replace plain text string with encrypted version
                     $fieldarray['user_password'] = $encrypted_string;
                     // insert dummy field to say that password has been encrypted
                     $fieldarray['pswd_is_encrypted'] = true;
+                    $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
                 } // if
             } // if
         } // if
@@ -320,11 +321,11 @@ class mnu_user extends Default_Table
     // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
         if (is_True($this->pswd_encrypt)) {
-        	if ((isset($fieldarray['pswd_is_encrypted']) and $fieldarray['pswd_is_encrypted'])) {
+        	if (isset($fieldarray['pswd_is_encrypted']) AND is_True($fieldarray['pswd_is_encrypted'])) {
             	// decrypt the password
-                if (!empty($fieldarray['user_id']) and !empty($fieldarray['user_password'])) {
+                if (!empty($fieldarray['user_id']) AND !empty($fieldarray['user_password'])) {
                     $crypt_obj =& RDCsingleton::getInstance('encryption_class');
-                    $key = $fieldarray['user_id'];
+                    $key    = $fieldarray['user_id'];
                     $string = $fieldarray['user_password'];
                     $fieldarray['user_password'] = $crypt_obj->decrypt($key, $string);
                     if ($crypt_obj->errors) {
@@ -470,7 +471,7 @@ class mnu_user extends Default_Table
             $this->sql_select     = 'user_id, user_name';
             $this->sql_orderby    = 'user_name';
             $this->sql_ordery_seq = 'asc';
-            $data = $this->getData(null);
+            $data = $this->getData($where);
 
             // convert each row into 'id=desc' in the output array
             foreach ($data as $row => $rowdata) {
@@ -592,6 +593,9 @@ class mnu_user extends Default_Table
         if (isset($rowdata['user_password'])) {
             // if pswd is being input it has not been encrypted yet
         	unset($rowdata['pswd_is_encrypted']);
+            $this->fields_not_for_trimming = array();  // pswd is plain text, so trim() it
+        } else {
+            $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
         } // if
 
         return $rowdata;
@@ -607,10 +611,13 @@ class mnu_user extends Default_Table
             $spec = $this->fieldspec['user_password'];
             if (isset($spec['noedit']) or isset($spec['nodisplay'])) {
             	// not being input by user, so leave alone
+                $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
             } else {
                 // if pswd is being input it has not been encrypted yet
             	unset($rowdata['pswd_is_encrypted']);
+                $this->fields_not_for_trimming = array();  // pswd is plain text, so trim() it
             } // if
+
         } // if
 
         return $rowdata;

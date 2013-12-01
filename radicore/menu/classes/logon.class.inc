@@ -260,7 +260,8 @@ class logon extends mnu_user
         $updatearray['logon_date']    = getTimeStamp('date');
         $updatearray['logon_time']    = getTimeStamp('time');
         $updatearray['in_use']        = true;
-        $updatearray['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        //$updatearray['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        $updatearray['ip_address']    = getRealIPAddress();
         unset($updatearray['user_password']);
 
         $updatearray = $this->updateRecord($updatearray);
@@ -321,7 +322,8 @@ class logon extends mnu_user
         $audit_data['user_id']       = $user_id;
         $audit_data['email_addr']    = $email_addr;
         $audit_data['user_password'] = $user_password;
-        $audit_data['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        //$audit_data['ip_address']    = $_SERVER['REMOTE_ADDR'];
+        $audit_data['ip_address']    = getRealIPAddress();
         $audit_data = $auditobj->insertRecord($audit_data);
         if ($auditobj->errors) {
         	$this->errors = array_merge($this->errors, $auditobj->errors);

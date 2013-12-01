@@ -48,7 +48,10 @@ class wf_workitem_s01 extends wf_workitem
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        global $dbprefix;
+        //$dbprefix = $this->dbprefix;
+
+        // find out if tables in the 'menu' database need to be qualified
+        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
 
         if ($GLOBALS['mode'] == 'list') {
         	$now = getTimeStamp();
@@ -61,7 +64,8 @@ class wf_workitem_s01 extends wf_workitem
             $this->sql_select = 'user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, transition_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name, task_desc';
             $this->sql_from   = 'wf_workitem '
                               . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
-                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';
+                              . 'LEFT JOIN '.$menuDB.'mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';
+                              //. 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';
         } // if
 
         return $where;

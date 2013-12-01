@@ -96,50 +96,7 @@ $array['Token']                                   = 'Token';
 $array['Workflow']                                = 'Workflow';
 $array['Workitem']                                = 'Workitem';
 
-// task details for subsystem WORKFLOW
-$array['wf_arc(add)']                             = 'Insert Workflow Arc';
-$array['wf_arc(del)']                             = 'Delete Workflow Arc';
-$array['wf_arc(enq)']                             = 'Enquire Workflow Arc';
-$array['wf_arc(list)']                            = 'List Workflow Arc';
-$array['wf_arc(search)']                          = 'Search Workflow Arc';
-$array['wf_arc(upd)']                             = 'Update Workflow Arc';
-$array['wf_case(enq)']                            = 'Enquire Workflow Case';
-$array['wf_case(list)']                           = 'List Workflow Case';
-$array['wf_case(list)2']                          = 'List Case within Workflow';
-$array['wf_case(search)']                         = 'Search Workflow Case';
-$array['wf_place(add)']                           = 'Insert Workflow Place';
-$array['wf_place(del)']                           = 'Delete Workflow Place';
-$array['wf_place(enq)']                           = 'Enquire Workflow Place';
-$array['wf_place(list)']                          = 'List Workflow Place';
-$array['wf_place(popup)']                         = 'Choose Workflow Place';
-$array['wf_place(search)']                        = 'Search Workflow Place';
-$array['wf_place(upd)']                           = 'Update Workflow Place';
-$array['wf_token(enq)']                           = 'Enquire Workflow Token';
-$array['wf_token(list)']                          = 'List Workflow Token';
-$array['wf_token(list)2']                         = 'List Token within Case';
-$array['wf_token(search)']                        = 'Search Workflow Token';
-$array['wf_transition(add)']                      = 'Insert Workflow Transition';
-$array['wf_transition(del)']                      = 'Delete Workflow Transition';
-$array['wf_transition(enq)']                      = 'Enquire Workflow Transition';
-$array['wf_transition(list)']                     = 'List Workflow Transition';
-$array['wf_transition(popup)']                    = 'Choose Workflow Transition';
-$array['wf_transition(search)']                   = 'Search Workflow Transition';
-$array['wf_transition(upd)']                      = 'Update Workflow Transition';
-$array['wf_workflow(add)']                        = 'Insert Workflow Process';
-$array['wf_workflow(del)']                        = 'Delete Workflow Process';
-$array['wf_workflow(enq)']                        = 'Enquire Workflow Process';
-$array['wf_workflow(list)']                       = 'List Workflow Process';
-$array['wf_workflow(popup)']                      = 'Choose Workflow Process';
-$array['wf_workflow(search)']                     = 'Search Workflow Process';
-$array['wf_workflow(upd)']                        = 'Update Workflow Process';
-$array['wf_workflow(validate)']                   = 'Validate Workflow Process';
-$array['wf_workitem(enq)']                        = 'Enquire Workflow Workitem';
-$array['wf_workitem(list)']                       = 'List Workflow Workitem';
-$array['wf_workitem(list)2']                      = 'List Workitem within Case';
-$array['wf_workitem(list)expired']                = 'List Expired Workitems';
-$array['wf_workitem(search)']                     = 'Search Workflow Workitem';
-$array['wf_workitem(upd)']                        = 'Update Workflow Workitem';
-$array['wf_workitem(upd)expired']                 = 'Fire Expired Workitem';
+// task details for subsystem WORKFLOW (NOT REQUIRED AS OF VERSION 1.77.0)
 
 // navigation button details for subsystem WORKFLOW
 $array['Arcs']                                    = 'Arcs';

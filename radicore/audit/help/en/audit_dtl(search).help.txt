@@ -1,3 +1,0 @@
-This will allow selection criteria to be entered before passing control back to the List Audit Detail screen.
-
-Refer to <a href="%root%/audit_dtl(search).html">Search Audit Details</a> for full details.

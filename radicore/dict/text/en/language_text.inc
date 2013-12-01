@@ -49,8 +49,8 @@ $array['e0040'] = "This id is already in use";
 $array['e0041'] = "A file with this name already exists";
 $array['e0042'] = "Script has been generated";
 $array['e0043'] = "Table %1\$s is not related to %2\$s";
-$array['e0044'] = "";
-$array['e0045'] = "";
+$array['e0044'] = "Table name '%1\$s' is used more than once, so one must be aliased";
+$array['e0045'] = "Alias name must not be the same as the table name";
 $array['e0046'] = "";
 $array['e0047'] = "";
 $array['e0048'] = "";
@@ -139,6 +139,7 @@ $array['DEFAULT']           = 'DEFAULT';
 $array['Link']              = 'Link';
 $array['List']              = 'List';
 $array['Maintain']          = 'Maintain';
+$array['Select/Display']    = 'Select/Display';
 $array['Timetable']         = 'Timetable';
 $array['Tree Structure']    = 'Tree Structure';
 
@@ -149,61 +150,7 @@ $array['Keys']                          = 'Keys';
 $array['Relationships']                 = 'Relationships';
 $array['Tables']                        = 'Tables';
 
-// task details for subsystem DICT
-$array['dict_column(add4)import']                 = 'Import Column Names';
-$array['dict_column(del1)']                       = 'Delete Column';
-$array['dict_column(enq1)']                       = 'Enquire Column';
-$array['dict_column(list1)']                      = 'List Columns';
-$array['dict_column(list2)']                      = 'List Column by Database Table';
-$array['dict_column(output2)']                    = 'Output to PDF - List view';
-$array['dict_column(output3)']                    = 'Output to PDF - Detail view';
-$array['dict_column(search)']                     = 'Search Column';
-$array['dict_column(upd1)']                       = 'Update Column';
-$array['dict_database(add1)import']               = 'Import Database Details';
-$array['dict_database(del1)']                     = 'Delete Database';
-$array['dict_database(enq1)']                     = 'Enquire Database';
-$array['dict_database(erase1)']                   = 'Erase Database details';
-$array['dict_database(list1)']                    = 'List Database';
-$array['dict_database(list2)']                    = 'List Database by Subsystem';
-$array['dict_database(output2)']                  = 'Output to PDF - List view';
-$array['dict_database(popup1)']                   = 'Choose Dict Database';
-$array['dict_database(search)']                   = 'Search Database';
-$array['dict_database(upd1)']                     = 'Update Database';
-$array['dict_database(upd4)export']               = 'Export Database details';
-$array['dict_related_column(list2)a']             = 'Enquire Child Relationship';
-$array['dict_related_column(list2)b']             = 'Enquire Parent Relationship';
-$array['dict_related_column(multi4)a']            = 'Update Child Relationship';
-$array['dict_related_column(multi4)b']            = 'Update Parent Relationship';
-$array['dict_relationship(add2)a']                = 'Add Child Relationship';
-$array['dict_relationship(add2)b']                = 'Add Parent Relationship';
-$array['dict_relationship(del4)']                 = 'Delete Relationship';
-$array['dict_relationship(list1)']                = 'List Relationships';
-$array['dict_relationship(list2)a']               = 'List Child Relationship by Table';
-$array['dict_relationship(list2)b']               = 'List Parent Relationship by Table';
-$array['dict_relationship(list2)c']               = 'List Child Relationships by Database';
-$array['dict_relationship(list2)d']               = 'List Parent Relationships by Database';
-$array['dict_relationship(output2)a']             = 'Output to PDF - List view';
-$array['dict_relationship(output3)a']             = 'Output to PDF - Detail view';
-$array['dict_relationship(search)']               = 'Search Relationship';
-$array['dict_table_key(del1)']                    = 'Delete Key';
-$array['dict_table_key(enq1)']                    = 'Enquire Key';
-$array['dict_table_key(list1)']                   = 'List Table Keys';
-$array['dict_table_key(list2)']                   = 'List Keys by Database Table';
-$array['dict_table_key(search)']                  = 'Search Key';
-$array['dict_table(add4)import']                  = 'Import Table Names';
-$array['dict_table(del1)']                        = 'Delete Table';
-$array['dict_table(enq1)']                        = 'Enquire Table';
-$array['dict_table(generate)a']                   = 'Generate PHP scripts (a) - Select Pattern';
-$array['dict_table(generate)b']                   = 'Generate PHP scripts (b) - Enter details';
-$array['dict_table(list1)']                       = 'List Database Tables';
-$array['dict_table(list2)']                       = 'List Table by Database';
-$array['dict_table(output2)']                     = 'Output to PDF - List view';
-$array['dict_table(popup1)']                      = 'Choose Database Table';
-$array['dict_table(popup1)jnr']                   = 'Choose Database Table';
-$array['dict_table(popup1)snr']                   = 'Choose Database Table';
-$array['dict_table(search)']                      = 'Search Table';
-$array['dict_table(upd1)']                        = 'Update Table';
-$array['dict_table(upd4)export']                  = 'Export Table Script';
+// task details for subsystem DICT (NOT REQUIRED AS OF VERSION 1.77.0)
 
 // navigation button details for subsystem DICT
 $array['Columns']                       = 'Columns';
@@ -219,15 +166,6 @@ $array['Relationships (DB)']            = 'Relationships (DB)';
 $array['Relationships (Table)']         = 'Relationships (Table)';
 
 // field names for subsystem XXX
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
 $array['']     = '';
 
 // field labels for subsystem DICT
@@ -303,39 +241,6 @@ $array['Upper/Lowercase']           = 'Upper/Lowercase';
 $array['ZF/BWZ?']                   = 'ZF/BWZ?';
 
 $array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-
 
 return $array;
 

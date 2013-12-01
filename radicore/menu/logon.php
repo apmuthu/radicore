@@ -53,6 +53,9 @@ if (isset($_SESSION['pages'][$PHP_SELF])) {
 if (isset($_SESSION['messages'])) {
     $messages_bf = (array)$_SESSION['messages'];
 } // if
+if (isset($_SESSION['errors'])) {
+    $errors_bf = (array)$_SESSION['errors'];
+} // if
 if (isset($_SESSION['logon_retries'])) {
     $save_session_data['logon_retries'] = $_SESSION['logon_retries'];
 } // if
@@ -109,7 +112,7 @@ if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
 } // if
 
 if (isset($messages_bf)) {
-    $_SESSION['messages'] = $messages_bf;  // put this message back
+    $_SESSION['messages'] = $messages_bf;   // put these messages back
 } // if
 
 // initialise a new session (but add saved data)
@@ -118,7 +121,7 @@ initSession($save_session_data);
 $_SESSION['pages'][$PHP_SELF]['pattern_id'] = 'logon';
 
 // define action buttons
-$act_buttons['submit'] = 'login';
+$act_buttons['submitBtn'] = 'login';
 
 if (isset($_POST['quit']) or (isset($_POST['quit_x']))) {
     // cancel this screen, return to previous screen
@@ -169,6 +172,10 @@ if (!empty($_POST)) {
 	if (isset($messages_bf)) {
     	$messages = $messages_bf;
     } // if
+} // if
+
+if (isset($errors_bf)) {
+    $errors = array_merge($errors, $errors_bf);
 } // if
 
 // initialise $page_stack

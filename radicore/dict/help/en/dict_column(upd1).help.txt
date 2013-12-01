@@ -1,3 +1,0 @@
-This will display the contents of a record from the DICT_COLUMN table and allow it to be updated.
-
-Refer to <a href="%root%/dict_column(upd1).html">Update Column</a> for full details.

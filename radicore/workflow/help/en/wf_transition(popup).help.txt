@@ -1,5 +1,0 @@
-This will list records on the WF_TRANSITION table and allow one or more to be selected.
-
-After selecting records please press the CHOOSE button.
-
-Refer to <a href="%root%/wf_transition(popup).html">Choose Workflow Transition</a> for full details.

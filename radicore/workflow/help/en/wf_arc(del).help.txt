@@ -1,3 +1,0 @@
-This will display a record from the WF_ARC table and allow it to be deleted.
-
-Refer to <a href="%root%/wf_arc(del).html">Delete Workflow Arc</a> for full details.

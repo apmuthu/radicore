@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
   
@@ -386,6 +386,7 @@
 // 'filepicker' - a text field for a file name that is populated from a file picker
 // 'hyperlink' - display a hyperlink
 // 'multiline' - a multiline text box
+// 'quicksearch' - a quicksearch dropdown and textbox
 //
 -->
 
@@ -427,6 +428,8 @@
             <!-- this is a hidden field -->
             <xsl:call-template name="hidden">
               <xsl:with-param name="item" select="$item"/>
+              <xsl:with-param name="multiple" select="$multiple"/>
+              <xsl:with-param name="position" select="$position"/>
             </xsl:call-template>
           </xsl:when>
           
@@ -643,7 +646,25 @@
     </xsl:choose>
   </xsl:variable>
   
-  <input class="button" type="submit" name="{$name}" value="{$item}" />
+  <input class="button" name="{$name}" id="{$name}" value="{$item}" >
+    
+    <xsl:choose>
+      <xsl:when test="$item/@subtype">
+        <xsl:attribute name="type">
+          <xsl:value-of select="$item/@subtype"/> <!-- may be set to 'button' -->
+        </xsl:attribute>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:attribute name="type">submit</xsl:attribute> <!-- default is 'submit' -->
+      </xsl:otherwise>
+    </xsl:choose>
+    
+    <xsl:call-template name="scripting_events">
+      <!-- insert any scripting events which have been defined -->
+      <xsl:with-param name="item" select="$item"/>
+    </xsl:call-template>
+    
+  </input>
   
 </xsl:template> <!-- button -->
   
@@ -705,9 +726,7 @@
       </xsl:if>
   
       <!-- create a checkbox control -->
-      <input type="checkbox" >
-  
-        <xsl:attribute name="name"><xsl:value-of select="$name"/></xsl:attribute>
+      <input type="checkbox" name="{$name}" id="{$name}">
   
         <xsl:if test="$item='T' or $item='Y' or $item='1'">
           <!-- this is to be marked as selected in the initial display -->
@@ -802,7 +821,7 @@
       <xsl:if test="string-length(normalize-space(node())) > 0">
 
         <!-- construct name as name[value] so that each element has a unique name -->
-        <xsl:variable name="name3" select="concat($name, '[', @id, ']')"/>
+        <xsl:variable name="name3" select="concat($name, '[', @key, ']')"/>
 
         <xsl:if test="not($mode='list' or $mode='read' or $mode='delete' or $item/@noedit or $noedit='y')">
           <!-- create hidden field to send back OFF setting -->
@@ -822,15 +841,13 @@
               <xsl:value-of select="node()"/>
            </xsl:if>
 
-           <input type="checkbox" >
+          <input type="checkbox" name="{$name3}" id="{$name3}">
    
-             <xsl:variable name="id" select="@id"/>
+             <xsl:variable name="key" select="@key"/>
    
-             <xsl:attribute name="name"><xsl:value-of select="$name3" /></xsl:attribute>
+             <xsl:attribute name="value"><xsl:value-of select="@key" /></xsl:attribute>
    
-             <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
-   
-             <xsl:if test="//*[name()=name($item)]/array[@value=$id]">
+             <xsl:if test="//*[name()=name($item)]/array[@value=$key]">
                <!-- this option has been selected -->
                <xsl:attribute name="checked">checked</xsl:attribute>
              </xsl:if>
@@ -842,7 +859,7 @@
    
              <xsl:call-template name="scripting_events">
                <!-- insert any scripting events which have been defined -->
-               <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+               <xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>
              </xsl:call-template>
    
            </input>
@@ -905,8 +922,8 @@
 
       <!-- item is read only, so output as plain text -->
 
-      <!-- look for an option where the id attribute equals the lookup value -->
-      <xsl:variable name="option" select="$optionlist/option[@id=$item]" />
+      <!-- look for an option where the key attribute equals the lookup value -->
+      <xsl:variable name="option" select="$optionlist/option[@key=$item]" />
       <xsl:choose>
         <xsl:when test="$option">
           <!-- entry found, so use it -->
@@ -945,7 +962,7 @@
       </xsl:variable>
 
       <!-- create a select statement for $item with a list of options -->
-      <select class="dropdown" name="{$name}">
+      <select class="dropdown" name="{$name}" id="{$name}">
 
         <xsl:if test="$item/@rows">
           <!-- identify how many rows are to be displayed -->
@@ -959,14 +976,14 @@
 
         <xsl:for-each select="$optionlist/option">
 
-          <!-- use the 'id' attribute of the node as the 'value' attribute of 'option' -->
-          <xsl:variable name="id" select="@id"/>
+          <!-- use the 'key' attribute of the node as the 'value' attribute of 'option' -->
+          <xsl:variable name="key" select="@key"/>
 
-          <option value="{@id}" >
+          <option value="{@key}" >
 
             <xsl:call-template name="scripting_events">
               <!-- insert any scripting events which have been defined -->
-              <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+              <xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>
             </xsl:call-template>
             
             <xsl:if test="@class">
@@ -975,7 +992,7 @@
             </xsl:if>
 
             <xsl:choose>
-              <xsl:when test="$item=@id">
+              <xsl:when test="$item=@key">
                 <!-- this option has been selected -->
                 <xsl:attribute name="selected">selected</xsl:attribute>
               </xsl:when>
@@ -1093,9 +1110,23 @@
 -->
 <xsl:template name="hidden">
   <xsl:param name="item"/>
+  <xsl:param name="multiple"/>
+  <xsl:param name="position"/>
+  
+  <!--  if 'multiple' is set then include row number in item name -->
+  <xsl:variable name="name">
+    <xsl:choose>
+      <xsl:when test="$multiple">
+        <xsl:value-of select="concat(name($item),'[',$position,']')" />
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="name($item)" />
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
 
   <!-- include in POST array, but make it invisible -->
-  <input type="hidden" name="{name($item)}" value="{$item}" />
+  <input type="hidden" name="{$name}" value="{$item}" />
 
   <xsl:if test="$item/@visible">
     <!-- override to show this as a non-editable field -->
@@ -1160,7 +1191,7 @@
   <xsl:param name="icon"/>
   <xsl:param name="width"/>
   <xsl:param name="height"/>
-  <xsl:param name="directory" />
+  <xsl:param name="directory"/>
 
   <!-- if entry is non-blank show it as an image -->
   <xsl:if test="$icon">
@@ -1175,7 +1206,7 @@
       </xsl:choose>
     </xsl:variable>
     <div class="center">
-      <img src="{$filename}" alt="{$icon}">
+      <img src="{$filename}" alt="{$icon}" title="{$icon}">
         <!-- height and width are optional -->
         <xsl:if test="$height > 0">
           <xsl:attribute name="height"><xsl:value-of select="$height"/></xsl:attribute>
@@ -1254,7 +1285,7 @@
             <!-- use specified value from the item attributes -->
             <xsl:value-of select="$item/@border"/>
           </xsl:when>
-          <xsl:otherwise>0</xsl:otherwise>  <!-- default value -->
+          <!--<xsl:otherwise>0</xsl:otherwise>-->  <!-- default value -->
         </xsl:choose>
       </xsl:variable>
 
@@ -1262,9 +1293,12 @@
       <img>
         <xsl:attribute name="src"><xsl:value-of select="$item"/></xsl:attribute>
         <xsl:attribute name="alt"><xsl:value-of select="$alt"/></xsl:attribute>
+        <xsl:attribute name="title"><xsl:value-of select="$alt"/></xsl:attribute>
         <xsl:attribute name="height"><xsl:value-of select="$imageheight"/></xsl:attribute>
         <xsl:attribute name="width"><xsl:value-of select="$imagewidth"/></xsl:attribute>
-        <xsl:attribute name="border"><xsl:value-of select="$border"/></xsl:attribute>
+        <xsl:if test="$border>0">
+          <xsl:attribute name="border"><xsl:value-of select="$border"/></xsl:attribute>
+        </xsl:if>
       </img>
       <!--<xsl:text>&#160;</xsl:text>--> <!-- insert non-breaking space -->
 
@@ -1340,9 +1374,9 @@
         <!-- use the 'value' attribute of the node as the 'value' attribute of 'option' -->
         <xsl:variable name="value" select="@value"/>
 
-        <xsl:if test="$optionlist/option[@id=$value]">
+        <xsl:if test="$optionlist/option[@key=$value]">
           <!-- option found in optionlist, so output its value -->
-          <xsl:value-of select="$optionlist/option[@id=$value]"/>
+          <xsl:value-of select="$optionlist/option[@key=$value]"/>
           <xsl:if test="not(position()=last())">
             <xsl:text>, </xsl:text> <!-- not the last entry, so append a comma -->
           </xsl:if>
@@ -1395,14 +1429,14 @@
 
         <xsl:for-each select="$optionlist/option">
 
-          <!-- use the 'id' attribute of the node as the 'value' attribute of 'option' -->
-          <xsl:variable name="id" select="@id"/>
+          <!-- use the 'key' attribute of the node as the 'value' attribute of 'option' -->
+          <xsl:variable name="key" select="@key"/>
 
-          <option value="{$id}" >
+          <option value="{$key}" >
 
             <xsl:call-template name="scripting_events">
             <!-- insert any scripting events which have been defined -->
-              <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+              <xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>
             </xsl:call-template>
             
             <xsl:if test="@class">
@@ -1410,7 +1444,7 @@
               <xsl:attribute name="class"><xsl:value-of select="@class"/></xsl:attribute>
             </xsl:if>
 
-            <xsl:if test="//*[name()=name($item)]/array[@value=$id]">
+            <xsl:if test="//*[name()=name($item)]/array[@value=$key]">
               <!-- this option has been selected -->
               <xsl:attribute name="selected">selected</xsl:attribute>
             </xsl:if>
@@ -1693,6 +1727,41 @@
 
 <!--
 ****************************************************************************************
+* QUICKSEARCH - create a dropdown list and textbox for the 'quicksearch' option
+****************************************************************************************
+-->
+<xsl:template name="quicksearch">
+  
+  <div class="quicksearch">
+    <form method="post" action="{$script}">
+      <div>
+        <!-- add a dropdown list for the selectable field names -->
+        <select class="dropdown" name="quicksearch_field">
+          <xsl:for-each select="/root/lookup/quicksearch_field/option">
+            <option value="{@key}" >
+              <xsl:if test="@key=/root/params/quicksearch_default">
+                <xsl:attribute name="selected">selected</xsl:attribute>
+              </xsl:if>
+              <xsl:value-of select="node()"/>
+            </option>
+          </xsl:for-each>
+        </select>
+        <!-- add a text box and a submit button to fire the search-->
+        <input name="quicksearch_value" type="text" value="" size="20" />
+        <input class="submit" type="submit" name="quicksearch" value="{/root/params/text/quick-search}" />
+        <!-- create a hidden field for session_name -->
+        <xsl:if test="$session_name">
+          <input type="hidden" name="session_name" value="{$session_name}" />
+        </xsl:if>
+      </div>
+    </form>
+  </div> <!-- quicksearch -->
+  
+</xsl:template> <!-- quicksearch -->
+  
+  
+<!--
+****************************************************************************************
 * RADIOGROUP - create a group of radio buttons
 ****************************************************************************************
 -->
@@ -1731,8 +1800,8 @@
 
       <!-- item is read only, so output as plain text -->
 
-      <!-- look for an option where the id attribute equals the lookup value -->
-      <xsl:variable name="option" select="$optionlist/*[@id=$item]" />
+      <!-- look for an option where the key attribute equals the lookup value -->
+      <xsl:variable name="option" select="$optionlist/*[@key=$item]" />
 
       <xsl:choose>
         <xsl:when test="$option">
@@ -1778,6 +1847,15 @@
                 </xsl:otherwise>
               </xsl:choose>
             </xsl:variable>
+            
+            <xsl:if test="$mode='search' and $item/@label and position()=1">
+              <!-- this is a checkbox that has been turned into a radiogroup for a search screen, -->
+              <!-- and it has a label, so display it to the left of the first radio button -->
+              <xsl:value-of select="$item/@label"/>:&#160;
+              <xsl:if test="$align_hv='v'">
+                <br/> <!-- alignment is vertical, so insert line break after each option -->
+              </xsl:if>
+            </xsl:if>
 
             <label>
               
@@ -1790,21 +1868,19 @@
                  <xsl:value-of select="node()"/>
               </xsl:if>
   
-              <input type="radio">
+              <input type="radio" name="{$name}" id="{$name}">
   
-                <xsl:variable name="id" select="@id"/>
+                <xsl:variable name="key" select="@key"/>
   
-                <xsl:attribute name="name"><xsl:value-of select="$name" /></xsl:attribute>
-  
-                <xsl:attribute name="value"><xsl:value-of select="@id" /></xsl:attribute>
+                <xsl:attribute name="value"><xsl:value-of select="@key" /></xsl:attribute>
   
                 <xsl:call-template name="scripting_events">
                   <!-- insert any scripting events which have been defined -->
-                  <xsl:with-param name="item" select="$optionlist/option[@id=$id]"/>
+                  <xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>
                 </xsl:call-template>
   
-                <!-- use the 'id' attribute of the node as the 'value' attribute -->
-                <xsl:if test="$item=@id">
+                <!-- use the 'key' attribute of the node as the 'value' attribute -->
+                <xsl:if test="$item=@key">
                   <!-- this option has been selected -->
                   <xsl:attribute name="checked">checked</xsl:attribute>
                 </xsl:if>
@@ -1882,12 +1958,11 @@
 <xsl:template name="scripting_events">
   <xsl:param name="item"/>
 
-  <!-- copy all attributes containing scripting events to the output document -->
-  <xsl:for-each select="$item/@onfocus|$item/@onblur|$item/@onselect|$item/@onchange
-                       |$item/@onclick|$item/@ondblclick|$item/@onmousedown|$item/@onmouseup
-                       |$item/@onmouseover|$item/@onmusemove|$item/@onmouseout
-                       |$item/@onkeypress|$item/@onkydown|$item/@onkeyup|$item/@id
-                       |$item/@show">
+    <!-- copy all attributes containing scripting events to the output document -->
+    <xsl:for-each select="$item/@onfocus|$item/@onblur|$item/@onselect|$item/@onchange
+                         |$item/@onclick|$item/@ondblclick|$item/@onmousedown|$item/@onmouseup
+                         |$item/@onmouseover|$item/@onmusemove|$item/@onmouseout
+                         |$item/@onkeypress|$item/@onkydown|$item/@onkeyup|$item/@show">
     <xsl:copy-of select="." />
   </xsl:for-each>
 
@@ -2023,22 +2098,20 @@
           </xsl:call-template>
         </script>
       </xsl:if>
+      
+      <xsl:variable name="name">
+        <xsl:choose>
+          <!-- if 'multiple' indicator is set then include position number -->
+          <xsl:when test="$multiple">
+            <xsl:value-of select="concat(name($item),'[',$position,']')"/>
+          </xsl:when>
+          <xsl:otherwise> <!-- use item name without any position number -->
+            <xsl:value-of select="name($item)"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
 
-      <input>
-
-        <xsl:attribute name="name">
-          <xsl:choose>
-
-            <!-- if 'multiple' indicator is set include position number -->
-            <xsl:when test="$multiple">
-              <xsl:value-of select="concat(name($item),'[',$position,']')"/>
-            </xsl:when>
-            <xsl:otherwise> <!-- use item name without any position number -->
-              <xsl:value-of select="name($item)"/>
-            </xsl:otherwise>
-
-          </xsl:choose>
-        </xsl:attribute>
+      <input name="{$name}" id="{$name}">
 
         <xsl:choose>
 
@@ -2138,7 +2211,7 @@
               <img>
                 <xsl:attribute name="src"><xsl:value-of select="$item/@href_image"/></xsl:attribute>
                 <xsl:attribute name="alt"><xsl:value-of select="$item/@href_image"/></xsl:attribute>
-                <xsl:attribute name="border">0</xsl:attribute>
+                <!--<xsl:attribute name="border">0</xsl:attribute>-->
               </img>
             </xsl:when>
             <xsl:otherwise>

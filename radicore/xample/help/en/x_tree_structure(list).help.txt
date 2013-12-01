@@ -1,5 +1,0 @@
-This will display the structure of a selected TREE TYPE, starting with the root nodes.
-The plus symbol (+) against a node can be used to expand the display to include the children of that node.
-The minus symbol (-) against a node can be used to collapse the display the exclude the cgildren of that node.
-The EXPAND and COLLAPSE buttons at the bottom of the screen will operate on all nodes within the tree structure.
-For a description of screens of type TREE VIEW 2 <a href="%root%/php-mysql/dialog-types.html#tree2">click here</a>.

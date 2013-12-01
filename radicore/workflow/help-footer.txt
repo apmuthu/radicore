@@ -1,5 +1,0 @@
-<hr>
-
-<p>A full description of the Workflow Engine is available in the <a href="%root%/appendixm.html">Appendix M of the User Guide</a>.</p>
-
-<p>The design of this Workflow Engine is explained in <a href="http://www.tonymarston.net/php-mysql/workflow.html">An activity based Workflow Engine for PHP</a>.</p>

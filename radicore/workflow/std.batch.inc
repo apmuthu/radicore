@@ -17,6 +17,8 @@ function batchInit ($batchfile)
 
     $result = ini_set('max_execution_time', 0);  // no time limit
 
+    set_error_handler('errorHandlerBatch');
+
     // get fully-qualified name of current file
     $curr_file = str_replace("\\", "/", $batchfile);
     $curr_dir  = dirname($curr_file);   // extract directory
@@ -34,9 +36,11 @@ function batchInit ($batchfile)
             $stdout = realpath($stdout);
         } // if
     	if (!$stdouth = fopen($stdout, 'w')) {
-    	    $message = "Error in script ".basename($curr_file);
-    	    $message .= "Cannot open file $stdout";
-    	    if (!empty($_SERVER['SERVER_ADMIN'])) {
+    	    $message = "Error in script ".basename($curr_file)."\n";
+    	    $message .= "Cannot open file '$stdout'";
+    	    if (!empty($ini_array['server_admin'])) {
+    	    	$mailto = $ini_array['server_admin'];
+    	    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
             	$mailto = $_SERVER['SERVER_ADMIN'];
     	    } else {
     	        $mailto = 'webmaster@'.$ini_array['server_name'];
@@ -111,7 +115,7 @@ function batchInit ($batchfile)
     	fclose($handle);
     	unset($fn);
     } // if
-    if (empty($include_path)) {
+    if (empty($include_path) AND !empty($ini_array['include_path'])) {
     	ini_set('include_path', trim($ini_array['include_path'], "'"));
     } // if
 
@@ -151,13 +155,22 @@ function batchInit ($batchfile)
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
 
-    checkFileExists('include.general.inc');
+    //checkFileExists('include.general.inc');
     require_once 'include.general.inc';
-    checkFileExists('include.session.inc');
+    //checkFileExists('include.session.inc');
     require_once 'include.session.inc';
 
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
     echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
+
+    $_SERVER['PHP_SELF'] = $PHP_SELF;
+
+    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
+        initSession();
+    } // if
+
+    echo '<p>user_id : ' .$_SESSION['logon_user_id'] ."</p>\n";
+    echo '<p>role_id : ' .$_SESSION['role_id'] ."</p>\n";
 
     if (isset($stdout)) {
         $output = ob_get_contents();
@@ -168,11 +181,7 @@ function batchInit ($batchfile)
         ob_flush();
     } // if
 
-    $_SERVER['PHP_SELF'] = $PHP_SELF;
-
-    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
-        initSession();
-    } // if
+    return;
 
 } // batchInit
 
@@ -218,13 +227,15 @@ function check_errors ($object)
 
     $errors = $object->getErrors();
 
-	if ($errors) {
+	if (!empty($errors)) {
 	    if (!empty($object->query)) {
 	        // append database query to array
         	$errors['query'] = $object->query;
         } // if
 
-        $objectData = $object->getFieldArray();
+        if (isset($GLOBALS['initial_values_task_id']) AND !empty($GLOBALS['initial_values_task_id'])) {
+            $errors['initial_values_task_id'] = $GLOBALS['initial_values_task_id'];
+        } // if
 
         // $errors should be an associative array, but it may be indexed
         $array_in = $errors;
@@ -242,28 +253,34 @@ function check_errors ($object)
 	    $errors = $array_out;
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);
 
-	    $object->rollback();
+        if (method_exists($object, 'rollback')) {
+	        $object->rollback();
+        } // if
 
         $output = format_array($errors);
         send_to_stdout($output);
 
-        if (!empty($objectData)) {
-            $output = "DATA:<br>".format_array($objectData);
-            send_to_stdout($output);
+        if (method_exists($object, 'getFieldArray')) {
+            $objectData = $object->getFieldArray();
+            if (!empty($objectData)) {
+                $output = "DATA:<br>".format_array($objectData);
+                send_to_stdout($output);
+            } // if
         } // if
 
-	    // put first error into $string
-	    $string = $errors[key($errors)];
+	    // put last error into $string
+        $string = array_pop($errors);
 
 	    trigger_error($string, E_USER_ERROR);
 	} // if
 
-	// now deal with any non-fatal messages
-	$messages = $object->getMessages();
-
-	foreach ($messages as $message) {
-        send_to_stdout($message);
-	} // foreach
+    if (method_exists($object, 'getMessages')) {
+	    // deal with any non-fatal messages
+	    $messages = $object->getMessages();
+	    foreach ($messages as $message) {
+            send_to_stdout($message);
+	    } // foreach
+    } // if
 
 	return;
 
@@ -294,8 +311,8 @@ function check_warnings ($object)
 function checkFileExists ($fname)
 // check that file $fname exists on current include_path, and abort if it doesn't.
 {
-    if (!fopen($fname, 'r', true)) {
-        $message = getLanguageText('sys0076', $fname);
+    if (!@fopen($fname, 'r', true)) {
+        $message = "** Cannot find file '$fname' **";
         trigger_error($message, E_USER_ERROR);
     } // if
 
@@ -316,6 +333,55 @@ function send_to_stdout($string)
     } // if
 
 } // send_to_stdout
+
+// ****************************************************************************
+function errorHandlerBatch ($errno, $errstr, $errfile, $errline, $errcontext)
+// This is a temporary error handler until the real one (error.inc) is activated.
+{
+    switch ($errno) {
+        case E_USER_WARNING:
+        case E_USER_NOTICE:
+        case E_WARNING:
+            if (isset($GLOBALS['batch']) AND preg_match('/^(require)/i', $errstr)) {
+                // detected a failed 'require()' in a batch job, so abort now
+                break;
+            } // if
+        case E_NOTICE:
+        case E_CORE_WARNING:
+        case E_COMPILE_WARNING:
+        case E_STRICT;
+        case E_RECOVERABLE_ERROR;
+        case E_DEPRECATED;
+        case E_USER_DEPRECATED;
+            return;
+        case E_USER_ERROR:
+        case E_ERROR:
+        case E_PARSE:
+        case E_CORE_ERROR:
+        case E_COMPILE_ERROR:
+        default:
+            break;
+    } // switch
+
+    global $stdout, $stdouth;
+
+    $output = ob_get_contents();
+    $output .= "<p>**** ERROR ****</p>\n";
+    $output .= "<p>$errstr</p>\n";
+    $output .= "<p>File: $errfile, Line: $errline</p>\n";
+
+    if (isset($stdout)) {
+        $result = fwrite($stdouth, $output);
+        fclose($stdouth);
+    } else {
+        echo $output;
+    } // if
+
+    ob_flush();  // flush current output
+
+    die();
+
+} // errorHandlerBatch
 
 // ****************************************************************************
 ?>

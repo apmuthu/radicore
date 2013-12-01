@@ -1,0 +1,62 @@
+<?php
+// *****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// *****************************************************************************
+require_once 'std.table.class.inc';
+class help_text_alt extends Default_Table
+{
+    // ****************************************************************************
+    function help_text_alt ()
+    {
+        // save directory name of current script
+        $this->dirname   = dirname(__file__);
+
+        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
+        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
+        $this->dbname      = 'menu';
+        $this->tablename   = 'help_text_alt';
+
+        // call this method to get original field specifications
+        // (note that they may be modified at runtime)
+        $this->fieldspec = $this->getFieldSpec_original();
+
+    } // help_text_alt
+
+    // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if ($GLOBALS['mode'] == 'list') {
+            unset($this->fieldspec['help_text']['control']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_getExtraData ($where, $fieldarray)
+    // Perform custom processing for the getExtraData method.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        if (!array_key_exists('language_id', $this->lookup_data)) {
+            // get options for language_code
+            $dbobject =& RDCsingleton::getInstance('mnu_language');
+            $array = $dbobject->getValRep('language_id', "language_id != '{$_SESSION['default_language']}'");
+            $array = array_change_key_case($array, CASE_LOWER);
+            $this->lookup_data['language_id'] = $array;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getExtraData
+
+// ****************************************************************************
+} // end class
+// ****************************************************************************
+
+?>

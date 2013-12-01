@@ -156,16 +156,18 @@ class dict_table_s02 extends dict_table
         // ensure that at least one entry has been selected
         $this->checkPrimaryKey = true;
 
-        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
+        //list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
+
+        // find out if tables in the 'menu' database need to be qualified
+        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM table
             $this->sql_select = 'dict_table.*, dict_database.subsys_id, mnu_subsystem.subsys_dir';
             $this->sql_from   = 'dict_table '
-                              . 'LEFT JOIN dict_database '
-                              . 'ON (dict_database.database_id=dict_table.database_id) '
-                              . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem '
-                              . 'ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                              . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
+                              . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                              //. 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
         } // if
 
         return $where;
@@ -279,6 +281,14 @@ class dict_table_s02 extends dict_table
 	            } // if
 	            $entry .= '= array(' ."'type' => '" .$colspecs[$type]['type'] ."'";
 
+                if ($column['col_type_native'] != $column['col_type']) {
+                    if (strpos($column['col_type_native'], ',')) {
+                        $type_array = explode(',', $column['col_type_native']);
+                        $first      = $type_array[0];
+                        $entry .= ",\n$indent2'type_native' => '$first'";
+                    } // if
+                } // if
+
 	            if (strlen($column['col_array_type']) > 0) {
 	                $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
 	            } // if
@@ -328,16 +338,20 @@ class dict_table_s02 extends dict_table
 	            if (is_True($column['col_auto_increment'])) {
 	                $entry .= ",\n$indent2'auto_increment' => 'y'";
 	            } // if
-	            if (strlen($column['user_minvalue']) > 0) {
-	                $entry .= ",\n$indent2'minvalue' => " .$column['user_minvalue'];
-	            } else {
-	                if (is_True($column['col_unsigned'])) {
-	                    $entry .= ",\n$indent2'unsigned' => 'y'";
+                if (preg_match('/(boolean)/i', $type)) {
+                    // min/max values not appropriate for boolean fields
+                } else {
+	                if (strlen($column['user_minvalue']) > 0) {
+	                    $entry .= ",\n$indent2'minvalue' => " .$column['user_minvalue'];
+	                } else {
+	                    if (is_True($column['col_unsigned'])) {
+	                        $entry .= ",\n$indent2'unsigned' => 'y'";
+	                    } // if
 	                } // if
-	            } // if
-	            if (strlen($column['user_maxvalue']) > 0) {
-	                $entry .= ",\n$indent2'maxvalue' => " .$column['user_maxvalue'];
-	            } // if
+                    if (strlen($column['user_maxvalue']) > 0) {
+                        $entry .= ",\n$indent2'maxvalue' => " .$column['user_maxvalue'];
+                    } // if
+                } // if
 
 	            if ($column['col_key'] == 'PRI') {
 	                $entry .= ",\n$indent2'pkey' => 'y'";

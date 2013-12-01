@@ -7,14 +7,20 @@
 class oracle
 // this version is for Oracle
 {
-    // member variables
+    // connection settings
+    var $dbhost;
+    var $schema;                        // schema name
+    var $dbusername;
+    var $dbuserpass;
+    var $dbprefix;
+
+    // server settings
     var $client_encoding;       // character encoding for client
     var $host_info;             // host info (connection)
     var $server_encoding;       // character encoding for server
     var $server_version;        // version number for server
 
     var $audit_logging;         // yes/no switch
-    var $dbname;                // database name
     var $errors;                // array of errors
     var $error_string;          //
     var $fieldspec = array();   // field specifications (see class constructor)
@@ -26,7 +32,6 @@ class oracle
     var $rows_per_page;         // page size for multi-row forms
     var $row_locks;             // SH=shared, EX=exclusive
     var $row_locks_supp;        // supplemental lock type
-    var $schema;                // database name
     var $stmt;                  // sql statement resource
     var $table_locks;           // array of tables to be locked
     var $transaction_level;     // transaction level
@@ -46,9 +51,23 @@ class oracle
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function oracle ($schema=null)
+    function oracle ($args=null)
     {
-        $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        if (is_string($args)) {
+            $schema           = $args;
+        } else {
+            $schema           =& $args['dbname'];
+            $this->dbhost     =& $args['dbhost'];
+            $this->dbusername =& $args['dbusername'];
+            $this->dbuserpass =& $args['dbuserpass'];
+            $this->dbprefix   =& $args['dbprefix'];
+        } // if
+
+        if (!empty($schema)) {
+            $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
+        } else {
+            $result = TRUE;
+        } // if
 
         if (!class_exists('audit_tbl')) {
     	    // obtain definition of the audit_tbl class
@@ -309,14 +328,22 @@ class oracle
     {
         global $dbhost, $dbusername, $dbuserpass;
 
+        if (!empty($schema) AND !empty($this->dbprefix)) {
+             if (!preg_match('/^(' .$this->dbprefix .')/i', $schema)) {
+                // prefix may be different on different servers
+                $schema = $this->dbprefix .$schema;
+            } // if
+        } // if
+
         $this->errors = array();
         $this->query  = '';
+        $this->schema = $schema;
 
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
             //$dbconn = ocipLogon($dbusername, $dbuserpass, $dbhost, 'UTF8');
-            $dbconn = ociLogon($dbusername, $dbuserpass, $dbhost, 'UTF8');
+            $dbconn = ociLogon($this->dbusername, $this->dbuserpass, $this->dbhost, 'UTF8');
             if ($dbconn) {
                 $this->server_info = ociServerVersion ($dbconn);
                 // get name of current database
@@ -358,8 +385,8 @@ class oracle
         } // if
 
         $this->query     = '';
-        $this->schema    = $schema;
         $this->dbconnect = $dbconn;
+        $this->schema    = $schema;
         return TRUE;
 
     } // connect
@@ -1663,8 +1690,19 @@ class oracle
                 	case 'data_type':
                 	    switch ($value) {
                 	    	case 'DATE';
-                	    	    $columnarray['col_type'] = 'date,time,datetime';
+                	    	    // default is 'datetime', but can be used as 'date' only or 'time' only
+                                $columnarray['col_type_native'] = 'datetime,date,time';
+                                $columnarray['col_type'] = 'date';
                 	    	    break;
+                            case 'TIME';
+                                $columnarray['col_type'] = 'time';
+                                break;
+                            case 'DATETIME';
+                                $columnarray['col_type'] = 'datetime';
+                                break;
+                            case 'TIMESTAMP';
+                                $columnarray['col_type'] = 'timestamp';
+                                break;
                             case 'TIMESTAMP WITH TIME ZONE';
                 	    	    $columnarray['col_type'] = 'timestamp_tz';
                 	            break;
@@ -1733,7 +1771,7 @@ class oracle
 
             // the generic NUMBER can be converted into INTEGER, DECIMAL or FLOAT
             if ($columnarray['col_type'] == 'number') {
-            	if (empty($precision) AND empty($scale)) {
+            	if (strlen($precision) == 0 AND empty($precision) AND strlen($scale) == 0 AND empty($scale)) {
                 	$columnarray['col_type']      = 'float';
                 	$specs                        = $colspecs['float'];
                 	$precision                    = $specs['precision'];
@@ -1762,14 +1800,16 @@ class oracle
                 } // if
             } // if
 
-            // a CHAR(1) column has the option of being used as BOOLEAN
-            if ($columnarray['col_maxsize'] == 1) {
-                if ($columnarray['col_type'] == 'char') {
-                    $columnarray['col_type'] = 'char,boolean';
-            	} // if
+            if ($columnarray['col_type'] == 'char') {
+                if ($columnarray['col_maxsize'] == 1) {
+                    // this can also be used as 'boolean'
+                    $columnarray['col_type_native'] = $columnarray['col_type'].',boolean';
+                } // if
             } // if
 
-            $columnarray['col_type_native'] = $columnarray['col_type'];
+            if (!isset($columnarray['col_type_native'])) {
+                $columnarray['col_type_native'] = $columnarray['col_type'];
+            } // if
 
             // look for minimum value in $colspecs
             if (isset($specs['minvalue'])) {
@@ -2008,6 +2048,13 @@ class oracle
         return $object_vars;
 
     } // __sleep
+
+    // ****************************************************************************
+    function __toString()
+    // this is for use by the error handler
+    {
+        return $this->getErrorString();
+    } // __toString
 
 // ****************************************************************************
 } // end class

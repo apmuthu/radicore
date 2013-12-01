@@ -1,3 +1,0 @@
-This will allow a record to be added to the WF_PLACE table for a selected WORKFLOW.
-
-Refer to <a href="%root%/wf_place(add).html">Add Workflow Place</a> for full details.

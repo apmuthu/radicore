@@ -1,5 +1,102 @@
 ﻿RADICORE for PHP - news
 
+2013-12-01, version 1.81.0
+Database changes:
+- run script menu/sql/menu.menu_export(2013-10-17).sql to change the contents of the MENU database.
+- run script dict/sql/dict.menu_export(2013-10-26).sql to change the contents of the MENU database.
+- run script dict/sql/mysql/alter_table(2013-10-26).sql to change the structure of the DICT database.
+
+Other changes:
+- updated 'radicore.simplexmlelement.inc' (which is used to convert a PHP array to XML) so that if the first element is an index number then it is output as '<index index="0">' instead of '<0>' which is invalid XML.
+- updated 'include.library.inc' so that the format_xml_document() function will abort if the $doc->loadXML() or $doc->load() functions find an error.
+- updated 'std.table.class.inc' to include '$this->fields_not_for_trimming' property. This is an indexed array containing names of fields whose contents should not be trimmed when either the '_validateInsert()' or '_validateUpdate()' function is called. By default all string values are trimmed to remove leading and trailing spaces, but in rare cases these may be valid parts of the string.
+- fixed bug in 'std.validation.class.inc' when dealing with very large floating point numbers.
+- fixed bug in getTableAlias1/2/3() functions in 'include.library.inc' when the string contains newline characters. 
+- updated database import functionality in the Data Dictionary so that if multiple servers are defined in the CONFIG.INC file then it will show all databases from all those servers which have yet to be imported. Previously this was limited to only that server which contained the DICT database itself.
+- updated 'dml.mysqli.class.inc' so that after an insert it will retrieve the value of an auto_increment field even if it is not the primary key.
+- added 'MULTI6' to the list of transaction patterns.
+- renamed task 'dict_table(popup1)' to 'dict_table(popup2)' as it actually uses the 'popup2' pattern.
+- updated list of relationship types in the Data Dictionary to include 'IGNORE' which will cause no action to be taken on the child table when the parent is deleted.
+- updated the DICT_RELATIONSHIP table to include a 'key_name' column to identify which key in the parent/senior table is to be used in the relationship. This will default to the PRIMARY key, but may be changed to one of the other UNIQUE keys.
+- updated all page controllers to rename the 'submit' button to 'submitBtn' so that it does not clash with the javascript 'submit()' function.
+- added the $object->updateFieldArray() and $this->_cm_updateFieldArray() methods to 'std.table.class.inc' so that if a form is submitted by the javascript 'submit()' function and not a SUBMIT button all changes can be made available to the application objects. All relevant page controllers have been updated to call this method.
+- removed the '_cm_setParentData()' method as it is now redundant. Please refer to the getParentData() and setParentData() methods below.
+- Where a transaction uses more than one object in a parent-child or parent-child-grandchild relationship the page controller will automatically populate the $parent_object and $child_object properties in each relevant object. The contents of $fieldarray in these objects can be obtained using either $this->getParentData() or $this->getChildData(). This data can also be updated using the $this->setParentData() or $this->setChildData() methods.
+- modified 'dml.mysqli.class.inc' to that it will automtically sync MySQL's timezone with PHP's timezone in order to avoid the problem reported in http://www.radicore.org/forum/index.php?t=msg&th=688&goto=3870#msg_3870. It is therefore *IMPERATIVE* that you have the correct timezone specified in your php.ini file.
+- created script fix_audit_tbl(batch).php to update the 'pkey' column in the 'audit_tbl' table to remove any errant spaces between the field name and the '=' sign. This prevents records from being retrieved when using the 'Audit Trail' button on the navigation bar.
+
+2013-09-03, version 1.80.0
+Database changes:
+- none
+Other changes:
+- added '$this->no_foreign_data' flag to 'std.table.class.inc' to prevent 'getForeignData()' method from being called automatically.
+- amended 'std.search1.inc' and 'std.multi5.inc' to set $this->no_foreign_data to TRUE.
+- fixed bug in 'std.xml.php4/5.inc' when displaying error messages which are not associated with a field on the screen.
+- fixed bug in 'xml2array' function inside 'radicore.xmlreader.inc' when an element contains a child element of the same name.
+- amended 'std.batch.inc' and 'error.inc' to properly report errors with 'require()' function in batch jobs.
+- removed the getBrowserLanguage(), matchBrowserLanguage() and saveLocaleFormat() functions from 'include.library.inc' and placed them inside 'language_detection.inc' so that they can be used without referencing 'include.library.inc'.
+- updated the '_cm_getValRep()' method within 'mnu_user.class.inc' so that the $where argument is used in the call to getData(). This will allow the list of users to be filtered by the contents of the $where string.
+- fixed bug in 'std.validation.class.inc' where a non-numeric value in a numeric field was not being reported correctly in the error message.
+- updated 'dml.mysqli.class.inc' to output any MySQL warnings, such as silent data truncation, into the message area.
+- updated 'mnu_subsystem_s01.class.inc' (subsystem export) to deal with MNU_TIME_LIMIT_ROLE and MNU_TIME_LIMIT_USER tables.
+- updated all 'dml.*.class.inc' to include the '__toString()' method which can be used when the error handler is invoked.
+- created 'error_logs' directory to hold the 'errorlog.html' file which is appended to by the error handler in 'error.inc'.
+- upgraded TCPDF library to version 6.0.024.
+
+
+2013-06-22, version 1.79.0
+Database changes:
+- added tables MNU_TIME_LIMIT_ROLE and MNU_TIME_LIMIT_USER to the menu database. Please run the following scripts:
+-- radicore\menu\sql\mysql\alter_table(2013-04-21).sql - to amend the structure of the MENU database
+-- radicore\menu\sql\menu.menu_export(2013-04-21).sql - to add task details to the MENU database.
+Other changes:
+- updated list of valid IP addresses in SOAP and XMLRPC folders to include '::1' (the IPv6 equivalent of '127.0.0.1').
+- updated 'std.validation.class.inc' to replace CRLF in any multiline strings to just LF as CRLF is sometimes interpretted as two line feeds.
+- updated 'std.filepicker1.inc' and 'std.filepicker2.inc' to move the processing of the RESET button.
+- updated 'std.filepicker2.inc' to include the server name in the 'current directory' message.
+- updated TCPDF to version 6.0.010 for PHP5. The PHP4 version is no longer updated.
+- added tables MNU_TIME_LIMIT_ROLE and MNU_TIME_LIMIT_USER to the menu database which can be used to restrict user access to particular times of day and/or particular days. The maintenance screens are available via navigation buttons on the 'List Roles' and 'List Users' screens.
+- fixed bug in 'dml.oracle.php5.class.inc' when retrieving times from a CHAR(8) column instead of a DATE column.
+- modified 'std.help.inc' to obtain task description from the mnu_task table. 
+- modified 'std.multi4.inc' to include processing for custom buttons in the data area (FAQ137).
+- modified 'std.help.inc' to look for 'help-header.txt' and 'help-footer.txt' in the 'text/<language>/' directory before falling back to the subsystem root directory. This will enable the header and footer text to be available in different languages.
+- modified 'std.help.inc' to allow the value '[copy: <task_id>]' to automatically copy the help text from another task.
+- updated 'std.data_field.xsl' to allow fields with 'control=hidden' to occur in multi-row screens.
+- updated list of relationship types in the Data Dictionary so that 'CASCADE' becomes 'CASCADE (framework)' and 'NULLIFY' becomes 'NULLIFY (framework)', and added 'CASCADE (FK constraint)' and 'NULLIFY (FK constraint)'. This is to separate actions which need to be taken by the framework from those that will be done by foreign key constraints in the database.
+- added 'MULTI5' to the list of transaction patterns. The update to the MENU database is included in the radicore\menu\sql\menu.menu_export(2013-04-21).sql script.
+
+2013-03-02, version 1.78.0
+Database changes:
+- none
+Other changes:
+- updated Import Columns function in Data Dictionary so that any existing comment is not overwritten with what has been defined in the dictionary database.
+- updated XSL stylesheets to remove various errors reported by http://validator.w3.org/.
+- updated XSL stylesheets to put 'title' attribute on images and navigation buttons so that they show up as tooltips in HTML pages.
+- fixed problem in 'Generate PHP Scripts (a)+(b)' which failed to enclose $dbprefix in double quotes when constructing the sql query.
+- updated 'std.pdf.class.inc' to allow an image to be used in 'detail view - multiple'.
+- updated 'std.data_field.xsl' so that when a checkbox with a label appears in a search screen as a radiogroup, the label is shown in front of the group.
+- fixed bug in 'std.filepicker1.inc' which failed to toggle sorting on the 'date' column.
+- modified 'std.datevalidation.class.inc' to include $GLOBALS['date_format'] = 'yyyy-mm-dd' in the config file so that it can display dates in the format '2001-06-21'.
+
+2013-01-01, version 1.77.0
+Database changes:
+- updated the structure of the MENU database to include the 'HELP_TEXT_ALT' and 'MNU_TASK_ALT' tables for text in alternative languages. You will need to run the following scripts:
+-- radicore\menu\sql\mysql\alter_table(2012-11-17).sql - to amend the structure of the MENU database
+-- radicore\menu\sql\menu.menu_export(2012-11-17).sql - to add task details to the MENU database.
+Other changes:
+- fixed bug in 'std.table.class.inc' where the scriptNext() and scriptPrevious() methods referred to $this->commit and $this->rollback instead of $this->commit() and $this->rollback().
+- updated 'include.library.inc' to include removeBOM() function. This removes the Byte Order Mark from UTF8 strings.
+- updated processing of $this->sql_search to allow line breaks in search expressions such as 'EXISTS(SELECT 1 FROM ... WHERE ...)'.
+- fixed bug in 'getTableAlias1()' and 'getTableAlias2()' where it had "trim($regs[0])" instead of "array_map('trim', $regs[0])".
+- fixed bug in 'validateSortItem()' where it failed to use alias name if $this->sql_from contained 'tablename AS alias'.
+- modified all the DML classes to pass the connection details via the constructor instead of global variables.
+- fixed bug in 'dml.oracle.class.inc' which prevented the details for FLOAT(126) columns from being imported into the data dictionary.
+- changed std.help.inc so that it reads help text from the database instead of from disk files. This means that the 'help' directory is now redundant.
+- updated 'std.filepicker.list1.xsl' to accept 'no_hyperlink' in the 'params' element to display the file name as plain text.
+- updated Data Dictionary to allow an integer column of any size, not just TINYINT(1), to be treated as a boolean.
+- updated navigation buttons to include the task description as a tool-tip ("title" attribute on an input control).
+- replaced the button label in the Quick Search area to read "Quick Search" instead of "Search" to avoid confusion with the other search button.
+
 2012-10-14, version 1.76.0
 - fixed bug in 'std.csv.class.inc' which prevented column headings being written out to a comma delimited file.
 - updated MNU_USER table in the MENU database to increase the size of the 'ip_address' column from 16 to 40 characters. You will need to run script 'alter_table(2012-06-06).sql' to implement this change.

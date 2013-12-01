@@ -256,19 +256,27 @@
       </xsl:when>
       
       <xsl:when test="$fieldname='file'">
-        <xsl:variable name="link">
-          <xsl:choose>
-            <xsl:when test="/root/params/hyperlink_direct">
-              <!-- link directly to the file -->
-              <xsl:value-of select="concat($file_directory, '/', $fieldvalue)" />
-            </xsl:when>
-            <xsl:otherwise>
-              <!-- link to the download task -->
-              <xsl:value-of select="concat($script, '?', $session, '&amp;select=', $fieldvalue)" />
-            </xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <a href="{$link}"><b><xsl:value-of select="$fieldvalue" /></b></a>
+        <xsl:choose>
+          <xsl:when test="/root/params/no_hyperlink">
+            <!-- display file name as plain text, not a hyperlink -->
+            <xsl:value-of select="$fieldvalue" />
+          </xsl:when>
+        <xsl:otherwise>
+          <xsl:variable name="link">
+              <xsl:choose>
+                <xsl:when test="/root/params/hyperlink_direct">
+                  <!-- link directly to the file -->
+                  <xsl:value-of select="concat($file_directory, '/', $fieldvalue)" />
+                </xsl:when>
+                <xsl:otherwise>
+                  <!-- link to the download task -->
+                  <xsl:value-of select="concat($script, '?', $session, '&amp;select=', $fieldvalue)" />
+                </xsl:otherwise>
+              </xsl:choose>
+            </xsl:variable>
+            <a href="{$link}"><b><xsl:value-of select="$fieldvalue" /></b></a>
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:when>
       
       <xsl:when test="$fieldname='image'">

@@ -204,15 +204,20 @@ class wf_transition extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        global $dbprefix;
+        //$dbprefix = $this->dbprefix;
+
+        // find out if tables in the 'menu' database need to be qualified
+        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
 
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
             $this->sql_select = 'wf_transition.*, task_desc, role_desc';
             $this->sql_from   = 'wf_transition '
-                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
-                              . 'LEFT JOIN "' .$dbprefix .'menu".mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
+                              . 'LEFT JOIN '.$menuDB.'mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
+                              . 'LEFT JOIN '.$menuDB.'mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
+                              //. 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
+                              //. 'LEFT JOIN "' .$dbprefix .'menu".mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
         } // if
 
         return $where;

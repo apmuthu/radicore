@@ -31,9 +31,9 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['clear']  = 'clear';
-$act_buttons['submit'] = 'submit';
-$act_buttons['quit']   = 'cancel';
+$act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
+$act_buttons['clear']     = 'clear';
+$act_buttons['quit']      = 'cancel';
 
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
@@ -46,16 +46,13 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    if (!is_string(key($fieldarray))) {
-        // indexed by row, so use row zero only
-        $fieldarray = $fieldarray[key($fieldarray)];
-    } // if
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     $dbobject->sql_search_table = &$sql_search_table;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
+    $dbobject->setRowsPerPage(1);  // only one row at a time
     if (!empty($selection)) {
     	$dbobject->sql_selection = $selection;
     } // if
@@ -63,11 +60,14 @@ if (isset($script_vars['dbobject'])) {
     $null = null;
     $where = $dbobject->initialise($where, $null);
     $fieldarray = $dbobject->fieldarray;
+    $dbobject->no_foreign_data = TRUE;  // do not look up data for foreign keys
 } // if
 
 if (isset($_POST['clear'])) {
-    // clear previous search
-    unset($_SESSION['search'][$dbobject->tablename]);
+    if (is_array($_SESSION['search'])) {
+        // clear previous search
+        unset($_SESSION['search'][$dbobject->tablename]);
+    } // if
     // clear all editable data from current selection
     $fieldarray = $dbobject->clearEditableData($fieldarray);
     $where      = array2where($fieldarray);
@@ -115,10 +115,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // get any data which may contain LOOKUP options
     $fieldarray = $dbobject->getExtraData($fieldarray);
     // look for an action which is another script
-    $errors = childForm($_POST, array('dbobject' => $dbobject));
+    $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+    if (is_array($child_errors)) {
+        $errors = array_merge($errors, $child_errors);
+    } // if
 
     if (!$errors) {
-        if (isset($_POST['submit'])) {
+        if (isset($_POST['submitBtn'])) {
             // initialise search criteria
             $search = ''; // use empty string (''), not NULL
             // format data for internal use
@@ -336,7 +339,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $search_table = $dbobject->tablename;
                 } // if
                 if (empty($search)) {
-                    if (isset($_SESSION['search'][$search_table])) {
+                    if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
                     	// clear saved search criteria
                         unset($_SESSION['search'][$search_table]);
                     } // if

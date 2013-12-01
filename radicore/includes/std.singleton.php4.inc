@@ -9,17 +9,30 @@ class RDCsingleton
 {
     function &getInstance ($class, $arg1=null, $initialise=true, $unbuffered_query=false)
     // implements the 'singleton' design pattern.
+    // $class = name of class to be instantiated.
+    // $arg1 = an optional argument to pass to the class constructor (may be a string/array/whatever).
+    // $initialise = if set to FALSE an existing instance will not have its initialise() method called.
+    // $unbuffered_query = if set to TRUE this will create a separate instance.
     {
         static $instances = array();  // array of instance names
 
-        $classdir = $GLOBALS['classdir'];  // save
+        if ($class == '__destruct') {
+            // session is being destroyed, instances are being lost, so lose all references to them
+            foreach ($instances as $key => $value) {
+                unset($instances[$key]);
+            } // foreach
+            $instances = array();
+            return $instances;
+        } // if
+
+        $classdir =& $GLOBALS['classdir'];  // save
 
         $pattern = '/^('        // begins with
                  . 'server'     // 'server'
                  . '[_]{2}'     // 2 underscores
                  . '[0-9]+'     // at least 1 digit
                  . '[_]{2}'     // 2 underscores
-                 . ')/';        // 2 underscores
+                 . ')/';        // ends with
         if (preg_match($pattern, $class, $regs)) {
             // $class starts with $pattern, so separate them
             $server = $regs[0];
@@ -27,7 +40,7 @@ class RDCsingleton
         } else {
             $server = null;
         } // if
-        
+
         if ($unbuffered_query === true) {
             // make this part unique so that it is used only once
             $server .= 'unbuffered_';
@@ -50,7 +63,11 @@ class RDCsingleton
             // load the class file (if not already loaded)
             if (!class_exists($classname)) {
             	switch ($classname) {
-                	case 'date_class':
+                	case 'curl_class':
+                        require_once 'std.curl.class.inc';
+                        break;
+
+                    case 'date_class':
                 		require_once 'std.datevalidation.class.inc';
                 		break;
 
@@ -71,7 +88,14 @@ class RDCsingleton
             // instance does not exist, so create it
             $instances[$server.$classname] = new $classname($arg1);
             $instance =& $instances[$server.$classname];
-            if (defined('TRANSIX_NO_AUDIT')) {
+
+            if (is_array($arg1)) {
+                if (isset($arg1['initiated_from_controller'])) {
+                    $instance->initiated_from_controller = true;
+                    unset($arg1['initiated_from_controller']);
+                } // if
+            } // if
+            if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
             	$instance->audit_logging = false;
             } // if
             $instance->unbuffered_query = $unbuffered_query;

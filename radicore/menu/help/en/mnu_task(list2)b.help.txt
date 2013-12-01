@@ -1,3 +1,0 @@
-This will list records on the TASK table for a selected SUBSYSTEM.
-
-Refer to <a href="%root%/mnu_task(list2)b.html">List Task by Subsystem</a> for full details.

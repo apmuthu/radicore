@@ -1,3 +1,0 @@
-This will display a record from the TASK_IP_ADDRESS table and allow it to be deleted.
-
-Refer to <a href="%root%/mnu_task_ip_address(del1).html">Delete Task IP Address</a> for full details.

@@ -1,3 +1,0 @@
-This will display the contents of a record from the LANGUAGE table.
-
-Refer to <a href="%root%/mnu_language(enq1).html">Enquire Language</a> for full details.

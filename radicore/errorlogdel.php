@@ -3,13 +3,23 @@
 // Delete errorlog.html
 
 $header = <<< END_OF_HEADER
+<!DOCTYPE HTML SYSTEM>
 <HTML>
 <HEAD>
 <META http-equiv=Content-Type content="text/html; charset=utf-8">
+<STYLE type="text/css">
+<!--
+  .error h2, .error p {
+    color: red;
+    font-weight: bold;
+  }
+-->
+</STYLE>
 </HEAD>
+<BODY>
 END_OF_HEADER;
 
-$fp = fopen('errorlog.html', 'w');
+$fp = fopen('./error_logs/errorlog.html', 'w');
 $result = fwrite($fp, $header);
 fclose($fp);
 

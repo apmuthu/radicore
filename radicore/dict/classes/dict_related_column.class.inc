@@ -62,16 +62,15 @@ class dict_related_column extends Default_Table
     // $fieldarray contains data from the initial $where clause.
     {
         if (is_string(key($fieldarray))) {
-            $database_id = $fieldarray['database_id_snr'];
-            $table_id    = $fieldarray['table_id_snr'];
-        } else {
-            $database_id = $fieldarray[0]['database_id_snr'];
-            $table_id    = $fieldarray[0]['table_id_snr'];
+            $fieldarray = array($fieldarray);
         } // if
+        $database_id = $fieldarray[0]['database_id_snr'];
+        $table_id    = $fieldarray[0]['table_id_snr'];
+        $key_name    = $fieldarray[0]['key_name'];
 
         // obtain names of primary key columns from parent table
         $keyobj =& RDCsingleton::getInstance('dict_table_key');
-        $where = "database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'";
+        $where = "database_id='$database_id' AND table_id='$table_id' AND key_name='$key_name'";
         $keyobj->setOrderBy('seq_in_index');
         $inarray = $keyobj->getData($where);
 
@@ -79,7 +78,7 @@ class dict_related_column extends Default_Table
         	$outarray[] = $fieldarray;
         } else {
             foreach ($inarray as $row => $rowdata) {
-                $outarray[$row] = $fieldarray;
+                $outarray[$row] = $fieldarray[0];
             	$outarray[$row]['column_id_snr'] = $rowdata['column_id'];
                 $outarray[$row]['seq_in_index']  = $rowdata['seq_in_index'];
             } // foreach

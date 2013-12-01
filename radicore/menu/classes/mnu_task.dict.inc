@@ -1,5 +1,5 @@
 <?php
-    // file created on July 22, 2010, 4:49 pm
+    // file created on January 1, 2013, 1:33 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -149,7 +149,7 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'help_text',
-                                                    'type' => 'RES',
+                                                    'type' => 'DEL',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'mnu_favourite',
@@ -204,6 +204,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id_run_at_cancel'));
     
+    $this->child_relations[]                = array('child' => 'mnu_task_alt',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_task_field',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
@@ -246,17 +250,23 @@
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_passthru',
                                                     'parent_field' => 'task_desc AS task_desc_passthru',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('initial_passthru' => 'task_id'));
-    
-    $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'alias' => 'mnu_task_run_at_cancel',
-                                                    'parent_field' => 'task_desc AS task_desc_run_at_cancel',
-                                                    'fields' => array('task_id_run_at_cancel' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_run_at_end',
                                                     'parent_field' => 'task_desc AS task_desc_run_at_end',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id_run_at_end' => 'task_id'));
+    
+    $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'alias' => 'mnu_task_run_at_cancel',
+                                                    'parent_field' => 'task_desc AS task_desc_run_at_cancel',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'fields' => array('task_id_run_at_cancel' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;
@@ -265,8 +275,8 @@
     $this->default_orderby                  = 'task_id';
     
     // alternative language options 
-    $this->alt_language_table               = '';
-    $this->alt_language_cols                = '';
+    $this->alt_language_table               = 'mnu_task_alt';
+    $this->alt_language_cols                = 'task_desc, button_text';
     
     // alias names 
     $this->nameof_start_date                = '';

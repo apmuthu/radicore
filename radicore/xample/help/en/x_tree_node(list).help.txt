@@ -1,2 +1,0 @@
-This will list records on the TREE NODE table for a selected TREE LEVEL.
-For a description of screens of type LIST 2 <a href="%root%/php-mysql/dialog-types.html#list2">click here</a>.

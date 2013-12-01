@@ -115,7 +115,7 @@ function childForm ($post, $object_array, $where=null)
         	list($original, $alias) = preg_split('/ as /i', $regs[0]);
         	$search_table = $original;
         } // if
-        if (isset($_SESSION['search'][$search_table])) {
+        if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
             $GLOBALS['search'] = $_SESSION['search'][$search_table];
         } // if
         // this is a dummy button, so clear it
@@ -181,9 +181,12 @@ function childForm ($post, $object_array, $where=null)
     	    $script_vars['popup_offset'] = $offset;
 
             // get current data from this object
-            $fieldarray = $dbobject->getFieldarray();
-            // extract current row from array of rows
-            $current_row = $fieldarray[$offset-1];
+            $fieldarray = $dbobject->getFieldArray();
+            if (is_long(key($fieldarrsay))) {
+                $current_row = $fieldarray[$offset-1];  // extract current row from array of rows
+            } else {
+                $current_row = $fieldarray;  // only contains one row
+            } // if
 
             if (isset($post['select']) AND preg_match('/(filepicker)/i', $task_array['pattern_id'], $regs)) {
                 // convert selection into SQL where format
@@ -290,6 +293,10 @@ function childForm ($post, $object_array, $where=null)
         $errors = runInBackground($task_array, $script_vars);
         return $errors;
 	} else {
+        foreach ($object_array as $zone => $object) {
+            // save objects in case there are changes which have yet to be saved to the database
+            $script_vars[$zone] = serialize($object);
+        } // foreach
         // pass control to selected script
         $errors = scriptNext($next_task, $where, $selection, $task_array, $search);
 	} // if
@@ -454,7 +461,7 @@ function copyForm ($post, &$dbobject)
     // get current object data
     $fieldarray = $dbobject->getFieldArray();
 
-    if (!is_string(key($fieldarray))) {
+    if (is_long(key($fieldarray))) {
         // index by row, so use row zero only
         $fieldarray = $fieldarray[0];
     } // if
@@ -597,6 +604,47 @@ function getPreviousTask ($script_id=null)
 } // getPreviousTask
 
 // ****************************************************************************
+function getShutDownStatus ()
+// find out if the system has a scheduled shutdown time
+{
+    $errors   = array();
+    $messages = array();
+
+    $dbobject =& RDCsingleton::getInstance('mnu_control');
+    $shutdown_data = $dbobject->getControlData('shutdown');
+    unset($dbobject);
+
+    $time = getTimeStamp('time');
+    $dow  = date('l', time()); // get day of week (full name)
+    $fieldname = 'shutdown_' .strtolower($dow);
+
+    if (is_True($shutdown_data[$fieldname])) {
+        // converts times from server timezone to client timezone
+        $shutdown_start = getTimeStamp('date').' '.$shutdown_data['shutdown_start'];
+        $shutdown_end   = getTimeStamp('date').' '.$shutdown_data['shutdown_end'];
+        if (!empty($_SESSION['timezone_server']) AND !empty($_SESSION['timezone_client'])) {
+            $shutdown_start = convertTZ($shutdown_start, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            $shutdown_end   = convertTZ($shutdown_end,   $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+        } // if
+        // there is a shutdown scheduled for this day...
+        if ($shutdown_data['shutdown_warning'] <= $time AND $shutdown_data['shutdown_start'] >= $time) {
+            // System will be shutting down between X and Y
+            $messages[] = getLanguageText('sys0140', substr($shutdown_start, 11, 5), substr($shutdown_end, 11, 5));
+        } // if
+        if ($shutdown_data['shutdown_start'] <= $time AND $shutdown_data['shutdown_end'] >= $time) {
+            // System has been shut down. It will be available at X
+            $errors[] = getLanguageText('sys0141', substr($shutdown_end, 11, 5));
+        } // if
+    } // if
+
+    $result[] = $errors;
+    $result[] = $messages;
+
+    return $result;
+
+} // getShutDownStatus
+
+// ****************************************************************************
 function getSupportedLanguages ()
 // obtain list of languages which are supported in this installation
 {
@@ -612,6 +660,68 @@ function getSupportedLanguages ()
     return $array;
 
 } // getSupportedLanguages
+
+// ****************************************************************************
+function getTimePeriodStatus ($user_id, $role_id)
+// find out if any time periods have been set for this user or this role
+{
+    $errors   = array();
+    $messages = array();
+
+//    $dbobject =& RDCsingleton::getInstance('mnu_control');
+//    $shutdown_data = $dbobject->getControlData('shutdown');
+//    unset($dbobject);
+
+    $userOBJ =& RDCsingleton::getInstance('mnu_time_limit_user');
+    $roleOBJ =& RDCsingleton::getInstance('mnu_time_limit_role');
+
+    $time = getTimeStamp('time');
+    $dow  = date('l', time()); // get day of week (full name)
+    $fieldname = 'scheduled_' .strtolower($dow);
+
+    $query = "$fieldname=1 AND scheduled_start_time<='$time' AND scheduled_end_time>='$time'";
+
+    $where = "user_id='$user_id' ";
+    $count = $userOBJ->getCount($where);
+    if ($count > 0) {
+        $data = $userOBJ->getData("$where AND $query");
+        if (empty($data)) {
+            // Your authorised time period has expired
+            $errors[] = getLanguageText('sys0148');
+        } else {
+            $data = $data[0];
+        } // if
+    } else {
+        // nothing found for user, so try again for role
+        $where = "role_id='$role_id'";
+        $count = $roleOBJ->getCount($where);
+        if ($count > 0) {
+            $data = $roleOBJ->getData("$where AND $query");
+            if (empty($data)) {
+                // Your authorised time period has expired
+                $errors[] = getLanguageText('sys0148');
+            } else {
+                $data = $data[0];
+            } // if
+        } // if
+    } // if
+
+    if (!empty($data)) {
+        // time period entry found, so how close are we to the end of this period?
+        $minutes = getTimeDiff($time, $data['scheduled_end_time']);
+        if ($minutes <= 5) {
+            // Your authorised time period will expire at <time>
+            $messages[] = getLanguageText('sys0147', $data['scheduled_end_time']);
+        } // if
+    } // if
+
+    $result[] = $errors;
+    $result[] = $messages;
+
+    return $result;
+
+} // getTimePeriodStatus
+
 
 // ****************************************************************************
 function initSession($save_session_data=array())
@@ -677,17 +787,21 @@ function initSession($save_session_data=array())
     	$_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
     } // if
 
-    // continue with existing session, or start a new one
-    $session_obj =& RDCsingleton::getInstance('php_session');
-    if (isset($GLOBALS['batch'])) {
-        if (is_True($GLOBALS['batch'])) {
-            if (!empty($_SESSION)) {
-                $save_session_batch = $_SESSION;
-            } // if
-        } else {
-            unset($GLOBALS['batch']);
-        } // if
-    } // if
+    if (!defined('NO_SESSION_HANDLER')) {
+    	// continue with existing session, or start a new one
+	    $session_obj =& RDCsingleton::getInstance('php_session');
+	    if (isset($GLOBALS['batch'])) {
+	        if (is_True($GLOBALS['batch'])) {
+	            if (!empty($_SESSION)) {
+	                $save_session_batch = $_SESSION;
+	            } // if
+	        } else {
+	            unset($GLOBALS['batch']);
+	        } // if
+	    } // if
+	} else {
+		$save_session_batch = $_SESSION;
+	} // if
     if (empty($_SESSION) OR isset($GLOBALS['batch'])) {
         if (isset($session_name)) {
             session_name($session_name);    // set the session name
@@ -712,12 +826,6 @@ function initSession($save_session_data=array())
         	$_SESSION = array_merge($_SESSION, $save_session_data);
 		} // if
     } // if
-
-//    if (isset($GLOBALS['batch'])) {
-//    	echo "<p>SESSION NAME: " .session_name() ."</p>";
-//        echo "<p>SESSION ID  : " .session_id() ."</p>";
-//        echo "<p>SESSION DATA: " .print_r($_SESSION, true) ."</p>";
-//    } // if
 
     //logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
 
@@ -809,31 +917,41 @@ function initSession($save_session_data=array())
     	} // if
     } // if
 
-    // find out if the system is being shut down today and issue a message
-    list($shutdown_errors, $shutdown_messages) = getShutDownStatus();
+    if (isset($GLOBALS['batch'])) {
+    	// running a batch job, so skip this next bit
+    } else {
+	    // find out if the system is being shut down today and issue a message
+	    list($shutdown_errors, $shutdown_messages) = getShutDownStatus();
 
-    if (!empty($shutdown_errors)) {
-    	if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
-    	    // on LOGON screen, so convert error to a warning message
-    	    $shutdown_messages = $shutdown_errors;
-    		$shutdown_errors   = array();
-    	} elseif (strtoupper($_SESSION['role_id']) == 'GLOBAL') {
-    	    // user is administrator, so convert error to a warning message
-    		$shutdown_messages = $shutdown_errors;
-    		$shutdown_errors   = array();
-    	} else {
-            // not administrator, so cancel current screen and go back to logon screen
-            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-                                  .getParentDIR()
-                                  .$logon_screen
-                                  .'?session_name=' .session_name();
+	    if (empty($shutdown_errors) AND !empty($_SESSION['logon_user_id'])) {
+	        // find out if there are any restricted time periods for this user or this role
+	        list($shutdown_errors, $shutdown_messages) = getTimePeriodStatus($_SESSION['logon_user_id'], $_SESSION['role_id']);
+	    } // if
 
-            logstuff("location: $location", __FUNCTION__, __LINE__);
+	    if (!empty($shutdown_errors)) {
+    		if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
+    		    // on LOGON screen, so convert error to a warning message
+    		    $shutdown_messages = $shutdown_errors;
+    			$shutdown_errors   = array();
+    		} elseif (strtoupper($_SESSION['role_id']) == 'GLOBAL') {
+    		    // user is administrator, so convert error to a warning message
+    			$shutdown_messages = $shutdown_errors;
+    			$shutdown_errors   = array();
+    		} else {
+	            $_SESSION['errors'] = $shutdown_errors;
+	            // not administrator, so cancel current screen and go back to logon screen
+	            $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+	                                  .getParentDIR()
+	                                  .$logon_screen
+	                                  .'?session_name=' .session_name();
 
-            header('Location: ' .$location);
-            exit;
-    	} // if
-    } // if
+	            logstuff("location: $location", __FUNCTION__, __LINE__);
+
+	            header('Location: ' .$location);
+	            exit;
+    		} // if
+	    } // if
+	} // if
 
     unset($_SESSION['global_access']); // ensure that data is re-fetched for each page
 
@@ -898,6 +1016,44 @@ function initSession($save_session_data=array())
         } // if
     } // if
 
+    if ($PHP_SELF == $logon_screen){
+        // always true for a logon screen
+        $use_https = true;
+    } elseif (is_True($GLOBALS['use_https'])) {
+        $use_https = true;
+    } elseif (isset($script_vars['use_https'])) {
+        // optional for other scripts
+        $use_https = $script_vars['use_https'];
+    } else {
+        $use_https = false;
+    } // if
+
+    if (empty($_SERVER['HTTPS'])) {
+        $_SERVER['HTTPS'] = 'off';
+    } // if
+
+    if (empty($GLOBALS['http_server'])) {
+        $GLOBALS['http_server'] = $_SERVER['HTTP_HOST'];
+    } // if
+
+    $GLOBALS['url_files'] = 'HTTP://'.$GLOBALS['http_server'];
+
+    if (is_True($_SERVER['HTTPS'])) {
+        if (empty($GLOBALS['https_server'])) {
+            // no value has been defined for 'https_server'
+            trigger_error(getLanguageText('sys0181'), E_USER_ERROR);
+        } // if
+        if (!empty($GLOBALS['https_server_suffix'])) {
+            // ensure that 'https_server' ends with 'https_server_suffix'
+            if (!preg_match('#'.$GLOBALS['https_server_suffix'].'$#i', $GLOBALS['https_server'], $regs)) {
+                $GLOBALS['https_server'] = $GLOBALS['https_server'].$GLOBALS['https_server_suffix'];
+            } // if
+        } // if
+        if (!defined('HTTPS_NOT_FOR_FILES')) {
+            $GLOBALS['url_files'] = 'HTTPS://'.$GLOBALS['https_server'];
+        } // if
+    } // if
+
     if (isset($_GET['action'])) {
 	    if ($_GET['action'] == 'logout_all') {
 	        // remove all cookies which refer to application sessions
@@ -906,7 +1062,7 @@ function initSession($save_session_data=array())
                     setcookie($cookie_name, '', time()-42000, '/');
                     $session_obj->destroy($cookie_id);
 	            } // if
-	        } // if
+	        } // foreach
 	    } // if
 	    if ($_GET['action'] == 'logout' or $_GET['action'] == 'logout_all') {
 	        // clear current session data
@@ -915,7 +1071,7 @@ function initSession($save_session_data=array())
             // go back to logon screen
             if (is_True($_SERVER['HTTPS'])) {
                 if (!empty($GLOBALS['https_server'])) {
-                    $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+                    $location = 'HTTPS://' .$GLOBALS['https_server'];
                 } else {
                     $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
                 } // if
@@ -947,7 +1103,7 @@ function initSession($save_session_data=array())
             // now restart the current script
             if (is_True($_SERVER['HTTPS'])) {
             	if (!empty($GLOBALS['https_server'])) {
-                    $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+                    $location = 'HTTPS://' .$GLOBALS['https_server'];
                 } else {
                     $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
                 } // if
@@ -994,51 +1150,55 @@ function initSession($save_session_data=array())
 	    } // if
 	} // if
 
-	if (!empty($_SESSION['logon_user_id'])) {
-		// check that this user_id is valid for this IP address (helps prevent session hijacking)
-        $ip_address = $_SERVER['SERVER_ADDR'];
-        $user_id    = $_SESSION['logon_user_id'];
-        $dbobject =& RDCsingleton::getInstance('mnu_user');
-        $dbobject->sql_select  = 'user_id, ip_address';
-        $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
-                                      ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
-                                      ." ELSE false"
-                                 ." END AS ip_address_valid";
-        $data = $dbobject->getData_raw("user_id='$user_id'");
-        if (!empty($data)) {
-        	$data = $data[0];
-        	if (!is_True($data['ip_address_valid'])) {
-                // 'This IP address is not valid'
-            	$_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
-                $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-                                      .getParentDIR()
-                                      .$logon_screen
-                                      .'?session_name=' .session_name();
+	if (defined('RADICORE_NO_MENU')) {
+		// no MENU database, so skip this next bit
+	} else {
+		if (!empty($_SESSION['logon_user_id'])) {
+			// check that this user_id is valid for this IP address (helps prevent session hijacking)
+	        $ip_address = $_SERVER['SERVER_ADDR'];
+	        $user_id    = $_SESSION['logon_user_id'];
+	        $dbobject =& RDCsingleton::getInstance('mnu_user');
+	        $dbobject->sql_select  = 'user_id, ip_address';
+	        $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+	                                      ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
+	                                      ." ELSE false"
+	                                 ." END AS ip_address_valid";
+	        $data = $dbobject->getData_raw("user_id='$user_id'");
+	        if (!empty($data)) {
+        		$data = $data[0];
+        		if (!is_True($data['ip_address_valid'])) {
+	                // 'This IP address is not valid'
+            		$_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
+	                $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+	                                      .getParentDIR()
+	                                      .$logon_screen
+	                                      .'?session_name=' .session_name();
 
-                logstuff("location: $location", __FUNCTION__, __LINE__);
+	                logstuff("location: $location", __FUNCTION__, __LINE__);
 
-                header('Location: ' .$location);
-                exit;
-            } // if
-        } // if
-        unset($dbobject);
+	                header('Location: ' .$location);
+	                exit;
+	            } // if
+	        } // if
+	        unset($dbobject);
+		} // if
+
+	    if (empty($_SESSION['default_language'])) {
+    		// get default language from control table
+	        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+	        $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
+	    } // if
+
+	    if (empty($_SESSION['user_language_array'])) {
+    		// obtain language code from browser settings
+	        $_SESSION['user_language_array'] = get_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+	    } // if
+
+	    if (empty($_SESSION['supported_languages'])) {
+    		// obtain supported languages from MENU database
+	        $_SESSION['supported_languages'] = getSupportedLanguages();
+	    } // if
 	} // if
-
-    if (empty($_SESSION['default_language'])) {
-    	// get default language from control table
-        $mnu_control =& RDCsingleton::getInstance('mnu_control');
-        $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
-    } // if
-
-    if (empty($_SESSION['user_language_array'])) {
-    	// obtain language code from browser settings
-        $_SESSION['user_language_array'] = get_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
-    } // if
-
-    if (empty($_SESSION['supported_languages'])) {
-    	// obtain supported languages from MENU database
-        $_SESSION['supported_languages'] = getSupportedLanguages();
-    } // if
 
     if (empty($_SESSION['user_language']) AND !empty($_SESSION['supported_languages'])) {
     	$found_lang = matchBrowserLanguage($_SESSION['user_language_array'], $_SESSION['supported_languages']);
@@ -1074,22 +1234,6 @@ function initSession($save_session_data=array())
         } // if
     } // foreach
 
-    if ($PHP_SELF == $logon_screen){
-        // always true for a logon screen
-        $use_https = true;
-    } elseif (is_True($GLOBALS['use_https'])) {
-        $use_https = true;
-    } elseif (isset($script_vars['use_https'])) {
-        // optional for other scripts
-        $use_https = $script_vars['use_https'];
-    } else {
-        $use_https = false;
-    } // if
-
-    if (empty($_SERVER['HTTPS'])) {
-        $_SERVER['HTTPS'] = 'off';
-    } // if
-
     if ($_SERVER['REMOTE_ADDR'] == 'batch') {
     	// do nothing
     } else {
@@ -1104,7 +1248,6 @@ function initSession($save_session_data=array())
             	    $_SESSION['restore_cookie_data'] = true;
             	    session_write_close();
             	    $location = 'HTTPS://' .$GLOBALS['https_server']
-            	                           .$GLOBALS['https_server_suffix']
             	                           .getParentDIR()
             	                           .$PHP_SELF;
             	    $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], true);
@@ -1167,7 +1310,7 @@ function initSession($save_session_data=array())
             } // if
             if (is_True($_SERVER['HTTPS'])) {
                 if (!empty($GLOBALS['https_server'])) {
-                    $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+                    $location = 'HTTPS://' .$GLOBALS['https_server'];
                 } else {
                     $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
                 } // if
@@ -1399,6 +1542,9 @@ function initSession($save_session_data=array())
         } elseif (isset($script_vars['search'])) {
             // search criteria has been saved in script variables
             $search = $script_vars['search'];
+            if (empty($script_vars['return_string'])) {
+                $return_string = $script_vars['search'];
+            } // if
             unset ($script_vars['search']);
         } // if
     } // if
@@ -1525,6 +1671,8 @@ function quickSearch ($quicksearch_field, $quicksearch_value)
     if (empty($quicksearch_field) OR empty($quicksearch_value)) {
         return false;
     } // if
+
+    $quicksearch_field = strtolower($quicksearch_field);
 
     if (substr_count($quicksearch_value, '%') > 0) {
         // already has a wildcard character, so don't add another
@@ -1692,7 +1840,7 @@ function runInBackground ($task_array, $save_script_vars)
 
     // build fully qualified URL
     if (strlen($GLOBALS['https_server']) > 0 AND (is_True($task_array['use_https']) OR is_True($GLOBALS['use_https']))) {
-    	$url = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+    	$url = 'HTTPS://' .$GLOBALS['https_server'];
     } else {
         $url = 'HTTP://' .$_SERVER['HTTP_HOST'];
     } // if
@@ -1745,6 +1893,7 @@ function runInBackground ($task_array, $save_script_vars)
     if (defined('CURL_HTTP_AUTH')) {
         curl_setopt($ch, CURLOPT_USERPWD, CURL_HTTP_AUTH);
     } // if
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
 
     $content = curl_exec($ch);
     if ($content === FALSE) {
@@ -2198,7 +2347,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     if (is_True($_SERVER['HTTPS'])) {
         if (!empty($GLOBALS['https_server'])) {
-            $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+            $location = 'HTTPS://' .$GLOBALS['https_server'];
         } else {
             $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
         } // if
@@ -2224,7 +2373,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction=NULL, $selection=null)
 // go back to the previous script in the current hierarchy.
 {
-    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch']) OR isset($GLOBALS['web_server'])) {
     	return $errors;
     } // if
 
@@ -2275,6 +2424,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             $null = array_shift($_SESSION['script_sequence']);
             $first = $_SESSION['script_sequence'][0];
             $page_stack = reducePageStack($task_id);
+
         } elseif ($last['task_id'] == $task_id) {
             // current task is last task in list
             if (!empty($last['action'])) {
@@ -2340,7 +2490,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
 
         if (is_True($_SERVER['HTTPS'])) {
             if (!empty($GLOBALS['https_server'])) {
-                $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+                $location = 'HTTPS://' .$GLOBALS['https_server'];
             } else {
                 $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
             } // if
@@ -2366,7 +2516,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         // no previous script, so go back to logon page
         if (is_True($_SERVER['HTTPS'])) {
             if (!empty($GLOBALS['https_server'])) {
-                $location = 'HTTPS://' .$GLOBALS['https_server'] .$GLOBALS['https_server_suffix'];
+                $location = 'HTTPS://' .$GLOBALS['https_server'];
             } else {
                 $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
             } // if

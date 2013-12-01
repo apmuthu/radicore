@@ -29,6 +29,7 @@ $structure['outer']['fields'][] = array('rel_type' => 'Relationship Type', 'cols
 $structure['outer']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['outer']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);
 $structure['outer']['fields'][] = array('calc_field' => 'Calculated Field', 'colspan' => 3);
+$structure['outer']['fields'][] = array('key_name' => 'Key Name', 'colspan' => 3);
 
 $structure['tables']['inner'] = 'dict_related_column_jnr';
 

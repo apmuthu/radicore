@@ -6,6 +6,7 @@
 $array = array();
 
 $array[] = '127.0.0.1';
+$array[] = '::1';
 $array[] = '127.0.1.1';
 $array[] = '80.177.120.119';	// Tony
 $array[] = '74.204.188.125';	// korvus.kodega.com

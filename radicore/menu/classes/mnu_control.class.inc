@@ -730,6 +730,9 @@ class mnu_control extends Default_Table
     function _cm_updateSelection($fieldarray, $replace)
     // update multiple rows in a single operation.
     {
+        if (is_long(key($fieldarray))) {
+            $fieldarray = $fieldarray[0];  // use first row only
+        } // if
         $this->fieldarray = $fieldarray;
 
         // perform standard declarative checks on input data

@@ -1,6 +1,7 @@
 <Files ~ "\.inc$">
-  Order Deny,Allow
-  Deny from all
+  #Order Deny,Allow
+  #Deny from all
+  Require all denied
 </Files>
 
 php_value include_path ".;F:\Apache2\HTDOCS\RADICORE\INCLUDES"

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update1.inc
@@ -33,10 +33,10 @@ if (isset($_POST['quit'])) {
 } // if
 
 // define action buttons
-$act_buttons['copy']       = 'copy';
-$act_buttons['submit']     = 'submit';
+$act_buttons['submitBtn']  = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
 //$act_buttons['submitstay'] = 'submitstay';  // this is usually hidden
 $act_buttons['submitnext'] = 'submitnext';
+$act_buttons['copy']       = 'copy';
 $act_buttons['quit']       = 'cancel';
 
 // create a class instance for the MAIN database table
@@ -46,14 +46,10 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action);
+        $dbobject->restart($return_from, $return_action, $return_string);
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    if (!is_string(key($fieldarray))) {
-        // indexed by row, so use first row only
-        $fieldarray = $fieldarray[key($fieldarray)];
-    } // if
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -92,11 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if ($dbobject->errors) {
             	$errors = $dbobject->getErrors();
             } // if
-            // some data may have been changed in the child form, so refresh it
-            $fieldarray = $dbobject->getExtraData($fieldarray);
-            if ($dbobject->errors) {
-            	$errors = $dbobject->getErrors();
-            } // if
         } // if
     } else {
         if (isset($scrolling)) {
@@ -118,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // returning from a script that does not want any pending changes to be lost
         } else {
             $fieldarray = $dbobject->getData($where);
+            $fieldarray = $dbobject->getExtraData($fieldarray);
             $result = $dbobject->validateUpdate($fieldarray);
         } // if
         if ($dbobject->errors) {
@@ -142,116 +134,120 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
         $scrolling[$dbobject->getClassName()]['where']    = $where;
 
-        // get any extra data and merge with $fieldarray
-        $fieldarray = $dbobject->getExtraData($fieldarray);
-        if ($dbobject->errors) {
-        	$errors = $dbobject->getErrors();
-        } // if
-
         // rebuild selection criteria using primary key of 1st occurrence
         $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
 
         if (!empty($errors)) {
             // switch the whole zone into 'noedit' mode
             $dbobject->xsl_params['main_noedit'] = 'y';
-            unset($act_buttons['submit']);
+            unset($act_buttons['submitBtn']);
             unset($act_buttons['submitnext']);
         } // if
     } // if
 } // if
 
-// look for entered data
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    if (isset($_POST['paste'])) {
+if (!empty($_POST)) {
+    // merge user's input with original data so that fields which were displayed
+    // but not POSTed are sent back if any errors are displayed.
+    // this also deals with a javascript 'submit()'.
+    $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
+    if ($dbobject->errors) {
+        $errors = $dbobject->getErrors();
+    } // if
+    if (empty($errors)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
+    } // if
+
+    if (isset($_POST['copy'])) {
+        // save current data so that it be be PASTed later
+        $messages = copyForm($_POST, $dbobject);
+
+    } elseif (isset($_POST['paste'])) {
         // merge initial data with previously saved data
         $fieldarray = pasteData($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
-        $fieldarray = $dbobject->getExtraData($fieldarray);
-        if ($dbobject->errors) {
-        	$errors = $dbobject->getErrors();
-        } // if
-    } elseif (isset($_POST['copy'])) {
-        $messages = copyForm($_POST, $dbobject);
-    } else {
-        // merge original data with POSTed data (so that fields which were displayed
-        // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
-        // ensure that changes are stored inside relevant object
-        $dbobject->setFieldArray($fieldarray);
-        // look for an action which is another script
-        $errors = childForm($_POST, array('dbobject' => $dbobject));
-        if (empty($errors)) {
+        // redo any initialisation
+        $fieldarray = $dbobject->getInitialData($fieldarray);
+
+    } elseif (empty($errors)) {
+        // identify if one of the 'submit' buttons has been pressed
+        $submit_button = check_submit_button ($act_buttons, $_POST);
+        if (!empty($submit_button)) {
+            $dbobject->startTransaction();
+            // update this data in the database
+            $fieldarray = $dbobject->updateRecord($fieldarray);
+            $messages = array_merge($messages, $dbobject->getMessages());
+            if ($dbobject->errors) {
+                $errors = $dbobject->getErrors();
+            } // if
+            if (empty($errors)) {
+                $errors = $dbobject->commit();
+            } // if
+            if (!empty($errors)) {
+                $dbobject->rollback();
+            } else {
+                if ($dbobject->numrows > 0) {
+                    $messages[] = getLanguageText('sys0092'); // 'Record updated OK'
+                } // if
+                if (isset($_POST['submitnext'])) {
+                    $curitem  = $scrolling[$dbobject->getClassName()]['curitem'];
+                    $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];
+                    if ($curitem < $lastitem) {
+                        // skip to the next item
+                        $curitem++;
+                        $scrolling[$dbobject->getClassName()]['curitem'] = $curitem;
+                        $dbobject->setPageNo($curitem);
+                        $where = $scrolling[$dbobject->getClassName()]['where'];
+                        $fieldarray = $dbobject->getData($where);
+                        $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
+                    } else {
+                        // no more items, so return to previous screen
+                        scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
+                    } // if
+                } elseif (isset($_POST['submitBtn'])) {
+                    if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
+                        // update was OK, no more items, so return to previous screen
+                        scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
+                    } // if
+                } // if
+                // treat as if 'submitstay' button was pressed and stay on current record
+
+                // re-read database in case any other values have been changed
+                $fieldarray = $dbobject->getData($where);
+                if ($dbobject->numrows == 0) {
+                    // record cannot be found, so re-read using original $where clause
+                    $where      = $scrolling[$dbobject->getClassName()]['where'];
+                    $fieldarray = $dbobject->getData($where);
+                    // reset 'lastitem' in scroll array
+                    $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
+                    $script_vars['scrolling'] = $scrolling;
+                } // if
+                // rebuild selection criteria using primary key of 1st occurrence
+                $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
+            } // if
+
+        } else {
             // look for a custom button (a field which begins with 'button#')
-		    $button = false;
+            $button = false;
             foreach ($_POST as $postname => $postvalue) {
-            	if (preg_match('/^button#/i', $postname, $regs)) {
-            	    // strip off the prefix to leave the original field name
-            		$button = str_replace($regs[0], '', $postname);
-            		break;
-            	} // if
+                if (preg_match('/^button#/i', $postname, $regs)) {
+                    // strip off the prefix to leave the original field name
+                    $button = str_replace($regs[0], '', $postname);
+                    break;
+                } // if
             } // foreach
             if ($button) {
-            	// a custom button was pressed
-            	$fieldarray = $dbobject->customButton($fieldarray, $button);
-            	if ($dbobject->errors) {
-                    $errors = $dbobject->getErrors();
-                } // if
-            } else {
+                // a custom button was pressed
                 $dbobject->startTransaction();
-                // update this data in the database
-                $fieldarray = $dbobject->updateRecord($fieldarray);
+                $fieldarray = $dbobject->customButton($fieldarray, $button, $_POST);
                 if ($dbobject->errors) {
-    				$errors = $dbobject->getErrors();
-    			} // if
-                $messages = $dbobject->getMessages();
-                if (empty($errors)) {
-                    $errors = $dbobject->commit();
-                } // if
-                if (!empty($errors)) {
+                    $errors = $dbobject->getErrors();
                     $dbobject->rollback();
                 } else {
-                    if ($dbobject->numrows > 0) {
-                    	$messages[] = getLanguageText('sys0092'); // 'Record updated OK'
-                    } // if
-                    if (isset($_POST['submitnext'])) {
-                        $curitem  = $scrolling[$dbobject->getClassName()]['curitem'];
-                        $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];
-                        if ($curitem < $lastitem) {
-                            // skip to the next item
-                            $curitem++;
-                            $scrolling[$dbobject->getClassName()]['curitem'] = $curitem;
-                            $dbobject->setPageNo($curitem);
-                            $where = $scrolling[$dbobject->getClassName()]['where'];
-                            $fieldarray = $dbobject->getData($where);
-                            $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-                        } else {
-                            // no more items, so return to previous screen
-                            scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
-                        } // if
-                    } elseif (isset($_POST['submit'])) {
-                        if ($scrolling[$dbobject->getClassName()]['lastitem'] <= 1) {
-                            // update was OK, no more items, so return to previous screen
-                            scriptPrevious($errors, $messages, 'OK', $dbobject->getInstruction());
-                        } // if
-                    } // if
-                    // treat as if 'submitstay' button was pressed and stay on current record
-
-                    // re-read database in case any other values have been changed
-                    $fieldarray = $dbobject->getData($where);
-                    if ($dbobject->numrows == 0) {
-                        // record cannot be found, so re-read using original $where clause
-                        $where      = $scrolling[$dbobject->getClassName()]['where'];
-                        $fieldarray = $dbobject->getData($where);
-                        // reset 'lastitem' in scroll array
-                        $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
-                        $script_vars['scrolling'] = $scrolling;
-                    } // if
-                    // get any extra data and merge with $fieldarray
-                    $fieldarray = $dbobject->getExtraData($fieldarray);
-                    if ($dbobject->errors) {
-                        $errors = $dbobject->getErrors();
-                    } // if
-                    // rebuild selection criteria using primary key of 1st occurrence
-                    $where = array2where($fieldarray, $dbobject->getPkeyNames(), $dbobject);
+                    $dbobject->commit();
                 } // if
             } // if
         } // if
@@ -279,11 +275,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if
-
-//if (isset($dbobject->xsl_params['main_noedit'])) {
-//	unset($act_buttons['submit']);
-//    unset($act_buttons['submitnext']);
-//} // if
 
 if (!empty($errors)) {
     // all errors are associated with this table

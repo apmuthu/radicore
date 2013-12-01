@@ -1,5 +1,0 @@
-This will allow search criteria to be entered for the WF_WORKFLOW table.
-
-Enter selection criteria then press the SUBMIT button to pass it back to the previous task for processing.
-
-Refer to <a href="%root%/wf_workflow(search).html">Search Workflow Process</a> for full details.

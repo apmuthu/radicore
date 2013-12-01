@@ -1,3 +1,0 @@
-This will list records on the PATTERN table.
-
-Refer to <a href="%root%/mnu_pattern(list1).html">List Pattern</a> for full details.

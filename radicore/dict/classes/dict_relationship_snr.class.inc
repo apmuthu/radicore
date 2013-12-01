@@ -6,7 +6,6 @@
 require_once 'dict_relationship.class.inc';
 class dict_relationship_snr extends dict_relationship
 {
-
     // ****************************************************************************
     // this subclass is used in: relationship(list2)b.php
     //                           relationship(add2)b.php
@@ -90,19 +89,11 @@ class dict_relationship_snr extends dict_relationship
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        $where = array2where($fieldarray, $this->getPkeyNames());
-
-        // create initial records on DICT_RELATED_COLUMN table
-        $relobj =& RDCsingleton::getInstance('dict_related_column');
-
-        $outarray = $relobj->getInitialDataMultiple($fieldarray);
-        $outarray = $relobj->insertMultiple($outarray);
-        if ($relobj->getErrors()) {
-            $this->errors = array_merge($this->errors, $relobj->getErrors());
-            return $fieldarray;
-        } // if
+        // create a record for each column in the specified key
+        $result = $this->_setRelatedColumns($fieldarray);
 
         // switch to task to maintain related columns
+        $where = array2where($fieldarray, $this->getPkeyNames());
         $next['task_id'] = 'dict_related_column(multi4)b';
         $next['where']   = $where;
 

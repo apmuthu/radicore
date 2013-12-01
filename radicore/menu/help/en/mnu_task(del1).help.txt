@@ -1,3 +1,0 @@
-This will display a record from the TASK table and allow it to be deleted.
-
-Refer to <a href="%root%/mnu_task(del1).html">Delete Task</a> for full details.

@@ -1,3 +1,0 @@
-This will allow a new record to be added to the PERSON table.
-Enter your data then press the SUBMIT button to add it to the database.
-For a description of screens of type ADD 1 <a href="%root%/php-mysql/dialog-types.html#add1">click here</a>.

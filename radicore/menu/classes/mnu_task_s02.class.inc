@@ -22,8 +22,10 @@ class mnu_task_s02 extends mnu_task
                                                     'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'nondb' => 'y');
-        // ensure this field appears in the HTML output
-        $fieldarray['new_task_id']          = null;
+        if (!isset($fieldarray['new_task_id'])) {
+            // ensure this field appears in the HTML output
+            $fieldarray['new_task_id'] = null;
+        } // if
 
         // this button causes confusion, so remove it
         unset($GLOBALS['act_buttons']['submitnext']);

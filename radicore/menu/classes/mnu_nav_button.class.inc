@@ -49,7 +49,7 @@ class mnu_nav_button extends Default_Table
         if ($global_access) {
             // if global_access is ON then all buttons can be accessed without restriction
             // (unless a task has been disabled)
-            $this->sql_select = 'x.task_id, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
@@ -58,7 +58,7 @@ class mnu_nav_button extends Default_Table
             // if global_access is OFF then a button cannot be loaded unless it has an
             // entry on MNU_ROLE_TASK for the current role
             // (or if it has been disabled)
-            $this->sql_select = 'x.task_id, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) '
@@ -73,6 +73,11 @@ class mnu_nav_button extends Default_Table
                                   ." ELSE false"
                              ." END AS ip_address_valid";
         $this->sql_having = "ip_address_valid=true";
+
+        if ($_SESSION['user_language'] != $_SESSION['default_language']) {
+            // obtain some text in an alternative language
+            $this->sql_select .= ", COALESCE((SELECT task_desc FROM mnu_task_alt WHERE mnu_task_alt.task_id=mnu_nav_button.task_id_jnr AND mnu_task_alt.language_id='{$_SESSION['user_language']}'), x.task_desc) AS task_desc";
+        } // if
 
         $this->sql_orderby = 'mnu_nav_button.sort_seq';
 
@@ -91,7 +96,7 @@ class mnu_nav_button extends Default_Table
             	list($original, $alias) = preg_split('/ as /i', $regs[0]);
             	$search_table = $original;
             } // if
-            if (isset($_SESSION['search'][$search_table])) {
+            if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
                 if (preg_match("/^curr_or_hist='[a-z]{1}'$/i", $_SESSION['search'][$search_table])) {
                     // contains only "curr_or_hist='X'", so ignore it
                 } else {

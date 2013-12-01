@@ -71,11 +71,28 @@ GO
 CREATE TABLE help_text (
   task_id nvarchar(80) NOT NULL,
   help_text ntext NOT NULL,
-  created_date datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime DEFAULT NULL,
+  revised_date datetime2(0) DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (task_id)
+);
+go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table help_text_alt
+--
+
+CREATE TABLE help_text_alt (
+  task_id nvarchar(80) NOT NULL,
+  language_id nvarchar(5) NOT NULL,
+  help_text ntext NOT NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  revised_date datetime2(0) DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (task_id,language_id)
 );
 go
 -- --------------------------------------------------------
@@ -88,9 +105,9 @@ CREATE TABLE mnu_account (
   rdcaccount_id int NOT NULL IDENTITY(1,1),
   account_name nvarchar(255) NOT NULL,
   rdcversion int NOT NULL DEFAULT '1',
-  created_date datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
-  revised_date datetime DEFAULT NULL,
+  revised_date datetime2(0) DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (rdcaccount_id)
 );
@@ -105,9 +122,9 @@ CREATE TABLE mnu_control (
   record_id nvarchar(16) NOT NULL,
   field_id nvarchar(32) NOT NULL,
   field_value nvarchar(255) DEFAULT NULL,
-  created_date datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime DEFAULT NULL,
+  revised_date datetime2(0) DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (record_id,field_id)
 );
@@ -125,9 +142,9 @@ CREATE TABLE mnu_favourite (
   task_desc nvarchar(80) NOT NULL,
   sort_seq smallint NOT NULL DEFAULT '0',
   breadcrumbs nvarchar(4000) DEFAULT NULL,
-  created_date datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime DEFAULT NULL,
+  revised_date datetime2(0) DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (user_id,seq_no)
 );
@@ -376,6 +393,24 @@ go
 -- --------------------------------------------------------
 
 --
+-- Table structure for table mnu_task_alt
+--
+
+CREATE TABLE mnu_task_alt (
+  task_id nvarchar(80) NOT NULL,
+  language_id nvarchar(5) NOT NULL,
+  task_desc nvarchar(80) NOT NULL,
+  button_text nvarchar(80) NOT NULL,
+  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  revised_date datetime2 DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (task_id,language_id)
+);
+go
+-- --------------------------------------------------------
+
+--
 -- Table structure for table mnu_task_field
 --
 
@@ -404,6 +439,56 @@ CREATE TABLE mnu_task_ip_address (
   revised_date datetime2 DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (task_id,ip_address)
+);
+go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_time_limit_role
+--
+
+CREATE TABLE mnu_time_limit_role (
+	role_id nvarchar(16), 
+	seq_no smallint NOT NULL DEFAULT '0',
+	scheduled_start_time time(0) DEFAULT NULL,
+	scheduled_end_time time(0) DEFAULT NULL,
+	scheduled_monday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_tuesday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_wednesday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_thursday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_friday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_saturday char(1) NOT NULL DEFAULT 'N',
+	scheduled_sunday char(1) NOT NULL DEFAULT 'N',
+	created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
+  	created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  	revised_date datetime2(0) DEFAULT NULL,
+  	revised_user nvarchar(16) DEFAULT NULL,
+	PRIMARY KEY (role_id, seq_no)
+);
+go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_time_limit_user
+--
+
+CREATE TABLE mnu_time_limit_user (
+	user_id nvarchar(16), 
+	seq_no smallint NOT NULL DEFAULT '0',
+	scheduled_start_time time(0) DEFAULT NULL,
+	scheduled_end_time time(0) DEFAULT NULL,
+	scheduled_monday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_tuesday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_wednesday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_thursday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_friday char(1) NOT NULL DEFAULT 'Y',
+	scheduled_saturday char(1) NOT NULL DEFAULT 'N',
+	scheduled_sunday char(1) NOT NULL DEFAULT 'N',
+	created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
+  	created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  	revised_date datetime2(0) DEFAULT NULL,
+  	revised_user nvarchar(16) DEFAULT NULL,
+	PRIMARY KEY (user_id, seq_no)
 );
 go
 -- --------------------------------------------------------
@@ -444,12 +529,12 @@ CREATE TABLE mnu_user (
   role_id nvarchar(16) NOT NULL,
   rdcaccount_id int DEFAULT NULL,
   pswd_chg_date date DEFAULT NULL,
-  pswd_chg_time time DEFAULT NULL,
+  pswd_chg_time time(0) DEFAULT NULL,
   pswd_count smallint DEFAULT NULL,
   in_use char(1) NOT NULL DEFAULT 'N',
   is_disabled char(1) NOT NULL DEFAULT 'N',
   logon_date date DEFAULT NULL,
-  logon_time time DEFAULT NULL,
+  logon_time time(0) DEFAULT NULL,
   language_code nvarchar(6) DEFAULT NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',

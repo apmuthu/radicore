@@ -1,0 +1,7 @@
+<p>** started at June 15, 2007, 10:35 am</p>
+<p>script name  : F:/Apache2/HTDOCS/radicore/xample/fix-last-addr-no.php</p>
+<p>document root: F:/Apache2/HTDOCS</p>
+<p>server name  : localhost</p>
+<p>include_path : .;F:\Apache2\HTDOCS\radicore\includes;F:\Apache2\HTDOCS\includes</p>
+<p>language     : 'en-gb'</p>
+<p>** finished at June 15, 2007, 10:35 am</p>
