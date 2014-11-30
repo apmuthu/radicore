@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_column.class.inc';
 class dict_column_s01 extends dict_column
@@ -75,14 +75,6 @@ class dict_column_s01 extends dict_column
             return $fieldarray;
         } // if
 
-        list($dbprefix, $dbname_server) = dict_findDBPrefix($dbname_dict);
-        if ($dbname_server != $dbname_dict) {
-        	// database name have been switched
-        } elseif (!empty($dbprefix)) {
-        	// server name requires a prefix
-        	$dbname_server = $dbprefix.$dbname_dict;
-	    } // if
-
         // save these for _cm_getDatabaseLock() method
         $this->target_dbname    = $dbname_dict;
         $this->target_tablename = $tablename;
@@ -102,7 +94,11 @@ class dict_column_s01 extends dict_column
         $this->update_array = array();
 
         // obtain a list of current column definitions from the database server
-        $db_data = $this->_ddl_showColumns($dbname_server, $tablename);
+        $db_data = $this->_ddl_showColumns($dbname_dict, $tablename);
+        if (empty($db_data)) {
+            $this->errors[] = getlanguageText('e0028',$tablename);
+            return $insert_array;
+        } // if
 
         // construct a smaller array of column names
         $db_data_cols = array();

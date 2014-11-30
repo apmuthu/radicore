@@ -1,1 +1,0 @@
-Try user_id='<b>demo</b>', password='<b>demo</b>'

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -245,6 +245,36 @@ class dict_table_s04 extends dict_table
     } // _cm_initialise
 
     // ****************************************************************************
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
+    // be altered before the popup screen is called.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    {
+        // clear out the contents of $where
+        $where = '';
+
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
+
+        // allow a single result to be selected without user intervention
+        //$settings['choose_single_row'] = true;
+
+        //if ($popupname == 'foo(bar)') {
+        //    // replace $where for this popup
+        //    $where = "$where";
+        //} else {
+        //    $where = '';
+        //} // if
+
+        return $where;
+
+    } // _cm_popupCall
+
+    // ****************************************************************************
     function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
@@ -344,6 +374,7 @@ class dict_table_s04 extends dict_table
             	break;
 
         	case 'add5':
+            case 'del4':
         	case 'multi4':
                 $fieldarray['inner_table_alias'] = '';   // ensure this field is displayed
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
@@ -507,10 +538,8 @@ class dict_table_s04 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
-
         // find out if tables in the 'menu' database need to be qualified
-        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
+        $menuDB = findDBName('menu', $this->dbname);
 
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
@@ -518,8 +547,6 @@ class dict_table_s04 extends dict_table
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
         	                  . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
         	                  . 'LEFT JOIN ' .$menuDB ."mnu_pattern ON (mnu_pattern.pattern_id='".$this->pattern_id."')";
-                              //. 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
-                              //. 'LEFT JOIN "' .$menu_prefix ."menu\".mnu_pattern ON (mnu_pattern.pattern_id='$this->pattern_id')";
         } // if
 
         return $where;
@@ -1059,6 +1086,7 @@ class dict_table_s04 extends dict_table
                     break;
 
                 case 'output1':
+                case 'output6':
 					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
@@ -1368,74 +1396,86 @@ class dict_table_s04 extends dict_table
                     } // if
                 } // if
 
-                // look for an instance of "$structure['zone']['columns']" and extract 'zone'
-                if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'columns\'])/i', $string_in, $regs)) {
-                    $string_in = '';
-                    $zone      = $regs[0];
-                    if (array_key_exists('columns', $done[$zone])) {
-                    	// already been done, so do not repeat
-                    } else {
-                        $done[$zone]['columns'] = true;
-                        if ($zone == 'outer') {
-                        	$database_id = $fieldarray['database_id_outer'];
+                if (preg_match('/(tree1)/i', $pattern_id)) {
+                    // ignore this next bit
+                } else {
+                    // look for an instance of "$structure['zone']['columns']" and extract 'zone'
+                    if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'columns\'])/i', $string_in, $regs)) {
+                        $zone = $regs[0];
+                        if (preg_match('/(tree2)/i', $pattern_id) AND preg_match('/(inner)/i', $zone)) {
+                            // ignore this next bit
                         } else {
-                            $database_id = $fieldarray['database_id'];
-                        } // if
-                        $table_id  = $fieldarray[$zone.'_table'];
-                        // look for 'original AS alias' and extract the two names
-                        list($original, $alias) = getTableAlias3($table_id);
-                        if (strlen($original) > 0) {
-                        	$table_id = $original;
-                        } // if
-                        if (array_key_exists('selectbox', $structure[$zone]['fields'][0])) {
-                        	// these columns are dispayed across the page (horizonal)
-                    		// define width for SELECTBOX column
-                    		$string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => 5);\n";
-                    		// create entry for each column in this table
-                    		$rowdata   = $object->getData_raw("database_id='$database_id' AND table_id='$table_id'");
-                    		$percent = round(100 / count($rowdata), 2);
-                    		for ($i = 0; $i < count($rowdata); $i++) {
-                    		    //$string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '$percent%');\n";
-                                $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '*');\n";
-                    		} // for
-                    	} else {
-                    	    // these columns are displayed down the page (vertical) so only 2 entries are needed
-                    	    $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '25%');\n";
-                    	    $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '*');\n";
+                            $string_in = '';
+                            if (array_key_exists('columns', $done[$zone])) {
+                    	        // already been done, so do not repeat
+                            } else {
+                                $done[$zone]['columns'] = true;
+                                if ($zone == 'outer') {
+                        	        $database_id = $fieldarray['database_id_outer'];
+                                } else {
+                                    $database_id = $fieldarray['database_id'];
+                                } // if
+                                $table_id  = $fieldarray[$zone.'_table'];
+                                // look for 'original AS alias' and extract the two names
+                                list($original, $alias) = getTableAlias3($table_id);
+                                if (strlen($original) > 0) {
+                        	        $table_id = $original;
+                                } // if
+                                if (array_key_exists('selectbox', $structure[$zone]['fields'][0])) {
+                        	        // these columns are dispayed across the page (horizonal)
+                    		        // define width for SELECTBOX column
+                    		        $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => 5);\n";
+                    		        // create entry for each column in this table
+                    		        $rowdata   = $object->getData_raw("database_id='$database_id' AND table_id='$table_id'");
+                    		        $percent = round(100 / count($rowdata), 2);
+                    		        for ($i = 0; $i < count($rowdata); $i++) {
+                    		            //$string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '$percent%');\n";
+                                        $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '*');\n";
+                    		        } // for
+                    	        } else {
+                    	            // these columns are displayed down the page (vertical) so only 2 entries are needed
+                    	            $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '25%');\n";
+                    	            $string_out .= '$structure[\'' .$zone ."']['columns'][] = array('width' => '*');\n";
+                                } // if
+                            } // if
                         } // if
                     } // if
-                } // if
 
-                // look for an instance of "$structure['zone']['fields']" and extract 'zone'
-                if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'fields\'])/i', $string_in, $regs)) {
-                    $string_in = '';
-                    $zone      = $regs[0];
-                    if (array_key_exists('fields', $done[$zone])) {
-                    	// already been done, so ignore
-                    } else {
-                        $done[$zone]['fields'] = true;
-                        if ($zone == 'outer') {
-                        	$database_id = $fieldarray['database_id_outer'];
+                    // look for an instance of "$structure['zone']['fields']" and extract 'zone'
+                    if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'fields\'])/i', $string_in, $regs)) {
+                        $zone = $regs[0];
+                        if (preg_match('/(tree2)/i', $pattern_id) AND preg_match('/(inner)/i', $zone)) {
+                            // ignore this next bit
                         } else {
-                            $database_id = $fieldarray['database_id'];
+                            $string_in = '';
+                            if (array_key_exists('fields', $done[$zone])) {
+                    	        // already been done, so ignore
+                            } else {
+                                $done[$zone]['fields'] = true;
+                                if ($zone == 'outer') {
+                        	        $database_id = $fieldarray['database_id_outer'];
+                                } else {
+                                    $database_id = $fieldarray['database_id'];
+                                } // if
+                                $table_id  = $fieldarray[$zone.'_table'];
+                                // look for 'original AS alias' and extract the two names
+                                list($original, $alias) = getTableAlias3($table_id);
+                                if (strlen($original) > 0) {
+                        	        $table_id = $original;
+                                } // if
+                                $rowdata   = $object->getData_raw("database_id='$database_id' AND table_id='$table_id'");
+                                if (array_key_exists('selectbox', $structure[$zone]['fields'][0])) {
+                                    // create entry for SELECTBOX column
+                    		        $string_out .= '$structure[\'' .$zone ."']['fields'][] = array('selectbox' => 'Select');\n";
+                                } // if
+                                // create entries for each column
+                                foreach ($rowdata as $data) {
+                                    $field = $data['column_id'];
+                                    $label = $data['column_desc'];
+                                    $string_out .= '$structure[\'' .$zone ."']['fields'][] = array('$field' => '$label');\n";
+                                } // foreach
+                            } // if
                         } // if
-                        $table_id  = $fieldarray[$zone.'_table'];
-                        // look for 'original AS alias' and extract the two names
-                        list($original, $alias) = getTableAlias3($table_id);
-                        if (strlen($original) > 0) {
-                        	$table_id = $original;
-                        } // if
-                        $rowdata   = $object->getData_raw("database_id='$database_id' AND table_id='$table_id'");
-                        if (array_key_exists('selectbox', $structure[$zone]['fields'][0])) {
-                            // create entry for SELECTBOX column
-                    		$string_out .= '$structure[\'' .$zone ."']['fields'][] = array('selectbox' => 'Select');\n";
-                        } // if
-                        // create entries for each column
-                        foreach ($rowdata as $data) {
-                            $field = $data['column_id'];
-                            $label = $data['column_desc'];
-                            $string_out .= '$structure[\'' .$zone ."']['fields'][] = array('$field' => '$label');\n";
-                        } // foreach
                     } // if
                 } // if
 

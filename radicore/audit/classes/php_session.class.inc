@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class php_session extends Default_Table
@@ -18,8 +18,6 @@ class php_session extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'audit';
         $this->tablename   = 'php_session';
 
@@ -95,8 +93,8 @@ class php_session extends Default_Table
         if ($count == 0) {
             // create new record
             $array['session_id']   = $session_id;
-            $array['date_created'] = getTimeStamp();
-            $array['last_updated'] = getTimeStamp();
+            $array['date_created'] = date('Y-m-d H:i:s');
+            $array['last_updated'] = date('Y-m-d H:i:s');
             $array['session_data'] = $session_data;
             $this->update_on_duplicate_key = true;
             $this->_dml_insertRecord($array);
@@ -105,7 +103,7 @@ class php_session extends Default_Table
             if (isset($_SESSION['logon_user_id'])) {
                 $array['user_id']  = $_SESSION['logon_user_id'];
             } // if
-            $array['last_updated'] = getTimeStamp();
+            $array['last_updated'] = date('Y-m-d H:i:s');
             $array['session_data'] = $session_data;
             if (isset($this->fieldarray['session_id']) AND $this->fieldarray['session_id'] == $session_id) {
             	$old_data[0] = $this->fieldarray;
@@ -140,6 +138,10 @@ class php_session extends Default_Table
     // perform garbage collection.
     {
         $count = $this->_dml_deleteSelection("last_updated < DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND)");
+
+        //$now = date('Y-m-d H:i:s');
+        //$count = $this->_dml_deleteSelection("last_updated < DATE_SUB('$now', INTERVAL $max_lifetime SECOND)");
+
         //$count = $this->_dml_deleteSelection("DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND) > last_updated");
         //$count = $this->_dml_deleteSelection("DATE_SUB(last_updated, INTERVAL $max_lifetime SECOND) < now()");
 

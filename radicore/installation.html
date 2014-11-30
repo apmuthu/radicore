@@ -30,17 +30,17 @@
 
 <li>The file HTACCESS.TXT contains some Apache directives. This can be renamed to .htaccess in a *nix environment, or for Windows you can insert the following lines into your httpd.conf (Apache configuration) file:
 <pre>
-#AccessFileName .htaccess
-AccessFileName htaccess.txt
-#
-# The following lines prevent .htaccess and .htpasswd 
-# files from being viewed by Web clients. 
-#
-#&lt;Files ~ "^\.ht"&gt;
-&lt;Files ~ "^htaccess\."&gt;
-    Order allow,deny
-    Deny from all
-&lt;/Files&gt;
+  #AccessFileName .htaccess
+  AccessFileName htaccess.txt
+  #
+  # The following lines prevent .htaccess and .htpasswd 
+  # files from being viewed by Web clients. 
+  #
+  #&lt;Files ~ "^\.ht"&gt;
+  &lt;Files ~ "^htaccess\."&gt;
+      Order allow,deny
+      Deny from all
+  &lt;/Files&gt;
 </pre>
 Note that the contents of .htaccess will be ignored by Apache unless the correct AllowOverride option has been set in your HTTPD.CONF file as follows:
 <pre>
@@ -57,20 +57,6 @@ Note that the contents of .htaccess will be ignored by Apache unless the correct
 #
     Order allow,deny
     Allow from all
-&lt;/Directory&gt;
-</pre>
-For Apache version 2.4 the syntax has changed to:
-<pre>
-AccessFileName htaccess.txt
-&lt;Files "htaccess.txt"&gt;
-    Require all denied
-&lt;/Files&gt;
-</pre>
-and
-<pre>
-&lt;Directory "F:/Apache2/htdocs"&gt;
-    AllowOverride All
-    Require all granted
 &lt;/Directory&gt;
 </pre>
 </li>
@@ -91,8 +77,7 @@ and
 	<ul class="compress">
 	<li>RADICORE - for the <code>errorlog.html</code> file.</li>
   <li>CLASSES - for all <code>&lt;table&gt;.class.inc</code> and <code>&lt;table&gt;.dict.inc</code> files.</li>
-	<li>HELP/EN - for all <code>&lt;script_id&gt;.help.txt</code> files.</li>
-  <li>LOGS - for all output from background tasks.</li>
+	<li>LOGS - for all output from background tasks.</li>
 	<li>SQL - for all <code>&lt;subsystem&gt;.dict_export.sql</code> and <code>&lt;subsystem&gt;.menu_export.sql</code> files.</li>
 	<li>TEXT - for all <code>&lt;subsystem&gt;.menu_export.txt</code> files.</li>
 	<li>XSL - for all <code>&lt;script_id&gt;.xml</code> files.</li>
@@ -105,7 +90,7 @@ and
   <li>Create the tables in those databases/schemas from the <code>???-schema.sql</code> scripts.</li>
   <li>Load the data from the <code>???-data.sql</code> scripts. Note that there is no data to be pre-loaded into the AUDIT database.</li>
   </ul>
-<p>These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirectories.</p>
+These scripts exist in the various <code>radicore/???/sql/mysql/</code> subdirectories.</li>
 
 	<ol type="i">
 	<li>The 'menu' database can be loaded from file <code>radicore/menu/sql/&lt;db&gt;/menu-data.sql</code> which contains the data for all subsystems (except the prototype applications), or single subsystems can be loaded individually from the <code>&lt;subsystem&gt;.menu_export.sql</code> files which exist in the <code>radicore/&lt;subsystem&gt;/sql/</code> directories. These files were created using the Menu Subsystem -&gt; Subsystem -&gt; Export function.</li>
@@ -130,7 +115,7 @@ and
 	</ul>
 </li>
 
-<li><a name="5.B"></a>Notes for <a name="postgresql">PostgreSQL</a> users:
+<li><a name="5.B">Notes for <a name="postgresql">PostgreSQL</a> users:
   <ul>
     <li>Refer to <a href="http://www.tonymarston.net/php-mysql/postgresql.html">Creating a PostgreSQL Driver</a> to see the differences encountered when using that DBMS.</li>
     <li>The database name to be used in the 'connect' function is specified in the <code>$PGSQL_dbname</code> variable in the CONFIG.INC file. The suggested database name is 'radicore', but you can change this if you wish.</li>
@@ -145,7 +130,7 @@ and
   </ul>
 </li>
 
-<li><a name="5.C"></a>Notes for <a name="oracle">Oracle</a> users:
+<li><a name="5.C">Notes for <a name="oracle">Oracle</a> users:
 	<ul>
 	<li>Refer to <a href="http://www.tonymarston.net/php-mysql/oracle.html">Creating an Oracle Driver</a> to see the differences encountered when using that DBMS.</li>
   <li>The database name to be used in the 'connect' function is specified in the <code>$dbhost</code> variable in the CONFIG.INC file.</li>
@@ -176,7 +161,6 @@ and
 <p>If you are using MySQL on a shared server you may need to set <code>$GLOBALS['dbprefix']</code> to your account name. If your databases do not have a prefix then this should be set to null.</p>
 <p>If you wish to use the HTTPS protocol with a secure server then please read <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq58">FAQ 58</a>.</p>
 <p>If you wish to access different databases on different servers then please read <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq92">FAQ 92</a>.</p>
-<p>If you wish to merge all the databases into a single database then please read <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq150">FAQ 150</a>.</p>
 </li>
 
 <li>Each subsystem may contain a file called <code>include.subsystem.inc</code> which can be used to make global environmental changes during the processing of scripts within that subsystem. Please refer to <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq86">FAQ 86</a> for details.</li>

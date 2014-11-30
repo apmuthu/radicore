@@ -1,4 +1,4 @@
-CREATE USER "DICT" IDENTIFIED BY "DICT";
+CREATE USER "DICT" IDENTIFIED BY "dict";
 GRANT CONNECT, RESOURCE TO "DICT";
 GRANT CREATE DATABASE LINK TO "DICT";
 GRANT CREATE MATERIALIZED VIEW TO "DICT";
@@ -34,7 +34,7 @@ CREATE TABLE dict_column (
   col_null char(1) default 'Y' NOT NULL,
   is_required char(1) default 'N' NOT NULL,
   col_key char(3), 
-  col_default varchar2(40),
+  col_default varchar2(255),
   col_auto_increment char(1) default 'N' NOT NULL,
   col_unsigned char(1) default 'N' NOT NULL,
   col_zerofill_bwz varchar2(3),
@@ -134,11 +134,11 @@ CREATE TABLE dict_relationship (
   table_alias_jnr varchar2(64),
   relation_desc varchar2(255),
   rel_comment clob,
-  rel_type char(3) default 'IGN' NOT NULL,
+  rel_type char(3) DEFAULT 'RES' NOT NULL,
   orderby varchar2(64),
   parent_field varchar2(64),
   calc_field varchar2(255),
-  key_name varchar2(64) default 'PRIMARY' NOT NULL,
+  key_name varchar2(64) DEFAULT 'PRIMARY' NOT NULL),
   created_date timestamp NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
   revised_date timestamp,

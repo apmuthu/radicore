@@ -1,13 +1,12 @@
 <?php
-    // file created on June 24, 2012, 8:50 pm
+    // file created on June 21, 2014, 5:32 pm
     
     // field specifications for table dict.dict_related_column
     $fieldspec['database_id_snr']           = array('type' => 'string',
                                                     'size' => 64,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'lowercase' => 'y',
-                                                    'noedit' => 'y');
+                                                    'lowercase' => 'y');
     
     $fieldspec['table_id_snr']              = array('type' => 'string',
                                                     'size' => 64,
@@ -19,15 +18,13 @@
                                                     'size' => 64,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'lowercase' => 'y',
-                                                    'noedit' => 'y');
+                                                    'lowercase' => 'y');
     
     $fieldspec['database_id_jnr']           = array('type' => 'string',
                                                     'size' => 64,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'lowercase' => 'y',
-                                                    'noedit' => 'y');
+                                                    'lowercase' => 'y');
     
     $fieldspec['table_id_jnr']              = array('type' => 'string',
                                                     'size' => 64,
@@ -45,8 +42,7 @@
     
     $fieldspec['column_id_jnr']             = array('type' => 'string',
                                                     'size' => 64,
-                                                    'lowercase' => 'y',
-                                                    'noedit' => 'y');
+                                                    'lowercase' => 'y');
     
     $fieldspec['seq_in_index']              = array('type' => 'integer',
                                                     'size' => 4,

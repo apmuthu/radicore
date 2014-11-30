@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.search1.inc
@@ -56,11 +56,11 @@ if (isset($script_vars['dbobject'])) {
     if (!empty($selection)) {
     	$dbobject->sql_selection = $selection;
     } // if
+    $dbobject->no_foreign_data = TRUE;  // do not look up data for foreign keys
     // get any initial values
     $null = null;
-    $where = $dbobject->initialise($where, $null);
+    $where = $dbobject->initialise($where, $task_selection);
     $fieldarray = $dbobject->fieldarray;
-    $dbobject->no_foreign_data = TRUE;  // do not look up data for foreign keys
 } // if
 
 if (isset($_POST['clear'])) {
@@ -76,16 +76,14 @@ if (isset($_POST['clear'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND !empty($popup_object)) {
-        if (isset($selection)) {
-            // merge previous saved variables with selection from popup form
-            $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            if ($dbobject->errors) {
-            	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
-            } // if
-            // get any data which may contain LOOKUP options
-            $fieldarray = $dbobject->getExtraData($fieldarray);
+    if (!empty($return_from) AND isset($selection)) {
+        // merge previous saved variables with selection from popup form
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
+        // get any data which may contain LOOKUP options
+        $fieldarray = $dbobject->getExtraData($fieldarray);
     } else {
         // get any data which may contain LOOKUP options
         $fieldarray = $dbobject->getExtraData($fieldarray);
@@ -105,6 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // save these variables for later in the same session
     $script_vars['dbobject'] = serialize($dbobject);
     $script_vars = updateScriptVars ($script_vars);
+
+    $dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 } // if
 
 // look for entered data
@@ -124,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (isset($_POST['submitBtn'])) {
             // initialise search criteria
             $search = ''; // use empty string (''), not NULL
+            $search = $task_selection;  // fixed selection criteria
             // format data for internal use
             $fieldarray = $dbobject->unFormatData($fieldarray);
             // perform any custom validation
@@ -170,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         $value = $internaldate;
                                     } else {
                                         //$errors[$field] = getLanguageText('sys0040');  // this is not a valid date
-                                        $errors[$field] = $dateobj->errors;
+                                        $errors[$dbobject->getClassName()][$field] = $dateobj->errors;
                                     } // if
                             		break;
                             	case 'time':
@@ -291,12 +292,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                         switch ($spec['type']) {
                             case 'enum':
-                                // ignore value 0 as this is same as NULL
-                                if ($value > 0) {
-                                    // $value is index number, use exact match
-                                    $search .= "$field = $value";
+                                $enum = true;
+                                if (!is_numeric($value) AND !empty($spec['values']) AND is_array($spec['values'])) {
+                                    $flip = array_flip($spec['values']);
+                                    if (array_key_exists($value, $flip)) {
+                                        $search .= "$field = '$value'";  // value is a string, so enclose in quotes
+                                    } // if
+                                } elseif (is_numeric($value) AND $value > 0) {  // ignore value 0 as this is same as NULL
+                                    $search .= "$field = $value";  // $value is index number, so do NOT enclose in quotes
                                 } else {
-                                    $search = rtrim($search, ' AND');
+                                    $search = rtrim($search, ' AND');  // this is no longer needed
                                 } // if
                                 break;
                             case 'boolean':

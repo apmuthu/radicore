@@ -29,6 +29,7 @@
 <xsl:variable name="page-created" select="/root/params/text/page-created"/>
 <xsl:variable name="seconds"      select="/root/params/text/seconds"/>
 
+<xsl:variable name="selections"     select="/root/params/text/selections"/>
 <xsl:variable name="select-all"     select="/root/params/text/select-all"/>
 <xsl:variable name="unselect-all"   select="/root/params/text/unselect-all"/>
 <xsl:variable name="selection-lock" select="/root/params/text/selection-lock"/>
@@ -532,7 +533,7 @@
             <!-- these links will allow the user to toggle all select boxes either ON or OFF -->
             <!-- do this only if there is a field called 'selectbox' -->
             <xsl:if test="/root/structure/*/row/cell[@field='selectbox']">
-              <xsl:text>Selections:&#160;</xsl:text>
+              <xsl:value-of select="$selections"/><xsl:text>&#160;</xsl:text>
               <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
               <xsl:text> | </xsl:text>
               <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>

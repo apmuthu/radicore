@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -129,7 +129,7 @@ if (isset($script_vars['dblink'])) {
     $dblink->is_link_table  = TRUE;
 } // if
 
-if (!empty($_POST)) {
+if (!empty($_POST) AND empty($_POST['reset'])) {
     // merge original data with user's input (so that fields which were displayed
     // but not POSTed are sent back if any errors are displayed).
     $link_data = array_update_indexed($link_data, $_POST);
@@ -290,13 +290,13 @@ if (isset($search)) {
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
 $where = array2where($outer_data, $pkeynames, $dbouter);
 
-// ensure that column names are qualified in the 'where' clause
-$link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec());
-
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $link_where = $dblink->reset($link_where);
+    $where = $dblink->reset($where);
 } // if
+
+// ensure that column names are qualified in the 'where' clause
+$link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec());
 
 if (count($outer_data) > 0) {
     // check if we are returning from a child form
@@ -347,6 +347,9 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dblink']    = serialize($dblink);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dblink->fieldarray  = $link_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

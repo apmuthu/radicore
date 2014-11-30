@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.fileupload1.inc
@@ -109,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 } // if
 
 if (!empty($_FILES) and empty($errors)) {
+    $messages = array();
     // Check to see if a file has been included when the form was submitted
     if (strlen($_FILES['userfile']['name']) < 1 ) {
         $errors[] = getLanguageText('sys0131'); // 'filename is empty - nothing to upload';
@@ -225,6 +226,8 @@ $fileobject->setFieldArray($fieldarray);
 $script_vars['where']      = $where;
 $script_vars['fileobject'] = serialize($fileobject);
 $script_vars = updateScriptVars ($script_vars);
+
+$fileobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$fileobject;

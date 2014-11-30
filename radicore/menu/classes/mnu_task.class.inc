@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_task extends Default_Table
@@ -16,8 +16,6 @@ class mnu_task extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_task';
         $this->dbname      = 'menu';
 
@@ -32,24 +30,27 @@ class mnu_task extends Default_Table
     // validate a selection from the menu screen or a navigation button.
     {
         // obtain security class from logon screen
-        $role_id = $_SESSION['role_id'];
-        $ip_address = $_SERVER['SERVER_ADDR'];
+        $role_id       = $_SESSION['role_id'];
+        $role_list     = $_SESSION['role_list'];
+        $ip_address    = getRealIPAddress();
+
+        if (empty($role_id))   $role_id   = 'UNDEFINED';
+        if (empty($role_list)) $role_list = "'UNDEFINED'";
 
         // load options for SQL SELECT statement
         // NOTE that task access is affected by the following:
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, global_access, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel'
-                           .", CASE WHEN mnu_role_task.role_id IS NOT NULL THEN 'Y' ELSE 'N' END AS access_allowed";
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, mnu_role.global_access'
+                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) LIMIT 1) THEN 'Y' ELSE 'N' END AS access_allowed";
         // - check that IP address is valid
-        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN true"
-                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id' AND ip_address='$ip_address') = 1 THEN true"
-                                  ." ELSE false"
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN 'Y'"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id' AND ip_address='$ip_address') = 1 THEN 'Y'"
+                                  ." ELSE 'N'"
                              ." END AS ip_address_valid";
         $this->sql_from   = 'mnu_task'
                          . ' LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id)'
-                         . " LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id AND mnu_role_task.role_id='$role_id')"
                          . " LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
         $this->sql_where  = '';
 
@@ -344,7 +345,7 @@ class mnu_task extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

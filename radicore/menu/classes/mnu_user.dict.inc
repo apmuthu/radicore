@@ -1,5 +1,5 @@
 <?php
-    // file created on April 25, 2013, 7:05 am
+    // file created on August 25, 2014, 1:28 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -19,13 +19,8 @@
                                                     'nosearch' => 'y',
                                                     'noaudit' => 'y');
     
-    $fieldspec['role_id']                   = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'required' => 'y',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'role_id');
-    
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
+                                                    'type_native' => 'int',
                                                     'size' => 10,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
@@ -41,22 +36,21 @@
                                                     'noedit' => 'y');
     
     $fieldspec['pswd_count']                = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'noedit' => 'y');
     
     $fieldspec['in_use']                    = array('type' => 'boolean',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
+                                                    'type_native' => 'char',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['is_disabled']               = array('type' => 'boolean',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
+                                                    'type_native' => 'char',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -98,13 +92,14 @@
                                                     'size' => 255);
     
     $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
-                                                    'default' => 'N',
+                                                    'type_native' => 'char',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['party_id']                  = array('type' => 'integer',
+                                                    'type_native' => 'int',
                                                     'size' => 11,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295);
@@ -165,8 +160,16 @@
                                                     'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_user_alt',
+                                                    'type' => 'DEL',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_user_ip_address',
                                                     'type' => 'RES',
+                                                    'fields' => array('user_id' => 'user_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_user_role',
+                                                    'type' => 'DEL',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->child_relations[]                = array('child' => 'email_signature',
@@ -187,12 +190,7 @@
                                                     'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_language',
-                                                    'parent_field' => 'language_name',
                                                     'fields' => array('language_code' => 'language_id'));
-    
-    $this->parent_relations[]               = array('parent' => 'mnu_role',
-                                                    'parent_field' => 'role_desc',
-                                                    'fields' => array('role_id' => 'role_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;
@@ -201,8 +199,8 @@
     $this->default_orderby                  = 'user_name';
     
     // alternative language options 
-    $this->alt_language_table               = '';
-    $this->alt_language_cols                = '';
+    $this->alt_language_table               = 'mnu_user_alt';
+    $this->alt_language_cols                = 'user_name';
     
     // alias names 
     $this->nameof_start_date                = '';

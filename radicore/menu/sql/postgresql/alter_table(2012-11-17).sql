@@ -23,7 +23,7 @@ CREATE TABLE menu.mnu_task_alt
   task_id character varying(80) NOT NULL DEFAULT ''::character varying,
   language_id character varying(5) NOT NULL DEFAULT ''::character varying,
   task_desc character varying(80) NOT NULL DEFAULT ''::character varying,
-  button_desc character varying(80) NOT NULL DEFAULT ''::character varying,
+  button_text character varying(80) NOT NULL DEFAULT ''::character varying,
   created_date timestamp without time zone NOT NULL DEFAULT '2000-01-01 00:00:00'::timestamp without time zone,
   created_user character varying(16) NOT NULL DEFAULT 'UNKNOWN'::character varying,
   revised_date timestamp without time zone,

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 if (!class_exists('wf_workflow')) {
 	require_once 'wf_workflow.class.inc';
@@ -67,12 +67,18 @@ class workflow_engine extends wf_workflow
             return;
         } // if
 
+        $workitem_user = $data[0]['user_id'];
+
         // mark this workitem as finished
         $workitem_array['case_id']         = $case_id;
         $workitem_array['workitem_id']     = $workitem_id;
         $workitem_array['workitem_status'] = 'FI';
         $workitem_array['finished_date']   = getTimeStamp();
-        $workitem_array['user_id']         = $_SESSION['logon_user_id'];
+        if (!empty($workitem_user)) {
+            $workitem_array['user_id']     = $workitem_user;
+        } else {
+            $workitem_array['user_id']     = $_SESSION['logon_user_id'];
+        } // if
         $workitem_array = $dbworkitem->updateRecord($workitem_array);
         if ($dbworkitem->errors) {
             $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
@@ -164,6 +170,7 @@ class workflow_engine extends wf_workflow
         $token_data['case_id']     = $case_id;
         $token_data['workflow_id'] = $workflow_id;
         $token_data['context']     = $context;
+        $token_data['user_id']     = $workitem_user;
 
         // process arc according to it's type
         switch ($arc_type) {

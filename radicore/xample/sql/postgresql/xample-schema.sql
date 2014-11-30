@@ -33,7 +33,7 @@ SET default_with_oids = false;
 --
 
 CREATE TABLE test_autoincrement (
-    id integer NOT NULL,
+    id serial NOT NULL,
     field1 character varying(40),
     field2 character varying(255),
     field3 bigint

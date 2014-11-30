@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi4.inc
@@ -54,6 +54,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
+    // see if any configuration settings need to be changed
+    $outer_data = $dbouter->changeConfig($outer_data);
     // refetch data for lookup lists in case they have changed
     $null = $dbouter->setLookupData($outer_data);
 } else {
@@ -99,6 +101,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
+    // see if any configuration settings need to be changed
+    $inner_data = $dbinner->changeConfig($inner_data);
     // refetch data for lookup lists in case they have changed
     $null = $dbinner->setLookupData($inner_data);
 } else {
@@ -145,20 +149,32 @@ if (isset($_POST['reset'])) {
 } // if
 
 if (!empty($_POST)) {
-    // merge original data with POSTed data (so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed).
-    // (this may include updates posted via javascript)
-    $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
-    if ($dbouter->errors) {
-        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-    } // if
-    if (empty($errors)) {
-        // repeat for the inner entity
-        $inner_data = $dbinner->getFieldArray();
-        $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
+        if ($dbouter->errors) {
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
+        if (empty($errors)) {
+            // repeat for the inner entity
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+    } else {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
+        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
+        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
+        // repeat for the inner entity
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
     } // if
     if (empty($errors)) {
         // look for an action which is another script (navigation or popup button)
@@ -168,8 +184,6 @@ if (!empty($_POST)) {
         } // if
     } // if
     if (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             // update the database with all POSTed data
             $dbouter->startTransaction();
@@ -401,6 +415,9 @@ $script_vars['dbinner']    = serialize($dbinner);
 $script_vars['scrolling']  = $scrolling;
 $script_vars['pagination'] = $pagination;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray  = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray  = $inner_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

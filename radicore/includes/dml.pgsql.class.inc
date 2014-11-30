@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -23,6 +23,7 @@ class pgsql
     var $server_encoding;               // character encoding for server
     var $server_version;                // version number for server
 
+    var $allow_db_function = false;     // allow a field's value in a database insert/update to contain a function name
     var $audit_logging;                 // yes/no switch
     var $errors;                        // array of errors
     var $error_string;                  //
@@ -60,7 +61,7 @@ class pgsql
         if (is_string($args)) {
             $schema             = $args;
         } else {
-            $this->dbname       =& $args['PGSQL_dbname'];
+            $this->dbname       =  $args['PGSQL_dbname'];
             $schema             =& $args['dbname'];
             $this->dbhost       =& $args['dbhost'];
             $this->dbusername   =& $args['dbusername'];
@@ -70,7 +71,7 @@ class pgsql
             $this->dbsocket     =& $args['dbsocket'];
         } // if
 
-        if (!empty($this->dbname)) {
+        if (!empty($this->dbname) AND !empty($schema)) {
             $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
         } else {
             trigger_error('No value supplied for PGSQL_dbname', E_USER_ERROR);
@@ -158,6 +159,36 @@ class pgsql
         return array($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str);
 
     } // adjustHaving
+
+    // ****************************************************************************
+    function adjustSelect ($input)
+    // adjust for differences between MySQL and Oracle.
+    {
+        $output = $input;
+
+        // replace: GROUP_CONCAT(field ORDER BY .... SEPARATOR ',')
+        // with   : LISTAGG(field, ',') WITHIN GROUP (ORDER BY ...) "alias",
+        if ($count = preg_match_all("/(?<=group_concat\()[a-z_\., ']*/i", $output, $regs)) {
+            foreach ($regs[0] as $string1) {
+                $count = preg_match('/.+(?=[ ]order[ ]by)/i', $string1, $regs2);
+                $part1 = trim($regs2[0]);
+                $count = preg_match('/(?<=order[ ]by[ ]).+(?=[ ]separator)/i', $string1, $regs2);
+                if ($count > 0) {
+                    $orderby = trim($regs2[0]);
+                } else {
+                    $orderby = $part1;
+                } // if
+                $count = preg_match('/(?<=separator[ ]).+/i', $string1, $regs2);
+                $separator = trim($regs2[0]);
+
+                $string2 = 'STRING_AGG('.$part1.','.$separator.' ORDER BY '.$orderby.')';
+                $output  = preg_replace('/group_concat\(' .$string1 .'\)/i', $string2, $output);
+            } // foreach
+        } // if
+
+        return $output;
+
+    } // adjustSelect
 
     // ****************************************************************************
     function adjustWhere ($string_in)
@@ -370,6 +401,15 @@ END_OF_REGEX;
                     logSqlQuery ($schema, null, $this->query);
                 } // if
 
+                // set timezone, if necessary
+                $tz = date_default_timezone_get();
+                if (!empty($tz)) {
+                    $this->query = "SET session time zone '$tz'";
+                    $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                    // write query to log file, if option is turned on
+                    logSqlQuery ($schema, null, $this->query);
+                } // if
+
                 // retrieve current server settings
                 $this->host_info       = pg_host($dbconn);
                 $this->client_encoding = pg_client_encoding($dbconn);
@@ -538,7 +578,7 @@ END_OF_REGEX;
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (preg_match("/group by /", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/i", $this->query)) {
+        if (preg_match("/group[ ]by[ ]/im", $this->query) == true AND !preg_match("/\(SELECT[ ].+group by.+\)/i", $this->query)) {
             $count = pg_num_rows($result);
         } else {
             $count = $query_data[0];
@@ -574,7 +614,7 @@ END_OF_REGEX;
             // the default is all fields
             $select_str = '*';
         } else {
-            $select_str = $this->sql_select;
+            $select_str = $this->adjustSelect($this->sql_select);
         } // if
 
         // use specified FROM parameters, or default to current table name
@@ -721,7 +761,7 @@ END_OF_REGEX;
             // the default is all fields
             $select_str = '*';
         } else {
-            $select_str = $this->sql_select;
+            $select_str = $this->adjustSelect($this->sql_select);
         } // if
 
         // use specified FROM parameters, or default to current table name
@@ -822,8 +862,13 @@ END_OF_REGEX;
             	$string = 'PostgreSQL: ' .$string;
             } // if
         } else {
-            $conerr = getLanguageText('sys0001', $this->dbname); // 'Cannot connect to database'
-            $string = $conerr .pg_last_error($this->dbconnect);
+            //$conerr = getLanguageText('sys0001', $this->dbname); // 'Cannot connect to database'
+            $conerr = $GLOBALS['php_errormsg'];
+            if ($this->dbconnect) {
+                $string = $conerr .pg_last_error($this->dbconnect);
+            } else {
+                $string = $conerr;
+            } // if
         } // if
 
         return $string;
@@ -926,6 +971,7 @@ END_OF_REGEX;
         // find out if any field in the primary key has 'serial' (auto_increment) set
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
+            $sequence = null;
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
 			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
@@ -933,6 +979,15 @@ END_OF_REGEX;
 			    } else {
     			    $auto_increment = $pkey;                // save name of related sequence
     				unset($fieldarray[$auto_increment]);    // remove from data array
+                    if (isset($fieldspec[$pkey]['default'])) {
+                        $default = $fieldspec[$pkey]['default'];
+                        if (preg_match('/^nextval\(/i', $default)) {
+                            if (preg_match("?\'[^\']+\'?", $default, $regs)) {
+                                // extract name of sequence from which values are generated
+                                $sequence = substr($regs[0], 1, strlen($regs[0])-2); // strip first & last characters
+                            } // if
+                        } // if
+                    } // if
 			    } // if
 			} // if
 		} // foreach
@@ -999,6 +1054,8 @@ END_OF_REGEX;
 
         $repeat       = false;
         $repeat_count = 0;
+        $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         do {
             // insert this record into the database
             $cols = '';
@@ -1025,6 +1082,14 @@ END_OF_REGEX;
                     // null entries are set to NULL, not '' (there is a difference!)
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match($pattern1, $fieldspec[$item]['type'])) {
+                    // cannot use empty string for numeric fields, so use NULL instead
+                    $cols .= "$item, ";
+                    $vals .= "NULL, ";
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $cols .= "$item, ";
+                    $vals .= pg_escape_string($value) .", ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .pg_escape_string($value) ."', ";
@@ -1074,7 +1139,11 @@ END_OF_REGEX;
 
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
-			$this->query = "SELECT currval('" .$tablename .'_' .$auto_increment .'_seq' ."')";
+            if (!empty($sequence)) {
+                $this->query = "SELECT currval('$sequence')";
+            } else {
+			    $this->query = "SELECT currval('" .$tablename .'_' .$auto_increment .'_seq' ."')";
+            } // if
             $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $fieldarray[$auto_increment] = pg_fetch_result($result, 0, 0);
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
@@ -1098,6 +1167,45 @@ END_OF_REGEX;
         return $fieldarray;
 
     } // insertRecord
+
+    // ****************************************************************************
+    function multiQuery ($dbname, $tablename, $query_array)
+    // perform multiple queries in a single step
+    {
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $single_step = true;  // special code to debug each query separately
+        if ($single_step) {
+            // execute these statements one at a time
+            foreach ($query_array as $query_part) {
+                $this->query = $query_part;
+                $result = pg_query($this->dbconnect, $this->query);
+                if ($result === false) {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } // foreach
+            if (count($query_array) == 1) {
+                // only a single query, so return result in full
+                if (is_bool($result)) {
+                    return $result;
+                } else {
+                    $array = array();
+                    while (pg_fetch_assoc($result)) {
+                        $array[] = array_change_key_case($row, CASE_LOWER);
+                    } // while
+                    pg_free_result($result);
+                    return $array;
+                } // if
+            } // if
+            return true;
+        } // if
+
+        return $result;
+
+    } // multiQuery
 
     // ****************************************************************************
     function rollback ($schema)
@@ -1265,7 +1373,7 @@ END_OF_REGEX;
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($schema, $tablename, $query);
@@ -1359,8 +1467,8 @@ END_OF_REGEX;
                     } else {
                         $update .= "$item=$value,";
                     } // if
-                } elseif (preg_match($pattern2, $value)) {
-                    // change to the new value (without enclosing quotes)
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
                     $update .= "$item=" .pg_escape_string($value) .", ";
                 } else {
                     // change to the new value (with enclosing quotes))
@@ -1382,7 +1490,7 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging)) {
+        if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
@@ -1534,6 +1642,7 @@ END_OF_REGEX;
         $colspecs['inet']       = array('name' => 'INET',
                                         'type' => 'network address');
         $colspecs['macaddr']    = array('name' => 'MAC ADDRESS',
+
                                         'type' => 'mac address');
 
         // these are all shapes
@@ -1632,10 +1741,14 @@ END_OF_REGEX;
                 	    $columnarray['column_seq'] = $value;
                 	    break;
                 	case 'column_default':
-                	    // extract default which is enclosed in single quotes
-                        if (preg_match("?\'[^\']+\'?", $value, $regs)) {
-                            $value = substr($regs[0], 1, strlen($regs[0])-2); // strip first & last characters
-                            $columnarray['col_default'] = $value;
+                	    if (preg_match('/^nextval\(/i', $value)) {
+                            // format = "nextval('...')" which indicates an auto_increment key
+                            $columnarray['col_auto_increment'] = TRUE;
+                            $columnarray['col_default']        = $value;
+                        } elseif (preg_match("?\'[^\']+\'?", $value, $regs)) {
+                            // extract default which is enclosed in single quotes
+                            $string = substr($regs[0], 1, strlen($regs[0])-2); // strip first & last characters
+                            $columnarray['col_default'] = $string;
                         } // if
                 	    break;
                 	case 'is_nullable':

@@ -1,4 +1,4 @@
-USE `menu`;
+-- USE `menu`;
 
 UPDATE `mnu_task` SET `revised_date`='2012-06-23 18:43:11' ,`revised_user`='AJM' ,`task_desc`='List Relationship by Table (Senior to Junior)' WHERE task_id='dict_relationship(list2)a';
 

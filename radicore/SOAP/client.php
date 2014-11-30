@@ -61,8 +61,6 @@ if (version_compare(phpversion(), '5.0.0', '<') OR defined('USE_NUSOAP')) {
 <?php
 if (isset($_GET['request'])) {
     $request = (int)$_GET['request'];
-} else {
-    $request = null;
 } // if
 
 switch ($request) {

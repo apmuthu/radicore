@@ -1,5 +1,5 @@
 <?php
-    // file created on December 29, 2010, 2:49 pm
+    // file created on April 24, 2014, 6:41 am
     
     // field specifications for table menu.mnu_favourite
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -8,7 +8,8 @@
                                                     'required' => 'y');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -18,17 +19,16 @@
     
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 80,
-                                                    'required' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'task_id');
     
     $fieldspec['task_desc']                 = array('type' => 'string',
-                                                    'size' => 80,
-                                                    'required' => 'y');
+                                                    'size' => 80);
     
     $fieldspec['sort_seq']                  = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
@@ -71,7 +71,8 @@
                                                     'seq_no');
     
     // unique key details 
-    $this->unique_keys                      = array();
+    $this->unique_keys[]                    = array('user_id',
+                                                    'task_id');
     
     // child relationship details 
     $this->child_relations                  = array();
@@ -79,6 +80,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'parent_field' => 'task_desc AS task_desc_original',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',

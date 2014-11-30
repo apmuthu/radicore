@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -196,7 +196,7 @@ if (!empty($_POST)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $where = $dbouter->reset($where);
+    $where = $dbouter->reset($where, true);  // but do not lose current ORDERBY settings
     $outer_data = $dbouter->getFieldArray();
     $where = $dbmiddle->reset($where);
     $middle_data = $dbmiddle->getFieldArray();
@@ -395,6 +395,10 @@ $script_vars['dbmiddle']  = serialize($dbmiddle);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray  = $outer_data;  // replace data lost during serialization
+$dbmiddle->fieldarray = $middle_data;
+$dbinner->fieldarray  = $inner_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

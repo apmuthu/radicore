@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_token extends Default_Table
@@ -14,8 +14,6 @@ class wf_token extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'workflow';
         $this->tablename   = 'wf_token';
 
@@ -104,7 +102,7 @@ class wf_token extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -184,9 +182,13 @@ class wf_token extends Default_Table
         foreach ($arc_data as $arc_instance) {
             $arc_instance['case_id'] = $fieldarray['case_id'];
             $arc_instance['context'] = $fieldarray['context'];
+            $arc_instance['user_id'] = $fieldarray['user_id'];
             if (empty($arc_instance['role_id'])) {
-                // not defined, so default to crrent user's role_id
+                // not defined, so default to current user's role_id
             	$arc_instance['role_id'] = $_SESSION['role_id'];
+            } // if
+            if (!empty($fieldarray['user_id'])) {
+                $arc_instance['user_id'] = $fieldarray['user_id'];
             } // if
             $arc_instance = $dbarc->examineInwardArc($arc_instance);
             if ($dbarc->errors) {

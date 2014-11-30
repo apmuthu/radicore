@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view2.inc
@@ -17,7 +17,7 @@
 require_once 'include.general.inc';
 
 // identify mode for xsl file
-$mode = 'read';
+$mode = 'tree';
 
 // load session variables
 initSession();
@@ -65,6 +65,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
+    $dbinner->zone                      = 'inner';
     $dbinner->sql_select  = &$inner_sql_select;
     $dbinner->sql_from    = &$inner_sql_from;
     $dbinner->sql_where   = &$inner_sql_where;
@@ -93,6 +94,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
+    $dbouter->zone                      = 'outer';
     $dbouter->setRowsPerPage(1);  // scroll through one item at a time
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
@@ -150,6 +152,9 @@ if ($dbouter->getNumRows() < 1) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
 
+// get any additional data for current record
+$outer_data = $dbouter->getExtraData($outer_data);
+
 // set variables to be included in XML output
 $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
 $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
@@ -161,7 +166,21 @@ $where = array2where($outer_data, $pkeynames, $dbouter);
 
 // look for optional instructions from previous script
 if (!empty($instruction)) {
-    $dbobject->setInstruction($instruction);
+    $dbinner->setInstruction($instruction);
+} // if
+
+if (isset($_SESSION['rowsperpage'])) {
+    $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
+} // if
+
+if (isset($_GET['pagesize'])) {
+    $dbinner->setRowsPerPage($_GET['pagesize']);
+    $_SESSION['rowsperpage'] = $_GET['pagesize'];
+} // if
+
+// obtain the required page number (optional)
+if (isset($_GET['page'])) {
+    $dbinner->setPageNo($_GET['page']);
 } // if
 
 // get list of expanded nodes from session data
@@ -172,9 +191,13 @@ if (isset($_GET['expand'])) {
     // add this node number to the list
     $expanded[$_GET['expand']] = true;
 } // if
+
 if (isset($_POST['expand'])) {
-    // remove all nodes from the list
-    $expanded = 'ALL';
+    $expanded = 'ALL';  // expand all nodes
+} elseif (empty($expanded)) {
+    if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+        $expanded = 'ALL';  // expand all nodes
+    } // if
 } // if
 
 // look for instruction to collapse a single node, or ALL nodes
@@ -201,8 +224,13 @@ if (count($inner_data) < 1) {
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
 } // if
 if (isset($_GET['action'])) {
-    $fieldarray = $dbinner->setAction($_GET['action']);
+    $inner_data = $dbinner->setAction($_GET['action']);
 } // if
+
+// get pagination details
+$pagination['inner']['numrows']  = $dbinner->getNumRows();
+$pagination['inner']['curpage']  = $dbinner->getPageNo();
+$pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 // save these variables for later in the same session
 $script_vars['where']     = $where;
@@ -210,6 +238,9 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray = $inner_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

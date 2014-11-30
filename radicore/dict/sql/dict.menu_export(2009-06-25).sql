@@ -1,4 +1,4 @@
-USE `menu`;
+-- USE `menu`;
 
 UPDATE `mnu_task` SET `log_sql_query`='N' ,`revised_date`='2009-06-26 10:43:02' ,`revised_user`='AJM' ,`script_id`='related_column(multi4).php' WHERE task_id='dict_related_column(multi)2';
 

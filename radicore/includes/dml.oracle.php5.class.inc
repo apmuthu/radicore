@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -192,26 +192,57 @@ class oracle
     {
         $output = $input;
 
+        // replace 'WHERE ..... LIMIT 1' with 'WHERE ..... AND rownum=1'
+        $offset = 0;
+        while ($count = preg_match("/(?<=where[ ]).+limit[ ]\d+/i", $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $string1 = $regs[0][0];
+            $count = preg_match('/(?<=limit[ ])\d+/i', $string1, $regs2);
+            $digits = trim($regs2[0]);
+            $output  = preg_replace('/limit ' .$digits .'/i', " AND rownum=$digits", $output);
+
+            $offset = $regs[0][1] + strlen($string1);
+        } // if
+
+        // replace: GROUP_CONCAT(field ORDER BY .... SEPARATOR ',')
+        // with   : LISTAGG(field, ',') WITHIN GROUP (ORDER BY ...) "alias",
+        if ($count = preg_match_all("/(?<=group_concat\()[a-z_\., ']*/i", $output, $regs)) {
+        	foreach ($regs[0] as $string1) {
+        		$count = preg_match('/.+(?=[ ]order[ ]by)/i', $string1, $regs2);
+                $part1 = trim($regs2[0]);
+                $count = preg_match('/(?<=order[ ]by[ ]).+(?=[ ]separator)/i', $string1, $regs2);
+                if ($count > 0) {
+                    $orderby = trim($regs2[0]);
+                } else {
+                    $orderby = $part1;
+                } // if
+                $count = preg_match('/(?<=separator[ ]).+/i', $string1, $regs2);
+                $separator = trim($regs2[0]);
+
+        		$string2 = 'LISTAGG('.$part1.','.$separator.') WITHIN GROUP(ORDER BY '.$orderby.') "listagg_alias"';
+        		$output  = preg_replace('/group_concat\(' .$string1 .'\)/i', $string2, $output);
+        	} // foreach
+        } // if
+
         // replace 'CONCAT(A, B, C)' with 'A || B || C' as Oracle will only accept two
         // arguments with the CONCAT function, but any number with '||'.
         if ($count = preg_match_all("/(?<=concat\()[a-z_\., ']*/i", $output, $regs)) {
-        	foreach ($regs[0] as $string1) {
-        		$array = array();
-        		$pattern  = '/';          // start pattern
-        		$pattern .= "'.+'";       // any string enclosed in single quotes
-        		$pattern .= '|';          // or
-        		$pattern .= '\w+\.\w+';   // word dot word
-        		$pattern .= '|';          // or
-        		$pattern .= '\w+';        // word
-        		$pattern .= '/';          // end pattern
-        		$count = preg_match_all($pattern, $string1, $regs2);
-        		foreach ($regs2[0] as $value) {
-        		    // trim leading and trailing spaces from each entry
-        			$array[] = trim($value);
-        		} // foreach
-        		$string2 = implode('||', $array);     // rejoin with '||' as separator
-        		$output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
-        	} // foreach;
+            foreach ($regs[0] as $string1) {
+                $array = array();
+                $pattern  = '/';          // start pattern
+                $pattern .= "'.+'";       // any string enclosed in single quotes
+                $pattern .= '|';          // or
+                $pattern .= '\w+\.\w+';   // word dot word
+                $pattern .= '|';          // or
+                $pattern .= '\w+';        // word
+                $pattern .= '/';          // end pattern
+                $count = preg_match_all($pattern, $string1, $regs2);
+                foreach ($regs2[0] as $value) {
+                    // trim leading and trailing spaces from each entry
+                    $array[] = trim($value);
+                } // foreach
+                $string2 = implode('||', $array);     // rejoin with '||' as separator
+                $output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
+            } // foreach
         } // if
 
         // Replace TRUE/FALSE in CASE statements to 1/0.
@@ -299,8 +330,7 @@ END_OF_REGEX;
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
                     $field3 = $fieldvalue;
-                    // replace with 'field1 - field2 op $field3'
-                    $fieldname = "($field1 - $field2)";
+                    $fieldname = "($field1 - INTERVAL '$field2' $unit)";
                     $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
                     $modified = true;
 
@@ -309,8 +339,7 @@ END_OF_REGEX;
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
                     $field3 = $fieldvalue;
-                    // replace with 'field1 + field2 op $field3'
-                    $fieldname = "($field1 + $field2)";
+                    $fieldname = "($field1 + INTERVAL '$field2' $unit)";
                     $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
                     $modified = true;
 
@@ -318,8 +347,7 @@ END_OF_REGEX;
                     // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    // replace with 'fieldname op field1 - field2'
-                    $fieldvalue = "($field1 - $field2)";
+                    $fieldvalue = "($field1 - INTERVAL '$field2' $unit)";
                     $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
                     $modified = true;
 
@@ -327,8 +355,7 @@ END_OF_REGEX;
                     // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    // replace with 'fieldname op field1 + field2'
-                    $fieldvalue = "($field1 + $field2)";
+                    $fieldvalue = "($field1 + INTERVAL '$field2' $unit)";
                     $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
                     $modified = true;
 
@@ -438,13 +465,6 @@ END_OF_REGEX;
     function connect ($schema=null)
     // establish a connection to the database
     {
-        if (!empty($schema) AND !empty($this->dbprefix)) {
-             if (!preg_match('/^(' .$this->dbprefix .')/i', $schema)) {
-                // prefix may be different on different servers
-                $schema = $this->dbprefix .$schema;
-            } // if
-        } // if
-
         $this->errors = array();
         $this->query  = '';
         $this->schema = $schema;
@@ -664,7 +684,7 @@ END_OF_REGEX;
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (preg_match("/group by /i", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/i", $this->query)) {
+        if (preg_match("/group by /im", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/im", $this->query)) {
             oci_fetch_all($this->stmt, $row, null, null, OCI_NUM);
             $count = count($row[0]);
         } else {
@@ -821,7 +841,19 @@ END_OF_REGEX;
         } // if
 
         $this->stmt = oci_parse($this->dbconnect, $this->query);
-        $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+        //$result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+        $result = oci_execute($this->stmt);
+        if ($error_array = oci_error($this->stmt)) {
+            if ($error_array['code'] == 1002) {
+                // ORA-01002: fetch out of sequence - remove $lock_str
+                oci_free_statement($this->stmt);
+                $this->query = str_replace($lock_str, '', $this->query);
+                $this->stmt = oci_parse($this->dbconnect, $this->query);
+                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+            } else {
+                trigger_error($this, E_USER_ERROR);
+            } // if
+        } // if
 
         // convert result set into a simple associative array for each row
         while ($row = oci_fetch_array ($this->stmt, OCI_ASSOC+OCI_RETURN_NULLS+OCI_RETURN_LOBS)) {
@@ -1209,6 +1241,10 @@ END_OF_REGEX;
                 AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+                    // cannot use empty string for numeric fields, so use NULL instead
+                    $cols .= "$item, ";
+                    $vals .= "NULL, ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .$this->adjustData($value) ."', ";
@@ -1312,6 +1348,54 @@ END_OF_REGEX;
         return $fieldarray;
 
     } // insertRecord
+
+    // ****************************************************************************
+    function multiQuery ($dbname, $tablename, $query_array)
+    // perform multiple queries in a single step
+    {
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $single_step = true;  // special code to debug each query separately
+        if ($single_step) {
+            // execute these statements one at a time
+            foreach ($query_array as $query_part) {
+                $this->query = $query_part;
+                $this->stmt = oci_parse($this->dbconnect, $this->query);
+                $result = oci_execute($this->stmt);
+                if ($error_array = oci_error($this->stmt)) {
+                    if ($error_array['code'] == 1002) {
+                        // ORA-01002: fetch out of sequence - remove $lock_str
+                        oci_free_statement($this->stmt);
+                        $this->query = str_replace($lock_str, '', $this->query);
+                        $this->stmt = oci_parse($this->dbconnect, $this->query);
+                        $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+                    } else {
+                        trigger_error($this, E_USER_ERROR);
+                    } // if
+                } // if
+            } // foreach
+            if (count($query_array) == 1) {
+                // only a single query, so return result in full
+                if (is_bool($result)) {
+                    return $result;
+                } else {
+                    $array = array();
+                    while (oci_fetch_array ($this->stmt, OCI_ASSOC+OCI_RETURN_NULLS+OCI_RETURN_LOBS)) {
+                        $array[] = array_change_key_case($row, CASE_LOWER);
+                    } // while
+                    oci_free_statement($this->stmt);
+                    return $array;
+                } // if
+            } // if
+            return true;
+        } // if
+
+        return $result;
+
+    } // multiQuery
 
     // ****************************************************************************
     function rollback ($schema)
@@ -1483,7 +1567,7 @@ END_OF_REGEX;
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($schema, $tablename, $query);
@@ -1861,9 +1945,9 @@ END_OF_REGEX;
         $pkey = array();  // primary key
         $ukey = array();  // candidate (unique) keys
         foreach ($tablekeys as $key => $spec) {
-        	if ($spec['key_name'] == 'PRIMARY') {
+        	if (preg_match('/PRIMARY/i', $spec['key_name'])) {
         	    $pkey[] = strtolower($spec['column_id']);
-    	    } elseif ($spec['uniqueness'] == 'UNIQUE') {
+    	    } elseif (preg_match('/UNIQUE/i', $spec['uniqueness'])) {
     	        $ukey[] = strtolower($spec['column_id']);
         	} // if
         } // foreach

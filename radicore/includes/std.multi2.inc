@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -60,6 +60,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get previously retrieved data
     $outer_data = $dbouter->getFieldArray();
+    // see if any configuration settings need to be changed
+    $outer_data = $dbouter->changeConfig($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -104,6 +106,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get previously retrieved data
     $inner_data = $dbinner->getFieldArray();
+    // see if any configuration settings need to be changed
+    $inner_data = $dbinner->changeConfig($inner_data);
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
@@ -130,14 +134,19 @@ if (isset($script_vars['dbinner'])) {
     } // if
 } // if
 
-$do_retrieve = false;
+if (preg_match('/(\(add2\)|\(add3\))/i', $return_from)) {
+    $do_retrieve = true;
+    $selection   = null;
+} else {
+    $do_retrieve = false;
+} // if
 
 // make each object available to its parent or child
 $dbouter->setChildObject($dbinner);
 $dbinner->setParentObject($dbouter);
 
 if (isset($_POST['reset'])) {
-    $where = $dbouter->reset($where);
+    $where = $dbouter->reset($task_selection);
     $outer_data = $dbouter->getFieldArray();
     $where = $dbinner->reset($where);
     $inner_data = $dbinner->getFieldArray();
@@ -146,12 +155,21 @@ if (isset($_POST['reset'])) {
 } // if
 
 if (!empty($_POST)) {
-    // merge user's input with original data so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed.
-    // this also deals with a javascript 'submit()'.
-    $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
-    if ($dbinner->errors) {
-        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
+        if ($dbinner->errors) {
+            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+        } // if
+    } else {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        // ensure that changes are stored inside relevant object
+        $dbinner->setFieldArray($inner_data);
     } // if
     if (empty($errors)) {
         // look for an action which is another script (navigation or popup button)
@@ -161,8 +179,6 @@ if (!empty($_POST)) {
         } // if
     } // if
     if (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             $dbinner->startTransaction();
             // update database with changes in POST array
@@ -242,17 +258,19 @@ if (!empty($_POST)) {
 } // if
 
 // check if we are returning from a child form
-if (!empty($return_from) AND !empty($popup_object)) {
-    if (isset($selection) AND $popup_object == 'dbinner') {
-        // merge previous saved variables with selection from popup form
-        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection);
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-        } // if
+if (!empty($return_from) AND isset($selection)) {
+    // merge previous saved variables with selection from popup form
+    $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection);
+    if ($dbinner->errors) {
+        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
     } // if
 
 } elseif ($_SERVER['REQUEST_METHOD'] == 'GET' OR !empty($search) OR $do_retrieve) {
     if (isset($scrolling)) {
+        if (!empty($search) AND !empty($dbouter->scrollarray)) {
+            $dbouter->setScrollArray($search);
+            $new_selection = true;
+        } // if
         if ($new_selection === true) {
     	    // selection has changed, so use new value in $where
         	$dbouter->setPageNo(1);
@@ -308,6 +326,8 @@ if (!empty($return_from) AND !empty($popup_object)) {
         $script_vars['dbouter']   = serialize($dbouter);
         $script_vars['scrolling'] = $scrolling;
         $script_vars = updateScriptVars ($script_vars);
+
+        $dbouter->fieldarray = $outer_data;  // replace data lost during serialization
     } // if
 
     if (isset($_SESSION['rowsperpage'])) {
@@ -341,10 +361,8 @@ if (!empty($return_from) AND !empty($popup_object)) {
 
     // only read INNER if OUTER is not empty
     if (count($outer_data) > 0) {
-        if (!empty($return_from) AND !empty($popup_object)) {
-            if (isset($selection) AND $popup_object == 'dbinner') {
-                $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset);
-            } //if
+        if (!empty($return_from) AND isset($selection)) {
+            $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset);
         } else {
             // load in current data from $outer in case it is needed
             $dbinner->setFieldArray($outer_data);
@@ -403,6 +421,9 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray = $inner_data;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
     // repeat current task with GET instead of POST

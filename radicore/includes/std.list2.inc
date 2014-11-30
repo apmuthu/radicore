@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -67,7 +67,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action);
+        $dbouter->restart($return_from, $return_action, $return_string);
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
@@ -115,7 +115,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action);
+        $dbinner->restart($return_from, $return_action, $return_string);
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
@@ -148,6 +148,10 @@ if (isset($script_vars['dbinner'])) {
         scriptPrevious($dbinner->getErrors(), $messages);
     } // if
 } // if
+
+// make each object available to its parent or child
+$dbouter->setChildObject($dbinner);
+$dbinner->setParentObject($dbouter);
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
@@ -192,7 +196,7 @@ if (empty($where)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $where = $dbouter->reset($where);
+    $where = $dbouter->reset($where, true);  // but do not lose current ORDERBY settings
 } // if
 
 // get data for the outer table
@@ -253,6 +257,8 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+
 if (isset($_SESSION['rowsperpage'])) {
     $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
 } // if
@@ -302,7 +308,7 @@ if (empty($outer_data)) {
 
 	if ($dbinner->tablename == $dbouter->alt_language_table) {
 	    // ensure that default entries exist for all supported languages
-    	$inner_data = $dbinner->getLanguageEntries($inner_data, $outer_data, $dbouter->alt_language_cols);
+    	//$inner_data = $dbinner->getLanguageEntries($inner_data, $outer_data, $dbouter->alt_language_cols);
     } // if
 
 } // if
@@ -336,7 +342,7 @@ if ($dbinner->messages) {
 } // if
 
 if (isset($_GET['action'])) {
-    $fieldarray = $dbinner->setAction($_GET['action']);
+    $inner_data = $dbinner->setAction($_GET['action']);
 } // if
 
 // check for only one row being found in POPUP mode
@@ -369,6 +375,9 @@ $script_vars['dbinner']    = serialize($dbinner);
 $script_vars['scrolling']  = $scrolling;
 $script_vars['pagination'] = $pagination;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray = $inner_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

@@ -1,47 +1,39 @@
-// file created on October 26, 2013, 4:15 pm
+// file created on June 26, 2014, 11:30 am
     
 // menu details for subsystem MENU
+$array['Admin']                                   = 'Admin';
 $array['Audit']                                   = 'Audit';
-$array['Content']                                 = 'Content';
+$array['Classroom']                               = 'Classroom';
 $array['Dictionary']                              = 'Dictionary';
+$array['Example']                                 = 'Example';
 $array['Hosting Account']                         = 'Hosting Account';
-$array['Inventory']                               = 'Inventory';
-$array['Invoicing']                               = 'Invoicing';
 $array['Languages']                               = 'Languages';
 $array['Menu Controls']                           = 'Menu Controls';
 $array['Menu System']                             = 'Menu System';
 $array['MOTD']                                    = 'MOTD';
-$array['Order Processing']                        = 'Order Processing';
-$array['Party']                                   = 'Party';
 $array['Pattern']                                 = 'Pattern';
 $array['Product']                                 = 'Product';
-$array['Requests']                                = 'Requests';
+$array['PROTO']                                   = 'PROTO';
 $array['Role']                                    = 'Role';
-$array['Shipments']                               = 'Shipments';
 $array['Subsystem']                               = 'Subsystem';
+$array['Survey']                                  = 'Survey';
 $array['Task (All)']                              = 'Task (All)';
 $array['Task (Menu)']                             = 'Task (Menu)';
 $array['Task (Proc)']                             = 'Task (Proc)';
-$array['TEST-APP']                                = 'TEST-APP';
 $array['ToDo']                                    = 'ToDo';
-$array['Transix']                                 = 'Transix';
 $array['User']                                    = 'User';
-$array['Work Effort']                             = 'Work Effort';
 $array['Workflow']                                = 'Workflow';
-$array['WRD']                                     = 'WRD';
 
 // navigation button details for subsystem MENU
 $array['Alternative Languages']                   = 'Alternative Languages';
 $array['Build Directory']                         = 'Build Directory';
 $array['Change Password']                         = 'Change Password';
-$array['COMPLETE']                                = 'COMPLETE';
 $array['Delete']                                  = 'Delete';
 $array['Erase']                                   = 'Erase';
 $array['Export']                                  = 'Export';
 $array['Favourites']                              = 'Favourites';
 $array['Field Access']                            = 'Field Access';
 $array['Help Text']                               = 'Help Text';
-$array['INCOMPLETE']                              = 'INCOMPLETE';
 $array['Initial Values']                          = 'Initial Values';
 $array['Initial Values (Role)']                   = 'Initial Values (Role)';
 $array['Initial Values (User)']                   = 'Initial Values (User)';
@@ -57,6 +49,7 @@ $array['Menu Contents (3)']                       = 'Menu Contents (3)';
 $array['Menu Items(1)']                           = 'Menu Items(1)';
 $array['Menu Items(2)']                           = 'Menu Items(2)';
 $array['Menu Items(3)']                           = 'Menu Items(3)';
+$array['MOTD']                                    = 'MOTD';
 $array['Move Down']                               = 'Move Down';
 $array['Move Up']                                 = 'Move Up';
 $array['Nav Buttons (PDF)']                       = 'Nav Buttons (PDF)';
@@ -81,6 +74,7 @@ $array['Task IP Address']                         = 'Task IP Address';
 $array['Time Limits']                             = 'Time Limits';
 $array['ToDo']                                    = 'ToDo';
 $array['Update']                                  = 'Update';
+$array['User Roles']                              = 'User Roles';
 
 // column details for subsystem MENU
 $array['access_type']                             = 'access_type';
@@ -102,11 +96,13 @@ $array['help_text']                               = 'help_text';
 $array['in_use']                                  = 'in_use';
 $array['initial_passthru']                        = 'initial_passthru';
 $array['initial_value']                           = 'initial_value';
+$array['input_date_format']                       = 'input_date_format';
 $array['ip_address']                              = 'ip_address';
 $array['is_complete']                             = 'is_complete';
 $array['is_disabled']                             = 'is_disabled';
 $array['is_external_auth_off']                    = 'is_external_auth_off';
 $array['is_noedit']                               = 'is_noedit';
+$array['is_primary']                              = 'is_primary';
 $array['item_desc']                               = 'item_desc';
 $array['item_notes']                              = 'item_notes';
 $array['keep_data']                               = 'keep_data';
@@ -122,6 +118,7 @@ $array['motd_id']                                 = 'motd_id';
 $array['motd_message']                            = 'motd_message';
 $array['motd_subject']                            = 'motd_subject';
 $array['order_by']                                = 'order_by';
+$array['output_date_format']                      = 'output_date_format';
 $array['party_id']                                = 'party_id';
 $array['pattern_desc']                            = 'pattern_desc';
 $array['pattern_id']                              = 'pattern_id';

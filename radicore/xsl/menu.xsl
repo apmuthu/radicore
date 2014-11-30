@@ -116,7 +116,7 @@
     <h2>
       <xsl:choose>
         <xsl:when test="/root/params/text/favourites-user">
-          <xsl:value-of select="/root/params/text/favourites-user"/>: <xsl:value-of select="//mnu_todo/user_id"/>
+          <xsl:value-of select="/root/params/text/favourites-user"/>: <xsl:value-of select="//mnu_favourite/user_id"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="/root/params/text/favourites"/>

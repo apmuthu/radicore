@@ -19,12 +19,14 @@ require_once 'include.general.inc';
 // load session variables
 initSession();
 
+$today     = getTimeStamp('date');
+$role_id   = $_SESSION['role_id'];
+$role_list = $_SESSION['role_list'];
+
 if (isset($_SESSION['motd'])) {
     unset($_SESSION['motd']);
-    $today = getTimeStamp('date');
-    $role_id = $_SESSION['role_id'];
     $motd =& RDCsingleton::getInstance('mnu_motd');
-    $where = "motd_id IS NOT NULL AND start_date<='$today' AND end_date>='$today' AND (role_id IS NULL OR role_id='$role_id')";
+    $where = "motd_id IS NOT NULL AND start_date<='$today' AND end_date>='$today' AND (role_id IS NULL OR role_id IN ($role_list))";
     $count = $motd->getCount($where);
     if ($count > 0) {
     	// show the MOTD screen
@@ -83,7 +85,6 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'mnu_todo') {
 } // if
 
 // get any 'to do' items for the current user
-$today = getTimeStamp('date');
 $db_todo->sql_select  = "mnu_todo.user_id, seq_no, item_desc, CONCAT(SUBSTR(item_notes, 1, 75),'...') AS item_notes, due_date, is_complete, task_id, task_context";
 $db_todo->setRowsPerPage(10);
 $where = "user_id='{$_SESSION['logon_user_id']}' AND is_complete='N' AND DATE_SUB(due_date, INTERVAL visibility DAY) <= '$today'";
@@ -142,7 +143,8 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'workitem_role') {
 // get any workitems for the current role
 $db_workitem_role->sql_orderby = 'enabled_date';
 $db_workitem_role->setRowsPerPage(10);
-$workitem_data = $db_workitem_role->getData("role_id='{$_SESSION['role_id']}' AND user_id IS NULL AND workitem_status='EN' AND transition_trigger='USER'");
+//$workitem_data = $db_workitem_role->getData("role_id='$role_id' AND user_id IS NULL AND workitem_status='EN' AND transition_trigger='USER'");
+$workitem_data = $db_workitem_role->getData("role_id IN($role_list) AND user_id IS NULL AND workitem_status='EN' AND transition_trigger='USER'");
 $errors = array_merge($errors, $db_workitem_role->getErrors());
 
 // save pagination details for XML output

@@ -7,8 +7,8 @@ $structure['tables']['main'] = 'mnu_motd';
 $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => 200);
-$structure['main']['columns'][] = array('width' => 90);
-$structure['main']['columns'][] = array('width' => 90);
+$structure['main']['columns'][] = array('width' => 110);
+$structure['main']['columns'][] = array('width' => 110);
 
 // identify the field names and their screen labels
 $structure['main']['fields'][] = array('selectbox' => 'Select');

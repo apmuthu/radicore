@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -12,7 +12,6 @@ class mysql
     var $dbname;                        // database name
     var $dbusername;
     var $dbuserpass;
-    var $dbprefix;
     var $dbport;
     var $dbsocket;
     var $ssl_key;
@@ -76,7 +75,6 @@ class mysql
             $this->dbhost     =& $args['dbhost'];
             $this->dbusername =& $args['dbusername'];
             $this->dbuserpass =& $args['dbuserpass'];
-            $this->dbprefix   =& $args['dbprefix'];
             $this->dbport     =& $args['dbport'];
             $this->dbsocket   =& $args['dbsocket'];
             $this->ssl_key    =& $args['ssl_key'];
@@ -144,7 +142,7 @@ class mysql
             	// ignore this
             } else {
                 list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
-                if (preg_match('/^(like|rlike|regexp)[ ]+/i', $fieldvalue)) {
+                if (preg_match('/^(like|rlike|regexp) /i', $fieldvalue)) {
             	    if (preg_match('/\\\\/', $fieldvalue)) {
             	    	$fieldvalue = str_replace('\\\\', '\\\\\\\\', $fieldvalue);
             	    	$array[$key] = $fieldname.$operator.$fieldvalue;
@@ -247,13 +245,6 @@ class mysql
     function connect ($dbname=null)
     // establish a connection to the database
     {
-        if (!empty($dbname) AND !empty($this->dbprefix)) {
-			 if (!preg_match('/^(' .$this->dbprefix .')/i', $dbname)) {
-    			// prefix may be different on different servers
-                $dbname = $this->dbprefix .$dbname;
-            } // if
-        } // if
-
         $this->errors = array();
         $this->query  = '';
         $this->dbname = $dbname;
@@ -318,8 +309,9 @@ class mysql
                 if (!mysqli_select_db($dbconn, $this->dbname)) {
                     if (mysqli_errno($this->dbconnect) == 2006) {
                         // connection has been lost, so re-connect
-            	        unset($this->dbconnect);
+            	        $this->dbconnect = false;
             	        $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
+                        mysqli_select_db($dbconn, $this->dbname);
             	    } else {
                         return FALSE;
             	    } // if
@@ -364,6 +356,8 @@ class mysql
 			} // if
         } // if
 
+        $this->query = '';
+
         return $fieldarray;
 
     } // deleteRecord
@@ -397,6 +391,8 @@ class mysql
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
 			} // if
         } // if
+
+        $this->query = '';
 
         return $count;
 
@@ -463,7 +459,7 @@ class mysql
         } else {
             // if 'GROUP BY' was used then return the number of rows
             // (ignore GROUP BY if it is in a subselect)
-            if (preg_match("/group by /i", $this->query) == true AND !preg_match("/\(.+group by.+\)/i", $this->query)) {
+            if (preg_match("/group[ ]by[ ]/im", $this->query) == true AND !preg_match("/\(.+group[ ]by.+\)/im", $this->query)) {
                 $count = mysqli_num_rows($result);
             } else {
                 $query_data = mysqli_fetch_row($result);
@@ -595,8 +591,11 @@ class mysql
             if ($result === false) {
             	if (mysqli_errno($this->dbconnect) == 2006) {
             	    // connection has been lost, so re-connect and retry
-            	    unset($this->dbconnect);
+            	    $this->dbconnect = false;
+                    $save_query = $this->query;
             	    $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+                    $this->query = $save_query;
+                    unset($save_query);
             	    $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             	} else {
             	    trigger_error($this, E_USER_ERROR);
@@ -635,6 +634,7 @@ class mysql
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
         mysqli_free_result($result);
+        $this->query = '';
 
         return $array;
 
@@ -943,6 +943,7 @@ class mysql
                         } else {
                             $auto_increment = $ukey;                // save name of field
                             unset($fieldarray[$auto_increment]);    // remove from data array
+                            break;
                         } // if
                     } // if
                 } // foreach
@@ -960,7 +961,8 @@ class mysql
         $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
 
         if (  empty($this->retry_on_duplicate_key)
-        AND ( empty($auto_increment) AND empty($ukey)) OR (!empty($auto_increment) AND $auto_increment == $ukey)
+        //AND ( empty($auto_increment) AND empty($ukey)) OR (!empty($auto_increment) AND $auto_increment == $ukey)
+        AND ( empty($auto_increment)) OR (!empty($auto_increment) AND $auto_increment == $ukey)
            ) {
 	        // find out if a record with this primary key already exists
 	        $query = "SELECT count(*) FROM $tablename WHERE $primary_key";
@@ -1023,6 +1025,11 @@ class mysql
                 //AND (is_null($value) OR strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL')) {
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     $this->query .= "`$item`=NULL, ";
+				} elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+					$this->query .= "`$item`=NULL, ";  // cannot use empty string for numeric fields, so use NULL instead
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $update .= "`$item`=$value, ";
                 } else {
                     $this->query .= "`$item`='" .mysqli_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
@@ -1050,7 +1057,7 @@ class mysql
                 $errno = mysqli_errno($this->dbconnect);
                 if ($errno == 2006) {
                     // connection has been lost, so re-connect and try again
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
                     $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
                     $repeat = true;
 
@@ -1106,13 +1113,14 @@ class mysql
 		} // if
 
         $this->numrows = 1;  // record has been inserted
+        $this->query = '';
 
         return $fieldarray;
 
     } // insertRecord
 
     // ****************************************************************************
-    function multiQuery ($dbname, $tablename, $query)
+    function multiQuery ($dbname, $tablename, $query_array)
     // perform multiple queries in a single step
     {
         $this->errors = array();
@@ -1122,24 +1130,14 @@ class mysql
 
         $single_step = true;  // special code to debug each query separately
         if ($single_step) {
-            if (!is_array($query)) {
-                // split string into an array of individual queries
-                $array = explode(';', $query);
-                $query = '';
-                foreach ($array as $value) {
-                    if (!empty($value) AND substr($value, -1, 1) != ';') {
-                        $query[] = $value.';';  // replace query terminator
-                    } // if
-                } // foreach
-            } // if
             // execute these statements one at a time
-            foreach ($query as $query_part) {
+            foreach ($query_array as $query_part) {
                 $this->query = $query_part;
                 $result = mysqli_query($this->dbconnect, $this->query);
                 if ($result === false) {
                     if (mysqli_errno($this->dbconnect) == 2006) {
                         // connection has been lost, so re-connect and retry
-                        unset($this->dbconnect);
+                        $this->dbconnect = false;
                         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
                         $this->query = $query_part;
                         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -1148,26 +1146,26 @@ class mysql
                     } // if
                 } // if
             } // foreach
-            if (count($query) == 1) {
+            if (count($query_array) == 1) {
                 // only a single query, so return result in full
-                $array = array();
-                while ($row = mysqli_fetch_assoc($result)) {
-                    $array[] = array_change_key_case($row, CASE_LOWER);
-                } // while
-                mysqli_free_result($result);
-                return $array;
+                if (is_bool($result)) {
+                    return $result;
+                } else {
+                    $array = array();
+                    while ($row = mysqli_fetch_assoc($result)) {
+                        $array[] = array_change_key_case($row, CASE_LOWER);
+                    } // while
+                    mysqli_free_result($result);
+                    return $array;
+                } // if
             } // if
             return true;
         } // if
 
         // perform multiple queries in a single step
 
-        if (is_array($query)) {
-            // turn array into one long string
-            $this->query = implode($query);
-        } else {
-            $this->query = $query;
-        } // if
+        // turn array into one long string
+        $this->query = implode($query);
 
         $result = mysqli_multi_query($this->dbconnect, $this->query);
         if (!$result) {
@@ -1206,7 +1204,7 @@ class mysql
                 $errno = mysqli_errno($this->dbconnect);
                 if ($errno == 2006) {
                     // connection has been lost, so re-connect and try again
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
                     $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
                     $repeat = true;
                 } elseif ($errno == 1196) {
@@ -1379,7 +1377,7 @@ class mysql
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($dbname, $tablename, $query);
@@ -1445,7 +1443,7 @@ class mysql
         do {
             // build update string from non-pkey fields
             $update = '';
-            $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+            $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
             $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
             foreach ($fieldarray as $item => $value) {
                 // use this item if it IS NOT part of primary key
@@ -1457,7 +1455,7 @@ class mysql
                         // do not enclose numbers in quotes (this also allows 'value=value+1'
                         if (strlen($value) == 0) {
                     	    $update .= "`$item`=NULL,";
-                        } else {
+                    	} else {
                             $update .= "`$item`=$value,";
                         } // if
                     } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
@@ -1492,7 +1490,7 @@ class mysql
                 $errno = mysqli_errno($this->dbconnect);
                 if ($errno == 2006) {
                     // connection has been lost, so re-connect and try again
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
                     $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
                     $repeat = true;
                 } // if
@@ -1515,6 +1513,8 @@ class mysql
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
 			} // if
         } // if
+
+        $this->query = '';
 
         return $fieldarray;
 
@@ -1547,6 +1547,8 @@ class mysql
 				} // if
             } // if
         } // if
+
+        $this->query = '';
 
         return $count;
 
@@ -1664,7 +1666,7 @@ class mysql
 
         $out_array = array();
 
-        $this->query = "SELECT * FROM information_schema.columns WHERE table_schema='$dbname' AND table_name='$tablename' ORDER BY ordinal_position";
+        $this->query = "SELECT * FROM information_schema.columns WHERE LOWER(table_schema)='$dbname' AND lower(table_name)='$tablename' ORDER BY ordinal_position";
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
@@ -1930,7 +1932,8 @@ class mysql
         $array = array();
 
         // build the query string and run it
-        $this->query = 'SHOW INDEX FROM "' .$tablename .'"';
+        //$this->query = 'SHOW INDEX FROM "' .$tablename .'"';
+        $this->query = "SELECT * FROM information_schema.statistics WHERE LOWER(table_schema)='$dbname' AND lower(table_name)='$tablename' ORDER BY index_name, seq_in_index";
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $count = mysqli_num_rows($result);
@@ -1946,6 +1949,8 @@ class mysql
                 $item = strtolower($item);
                 if ($item == 'column_name') {
                     $keyarray['column_id'] = strtolower($value);
+                } elseif ($item == 'index_name') {
+                    $keyarray['key_name'] = strtolower($value);
                 } elseif ($item == 'non_unique') {
                     if ($value == 0) {
                         $keyarray['is_unique'] = TRUE;

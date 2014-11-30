@@ -1,5 +1,5 @@
 <?php
-    // file created on June 26, 2009, 7:21 pm
+    // file created on June 21, 2014, 5:32 pm
     
     // field specifications for table dict.dict_database
     $fieldspec['database_id']               = array('type' => 'string',

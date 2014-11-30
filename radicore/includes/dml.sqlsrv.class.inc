@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class sqlsrv
@@ -9,6 +9,7 @@ class sqlsrv
 {
     // connection settings
     var $dbname;                        // database name
+    var $dbname_prev;                   // previous database name
     var $dbschema;                      // schema name
     var $dbprefix;
     var $serverName;
@@ -93,13 +94,21 @@ class sqlsrv
     } // adjustData
 
     // ****************************************************************************
-    function adjustFrom ($from_str)
+    function _insertSchema ($input)
     // adjust 'JOIN dbname.tblname ON' to 'JOIN dbname.<schema>.tblname ON'.
     {
         global $SQLSRV_schema;
 
         $pattern1 = <<< END_OF_REGEX
 /
+(?<=from[ ])                # begins with 'from '
+[ ]*                        # 0 or more spaces
+["]?                        # optional quote
+\w+                         # dbname
+["]?                        # optional quote
+\.\w+                       # .tblname
+(?=[ ]+)                    # ends with 1 or more spaces
+|
 (?<=join[ ])                # begins with 'join '
 [ ]*                        # 0 or more spaces
 ["]?                        # optional quote
@@ -110,16 +119,29 @@ class sqlsrv
 /xi
 END_OF_REGEX;
 
-        if ($count = preg_match_all($pattern1, $from_str, $regs)) {
-        	foreach ($regs[0] as $string1) {
-        		$array = array();
-        		list($dbname, $tblname) = explode('.', $string1);
-        		// insert schema name between the two
-        		$string2 = "$dbname.$SQLSRV_schema.$tblname";
+        $output = $input;
 
-        		$from_str = str_replace($string1, $string2, $from_str);
-        	} // foreach;
+        if ($count = preg_match_all($pattern1, $input, $regs)) {
+            foreach ($regs[0] as $string1) {
+                $array = array();
+                list($dbname, $tblname) = explode('.', $string1);
+                // insert schema name between the two
+                $string2 = "$dbname.$SQLSRV_schema.$tblname";
+
+                $output = str_replace($string1, $string2, $output);
+            } // foreach;
         } // if
+
+        return $output;
+
+    } // _insertSchema
+
+    // ****************************************************************************
+    function adjustFrom ($from_str)
+    // make any adjustments to the FROM string
+    {
+        // replace 'dbname.tablename' with 'dbname.schema.tablename'
+        $from_str = $this->_insertSchema($from_str);
 
         return $from_str;
 
@@ -206,6 +228,53 @@ END_OF_REGEX;
     {
         $output = $input;
 
+        // replace 'SELECT ... WHERE ... LIMIT 1' with 'SELECT TOP 1 ... WHERE ...'
+        $offset = 0;
+        while ($count = preg_match("/(?<=\(select[ ]).*?LIMIT[ ]\d+/i", $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $string1 = $regs[0][0];
+            $count = preg_match('/(?<=limit[ ])\d+/i', $string1, $regs2);
+            $digits = trim($regs2[0]);
+            $string2 = preg_replace("/limit $digits/i", '', $string1);
+            $string1 = str_replace(array('(',')'), array('\(','\)'), $string1);
+            $output  = preg_replace('/\(select[ ]' .$string1 .'/i', '(SELECT TOP 1 '.$string2, $output);
+
+            $offset = $regs[0][1] + strlen($string1);
+        } // if
+
+        // replace: (SELECT GROUP_CONCAT(table.field ORDER BY .... SEPARATOR ',') FROM table WHERE a=b) AS alias
+        // with   : alias=STUFF((SELECT ','+field FROM table WHERE user_id=mnu_user.user_id FOR XML PATH('')) , 1, 1, '' ),
+        if ($count = preg_match_all("/(?<=select[ ]group_concat\()[a-z_\., ']*\)[a-z_\.,=\(\) ']*\)[ ]AS[ ]\w+/i", $output, $regs)) {
+            foreach ($regs[0] as $string1) {
+                $count = preg_match('/.+(?=[ ]order[ ]by)/i', $string1, $regs2);
+                $part1 = trim($regs2[0]);
+                $count = preg_match('/(?<=order[ ]by[ ]).+(?=[ ]separator)/i', $string1, $regs2);
+                if ($count > 0) {
+                    $orderby = trim($regs2[0]);
+                } else {
+                    $orderby = $part1;
+                } // if
+                $count = preg_match("/(?<=separator[ ])'.+?'/i", $string1, $regs2);
+                $separator = trim($regs2[0]);
+                $count = preg_match('/(?<=from[ ])(\w+[ ])+(\(\w+(\.\w+)?=\w+(\.\w+)?\))*(?=[ ]where[ ])?/i', $string1, $regs2);
+                $from  = trim($regs2[0]);
+                if (isset($regs2[1])) {
+                    $search = rtrim($regs2[1]);
+                    if (substr($from, -strlen($search)) == $search) {
+                        $from = substr($from, 0, strlen($from)-strlen($search));
+                    } // if
+                    //$from = str_replace($search, '', $from, 1);
+                } // if
+                $count = preg_match('/(?<=where[ ])[^\)]*(?=[ ]order[ ]by)?/i', $string1, $regs2);
+                $where = trim($regs2[0]);
+                $count = preg_match('/(?<=\)[ ]as[ ])\w+/i', $string1, $regs2);
+                $alias = trim($regs2[0]);
+
+                $string2 = "$alias=STUFF((SELECT $separator+$part1 FROM $from WHERE $where ORDER BY $orderby FOR XML PATH('')) , 1, 1, '' )";
+                $string1 = str_replace(array('(',')'), array('\(','\)'), $string1);
+                $output  = preg_replace('/\(select[ ]group_concat\(' .$string1 .'/i', $string2, $output, 1);
+            } // foreach
+        } // if
+
         $pattern1 = <<< END_OF_REGEX
 /
 (?<=concat\()                # 'concat('
@@ -261,6 +330,9 @@ END_OF_REGEX;
 
         // Replace 'SUBSTR(...)' with 'SUBSTRING(...)'.
         $output  = preg_replace('/SUBSTR(?!ING)/i', 'SUBSTRING', $output);
+
+        // replace 'dbname.tablename' with 'dbname.schema.tablename'
+        $output = $this->_insertSchema($output);
 
         return $output;
 
@@ -325,6 +397,7 @@ END_OF_REGEX;
                     // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+
                     $field3 = $fieldvalue;
                     // replace with 'DATEADD(unit, field2*-1, field1) op $field3'
                     $fieldname = "DATEADD($unit, $field2*-1, $field1)";
@@ -445,16 +518,9 @@ END_OF_REGEX;
     function connect ($dbname=null)
     // establish a connection to the database
     {
-        if (!empty($dbname) AND !empty($this->dbprefix)) {
-			 if (!preg_match('/^(' .$this->dbprefix .')/i', $dbname)) {
-    			// prefix may be different on different servers
-                $dbname = $this->dbprefix .$dbname;
-            } // if
-        } // if
-
         $this->errors = array();
         $this->query  = '';
-        //$this->dbname = $dbname;
+        $this->dbname = $dbname;
 
         $dbconn = $this->dbconnect;
 
@@ -500,7 +566,7 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
-        if (!empty($dbname) AND $dbname != $this->dbname) {
+        if (!empty($dbname) AND $dbname != $this->dbname_prev) {
             $this->query = "USE [$dbname]";
             $result = sqlsrv_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
             // write query to log file, if option is turned on
@@ -508,6 +574,8 @@ END_OF_REGEX;
             $this->query = '';
             $this->dbname = $dbname;
         } // if
+
+        $this->dbname_prev = $dbname;
 
         return TRUE;
 
@@ -575,7 +643,7 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $count);
 
-        if ($this->audit_logging)) {
+        if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
@@ -632,6 +700,8 @@ END_OF_REGEX;
         if (preg_match('/^(select )/i', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
+            // replace 'dbname.tablename' with 'dbname.schema.tablename'
+            $this->query = $this->_insertSchema($this->query);
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
             if (empty($where)) {
@@ -647,8 +717,17 @@ END_OF_REGEX;
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
-        if (preg_match("/group by /", $this->query) == true AND !preg_match("/\(SELECT .+group by.+\)/i", $this->query)) {
+        if (preg_match("/group[ ]by[ ]/im", $this->query) == true AND !preg_match("/\(SELECT[ ].+group by.+\)/im", $this->query)) {
             $count = sqlsrv_num_rows($result);
+            if ($count === false) {  // BUG!! so have to count the rows manually
+                $count = 0;
+                if (!empty($query_data)) {
+                    $count = 1;
+                    while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+                        $count++;
+                    } // while
+                } // if
+            } // if
         } else {
             $count = $query_data[0];
         } // if
@@ -754,6 +833,7 @@ END_OF_REGEX;
         $this->pageno = $pageno;
 
         $lock_str = null;
+
         if ($GLOBALS['transaction_has_started'] == TRUE) {
             if ($GLOBALS['lock_tables'] == FALSE) {
             	if (empty($this->row_locks)) {
@@ -980,7 +1060,8 @@ END_OF_REGEX;
             } // if
 
         } else {
-            $conerr = getLanguageText('sys0001', $this->dbname); // 'Cannot connect to database'
+            //$conerr = getLanguageText('sys0001', $this->dbname); // 'Cannot connect to database'
+            $conerr = $GLOBALS['php_errormsg'];
             $string = $conerr;
         } // if
 
@@ -1179,6 +1260,10 @@ END_OF_REGEX;
                     // null entries are set to NULL, not '' (there is a difference!)
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+                    // cannot use empty string for numeric fields, so use NULL instead
+                    $cols .= "$item, ";
+                    $vals .= "NULL, ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .$this->adjustData($value) ."', ";
@@ -1237,7 +1322,7 @@ END_OF_REGEX;
             logSqlQuery ($dbname, $tablename, $this->query, $fieldarray[$auto_increment]);
 		} // if
 
-        if ($this->audit_logging)) {
+        if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
@@ -1253,6 +1338,45 @@ END_OF_REGEX;
         return $fieldarray;
 
     } // insertRecord
+
+    // ****************************************************************************
+    function multiQuery ($dbname, $tablename, $query_array)
+    // perform multiple queries in a single step
+    {
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $single_step = true;  // special code to debug each query separately
+        if ($single_step) {
+            // execute these statements one at a time
+            foreach ($query_array as $query_part) {
+                $this->query = $query_part;
+                $result = sqlsrv_query($this->dbconnect, $this->query);
+                if ($result === false) {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } // foreach
+            if (count($query_array) == 1) {
+                // only a single query, so return result in full
+                if (is_bool($result)) {
+                    return $result;
+                } else {
+                    $array = array();
+                    while (sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+                        $array[] = array_change_key_case($row, CASE_LOWER);
+                    } // while
+                    sqlsrv_free_stmt($result);
+                    return $array;
+                } // if
+            } // if
+            return true;
+        } // if
+
+        return $result;
+
+    } // multiQuery
 
     // ****************************************************************************
     function rollback ($dbname)
@@ -1418,7 +1542,7 @@ END_OF_REGEX;
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($dbname, $tablename, $query);
@@ -1536,7 +1660,7 @@ END_OF_REGEX;
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
-        if ($this->audit_logging)) {
+        if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
@@ -1947,6 +2071,8 @@ END_OF_REGEX;
 
         // build the query string and run it
         $this->query = "SELECT * FROM INFORMATION_SCHEMA.tables WHERE table_catalog = '$dbname' ORDER BY table_name";
+
+
         $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
 
         $count = sqlsrv_num_rows($result);

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -19,8 +19,6 @@ class mnu_user extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_user';
         $this->dbname      = 'menu';
 
@@ -36,14 +34,14 @@ class mnu_user extends Default_Table
     {
         $fieldspec = parent::getFieldSpec_original();
 
+        // remove references to any relationships which do not exist in this installation
         foreach ($this->child_relations as $index => $relation) {
-        	if (isset($relation['subsys_dir'])) {
+            if (isset($relation['subsys_dir'])) {
                 $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
                 if (!file_exists($classname)) {
-                    // does not exist in this installation, so remove this reference
-                	unset($this->child_relations[$index]);
+                    unset($this->child_relations[$index]);
                 } // if
-        	} // if
+            } // if
         } // foreach
 
         return $fieldspec;
@@ -185,8 +183,14 @@ class mnu_user extends Default_Table
             unset($this->fieldspec['logon_time']['noedit']);
             $this->fieldspec['user_password']['nodisplay'] = 'y';
             unset($this->fieldspec['ip_address']['noedit']);
+            // add field to allow searching on the MNU_USER_ROLE table
+            $this->fieldspec['role_id']     = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'required' => 'y',
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'role_id');
 
-        } elseif ($mode == 'insert') {
+        } elseif ($mode == 'insert' AND is_True($this->initiated_from_controller)) {
             // these fields should not appear on INSERT screen
             $this->fieldspec['pswd_chg_date']['nodisplay'] = 'y';
             $this->fieldspec['pswd_chg_time']['nodisplay'] = 'y';
@@ -196,6 +200,13 @@ class mnu_user extends Default_Table
             $this->fieldspec['logon_date']['nodisplay']    = 'y';
             $this->fieldspec['logon_time']['nodisplay']    = 'y';
             $this->fieldspec['ip_address']['nodisplay']    = 'y';
+            // add field which will be written to the MNU_USER_ROLE table
+            $this->fieldspec['role_id']     = array('type' => 'string',
+                                                    'size' => 16,
+                                                    'required' => 'y',
+                                                    'control' => 'dropdown',
+                                                    //'nondb' => 'y',
+                                                    'optionlist' => 'role_id');
         } else {
             if ($this->pswd_hidden) {
             	// not insert mode, so cannot edit this field
@@ -203,6 +214,16 @@ class mnu_user extends Default_Table
             } else {
                 // not insert mode, so cannot edit this field
                 $this->fieldspec['user_password']['noedit'] = 'y';
+            } // if
+        } // if
+
+        if ($mode == 'update') {
+            $this->fieldspec['user_roles']      = array('type' => 'string',
+                                                        'control' => 'button',
+                                                        'nondb' => 'y',
+                                                        'task_id' => 'mnu_user_role(list2)');
+            if (isset($fieldarray['role_list'])) {
+                $fieldarray['user_roles'] = null;
             } // if
         } // if
 
@@ -214,24 +235,6 @@ class mnu_user extends Default_Table
         if (version_compare(phpversion(), '5.2.0', '<')) {
             // not available in this version
             $this->fieldspec['user_timezone']['nodisplay'] = 'y';
-        } // if
-
-        // remove relationships which do not exist in the open source download
-        if (!file_exists('../survey/classes/survey_answer_hdr.class.inc')) {
-            foreach ($this->child_relations as $ix => $relation) {
-                if ($relation['child'] == 'survey_answer_hdr') {
-                    unset($this->child_relations[$ix]);
-                    break;
-                } // if
-            } // foreach
-        } // if
-        if (!file_exists('../party/classes/email_signature.class.inc')) {
-            foreach ($this->child_relations as $ix => $relation) {
-                if ($relation['child'] == 'email_signature') {
-                    unset($this->child_relations[$ix]);
-                    break;
-                } // if
-            } // foreach
         } // if
 
         return $fieldarray;
@@ -461,7 +464,7 @@ class mnu_user extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -576,6 +579,17 @@ class mnu_user extends Default_Table
     function _cm_post_insertRecord ($rowdata)
     // perform custom processing after database record has been inserted.
     {
+        // add primary role to MNU_USER_ROLE table
+        $dbobject =& RDCsingleton::getInstance('mnu_user_role');
+        $role['user_id']    = $rowdata['user_id'];
+        $role['role_id']    = $rowdata['role_id'];
+        $role['is_primary'] = TRUE;
+        $role = $dbobject->insertRecord($role);
+        if ($dbobject->errors) {
+            $this->errors[$dbobject->getClassName()] = $dbobject->errors;
+            return $rowdata;
+        } // if
+
         // create default favourites
         $next['task_id']  = 'mnu_favourite(add4)';
         $next['where']    = "user_id='{$rowdata['user_id']}'";
@@ -584,6 +598,37 @@ class mnu_user extends Default_Table
         return $rowdata;
 
     } // _cm_post_insertRecord
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $fieldarray may contain full details of the current record in the parent
+    // class, not just its primary key.
+    {
+        if (empty($this->sql_from)) {
+            // construct default SELECT and FROM clauses using parent relations
+            $this->sql_groupby = null;
+            $this->sql_having  = null;
+            $this->sql_union   = null;
+            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // retrieve one or more roles from MNU_USER_ROLE
+            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_desc ORDER BY is_primary DESC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id) AS role_list)";
+        } // if
+
+        if (!empty($this->sql_search)) {
+            $search_array = where2array($this->sql_search, false, false);
+            if (!empty($search_array['role_id'])) {
+                $role_id = stripOperators($search_array['role_id']);
+                $search_array[] = "EXISTS(SELECT 1 FROM mnu_user_role WHERE user_id=mnu_user.user_id AND role_id='$role_id')";
+                unset($search_array['role_id']);
+            } // if
+            $this->sql_search = array2where($search_array);
+        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($rowdata)

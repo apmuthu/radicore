@@ -1,7 +1,7 @@
 <?php
-
 // *****************************************************************************
-// Copyright 2010-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2010-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 require_once('include.library.inc');
@@ -32,7 +32,8 @@ class imap_class
     // open the mailbox and obtain message count, et cetera
     {
         if (!$this->mbox = imap_open($mailbox, $user, $password)) {
-            $this->errors[] = "Could not open mailbox";
+            //$this->errors[] = "Could not open mailbox";
+            $this->errors = imap_errors();
             return false;
         } // if
 

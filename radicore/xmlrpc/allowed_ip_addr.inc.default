@@ -6,7 +6,6 @@
 $array = array();
 
 $array[] = '127.0.0.1';
-$array[] = '::1';
 
 return $array;
 

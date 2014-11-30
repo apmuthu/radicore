@@ -5,7 +5,7 @@ $structure['tables']['main'] = '#tablename#';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['main']['columns'][] = array('width' => 5);
-$structure['main']['columns'][] = array('width' => 350);
+$structure['main']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['main']['fields'][] = array('selectbox' => 'Select');

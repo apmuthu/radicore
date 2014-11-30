@@ -11,6 +11,8 @@ $structure['main']['columns'][] = array('width' => '*');
 // the SHORT format defines two cells per row, a label followed by a field, as in:
 $structure['main']['fields'][] = array('language_id' => 'Language Id');
 $structure['main']['fields'][] = array('language_name' => 'Language Name');
+$structure['main']['fields'][] = array('input_date_format' => 'Input Date Format');
+$structure['main']['fields'][] = array('output_date_format' => 'Output Date Format');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created User');
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date');

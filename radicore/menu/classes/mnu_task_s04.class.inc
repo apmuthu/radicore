@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_task.class.inc';
 class mnu_task_s04 extends mnu_task
@@ -11,7 +11,7 @@ class mnu_task_s04 extends mnu_task
     // ****************************************************************************
 
     var $global_access = false;     // TRUE = can access all tasks in the database
-    var $role_id = '';              // role_id with limited access ig GLOBAL_ACCESS = FALSE
+    var $role_list;                 // list of user roles
 
     // ****************************************************************************
     function _cm_initialise ($where, &$selection, $search)
@@ -30,8 +30,8 @@ class mnu_task_s04 extends mnu_task
                 return FALSE;
             } // if
 
-            $this->role_id       = $dbrole_data['role_id'];
             $this->global_access = $dbrole_data['global_access'];
+            $this->role_list     = $dbrole_data['role_list'];
         } // if
 
         return $where;
@@ -53,16 +53,19 @@ class mnu_task_s04 extends mnu_task
                 // (unless a task has been disabled)
                 $this->sql_select = 'mnu_task.*';
                 $this->sql_from   = 'mnu_task';
-                $where = "mnu_task.is_disabled='N'";
+                $where_array[]    = "mnu_task.is_disabled='N'";
             } else {
                 // if global_access is OFF then a task is not accessible unless it has an
                 // entry on MNU_ROLE_TASK for the current role
                 // (or if it has been disabled)
+                $role_list = $this->role_list;
                 $this->sql_select = 'mnu_task.*';
                 $this->sql_from   = 'mnu_task'
-                                   .' LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)';
-                $where = "mnu_task.is_disabled='N' AND mnu_role_task.role_id='{$this->role_id}'";
+                                  .' LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)';
+                $where_array[] = "mnu_task.is_disabled='N'";
+                $where_arrau[] = "mnu_role_task.role_id IN($role_list)";
             } // if
+            $where = array2where($where_array);
         } // if
 
         return $where;

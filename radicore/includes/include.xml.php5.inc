@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -12,6 +12,7 @@ class radicore_view
     var $structure = array();           // from screen structure file
     var $orderby;                       // sort field
     var $orderby_seq;                   // sort sequence (ASC or DESC)
+    var $javascript;                    // optional javascript
 
     // *****************************************************************************
     function __construct ($screen_structure)
@@ -94,7 +95,7 @@ class radicore_view
         $dbobject->setFieldAccess();
 
         // get field specifications for current object (inluding item access details)
-        $fieldspec = $dbobject->getFieldSpec();
+        //$fieldspec = $dbobject->getFieldSpec();
 
         // get data array for current object (indexed by rownum)
         $objectdata = $dbobject->getFieldArray();
@@ -104,6 +105,8 @@ class radicore_view
 
         // process the data one row at a time
         foreach ($objectdata as $rownum => $rowdata) {
+            // get field specifications for current object (inluding item access details)
+            $fieldspec = $dbobject->getFieldSpec();
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
@@ -122,6 +125,15 @@ class radicore_view
             		    $node->setAttribute($key, $value);
             	    } // foreach
                     unset($rowdata['rdc_rowspecs']);
+                } // if
+                // look for optional attributes for individual fields within this row
+                if (array_key_exists('rdc_fieldspec', $rowdata)) {
+                    foreach ($rowdata['rdc_fieldspec'] as $field => $spec) {
+                        if (array_key_exists($field, $fieldspec)) {
+                            $fieldspec[$field] = array_merge($fieldspec[$field], $spec);
+                        } // if
+                    } // foreach
+                    unset($rowdata['rdc_fieldspec']);
                 } // if
                 $css_array = array();  // optional css class specifications
                 // format data for output (this converts dates and numbers)
@@ -453,12 +465,28 @@ class radicore_view
                             } // if
                         } // if
 
-                        // option for javascript events
+						// look for custom javascipt which needs to be inserted
+                        $fn = 'custom_javascript.class.inc';
+                        if ($fp = @fopen($fn, 'r', true)) {
+                            fclose($fp);
+                            $jsobj =& RDCsingleton::getInstance('custom_javascript');
+                            $javascript = $jsobj->field_level_js($fieldname, $fieldvalue, $spec);
+                            if (!empty($javascript) AND is_array($javascript)) {
+                                foreach ($javascript as $event_name => $event_body) {
+                                    $child->setAttribute($event_name, $event_body);
+                                } // foreach
+                            } // if
+                            if (!empty($jsobj->form_level_js)) {
+                                $this->javascript = array_merge($this->javascript, $jsobj->form_level_js);
+                            } // if
+                        } // if
+						// option for javascript events
                         if (isset($spec['javascript'])) {
                             foreach ($spec['javascript'] as $event_name => $event_body) {
                         	    $child->setAttribute($event_name, $event_body);
                             } // foreach
                         } // if
+
                     } else {
                         // field does not exist in $fieldspec, so make it non-editable
                         $child->setAttribute('noedit', 'y');
@@ -774,12 +802,22 @@ class radicore_view
         if (isset($_SESSION['XSLT_client_side']) AND is_true($_SESSION['XSLT_client_side'])) {
             $xsl_params['client-side'] = 'true';
         } // if
-        if (isset($_SESSION['logon_user_name'])) {
+
+		if (isset($_SESSION['logon_user_name'])) {
     	    $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
             $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
+            // look for custom text which needs to be inserted
+            $fn = 'custom_xsl_params.class.inc';
+            if ($fp = fopen($fn, 'r', true)) {
+                fclose($fp);
+                $tempobj =& RDCsingleton::getInstance('custom_xsl_params');
+                $xsl_params = $tempobj->amend_text($xsl_params);
+                unset($tempobj);
+            } // if
         } // if
 
-        $xsl_params['text']['select-all']     = getLanguageText('xsl_select_all');
+		$xsl_params['text']['selections']     = getLanguageText('xsl_selections');
+		$xsl_params['text']['select-all']     = getLanguageText('xsl_select_all');
         $xsl_params['text']['unselect-all']   = getLanguageText('xsl_unselect_all');
         $xsl_params['text']['selection-lock'] = getLanguageText('xsl_selection_lock');
         if (isset($_SESSION['selection_lock']) AND is_True($_SESSION['selection_lock'])) {
@@ -847,6 +885,16 @@ class radicore_view
         } // if
         unset($_SESSION['script_start']);
 
+		// ************************************************************************************************************************
+		// Nelson Nones (11-Jul-14) begin insertion
+		// Add optional "iframe_url" parameter
+		if(!empty($_SESSION['iframe_url'])) {
+			$xsl_params['iframe_url'] = $_SESSION['iframe_url'];
+			unset($_SESSION['iframe_url']); //Unset this session variable so that the next ADD5/ADD1 would not see the same document.
+		}
+		// Nelson Nones (11-Jul-14) end insertion
+		// ************************************************************************************************************************
+
         // now add each parameter to the XML document
         $node = $doc->createElement('params');
         $node = $root->appendChild($node);
@@ -894,10 +942,10 @@ class radicore_view
         global $task_id;
         global $xsl_file;
 
-        $xsl_params    = array();
-        $css_files     = array();
-        $javascript    = array();
-        $errors        = (array)$errors;
+        $xsl_params       = array();
+        $css_files        = array();
+        $this->javascript = array();
+        $errors           = (array)$errors;
 
         // create a new XML document
         $xml_doc = new DomDocument('1.0', 'UTF-8');
@@ -910,6 +958,7 @@ class radicore_view
         $node_array['root'] = $xml_doc->createElement('root');
         $root = $xml_doc->appendChild($node_array['root']);
 
+        $object_messages = array();
         foreach ($xml_objects as $seq => $object_data) {
             $node   = key($object_data);
             $object = $object_data[$node];
@@ -921,13 +970,18 @@ class radicore_view
             $child = $this->addData2XMLdoc($xml_doc, $node_array['root'], $node_array[$node], $object, $errors);
             // add this object's name to $node_array
             $node_array[$object->getClassName()] = $child;
+            // extract and merge any messages for the XML output
+            $object_messages = array_merge($object_messages, (array)$object->messages);
             // extract and merge any parameters for the XSL transformation
             $xsl_params = array_merge_recursive($xsl_params, (array)$object->xsl_params);
             // extract and merge any CSS file names
             $css_files = array_merge_recursive($css_files, (array)$object->css_files);
             // extract and merge any JavaScript code
-            $javascript = array_merge_recursive($javascript, $object->javascript);
+            $javascript = array_merge_recursive($this->javascript, $object->javascript);
         } // foreach
+
+        $object_messages = array_unique($object_messages);
+        $messages = array_merge($messages, $object_messages);
 
         // insert list of CSS files
         $this->setCSSfiles($xml_doc, $root, $css_files);
@@ -1108,6 +1162,10 @@ class radicore_view
         // add optional parameters
         $this->addParams2XMLdoc ($xml_doc, $root, $xsl_params);
 
+        // get completed xml document
+        $xml_doc->formatOutput = true;
+        $xml_string = $xml_doc->saveXML();
+
         if (is_True($_SESSION['log_xml_document'])) {
             // write XML data to a disk file in XSL subdirectory for debugging
             $fname = './xsl/' . basename($_SERVER['PHP_SELF']) . '.xml' ;
@@ -1117,23 +1175,22 @@ class radicore_view
                 //    trigger_error("Cannot open file $fname", E_USER_ERROR);
                 //} // if
             } else {
-                fclose($fp);
-                $xml_doc->formatOutput = true;
-                if ($xml_doc->save($fname) === false) {
+                if (fwrite($fp, $xml_string) === false) {
                     // "Cannot write to file $fname"
                     trigger_error(getLanguageText('sys0055', $fname));
                 } // if
+                fclose($fp);
             } // if
         } // if
 
         if (is_true($_SESSION['XSLT_client_side'])) {
             // send XML file to the client for transformation there
-            $xml_string = $xml_doc->saveXML();
             $this->XSLclient($xml_string);
         } else {
             // transform XML document using XSL file
             $this->XSLTransform($xml_doc, $xsl_file);
         } // if
+        unset($xml_doc);
 
         return;
 
@@ -1351,30 +1408,37 @@ class radicore_view
     function setJavaScript ($doc, $root, $javascript)
     // add contents of $js_files to the current XML document
     {
+        $file_array = array();  // array of 'file' entries
+
         if (isset($javascript['head'])) {
             $occ = $doc->createElement('javascript');
             $occ = $root->appendChild($occ);
     	    foreach ($javascript['head'] as $entry) {
                 if (key($entry) == 'file') {
-                    // add a reference to a file
-                    $head = $doc->createElement('head');
-                    $head->setAttribute('type', 'file');
-                    $head = $occ->appendChild($head);
+                    if (in_array($entry, $file_array)) {
+                        // already processed, so don't repeat
+                    } else {
+                        $file_array[] = $entry;
+                        // add a reference to a file
+                        $head = $doc->createElement('head');
+                        $head->setAttribute('type', 'file');
+                        $head = $occ->appendChild($head);
 
-                    $PHP_SELF = $_SERVER['PHP_SELF'];
-                    if (!empty($GLOBALS['https_server_suffix'])) {
-                        // if path name begins with https_server_suffix it must be stripped off
-                        $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
-                        if (preg_match($pattern, $PHP_SELF, $regs)) {
-                            $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
+                        $PHP_SELF = $_SERVER['PHP_SELF'];
+                        if (!empty($GLOBALS['https_server_suffix'])) {
+                            // if path name begins with https_server_suffix it must be stripped off
+                            $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
+                            if (preg_match($pattern, $PHP_SELF, $regs)) {
+                                $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
+                            } // if
                         } // if
+
+                        $url = $GLOBALS['url_files'] .dirname($PHP_SELF) .'/' .$entry[key($entry)];
+
+                        $head  = $occ->appendChild($head);
+                        $value = $doc->createTextNode($url);
+                        $value = $head->appendChild($value);
                     } // if
-
-                    $url = $GLOBALS['url_files'] .dirname($PHP_SELF) .'/' .$entry[key($entry)];
-
-                    $head  = $occ->appendChild($head);
-                    $value = $doc->createTextNode($url);
-                    $value = $head->appendChild($value);
                 } // if
 
                 if (key($entry) == 'code') {
@@ -1409,6 +1473,15 @@ class radicore_view
                 $body->setAttribute($tag, $event);
             } // foreach
         } // if
+
+		if (isset($javascript['script'])) {
+			// add a block of javascript code to body
+			$body = $doc->createElement('script');
+			$body->setAttribute('type', 'code');
+			$body = $occ->appendChild($body);
+			$value = $doc->createTextNode($javascript['script']);
+			$value = $body->appendChild($value);
+		} // if
 
         return;
 

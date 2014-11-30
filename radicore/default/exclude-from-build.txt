@@ -33,6 +33,7 @@ output2.php
 output3.php
 output4.php
 output5.php
+output6.php
 popup1.php
 popup2.php
 popup3.php
@@ -68,7 +69,6 @@ multi2.screen.inc
 multi3.screen.inc
 multi4.screen.inc
 multi5.screen.inc
-multi6.screen.inc
 output4.screen.inc
 popup1.screen.inc
 popup2.screen.inc

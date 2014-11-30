@@ -1,3 +1,0 @@
-<hr />
-<p>A full description of the Menu and Security System is available in the <a href="%root%/index.html">User Guide</a>.</p>
-<p>The design of this Menu and Security System is explained in <a href="http://www.tonymarston.net/php-mysql/role-based-access-control.html">A Role-Based Access Control (RBAC) system for PHP</a>.</p>

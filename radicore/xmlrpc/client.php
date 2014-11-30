@@ -37,8 +37,6 @@ $client = new XMLRPC_client($location);
 <?php
 if (isset($_GET['request'])) {
     $request = (int)$_GET['request'];
-} else {
-    $request = null;
 } // if
 
 switch ($request) {

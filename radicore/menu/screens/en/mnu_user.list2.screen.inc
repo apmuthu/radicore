@@ -7,7 +7,7 @@ $structure['outer']['columns'][] = array('width' => '25%');
 
 $structure['outer']['fields'][] = array('role_desc' => 'Role');
 
-$structure['tables']['inner'] = 'mnu_user';
+$structure['tables']['inner'] = 'mnu_user_role';
 
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => 150);

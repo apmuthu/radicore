@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi5.inc
@@ -57,6 +57,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
+    // see if any configuration settings need to be changed
+    $outer_data = $dbouter->changeConfig($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -72,6 +74,14 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->no_foreign_data = TRUE;  // do not look up data for foreign keys
     // add a 'retrieve' button
     $dbouter->fieldspec['retrieve'] = array('type' => 'string', 'control' => 'button');
+    // set sort order (if defined)
+    if (!empty($orderby)) {
+        $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
+        $dbouter->setOrderBy($string);
+        if (!empty($orderby_seq)) {
+            $dbouter->setOrderBySeq($orderby_seq);
+        } // if
+    } // if
 } // if
 
 // create a class instance for the INNER database table
@@ -85,6 +95,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
+    // see if any configuration settings need to be changed
+    $inner_data = $dbinner->changeConfig($inner_data);
     // refetch data for lookup lists in case they have changed
     $null = $dbinner->setLookupData($inner_data);
 } else {
@@ -145,20 +157,34 @@ $outer_data['retrieve'] = getLanguageText('retrieve');
 $dbouter->setFieldArray($outer_data);
 
 if (!empty($_POST)) {
-    // merge original data with POSTed data (so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed).
-    // (this may include updates posted via javascript)
-    $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
-    if ($dbouter->errors) {
-        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-    } // if
-    if (empty($errors)) {
-        // repeat for the inner entity
-        $inner_data = $dbinner->getFieldArray();
-        $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
+        if ($dbouter->errors) {
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
+        if (empty($errors)) {
+            // repeat for the inner entity
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+    } else {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
+        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
+        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
+        // repeat for the inner entity
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
+        // make any changes in outer available to the inner entity
+        $inner_data = $dbinner->setParentData($outer_data);
     } // if
     if (empty($errors)) {
         // look for an action which is another script (navigation or popup button)
@@ -168,8 +194,6 @@ if (!empty($_POST)) {
         } // if
     } // if
     if (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             // update the database with all POSTed data
             $dbinner->startTransaction();
@@ -225,6 +249,8 @@ if (!empty($_POST)) {
                     if ($dbinner->errors) {
                         $errors[$dbinner->getClassName()] = $dbinner->getErrors();
                     } // if
+                } else {
+                    $inner_data = $dbinner->setFieldArray();  // outer has errors, so clear inner
                 } // if
                 if (empty($errors)) {
                     $dbinner->commit();
@@ -258,11 +284,24 @@ if (!empty($return_from) AND !empty($popup_object)) {
 
 } elseif ($_SERVER['REQUEST_METHOD'] == 'GET' OR !empty($search) OR $do_retrieve) {
     if (empty($errors)) {
+        if (isset($_GET['scrolling'])) {
+            if ($_GET['scrolling'] == $dbouter->getClassName()) {
+                // set index number of item to be read from current $where list
+                $dbouter->setPageNo($_GET['item']);
+            } else {
+                $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+            } // if
+        //} else {
+        //    $dbouter->setPageNo(1);
+        } // if
         $outer_data = $dbouter->getFieldArray();
         $outer_data = $dbouter->getExtraData($outer_data);
         if (is_True($dbinner->skip_getdata)) {
             // data is being handled manually, so skip this next bit
         } else {
+            if (!isset($_GET['page'])) {
+                $_GET['page'] = $dbinner->pageno;  // save this value so that it can be re-instated later
+            } // if
             $inner_data  = $dbinner->setFieldArray(null);  // force retrieval of inner data
         } // if
     } // if
@@ -290,6 +329,10 @@ if (!empty($return_from) AND !empty($popup_object)) {
         $dbouter->restart('search', 'search', $search);
         $dbinner->setSqlSearch($search, true);
     } // if
+
+    // get primary key of row retrieved from OUTER entity
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();
+    $where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
     if (!empty($outer_data)) {
         if (empty($inner_data)) {
@@ -325,6 +368,11 @@ if (isset($dbinner->xsl_params['inner_noedit'])) {
 $messages = $dbouter->getMessages();
 $messages = array_merge($messages, $dbinner->getMessages());
 
+// set variables to be included in XML output
+$scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
+$scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+$scrolling[$dbouter->getClassName()]['where']    = $dbouter->where;
+
 // get pagination details
 $pagination['inner']['numrows']  = $dbinner->getNumRows();
 $pagination['inner']['curpage']  = $dbinner->getPageNo();
@@ -334,9 +382,12 @@ $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 $script_vars['where']      = unqualifyWhere($where);
 $script_vars['dbouter']    = serialize($dbouter);
 $script_vars['dbinner']    = serialize($dbinner);
-//$script_vars['scrolling']  = $scrolling;
+$script_vars['scrolling']  = $scrolling;
 $script_vars['pagination'] = $pagination;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray  = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray  = $inner_data;
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

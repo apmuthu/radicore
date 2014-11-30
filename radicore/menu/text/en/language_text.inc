@@ -2,7 +2,7 @@
 
 // Each text string may include parameter substitution - refer to SPRINTF() function
 
-$array['e0000'] = "";
+$array['e0000'] = "Cannot delete a user's only role";
 $array['e0001'] = "This user has been disabled.";
 $array['e0002'] = "You must change your password.";
 $array['e0003'] = "Retry count exceeded.";
@@ -119,14 +119,8 @@ $array['ToDo']                                    = 'ToDo';
 $array['User']                                    = 'User';
 $array['Workflow']                                = 'Workflow';
 
-// task details for subsystem MISC
-$array['batch_log(filedownload)']                 = 'Download Batch Log File';
-$array['batch_log(filepicker)']                   = 'Show Batch Log File';
-$array['date(current)']                           = 'Select Records with Current Dates';
-$array['date(future)']                            = 'Select Records with Future Dates';
-$array['date(historic)']                          = 'Select Records with Historic Dates';
-$array['file(delete)']                            = 'Delete File Name';
-$array['file(search)']                            = 'Search File Name';
+// task details for subsystem MISC (no longer required)
+
 
 // task details for subsystem MENU (NOT REQUIRED AS OF VERSION 1.77.0)
 
@@ -151,7 +145,7 @@ $array['Rename']                        = 'Rename';
 $array['Reset Password']                = 'Reset Password';
 $array['Task Access']                   = 'Task Access';
 
-// field names for subsystem XXX
+// field names for subsystem MENU
 $array['']     = '';
 $array['']     = '';
 $array['']     = '';
@@ -227,6 +221,7 @@ $array['User Id']                       = 'User Id';
 $array['User Name']                     = 'User Name';
 $array['Users']                         = 'Users';
 $array['Visible screen?']               = 'Visible screen?';
+$array['user_roles']                    = 'Maintain User Roles';
 
 return $array;
 

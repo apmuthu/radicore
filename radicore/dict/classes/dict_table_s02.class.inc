@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
@@ -16,7 +16,7 @@ class dict_table_s02 extends dict_table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
+        $menuDB = findDBName('menu', $this->dbname);
 
         // create object for retrieving column details
         $columnobj =& RDCsingleton::getInstance('dict_column');
@@ -72,7 +72,7 @@ class dict_table_s02 extends dict_table
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
-                                     . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
                 $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
                 $this->_createChildRelations($data, $subsys_id);
@@ -81,7 +81,7 @@ class dict_table_s02 extends dict_table
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
-                                     . 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
                 $relobj->sql_orderby = 'database_id_snr, table_id_snr';
                 $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
                 $this->_createParentRelations($data, $subsys_id);
@@ -156,10 +156,8 @@ class dict_table_s02 extends dict_table
         // ensure that at least one entry has been selected
         $this->checkPrimaryKey = true;
 
-        //list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
-
         // find out if tables in the 'menu' database need to be qualified
-        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
+        $menuDB = findDBName('menu', $this->dbname);
 
         if (empty($this->sql_select)) {
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM table
@@ -167,7 +165,6 @@ class dict_table_s02 extends dict_table
             $this->sql_from   = 'dict_table '
                               . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
                               . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
-                              //. 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
         } // if
 
         return $where;
@@ -360,7 +357,7 @@ class dict_table_s02 extends dict_table
 	                $entry .= ",\n$indent2'required' => 'y'";
 	            } // if
 	            if (strlen($column['col_default']) > 0) {
-	                $entry .= ",\n$indent2'default' => '" .$column['col_default'] ."'";
+	                $entry .= ",\n$indent2'default' => '" .addslashes($column['col_default']) ."'";
 	            } // if
 	            if (is_True($column['is_password'])) {
 	                $entry .= ",\n$indent2'password' => 'y'";

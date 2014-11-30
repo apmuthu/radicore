@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // are we using PHP 5, or something earlier?
@@ -26,6 +26,7 @@ class PDF extends TCPDF
     var $new_page = false;          // set to TRUE when a new page has been started
     var $new_page_fill;             // set to TRUE when a new page has been started
     var $printable_width;           // width of printable area (without margins)
+    var $save_y_pos = array();      // save 'y' positions for reuse
     var $structure = array();       // report structure
     var $style = array();           // array of print styles
     var $total_width = 0;           // total width of all cells
@@ -39,26 +40,7 @@ class PDF extends TCPDF
     function PDF ($structure, &$dbobject, $pdfout=null)
     // validate contents of $report structure file
     {
-        if (file_exists('pdf.styles.inc')) {
-            // load file of print styles
-        	require 'pdf.styles.inc';
-            // include additional project styles (optional)
-            if (!empty($GLOBALS['project_code'])) {
-                $fname = 'pdf.styles.'.$GLOBALS['project_code'].'.inc';
-                if (file_exists($fname)) {
-                    include $fname;
-                } // in
-            } // if
-        	foreach ($style as $key => $value) {
-        	    if (isset($style[$key]['font']) AND is_array($style[$key]['font'])) {
-        	    	// change all occurrences of 'marginX' to 'margin_X'
-            		$style[$key]['font'] = $this->addUnderscore($style[$key]['font']);
-        	    } // if
-        	} // foreach
-        	$this->style = $style;
-        } // if
-
-        $structure['pdf'] = $this->addUnderscore($structure['pdf']);
+    	$this->style = $this->loadStyleFile();
 
         $structure = $this->validateStructure($structure);
 
@@ -70,11 +52,11 @@ class PDF extends TCPDF
         $dbobject->report_structure =& $structure;
 
         if (!empty($pdfout)) {
-            $this->pdf_filename = $pdfout;
+            $this->pdf_filename     = $pdfout;
         } // if
 
-        $dbobject->pdf_destination =& $this->pdf_destination;
-        $dbobject->pdf_filename    =& $this->pdf_filename;
+        $dbobject->pdf_destination  =& $this->pdf_destination;
+        $dbobject->pdf_filename     =& $this->pdf_filename;
 
         return;
 
@@ -269,17 +251,22 @@ class PDF extends TCPDF
         $border = 1;
         $fill = 1;
 
+        $save_party_language = $GLOBALS['party_language'];
+
         // add each row to the document in a separate page
         while ($fieldarray = $dbobject->fetchRow($resource)) {
             if ($dbobject->errors) return;
 
-            if (empty($this->structure)) {
-                $save->destination = $this->pdf_destination;
+            if ($GLOBALS['party_language'] != $save_party_language) {
+                $save_destination = $this->pdf_destination;
                 // reload report structure in the customer's language
                 $this->structure = getFileStructure($GLOBALS['report'], './reports');
             	$this->structure = $this->validateStructure($this->structure);
             	$this->structure = $this->adjustColumnWidthsDetailView($this->structure);
-                $this->pdf_destination = $save->destination;
+                $this->style = $this->loadStyleFile();  // reload 'pdf.styles.inc' file
+                $result = $this->replaceFonts($GLOBALS['party_language']);
+                $this->pdf_destination = $save_destination;
+                $save_party_language = $GLOBALS['party_language'];
             } // if
 
             // perform any formatting on retrieved data
@@ -316,27 +303,26 @@ class PDF extends TCPDF
                         $print_array = array();
 
                         // start with label
-                        $cellspec = array();
+                        $cellspec = $this->structure['columns'][0];
                         $cellspec['default_style'] = $this->structure['label']['style'];
                         $cellspec['text']  = getLanguageText($fieldlabel);
 
-                        // extract width and alignment of label column
-                	    if (isset($this->structure['columns'][0]['width'])) {
-                		    $cellspec['width'] = $this->structure['columns'][0]['width'];
-                	    } else {
-                	        // default is width is 1/4 page width
-                    	    $cellspec['width'] = $this->printable_width / 4;
+                	    if (!isset($cellspec['width'])) {
+                            // not set, so default to 1/4 of page width
+                		    $cellspec['width'] = $this->printable_width / 4;
                 	    } // if
-                	    if (isset($this->structure['columns'][0]['halign'])) {
-                    	    $cellspec['halign'] = $this->structure['columns'][0]['halign'];
-                        } elseif (isset($this->structure['columns'][0]['align'])) {
-                    	    $cellspec['halign'] = $this->structure['columns'][0]['align'];
+
+                        if (isset($cellspec['align'])) {
+                            // 'align' is deprecated, use 'halign' instead
+                            $cellspec['halign'] = $cellspec['align'];
+                            unset($cellspec['align']);
                         } // if
 
                         $print_array[0] = $cellspec;
 
                         // follow with field data
-                        $cellspec = array();
+                        $cellspec = $this->structure['columns'][1];
+                        $cellspec = array_merge($cellspec, $columndata);
                         $cellspec['default_style'] = $this->structure['data']['style'];
                         if (array_key_exists('ignore_if_empty', $this->style[$cellspec['default_style']])) {
                     	    $cellspec['ignore_if_empty'] = $this->style[$cellspec['default_style']]['ignore_if_empty'];
@@ -360,16 +346,15 @@ class PDF extends TCPDF
                 		    $cellspec['fieldspec']['notext'] = 'y';
                 	    } // if
 
-                	    if (isset($this->structure['columns'][1]['width'])) {
-                		    $cellspec['width'] = $this->structure['columns'][1]['width'];
-                	    } else {
-                	        // default is width is 3/4 page width
-                    	    $cellspec['width'] = $this->printable_width / (3/4);
-                	    } // if
-                	    if (isset($this->structure['columns'][1]['halign'])) {
-                    	    $cellspec['halign'] = $this->structure['columns'][1]['halign'];
-                        } elseif (isset($this->structure['columns'][1]['align'])) {
-                    	    $cellspec['halign'] = $this->structure['columns'][1]['align'];
+                        if (!isset($cellspec['width'])) {
+                            // not set, so default to 3/4 of page width
+                            $cellspec['width'] = $this->printable_width / (3/4);
+                        } // if
+
+                	    if (isset($cellspec['align'])) {
+                            // 'align' is deprecated, use 'halign' instead
+                            $cellspec['halign'] = $cellspec['align'];
+                            unset($cellspec['align']);
                         } // if
 
                         if (empty($cellspec['text']) AND array_key_exists('ignore_if_empty', $cellspec)) {
@@ -472,7 +457,16 @@ class PDF extends TCPDF
     // obtained by making callbacks to the database object.
     {
         // obtain a number of rows of data for this named area
-        $newdata = $dbobject->_cm_output_multi($zone, $current_row);
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_output_multi')) {
+                $newdata = $dbobject->custom_processing_object->_cm_output_multi($zone, $current_row);
+            } // if
+        } // if
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $newdata = $dbobject->_cm_output_multi($zone, $current_row);
+        } // if
 
         $fieldspec = $dbobject->fieldspec;
 
@@ -494,6 +488,7 @@ class PDF extends TCPDF
                         if (empty($cellspec['field'])) {
                             $fieldname = null;
                         } else {
+                            $fieldname = $cellspec['field'];
                             if (array_key_exists($fieldname, $style_array)) {
                                 $cellspec['style'] = $style_array[$fieldname];
                             } // if
@@ -630,9 +625,39 @@ class PDF extends TCPDF
             $result = $this->setPrintStyle($celldata['default_style']);
             $count = extract($result, EXTR_IF_EXISTS);
             if (isset($celldata['style'])) {
-            	$result = $this->setPrintStyle($celldata['style']);
+            	$result = $this->setPrintStyle($celldata['style'], $result);
             	$count = extract($result, EXTR_IF_EXISTS);
             } // if
+        } // if
+
+        if (isset($result['nofillcolour'])) {
+            $celldata['nofillcolour'] = $result['nofillcolour'];
+        } // if
+
+        if (isset($result['padding_left']) AND !isset($celldata['padding_left'])) {
+            $celldata['padding_left']   = $result['padding_left'];
+        } // if
+        if (isset($result['padding_right']) AND !isset($celldata['padding_right'])) {
+            $celldata['padding_right']  = $result['padding_right'];
+        } // if
+        if (isset($result['padding_top']) AND !isset($celldata['padding_top'])) {
+            $celldata['padding_top']    = $result['padding_top'];
+        } // if
+        if (isset($result['padding_bottom']) AND !isset($celldata['padding_bottom'])) {
+            $celldata['padding_bottom'] = $result['padding_bottom'];
+        } // if
+
+        if (isset($result['margin_left']) AND !isset($celldata['margin_left'])) {
+            $celldata['margin_left']   = $result['margin_left'];
+        } // if
+        if (isset($result['margin_right']) AND !isset($celldata['margin_right'])) {
+            $celldata['margin_right']  = $result['margin_right'];
+        } // if
+        if (isset($result['margin_top']) AND !isset($celldata['margin_top'])) {
+            $celldata['margin_top']    = $result['margin_top'];
+        } // if
+        if (isset($result['margin_bottom']) AND !isset($celldata['margin_bottom'])) {
+            $celldata['margin_bottom'] = $result['margin_bottom'];
         } // if
 
         if (isset($celldata['height']) AND !isset($celldata['barcode_style'])) {
@@ -648,7 +673,16 @@ class PDF extends TCPDF
         	$celldata['height'] = $height;
         } // if
 
-        $cell_width = $celldata['width'];
+        $paddings          = $this->getCellPaddings();
+        if (isset($celldata['padding_left'])) {
+            $paddings['L'] = $celldata['padding_left'];
+        } // if
+        if (isset($celldata['padding_right'])) {
+            $paddings['R'] = $celldata['padding_right'];
+        } // if
+
+        // printable width excludes left and right padding
+        $cell_width = $celldata['width'] - $paddings['L'] - $paddings['R'];
 
         if (isset($celldata['fieldspec']) AND isset($celldata['fieldspec']['subtype'])) {
     		if ($celldata['fieldspec']['subtype'] == 'image') {
@@ -714,7 +748,8 @@ class PDF extends TCPDF
 
         } // for
 
-        if (!empty($line)) {
+        //if (!empty($line)) {
+        if (strlen($line) > 0) {
             // append last fragment
         	$celldata['line_array'][] = trim($line);
         } // if
@@ -793,7 +828,7 @@ class PDF extends TCPDF
                 	$count = extract($result, EXTR_IF_EXISTS);
                     if (isset($attributes['style'])) {
                         // override with attributes from specified style
-                    	$result = $this->setPrintStyle($attributes['style']);
+                    	$result = $this->setPrintStyle($attributes['style'], $result);
                     	$count = extract($result, EXTR_IF_EXISTS);
                     } // if
             	} //if
@@ -816,6 +851,43 @@ class PDF extends TCPDF
             	// save current XY values in case any adjustments need to be cancelled
             	$saveX = $this->getX();
             	$saveY = $this->getY();
+
+                if (isset($attributes['y_save_top'])) {
+                    if (preg_match('/pos[0-9]{1}/', $attributes['y_save_top'], $regs)) {
+                        $pos = $attributes['y_save_top'];
+                        $this->save_y_pos[$pos] = $this->getY() - $this->tMargin;
+                    } // if
+                } // if
+
+                if (isset($attributes['y'])) {
+                    if (preg_match_all('/pos[0-9]{1}/', $attributes['y'], $regs)) {
+                        if (count($regs[0]) == 1) {
+                            $saved_pos = $regs[0][0];  // only one, so fetch its value
+                            if (array_key_exists($saved_pos, $this->save_y_pos)) {
+                                $attributes['y'] = $this->save_y_pos[$saved_pos];
+                            } else {
+                                unset($attributes['y']);
+                            } // if
+                        } else {
+                            // more than one, so use the highest value
+                            $saved_pos = 0;
+                            foreach ($regs[0] as $name) {
+                                if ($this->save_y_pos[$name] > $saved_pos) {
+                                    $saved_pos = $this->save_y_pos[$name];
+                                } // if
+                            } // foreach
+                            if ($saved_pos > 0) {
+                                $attributes['y'] = $saved_pos;
+                            } else {
+                                unset($attributes['y']);
+                            } // if
+                        } // if
+                        //if (isset($attributes['ignore_if_empty'])) {
+                        //    // do not print this cell if empty, but do not lose this position
+                        //    $saveY = $saveY + $this->tMargin + $attributes['y'];
+                        //} // if
+                    } // if
+                } // if
 
             	if (isset($attributes['align'])) {
             	    // absolute cell positioning on page - left, center or right
@@ -843,7 +915,8 @@ class PDF extends TCPDF
             	if (isset($attributes['y'])) {
             	    // relative to top margin (i.e. absolute)
             	    $this->setXY($this->getX(), $this->tMargin + $attributes['y']);
-            	} elseif (isset($attributes['y_relative'])) {
+                } // if
+            	if (isset($attributes['y_relative'])) {
             	    // relative to last cell
                 	$this->setXY($this->getX(), $this->getY() + $attributes['y_relative']);
                 } // if
@@ -937,7 +1010,7 @@ class PDF extends TCPDF
                         		$attributes['text'] = $text;
                         		if (isset($attributes['print_only_once'])) {
                         		    // empty this field so that it is not output again if the page overflows
-                        		    // (when used in conjunction with 'ignore_if-empty')
+                        		    // (when used in conjunction with 'ignore_if_empty')
                         			$this->fieldarray[$fieldname] = '';
                         		} // if
                         	} // if
@@ -964,8 +1037,14 @@ class PDF extends TCPDF
                     if (empty($text) AND isset($attributes['ignore_if_empty'])) {
                     	// do not output this empty cell
                     	$depth = 0;
-                    	// cancel any adjustments to the XY coordinates
-                    	$this->setXY($saveX, $saveY);
+                        if (isset($attributes['y']) OR isset($attributes['y'])) {
+                            // 'y' position was forced, so do not lose it
+                            $this->setXY($saveX, $this->getY());
+                            unset($attributes['newline']);
+                        } else {
+                    	    // cancel any adjustments to the XY coordinates
+                    	    $this->setXY($saveX, $saveY);
+                        } // if
                     } else {
                         // get number of lines that this text will produce
                         $attributes = $this->getLineCount($attributes);
@@ -985,6 +1064,13 @@ class PDF extends TCPDF
                     } // if
 
             	} // if
+
+                if (isset($attributes['y_save_bottom'])) {
+                    if (preg_match('/pos[0-9]{1}/', $attributes['y_save_bottom'])) {
+                        $pos = $attributes['y_save_bottom'];
+                        $this->save_y_pos[$pos] = $this->getY() - $this->tMargin + $depth;
+                    } // if
+                } // if
 
             	if ($depth > $max_depth) {
                 	$max_depth = $depth;
@@ -1046,15 +1132,22 @@ class PDF extends TCPDF
         $fill   = 1;  // assume ON unless turned OFF
         $last_page = false;
 
+        $save_party_language = $GLOBALS['party_language'];
+
         // add print a line of labels where each label comes from a different record
         while ($fieldarray = $dbobject->fetchRow($resource) OR !$last_page) {
             if ($dbobject->errors) return;
 
-            if (empty($this->structure)) {
+            if ($GLOBALS['party_language'] != $save_party_language) {
+            	$save_destination = $this->pdf_destination;
                 // reload report structure in the customer's language
                 $this->structure = getFileStructure($GLOBALS['report'], './reports');
             	$this->structure = $this->validateStructure($this->structure);
             	$this->structure = $this->adjustColumnWidthsDetailView($this->structure);
+                $this->style     = $this->loadStyleFile();  // reload 'pdf.styles.inc' file
+                $result          = $this->replaceFonts($GLOBALS['party_language']);
+                $this->pdf_destination = $save_destination;
+                $save_party_language = $GLOBALS['party_language'];
             } // if
 
             if (empty($fieldarray) AND !$last_page) {
@@ -1197,16 +1290,25 @@ class PDF extends TCPDF
 
         $previous_row = array();                      // initialise previous row
         $style_array  = array();
+
+        $save_party_language = $GLOBALS['party_language'];
+
         $current_row = $dbobject->fetchRow($resource);  // read first row
+
         // add each row to the document
         do {
             if ($dbobject->errors) return;
 
-            if (empty($this->structure)) {
-                // reload report structure in the customer's language
-                $this->structure = getFileStructure($GLOBALS['report'], './reports');
-            	$this->structure = $this->validateStructure($this->structure);
-            } // if
+            if ($GLOBALS['party_language'] != $save_party_language) {
+	            $save_destination = $this->pdf_destination;
+	            // reload report structure in the designated language
+	            $this->structure = getFileStructure($GLOBALS['report'], './reports');
+	            $this->structure = $this->validateStructure($this->structure);
+	            $this->style     = $this->loadStyleFile();  // reload 'pdf.styles.inc' file
+		        $result          = $this->replaceFonts($GLOBALS['party_language']);
+		        $this->pdf_destination = $save_destination;
+		        $save_party_language = $GLOBALS['party_language'];
+	        } // if
 
             $this->fieldarray = $current_row;  // make this data accessible to Header() method
 
@@ -1298,7 +1400,8 @@ class PDF extends TCPDF
     function listView_assemble_row ($column, $columndata, $fieldarray, $style_array=array())
     // assemble a row of data for the list view
     {
-        $cellspec = array();
+        // copy in any specs from the structure file (may only contain 'width')
+        $cellspec = $this->structure['columns'][$column];
 
         $columndata = array_change_key_case($columndata, CASE_LOWER);
         if (isset($this->structure['pdf']['label_print'])) {
@@ -1313,9 +1416,6 @@ class PDF extends TCPDF
             } // if
         } // if
 
-        // change all occurrences of 'marginX' to 'margin_X'
-        $columndata = $this->addUnderscore($columndata);
-
         if (isset($this->structure['body']['style'])) {
         	$cellspec['default_style']  = $this->structure['body']['style'];
         } elseif (isset($this->structure['data']['style'])) {
@@ -1327,23 +1427,20 @@ class PDF extends TCPDF
         	$cellspec['style'] = $style_array[$fieldname];
         } // if
 
-        if (isset($this->structure['columns'][$column]['width'])) {
-        	$cellspec['width'] = $this->structure['columns'][$column]['width'];
-        } else {
+        if (!isset($cellspec['width'])) {
             // default is width divided by number of columns
             $cellspec['width'] = $this->printable_width / count($this->structure['body']['fields']);
         } // if
-        if (isset($this->structure['columns'][$column]['halign'])) {
-        	$cellspec['halign'] = $this->structure['columns'][$column]['halign'];
-        } elseif (isset($this->structure['columns'][$column]['align'])) {
-        	$cellspec['halign'] = $this->structure['columns'][$column]['align'];
+        if (!isset($cellspec['halign'])) {
+            if (isset($cellspec['align'])) {
+                // use deprecated value
+        	    $cellspec['halign'] = $cellspec['align'];
+                unset($cellspec['align']);
+            } // if
         } // if
-        if (isset($this->structure['columns'][$column]['valign'])) {
-        	$cellspec['valign'] = $this->structure['columns'][$column]['valign'];
-        } // if
-        if (isset($this->structure['columns'][$column]['stretch'])) {
-        	$cellspec['stretch'] = $this->structure['columns'][$column]['stretch'];
-        } // if
+
+        // change all occurrences of 'marginX' to 'margin_X'
+        $cellspec = $this->addUnderscore($cellspec);
 
         if (isset($fieldarray[$fieldname])) {
         	$text = $fieldarray[$fieldname];
@@ -1386,6 +1483,12 @@ class PDF extends TCPDF
             	// format current row
                 $style_array = array();
                 $rowdata = $dbobject->formatData($rowdata, $style_array);
+                if ($dbobject->errors) {
+                    foreach ($dbobject->errors as $key => $value) {
+                        $msg = "$key: $value";
+                        trigger_error($msg, E_USER_ERROR);
+                    } // foreach
+                } // if
             } // if
             // assemble a row of column details
             $print_array = array();
@@ -1409,6 +1512,44 @@ class PDF extends TCPDF
         return $fill;
 
     } // listView_print
+
+    // ****************************************************************************
+    function loadStyleFile ()
+    // load file(s) containing style details
+    {
+        // load file of default print styles
+        require 'pdf.styles.inc';  // use standard styles
+
+        // include additional project styles (optional)
+        if (!empty($GLOBALS['project_code'])) {
+        	// 1st alternative - look in the 'custom-processing' directory
+            $fname = "reports/custom-processing/{$GLOBALS['project_code']}/pdf.styles.inc";
+            if (file_exists($fname)) {
+                require $fname;
+            } else {
+            	// 2nd alternative - look in the current working directory
+	            $fname = "pdf.styles.{$GLOBALS['project_code']}.inc";
+	            if (file_exists($fname)) {
+	                require $fname;
+	            } // if
+			} // if
+        } // if
+
+        foreach ($style as $key => $value) {
+        	if (isset($style[$key]['font']) AND is_array($style[$key]['font'])) {
+        	    // change all occurrences of 'marginX' to 'margin_X'
+            	$style[$key]['font'] = $this->addUnderscore($style[$key]['font']);
+        	} // if
+        } // foreach
+
+        if (isset($font_replacement)) {
+        	// replace fonts for specific languages (see replaceFonts() method)
+        	$this->font_replacement = $font_replacement;
+        } // if
+
+        return $style;
+
+    } // loadStyleFile
 
     // ****************************************************************************
     function millimeters2units ($mm)
@@ -1448,6 +1589,8 @@ class PDF extends TCPDF
     // read database resource and output all records to a PDF file in DETAIL view
     // using the layout defined in the $structure
     {
+        ob_start();  // turn on output buffering
+
         $dbobject =& $this->dbobject;
 
         // allow filename to be customised
@@ -1477,7 +1620,15 @@ class PDF extends TCPDF
 
         $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
 
-        $res = ob_end_clean();
+        $output = ob_get_contents();
+        ob_end_clean();
+        if (strlen($output) > 0) {
+            // if output buffer contains a Byte Order Mark after including a file then remove it and continue
+            $output = removeBOM($output);
+            if (strlen($output) > 0) {
+                echo $output;  // contains something other than a BOM
+            } // if
+        } // if
 
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
@@ -1526,6 +1677,8 @@ class PDF extends TCPDF
     // read database resource and output all records to a PDF file in LABEL view
     // using the layout defined in the report structure
     {
+        ob_start();  // turn on output buffering
+
         $dbobject =& $this->dbobject;
 
         // allow filename to be customised
@@ -1554,6 +1707,16 @@ class PDF extends TCPDF
         } // if
 
         $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
+
+        $output = ob_get_contents();
+        ob_end_clean();
+        if (strlen($output) > 0) {
+            // if output buffer contains a Byte Order Mark after including a file then remove it and continue
+            $output = removeBOM($output);
+            if (strlen($output) > 0) {
+                echo $output;  // contains something other than a BOM
+            } // if
+        } // if
 
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
@@ -1602,6 +1765,8 @@ class PDF extends TCPDF
     // read database resource and output all records to a PDF file in LIST view
     // using the layout defined in the report structure
     {
+        ob_start();  // turn on output buffering
+
         $dbobject =& $this->dbobject;
 
         // allow filename to be customised
@@ -1633,6 +1798,16 @@ class PDF extends TCPDF
         $locale = saveLocaleFormat($_SESSION['user_language_array'][0][2]);
 
         $dbobject->pdf_destination = strtoupper($dbobject->pdf_destination);
+
+        $output = ob_get_contents();
+        ob_end_clean();
+        if (strlen($output) > 0) {
+            // if output buffer contains a Byte Order Mark after including a file then remove it and continue
+            $output = removeBOM($output);
+            if (strlen($output) > 0) {
+                echo $output;  // contains something other than a BOM
+            } // if
+        } // if
 
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
@@ -1905,7 +2080,7 @@ class PDF extends TCPDF
             $count = extract($result, EXTR_IF_EXISTS);
             if (isset($celldata['style'])) {
                 // use style override for this cell
-            	$result = $this->setPrintStyle($celldata['style']);
+            	$result = $this->setPrintStyle($celldata['style'], $result);
             	$count = extract($result, EXTR_IF_EXISTS);
             } // if
     	} // if
@@ -1954,8 +2129,9 @@ class PDF extends TCPDF
 
         if (strtoupper($this->DrawColor) == strtoupper($this->FillColor)) {
             // both colours are the same, so do not write any borders
-        	$border = false;
-        	$this->SetLineWidth(null);
+        	$draw = 0;
+        } elseif (isset($celldata['border']) AND !is_True($celldata['border'])) {
+            $draw = 0;
         } // if
         if ($draw > 0) {
         	$this->SetLineWidth($draw);
@@ -1964,7 +2140,7 @@ class PDF extends TCPDF
             $this->SetLineWidth(null);
         } // if
 
-        if (empty($this->style[$celldata['default_style']]['fillcolour'])) {
+        if (isset($celldata['default_style']) AND !isset($this->style[$celldata['default_style']]['fillcolour'])) {
 	        $fill = false;  // no fill colour specified, so turn fill off
 	    } // if
 	    if (isset($celldata['style'])) {
@@ -1995,6 +2171,15 @@ class PDF extends TCPDF
         } else {
             $fieldspec = array();
         } // if
+
+        $paddings          = $this->default_padding;
+        if (isset($celldata['padding_left'])) {
+            $paddings['L'] = $celldata['padding_left'];
+        } // if
+        if (isset($celldata['padding_right'])) {
+            $paddings['R'] = $celldata['padding_right'];
+        } // if
+        $this->setCellPaddings($paddings['L'], $paddings['T'], $paddings['R'], $paddings['B']);
 
         $X = $this->getX();
         $Y = $this->getY();
@@ -2163,7 +2348,6 @@ class PDF extends TCPDF
                 } else {
                     $text = '';
                 } // if
-                // output a line of text in the current cell
                 $this->Cell($cell_width, $height, $text, $mod_border, 0, $halign, $fill, $link, $stretch, $ignore_min_height, $calign, $valign);
 
                 if ($line_no == 0 OR $this->new_page) {
@@ -2218,7 +2402,7 @@ class PDF extends TCPDF
             	$count = extract($result, EXTR_IF_EXISTS);
                 if (isset($attributes['style'])) {
             	    // use style specified for this element
-            	    $result = $this->setPrintStyle($attributes['style']);
+            	    $result = $this->setPrintStyle($attributes['style'], $result);
             	    $count = extract($result, EXTR_IF_EXISTS);
             	} // if
 
@@ -2404,6 +2588,7 @@ class PDF extends TCPDF
         $this->last_height = 0;
         $height            = 0;
         $max_height        = 0;
+        $paddings          = $this->default_padding;
 
         // calculate number of lines required for each cell in this row
         foreach ($print_array as $cellno => $celldata) {
@@ -2451,6 +2636,17 @@ class PDF extends TCPDF
         	    $height = $celldata['height'];
         	} // if
 
+            if (isset($celldata['padding_top'])) {
+                if ($celldata['padding_top'] > $paddings['T']) {
+                    $paddings['T'] = $celldata['padding_top'];
+                } // if
+            } // if
+            if (isset($celldata['padding_bottom'])) {
+                if ($celldata['padding_bottom'] > $paddings['B']) {
+                    $paddings['B'] = $celldata['padding_bottom'];
+                } // if
+            } // if
+
         	if ($line_count > $max_lines) {
         		$max_lines = $line_count;
         	} // if
@@ -2486,6 +2682,21 @@ class PDF extends TCPDF
             if ($space_left < 1) {
         	 	$this->AddPage();  // start a new page
         	} // if
+        } // if
+
+        if ($paddings['T'] > 0) {
+            $max_lines++;  // add an extra blank line for padding_top
+            foreach ($print_array as $cellno => $celldata) {
+                array_unshift($celldata['line_array'], '');
+                $print_array[$cellno] = $celldata;
+            } // foreach
+        } // if
+        if ($paddings['B'] > 0) {
+            $max_lines++;  // add an extra blank line for padding_bottom
+            foreach ($print_array as $cellno => $celldata) {
+                $celldata['line_array'][] = '';
+                $print_array[$cellno] = $celldata;
+            } // foreach
         } // if
 
         if (isset($this->structure['pdf']['label_print'])) {
@@ -2541,14 +2752,45 @@ class PDF extends TCPDF
                 } else {
                     $last_height = 0;
                 } // if
+
+                // reset padding to defaults
+                $this->setCellPaddings($this->default_padding['L'], $this->default_padding['T'], $this->default_padding['R'], $this->default_padding['B']);
+
                 // print one line from each cell before advancing to next line
+                unset($cell_padding);
                 foreach ($print_array as $cellno => $celldata) {
-                    $celldata['cellno']   = $cellno;
-                    $celldata['lastcell'] = count($print_array)-1;
-                    $this->printCell($celldata, $i, $max_lines-1, $border, $fill, $last_height, $function);
+                    if (isset($celldata['nofillcolour'])) {
+                        $cell_fill = 0;
+                    } else {
+                        $cell_fill = $fill;
+                    } // if
+                    if ($paddings['T'] > 0 AND $i == 0) {
+                        // add an empty line for the top padding
+                        $cell_padding = array('default_style' => $celldata['default_style']);
+                        $cell_padding['line_array']        = $celldata['line_array'];
+                        $cell_padding['width']             = $celldata['width'];
+                        $cell_padding['height']            = $paddings['T'];
+                        $cell_padding['ignore_min_height'] = true;
+                        $this->printCell($cell_padding, $i, $max_lines-1, $border, $cell_fill, $cell_padding['height'], $function);
+                    } elseif ($paddings['B'] > 0 AND $i == $max_lines-1) {
+                        // add an empty line for the bottom padding
+                        $cell_padding = array('default_style' => $celldata['default_style']);
+                        $cell_padding['line_array']        = $celldata['line_array'];
+                        $cell_padding['width']             = $celldata['width'];
+                        $cell_padding['height']            = $paddings['B'];
+                        $cell_padding['ignore_min_height'] = true;
+                        $this->printCell($cell_padding, $i, $max_lines-1, $border, $cell_fill, $cell_padding['height'], $function);
+                    } else {
+                        // add normal lines between the top and bottom padding
+                        $celldata['cellno']   = $cellno;
+                        $celldata['lastcell'] = count($print_array)-1;
+                        $this->printCell($celldata, $i, $max_lines-1, $border, $cell_fill, $last_height, $function);
+                    } // if
                 } // foreach
                 // end of current line, so move to start of next line
-                if ($last_height <> 0) {
+                if (isset($cell_padding) AND is_array($cell_padding)) {
+                    $this->Ln($cell_padding['height']);
+                } elseif ($last_height <> 0) {
                 	$this->Ln($last_height);
                 } elseif (preg_match('/(multi)$/i', $function)) {
                     if ($max_height > $this->last_height) {
@@ -2568,6 +2810,33 @@ class PDF extends TCPDF
         return;
 
     } // printRow
+
+    // ****************************************************************************
+    function replaceFonts ($language)
+    // examine $this->style and replace all font names
+    {
+    	if (is_array($this->font_replacement) AND !empty($this->font_replacement)) {
+    		if (array_key_exists($language, $this->font_replacement)) {
+    			$new_font = $this->font_replacement[$language];
+			} else {
+				return FALSE;
+    		} // if
+		} else {
+			return FALSE;
+    	} // if
+
+    	foreach ($this->style as $style => $style_data) {
+    		if (isset($style_data['font']) AND isset($style_data['font']['family'])) {
+    			//if (!isset($style_data['font']['no_font_replacement'])) {
+                if (isset($style_data['font']['font_replacement'])) {
+    				$this->style[$style]['font']['family'] = $new_font;
+    			} // if
+    		} // if
+    	} // foreach
+
+    	return TRUE;
+
+	} // replaceFonts
 
     // ****************************************************************************
     function setBarcodeStyle ($style)
@@ -2624,7 +2893,7 @@ class PDF extends TCPDF
     } // setHeader
 
     // ****************************************************************************
-    function setPrintStyle ($style)
+    function setPrintStyle ($style, $prev_style=null)
     // set print style (font, colours, etc)
     {
         $result = array();
@@ -2636,19 +2905,34 @@ class PDF extends TCPDF
         	return $result;
         } // if
 
+        if (is_array($prev_style) AND !empty($prev_style)) {
+            // load in previous style which may be overridden
+            $result = $prev_style;
+        } // if
+
     	if (isset($this->style[$style]['font']['family'])) {
-        	$this->SetFont($this->style[$style]['font']['family'], $this->style[$style]['font']['style'], $this->style[$style]['font']['size']);
+            $result['family'] = $this->style[$style]['font']['family'];
+            $result['style']  = $this->style[$style]['font']['style'];
+            $result['size']   = $this->style[$style]['font']['size'];
+        } // if
+
+        if (isset($this->style[$style]['font']['style'])) {
+        	$result['style'] = $this->style[$style]['font']['style'];
         } // if
 
         if (isset($this->style[$style]['font']['size'])) {
-        	$this->SetFontSize($this->style[$style]['font']['size']);
+            $result['size']  = $this->style[$style]['font']['size'];
+        } // if
+
+        if (isset($result['family']) AND isset($result['style']) AND isset($result['size'])) {
+            $this->SetFont($result['family'], $result['style'], $result['size']);
         } // if
 
         if (isset($this->style[$style]['font']['height'])) {
-        	// set line height for cells which use this font
+            // set line height for cells which use this font
             $result['height'] = $this->style[$style]['font']['height'];
 //            if ($result['height'] > $this->last_height) {
-//            	$this->last_height = $result['height'];
+//                $this->last_height = $result['height'];
 //            } // if
         } // if
 
@@ -2701,44 +2985,44 @@ class PDF extends TCPDF
 
         //$paddings = $this->getCellPaddings();
         $paddings = $this->default_padding;
-        $padding_left   = $paddings['L'];
-        $padding_top    = $paddings['T'];
-        $padding_right  = $paddings['R'];
-        $padding_bottom = $paddings['B'];
 
         if (isset($this->style[$style]['font']['padding_left'])) {
-            $padding_left   = $this->style[$style]['font']['padding_left'];
+            $paddings['L']            = $this->style[$style]['font']['padding_left'];
+            $result['padding_left']   = $paddings['L'];
         } // if
         if (isset($this->style[$style]['font']['padding_right'])) {
-            $padding_right  = $this->style[$style]['font']['padding_right'];
+            $paddings['R']            = $this->style[$style]['font']['padding_right'];
+            $result['padding_right']  = $paddings['R'];
         } // if
         if (isset($this->style[$style]['font']['padding_top'])) {
-            $padding_top    = $this->style[$style]['font']['padding_top'];
+            $paddings['T']            = $this->style[$style]['font']['padding_top'];
+            $result['padding_top']    = $paddings['T'];
         } // if
         if (isset($this->style[$style]['font']['padding_bottom'])) {
-            $padding_bottom = $this->style[$style]['font']['padding_bottom'];
+            $paddings['B']            = $this->style[$style]['font']['padding_bottom'];
+            $result['padding_bottom'] = $paddings['B'];
         } // if
-        $this->setCellPaddings($padding_left, $padding_top, $padding_right, $padding_bottom);
+        $this->setCellPaddings($paddings['L'], $paddings['T'], $paddings['R'], $paddings['B']);
 
         $margins = $this->getCellMargins();
-        $margin_left   = $margins['L'];
-        $margin_top    = $margins['T'];
-        $margin_right  = $margins['R'];
-        $margin_bottom = $margins['B'];
 
         if (isset($this->style[$style]['font']['margin_left'])) {
-            $margin_left   = $this->style[$style]['font']['margin_left'];
+            $margins['L']            = $this->style[$style]['font']['margin_left'];
+            $result['margin_left']   = $margins['L'];
         } // if
         if (isset($this->style[$style]['font']['margin_right'])) {
-            $margin_right  = $this->style[$style]['font']['margin_right'];
+            $margins['R']            = $this->style[$style]['font']['margin_right'];
+            $result['margin_right']  = $margins['R'];
         } // if
         if (isset($this->style[$style]['font']['margin_top'])) {
-            $margin_top    = $this->style[$style]['font']['margin_top'];
+            $margins['T']            = $this->style[$style]['font']['margin_top'];
+            $result['margin_top']    = $margins['T'];
         } // if
         if (isset($this->style[$style]['font']['margin_bottom'])) {
-            $margin_bottom = $this->style[$style]['font']['margin_bottom'];
+            $margins['B']            = $this->style[$style]['font']['margin_bottom'];
+            $result['margin_bottom'] = $margins['B'];
         } // if
-        $this->setCellMargins($margin_left, $margin_top, $margin_right, $margin_bottom);
+        $this->setCellMargins($margins['L'], $margins['T'], $margins['R'], $margins['B']);
 
         return $result;
 
@@ -2813,11 +3097,10 @@ class PDF extends TCPDF
         } else {
         	// now call constructor in parent class
             if (version_compare(phpversion(), '5.0.0', '<')) {
-                parent::TCPDF($orientation, $units, $format);
-            } else {
-                // PHP 5 uses different code
-                parent::__construct($orientation, $units, $format);
-            } // if
+			    parent::TCPDF($orientation, $units, $format, true, 'UTF-8', false, false);
+			} else {
+			    parent::__construct($orientation, $units, $format, true, 'UTF-8', false, false);
+			} // if
         } // if
 
         // change all occurrences of 'marginX' to 'margin_X'

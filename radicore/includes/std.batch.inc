@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -10,7 +10,7 @@
 function batchInit ($batchfile)
 // initialisation for a batch process
 {
-    global $stdout, $stdouth;
+    global $stdout, $stdouth, $argv;
 
     error_reporting(-1);                // report everything
     ini_set('display_errors', true);    // display everything
@@ -60,7 +60,10 @@ function batchInit ($batchfile)
     } // if
 
     echo "<html>\n";
-    echo '<p>** started at ' .date('F j, Y, g:i a') ."</p>\n";
+    //echo '<p>** started at ' .date('F j, Y, H:i:s')."</p>\n";
+    echo '<p>** started at ' .date(DATE_RFC850)."</p>\n";
+
+    $_SERVER['SCRIPT_FILENAME']          = $curr_file;
 
     if (empty($_SERVER['SERVER_NAME'])) {
     	$_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
@@ -71,14 +74,12 @@ function batchInit ($batchfile)
     if (empty($_SERVER['DOCUMENT_ROOT'])) {
     	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
     } // if
+    $_SERVER['PHP_SELF']                 = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
     } // if
     if (empty($_SERVER['REMOTE_ADDR'])) {
     	$_SERVER['REMOTE_ADDR']          = 'batch';
-    } // if
-    if (empty($_SERVER['REQUEST_URI'])) {
-    	$_SERVER['REQUEST_URI']          = $curr_file;
     } // if
     if (empty($_SERVER['SERVER_ADMIN'])) {
         $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
@@ -86,8 +87,6 @@ function batchInit ($batchfile)
             $_SERVER['SERVER_ADMIN']     = trim($ini_array['server_admin'], "'");
         } // if
     } // if
-
-    $_SERVER['SCRIPT_FILENAME']      = $curr_file;
 
     // if multiple accounts are being used, then default to the shared account
     $_SESSION['rdcaccount_id']       = 1;
@@ -140,18 +139,17 @@ function batchInit ($batchfile)
         unset($fn);
     } //
 
-    echo '<p>script name  : ' .$curr_file ."</p>\n";
-    echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
+    echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
+    echo '<p>script name  : ' .$_SERVER['SCRIPT_FILENAME'] ."</p>\n";
+    echo '<p>php_self     : ' .$_SERVER['PHP_SELF'] ."</p>\n";
     echo '<p>server API   : ' .php_sapi_name() ."</p>\n";
     echo '<p>language     : ' .$_SERVER["HTTP_ACCEPT_LANGUAGE"] ."</p>\n";
     echo '<p>server_admin : ' .$_SERVER["SERVER_ADMIN"] ."</p>\n";
 
-    $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
-
-    $_SESSION['role_id']       = 'batch';
-    $_SESSION['logon_user_id'] = 'batch';
-    $GLOBALS['task_id']        = basename($PHP_SELF);
+    $_SESSION['role_id']       = 'batch';  // default - may be replaced if session data is read
+    $_SESSION['logon_user_id'] = 'batch';  // default - may be replaced if session data is read
+    $GLOBALS['task_id']        = basename($_SERVER['PHP_SELF']);
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
 
@@ -163,9 +161,14 @@ function batchInit ($batchfile)
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
     echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
 
-    $_SERVER['PHP_SELF'] = $PHP_SELF;
+    if (!empty($argv)) {
+        $count = count($argv)-1;
+        for ($i=1;$i<=$count;$i++) {
+            echo "<p>ARGV[$i]={$argv[$i]}</p>\n";
+        } // for
+    } // if
 
-    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
+    if (!empty($_SERVER['SERVER_PROTOCOL']) OR !empty($argv)) {
         initSession();
     } // if
 
@@ -199,7 +202,9 @@ function batchEnd ($errors=null)
     	} // if
     } // if
 
-    echo '<p>** finished at ' .date('F j, Y, g:i a') ."</p>\n";
+    //echo '<p>** finished at ' .date('F j, Y, H:i:s')."</p>\n";
+    echo '<p>** finished at ' .date('F j, Y, ').getTimeStamp('time') ."</p>\n";
+    //echo '<p>** finished at ' .date(DATE_RFC850) ."</p>\n";
     echo "</html>";
 
     global $stdout, $stdouth;

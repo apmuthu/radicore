@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete4.inc
@@ -297,6 +297,9 @@ $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray = $inner_data;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
     // repeat current task with GET instead of POST

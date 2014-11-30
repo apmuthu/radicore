@@ -64,7 +64,7 @@ $array['rel_type']              = array('RES' => 'RESTRICTED',
                                         'NUL' => 'NULLIFY (framework)',
                                         'DEX' => 'CASCADE (FK constraint)',
                                         'NUX' => 'NULLIFY (FK constraint)',
-                                        'IGN' => 'IGNORE - No action');
+                                        'IGN' => 'IGNORE');
 
 $array['col_subtype']           = array('filename' => 'FILE NAME',
                                         'email'    => 'E-MAIL',

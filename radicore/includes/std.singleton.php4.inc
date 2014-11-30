@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class RDCsingleton
@@ -65,6 +65,10 @@ class RDCsingleton
             	switch ($classname) {
                 	case 'curl_class':
                         require_once 'std.curl.class.inc';
+                        break;
+
+                    case 'csv_class':
+                        require_once 'std.csv.class.inc';
                         break;
 
                     case 'date_class':

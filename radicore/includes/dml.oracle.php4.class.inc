@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -326,15 +326,6 @@ class oracle
     function connect ($schema=null)
     // establish a connection to the database
     {
-        global $dbhost, $dbusername, $dbuserpass;
-
-        if (!empty($schema) AND !empty($this->dbprefix)) {
-             if (!preg_match('/^(' .$this->dbprefix .')/i', $schema)) {
-                // prefix may be different on different servers
-                $schema = $this->dbprefix .$schema;
-            } // if
-        } // if
-
         $this->errors = array();
         $this->query  = '';
         $this->schema = $schema;
@@ -1277,7 +1268,7 @@ class oracle
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($schema, $tablename, $query);

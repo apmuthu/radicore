@@ -1,5 +1,5 @@
 <?php
-    // file created on October 27, 2013, 3:18 pm
+    // file created on June 21, 2014, 5:32 pm
     
     // field specifications for table dict.dict_relationship
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -68,7 +68,7 @@
     $fieldspec['rel_type']                  = array('type' => 'string',
                                                     'size' => 3,
                                                     'required' => 'y',
-                                                    'default' => 'IGN',
+                                                    'default' => 'RES',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'rel_type');
     

@@ -1,15 +1,20 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
-class CSV
+// *****************************************************************************
+// This class is used for reading and writing CSV (Comma Separated Variable) files.
+// *****************************************************************************
+
+class csv_class
 {
     // member variables
     var $dbobject;              // database object
 
     var $alternative_names;     // possible alternative names
+    var $byte_order_mark = '';  // to be written at beginning of file
     var $errors = array();      // array of errors messages
     var $column_names;          // array of column names in the input file
     var $delimiter;             // delimiter used by fgetcsv()
@@ -28,7 +33,7 @@ class CSV
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function CSV ($dbobject=null)
+    function csv_class ($dbobject=null)
     //
     {
         if (is_object($dbobject)) {
@@ -38,9 +43,12 @@ class CSV
             $dbobject->csv =& $this;
         } // if
 
+        // mark the output file as using the UTF8 character set
+        $this->byte_order_mark = pack("CCC",0xef,0xbb,0xbf);
+
         return;
 
-    } // CSV
+    } // csv_class
 
     // ****************************************************************************
     function getErrors ()
@@ -70,6 +78,8 @@ class CSV
             $csvout = get_class($dbobject) .'.csv';
         } // if
 
+        $pattern_id = getPatternId();
+
         $dbobject =& $this->dbobject;
 
         // allow filename to be customised
@@ -84,11 +94,14 @@ class CSV
             $csvout = $dbobject->_cm_pre_output($csvout);
         } // if
 
-        if (isset($csvout) and isset($GLOBALS['batch'])) {
+        if (isset($csvout) AND isset($GLOBALS['batch'])) {
             if (!empty($csvout)) {
                 if (!$csvouth = fopen($csvout, 'w')) {
                     trigger_error("Cannot open file $csvout", E_USER_ERROR);
                 } // if
+            } // if
+            if (!empty($this->byte_order_mark)) {
+                $result = fwrite($csvouth, $this->byte_order_mark);
             } // if
         } // if
 
@@ -105,6 +118,10 @@ class CSV
 
         // fetch database rows one at a time
         while ($fieldarray = $dbobject->fetchRow($resource)) {
+            if ($dbobject->errors) {
+                $this->errors = $dbobject->errors;
+                return false;
+            } // if
             $row_count++;
             if (!empty($exclude) AND is_array($exclude)) {
                 // this contains a list of field names which may have to be excluded
@@ -121,8 +138,8 @@ class CSV
                 foreach ($fieldarray as $fieldname => $fieldvalue) {
                     $fieldname = getLanguageText($fieldname);
                     if ($tab_delimited) {
-                        //$output .= $fieldname ."\t";
-                        $output .= '"' .$fieldname .'"' ."\t";
+                        $output .= $fieldname ."\t";
+                        //$output .= '"' .$fieldname .'"' ."\t";
                     } else {
                         $output .= '"' .str_replace('"', "'", $fieldname) .'",';
                     } // if
@@ -137,33 +154,47 @@ class CSV
                     $output = '';
                 } // if
             } // if
-            // perform any data formatting
-            $null = array();
-            $fieldarray = $dbobject->formatData($fieldarray, $null);
-            // output each field as data
-            foreach ($fieldarray as $fieldname => $fieldvalue) {
-                // replace any tab characters which may be in the data
-                $fieldvalue = str_replace($search, $replace, $fieldvalue);
-                if ($tab_delimited) {
-                    $output .= $fieldvalue ."\t";
-                    //$output .= '"' .$fieldvalue .'"' ."\t";
-                } else {
-                    $output .= '"' .$fieldvalue .'",';
+            do {
+                // perform any data formatting
+                $null = array();
+                $fieldarray = $dbobject->formatData($fieldarray, $null);
+                // output each field as data
+                foreach ($fieldarray as $fieldname => $fieldvalue) {
+                    // replace any tab characters which may be in the data
+                    $fieldvalue = str_replace($search, $replace, $fieldvalue);
+                    if ($tab_delimited) {
+                        $output .= $fieldvalue ."\t";
+                        //$output .= '"' .$fieldvalue .'"' ."\t";
+                    } else {
+                        $output .= '"' .$fieldvalue .'",';
+                    } // if
+                } // foreach
+                // strip last ',' or "\t" and append <newline>
+                $output = rtrim($output, $delimiter);
+                $output .= "\r\n";
+                if (isset($csvouth) AND !empty($csvout)) {
+                    if (!$result = fwrite($csvouth, $output)) {
+                        trigger_error("Cannot write to file $csvout", E_USER_ERROR);
+                    } // if
+                    $output = '';
                 } // if
-            } // foreach
-            // strip last ',' or "\t" and append <newline>
-            $output = rtrim($output, $delimiter);
-            $output .= "\r\n";
-            if (isset($csvouth) AND !empty($csvout)) {
-                if (!$result = fwrite($csvouth, $output)) {
-                    trigger_error("Cannot write to file $csvout", E_USER_ERROR);
-                } // if
-                $output = '';
-            } // if
 
-            $result = check_memory_limit();
+                $result = check_memory_limit();
+
+                if (preg_match('/^(output6)$/i', $pattern_id)) {
+                    // this is a Tree View, so look for any children of this row
+                    $fieldarray = $dbobject->fetchRowChild($fieldarray);
+                } else {
+                    $fieldarray = null;
+                } // if
+
+            } while (!empty($fieldarray));
 
         } // while
+
+        if (isset($GLOBALS['transaction_has_started']) AND is_True($GLOBALS['transaction_has_started'])) {
+            $errors = $dbobject->commit();
+        } // if
 
         // perform any post processing (which may involve adding more records to $output)
         if (is_object($dbobject->custom_processing_object)) {
@@ -177,6 +208,8 @@ class CSV
         } else {
             $output = $dbobject->_cm_post_output($output, $csvout);
         } // if
+
+        fclose($csvouth);
 
         return $output;
 
@@ -292,11 +325,14 @@ class CSV
                 $data = array();  // start with an empty array
             } // if
 
+            $nbsp = chr(194).chr(160); // non-breaking space
+
             foreach ($column_names as $key => $fieldname) {
                 $data[$fieldname] = $input[$key];
                 if (preg_match('/NULL/i', $data[$fieldname])) $data[$fieldname] = null;
                 // replace non-breaking space with ordinary space
-                $data[$fieldname] = preg_replace('/[\xA0]/', ' ', $data[$fieldname]);
+                //$data[$fieldname] = preg_replace('/[\xA0]/', ' ', $data[$fieldname]);
+                $data[$fieldname] = str_replace($nbsp, ' ', $data[$fieldname]);
             } // foreach
 
             if (!empty($map_leftovers)) {
@@ -395,7 +431,7 @@ class CSV
     function setColumnNames ($names)
     // set the column names manually as they are not present in the input file.
     // (this is instead of the getColumnNames() method).
-    // $names is an indexed array.
+    // $names is an indexed array in format: 'outname' = 'inputputname'
     {
         if (empty($names)) {
             $this->errors[] = "setColumnNames: Input array is empty";
@@ -434,7 +470,7 @@ class CSV
             if (!empty($this->errors)) return;
         } // if
 
-        // convert te original names to the mapped names
+        // convert the original names to the mapped names
         foreach ($this->column_names as $ix => &$column_name) {
             $key = array_search($column_name, $mapping);
             if (!empty($key)) {

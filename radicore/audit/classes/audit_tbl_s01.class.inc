@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_tbl.class.inc';
 class audit_tbl_s01 extends audit_tbl
@@ -84,7 +84,8 @@ class audit_tbl_s01 extends audit_tbl
 
         if (isset($GLOBALS['search'])) {
             // this may have values for base_name and table name
-        	$this->sql_search = $GLOBALS['search'];
+        	$this->sql_search_orig = $GLOBALS['search'];
+            $this->sql_search      = $GLOBALS['search'];
         } // if
 
         return $where;

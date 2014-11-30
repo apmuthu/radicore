@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output4.inc
@@ -121,11 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // create an instance of the CSV object
         require_once 'std.csv.class.inc';
-        $csv = new CSV($dbobject);
+        $csv = new csv_class($dbobject);
 
         // transform output to CSV format
         $output = $csv->outputCSV($resource, $_POST);
-        $errors = $dbobject->getErrors();
+        if ($csv->errors) {
+            $string = format_array($csv->errors);
+            display_on_stdout($string);
+        } // if
+        //$errors = $dbobject->getErrors();
         $messages = $dbobject->getMessages();
 
         if (!empty($output)) {
@@ -145,9 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $mode = 'update';      // identify mode for building the screen
 
-//if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    $fieldarray = $dbobject->getColumnNames($where);
-//} // if
+$fieldarray = $dbobject->getColumnNames($where);
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $objectdata = getPostArray($_POST, $dbobject->getFieldSpec());
     $fieldarray = array_merge($fieldarray, $objectdata);
@@ -159,6 +162,8 @@ $script_vars['where']     = $where;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

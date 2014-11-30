@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions related to session management
@@ -231,6 +231,10 @@ function childForm ($post, $object_array, $where=null)
     if (isset($post['select'])) {
         // convert selection into SQL where format
         $pkey_array = $dbobject->getPkeyArray(null, $task_array);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
+            return $errors;
+        } // if
         $selection = selection2where($pkey_array, $post['select']);
         if (is_True($_SESSION['selection_lock'])) {
         	$dbobject->select_string = $selection;
@@ -244,11 +248,11 @@ function childForm ($post, $object_array, $where=null)
 	    // extract current $where string from object
         $where = $dbobject->getWhere($task_array);
 	    if ($next_task == 'audit_dtl(list)3') {
-	    	$database_id = $dbobject->dbname;
+            $database_id = $dbobject->dbname_server;
 	    	// restrict selection to current database
 	    	$search = "base_name='$database_id'";
 	    } elseif ($next_task == 'audit_dtl(list)3exact') {
-	    	$database_id = $dbobject->dbname;
+	    	$database_id = $dbobject->dbname_server;
 	    	$table_id    = $dbobject->tablename;
 	    	// restrict selection to current database and table
 	    	$search = "base_name='$database_id' AND table_name='$table_id'";
@@ -610,30 +614,34 @@ function getShutDownStatus ()
     $errors   = array();
     $messages = array();
 
-    $dbobject =& RDCsingleton::getInstance('mnu_control');
-    $shutdown_data = $dbobject->getControlData('shutdown');
-    unset($dbobject);
+    if (!empty($_SESSION['empty_tables']) AND array_key_exists('SYSTEM_SHUTDOWN', $_SESSION['empty_tables'])) {
+        // there is no data to lookup
+    } else {
+        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $shutdown_data = $dbobject->getControlData('shutdown');
+        unset($dbobject);
 
-    $time = getTimeStamp('time');
-    $dow  = date('l', time()); // get day of week (full name)
-    $fieldname = 'shutdown_' .strtolower($dow);
+        $time = getTimeStamp('time');
+        $dow  = date('l', time()); // get day of week (full name)
+        $fieldname = 'shutdown_' .strtolower($dow);
 
-    if (is_True($shutdown_data[$fieldname])) {
-        // converts times from server timezone to client timezone
-        $shutdown_start = getTimeStamp('date').' '.$shutdown_data['shutdown_start'];
-        $shutdown_end   = getTimeStamp('date').' '.$shutdown_data['shutdown_end'];
-        if (!empty($_SESSION['timezone_server']) AND !empty($_SESSION['timezone_client'])) {
-            $shutdown_start = convertTZ($shutdown_start, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-            $shutdown_end   = convertTZ($shutdown_end,   $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-        } // if
-        // there is a shutdown scheduled for this day...
-        if ($shutdown_data['shutdown_warning'] <= $time AND $shutdown_data['shutdown_start'] >= $time) {
-            // System will be shutting down between X and Y
-            $messages[] = getLanguageText('sys0140', substr($shutdown_start, 11, 5), substr($shutdown_end, 11, 5));
-        } // if
-        if ($shutdown_data['shutdown_start'] <= $time AND $shutdown_data['shutdown_end'] >= $time) {
-            // System has been shut down. It will be available at X
-            $errors[] = getLanguageText('sys0141', substr($shutdown_end, 11, 5));
+        if (is_True($shutdown_data[$fieldname])) {
+            // converts times from server timezone to client timezone
+            $shutdown_start = getTimeStamp('date').' '.$shutdown_data['shutdown_start'];
+            $shutdown_end   = getTimeStamp('date').' '.$shutdown_data['shutdown_end'];
+            if (!empty($_SESSION['timezone_server']) AND !empty($_SESSION['timezone_client'])) {
+                $shutdown_start = convertTZ($shutdown_start, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+                $shutdown_end   = convertTZ($shutdown_end,   $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            } // if
+            // there is a shutdown scheduled for this day...
+            if ($shutdown_data['shutdown_warning'] <= $time AND $shutdown_data['shutdown_start'] >= $time) {
+                // System will be shutting down between X and Y
+                $messages[] = getLanguageText('sys0140', substr($shutdown_start, 11, 5), substr($shutdown_end, 11, 5));
+            } // if
+            if ($shutdown_data['shutdown_start'] <= $time AND $shutdown_data['shutdown_end'] >= $time) {
+                // System has been shut down. It will be available at X
+                $errors[] = getLanguageText('sys0141', substr($shutdown_end, 11, 5));
+            } // if
         } // if
     } // if
 
@@ -668,21 +676,19 @@ function getTimePeriodStatus ($user_id, $role_id)
     $errors   = array();
     $messages = array();
 
-//    $dbobject =& RDCsingleton::getInstance('mnu_control');
-//    $shutdown_data = $dbobject->getControlData('shutdown');
-//    unset($dbobject);
-
-    $userOBJ =& RDCsingleton::getInstance('mnu_time_limit_user');
-    $roleOBJ =& RDCsingleton::getInstance('mnu_time_limit_role');
-
     $time = getTimeStamp('time');
     $dow  = date('l', time()); // get day of week (full name)
     $fieldname = 'scheduled_' .strtolower($dow);
 
     $query = "$fieldname=1 AND scheduled_start_time<='$time' AND scheduled_end_time>='$time'";
 
-    $where = "user_id='$user_id' ";
-    $count = $userOBJ->getCount($where);
+    if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_time_limit_user', $_SESSION['empty_tables'])) {
+        $count = 0;
+    } else {
+        $userOBJ =& RDCsingleton::getInstance('mnu_time_limit_user');
+        $where = "user_id='$user_id' ";
+        $count = $userOBJ->getCount($where);
+    } // if
     if ($count > 0) {
         $data = $userOBJ->getData("$where AND $query");
         if (empty($data)) {
@@ -693,8 +699,13 @@ function getTimePeriodStatus ($user_id, $role_id)
         } // if
     } else {
         // nothing found for user, so try again for role
-        $where = "role_id='$role_id'";
-        $count = $roleOBJ->getCount($where);
+        if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_time_limit_role', $_SESSION['empty_tables'])) {
+            $count = 0;
+        } else {
+            $roleOBJ =& RDCsingleton::getInstance('mnu_time_limit_role');
+            $where = "role_id='$role_id'";
+            $count = $roleOBJ->getCount($where);
+        } // if
         if ($count > 0) {
             $data = $roleOBJ->getData("$where AND $query");
             if (empty($data)) {
@@ -722,11 +733,11 @@ function getTimePeriodStatus ($user_id, $role_id)
 
 } // getTimePeriodStatus
 
-
 // ****************************************************************************
 function initSession($save_session_data=array())
 // initialise session data
 {
+    global $argv;               // command line arguments
     global $button_text;        // button text for current task
     global $current_menu;       // currently active menu on menu bar
     global $current_menu_tab;   // currently active tab on menu bar
@@ -782,9 +793,19 @@ function initSession($save_session_data=array())
     $errors   = array();
     $messages = array();
 
-    if ($_SERVER['PHP_SELF'] != $_SERVER['SCRIPT_NAME']) {
+    if (basename($_SERVER['PHP_SELF']) != basename($_SERVER['SCRIPT_FILENAME'])) {
         // somebody has added '/something-else' to the URL, so remove it
-    	$_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
+        $array = explode('/', $_SERVER['PHP_SELF']);
+        $key = array_search(basename($_SERVER['SCRIPT_FILENAME']), $array);
+        $array = array_slice($array, 0, $key+1);
+        $_SERVER['PHP_SELF'] = implode('/', $array);
+    } // if
+
+    if (!empty($GLOBALS['https_server_suffix']) AND preg_match('|^'.$GLOBALS['https_server_suffix'].'|i', $_SERVER['PHP_SELF'])) {
+        // remove 'https_server_suffix' from PHP_SELF
+        $_SERVER['PHP_SELF'] = substr($_SERVER['PHP_SELF'], strlen($GLOBALS['https_server_suffix']));
+    } else {
+        $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     } // if
 
     if (!defined('NO_SESSION_HANDLER')) {
@@ -803,28 +824,36 @@ function initSession($save_session_data=array())
 		$save_session_batch = $_SESSION;
 	} // if
     if (empty($_SESSION) OR isset($GLOBALS['batch'])) {
-        if (isset($session_name)) {
-            session_name($session_name);    // set the session name
-        } // if
-        if (isset($_GET['session_id'])) {
-            session_id($_GET['session_id']);    // set the session id
-        //} elseif (isset($_COOKIE['PHPSESSID'])) {
-		//	session_id($_COOKIE['PHPSESSID']);
-        } // if
-        @session_start();                    // open/reopen session
-        if (isset($save_session_batch)) {
-            // do not overwrite certain values from the starting session
-            if (!empty($_SESSION['role_id'])) {
-            	unset($save_session_batch['role_id']);
+        if (!empty($argv)) {
+            if ($argv[1] == 'PHPSESSID' AND !empty($argv[2])) {
+                session_name($argv[1]);
+                session_id($argv[2]);
+                unset($argv);  // this is no longer required
             } // if
-            if (!empty($_SESSION['logon_user_id'])) {
-    	        unset($save_session_batch['logon_user_id']);
+        } else {
+            if (isset($session_name)) {
+                session_name($session_name);    // set the session name
             } // if
-        	$_SESSION = array_merge($_SESSION, $save_session_batch);
+            if (isset($_GET['session_id'])) {
+                session_id($_GET['session_id']);    // set the session id
+            } // if
         } // if
-        if (!empty($save_session_data)) {
-        	$_SESSION = array_merge($_SESSION, $save_session_data);
-		} // if
+        if (!isset($_SESSION['pages'])) {
+            $res = @session_start();                    // open/reopen session
+            if (isset($save_session_batch)) {
+                // do not overwrite certain values from the starting session
+                if (!empty($_SESSION['role_id'])) {
+            	    unset($save_session_batch['role_id']);
+                } // if
+                if (!empty($_SESSION['logon_user_id'])) {
+    	            unset($save_session_batch['logon_user_id']);
+                } // if
+        	    $_SESSION = array_merge($_SESSION, $save_session_batch);
+            } // if
+            if (!empty($save_session_data)) {
+        	    $_SESSION = array_merge($_SESSION, $save_session_data);
+		    } // if
+        } // if
     } // if
 
     //logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
@@ -1124,7 +1153,8 @@ function initSession($save_session_data=array())
             // switch to specified task
             updateScriptVars();
             $page_stack = updatePageStack($task_id, '', $PHP_SELF);
-            $_SESSION['role_id'] = 'GLOBAL';
+            $_SESSION['role_id']   = 'GLOBAL';
+            $_SESSION['role_list'] = "'GLOBAL'";
             $errors = scriptNext('mnu_user(upd1)c', 'user_id=false');
 
 	    } elseif ($_GET['action'] == 'add-to-favourites') {
@@ -1155,32 +1185,36 @@ function initSession($save_session_data=array())
 	} else {
 		if (!empty($_SESSION['logon_user_id'])) {
 			// check that this user_id is valid for this IP address (helps prevent session hijacking)
-	        $ip_address = $_SERVER['SERVER_ADDR'];
-	        $user_id    = $_SESSION['logon_user_id'];
-	        $dbobject =& RDCsingleton::getInstance('mnu_user');
-	        $dbobject->sql_select  = 'user_id, ip_address';
-	        $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
-	                                      ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
-	                                      ." ELSE false"
-	                                 ." END AS ip_address_valid";
-	        $data = $dbobject->getData_raw("user_id='$user_id'");
-	        if (!empty($data)) {
-        		$data = $data[0];
-        		if (!is_True($data['ip_address_valid'])) {
-	                // 'This IP address is not valid'
-            		$_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
-	                $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-	                                      .getParentDIR()
-	                                      .$logon_screen
-	                                      .'?session_name=' .session_name();
+            if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_user_ip_address', $_SESSION['empty_tables'])) {
+                // table is empty, so no lookups are required
+            } else {
+	            $ip_address = getRealIPAddress();
+	            $user_id    = $_SESSION['logon_user_id'];
+	            $dbobject =& RDCsingleton::getInstance('mnu_user');
+	            $dbobject->sql_select  = 'user_id, ip_address';
+	            $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+	                                          ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
+	                                          ." ELSE false"
+	                                     ." END AS ip_address_valid";
+	            $data = $dbobject->getData_raw("user_id='$user_id'");
+	            if (!empty($data)) {
+        		    $data = $data[0];
+        		    if (!is_True($data['ip_address_valid'])) {
+	                    // 'This IP address is not valid for this user'
+            		    $_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
+	                    $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+	                                          .getParentDIR()
+	                                          .$logon_screen
+	                                          .'?session_name=' .session_name();
 
-	                logstuff("location: $location", __FUNCTION__, __LINE__);
+	                    logstuff("location: $location", __FUNCTION__, __LINE__);
 
-	                header('Location: ' .$location);
-	                exit;
+	                    header('Location: ' .$location);
+	                    exit;
+	                } // if
 	            } // if
-	        } // if
-	        unset($dbobject);
+	            unset($dbobject);
+            } // if
 		} // if
 
 	    if (empty($_SESSION['default_language'])) {
@@ -1206,12 +1240,20 @@ function initSession($save_session_data=array())
     		$_SESSION['user_language'] = $found_lang;
     	} // if
     } // if
-    if (empty($_SESSION['user_language'])) {
+    if (empty($_SESSION['user_language']) AND !empty($_SESSION['default_language'])) {
     	$_SESSION['user_language'] = $_SESSION['default_language'];
     } // if
 
     if (empty($_SESSION['user_language'])) {
         $_SESSION['user_language'] = 'en';
+    } // if
+
+    if (!isset($_SESSION['date_format_input'])) {
+        $dbobject =& RDCsingleton::getInstance('mnu_language');
+        $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
+        $_SESSION['date_format_input']  = $data[0]['input_date_format'];
+        $_SESSION['date_format_output'] = $data[0]['output_date_format'];
+        unset($dbobject);
     } // if
 
     // set to locale where decimal point is '.' (as used internally)
@@ -1378,7 +1420,7 @@ function initSession($save_session_data=array())
         $menu_buttons = $script_vars['menu_buttons'];
     } else {
         $menu_buttons = array();
-     } // if
+    } // if
 
     if (isset($script_vars['current_menu'])) {
         // the current menu in $page_stack is not a hyperlink
@@ -1543,7 +1585,8 @@ function initSession($save_session_data=array())
             // search criteria has been saved in script variables
             $search = $script_vars['search'];
             if (empty($script_vars['return_string'])) {
-                $return_string = $script_vars['search'];
+                $return_string                = $script_vars['search'];
+                $script_vars['return_string'] = $script_vars['search'];
             } // if
             unset ($script_vars['search']);
         } // if
@@ -1553,7 +1596,7 @@ function initSession($save_session_data=array())
     // outer entity before being passed to an inner entity, so it is defined separately.
     if (isset($script_vars['selection_fixed'])) {
         $task_selection = $script_vars['selection_fixed'];
-        unset ($script_vars['selection_fixed']);
+        //unset ($script_vars['selection_fixed']);
     } // if
 
     // check for details concerned with a popup form.
@@ -1591,6 +1634,8 @@ function initSession($save_session_data=array())
         if (isset($script_vars['return_string'])) {
             $return_string = $script_vars['return_string'];
             unset($script_vars['return_string']);
+        } elseif (!empty($selection)) {
+            $return_string = $selection;
         } else {
             $return_string = null;
         } // if
@@ -1814,8 +1859,11 @@ function runInBackground ($task_array, $save_script_vars)
     $dir = dirname($_SERVER['PHP_SELF']);
 
     $cwd = getcwd();
-    if (basename(getcwd()) != $task_array['subsys_dir']) {
+    if (basename(getcwd()) == $task_array['subsys_dir']) {
+        $script_dir = $cwd;
+    } else {
     	chdir('../'.$task_array['subsys_dir']);
+        $script_dir = getcwd();
         $dir = dirname($dir);
         if ($dir == DIRECTORY_SEPARATOR) {
             $dir = '';
@@ -1837,18 +1885,6 @@ function runInBackground ($task_array, $save_script_vars)
 
     // generate a new session just for the batch process
     session_regenerate_id();
-
-    // build fully qualified URL
-    if (strlen($GLOBALS['https_server']) > 0 AND (is_True($task_array['use_https']) OR is_True($GLOBALS['use_https']))) {
-    	$url = 'HTTPS://' .$GLOBALS['https_server'];
-    } else {
-        $url = 'HTTP://' .$_SERVER['HTTP_HOST'];
-    } // if
-    if (!empty($dir)) {
-    	$url .= $dir .'/';
-    } // if
-    $url .= $task_array['script_id'];
-    $url .= '?session_name=batch&session_id=' .session_id();
 
     // add variables to $_SESSION array for this script
     $script_id = $task_array['script_id'];
@@ -1885,30 +1921,49 @@ function runInBackground ($task_array, $save_script_vars)
 
     session_write_close();  // close session data before batch script launches
 
-    // launch this script in another server process, but let it run
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-    if (defined('CURL_HTTP_AUTH')) {
-        curl_setopt($ch, CURLOPT_USERPWD, CURL_HTTP_AUTH);
-    } // if
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+    if (preg_match('/^(linux|unix)/i', PHP_OS)) {
+        // run this program in the background via the command line
+        $session_id = session_id();
+        $script_name = $script_dir.'/'.$task_array['script_id'];
+        $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null &";
+        $result = exec($command_line);
 
-    $content = curl_exec($ch);
-    if ($content === FALSE) {
-        $curl_errno = curl_errno($ch);
-        if ($curl_errno == 28) {
-            // timeout - ignore
+    } else {
+        // build fully qualified URL
+        if (strlen($GLOBALS['https_server']) > 0 AND (is_True($task_array['use_https']) OR is_True($GLOBALS['use_https']))) {
+            $url = 'HTTPS://' .$GLOBALS['https_server'];
         } else {
-        	$curl_error = curl_error($ch);
-        	$errors[] = "CURL error $curl_errno: $curl_error";
-        	return $errors;
+            $url = 'HTTP://' .$_SERVER['HTTP_HOST'];
         } // if
-    } // if
-    curl_close($ch);
+        if (!empty($dir)) {
+            $url .= $dir .'/';
+        } // if
+        $url .= $task_array['script_id'];
+        $url .= '?session_name=batch&session_id=' .session_id();
+        // launch this script in another server process, but let it run in parallel
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+        if (defined('CURL_HTTP_AUTH')) {
+            curl_setopt($ch, CURLOPT_USERPWD, CURL_HTTP_AUTH);
+        } // if
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
 
-    //$content = <<< EOD
+        $content = curl_exec($ch);
+        if ($content === FALSE) {
+            $curl_errno = curl_errno($ch);
+            if ($curl_errno == 28) {
+                // timeout - ignore
+            } else {
+        	    $curl_error = curl_error($ch);
+        	    $errors[] = "CURL error $curl_errno: $curl_error";
+        	    return $errors;
+            } // if
+        } // if
+        curl_close($ch);
+
+        //$content = <<< EOD
 //<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 //<html><head>
 //<title>401 Authorization Required</title>
@@ -1917,6 +1972,7 @@ function runInBackground ($task_array, $save_script_vars)
 //<p>This server could not verify that you
 //are authorized to access the document
 //requested.  Either you supplied the wrong
+
 //credentials (e.g., bad password), or your
 //browser doesn't understand how to supply
 //the credentials required.</p>
@@ -1925,26 +1981,29 @@ function runInBackground ($task_array, $save_script_vars)
 //</body></html>
 //EOD;
 
-    if (empty($content)) {
-        // no response so far, so assume no errors and continue
-    } else {
-        if (preg_match('/<p>\*\* started at/ims', $content)) {
-            // this is a valid response
+        if (empty($content)) {
+            // no response so far, so assume no errors and continue
         } else {
-            // this is an unexpected response
-            if (preg_match('#(?=<title>).+(?<=</title>)#', $content, $regs)) {
-                // use the contents of the '<title' tag
-                $message = $regs[0];
-                $search   = array('#<title>#i','#</title>#i');
-                $replace  = array();
-                $message = preg_replace($search, $replace, $message);
-                $errors[] = "CURL error: $message";
-                return $errors;
+            if (preg_match('/<p>\*\* started at/ims', $content)) {
+                // this is a valid response
             } else {
-                $search = array('#\<html\>#ims', '#\</html\>#ims');
-                $content = preg_replace($search, NULL, $content);
-                $content = "START runInBackground() ERROR =>><br />".$content."<br /><<= END runInBackground() ERROR";
-                trigger_error($content, E_USER_ERROR);
+                // this is an unexpected response
+                if (preg_match('#(?=<title>).+(?<=</title>)#', $content, $regs)) {
+                    // use the contents of the '<title' tag
+                    $message = $regs[0];
+                    $search   = array('#<title>#i','#</title>#i');
+                    $replace  = array();
+                    $message = preg_replace($search, $replace, $message);
+
+
+                    $errors[] = "CURL error: $message";
+                    return $errors;
+                } else {
+                    $search = array('#\<html\>#ims', '#\</html\>#ims');
+                    $content = preg_replace($search, NULL, $content);
+                    $content = "START runInBackground() ERROR =>><br />".$content."<br /><<= END runInBackground() ERROR";
+                    trigger_error($content, E_USER_ERROR);
+                } // if
             } // if
         } // if
     } // if
@@ -2459,8 +2518,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                 // no, so remove current task from $page_stack
                 unset($page_stack[$task_id]);
                 // now go forwards to a new script
-                $where =& $first['where'];
-                $errors = scriptNext($first['task_id'], $where);
+                $where     =& $first['where'];
+                $selection =& $first['selection'];
+                $errors    = scriptNext($first['task_id'], $where, $selection);
                 if (!empty($errors)) {
                     return $errors;
                 } // if

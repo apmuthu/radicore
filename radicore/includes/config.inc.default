@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains database access details and values for optional constants/globals
@@ -103,10 +103,10 @@ $GLOBALS['log_sql_query'] = false;
 // set this to TRUE to write all XML documents to file 'xsl/<script_id>.xml' (for debugging)
 $GLOBALS['log_xml_document'] = false;
 
-// set date format - choose one of the following
+// set date format - choose one of the following (may be overridden on the MNU_LANGUAGE table)
 $GLOBALS['date_format'] = 'dmy';         //  '21 Jan 2001'
 //$GLOBALS['date_format'] = 'mdy';         // 'Jan 21 2001'
-//$GLOBALS['date_format'] = 'ymd';         // '2001, Jan 21'
+//$GLOBALS['date_format'] = 'ymd';         // '2001 Jan 21'
 //$GLOBALS['date_format'] = 'dd.mm.yyyy';  // '21.06.2001'
 //$GLOBALS['date_format'] = 'dd/mm/yyyy';  // '21/06/2001'
 //$GLOBALS['date_format'] = 'dd/mm/yy';    // '21/06/01'

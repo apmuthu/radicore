@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -145,6 +145,8 @@ END_OF_REGEX;
 
         $GLOBALS['classdir'] = $classdir;   // restore
 
+        $allow_db_function =& $callingOBJ->allow_db_function;
+
         if (!is_array($this->fields_not_for_trimming)) {
             if (is_string($this->fields_not_for_trimming)) {
                 $this->fields_not_for_trimming = array($this->fields_not_for_trimming);
@@ -221,7 +223,11 @@ END_OF_REGEX;
 
                 } elseif (isset($fieldspec['control']) and $fieldspec['control'] == 'popup') {
                     // only use default value if it is non-zero
-                    if ((int)$fieldspec['default'] != 0) {
+                    if (is_string($fieldspec['control']) AND $fieldspec['control'] == '0') {
+                        // ignore this value
+                    } elseif (is_numeric($fieldspec['control']) AND $fieldspec['control'] == 0) {
+                        // ignore this value
+                    } else {
                     	$fieldvalue = $fieldspec['default'];
                     } // if
 
@@ -233,6 +239,8 @@ END_OF_REGEX;
                     // load default value
                     $fieldvalue = $fieldspec['default'];
                 } // if
+			} elseif (preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type'])) {
+				$fieldvalue = null;  // numeric fields cannot be set to an empty string, so use NULL instead
             } // if
         } // if
 
@@ -247,9 +255,14 @@ END_OF_REGEX;
                     $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0020', $translated_fieldname);
                 } // if
             } // if
-            if (preg_match('/(date|datetime|timestamp)/i', $fieldspec['type'])) {
+            if (preg_match('/(date)/i', $fieldspec['type'])) {
                 if (isset($fieldspec['infinityisnull'])) {
                     $fieldvalue = '9999-12-31';
+                } // if
+            } // if
+            if (preg_match('/(datetime)/i', $fieldspec['type'])) {
+                if (isset($fieldspec['infinityisnull'])) {
+                    $fieldvalue = '9999-12-31 23:59:59';
                 } // if
             } // if
             if ($fieldspec['type'] == 'boolean') {
@@ -268,37 +281,41 @@ END_OF_REGEX;
             if (preg_match('/(set|array|varray|datetime|timestamp)/i', $fieldspec['type'])) {
                 // ignore size on these datatypes
             } else {
-                $size = (double)$fieldspec['size'];
-                if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
-                    // remove thousands separator and ensure decimal point is '.'
-                    $fieldvalue = number_unformat($fieldvalue, '.', ',');
-                    if (preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
-                        // assume value is in format 'field+1', so let it through
-                    } elseif (array_key_exists('scale', $fieldspec)) {
-                        if (is_numeric($fieldvalue)) {
-                            // round to the correct number of decimal places
-                            $fieldvalue = number_format($fieldvalue, $fieldspec['scale'], '.', '');
+                if (is_array($allow_db_function) AND in_array($fieldname, $allow_db_function)) {
+                    // this is a function call, not a value, so leave it alone
+                } else {
+                    $size = (double)$fieldspec['size'];
+                    if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
+                        // remove thousands separator and ensure decimal point is '.'
+                        $fieldvalue = number_unformat($fieldvalue, '.', ',');
+                        if (preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
+                            // assume value is in format 'field+1', so let it through
+                        } elseif (array_key_exists('scale', $fieldspec)) {
+                            if (is_numeric($fieldvalue)) {
+                                // round to the correct number of decimal places
+                                $fieldvalue = number_format($fieldvalue, $fieldspec['scale'], '.', '');
+                            } // if
                         } // if
                     } // if
-                } // if
-                if (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
-                	if (is_numeric($fieldvalue) AND strlen($fieldvalue) > $size) {
-                	    // reduce huge number to scientific notation
-                		$fieldvalue = sprintf('%e', $fieldvalue);
-                	} // if
-                } // if
-                if (strlen($fieldvalue) > $size) {
-                    if (preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type']) AND preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
-                        // assume value is in format 'field+1', so let it through
-                    } elseif (function_exists('mb_strlen')) {
-                        $encoding = mb_detect_encoding($fieldvalue);
-                        if (mb_strlen($fieldvalue, $encoding) > $size) {
-                        	// '$fieldname cannot be > $size characters
+                    if (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
+                	    if (is_numeric($fieldvalue) AND strlen($fieldvalue) > $size) {
+                	        // reduce huge number to scientific notation
+                		    $fieldvalue = sprintf('%e', $fieldvalue);
+                	    } // if
+                    } // if
+                    if (strlen($fieldvalue) > $size) {
+                        if (preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type']) AND preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
+                            // assume value is in format 'field+1', so let it through
+                        } elseif (function_exists('mb_strlen')) {
+                            $encoding = mb_detect_encoding($fieldvalue);
+                            if (mb_strlen($fieldvalue, $encoding) > $size) {
+                        	    // '$fieldname cannot be > $size characters
+                                $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
+                            } // if
+                        } else {
+                            // '$fieldname cannot be > $size characters
                             $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                         } // if
-                    } else {
-                        // '$fieldname cannot be > $size characters
-                        $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                     } // if
                 } // if
             } // if
@@ -427,7 +444,7 @@ END_OF_REGEX;
                     // let this through
                 } else {
                     // value must be a combined date and time
-                    if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue)) {
+                    if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue, $fieldspec)) {
                         $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
                     } else {
                         // set date to internal format
@@ -447,13 +464,17 @@ END_OF_REGEX;
                 break;
 
             default:
-                // perform validation if field type is numeric (integer, decimal)
-                $ini_precision = ini_get('precision');
-                if (isset($fieldspec['size']) AND $fieldspec['size'] > $ini_precision) {
-                    ini_set('precision', $fieldspec['size']);
+                if (is_array($allow_db_function) AND in_array($fieldname, $allow_db_function)) {
+                    // this is a function call, not a value, so leave it alone
+                } else {
+                    // perform validation if field type is numeric (integer, decimal)
+                    $ini_precision = ini_get('precision');
+                    if (isset($fieldspec['size']) AND $fieldspec['size'] > $ini_precision) {
+                        ini_set('precision', $fieldspec['size']);
+                    } // if
+                    $fieldvalue = $this->validateNumber($fieldname, $fieldvalue, $fieldspec);
+                    ini_set('precision', $ini_precision);
                 } // if
-                $fieldvalue = $this->validateNumber($fieldname, $fieldvalue, $fieldspec);
-                ini_set('precision', $ini_precision);
         } // switch
 
         return $fieldvalue;

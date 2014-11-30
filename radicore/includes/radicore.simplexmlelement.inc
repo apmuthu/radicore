@@ -1,11 +1,14 @@
 <?php
 // ****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// ****************************************************************************
 // This is used to convert an array into an XML document.
 // ****************************************************************************
 // Author:          Tony Marston <tony@radicore.org>
-// Version:         1.2
+// Version:         1.3
 // Date created:    15th June 2013
-// Date amended:    6th October 2013
+// Date amended:    27th March 2014
 
 class radicore_SimpleXMLElement extends SimpleXMLElement
 {
@@ -176,6 +179,9 @@ class radicore_SimpleXMLElement extends SimpleXMLElement
         } // if
 
         foreach ($array as $key2 => $value2) {
+            if ($value2 === $array) {
+                break;  // this is a reference back to itself, so ignore it
+            } // if
             $index = null;
             if (is_numeric($key2)) {
                 if (!is_array($value2)) {

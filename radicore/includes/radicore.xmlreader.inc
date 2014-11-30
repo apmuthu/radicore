@@ -1,5 +1,8 @@
 <?php
 // ****************************************************************************
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// ****************************************************************************
 // This is used to convert an XML document into an array.
 // ****************************************************************************
 // Author:          Tony Marston <tony@radicore.org>

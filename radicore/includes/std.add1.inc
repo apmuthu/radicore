@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -40,12 +40,15 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
+    // see if any configuration settings need to be changed
+    $fieldarray = $dbobject->changeConfig($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
     $dbobject->setRowsPerPage(1);  // scroll through one item at a time
+    $dbobject->sql_where   = &$sql_where;
     // get initial data for a new record
     $where = $dbobject->initialise($where, $selection);
     if (empty($dbobject->errors)) {
@@ -57,12 +60,20 @@ if (isset($script_vars['dbobject'])) {
 } // if
 
 if (!empty($_POST)) {
-    // merge user's input with original data so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed.
-    // this also deals with a javascript 'submit()'.
-    $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
-    if ($dbobject->errors) {
-        $errors = $dbobject->getErrors();
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
+        } // if
+    } else {
+        // merge original data with user's input (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
+        // ensure that changes are stored inside relevant object
+        $dbobject->setFieldArray($fieldarray);
     } // if
     if (empty($errors)) {
         // look for a navigation or popup button which jumps to another script
@@ -77,13 +88,11 @@ if (!empty($_POST)) {
 
     } elseif (isset($_POST['paste'])) {
         // merge initial data with previously saved data
-        $fieldarray = pasteData($dbobject->fieldspec, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
+        $fieldarray = pasteData($dbobject, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
         // redo any initialisation
         $fieldarray = $dbobject->getInitialData($fieldarray);
 
     } elseif (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             // this is a standard 'submit' button, so update the database
             $dbobject->startTransaction();
@@ -147,13 +156,11 @@ if (!empty($_POST)) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form where something has been selected
-    if (!empty($return_from) AND !empty($popup_object) ) {
-        if (!empty($selection)) {
-            // merge previous saved variables with selection from popup form
-            $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            if ($dbobject->errors) {
-                $errors = $dbobject->getErrors();
-            } // if
+    if (!empty($return_from) AND isset($selection) ) {
+        // merge previous saved variables with selection from popup form
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
         } // if
     } // if
     // get any extra data and merge with $fieldarray
@@ -173,7 +180,9 @@ $script_vars['where']    = $where;
 $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
+$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) AND !$button) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if

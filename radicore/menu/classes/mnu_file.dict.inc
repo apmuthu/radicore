@@ -12,7 +12,7 @@
                                                     'size' => 255);
 
     // primary key details
-    $this->primary_key                      = array('file_id');
+    $this->primary_key                      = array('file');
 
     // default sort sequence
     $this->default_orderby                  = 'file';

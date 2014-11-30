@@ -1,4 +1,4 @@
-// file created on July 31, 2013, 2:46 pm
+// file created on June 26, 2014, 11:55 am
     
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                          = 'Auto-Increment';
@@ -26,6 +26,7 @@ $array['Maintain Person']                         = 'Maintain Person';
 $array['Maintain Person Address']                 = 'Maintain Person Address';
 $array['New']                                     = 'New';
 $array['Nodes']                                   = 'Nodes';
+$array['Output to CSV']                           = 'Output to CSV';
 $array['Output to CSV (1)']                       = 'Output to CSV (1)';
 $array['Output to CSV (2)']                       = 'Output to CSV (2)';
 $array['Output to PDF(D)']                        = 'Output to PDF(D)';
@@ -44,10 +45,10 @@ $array['Update Seq Number']                       = 'Update Seq Number';
 $array['Upload Picture']                          = 'Upload Picture';
 
 // column details for subsystem XAMPLE
-$array['address_no']                              = 'address_no';
 $array['addr_line_1']                             = 'addr_line_1';
 $array['addr_line_2']                             = 'addr_line_2';
 $array['addr_line_3']                             = 'addr_line_3';
+$array['address_no']                              = 'address_no';
 $array['county']                                  = 'county';
 $array['created_date']                            = 'created_date';
 $array['created_user']                            = 'created_user';
@@ -71,15 +72,15 @@ $array['node_id']                                 = 'node_id';
 $array['node_id_snr']                             = 'node_id_snr';
 $array['option_desc']                             = 'option_desc';
 $array['option_id']                               = 'option_id';
-$array['person_id']                               = 'person_id';
 $array['pers_type_desc']                          = 'pers_type_desc';
 $array['pers_type_id']                            = 'pers_type_id';
+$array['person_id']                               = 'person_id';
 $array['picture']                                 = 'picture';
 $array['postcode']                                = 'postcode';
 $array['revised_date']                            = 'revised_date';
 $array['revised_user']                            = 'revised_user';
-$array['start_date']                              = 'start_date';
 $array['star_sign']                               = 'star_sign';
+$array['start_date']                              = 'start_date';
 $array['telephone_no']                            = 'telephone_no';
 $array['town']                                    = 'town';
 $array['tree_level_desc']                         = 'tree_level_desc';

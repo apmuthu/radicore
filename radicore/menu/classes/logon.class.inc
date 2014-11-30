@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class logon extends mnu_user
@@ -86,11 +86,12 @@ class logon extends mnu_user
             } // if
             if ($auth_array['authentication'] != 'INTERNAL') {
                 // external authentication is turned ON globally, but is it turned off for this USER or ROLE
-                $this->sql_select = 'user_id, mnu_user.role_id'
+                $this->sql_select = 'mnu_user.user_id, mnu_user_role.role_id'
                                   . ", CASE WHEN mnu_user.is_external_auth_off='Y' THEN 'Y' ELSE mnu_role.is_external_auth_off END AS is_external_auth_off";
-                $this->sql_from   = 'mnu_user '
-                                  . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
-                $where = "user_id='" .addslashes($logonarray['user_id']) ."'";
+                $this->sql_from   = 'mnu_user'
+                                  ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                                  .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
+                $where = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
                 $fieldarray = $this->getData_raw($where);
                 if (is_True($fieldarray[0]['is_external_auth_off'])) {
                     $auth_array['authentication'] = 'INTERNAL';
@@ -127,18 +128,24 @@ class logon extends mnu_user
             unset ($crypt_obj);
         } // if
 
-        $ip_address = $_SERVER['SERVER_ADDR'];
+        $ip_address = getRealIPAddress();
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, mnu_user.role_id, mnu_role.start_task_id, mnu_user.rdcaccount_id, mnu_user.external_id, mnu_user.party_id, mnu_user.user_timezone ';
-        $this->sql_from   = 'mnu_user '
-                          . 'LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user.role_id)';
-        $where = "user_id='" .addslashes($logon_user_id) ."'";
+        $this->sql_select = 'mnu_user.user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
+        $this->sql_from   = 'mnu_user'
+                          ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                          .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
+        $where = "mnu_user.user_id='" .addslashes($logon_user_id) ."'";
+        $user_id = addslashes($logon_user_id);
         // lookup on MNU_USER_IP_ADDRESS to see if this IP address is valid
-        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE $where) = 0 THEN true"
-                                  ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE $where AND ip_address='$ip_address') = 1 THEN true"
+        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+                                  ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
                                   ." ELSE false"
                              ." END AS ip_address_valid";
+        $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id=mnu_user.user_id) AS role_list";
+        // fetch the user's language with any date formats
+        $this->sql_select .= ', mnu_language.input_date_format, mnu_language.output_date_format';
+        $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_code, '{$_SESSION['default_language']}'))";
         if ($auth_array['authentication'] == 'INTERNAL') {
             // include user_password in selection criteria
             $where .= " AND user_password='" .addslashes($logon_password) ."'";
@@ -155,6 +162,14 @@ class logon extends mnu_user
         unset($_SESSION['logon_retries']);
 
         $fieldarray = $fieldarray[0];
+
+        if (strlen($fieldarray['language_code']) > 0) {
+            // user has a pre-set language code
+            $_SESSION['user_language'] = strtolower($fieldarray['language_code']);
+        } else {
+            $_SESSION['user_language'] = $_SESSION['default_language'];
+        } // if
+
         $fieldarray['user_password'] = '';
         if (is_True($fieldarray['is_disabled'])) {
             $this->errors[] = getLanguageText('sys0143'); // 'This user has been disabled';
@@ -177,8 +192,22 @@ class logon extends mnu_user
             return $this->errors;
         } // if
 
+        if (empty($fieldarray['role_id']) OR empty($fieldarray['role_list'])) {
+            // 'This user does not have a primary role'
+            $this->errors[] = getLanguageText('sys0230');
+            $this->fieldarray = $logonarray;
+            return $this->errors;
+        } // if
+
+        if (empty($fieldarray['start_task_id'])) {
+            // 'This user does not have a starting task'
+            $this->errors[] = getLanguageText('sys0231');
+            $this->fieldarray = $logonarray;
+            return $this->errors;
+        } // if
+
         if (!is_True($fieldarray['ip_address_valid'])) {
-            // 'This IP address is not valid'
+            // 'This IP address is not valid for this user'
         	$this->errors[] = getLanguageText('sys0200', $ip_address);
             $this->fieldarray = $logonarray;
             return $this->errors;
@@ -229,18 +258,23 @@ class logon extends mnu_user
         } // if
 
         // make logon data available throughout the session
-        $_SESSION['logon_user_id']    = $logon_user_id;
-        $_SESSION['logon_user_name']  = $fieldarray['user_name'];
-        $_SESSION['role_id']          = $fieldarray['role_id'];
-        $_SESSION['logon_email_addr'] = $fieldarray['email_addr'];
-        $_SESSION['rdcaccount_id']    = $fieldarray['rdcaccount_id'];
-        $_SESSION['logon_party_id']   = $fieldarray['party_id'];
-        $_SESSION['start_task_id']    = $fieldarray['start_task_id'];
+        $_SESSION['logon_user_id']      = $logon_user_id;
+        $_SESSION['logon_user_name']    = $fieldarray['user_name'];
+        $_SESSION['role_id']            = $fieldarray['role_id'];
+        $_SESSION['logon_email_addr']   = $fieldarray['email_addr'];
+        $_SESSION['rdcaccount_id']      = $fieldarray['rdcaccount_id'];
+        $_SESSION['logon_party_id']     = $fieldarray['party_id'];
+        $_SESSION['start_task_id']      = $fieldarray['start_task_id'];
+        $_SESSION['date_format_input']  = $fieldarray['input_date_format'];
+        $_SESSION['date_format_output'] = $fieldarray['output_date_format'];
         //$_SESSION['selection_lock']   = true;
 
-        if (strlen($fieldarray['language_code']) > 0) {
-            // user has a pre-set language code
-        	$_SESSION['user_language'] = strtolower($fieldarray['language_code']);
+        // save list of roles from MNU_USER_ROLE table
+        $array = explode(',', $fieldarray['role_list']);
+        if (!empty($array)) {
+            $_SESSION['role_list'] = "'".implode("','", $array)."'";
+        } else {
+            $_SESSION['role_list'] = "'".$fieldarray['role_id']."'";
         } // if
 
         // store locale data based on user's preferred language
@@ -260,8 +294,7 @@ class logon extends mnu_user
         $updatearray['logon_date']    = getTimeStamp('date');
         $updatearray['logon_time']    = getTimeStamp('time');
         $updatearray['in_use']        = true;
-        //$updatearray['ip_address']    = $_SERVER['REMOTE_ADDR'];
-        $updatearray['ip_address']    = getRealIPAddress();
+        $updatearray['ip_address']    = $ip_address;
         unset($updatearray['user_password']);
 
         $updatearray = $this->updateRecord($updatearray);
@@ -304,6 +337,8 @@ class logon extends mnu_user
 
         // save this data inside this object
         $this->fieldarray = $fieldarray;
+
+        $_SESSION['empty_tables'] = $this->findEmptyTables($logon_user_id);
 
         return $this->errors;
 
@@ -357,7 +392,7 @@ class logon extends mnu_user
             if ($_SESSION['logon_retries']['count'] > $max_retries) {
                 $errors = $this->errors;
                 // limit exceeded, so disable user
-                $fieldarray = $this->getData_raw("user_id='$user_id'");
+                $fieldarray = $this->getData_raw("mnu_user.user_id='$user_id'");
                 if ($this->numrows == 1) {
                     $_SESSION['logon_user_id'] = $user_id;
                     $fieldarray[0]['is_disabled'] = true;
@@ -377,6 +412,41 @@ class logon extends mnu_user
         return;
 
     } // PasswordRetries
+
+    // ****************************************************************************
+    function findEmptyTables ($user_id)
+    // Find any empty tables to avoid reading them again in this session
+    {
+        $array = array();
+
+        $count = $this->getCount("SELECT COUNT(*) FROM mnu_task_ip_address");
+        if ($count == 0) {
+            $array['mnu_task_ip_address'] = true;
+        } // if
+
+        $count = $this->getCount("SELECT COUNT(*) FROM mnu_user_ip_address WHERE user_id='$user_id'");
+        if ($count == 0) {
+            $array['mnu_user_ip_address'] = true;
+        } // if
+
+        $count = $this->getCount("SELECT COUNT(*) FROM mnu_time_limit_role");
+        if ($count == 0) {
+            $array['mnu_time_limit_role'] = true;
+        } // if
+
+        $count = $this->getCount("SELECT COUNT(*) FROM mnu_time_limit_user WHERE user_id='$user_id'");
+        if ($count == 0) {
+            $array['mnu_time_limit_user'] = true;
+        } // if
+
+        $count = $this->getCount("SELECT COUNT(*) FROM mnu_control WHERE record_id='SYSTEM' AND field_id LIKE 'SHUTDOWN%' AND field_value IS NOT NULL");
+        if ($count == 0) {
+            $array['SYSTEM_SHUTDOWN'] = true;
+        } // if
+
+        return $array;
+
+    } // findEmptyTables
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)

@@ -17,6 +17,38 @@ $array['day_names_short']  = array('mon' => 'Mon',
                                    'fri' => 'Fri',
                                    'sat' => 'Sat',
                                    'sun' => 'Sun');
+// Japanese/Chinese characters
+$ja_day   = pack("CCC",0xe6,0x97,0xa5);
+$ja_month = pack("CCC",0xe6,0x9c,0x88);
+$ja_year  = pack("CCC",0xe5,0xb9,0xb4);
+// Korean characters
+$ko_day   = pack("CCC",0xec,0x9d,0xbc);
+$ko_month = pack("CCC",0xec,0x9b,0x94);
+$ko_year  = pack("CCC",0xeb,0x85,0x84);
+
+$array['date_format']  = array('dd mm yyyy'    => 'dd mm yyyy (09 01 2006)',
+                               'dd.mm.yyyy'    => 'dd.mm.yyyy (09.01.2006)',
+                               'dd-mm-yyyy'    => 'dd-mm-yyyy (09-01-2006)',
+                               'dd/mm/yyyy'    => 'dd/mm/yyyy (09/01/2006)',
+                               'dd/mm yyyy'    => 'dd/mm yyyy (09/01 2006)',
+                               'dd/mm/yy'      => 'dd/mm/yy (09/01/06)',
+                               'd/mm/yyyy'     => 'd/mm/yyyy (9/01/2006)',
+                               'd.m.yyyy'      => 'd.m.yyyy (9.1.2006)',
+                               'd. m. yyyy'    => 'd. m. yyyy (9. 1. 2006)',
+                               'dd. mm. yyyy.' => 'dd. mm. yyyy. (09. 01. 2006.)',
+                               'dd MMM yyyy'   => 'dd MMM yyyy (09 Jan 2006)',
+                               'd MMM yyyy'    => 'd MMM yyyy (9 Jan 2006)',
+                               'mm dd yyyy'    => 'mm dd yyyy (01 09 2006)',
+                               'm/d/yyyy'      => 'm/d/yyyy (1/9/2006)',
+                               'MMM dd yyyy'   => 'MMM dd yyyy (Jan 09 2006)',
+                               'yyyy-mm-dd'    => 'yyyy-mm-dd (2006-01-09)',
+                               'yyyy/mm/dd'    => 'yyyy/mm/dd (2006/01/09)',
+                               'yyyy.mm.dd'    => 'yyyy.mm.dd (2006.01.09)',
+                               'yyyy. mm. dd'  => 'yyyy. mm. dd (2006. 01. 09)',
+                               'yyyy MMM dd'   => 'yyyy MMM dd (2006 Jan 09)',
+                               'yyyy#mm#dd# [ja]'   => 'yyyy'.$ja_year.'mm' .$ja_month.'dd' .$ja_day.' (2006*01*09*) [ja]',
+                               'yyyy# mm# dd# [ko]' => 'yyyy'.$ko_year.' mm'.$ko_month.' dd'.$ko_day.' (2006* 01* 09*) [ko]',
+                               'yyyy#m#d# [zh_XX]'  => 'yyyy'.$ja_year.'m'  .$ja_month.'d'  .$ja_day.' (2006*1*9*) [zh_HK/MO/SG/TW]');
 
 $array['day_names_long']  = array('monday' => 'Monday',
                                   'tuesday' => 'Tuesday',

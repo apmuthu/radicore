@@ -6,7 +6,7 @@
 //*****************************************************************************
 
 $outer_table = 'mnu_role';                  // name of outer table
-$inner_table = 'mnu_user';                  // name of inner table
+$inner_table = 'mnu_user_role';             // name of inner table
 $screen   = 'mnu_user.list2.screen.inc';    // file identifying screen structure
 
 require 'std.list2.inc';                    // activate page controller

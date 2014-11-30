@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add5.inc
@@ -53,6 +53,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
+    // see if any configuration settings need to be changed
+    $outer_data = $dbouter->changeConfig($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -85,6 +87,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
+    // see if any configuration settings need to be changed
+    $inner_data = $dbinner->changeConfig($inner_data);
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
@@ -104,20 +108,32 @@ $dbouter->setChildObject($dbinner);
 $dbinner->setParentObject($dbouter);
 
 if (!empty($_POST)) {
-    // merge user's input with original data so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed.
-    // this also deals with a javascript 'submit()'.
-    $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
-    if ($dbouter->errors) {
-        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-    } // if
-    if (empty($errors)) {
-        // repeat for the inner entity
-        $inner_data = $dbinner->getFieldArray();
-        $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
+        if ($dbouter->errors) {
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
+        if (empty($errors)) {
+            // repeat for the inner entity
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+    } else {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
+        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
+        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
+        // repeat for the inner entity
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
     } // if
     if (empty($errors)) {
         // look for a navigation or popup button which jumps to another script
@@ -127,8 +143,6 @@ if (!empty($_POST)) {
         } // if
     } // if
     if (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             // a SUBMIT button was pressed, so update the database
             $dbinner->startTransaction();
@@ -220,6 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if ($dbouter->errors) {
             	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
+            $inner_data = $dbinner->getFieldArray();
         } elseif (isset($selection) AND $popup_object == 'dbinner') {
             $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset);
             if ($dbinner->errors) {
@@ -264,6 +279,9 @@ $script_vars['where']     = unqualifyWhere($where);
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
 $script_vars = updateScriptVars ($script_vars);
+
+$dbouter->fieldarray = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray = $inner_data;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !$button) {
     // repeat current task with GET instead of POST

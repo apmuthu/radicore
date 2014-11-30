@@ -198,6 +198,8 @@ go
 CREATE TABLE mnu_language (
   language_id nvarchar(5) NOT NULL DEFAULT 'EN',
   language_name nvarchar(40) NOT NULL DEFAULT 'English',
+  input_date_format nvarchar(12) DEFAULT NULL,
+  output_date_format nvarchar(12) DEFAULT NULL,
   created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
   revised_date datetime2 DEFAULT NULL,
@@ -526,7 +528,6 @@ CREATE TABLE mnu_user (
   user_id nvarchar(16) NOT NULL,
   user_name nvarchar(30) NOT NULL,
   user_password nvarchar(40) NOT NULL,
-  role_id nvarchar(16) NOT NULL,
   rdcaccount_id int DEFAULT NULL,
   pswd_chg_date date DEFAULT NULL,
   pswd_chg_time time(0) DEFAULT NULL,
@@ -551,9 +552,24 @@ CREATE TABLE mnu_user (
   PRIMARY KEY (user_id),
   UNIQUE (email_addr)
 );
-CREATE INDEX mnu_user_role_id ON mnu_user (role_id);
 CREATE INDEX mnu_user_rdcaccount_id ON mnu_user (rdcaccount_id);
 go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_user_alt
+--
+CREATE TABLE mnu_user_alt (
+  user_id nvarchar(16), 
+  language_id nvarchar(5),
+  user_name nvarchar(30) NOT NULL,  
+  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) DEFAULT 'UNKNOWN',
+  revised_date datetime2 DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (user_id, language_id)
+);
+GO
 -- --------------------------------------------------------
 
 --
@@ -570,3 +586,21 @@ CREATE TABLE mnu_user_ip_address (
   PRIMARY KEY (user_id,ip_address)
 );
 go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_user_role
+--
+
+CREATE TABLE mnu_user_role (
+  user_id nvarchar(16), 
+  role_id nvarchar(16),
+  is_primary char(1) DEFAULT 'N', 
+  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) DEFAULT 'UNKNOWN',
+  revised_date datetime2 DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (user_id, role_id)
+);
+go
+

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_language extends Default_Table
@@ -12,8 +12,6 @@ class mnu_language extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'menu';
         $this->tablename   = 'mnu_language';
 
@@ -29,11 +27,11 @@ class mnu_language extends Default_Table
     {
         $fieldspec = parent::getFieldSpec_original();
 
+        // remove references to any relationships which do not exist in this installation
         foreach ($this->child_relations as $index => $relation) {
         	if (isset($relation['subsys_dir'])) {
                 $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
                 if (!file_exists($classname)) {
-                    // does not exist in this installation, so remove this reference
                 	unset($this->child_relations[$index]);
                 } // if
         	} // if
@@ -72,12 +70,18 @@ class mnu_language extends Default_Table
             $this->lookup_data['language_id'] = $array;
         } // if
 
+        if (!array_key_exists('date_format', $this->lookup_data)) {
+            // get options for language_code
+            $array = getLanguageArray('date_format');
+            $this->lookup_data['date_format'] = $array;
+        } // if
+
         return $fieldarray;
 
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

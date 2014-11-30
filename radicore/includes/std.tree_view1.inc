@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.tree_view1.inc
@@ -14,7 +14,7 @@
 require_once 'include.general.inc';
 
 // identify mode for xsl file
-$mode = 'read';
+$mode = 'tree';
 
 // load session variables
 initSession();
@@ -85,6 +85,20 @@ if (!empty($instruction)) {
     $dbobject->setInstruction($instruction);
 } // if
 
+if (isset($_SESSION['rowsperpage'])) {
+    $dbobject->setRowsPerPage($_SESSION['rowsperpage']);
+} // if
+
+if (isset($_GET['pagesize'])) {
+    $dbobject->setRowsPerPage($_GET['pagesize']);
+    $_SESSION['rowsperpage'] = $_GET['pagesize'];
+} // if
+
+// obtain the required page number (optional)
+if (isset($_GET['page'])) {
+    $dbobject->setPageNo($_GET['page']);
+} // if
+
 // get list of expanded nodes from session data
 $expanded = $dbobject->getExpanded();
 
@@ -95,8 +109,11 @@ if (isset($_GET['expand'])) {
 } // if
 
 if (isset($_POST['expand'])) {
-    // remove all nodes from the list
-    $expanded = 'ALL';
+    $expanded = 'ALL';  // expand all nodes
+} elseif (empty($expanded)) {
+    if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+        $expanded = 'ALL';  // expand all nodes
+    } // if
 } // if
 
 // look for instruction to collapse a single node, or ALL nodes
@@ -126,10 +143,17 @@ if (isset($_GET['action'])) {
     $fieldarray = $dbobject->setAction($_GET['action']);
 } // if
 
+// get pagination details
+$pagination['main']['numrows']  = $dbobject->getNumRows();
+$pagination['main']['curpage']  = $dbobject->getPageNo();
+$pagination['main']['lastpage'] = $dbobject->getLastPage();
+
 // save these variables for later in the same session
 $script_vars['where']    = $where;
 $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
+
+$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

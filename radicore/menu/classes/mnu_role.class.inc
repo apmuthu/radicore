@@ -1,7 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright (c) 1999-2014 by Geoprise Technologies Licensing, All Rights Reserved.
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_role extends Default_Table
@@ -16,8 +15,7 @@ class mnu_role extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
+        $this->dbms_engine = $GLOBALS['dbms'];
         $this->tablename   = 'mnu_role';
         $this->dbname      = 'menu';
 
@@ -28,23 +26,30 @@ class mnu_role extends Default_Table
     } // mnu_role
 
     // ****************************************************************************
-    function getRole ()
+    function getRole ($user_id=null)
     // return the role details for the current user.
     {
         $this->errors = array();
 
         if (!isset($_SESSION['role_id'])) {
             // not found, so assume user has global access
-            $array = array('role_id' => 'GLOBAL', 'global_access' => true);
+            $array['role_id']       = 'GLOBAL';
+            $array['role_list']     = "'GLOBAL'";
+            $array['global_access'] = TRUE;
 
         } elseif (isset($_SESSION['global_access'])) {
             $array['role_id']       = $_SESSION['role_id'];
+            $array['role_list']     = $_SESSION['role_list'];
             $array['global_access'] = $_SESSION['global_access'];
 
         } else {
+            if (empty($user_id)) {
+                $user_id = $_SESSION['logon_user_id'];
+            } // if
             // look for security class from logon screen
             $role_id = $_SESSION['role_id'];
-            $this->sql_select = 'role_id,global_access';
+            $this->sql_select = 'role_id, global_access';
+            //$this->sql_select .= ", (SELECT GROUP_CONCAT('\'', role_id, '\'' ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='$user_id') AS role_list";
             $role_data = $this->getData_raw("role_id='$role_id'");
             if ($this->errors) {
                 return FALSE;
@@ -61,9 +66,10 @@ class mnu_role extends Default_Table
                 $array['global_access'] = FALSE;
             } // if
             $_SESSION['global_access'] = $array['global_access'];
+            $array['role_list']        = $_SESSION['role_list'];
         } // if
 
-       return $array;
+        return $array;
 
     } // getRole
 
@@ -82,11 +88,10 @@ class mnu_role extends Default_Table
             if ($pattern_id == 'LINK1') {
                 // add an extra field to the field list
                 $this->fieldspec['selected'] = array('type' => 'boolean');
-                unset($fieldarray['role_id']);
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['role_id']['noedit']);
-            //unset($fieldarray['role_id']);
+            unset($fieldarray['role_id']);
         } // if
 
         return $fieldarray;
@@ -136,7 +141,7 @@ class mnu_role extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -270,9 +275,6 @@ class mnu_role extends Default_Table
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)movedown');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)moveup');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)reseq');
-
-        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_task(popup1)a');
-        $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_task(search)');
 
         $dbobject =& RDCsingleton::getInstance('mnu_role_task');
         $access = $dbobject->insertMultiple($access);

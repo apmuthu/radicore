@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -133,7 +133,7 @@ class mysql
             	// ignore this
             } else {
                 list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
-                if (preg_match('/^(like|rlike|regexp)[ ]+/i', $fieldvalue)) {
+                if (preg_match('/^like /i', $fieldvalue)) {
             	    if (preg_match('/\\\\/', $fieldvalue)) {
             	    	$fieldvalue = str_replace('\\\\', '\\\\\\\\', $fieldvalue);
             	    	$array[$key] = $fieldname.$operator.$fieldvalue;
@@ -236,18 +236,11 @@ class mysql
     function connect ($dbname=null)
     // establish a connection to the database
     {
-        if (!empty($dbname) AND !empty($this->dbprefix)) {
-            if (!preg_match('/^(' .$this->dbprefix .')/i', $dbname)) {
-    			// prefix may be different on different servers
-                $dbname = $this->dbprefix .$dbname;
-            } // if
-        } // if
-
-        $dbconn = $this->dbconnect;
-
         $this->errors = array();
         $this->query  = '';
         $this->dbname = $dbname;
+
+        $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
             $dbconn = mysql_connect($this->dbhost, $this->dbusername, $this->dbuserpass);
@@ -324,6 +317,8 @@ class mysql
 			} // if
         } // if
 
+        $this->query = '';
+
         return $fieldarray;
 
     } // deleteRecord
@@ -353,6 +348,8 @@ class mysql
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
 			} // if
         } // if
+
+        $this->query = '';
 
         return $count;
 
@@ -551,8 +548,11 @@ class mysql
             if ($result === false) {
                 if (mysql_errno($this->dbconnect) == 2006) {
                     // connection has been lost, so re-connect and retry
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
+                    $save_query = $this->query;
                     $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+                    $this->query = $save_query;
+                    unset($save_query);
                     $result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
                 } else {
                     trigger_error($this, E_USER_ERROR);
@@ -591,6 +591,7 @@ class mysql
         logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
 
         mysql_free_result($result);
+        $this->query = '';
 
         return $array;
 
@@ -876,6 +877,7 @@ class mysql
                         } else {
                             $auto_increment = $ukey;                // save name of field
                             unset($fieldarray[$auto_increment]);    // remove from data array
+                            break;
                         } // if
                     } // if
                 } // foreach
@@ -956,6 +958,8 @@ class mysql
                 //AND (is_null($value) OR strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL')) {
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     $this->query .= "`$item`=NULL, ";
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+					$this->query .= "`$item`=NULL, ";  // cannot use empty string for numeric fields, so use NULL instead
                 } else {
                     $this->query .= "`$item`='" .mysql_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
@@ -974,7 +978,7 @@ class mysql
                 $errno = mysql_errno($this->dbconnect);
                 if ($errno == 2006) {
                     // connection has been lost, so re-connect and try again
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
                     $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
                     $repeat = true;
 
@@ -1030,13 +1034,14 @@ class mysql
         } // if
 
         $this->numrows = 1;  // record has been inserted
+        $this->query = '';
 
         return $fieldarray;
 
     } // insertRecord
 
     // ****************************************************************************
-    function multiQuery ($dbname, $tablename, $query)
+    function multiQuery ($dbname, $tablename, $query_array)
     // perform multiple queries in a single step
     {
         $this->errors = array();
@@ -1046,24 +1051,27 @@ class mysql
 
         $single_step = true;  // special code to debug each query separately
         if ($single_step) {
-            if (!is_array($query)) {
-                // split string into an array of individual queries
-                $array = explode(';', $query);
-                $query = '';
-                foreach ($array as $value) {
-                    if (!empty($value)) {
-                        $query[] = $value.';';  // replace query terminator
-                    } // if
-                } // foreach
-            } // if
             // execute these statements one at a time
-            foreach ($query as $query_part) {
+            foreach ($query_array as $query_part) {
                 $this->query = $query_part;
                 $result = mysql_query($this->query, $this->dbconnect);
                 if (!$result) {
                     trigger_error($this, E_USER_ERROR);
                 } // if
             } // foreach
+            if (count($query_array) == 1) {
+                // only a single query, so return result in full
+                if (is_bool($result)) {
+                    return $result;
+                } else {
+                    $array = array();
+                    while ($row = mysql_fetch_assoc($result)) {
+                        $array[] = array_change_key_case($row, CASE_LOWER);
+                    } // while
+                    mysql_free_result($result);
+                    return $array;
+                } // if
+            } // if
             return true;
         } // if
 
@@ -1248,7 +1256,7 @@ class mysql
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if ($where1 <> $where2) {
+                if (strlen($where2) > 0 AND $where1 <> $where2) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($dbname, $tablename, $query);
@@ -1314,7 +1322,7 @@ class mysql
         do {
             // build update string from non-pkey fields
             $update = '';
-            $pattern1 = '/(integer|decimal|numeric|float|real)/i';
+            $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
             $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
             foreach ($fieldarray as $item => $value) {
                 // use this item if it IS NOT part of primary key
@@ -1351,7 +1359,7 @@ class mysql
                 $errno = mysql_errno($this->dbconnect);
                 if ($errno == 2006) {
                     // connection has been lost, so re-connect and try again
-                    unset($this->dbconnect);
+                    $this->dbconnect = false;
                     $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
                     $repeat = true;
                 } // if
@@ -1374,6 +1382,8 @@ class mysql
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
 			} // if
         } // if
+
+        $this->query = '';
 
         return $fieldarray;
 
@@ -1406,6 +1416,8 @@ class mysql
 				} // if
             } // if
         } // if
+
+        $this->query = '';
 
         return $count;
 

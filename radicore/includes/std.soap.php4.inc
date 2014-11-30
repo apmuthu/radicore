@@ -1,6 +1,7 @@
 <?php
 // *****************************************************************************
-// Copyright 2009-2010 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // contains additional functions for use with SOAP in PHP 4

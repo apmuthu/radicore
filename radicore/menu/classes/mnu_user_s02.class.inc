@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s02 extends mnu_user
@@ -17,7 +17,7 @@ class mnu_user_s02 extends mnu_user
     // $fieldarray = the contents of $where as an array.
     {
         // create 'new_password' field
-        $fieldarray['new_password1'] = '';
+        if (!isset($fieldarray['new_password1'])) $fieldarray['new_password1'] = '';
         $this->fieldspec['new_password1']['type'] = 'string';
         $this->fieldspec['new_password1']['size'] = $this->fieldspec['user_password']['size'];
         $this->fieldspec['new_password1']['password'] = 'y';
@@ -25,7 +25,7 @@ class mnu_user_s02 extends mnu_user
         $this->fieldspec['new_password1']['nondb']    = 'y';
 
         // get user to repeat input to avoid mistakes
-        $fieldarray['new_password2'] = '';
+        if (!isset($fieldarray['new_password2'])) $fieldarray['new_password2'] = '';
         $this->fieldspec['new_password2']['type'] = 'string';
         $this->fieldspec['new_password2']['size'] = $this->fieldspec['user_password']['size'];
         $this->fieldspec['new_password2']['password'] = 'y';

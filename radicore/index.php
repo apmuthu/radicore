@@ -1,6 +1,6 @@
 <?php
 $dir = basename(getcwd());
-if (preg_match('/^(radicore|transix)$/i', $dir)) {
+if ($dir == 'radicore') {
 	$header = 'Location: menu/logon.php';
 } else {
     $header = "Location: $dir/menu/logon.php";

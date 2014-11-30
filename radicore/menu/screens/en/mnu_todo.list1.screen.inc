@@ -8,7 +8,7 @@ $structure['main']['columns'][] = array('width' => 5);
 $structure['main']['columns'][] = array('width' => 100);
 $structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => '*');
-$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => 110);
 $structure['main']['columns'][] = array('width' => 30);
 
 // identify the field names and their screen labels

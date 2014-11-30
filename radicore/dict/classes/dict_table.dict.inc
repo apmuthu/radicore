@@ -1,5 +1,5 @@
 <?php
-    // file created on June 26, 2009, 7:21 pm
+    // file created on June 21, 2014, 5:33 pm
     
     // field specifications for table dict.dict_table
     $fieldspec['database_id']               = array('type' => 'string',
@@ -28,6 +28,7 @@
                                                     'nosearch' => 'y');
     
     $fieldspec['audit_logging']             = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'Y',
                                                     'true' => 'Y',

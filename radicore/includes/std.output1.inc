@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output1.inc
@@ -96,10 +96,14 @@ if (!isset($csvout)) {
 
 // create an instance of the CSV object
 require_once 'std.csv.class.inc';
-$csv = new CSV($dbobject);
+$csv = new csv_class($dbobject);
 
 // transform output to CSV format
 $output = $csv->outputCSV($resource);
+if ($csv->errors) {
+    $string = format_array($csv->errors);
+    display_on_stdout($string);
+} // if
 
 if (!isset($GLOBALS['batch'])) {
     // send to client browser

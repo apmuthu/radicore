@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_transition extends Default_Table
@@ -14,8 +14,6 @@ class wf_transition extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'workflow';
         $this->tablename   = 'wf_transition';
 
@@ -121,7 +119,7 @@ class wf_transition extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -204,10 +202,8 @@ class wf_transition extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //$dbprefix = $this->dbprefix;
-
         // find out if tables in the 'menu' database need to be qualified
-        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
+        $menuDB = findDBName('menu', $this->dbname);
 
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
@@ -216,8 +212,6 @@ class wf_transition extends Default_Table
             $this->sql_from   = 'wf_transition '
                               . 'LEFT JOIN '.$menuDB.'mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
                               . 'LEFT JOIN '.$menuDB.'mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
-                              //. 'LEFT JOIN "' .$dbprefix .'menu".mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
-                              //. 'LEFT JOIN "' .$dbprefix .'menu".mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
         } // if
 
         return $where;

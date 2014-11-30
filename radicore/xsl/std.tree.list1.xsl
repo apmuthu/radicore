@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -28,14 +28,13 @@
 
 <!-- get the name of the MAIN table -->
 <xsl:variable name="main" select="/root/structure/main/@id"/>
-
-<xsl:variable name="numrows">0</xsl:variable>
+<xsl:variable name="numrows" select="/root/pagination/page[@id='main']/@numrows"/>
 
 <xsl:template match="/"> <!-- standard match to include all child elements -->
 
   <html xml:lang="{/root/params/language}" lang="{/root/params/language}">
 
-    <xsl:call-template name="head" />
+  <xsl:call-template name="head" />
 
   <body>
     <xsl:attribute name="class">
@@ -62,7 +61,7 @@
   
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar">
-            <xsl:with-param name="noshow"   select="'y'"/>
+            <xsl:with-param name="noshow"   select="/root/params/noshow"/>
             <xsl:with-param name="noselect" select="/root/params/noselect"/>
           </xsl:call-template>
   
@@ -100,6 +99,11 @@
   
           <!-- look for optional messages -->
           <xsl:call-template name="message"/>
+          
+          <!-- insert the page navigation links -->
+          <xsl:call-template name="pagination" >
+            <xsl:with-param name="object" select="'main'"/>
+          </xsl:call-template>
   
           <!-- create standard action buttons -->
           <xsl:call-template name="actbar"/>

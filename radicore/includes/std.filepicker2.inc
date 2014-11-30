@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker2.inc
@@ -285,6 +285,8 @@ $pagination['main']['lastpage'] = $last_page;
 
 $script_vars['fileobject'] = serialize($fileobject);
 $script_vars = updateScriptVars ($script_vars);
+
+$fileobject->fieldarray = $file_list;  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$fileobject;

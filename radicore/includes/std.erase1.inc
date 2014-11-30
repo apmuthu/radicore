@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.erase1.inc
@@ -154,6 +154,8 @@ $script_vars['where']     = $where;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This is my universal error handler.
@@ -45,8 +45,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
 
-    static $save_errstr;
-
     switch ($errno) {
         case E_USER_WARNING:
         case E_USER_NOTICE:
@@ -67,7 +65,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
                     if ($errno <> 0) {
                         if ($errno == 1002) {
                              // "fetch out of sequence" - IGNORE
-                             $save_errstr = null;
                              $errcontext['this']->error_string = null;
                         } else {
                             break;
@@ -89,17 +86,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
                         } // if
                     } // if
                 } // if
-                if ($errno == 0 AND empty($save_errstr)) {
-                    // save this for later
-                    $save_errstr = $errstr;
-                    break;
-                } // if
             } elseif (isset($GLOBALS['batch']) AND preg_match('/^(require)/i', $errstr)) {
                 // detected a failed 'require()' in a batch job, so abort now
                 break;
-            } elseif (empty($save_errstr)) {
-                // save this for later
-                $save_errstr = $errstr;
             } // if
         case E_NOTICE:
         case E_CORE_WARNING:
@@ -108,6 +97,11 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         case E_RECOVERABLE_ERROR;
         case E_DEPRECATED;
         case E_USER_DEPRECATED;
+            // save error details before returning
+            $GLOBALS['php_errorno']   = $errno;
+            $GLOBALS['php_errormsg']  = $errstr;
+            $GLOBALS['php_errorfile'] = $errfile;
+            $GLOBALS['php_errorline'] = $errline;
             return;
         case E_USER_ERROR:
         case E_ERROR:
@@ -132,9 +126,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
         } // if
         if (method_exists($errcontext['this'], 'getErrorString')) {
             $errstr = $errcontext['this']->getErrorString();
-            if (empty($errstr)) {
-                $errstr = $save_errstr;
-            } // if
         } // if
         if (method_exists($errcontext['this'], 'getErrorString2')) {
             $errstr2 = $errcontext['this']->getErrorString2();
@@ -180,9 +171,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     //$errorstring .= "<p>CURRENT DIRECTORY: " .getcwd() ."</p>\n";
     $errorstring .= "<p>" .getLanguageText('sys0187', getcwd()) ."</p>\n";
 
-    if (!empty($_SERVER['SERVER_ADDR'])) {
+    $ip_address = getRealIPAddress();
+    if (!empty($ip_address)) {
         //$errorstring .= "<p>SERVER_ADDR: '{$_SERVER['SERVER_ADDR']}'.</p>\n";
-    	$errorstring .= "<p>" .getLanguageText('sys0183', $_SERVER['SERVER_ADDR']) ."</p>\n";
+    	$errorstring .= "<p>" .getLanguageText('sys0183', $ip_address) ."</p>\n";
     } // if
     if (!empty($_SERVER['SERVER_NAME'])) {
     	//$errorstring .= "<p>SERVER_NAME: '{$_SERVER['SERVER_NAME']}'.</p>\n";
@@ -260,7 +252,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     // Send the error to the administrator by email
     $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
     $headers .= "\nContent-Type: text/plain; charset=UTF-8";
-    @error_log($mailstring, 1, $mailto, $headers);
+    $res = error_log($mailstring, 1, $mailto, $headers);
 
     //echo "<h1>This application has encountered an unrecoverable error</h1>\n";
     $header = "<h1>" .getLanguageText('sys0060') ."</h1>\n";
@@ -322,7 +314,7 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } elseif (defined('ERROR_LOG_DIR')) {
     	$logfile = ERROR_LOG_DIR.'/errorlog.html';  // write into specified directory
     } else {
-        $logfile = $_SERVER['DOCUMENT_ROOT'].'/error_logs/errorlog.html';  // write into default file
+        $logfile = $_SERVER['DOCUMENT_ROOT'].getParentDIR().'/error_logs/errorlog.html';  // write into default file
     } // if
     error_log("$errorstring\n$history\n$trace_hdg<pre>\n" .htmlspecialchars($trace, ENT_COMPAT, 'UTF-8') ."\n</pre>", 3, $logfile);
 

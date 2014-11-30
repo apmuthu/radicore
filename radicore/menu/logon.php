@@ -38,7 +38,7 @@ if (isset($session_name) AND preg_match('/^menu/i', $session_name)) {
 session_name($session_name);
 if (isset($_GET['session_id'])) {
     session_id($_GET['session_id']);    // set the session id
-} elseif (isset($_COOKIE['PHPSESSID'])) {
+//} elseif (isset($_COOKIE['PHPSESSID'])) {
 	//session_id($_COOKIE['PHPSESSID']);
 	//setcookie('PHPSESSID', '', time()-3600);
 } // if
@@ -153,11 +153,12 @@ if (!empty($_POST)) {
     if ($errors) {
         $dbobject->rollback();
     } else {
-        $dbobject->commit();
         // logon is OK - go to next screen
+        $dbobject->commit();
+        $res = session_regenerate_id(true); // drop the old session_id and create a new one
         $fieldarray = $dbobject->getFieldArray();
         $messages   = $dbobject->getMessages();
-        $_SESSION['motd'] = true;
+        $_SESSION['motd'] = true; // go to the MOTD screen once and once only in this session
         $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
         scriptNext('menu', null, null, $task_array);
     } // if

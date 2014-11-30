@@ -1,5 +1,5 @@
 <?php
-    // file created on October 26, 2013, 5:52 pm
+    // file created on June 21, 2014, 5:32 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -26,6 +26,7 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['column_seq']                = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
@@ -47,14 +48,12 @@
     
     $fieldspec['col_type']                  = array('type' => 'string',
                                                     'size' => 20,
-                                                    'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'col_type');
     
     $fieldspec['col_type_native']           = array('type' => 'string',
-                                                    'size' => 32,
-                                                    'required' => 'y');
+                                                    'size' => 32);
     
     $fieldspec['col_array_type']            = array('type' => 'string',
                                                     'size' => 20);
@@ -63,22 +62,20 @@
                                                     'size' => 65535);
     
     $fieldspec['user_size']                 = array('type' => 'integer',
-                                                    'size' => 20,
+                                                    'type_native' => 'bigint',
+                                                    'size' => 21,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 1.844674407371e19,
-                                                    'required' => 'y');
+                                                    'maxvalue' => 1.84467440737096e19);
     
     $fieldspec['col_maxsize']               = array('type' => 'integer',
-                                                    'size' => 20,
+                                                    'type_native' => 'bigint',
+                                                    'size' => 21,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 1.844674407371e19,
-                                                    'required' => 'y',
+                                                    'maxvalue' => 1.84467440737096e19,
                                                     'noedit' => 'y');
     
     $fieldspec['col_null']                  = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'Y',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -86,8 +83,6 @@
     
     $fieldspec['is_required']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -100,12 +95,10 @@
                                                     'optionlist' => 'col_key');
     
     $fieldspec['col_default']               = array('type' => 'string',
-                                                    'size' => 40);
+                                                    'size' => 255);
     
     $fieldspec['col_auto_increment']        = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -113,8 +106,6 @@
     
     $fieldspec['col_unsigned']              = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -126,14 +117,16 @@
                                                     'optionlist' => 'col_zerofill_bwz');
     
     $fieldspec['col_precision']             = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 39);
+                                                    'maxvalue' => 255);
     
     $fieldspec['col_scale']                 = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 32);
+                                                    'maxvalue' => 255);
     
     $fieldspec['col_minvalue']              = array('type' => 'float',
                                                     'size' => 22,
@@ -173,8 +166,6 @@
     
     $fieldspec['is_password']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -182,8 +173,6 @@
     
     $fieldspec['auto_insert']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -191,8 +180,6 @@
     
     $fieldspec['auto_update']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -200,8 +187,6 @@
     
     $fieldspec['infinityisnull']            = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -213,19 +198,19 @@
                                                     'optionlist' => 'col_subtype');
     
     $fieldspec['image_width']               = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535);
     
     $fieldspec['image_height']              = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535);
     
     $fieldspec['is_boolean']                = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -279,14 +264,16 @@
                                                     'optionlist' => 'align_lr');
     
     $fieldspec['multi_cols']                = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 127);
+                                                    'maxvalue' => 255);
     
     $fieldspec['multi_rows']                = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 127);
+                                                    'maxvalue' => 255);
     
     $fieldspec['custom_validation']         = array('type' => 'string',
                                                     'size' => 255);

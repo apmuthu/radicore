@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:35 pm
+    // file created on September 7, 2014, 9:05 am
     
     // field specifications for table menu.mnu_account
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
@@ -93,6 +93,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

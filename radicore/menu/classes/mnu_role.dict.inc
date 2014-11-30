@@ -1,5 +1,5 @@
 <?php
-    // file created on April 25, 2013, 7:05 am
+    // file created on April 20, 2014, 6:18 am
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -21,6 +21,7 @@
                                                     'foreign_field' => 'start_task_desc');
     
     $fieldspec['global_access']             = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -28,6 +29,7 @@
                                                     'optionlist' => 'boolean');
     
     $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -89,7 +91,7 @@
                                                     'type' => 'DEL',
                                                     'fields' => array('role_id' => 'role_id'));
     
-    $this->child_relations[]                = array('child' => 'mnu_user',
+    $this->child_relations[]                = array('child' => 'mnu_user_role',
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
     

@@ -22,7 +22,7 @@ $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => '*');
 $structure['inner']['columns'][] = array('width' => '*');
-$structure['inner']['columns'][] = array('width' => 100);
+$structure['inner']['columns'][] = array('width' => 110);
 $structure['inner']['columns'][] = array('width' => 30);
 
 // identify the field names and their screen labels

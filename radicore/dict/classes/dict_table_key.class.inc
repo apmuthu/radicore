@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_table_key extends Default_Table
@@ -135,8 +135,8 @@ class dict_table_key extends Default_Table
 
         // obtain a list of current column definitions from the database engine
         $fieldarray = array();
-        list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
-        $db_data = $this->_ddl_showTableKeys($dbprefix.$server_name, $tablename);
+
+        $db_data = $this->_ddl_showTableKeys($dbname, $tablename);
 
         // construct a smaller array of column names
         $db_data_cols = array();
@@ -152,6 +152,7 @@ class dict_table_key extends Default_Table
         $this->delete_array = array();
         $this->update_array = array();
         foreach ($old_data_cols as $key_name => $key_data) {
+            $key_name = strtolower($key_name);
         	foreach ($key_data as $columnid => $old_row) {
                 if (array_key_exists($key_name, $db_data_cols)) {
                     if (array_key_exists($columnid, $db_data_cols[$key_name])) {

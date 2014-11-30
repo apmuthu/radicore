@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class RDCsingleton
@@ -67,7 +67,11 @@ class RDCsingleton
                 		require_once 'std.curl.class.inc';
                 		break;
 
-                	case 'date_class':
+                	case 'csv_class':
+                        require_once 'std.csv.class.inc';
+                        break;
+
+                    case 'date_class':
                         require_once 'std.datevalidation.class.inc';
                         break;
 
@@ -79,7 +83,15 @@ class RDCsingleton
                 		require_once 'std.validation.class.inc';
                 		break;
 
-                	default:
+                	case 'custom_xsl_params':
+                        require_once 'custom_xsl_params.class.inc';
+                        break;
+
+                    case 'custom_javascript':
+                        require_once 'custom_javascript.class.inc';
+                        break;
+
+                    default:
                 	    require_once $filename;
                 		break;
                 } // switch

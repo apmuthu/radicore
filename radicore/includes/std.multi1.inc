@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -56,6 +56,8 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
+    // see if any configuration settings need to be changed
+    $fieldarray = $dbobject->changeConfig($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -144,13 +146,20 @@ if (isset($_POST['reset'])) {
 } // if
 
 if (!empty($_POST)) {
-    // merge user's input with original data so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed.
-    // this also deals with a javascript 'submit()'.
-    $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
-    if (empty($errors)) {
-        // check that primary key contains no wildcard characters
-        list($where1, $errors) = isPkeyComplete($fieldarray, $dbobject->getPkeyNames());
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button ($act_buttons, $_POST);
+    if (empty($submit_button)) {
+        // deal with a javascript 'submit()'.
+        $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
+        } // if
+    } else {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
+        // ensure that changes are stored inside relevant object
+        $dbobject->setFieldArray($fieldarray);
     } // if
     if (empty($errors)) {
         // look for a navigation or popup button which jumps to another script
@@ -160,8 +169,6 @@ if (!empty($_POST)) {
         } // if
     } // if
     if (empty($errors)) {
-        // identify if one of the 'submit' buttons has been pressed
-        $submit_button = check_submit_button ($act_buttons, $_POST);
         if (!empty($submit_button)) {
             $dbobject->startTransaction();
             $dbobject->no_submit_on_error = true;
@@ -259,13 +266,11 @@ if (!empty($_POST)) {
 //if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if (empty($errors)) {
     // check if we are returning from a child form
-    if (!empty($return_from) AND !empty($popup_object)) {
-        if (isset($selection)) {
-            // merge previous saved variables with selection from popup form
-            $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
-            if ($dbobject->errors) {
-            	$errors = $dbobject->getErrors();
-            } // if
+    if (!empty($return_from) AND isset($selection)) {
+        // merge previous saved variables with selection from popup form
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
         } // if
 
     } else {
@@ -280,6 +285,9 @@ if (empty($errors)) {
         } else {
         	// retrieve record from the database
             $fieldarray = $dbobject->getData($where);
+            if (empty($fieldarray)) {
+                $fieldarray = where2array($where);  // nothing found, so use contents of $where
+            } // if
             $fieldarray = $dbobject->getExtraData($fieldarray);
         } // if
         if ($dbobject->errors) {
@@ -316,7 +324,7 @@ if (empty($errors)) {
 if (empty($errors)) {
     if ($dbobject->getNumRows() < 1) {
         // get initial data for a new record
-        $fieldarray = $dbobject->getInitialData($where);
+        $fieldarray = $dbobject->getInitialData($fieldarray);
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
             $messages = array_merge($messages, $dbobject->getMessages());
@@ -336,6 +344,8 @@ $script_vars['where']     = $where;
 $script_vars['dbobject']  = serialize($dbobject);
 $script_vars['scrolling'] = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
+
+$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
 if (!empty($_POST) AND empty($errors)) {
     // repeat current task with GET instead of POST

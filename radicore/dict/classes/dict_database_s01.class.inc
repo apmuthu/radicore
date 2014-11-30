@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s01 extends dict_dataBase
@@ -11,7 +11,7 @@ class dict_dataBase_s01 extends dict_dataBase
     // ****************************************************************************
 
     var $database_names;			// an array of database names which can be imported [server_name=dict_name]
-    
+
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
@@ -116,11 +116,13 @@ class dict_dataBase_s01 extends dict_dataBase
         ksort($dbnames);  // sort into ascending sequence on server name
         $this->database_names = $dbnames;				// this is for internal use
         $this->lookup_data['database_id'] = $dbnames;	// this is for the dropdown list
-        
+
         if (!empty($switch_dbnames)) {
         	foreach ($switch_dbnames as $dbname_server => $dbname_dict) {
-        		// show that there is a difference between the server name and the dictionary name
-        		$this->lookup_data['database_id'][$dbname_server] = "$dbname_server ($dbname_dict)";
+                if (array_key_exists($dbname_server, $dbnames)) {
+        		    // show that there is a difference between the server name and the dictionary name
+        		    $this->lookup_data['database_id'][$dbname_server] = "$dbname_server ($dbname_dict)";
+                } // if
         	} // foreach
         } // if
 
@@ -163,7 +165,7 @@ class dict_dataBase_s01 extends dict_dataBase
 		} else {
 			$DDL =& $this->_getDBMSengine($this->dbname);
     	} // if
-    	
+
         // get list of all database names from the database server
         //$array  = $this->_ddl_showDatabases($dbprefix);
         $array = $DDL->ddl_showDatabases($dbprefix);
@@ -200,10 +202,8 @@ class dict_dataBase_s01 extends dict_dataBase
 	            // check to see if this dbname is already in the dictionary database
         		$count = $this->getCount("database_id='$dbname_dict'");
 	            if ($count == 0) {
-	                if (!array_key_exists($dbname_server, $dbnames)) {
-	                    // this is new, so store details in return array
-	                    $dbnames[$dbname_server] = $dbname_dict;
-	                } // if
+	                // not yet, so add it to list of databases which can be selected
+	                $dbnames[$dbname_server] = $dbname_dict;
 	            } // if
 			} // if
         } // foreach
@@ -211,7 +211,7 @@ class dict_dataBase_s01 extends dict_dataBase
         return $dbnames;
 
     } // _loadDatabases
-    
+
     // ****************************************************************************
     function &_getDBMSengineByHost ($dbhost)
     // obtain the object that deals with the database engine for this table.

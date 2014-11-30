@@ -89,6 +89,10 @@ function get_languages($input)
 function getBrowserLanguage ($directory)
 // find a subdirectory which corresponds with a language defined in the browser.
 {
+    if (!isset($_SESSION['user_language_array'])) {
+        return false;
+    } // if
+
     $found = array();
     if (is_dir($directory)) {
         // build an array of subdirectory names for specified $directory
@@ -123,24 +127,26 @@ function getBrowserLanguage ($directory)
 function matchBrowserLanguage ($browser_array, $language_array)
 // match browser language with an entry in $language_array
 {
-    foreach ($browser_array as $browser_language) {
-        // look for full language abbreviation (after replacing hyphen with underscore)
-        $test_language = str_replace('-', '_', strtolower($browser_language[0]));
-        foreach ($language_array as $supported_language) {
-            $supported_language = str_replace('-', '_', $supported_language);
-            if ($test_language == strtolower($supported_language)) {
-                return $test_language;
-            } // if
+    if (is_array($browser_array)) {
+        foreach ($browser_array as $browser_language) {
+            // look for full language abbreviation (after replacing hyphen with underscore)
+            $test_language = str_replace('-', '_', strtolower($browser_language[0]));
+            foreach ($language_array as $supported_language) {
+                $supported_language = str_replace('-', '_', $supported_language);
+                if ($test_language == strtolower($supported_language)) {
+                    return $test_language;
+                } // if
+            } // foreach
+            // look for primary language (after replacing hyphen with underscore)
+            $test_language = str_replace('-', '_', strtolower($browser_language[1]));
+            foreach ($language_array as $supported_language) {
+                $supported_language = str_replace('-', '_', $supported_language);
+                if ($test_language == strtolower($supported_language)) {
+                    return $test_language;
+                } // if
+            } // foreach
         } // foreach
-        // look for primary language (after replacing hyphen with underscore)
-        $test_language = str_replace('-', '_', strtolower($browser_language[1]));
-        foreach ($language_array as $supported_language) {
-            $supported_language = str_replace('-', '_', $supported_language);
-            if ($test_language == strtolower($supported_language)) {
-                return $test_language;
-            } // if
-        } // foreach
-    } // foreach
+    } // if
 
     return false;
 

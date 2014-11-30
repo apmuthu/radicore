@@ -205,6 +205,12 @@ class x_person extends Default_Table
             $this->sql_groupby = null;
             $this->sql_having  = null;
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // ***** TEST *****
+            //$this->sql_select .= ", (SELECT SUM(credit_amount) FROM test_credit WHERE test_credit.person_id=x_person.person_id) AS credit_amount";
+            //$this->sql_select .= ", (SELECT SUM(debit_amount) FROM test_debit WHERE test_debit.person_id=x_person.person_id) AS debit_amount";
+            //$this->sql_having = "credit_amount <> debit_amount";
+            //$this->sql_having = "credit_amount - debit_amount <> 0";
+            // ***** TEST *****
         } // if
 
         $pattern_id = getPatternId();
@@ -252,7 +258,7 @@ class x_person extends Default_Table
     } // _cm_pre_output
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -285,7 +291,7 @@ class x_person extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_initialiseFilePicker ($fieldarray)
+    function _cm_initialiseFilePicker ($fieldarray, $search)
     // perform any initialisation before displaying the File Picker screen.
     {
         // identify the subdirectory which contains the files

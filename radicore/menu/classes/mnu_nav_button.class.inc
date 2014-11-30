@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_nav_button extends Default_Table
@@ -15,8 +15,6 @@ class mnu_nav_button extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'mnu_nav_button';
         $this->dbname      = 'menu';
 
@@ -44,46 +42,64 @@ class mnu_nav_button extends Default_Table
         } // if
 
         $role_id       = $dbrole_data['role_id'];
+        $role_list     = $dbrole_data['role_list'];
         $global_access = $dbrole_data['global_access'];
 
-        if ($global_access) {
+        $having_array = array();
+
+        if (is_True($global_access)) {
             // if global_access is ON then all buttons can be accessed without restriction
             // (unless a task has been disabled)
-            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
-            $where = "x.is_disabled='N'";
+            //$where = "x.is_disabled='N'";
+            $having_array['x.is_disabled'] = 'N';
         } else {
             // if global_access is OFF then a button cannot be loaded unless it has an
             // entry on MNU_ROLE_TASK for the current role
             // (or if it has been disabled)
-            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
-            $this->sql_from   = 'mnu_nav_button '
-                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
-                              . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) '
-                              . "LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_nav_button.task_id_jnr AND mnu_role_task.role_id='$role_id')";
-            $where = "x.is_disabled='N' AND (mnu_role_task.role_id IS NOT NULL)";
+            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect'
+                              .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_nav_button.task_id_jnr AND role_id IN($role_list) LIMIT 1) THEN 'Y' ELSE 'N' END AS access_allowed";
+            $this->sql_from   = 'mnu_nav_button'
+                              .' LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
+                              .' LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
+            //$where = "x.is_disabled='N'";
+            $having_array['x.is_disabled'] = 'N';
+            $having_array['access_allowed'] = 'Y';
         } // if
 
-        // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
-        $ip_address = $_SERVER['SERVER_ADDR'];
-        $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr) = 0 THEN true"
-                                  ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr AND ip_address='$ip_address') = 1 THEN true"
-                                  ." ELSE false"
-                             ." END AS ip_address_valid";
-        $this->sql_having = "ip_address_valid=true";
+        if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_task_ip_address', $_SESSION['empty_tables'])) {
+            // table is empty, so no lookup is required
+        } else {
+            // lookup on MNU_TASK_IP_ADDRESS to see if this IP address is valid
+            $ip_address = getRealIPAddress();
+            $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr) = 0 THEN 'Y'"
+                                      ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE mnu_task_ip_address.task_id=mnu_nav_button.task_id_jnr AND ip_address='$ip_address') = 1 THEN 'Y'"
+                                      ." ELSE 'N'"
+                                 ." END AS ip_address_valid";
+            $having_array['ip_address_valid'] = 'Y';
+        } // if
 
         if ($_SESSION['user_language'] != $_SESSION['default_language']) {
             // obtain some text in an alternative language
             $this->sql_select .= ", COALESCE((SELECT task_desc FROM mnu_task_alt WHERE mnu_task_alt.task_id=mnu_nav_button.task_id_jnr AND mnu_task_alt.language_id='{$_SESSION['user_language']}'), x.task_desc) AS task_desc";
+            // extract all elements within current SELECT clause into an associative array
+            $select_array = extractSelectList($this->sql_select);
+            $select_array = removeDuplicateNameFromSelect($select_array, 'x.task_desc');
+            // convert array back into a string
+            $this->sql_select = implode(', ', $select_array);
         } // if
 
         $this->sql_orderby = 'mnu_nav_button.sort_seq';
 
         $this->sql_select .= ', mnu_nav_button.sort_seq';  // required by postgres
 
-        $buttons = $this->getData_raw("$where AND mnu_task.task_id='$task_id'");
+        $this->sql_having = array2where($having_array);
+
+        //$buttons = $this->getData_raw("$where AND mnu_task.task_id='$task_id'");
+        $buttons = $this->getData_raw("mnu_task.task_id='$task_id'");
 
         if (count($buttons) > 0) {
             if (!empty($object->sql_search_table)) {

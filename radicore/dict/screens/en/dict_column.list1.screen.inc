@@ -4,10 +4,10 @@ $structure['xsl_file'] = 'std.list1.xsl';
 $structure['tables']['main'] = 'dict_column';
 
 $structure['main']['columns'][] = array('width' => 5);
-$structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 150);
-$structure['main']['columns'][] = array('width' => 10);
-$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => 125);
+$structure['main']['columns'][] = array('width' => '*');
+$structure['main']['columns'][] = array('width' => 10, 'align' => 'center');
+$structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');

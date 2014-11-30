@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s03 extends dict_table
@@ -58,6 +58,7 @@ class dict_table_s03 extends dict_table
         $include_array[] = 'output3';
         $include_array[] = 'output4';
         $include_array[] = 'output5';
+        $include_array[] = 'output6';
         $include_array[] = 'popup1';
         $include_array[] = 'popup2';
         $include_array[] = 'popup3';
@@ -136,17 +137,14 @@ class dict_table_s03 extends dict_table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //list($menu_prefix, $server_name) = dict_findDBPrefix('menu');
-
         // find out if tables in the 'menu' database need to be qualified
-        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
+        $menuDB = findDBName('menu', $this->dbname);
 
         if (empty($this->sql_from)) {
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
         	                  . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
-                              //. 'LEFT JOIN "' .$menu_prefix .'menu".mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
         } // if
 
         return $where;

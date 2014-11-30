@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -52,15 +52,12 @@ class mnu_subsystem_s01 extends mnu_subsystem
 
         // create object for retrieving task details
         $taskobj =& RDCsingleton::getInstance('mnu_task');
-        //$task_prefix = $taskobj->dbprefix;
 
         // create object for retrieving dictionary details
         $dictobj =& RDCsingleton::getInstance('dict_column');
-        //$dict_prefix = $dictobj->dbprefix;
 
         // find out if tables in the 'dict' database need to be qualified
-        $menuDB = $this->_qualify_dbname($this->dbname, 'menu');
-        $dictDB = $this->_qualify_dbname($this->dbname, 'dict');
+        $dictDB = findDBName('dict', $this->dbname);
 
 		$subsys_id   = $rowdata['subsys_id'];
         $subsys_dir  = $rowdata['subsys_dir'];
@@ -446,7 +443,14 @@ class mnu_subsystem_s01 extends mnu_subsystem
             	$output = $this->_exportSqlData('mnu_user', $user_data, $output);
             	$user_id = $user_data['user_id'];
 
-            	// export the contents of MNU_INITIAL_VALUE_USER for this user
+            	// export contents of MNU_USER_ROLE for this user
+                $userobj->sql_select = '*';
+                $userobj->sql_from   = 'mnu_user_role';
+                $userobj->sql_orderby = 'user_id ASC, is_primary DESC, role_id ASC';
+                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $output = $this->_exportSqlData('mnu_user_role', $data2, $output);
+
+                // export the contents of MNU_INITIAL_VALUE_USER for this user
             	$userobj->sql_select = 'mnu_initial_value_user.*';
             	$userobj->sql_from   = 'mnu_initial_value_user';
             	$userobj->sql_orderby = 'field_id,user_id';

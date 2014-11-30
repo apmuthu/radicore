@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -68,6 +68,10 @@ if (isset($script_vars['fileobject'])) {
         // see if any action is required when being restarted
         $fileobject->restart($return_from, $return_action, $return_string);
     } // if
+    // get data from this instance
+    $fieldarray = $fileobject->getFieldArray();
+    // redo any configuration changes
+    $fieldarray = $fileobject->getExtraData($fieldarray);
 } else {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -77,6 +81,9 @@ if (isset($script_vars['fileobject'])) {
     //$fileobject->xsl_params['nosort'] = 'y';
     // do not display the 'show nn' hyperlinks
     $fileobject->xsl_params['noshow'] = 'y';
+    if (isset($task_orderby)) {
+        $fileobject->setDefaultOrderby($task_orderby);
+    } // if
     // perform any initialisation
     $where = $fileobject->initialise($where, $selection);
     if (!isset($search)) $search = null;
@@ -101,6 +108,23 @@ if (isset($_GET['select'])) {
     scriptPrevious(null, null, 'choose');
 } // if
 
+if (!empty($fileobject->cache_dir)) {
+    $cache = $fileobject->cache_dir.'/filepicker1_'.session_id().'.dat';
+} else {
+    $cache = ini_get('session.save_path').'/filepicker1_'.session_id().'.dat';
+} // if
+if (file_exists($cache)) {
+    // recover file data from cache
+    $file_list = unserialize(file_get_contents($cache));
+    if (is_array($file_list)) {
+        foreach ($file_list as $ix => $file_data) {
+            $filename[$ix] = $file_data['file'];
+            $filedate[$ix] = $file_data['date'];
+            $filesize[$ix] = $file_data['size'];
+        } // foreach
+    } // if
+} // if
+
 if (!empty($_POST)) {
     // look for an action which is another script
     $child_errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
@@ -112,10 +136,12 @@ if (!empty($_POST)) {
 if (isset($_POST['reset'])) {
     // re-initialise all settings to start afresh
     $where = $fileobject->reset($where);
+    $file_list = null;  // rebuild list of files
+    $fileobject->search = null;
 } // if
 
 $subdir   = $fileobject->picker_subdir;
-$messages[] = getLanguageText('sys0187', $subdir);
+$messages[] = getLanguageText('sys0187', $subdir);  // CURRENT DIRECTORY: ???
 $filemask = $fileobject->picker_filetypes;
 if (!isset($errors)) $errors = array();
 
@@ -145,43 +171,67 @@ if (!empty($search)) {
 		$pattern = str_replace('%', '', $pattern);
 	} // if
 	$fileobject->search = $pattern;
+    if (!empty($file_list) AND is_array($file_list)) {
+        foreach ($file_list as $ix => $file_data) {
+            if (!preg_match('/'.$pattern.'/i', $file_data['file'])) {
+                unset($file_list[$ix]);
+                unset($filename[$ix]);
+                unset($filedate[$ix]);
+                unset($filesize[$ix]);
+            } // if
+        } // foreach
+    } // if
 } elseif (!empty($fileobject->search)) {
     $pattern = $fileobject->search;
 } // if
 
-$this_dir = @opendir($subdir);
-$file_list = array();
-$rownum    = 0;
+if (empty($file_list)) {
+    $this_dir = @opendir($subdir);
+    $file_list = array();
+    $rownum    = 0;
 
-// these arrays are used for sorting
-$filename = array();
-$filedate = array();
-$filesize = array();
+    // these arrays are used for sorting
+    $filename = array();
+    $filedate = array();
+    $filesize = array();
 
-if (is_resource($this_dir)) {
-    while (false !== ($file = readdir($this_dir))) {
-        // only files of right type are appended to array
-        if (preg_match('/'.$filemask.'/i', $file, $regs)) {
-            if (!empty($pattern)) {
-                if (preg_match('/'.$pattern.'/i', $file)) {
-            	    $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+    if (is_resource($this_dir)) {
+        while (false !== ($file = readdir($this_dir))) {
+            // only files of right type are appended to array
+            if (preg_match('/'.$filemask.'/i', $file, $regs)) {
+                if (!empty($pattern)) {
+                    if (preg_match('/'.$pattern.'/i', $file)) {
+            	        $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+                    } // if
+                } else {
+                    $file_list[$rownum]['file'] = $file;  // display filename without the directory name
                 } // if
-            } else {
-                $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+                if (array_key_exists($rownum, $file_list)) {
+                    $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
+                    $file_list[$rownum]['size'] = filesize("$subdir/$file");
+                    // set up arrays for sorting
+                    $filename[$rownum] = strtolower($file);
+                    $filedate[$rownum] = $file_list[$rownum]['date'];
+                    $filesize[$rownum] = $file_list[$rownum]['size'];
+                    $rownum++;
+                } // if
             } // if
-            if (array_key_exists($rownum, $file_list)) {
-                $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
-                $file_list[$rownum]['size'] = filesize("$subdir/$file");
-                // set up arrays for sorting
-                $filename[$rownum] = strtolower($file);
-                $filedate[$rownum] = $file_list[$rownum]['date'];
-                $filesize[$rownum] = $file_list[$rownum]['size'];
-                $rownum++;
+        } // endwhile
+
+        closedir($this_dir);
+
+        if (count($file_list) > 2000) {
+            // save this data in a cache file so that it can be recovered
+            // (this is too big to go into the session data)
+            if ($fh = fopen($cache, 'w')) {
+                $res = fwrite($fh, serialize($file_list));
+                fclose($fh);
+            } else {
+                // "cannot write to file X"
+                $messages[] = getLanguageText('sys0055', $cache);
             } // if
         } // if
-    } // endwhile
-
-    closedir($this_dir);
+    } // if
 } // if
 
 if (count($file_list) == 0) {
@@ -217,12 +267,12 @@ if (empty($orderby_seq) OR $orderby_seq == 'asc') {
     $multisort_seq = SORT_DESC;
 } // if
 
-if ($orderby == 'file') {
-	array_multisort($filename, $multisort_seq, $file_list);
-} elseif ($orderby == 'size') {
+if ($orderby == 'size') {
 	array_multisort($filesize, $multisort_seq, $file_list);
-} else {
+} elseif ($orderby == 'date') {
     array_multisort($filedate, $multisort_seq, $file_list);
+} else {  // $orderby == 'file'
+    array_multisort($filename, $multisort_seq, $file_list);
 } // if
 
 // set pagination data
@@ -239,7 +289,6 @@ $offset = ($curr_page - 1) * $limit;
 
 // copy data into object's $fieldarray so that it can be displayed
 $file_list = array_slice($file_list, $offset, $limit);
-$fileobject->setFieldArray($file_list);
 
 if (isset($_GET['action'])) {
     $fieldarray = $fileobject->setAction($_GET['action']);
@@ -252,8 +301,12 @@ if ($last_page == 0) {
 $pagination['main']['curpage']  = $curr_page;
 $pagination['main']['lastpage'] = $last_page;
 
+//$fileobject->setFieldArray(null);  // remove data before object is serialised
+$fileobject->setFieldArray($file_list);  // save data for next iteration
 $script_vars['fileobject'] = serialize($fileobject);
 $script_vars = updateScriptVars ($script_vars);
+
+$fileobject->setFieldArray($file_list);  // replace data so that it can be displayed
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$fileobject;

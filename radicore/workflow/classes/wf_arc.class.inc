@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_arc extends Default_Table
@@ -14,8 +14,6 @@ class wf_arc extends Default_Table
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->dbname      = 'workflow';
         $this->tablename   = 'wf_arc';
 
@@ -75,12 +73,13 @@ class wf_arc extends Default_Table
         // transition has enough input tokens, so create a workitem
         require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
-        $workitem_data['workflow_id'] = $workflow_id;
-        $workitem_data['transition_id'] = $transition_id;
-        $workitem_data['case_id'] = $case_id;
-        $workitem_data['role_id'] = $arc_data['role_id'];
-        $workitem_data['task_id'] = $arc_data['task_id'];
-        $workitem_data['context'] = $arc_data['context'];
+        $workitem_data['workflow_id']        = $workflow_id;
+        $workitem_data['transition_id']      = $transition_id;
+        $workitem_data['case_id']            = $case_id;
+        $workitem_data['role_id']            = $arc_data['role_id'];
+        $workitem_data['user_id']            = $arc_data['user_id'];
+        $workitem_data['task_id']            = $arc_data['task_id'];
+        $workitem_data['context']            = $arc_data['context'];
         $workitem_data['transition_trigger'] = $arc_data['transition_trigger'];
         if ($arc_data['transition_trigger'] == 'TIME') {
         	//$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
@@ -226,7 +225,7 @@ class wf_arc extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

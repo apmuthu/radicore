@@ -18,11 +18,15 @@ input.submit, input.button {
 .radio input {
   background-color: transparent;
   font-size: 100%;
+  width: 15px;
+  height: 15px;
   color: black;
 }
 .checkbox input {
   background-color: transparent;
   font-size: 100%;
+  width: 15px;
+  height: 15px;
   color: black;
 }
 input.text {
@@ -276,8 +280,8 @@ div.main td.label {
   font-weight: bold;
   color: white;
   background: gray;
-  /*padding:3px;*/
-  /*padding-right:5px;*/
+  padding:3px;
+  padding-right:5px;
 }
 
 /* fileupload */
@@ -692,7 +696,8 @@ div.tree td .text {
 /* universe */
 div.universe {
   margin-top: 5px;
-  width: 750px;
+  /*width: 750px;*/
+  width: 1000px;
   text-align: center;
   margin-left: auto;
   margin-right: auto;

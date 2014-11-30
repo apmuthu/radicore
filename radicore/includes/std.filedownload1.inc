@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // Author: Kyle Brost <http://www.softelephant.com>
 // *****************************************************************************
 
@@ -56,14 +56,16 @@ if ($dbobject->getNumRows() < 1) {
     scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
 } // if
 
-// allow this record to be updated in the database
-$dbobject->startTransaction();
-$fieldarray = $dbobject->updateRecord($fieldarray, array());
-if ($dbobject->errors) {
-    $dbobject->rollback();
-    $errors = $dbobject->getErrors();
-} else {
-    $errors = $dbobject->commit();
+if (!is_True($dbobject->skip_getdata)) {
+    // allow this record to be updated in the database
+    $dbobject->startTransaction();
+    $fieldarray = $dbobject->updateRecord($fieldarray, array());
+    if ($dbobject->errors) {
+        $dbobject->rollback();
+        $errors = $dbobject->getErrors();
+    } else {
+        $errors = $dbobject->commit();
+    } // if
 } // if
 
 $messages = $dbobject->getMessages();

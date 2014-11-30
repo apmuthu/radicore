@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s01 extends dict_table
@@ -19,11 +19,9 @@ class dict_table_s01 extends dict_table
         } // if
 
     	$dbname  = $fieldarray['database_id'];
-        // NOTE: name in dictionary may be different from name on server
-    	list($dbprefix, $server_name) = dict_findDBPrefix($dbname);
+        $array = $this->_ddl_showTables($dbname);
 
         $fieldarray = array();
-        $array = $this->_ddl_showTables($dbprefix.$server_name);
 
         // filter out those that already exist in DICT database
         $i = 0;

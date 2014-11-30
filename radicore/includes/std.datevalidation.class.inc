@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2013 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class date_class {
@@ -11,7 +11,10 @@ class date_class {
     var $internaldate;          // date as held in the database (yyyymmdd)
     var $externaldate;          // date as shown to the user (dd Mmm yyyy)
     var $errors;                // error messages
-    var $date_format = 'dmy';   // date format - 'dmy', 'mdy' or 'ymd'
+    var $date_format = 'dmy';   // date format from the CONFIG.INC file
+    var $date_format_input;     // date format (input) from the LANGUAGE table
+    var $date_format_output;    // date format (output) from the LANGUAGE table
+    var $date_length = 12;      // length of date string on HTML form
 
     // ****************************************************************************
     // class constructor
@@ -24,61 +27,266 @@ class date_class {
         if (isset($GLOBALS['date_format'])) {
         	$this->date_format = $GLOBALS['date_format'];
         } // if
+        if (isset($_SESSION['date_format_input'])) {
+            $this->date_format_input = $_SESSION['date_format_input'];
+        } // if
+        if (isset($_SESSION['date_format_output'])) {
+            $this->date_format_output = $_SESSION['date_format_output'];
+        } // if
 
     } // date_class
 
     // ****************************************************************************
     // accessor functions
     // ****************************************************************************
-    function formatDate ($dd, $mm, $ccyy)
-    // convert a date into the format required by the user
+    function _formatDate ($dd, $mm, $ccyy, $date_format)
+    // convert a date into the output format required by the user
     {
-        $format     = strtolower($this->date_format);
+        $format     = strtolower($date_format);
         $monthalpha = $this->monthalpha;
+
+        // Japanese/Chinese characters
+        $ja_day   = pack("CCC",0xe6,0x97,0xa5);
+        $ja_month = pack("CCC",0xe6,0x9c,0x88);
+        $ja_year  = pack("CCC",0xe5,0xb9,0xb4);
+        // Korean characters
+        $ko_day   = pack("CCC",0xec,0x9d,0xbc);
+        $ko_month = pack("CCC",0xec,0x9b,0x94);
+        $ko_year  = pack("CCC",0xeb,0x85,0x84);
 
         switch ($format) {
         	case 'dmy':
+            case 'dd mmm yyyy':
         	    $mm     = (int)$mm;
         		$output = "$dd $monthalpha[$mm] $ccyy";
         		break;
 
-        	case 'mdy':
-        	    $mm     = (int)$mm;
-        		$output = "$monthalpha[$mm] $dd $ccyy";
+        	case 'd mmm yyyy':
+                $d      = (int)$dd;
+                $mm     = (int)$mm;
+                $output = "$d $monthalpha[$mm] $ccyy";
+                break;
+
+            case 'dd mm yyyy':
+                $output = "$dd $mm $ccyy";
+                break;
+
+            case 'dd.mm.yyyy':
+                $output = "$dd.$mm.$ccyy";
+                break;
+
+            case 'dd-mm-yyyy':
+        		$output = "$dd-$mm-$ccyy";
         		break;
 
         	case 'dd/mm/yyyy':
-        		$output = "$dd/$mm/$ccyy";
-        		break;
+                $output = "$dd/$mm/$ccyy";
+                break;
 
-        	case 'dd.mm.yyyy':
-        		$output = "$dd.$mm.$ccyy";
-        		break;
+            case 'd/mm/yyyy':
+                $d = (int)$dd;
+                $output = "$d/$mm/$ccyy";
+                break;
 
-        	case 'dd/mm/yy':
+            case 'dd/mm yyyy':
+                $output = "$dd/$mm $ccyy";
+                break;
+
+            case 'dd/mm/yy':
         	    $yy = substr($ccyy, 2);
         		$output = "$dd/$mm/$yy";
         		break;
 
-        	case 'ymd':
+            case 'd.m.yyyy':
+                $d = (int)$dd;
+                $m = (int)$mm;
+                $output = "$d.$m.$ccyy";
+                break;
+
+            case 'd. m. yyyy':
+                $d = (int)$dd;
+                $m = (int)$mm;
+                $output = "$d. $m. $ccyy";
+                break;
+
+            case 'dd. mm. yyyy.':
+                $output = "$dd. $mm. $ccyy.";
+                break;
+
+            case 'mdy':
+            case 'mmm dd yyyy':
+                $mm     = (int)$mm;
+                $output = "$monthalpha[$mm] $dd $ccyy";
+                break;
+
+            case 'mm dd yyyy':
+                $output = "$mm $dd $ccyy";
+                break;
+
+        	case 'm/d/yyyy':
+                $m      = (int)$mm;
+                $d      = (int)$dd;
+                $output = "$m/$d/$ccyy";
+                break;
+
+            case 'm d yyyy':
+                $m      = (int)$mm;
+                $d      = (int)$dd;
+                $output = "$m $d $ccyy";
+                break;
+
+            case 'ymd':
+            case 'yyyy mmm dd':
         	    $mm     = (int)$mm;
         	    $output = "$ccyy $monthalpha[$mm] $dd";
         		break;
+
+            case 'yyyy/mm/dd':
+                $output = "$ccyy/$mm/$dd";
+                break;
+
+            case 'yyyy.mm.dd':
+                $output = "$ccyy.$mm.$dd";
+                break;
+
+            case 'yyyy. mm. dd':
+                $output = "$ccyy. $mm. $dd";
+                break;
+
+            case 'yyyy#mm#dd# [ja]':
+                $output = $ccyy.$ja_year.$mm.$ja_month.$dd.$ja_day;
+                break;
+
+            case 'yyyy# mm# dd# [ko]':
+                $output = $ccyy.$ko_year.' '.$mm.$ko_month.' '.$dd.$ko_day;
+                break;
+
+            case 'yyyy#m#d# [zh_xx]':
+                $m      = (int)$mm;
+                $d      = (int)$dd;
+                $output = $ccyy.$ja_year.$m.$ja_month.$d.$ja_day;
+                break;
+
             case 'yyyy-mm-dd':
             default:
                 $output = "$ccyy-$mm-$dd";
                 break;
         } // switch
 
+        $this->date_length = strlen($output);
+
         return $output;
 
-    } // formatDate
+    } // _formatDate
 
     // ****************************************************************************
-    function getInternalDate ($input)
+    function getInternalDate ($input, $date_format=null)
     // convert date from external format (as input by user)
     // to internal format (as used in the database)
     {
+        if (empty($date_format)) {                      // AJM - 2014-04-22
+            $date_format = $this->date_format_input;    // AJM - 2014-04-22
+        } // if                                         // AJM - 2014-04-22
+
+        $input = trim($input);
+
+        // check if date is already in yyyy-mm-dd format
+        $pattern = '/'
+                 . '^[0-9]{4}'      // 4 digit year
+                 . '-'              // '-'
+                 . '[0-9]{2}'       // 2 digit month
+                 . '-'              // '-
+                 . '[0-9]{2}'       // 2 digit day
+                 . '/';
+        if (preg_match($pattern, $input, $regs)) {
+            $date_format = 'yyyy-mm-dd';  //date is already in internal format
+        } // if
+
+        $date_format = strtolower($date_format);
+
+        if (!empty($date_format)) {
+            switch ($date_format) {
+                case 'yyyy-mm-dd':
+                case 'yyyy/mm/dd':
+                case 'yyyy.mm.dd':
+                    preg_match_all('/[0-9]+/', $input, $regs);
+                    $year  = $regs[0][0];
+                    $month = $regs[0][1];
+                    $day   = $regs[0][2];
+                    break;
+
+                case 'dd mmm yyyy':
+                case 'd MMM yyyy':
+                    $array = explode(' ', $input, 3);
+                    $day   = $array[0];
+                    $month = $array[1];
+                    $year  = $array[2];
+                    break;
+
+                case 'mmm dd yyyy':
+                    $array = explode(' ', $input, 3);
+                    $month = $array[0];
+                    $day   = $array[1];
+                    $year  = $array[2];
+                    break;
+
+                case 'dd mm yyyy':
+                case 'dd.mm.yyyy':
+                case 'dd-mm-yyyy':
+                case 'dd/mm/yyyy':
+                case 'd/mm/yyyy':
+                case 'dd/mm yyyy':
+                case 'dd/mm/yy':
+                case 'd.m.yyyy':
+                case 'd. m. yyyy':
+                case 'dd. mm. yyyy.':
+                    preg_match_all('/[0-9]+/', $input, $regs);
+                    $day   = $regs[0][0];
+                    $month = $regs[0][1];
+                    $year  = $regs[0][2];
+                    break;
+
+                case 'mm dd yyyy':
+                case 'm/d/yyyy':
+                    preg_match_all('/[0-9]+/', $input, $regs);
+                    $month = $regs[0][0];
+                    $day   = $regs[0][1];
+                    $year  = $regs[0][2];
+                    break;
+
+                case 'yyyy mmm dd':
+                    $array = explode(' ', $input, 3);
+                    $year  = $array[0];
+                    $month = $array[1];
+                    $day   = $array[2];
+                    break;
+
+                case 'yyyy. mm. dd':
+                case 'yyyy#mm#dd# [ja]':
+                case 'yyyy# mm# dd# [ko]':
+                case 'yyyy#m#d# [zh_xx]':
+                    preg_match_all('/[0-9]+/', $input, $regs);
+                    $year  = $regs[0][0];
+                    $month = $regs[0][1];
+                    $day   = $regs[0][2];
+                    break;
+
+                default:
+                    $this->errors = getLanguageText('sys0047', $date_format);
+                    return false;
+            } // switch
+            $result = $this->verifyDate($day, $month, $year);
+            if ($result === false) {
+                // "Invalid date format, expecting 'xx xx xx'
+                $this->errors = getLanguageText('sys0046', $date_format);
+            } // if
+            return $result;
+        } // if
+
+        if (empty($date_format)) {              // AJM - 2014-02-15
+            $date_format = $this->date_format;  // AJM - 2014-02-15
+        } // if                                 // AJM - 2014-02-15
+
         // look for d(d)?m(m)?(yyyy) format (may also be m(m)?d(d)?y(yyy) format)
         $pattern = '/'
                  . '(^[0-9]{1,2})'      // 1 or 2 digits
@@ -88,7 +296,7 @@ class date_class {
                  . '([0-9]{0,4}$)'      // 0 to 4 digits
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
-            if (preg_match('#^(dmy|dd/mm/yyyy|dd\.mm\.yyyy|dd/mm/yy)$#i', $this->date_format)) {
+            if (preg_match('#^(dmy|dd/mm/yyyy|dd\.mm\.yyyy|dd/mm/yy)$#i', $date_format)) {
                 $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
             } else { // assume 'mdy'
                 $result = $this->verifyDate($regs[3], $regs[1], $regs[5]);
@@ -157,7 +365,7 @@ class date_class {
             return $result;
         } // if
 
-        if (preg_match('/^(dmy|mdy)$/i', $this->date_format)) {
+        if (preg_match('/^(dmy|mdy)$/i', $date_format)) {
             // look for ddmmyyyy format (may also be mmddyyyy format)
             $pattern = '/'
                      . '(^[0-9]{2})'        // 2 digits
@@ -165,7 +373,7 @@ class date_class {
                      . '([0-9]{4}$)'        // 4 digits
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
-                if (preg_match('/^(dmy)$/i', $this->date_format)) {
+                if (preg_match('/^(dmy)$/i', $date_format)) {
                     $result = $this->verifyDate($regs[1], $regs[2], $regs[3]);
                 } else { // assume 'mdy'
                     $result = $this->verifyDate($regs[2], $regs[1], $regs[3]);
@@ -174,7 +382,7 @@ class date_class {
             } // if
         } // if
 
-        if (preg_match('/^(ymd)$/i', $this->date_format)) {
+        if (preg_match('/^(ymd)$/i', $date_format)) {
             // look for yyyymmdd format
             $pattern = '/'
                      . '(^[0-9]{4})'        // 4 digits
@@ -275,16 +483,22 @@ class date_class {
     } // getInternalTime
 
     // ****************************************************************************
-    function getInternalDateTime ($input)
+    function getInternalDateTime ($input, $fieldspec=null)
     // convert datetime from external format (as input by user)
     // to internal format (as used in the database)
     {
-        // look for last space as a delimiter between date and time portions
-        $pos = strrpos($input, ' ');
-
-        // now split the input into its two portions
-        $date = substr($input, 0, $pos);
-        $time = substr($input, $pos+1);
+        // look for a time portion (ends with '99:99' or '99:99:99')
+        if (preg_match('/([0-9]{2}:[0-9]{2}){1}(:[0-9]{2})?$/', $input, $regs)) {
+            $time = $regs[0];
+            $date = substr($input, 0, -strlen($time));
+        } else {
+            $date = $input;
+            $time = null;
+            // only a date given, so append the default time) if there is one)
+            if (isset($fieldspec['default'])) {
+                $time = substr($fieldspec['default'], 11, 8);
+            } // if
+        } // if
 
         // validate the separate portions
         if (!$internaldate = $this->getInternalDate(trim($date))) {
@@ -382,14 +596,21 @@ class date_class {
     } // verifyTime
 
     // ****************************************************************************
-    function getExternalDate ($input)
+    function getExternalDate ($input, $date_format=null)
     // convert date from internal format (as used in the database)
     // to external format (as shown to the user))
     {
-        $monthalpha = $this->monthalpha;
+        if (empty($date_format)) {                      // AJM - 2014-04-22
+            $date_format = $this->date_format_output;   // AJM - 2014-04-22
+        } // if                                         // AJM - 2014-04-22
+        if (empty($date_format)) {              // AJM - 2014-02-15
+            $date_format = $this->date_format;  // AJM - 2014-02-15
+        } // if                                 // AJM - 2014-02-15
 
         // input may be 'yyyy-mm-dd' or 'yyyymmdd'  or 'dd-Mmm-yy', so
         // check the length and process accordingly
+
+        $input = trim($input);
 
         if (strlen($input) == 8) {
             // test for 'yyyymmdd'
@@ -405,12 +626,12 @@ class date_class {
                     $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
                     return false;
                 } else {
-                    $this->externaldate = $this->formatDate($regs[3], $regs[2], $regs[1]);
+                    $this->externaldate = $this->_formatDate($regs[3], $regs[2], $regs[1], $date_format);
                     return $this->externaldate;
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0046'); // Invalid date format: expected 'yyyymmdd
+            $this->errors = getLanguageText('sys0046', 'yyyymmdd'); // Invalid date format: expected 'yyyymmdd'
             return false;
         } // if
 
@@ -430,7 +651,7 @@ class date_class {
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0049'); // Invalid date format: expected 'dd-Mmm-yy'
+            $this->errors = getLanguageText('sys0046','dd-Mmm-yy'); // Invalid date format: expected 'dd-Mmm-yy'
             return false;
         } // if
 
@@ -450,12 +671,12 @@ class date_class {
                     $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
                     return false;
                 } else {
-                    $this->externaldate = $this->formatDate($regs[5], $regs[3], $regs[1]);
+                    $this->externaldate = $this->_formatDate($regs[5], $regs[3], $regs[1], $date_format);
                     return $this->externaldate;
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0047'); // Invalid date format: expected 'dd-mm-yyyy'
+            $this->errors = getLanguageText('sys0046','dd-mm-yyyy'); // Invalid date format: expected 'dd-mm-yyyy'
             return false;
         } // if
 
@@ -499,7 +720,10 @@ class date_class {
         list ($month, $day, $year) = preg_split ('[/]', $gregorian);
 
         // convert back into standard format
-        $result = $this->getInternaldate("$day/$month/$year");
+        //$save_format = $this->date_format;      // AJM - 2014-01-23
+        //$this->date_format = 'dmy';             // AJM - 2014-01-23
+        $result = $this->getInternaldate("$day/$month/$year", 'dd/mm/yyyy');
+        //$this->date_format = $save_format;      // AJM - 2014-01-23
 
         return $result;
 
@@ -534,6 +758,54 @@ class date_class {
         return $result;
 
     } // addMonths
+
+    // ****************************************************************************
+    function getDateLength ($format, $type)
+    // return the size of the date field which changes depending on the format
+    {
+         // Japanese/Chinese characters
+        $ja_day   = pack("CCC",0xe6,0x97,0xa5);
+        $ja_month = pack("CCC",0xe6,0x9c,0x88);
+        $ja_year  = pack("CCC",0xe5,0xb9,0xb4);
+        // Korean characters
+        $ko_day   = pack("CCC",0xec,0x9d,0xbc);
+        $ko_month = pack("CCC",0xec,0x9b,0x94);
+        $ko_year  = pack("CCC",0xeb,0x85,0x84);
+
+        $format = strtolower($format);
+
+        switch ($format) {
+            case 'dd. mm. yyyy.':
+                $length = strlen($format);
+                break;
+
+            case 'yyyy#mm#dd# [ja]':
+                $output = 'yyyy'.$ja_year.'mm'.$ja_month.'dd'.$ja_day;
+                $length = strlen($output);
+                break;
+
+            case 'yyyy# mm# dd# [ko]':
+                $output = 'yyyy'.$ko_year.' mm'.ko_month.' dd'.$ko_day;
+                $length = strlen($output);
+                break;
+
+            case 'yyyy#m#d# [zh_xx]':
+                $output = 'yyyy'.$ja_year.'mm'.$ja_month.'dd'.$ja_day;
+                $length = strlen($output);
+                break;
+
+            default:
+                $length = 12;  // this is the default length
+                break;
+        } // switch
+
+        if (preg_match('/time/i', $type)) {
+            $length = $length + 8;
+        } // if
+
+        return $length;
+
+    } // getErrors
 
     // ****************************************************************************
     function getErrors ()

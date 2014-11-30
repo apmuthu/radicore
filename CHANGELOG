@@ -1,5 +1,105 @@
 ﻿RADICORE for PHP - news
 
+2014-12-01, version 1.87.0
+Database changes:
+- none
+
+Other changes:
+- fixed bug in 'std.pdf.class.inc' so that can it can trap and discard any Byte Order Marks which are written to the output stream when a file which is encoded in UTF-8 is included, such as when the getLanguageText() function is called.
+- fixed bug in 'std.multi1.inc' so that if a call to getData($where) returns an empty row it will be filled with the contents of the $where string so that a new record can be created.
+- fixed bug in 'std.table.class.inc' so that the formatData() method will not call the getInternalDate() method on an empty date otherwise it will generate an error.
+- updated 'std.filepicker1.inc' so that it will use the 'Order By' value in the task screen for its default sort sequence.
+- fixed bug in 'mnu_menu.class.inc' which, in some circumstances, did not remove menu buttons which were not accessible by the user.
+- fixed bug in the data dictionary which failed to show the choice of unique keys when maintaining the relationship between two tables.
+- fixed bug with where2array() function in 'include.library.inc' which could not deal with tabs and newlines in the input string.
+- fixed bug with executeQuery() method in 'std.table.class.inc' so that when splitting a string of queries into an array using ';' as a delimiter it now ignores ';' characters inside quoted strings. This fixes bug http://radicore.org/fud/index.php?t=msg&th=1410
+- fixed bug in isPkeyComplete() function in 'include.library.inc' which failed to deal with a compound unique key where an optional column was not provided. This should only cause an error when a NOT NULL column is not provided.
+- fixed bug with 'Generate PHP scripts (b) - Enter Details' which failed to show the outer database name and showed an empty dropdown list for the outer table name in the DEL4 pattern. This fixes bug http://radicore.org/fud/index.php?t=msg&th=1414
+- updated PDF processing to allow 'padding' values to be set between the cell boundary and the cell contents.
+- updated PDF processing to allow the 'y' coordinate of one cell to be saved so that it can be used to position another cell.
+
+2014-09-01, version 1.86.0
+Database changes:
+- none
+
+Other changes:
+- modified processing of datetime fields so that when the input contains only a date portion a time portion will be appended, and this will be taken from the default value. For start_date fields this will normally be '00:00:00' while for end_date fields this would be '23:59:59'.
+- modified 'std.tree_view2.inc' to set $GLOBALS['mode'] to 'tree' instead of 'read', and to call the 'getExtraData()' method on the outer entity.
+- fixed bug in 'std.multi1.inc' which removed all data except the primary key for a new record after returning from a popup screen.
+- fixed bug in 'std.buttons.xsl' and 'include.xml.php4/5.inc' to make the word 'Selections:' (in the navigation bar) translatable instead of hard-coded.
+- fixed bug in validateSortItem() function so that if the object's table name is at the start of the FROM string it will not look for any alias names for that table.
+- fixed bug in 'std.list2.inc' and 'std.list3.inc' so that when the RESET button is used it will not lose the ORDERBY sequence for the outer entity.
+- added the ability to specify that a particular field in a particular row in a multi-row update area, such as in a MULTI2 pattern, should be set to 'noedit'. This can be achieved by adding the pseudo-column 'rdc_fieldspec['fieldname']' with the value "array('noedit' => 'y')" to the row in question.
+- modified the workflow system to enable a task to set the user_id of a workitem record to a particular value. See <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq161">FAQ161</a> for details.
+- fixed bug in 'logon.class.inc' which generated an invalid SQL query when trying to set 'is_disabled' to TRUE after the number of failed logon attempts went over the limit.
+- amended 'std.table.class.inc' so that for the 'insertRecord()' and 'updateRecord()' methods the call to $this->convertTimeZone is now done after the call to '_cm_pre_insertRecord()' and '_cm_pre_updateRecord()' respectively. This is to allow any datetime validation to take place before the values are converted from the client timezone to the server timezone.
+
+2014-07-01, version 1.85.0
+Database changes:
+- run script 'dict/sql/mysql/alter_table(2014-06-14).sql' to change the structure of the DICT database.
+- run script 'menu/sql/menu.menu_export(2014-06-26).sql' to alter the contents of the MENU database
+
+Other changes:
+- fixed bug in 'dict_table_key.class.inc' which failed to update correctly after columns were either added to or removed from the primary key.
+- fixed bug in 'dml.pgsql.class.inc' which failed to set the auto_increment attribute when importing a table's structure into the Data Dictionary.
+- updated table 'dict_column' in the DICT database to increase size of 'col_default' column from 40 to 255 characters. This is to allow default values such as "nextval('test_autoincrement_id_seq'::regclass)" which may appear in PostgreSQL databases.
+- fixed bug in 'mnu_task.class.inc', 'mnu_menu.class.inc', 'mnu_nav_button.class.inc' and 'mnu_favourite_s04.class.inc' so that queries test for the value 'Y' instead of TRUE otherwise they will fail when using the PostgreSQL database.
+- modified 'std.tree_view1.inc' and 'std.tree_view2.inc' to allow pagination, but this is for the entries which exist at level 1 only.
+- added pattern 'OUTPUT6' to extract data from a Tree View and output it to a CSV file. 
+
+
+2014-06-01, version 1.84.0
+Database changes:
+- run script 'menu/sql/mysql/alter_table(2014-05-07).sql' to change the structure of the MENU database.
+
+Other changes:
+- modified 'php_session.class.inc' so that it ignores $GLOBALS['server_timezone'] when setting the 'date_created' and 'last_updated' columns. This was causing problems with session garbage collection when the application timezone was different from the database timezone.
+- modified 'dml.pgsql.class.inc' so that it sets the database timezone to be the same as date_default_timezone_get();
+- fixed bug in 'dml.oracle.class.inc' which caused an incorrect conversion of 'DATE_SUB(field1 - INTERVAL $field2 unit)' to '($field1 - INTERVAL '$field2' $unit)'.
+- fixed bug when attempting to use the 'recover password' option on the logon screen.
+- modified the MNU_LANGUAGE table to increase the size of the date_format columns. This is to allow for Asian dates which contain symbols.
+- modified 'std.filepicker1.inc' so that if the directory contains more than 2000 files the file names will be read once and stored in a cache instead of being read from disk each time. The cache will be per session, and if the RESTART button is pressed it will be rebuilt.
+- added function 'replaceScreenLabels()' to work in DETAIL screens to complement 'replaceScreenHeadings()' which works in LIST screens.
+- updated 'std.pdf.class.inc' to allow all fonts to be changed if the language changes. Please refer to http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq159 for details.
+- modified the logon process to check the record counts on the 'mnu_task_ip_address', 'mnu_user_ip_address', 'mnu_time_limit_role' and 'mnu_time_limit_user' tables so that if they are empty no further lookups are performed on all subsequent web pages in the current session.
+- updated 'std.imap.class.inc' to use imap_errors() if imap_open() returns false.
+
+2014-05-01, version 1.83.0
+Database changes:
+- run script 'menu/sql/mysql/alter_table(2014-04-17).sql' to change the structure of the MENU database.
+- run script 'menu/sql/menu.menu_export(2014-04-17).sql' to change the contents of the MENU database.
+
+Other changes:
+- updated the MNU_LANGUAGE table in the MENU database to add the 'input_date_format' and 'output_date_format' columns. This is to allow the ability to specify different input and output date formats for different languages instead of having a single output format for each installation. The input date format will restrict the user's input to that format instead of allowing it to be free-format and having the software guess what it is by using regular expressions (this does not work satisfactorily with certain unicode character sets).
+- updated the MNU_FAVOURITE table in the MENU database to add a UNIQUE index on user_id+task_id to prevent duplicate records.
+- updated the MENU database to remove the 'role_id' column from the MNU_USER table and move it to the new MNU_USER_ROLE table. This will allow a user to have more than one role. One role must be marked as 'primary' to identify the starting transaction. 
+- updated the MENU database to include the MNU_USER_ALT table which allows users to have different names in different languages.
+- fixed bug in 'dml.*.class.inc' which prevented a candidate key from being changed from something to NULL.
+- updated 'std.csv.class.inc' so that when creating a CSV file it will by default set the BOM (byte order mark) to signify that the output is UTF8.
+- updated login.php so that after a successful login the session_id is regenerated. This procedure was advised in https://wblinks.com/notes/secure-session-management-tips/
+- updated htaccess.txt to include "session.cookie_httponly 1". This procedure was advised in http://simonholywell.com/post/2013/05/improve-php-session-cookie-security.html
+- fixed bug in '_dml_updateSelection()' and '_dml_deleteSelection()' methods which used the current value in $this->rows_per_page to limit the number of rows affected. This prevented more than one record being processed if the current value of $this->rows_per_page was 1, such as in an UPDATE1 transaction. This value is now ignored, which means that the code will process all available records and not just the first one.
+- modified the '__sleep()' method within 'std.table.class.inc' so that when the object is being serialised for storage in the session data the contents of $this->fieldarray will be modified to remove any fields which are not in the primary key. Note that the list of pkey fields can be temporarily adjusted by using the '_cm_getPkeyNames()' method. Note that this procedure is not performed if the current task has a pattern of ADD, UPD, MULTI or SRCH.
+- fixed issue http://www.radicore.org/forum/index.php?t=msg&th=1089&goto=4133 which caused the audit trail to find zero records.
+
+2014-03-07, version 1.82.0
+Database changes:
+- none
+
+Other changes:
+- modified 'std.table.class.inc' so that '_cm_getColumnNames()' method can be used to remove unwanted columns as well as set the initial value in the selection screen of the UPDATE4 task.
+- modified 'std.search1.inc' so that it will accept a value for an ENUM field which is either a numeric index or a string representation.
+- modified 'runInBackground()' function within 'include.session.inc' so that if being run on linux/unix it will run the command line version of PHP and pass the session id as an argument, otherwise it will continue to start a parallel apache thread via the curl extension.
+- modified 'initSession()' function within 'include.session.inc' so that it the session id can be obtained either from $argv (command line) or $_GET. 
+- modified 'std.batch.inc' so that it will display any input values which have been supplied in the $argv array.
+- modified 'mnu_nav_button.class.inc' so that when it modifies the SELECT clause to extract values from a foreign language table it removes the previous entry from the default table. This is to fix a problem when using the SQL Server database as it does not like duplicate names in the SELECT clause.
+- fixed bug in 'dml.sqlsrv.class.inc' where it failed to change 'dbname.tblname' to 'dbname.dbo.tblname' in the SELECT clause.
+- updated 'getExternalDate()' and 'getInternalDate()' methods inside 'std.datevalidation.class.inc' to provide a second optional argument to specify the format of the input/output date if it is different from the value defined in $GLOBALS['date_format'].
+- modified 'std.table.class.inc' to include '$this->executeQuery()' method to execute an arbitrary query, or several queries. You can also use '$this->multiQuery()' as a synonym for this method.
+- added the 'findDBName()' function to identify the correct database name to be used in an SQL query containing a JOIN.
+- fixed bug in 'std.pdf.class.inc' which caused a cell containing only '0' (zero) to be printed as blank.
+- modified 'dict_table_s02.class.inc' so that when creating '<table>.dict.inc' files it will include the database name independent of the subsystem name. This is to allow more than one database to exist in the same subsystem.
+
 2013-12-01, version 1.81.0
 Database changes:
 - run script menu/sql/menu.menu_export(2013-10-17).sql to change the contents of the MENU database.
@@ -42,7 +142,6 @@ Other changes:
 - updated all 'dml.*.class.inc' to include the '__toString()' method which can be used when the error handler is invoked.
 - created 'error_logs' directory to hold the 'errorlog.html' file which is appended to by the error handler in 'error.inc'.
 - upgraded TCPDF library to version 6.0.024.
-
 
 2013-06-22, version 1.79.0
 Database changes:
