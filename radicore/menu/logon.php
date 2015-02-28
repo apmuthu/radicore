@@ -151,7 +151,8 @@ if (!empty($_POST)) {
 	    $errors[$dbobject->getClassName()] = $result;
 	} // if
     if ($errors) {
-        $dbobject->rollback();
+        //$dbobject->rollback();
+        $dbobject->commit();
     } else {
         // logon is OK - go to next screen
         $dbobject->commit();

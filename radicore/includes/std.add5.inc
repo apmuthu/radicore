@@ -49,7 +49,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action, $return_string);
+        $dbouter->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
@@ -83,7 +83,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action, $return_string);
+        $dbinner->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection) AND $popup_object == 'dbouter') {
             // merge previous saved variables with selection from popup form
-            $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, $popup_offset);
+            $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, $popup_offset, $return_files);
             if ($dbouter->errors) {
             	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if

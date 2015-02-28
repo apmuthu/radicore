@@ -10,6 +10,7 @@ class Default_Table
     var $access_count;                  // count of accesses since instantiation
     var $allow_empty_where = false;     // switch to allow an empty $where string in STD.LIST2.INC
     var $allow_db_function = array();   // allow a field's value in a database insert/update to contain a function name
+    var $allow_multiple = false;        // allow multiple records or files
     var $allow_scrolling = false;       // used inside ADD2 pattern to allow scrolling between selected rows
     var $alt_language_table;            // table holding alternative language text
     var $alt_language_cols;             // columns holding alternative language text
@@ -103,6 +104,7 @@ class Default_Table
     var $upload_subdir;                 // subdirectory for file upoads
     var $upload_filetypes = array();    // file types for uploading
     var $upload_maxfilesize;            // max file size for uploading
+    var $upload_blacklist = array();    // prohibited file types
 
     var $wf_case_id;                    // workflow case id
     var $wf_context;                    // workitem context
@@ -239,7 +241,7 @@ class Default_Table
 
     // ****************************************************************************
     function changeConfig ($fieldarray)
-    // check to seein any configuration settings need to be changed.
+    // check to see if any configuration settings need to be changed.
     {
         $where = null;
 
@@ -479,14 +481,32 @@ class Default_Table
             // this is the only row
             $row = 0;
             $fieldarray = array_update_associative($fieldarray[$row], $postarray, $this->fieldspec);
-            $output     = $this->_cm_customButton($fieldarray, $button);
+            if (is_object($this->custom_processing_object)) {
+                if (method_exists($this->custom_processing_object, '_cm_customButton')) {
+                    $output = $this->custom_processing_object->_cm_customButton($fieldarray, $button);
+                } // if
+            } // if
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $output = $this->_cm_customButton($fieldarray, $button);
+            } // if
         } else {
             // this is one of many rows
             if (empty($row)) $row=1;  // default
             $row = $row-1;  // screen rows start at #1 while database rows start at zero
             if (array_key_exists($row, $fieldarray)) {
                 $fieldarray  = array_update_indexed($fieldarray, $postarray, $this->fieldspec);
-                $output      = $this->_cm_customButton($fieldarray[$row], $button);
+                if (is_object($this->custom_processing_object)) {
+                    if (method_exists($this->custom_processing_object, '_cm_customButton')) {
+                        $output = $this->custom_processing_object->_cm_customButton($fieldarray[$row], $button);
+                    } // if
+                } // if
+                if ($this->custom_replaces_standard) {
+                    $this->custom_replaces_standard = false;
+                } else {
+                    $output = $this->_cm_customButton($fieldarray[$row], $button);
+                } // if
             } // if
         } // if
 
@@ -515,6 +535,63 @@ class Default_Table
         return $this->getFieldArray();
 
     } // customButton
+
+    // ****************************************************************************
+    function custom_commonValidation ($fieldarray, $originaldata=null)
+    // perform any validation which is common to both INSERT and UPDATE.
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
+                $fieldarray = $this->custom_processing_object->_cm_commonValidation($fieldarray, $originaldata);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_commonValidation($fieldarray, $originaldata);
+        } // if
+
+        return $fieldarray;
+
+    } // custom_commonValidation
+
+    // ****************************************************************************
+    function custom_validateInsert($fieldarray)
+    // perform any custom pre-INSERT validation
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_validateInsert')) {
+                $fieldarray = $this->custom_processing_object->_cm_validateInsert($fieldarray);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_validateInsert($fieldarray);
+        } // if
+
+        return $fieldarray;
+
+    } // custom_validateInsert
+
+    // ****************************************************************************
+    function custom_validateUpdate($fieldarray, $originaldata)
+    // perform any custom pre-UPDATE validation
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_validateUpdate')) {
+                $fieldarray = $this->custom_processing_object->_cm_validateUpdate($fieldarray, $originaldata);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_validateUpdate($fieldarray, $originaldata);
+        } // if
+
+        return $fieldarray;
+
+    } // custom_validateUpdate
 
     // ****************************************************************************
     function deleteMultiple ($fieldarray)
@@ -731,7 +808,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -785,7 +862,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -1014,7 +1091,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -1055,7 +1132,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -1261,7 +1338,17 @@ class Default_Table
     function filePickerSelect ($selection)
     // Deal with selection from a filepicker screen.
     {
-        $selection = $this->_cm_filePickerSelect($selection);
+        // call customisable method in the subclass.
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_filePickerSelect')) {
+                $selection = $this->custom_processing_object->_cm_filePickerSelect($selection);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $selection = $this->_cm_filePickerSelect($selection);
+        } // if
 
         return $selection;
 
@@ -1275,9 +1362,19 @@ class Default_Table
 
         $fieldarray = where2array($this->where);
 
-        $output_name = $this->_cm_fileUpload($input_name, $temp_file, $fieldarray);
+        // call customisable method in the subclass.
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_fileUpload')) {
+                $output_name = $this->custom_processing_object->_cm_fileUpload($input_name, $temp_file, $fieldarray);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $output_name = $this->_cm_fileUpload($input_name, $temp_file, $fieldarray);
+        } // if
 
-        return $this->upload_subdir .'/' .$output_name;
+        return $this->upload_subdir .DIRECTORY_SEPARATOR .$output_name;
 
     } // fileUpload
 
@@ -1478,6 +1575,9 @@ class Default_Table
                         if (isset($fieldspec['size']) and $fieldspec['size'] == 5) {
                             // exclude the seconds portion of the time
                             $fieldvalue = substr($fieldarray[$fieldname], 0, 5);
+                        } elseif (isset($fieldspec['size']) and $fieldspec['size'] == 8) {
+                            // exclude the seconds portion of the time
+                            $fieldvalue = substr($fieldarray[$fieldname], 0, 8);
                         } // if
                         break;
                     case 'integer':
@@ -2247,9 +2347,9 @@ class Default_Table
         if ($tablename != 'default') {
             // include table specifications generated by Data Dictionary
             if (!empty($this->dirname_dict)) {
-                require ($this->dirname_dict .'/' .$tablename .'.dict.inc');
+                require ($this->dirname_dict .DIRECTORY_SEPARATOR .$tablename .'.dict.inc');
             } else {
-                require ($this->dirname      .'/' .$tablename .'.dict.inc');
+                require ($this->dirname      .DIRECTORY_SEPARATOR .$tablename .'.dict.inc');
             } // if
             if (is_bool($save_audit_logging) OR !empty($save_audit_logging)) {
                 $this->audit_logging = $save_audit_logging;
@@ -2349,8 +2449,8 @@ class Default_Table
                             $save_cwd = getcwd();
                             // switch to other directory so that any includes() within the class
                             // are relative to that directory and not the current directory
-                            $dir = dirname($this->dirname);                          // path to current subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';  // switch to other subsystem directory
+                            $dir = dirname($this->dirname);                                                          // path to current subsystem directory
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;  // switch to other subsystem directory
                             chdir($dir);
                         } else {
                             $save_cwd = NULL;
@@ -2919,7 +3019,16 @@ class Default_Table
             // obtain any custom adjustments to this array
             $task_id    = $next_task['task_id'];
             $pattern_id = $next_task['pattern_id'];
-            $pkeynames  = $this->_cm_getPkeyNames($pkeynames, $task_id, $pattern_id);
+            if (is_object($this->custom_processing_object)) {
+                if (method_exists($this->custom_processing_object, '_cm_getPkeyNames')) {
+                    $pkeynames = $this->custom_processing_object->_cm_getPkeyNames($pkeynames, $task_id, $pattern_id);
+                } // if
+            } // if
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $pkeynames  = $this->_cm_getPkeyNames($pkeynames, $task_id, $pattern_id);
+            } // if
             if (empty($pkeynames)) {
                 // "Primary key has not been defined for table 'x'"
                 $this->errors[] = getLanguageText('sys0198', $this->tablename);
@@ -3077,6 +3186,27 @@ class Default_Table
         return strtolower($this->tablename);
 
     } // getTableName
+
+    // ****************************************************************************
+    function getUploadSubdir ()
+    // return the name of this table.
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_getUploadSubdir')) {
+                $subdir = $this->custom_processing_object->_cm_getUploadSubdir();
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            if (empty($subdir)) {
+                $subdir = $this->_cm_getUploadSubdir();
+            } // if
+        } // if
+
+        return $subdir;
+
+    } // getUploadSubdir
 
     // ****************************************************************************
     function getValRep ($item, $where=null, $orderby=null)
@@ -3527,7 +3657,23 @@ class Default_Table
         $this->fieldarray = $fieldarray;
 
         // call customisable method in the subclass.
-        $fieldarray = $this->_cm_initialiseFilePicker($fieldarray, $search);
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_initialiseFilePicker')) {
+                $fieldarray = $this->custom_processing_object->_cm_initialiseFilePicker($fieldarray, $search);
+                $this->resize_array       = $this->custom_processing_object->resize_array;
+                $this->picker_subdir      = $this->custom_processing_object->picker_subdir;
+                $this->picker_filetypes   = $this->custom_processing_object->picker_filetypes;
+                $this->image_height       = $this->custom_processing_object->image_height;
+                $this->image_width        = $this->custom_processing_object->image_width;
+                $this->cache_dir          = $this->custom_processing_object->cache_dir;
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_initialiseFilePicker($fieldarray, $search);
+        } // if
+
         if (!empty($this->errors)) {
             return FALSE;
         } // if
@@ -3578,6 +3724,8 @@ class Default_Table
         $this->upload_subdir      = 'uploadedfiles';
         $this->upload_filetypes   = array('image/gif');
         $this->upload_maxfilesize = 1000000;
+        $this->upload_blacklist   = array("\.php.*", "\..*htm.*");
+        $this->allow_multiple     = false;
 
         // call customisable method in the subclass.
         if (is_object($this->custom_processing_object)) {
@@ -3587,6 +3735,7 @@ class Default_Table
                 $this->upload_subdir      = $this->custom_processing_object->upload_subdir;
                 $this->upload_filetypes   = $this->custom_processing_object->upload_filetypes;
                 $this->upload_maxfilesize = $this->custom_processing_object->upload_maxfilesize;
+                $this->upload_blacklist   = $this->custom_processing_object->upload_blacklist;
             } // if
         } // if
         if ($this->custom_replaces_standard) {
@@ -3901,29 +4050,11 @@ class Default_Table
                 // do not perform any custom validation
             } elseif (is_array($insertarray) AND !empty($insertarray)) {
                 // perform any custom pre-insert validation (1)
-                if (is_object($this->custom_processing_object)) {
-                    if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
-                        $insertarray = $this->custom_processing_object->_cm_commonValidation($insertarray, $insertarray);
-                    } // if
-                } // if
-                if ($this->custom_replaces_standard) {
-                    $this->custom_replaces_standard = false;
-                } else {
-                    $insertarray = $this->_cm_commonValidation($insertarray, $insertarray);
-                } // if
+                $insertarray = $this->custom_commonValidation($insertarray, $insertarray);
 
                 if (empty($this->errors)) {
                     // perform any custom pre-insert validation (2)
-                    if (is_object($this->custom_processing_object)) {
-                        if (method_exists($this->custom_processing_object, '_cm_validateInsert')) {
-                            $insertarray = $this->custom_processing_object->_cm_validateInsert($insertarray);
-                        } // if
-                    } // if
-                    if ($this->custom_replaces_standard) {
-                        $this->custom_replaces_standard = false;
-                    } else {
-                        $insertarray = $this->_cm_validateInsert($insertarray);
-                    } // if
+                    $insertarray = $this->custom_validateInsert($insertarray);
                 } // if
             } // if
         } // if
@@ -4075,7 +4206,7 @@ class Default_Table
     } // popupCall
 
     // ****************************************************************************
-    function popupReturn ($fieldarray, $return_from, $selection, $popup_offset=null)
+    function popupReturn ($fieldarray, $return_from, $selection, $popup_offset=null, $return_files=null)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
@@ -4119,14 +4250,14 @@ class Default_Table
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_popupReturn')) {
                         // call method which is specific to current project
-                        $single_row = $this->custom_processing_object->_cm_popupReturn($single_row, $return_from, $select_array);
+                        $single_row = $this->custom_processing_object->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                     } // if
                 } // if
                 if ($this->custom_replaces_standard) {
                     $this->custom_replaces_standard = false;
                 } else {
                     // call standard method
-                    $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array);
+                    $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                 } // if
                 // store updated $fieldarray within this object
                 $this->fieldarray = $single_row;
@@ -4151,14 +4282,14 @@ class Default_Table
                     if (is_object($this->custom_processing_object)) {
                         if (method_exists($this->custom_processing_object, '_cm_popupReturn')) {
                             // call method which is specific to current project
-                            $single_row = $this->custom_processing_object->_cm_popupReturn($single_row, $return_from, $select_array);
+                            $single_row = $this->custom_processing_object->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                         } // if
                     } // if
                     if ($this->custom_replaces_standard) {
                         $this->custom_replaces_standard = false;
                     } else {
                         // call standard method
-                        $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array);
+                        $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                     } // if
 
                     // look for any differences between the fieldname(s) returned by the popup
@@ -4209,13 +4340,13 @@ class Default_Table
                 // perform any post-popup processing
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_post_popupReturn')) {
-                        $single_row = $this->custom_processing_object->_cm_post_popupReturn($single_row, $return_from, $select_array);
+                        $single_row = $this->custom_processing_object->_cm_post_popupReturn($single_row, $return_from, $select_array, $return_files);
                     } // if
                 } // if
                 if ($this->custom_replaces_standard) {
                     $this->custom_replaces_standard = false;
                 } else {
-                    $single_row = $this->_cm_post_popupReturn($single_row, $return_from, $select_array);
+                    $single_row = $this->_cm_post_popupReturn($single_row, $return_from, $select_array, $return_files);
                 } // if
             } // if
         } // if
@@ -4325,7 +4456,7 @@ class Default_Table
     } // reset
 
     // ****************************************************************************
-    function restart ($return_from, $return_action, $return_string=null)
+    function restart ($return_from, $return_action, $return_string=null, $return_files=null)
     // script is being restarted after running a child form, so check for further action.
     {
         $pattern_id = getPatternId();
@@ -4333,14 +4464,14 @@ class Default_Table
 
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_restart')) {
-                $this->custom_processing_object->_cm_restart($pattern_id, $zone, $return_from, $return_action, $return_string);
+                $this->custom_processing_object->_cm_restart($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files);
             } // if
         } // if
 
         if ($this->custom_replaces_standard) {
             $this->custom_replaces_standard = false;
         } else {
-            $this->_cm_restart($pattern_id, $zone, $return_from, $return_action, $return_string);
+            $this->_cm_restart($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files);
         } // if
 
         return;
@@ -5583,29 +5714,11 @@ class Default_Table
                 // do not perform any custom validation
             } else {
                 // perform any custom pre-update validation (1)
-                if (is_object($this->custom_processing_object)) {
-                    if (method_exists($this->custom_processing_object, '_cm_commonValidation')) {
-                        $updatearray = $this->custom_processing_object->_cm_commonValidation($updatearray, $originaldata);
-                    } // if
-                } // if
-                if ($this->custom_replaces_standard) {
-                    $this->custom_replaces_standard = false;
-                } else {
-                    $updatearray = $this->_cm_commonValidation($updatearray, $originaldata);
-                } // if
+                $updatearray = $this->custom_commonValidation($updatearray, $originaldata);
 
                 if (empty($this->errors)) {
                     // perform any custom pre-update validation (2)
-                    if (is_object($this->custom_processing_object)) {
-                        if (method_exists($this->custom_processing_object, '_cm_validateUpdate')) {
-                            $updatearray = $this->custom_processing_object->_cm_validateUpdate($updatearray, $originaldata);
-                        } // if
-                    } // if
-                    if ($this->custom_replaces_standard) {
-                        $this->custom_replaces_standard = false;
-                    } else {
-                        $updatearray = $this->_cm_validateUpdate($updatearray, $originaldata);
-                    } // if
+                    $updatearray = $this->custom_validateUpdate($updatearray, $originaldata);
                 } // if
 
                 $updatearray = array_change_key_case($updatearray, CASE_LOWER);
@@ -5833,7 +5946,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -5885,7 +5998,7 @@ class Default_Table
                             // get path to current subsystem directory
                             $dir = dirname($this->dirname);
                             // switch to other subsystem directory
-                            $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
                         } else {
                             $dir = NULL;
                         } // if
@@ -5932,6 +6045,8 @@ class Default_Table
         } // foreach
 
         // remove any duplicate error messages
+
+
         $this->errors = array_unique($this->errors);
 
         return $fieldarray;
@@ -6302,6 +6417,18 @@ class Default_Table
     } // _cm_getPkeyNames
 
     // ****************************************************************************
+    function _cm_getUploadSubdir ($subdir)
+    // return the directory for uploading files
+    {
+        if (isset($this->upload_subdir)) {
+            return $this->upload_subdir;
+        } // if
+
+        return;
+
+    } // _cm_getUploadSubdir
+
+    // ****************************************************************************
     function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
@@ -6560,11 +6687,12 @@ class Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
     // $select_array contains an array of item(s) selected in that popup screen.
+    // $return_files contains a list of all files loaded via a fileupload task.
     // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
     {
         //if ($return_from == '???(popup)') {
@@ -6691,7 +6819,7 @@ class Default_Table
     } // _cm_post_output
 
     // ****************************************************************************
-    function _cm_post_popupReturn ($fieldarray, $return_from, $select_array)
+    function _cm_post_popupReturn ($fieldarray, $return_from, $select_array, $return_files)
     // perform any post-popup processing.
     {
         // customisable code goes here
@@ -6921,7 +7049,7 @@ class Default_Table
     } // _cm_reset
 
     // ****************************************************************************
-    function _cm_restart ($pattern_id, $zone, $return_from, $return_action, $return_string)
+    function _cm_restart ($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files)
     // script is being restarted after running a child form, so check for further action.
     {
         // customisable code goes here
@@ -7753,16 +7881,29 @@ class Default_Table
                 $cpo->dbname_server      =& $this->dbname_server;
                 $cpo->tablename          =& $this->tablename;
                 $cpo->fieldspec          =& $this->fieldspec;
-                $cpo->primary_key        =& $this->primary_key;
-                $cpo->unique_keys        =& $this->unique_keys;
-                $cpo->child_relations    =& $this->child_relations;
-                $cpo->parent_relations   =& $this->parent_relations;
-                $cpo->audit_logging      =& $this->audit_logging;
-                $cpo->default_orderby    =& $this->default_orderby;
+                $cpo->fieldarray         =& $this->fieldarray;
+
+                $cpo->allow_multiple     =& $this->allow_multiple;
                 $cpo->alt_language_table =& $this->alt_language_table;
                 $cpo->alt_language_cols  =& $this->alt_language_cols;
+                $cpo->audit_logging      =& $this->audit_logging;
+                $cpo->child_relations    =& $this->child_relations;
+                $cpo->custom_replaces_standard =& $this->custom_replaces_standard;
+                $cpo->default_orderby    =& $this->default_orderby;
+                $cpo->errors             =& $this->errors;
+                $cpo->initial_values     =& $this->initial_values;
+                $cpo->initiated_from_controller =& $this->initiated_from_controller;
+                $cpo->lookup_data        =& $this->lookup_data;
+                $cpo->messages           =& $this->messages;
                 $cpo->nameof_start_date  =& $this->nameof_start_date;
                 $cpo->nameof_end_date    =& $this->nameof_end_date;
+                $cpo->no_display_count   =& $this->no_display_count;
+                $cpo->numrows            =& $this->numrows;
+                $cpo->pageno             =& $this->pageno;
+                $cpo->parent_relations   =& $this->parent_relations;
+                $cpo->primary_key        =& $this->primary_key;
+                $cpo->rows_per_page      =& $this->rows_per_page;
+                $cpo->skip_getdata       =& $this->skip_getdata;
                 $cpo->sql_from           =& $this->sql_from;
                 $cpo->sql_groupby        =& $this->sql_groupby;
                 $cpo->sql_having         =& $this->sql_having;
@@ -7776,27 +7917,19 @@ class Default_Table
                 $cpo->sql_select         =& $this->sql_select;
                 $cpo->sql_where          =& $this->sql_where;
                 $cpo->sql_union          =& $this->sql_union;
-                $cpo->initial_values     =& $this->initial_values;
-                $cpo->lookup_data        =& $this->lookup_data;
-                $cpo->rows_per_page      =& $this->rows_per_page;
-                $cpo->pageno             =& $this->pageno;
-                $cpo->numrows            =& $this->numrows;
-                $cpo->initiated_from_controller =& $this->initiated_from_controller;
-                $cpo->skip_getdata       =& $this->skip_getdata;
-                $cpo->errors             =& $this->errors;
-                $cpo->messages           =& $this->messages;
-                $cpo->custom_replaces_standard =& $this->custom_replaces_standard;
-                $cpo->zone               =& $this->zone;
-                $cpo->no_display_count   =& $this->no_display_count;
                 $cpo->unbuffered_query   =& $this->unbuffered_query;
-                $cpo->xsl_params         =& $this->xsl_params;
+                $cpo->unique_keys        =& $this->unique_keys;
                 $cpo->wf_case_id         =& $this->wf_case_id;
                 $cpo->wf_workitem_id     =& $this->wf_workitem_id;
                 $cpo->wf_context         =& $this->wf_context;
                 $cpo->wf_user_id         =& $this->wf_user_id;
+                $cpo->xsl_params         =& $this->xsl_params;
+                $cpo->zone               =& $this->zone;
 
                 // include reference to calling object in the custom object
                 $cpo->calling_object     =& $this;
+                $cpo->child_object       =& $this->child_object;
+                $cpo->parent_object      =& $this->parent_object;
 
                 $this->custom_processing_object =& $cpo;
             } // if
@@ -7881,20 +8014,39 @@ class Default_Table
                     } else {
                         $engine = $server['dbengine'];
                     } // if
-                    if (!isset($server['dbhost'])) {
-                        trigger_error($this->getLanguageText('sys0170', 'DBHOST'), E_USER_ERROR);
+                    if (preg_match('/^(sqlsrv)$/i', $server['dbengine'])) {
+                        if (isset($server['serverName'])) {
+                            $args['serverName'] =& $server['serverName'];
+                        } else {
+                            trigger_error($this->getLanguageText('sys0170', 'SERVERNAME'), E_USER_ERROR);
+                        } // if
+                        if (isset($server['SQLSRV_schema'])) {
+                            $args['SQLSRV_schema'] =& $server['SQLSRV_schema'];
+                        } else {
+                            trigger_error($this->getLanguageText('sys0170', 'SQLSRV_SCHEMA'), E_USER_ERROR);
+                        } // if
+                        if (isset($server['connectionInfo'])) {
+                            $args['connectionInfo'] =& $server['connectionInfo'];
+                        } else {
+                            trigger_error($this->getLanguageText('sys0170', 'CONNECTIONINFO'), E_USER_ERROR);
+                        } // if
+
                     } else {
-                        $args['dbhost'] = $server['dbhost'];
-                    } // if
-                    if (!isset($server['dbusername'])) {
-                        trigger_error($this->getLanguageText('sys0170', 'DBUSERNAME'), E_USER_ERROR);
-                    } else {
-                        $args['dbusername'] = $server['dbusername'];
-                    } // if
-                    if (!isset($server['dbuserpass'])) {
-                        trigger_error($this->getLanguageText('sys0170', 'DBUSERPASS'), E_USER_ERROR);
-                    } else {
-                        $args['dbuserpass'] = $server['dbuserpass'];
+                        if (!isset($server['dbhost'])) {
+                            trigger_error($this->getLanguageText('sys0170', 'DBHOST'), E_USER_ERROR);
+                        } else {
+                            $args['dbhost'] = $server['dbhost'];
+                        } // if
+                        if (!isset($server['dbusername'])) {
+                            trigger_error($this->getLanguageText('sys0170', 'DBUSERNAME'), E_USER_ERROR);
+                        } else {
+                            $args['dbusername'] = $server['dbusername'];
+                        } // if
+                        if (!isset($server['dbuserpass'])) {
+                            trigger_error($this->getLanguageText('sys0170', 'DBUSERPASS'), E_USER_ERROR);
+                        } else {
+                            $args['dbuserpass'] = $server['dbuserpass'];
+                        } // if
                     } // if
                     if (!empty($server['dbport'])) {
                         $args['dbport'] = $server['dbport'];
@@ -7917,18 +8069,8 @@ class Default_Table
                     if (!empty($server['ssl_cipher'])) {
                         $args['ssl_cipher'] = $server['ssl_cipher'];
                     } // if
-                    // these are options for non-MySQL databases
                     if (isset($server['PGSQL_dbname'])) {
                         $args['PGSQL_dbname'] =& $server['PGSQL_dbname'];
-                    } // if
-                    if (isset($server['SQLSRV_schema'])) {
-                        $args['SQLSRV_schema'] =& $server['SQLSRV_schema'];
-                    } // if
-                    if (isset($server['serverName'])) {
-                        $args['serverName'] =& $server['serverName'];
-                    } // if
-                    if (isset($server['connectionInfo'])) {
-                        $args['connectionInfo'] =& $server['connectionInfo'];
                     } // if
                     break; // so stop here
                 } // if
@@ -8599,7 +8741,7 @@ class Default_Table
                 // get path to current subsystem directory
                 $dir = dirname($this->dirname);
                 // switch to other subsystem directory
-                $dir = dirname($dir) .'/' .$reldata['subsys_dir'] .'/';
+                $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
             } else {
                 $dir = NULL;
             } // if
@@ -8925,8 +9067,7 @@ class Default_Table
             // do NOT shrink $this->fieldarray
         } else {
             // get list of primary key fields
-            $pkey_array = $this->getPkeyNames();
-            $pkey_array = $this->_cm_getPkeyNames($pkey_array, null, null);
+            $pkey_array = $this->getPkeyNamesAdjusted();
 
             if (is_string(key($this->fieldarray))) {
                 $this->fieldarray = array($this->fieldarray);

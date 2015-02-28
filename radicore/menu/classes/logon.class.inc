@@ -364,10 +364,14 @@ class logon extends mnu_user
         	$this->errors = array_merge($this->errors, $auditobj->errors);
         } // if
 
-        // get count of password attempts
-        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+        if (empty($user_id)) {
+            return;  // no user_id to update, so skip the following
+        } // if
 
-        $max_retries = $mnu_control->getControlData('pswd_retries');
+        // get count of password attempts
+        $controlobj =& RDCsingleton::getInstance('mnu_control');
+
+        $max_retries = $controlobj->getControlData('pswd_retries');
 
         if (isset($_SESSION['logon_retries'])) {
             if ($_SESSION['logon_retries']['user_id'] <> $user_id) {
@@ -388,8 +392,19 @@ class logon extends mnu_user
         sleep($interval);
 
         if ($max_retries > 0) {
+            $fail = false;
             // a limit has been set on the number of retries
             if ($_SESSION['logon_retries']['count'] > $max_retries) {
+                $fail = true;
+            } // if
+            // check contents of AUDIT_LOGON_ERRORS table
+            $now = getTimeStamp();
+            $where = "user_id='{$user_id}' AND DATE_ADD(err_timestamp, INTERVAL 5 MINUTE) >= '$now'";
+            $count = $auditobj->getCount($where);
+            if ($count > $max_retries) {
+                $fail = true;
+            } // if
+            if ($fail === true) {
                 $errors = $this->errors;
                 // limit exceeded, so disable user
                 $fieldarray = $this->getData_raw("mnu_user.user_id='$user_id'");

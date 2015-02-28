@@ -666,7 +666,7 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        if (preg_match('/^(select )/i', $where)) {
+        if (preg_match('/^(select )/ims', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
@@ -1232,6 +1232,8 @@ END_OF_REGEX;
             $cols = '';
             $vals = '';
         } // if
+        $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             if (array_key_exists($item, $lob_names)) {
             	$cols .= "$item, ";
@@ -1241,10 +1243,14 @@ END_OF_REGEX;
                 AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
-                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match($pattern1, $fieldspec[$item]['type'])) {
                     // cannot use empty string for numeric fields, so use NULL instead
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $cols .= "$item, ";
+                    $vals .= $this->adjustData($value) .", ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .$this->adjustData($value) ."', ";
@@ -1667,8 +1673,8 @@ END_OF_REGEX;
                     } else {
                         $update .= "$item=$value,";
                     } // if
-                } elseif (preg_match($pattern2, $value)) {
-                    // change to the new value (without enclosing quotes)
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
                     $update .= "$item=" .$this->adjustData($value) .", ";
                 } else {
                     // change to the new value (with enclosing quotes)

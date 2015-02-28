@@ -394,7 +394,7 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        if (preg_match('/^(select )/i', $where)) {
+        if (preg_match('/^(select )/ims', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {
@@ -950,6 +950,8 @@ class mysql
 
         $repeat       = false;
         $repeat_count = 0;
+        $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -958,8 +960,11 @@ class mysql
                 //AND (is_null($value) OR strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL')) {
                 if (is_null($value) OR strtoupper(trim($value)) == 'NULL') {
                     $this->query .= "`$item`=NULL, ";
-                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match($pattern1, $fieldspec[$item]['type'])) {
 					$this->query .= "`$item`=NULL, ";  // cannot use empty string for numeric fields, so use NULL instead
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $update .= "`$item`=$value, ";
                 } else {
                     $this->query .= "`$item`='" .mysql_real_escape_string($this->dbconnect, $value) ."', ";
                 } // if
@@ -1319,11 +1324,11 @@ class mysql
         } // if
 
         $repeat = false;
+        $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         do {
             // build update string from non-pkey fields
             $update = '';
-            $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-            $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
             foreach ($fieldarray as $item => $value) {
                 // use this item if it IS NOT part of primary key
                 if (!in_array($item, $this->primary_key)) {

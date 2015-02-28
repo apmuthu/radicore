@@ -55,12 +55,14 @@ if (isset($script_vars['fileobject'])) {
     if ($fileobject->errors) {
     	scriptPrevious($fileobject->getErrors());
     } // if
+    unset($script_vars['files']);
 } // if
 
 $filename    = '';
 $subdir      = $fileobject->upload_subdir;
 $filetypes   = $fileobject->upload_filetypes;
 $maxfilesize = $fileobject->upload_maxfilesize;
+$blacklist   = $fileobject->upload_blacklist;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_FILES['userfile']['error'])) {
@@ -142,11 +144,13 @@ if (!empty($_FILES) and empty($errors)) {
         } // if
     } // if
     // check that the file does not have an invalid extension
-    $blacklist = array("\.php.*", "\..*htm.*");
-    foreach ($blacklist as $item) {
-        if (preg_match("/$item\$/i", $_FILES['userfile']['name'], $regs)) {
-            // "The uploading of 'x' files is not allowed"
-            $errors[] = getLanguageText('sys0136', $regs[0]);
+    //$blacklist = array("\.php.*", "\..*htm.*");
+    if (is_array($blacklist)) {
+        foreach ($blacklist as $item) {
+            if (preg_match("/$item\$/i", $_FILES['userfile']['name'], $regs)) {
+                // "The uploading of 'x' files is not allowed"
+                $errors[] = getLanguageText('sys0136', $regs[0]);
+            } // if
         } // if
     } // if
     //  Check to see if the directory specified in the store_dir input field is a valid directory
@@ -184,12 +188,22 @@ if (!empty($_FILES) and empty($errors)) {
                 $messages = array_merge($messages, $fileobject->messages);
             } // if
             if (empty($errors)) {
+                $info = new SplFileInfo($uploadfile);
+                $file_array['url']           = realpath($uploadfile);
+                $file_array['filename_orig'] = $info->getBasename();
+                $file_array['filename']      = $info->getBasename('.'.$info->getExtension());
+                $file_array['extension']     = $info->getExtension();
+                $file_array['size']          = $_FILES['userfile']['size'];
+                $script_vars['files'][] = $file_array;
                 if (isset($_POST['submitstay'])) {
-
+                    // redisplay current screen
                 } else {
                 	// send selection back to the previous script
                     $prev_script = getPreviousScript();
                     $prev_task   = getPreviousTask($prev_script);
+                    if (!empty($script_vars['files'])) {
+                        $_SESSION['pages'][$prev_script][$prev_task]['files'] = $script_vars['files'];
+                    } // if
                     $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
                     $errors = scriptPrevious($errors, $messages, 'choose');
                 } // if
@@ -221,6 +235,10 @@ if ($filetypes != '*') {
     } // if
 } // if
 $fileobject->setFieldArray($fieldarray);
+
+if (!is_True($fileobject->allow_multiple)) {
+    unset($act_buttons['submitstay']);  // remove this button
+} // if
 
 // save these variables for later in the same session
 $script_vars['where']      = $where;

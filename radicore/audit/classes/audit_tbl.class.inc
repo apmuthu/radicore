@@ -281,24 +281,18 @@ class audit_tbl extends Default_Table
             unset($this->fieldspec['session_id']);
             unset($this->fieldspec['table_seq_no']);
             unset($this->fieldspec['tran_seq_no']);
+        } else {
+            $this->fieldspec['trn_date']  = array('type' => 'date',
+                                                  'size' => 12,
+                                                  'nondb' => 'y');
+            $this->fieldspec['trn_time']  = array('type' => 'time',
+                                                  'size' => 8,
+                                                  'nondb' => 'y');
         } // if
 
         return $fieldarray;
 
     } // _cm_changeConfig
-
-    // ***************************************************************************
-    function _cm_formatData ($fieldarray, &$css_array)
-    // perform custom formatting before values are shown to the user.
-    {
-        if (isset($fieldarray['trn_date'])) {
-            $dateobj =& RDCsingleton::getInstance('date_class');
-        	$fieldarray['trn_date'] = $dateobj->getExternalDate($fieldarray['trn_date']);
-        } // if
-
-        return $fieldarray;
-
-    } // _cm_formatData
 
     // ****************************************************************************
     function _cm_initialise ($where, &$selection, $search)

@@ -137,11 +137,21 @@ END_OF_REGEX;
     } // _insertSchema
 
     // ****************************************************************************
-    function adjustFrom ($from_str)
+    function adjustFrom ($from_str, $where_str)
     // make any adjustments to the FROM string
     {
         // replace 'dbname.tablename' with 'dbname.schema.tablename'
         $from_str = $this->_insertSchema($from_str);
+
+        // look for 'CROSS JOIN x ON (...)' and move 'ON (...)' to end of $where string
+        if (preg_match('/CROSS[ ]JOIN[ ]+\w*[ ]+(?<on>ON[ ]+.*?)(?=(LEFT|RIGHT))/ims', $from_str, $regs)) {
+            $on_str = $regs['on'];
+            // remove ' ON (...)' from $from_str
+            $from_str = str_ireplace($on_str, '', $from_str);
+            // change ' ON ' to ' AND ' and append to $where_str
+            $on_str = str_ireplace('ON ', ' AND ', $on_str);
+            $where_str .= $on_str;
+        } // if
 
         return $from_str;
 
@@ -697,7 +707,7 @@ END_OF_REGEX;
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
-        if (preg_match('/^(select )/i', $where)) {
+        if (preg_match('/^(select )/ims', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
             // replace 'dbname.tablename' with 'dbname.schema.tablename'
@@ -774,7 +784,7 @@ END_OF_REGEX;
             $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
             $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
             $from_str = str_replace($search_array, $replace_array, $from_str);
-            $from_str = $this->adjustFrom($from_str);
+            $from_str = $this->adjustFrom($from_str, $where);
         } // if
 
         // incorporate optional 'where' criteria
@@ -947,7 +957,7 @@ END_OF_REGEX;
             $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
             $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
             $from_str = str_replace($search_array, $replace_array, $from_str);
-            $from_str = $this->adjustFrom($from_str);
+            $from_str = $this->adjustFrom($from_str, $where);
         } // if
 
         // incorporate optional 'where' criteria
@@ -1234,6 +1244,8 @@ END_OF_REGEX;
 
         $repeat       = false;
         $repeat_count = 0;
+        $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
+        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
         do {
             // insert this record into the database
             $cols = '';
@@ -1260,10 +1272,14 @@ END_OF_REGEX;
                     // null entries are set to NULL, not '' (there is a difference!)
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
-                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec[$item]['type'])) {
+                } elseif (strlen($value) == 0 AND isset($fieldspec[$item]['type']) AND preg_match($pattern1, $fieldspec[$item]['type'])) {
                     // cannot use empty string for numeric fields, so use NULL instead
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $cols .= "$item, ";
+                    $vals .= $this->adjustData($value) .", ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .$this->adjustData($value) ."', ";
@@ -1637,8 +1653,8 @@ END_OF_REGEX;
                     } else {
                         $update .= "$item=$value,";
                     } // if
-                } elseif (preg_match($pattern2, $value)) {
-                    // change to the new value (without enclosing quotes)
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
                     $update .= "$item=" .$this->adjustData($value) .", ";
                 } else {
                     // change to the new value
@@ -2101,7 +2117,7 @@ END_OF_REGEX;
         $array = array();
 
         // build the query string and run it
-        $this->query = "SELECT tc.table_name, constraint_type, column_name, ordinal_position
+        $this->query = "SELECT tc.table_name, tc.constraint_type, tc.constraint_name, kcu.column_name, kcu.ordinal_position
                           FROM INFORMATION_SCHEMA.table_constraints AS tc
                      LEFT JOIN INFORMATION_SCHEMA.key_column_usage AS kcu ON (kcu.CONSTRAINT_NAME=tc.CONSTRAINT_NAME)
                          WHERE tc.table_catalog='$dbname' AND tc.table_name='$tablename'

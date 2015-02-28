@@ -2602,7 +2602,8 @@ if (!function_exists('getChanges')) {
         foreach ($newarray as $item => $value) {
             // remove if item with same value exists in $oldarray
             if (array_key_exists($item, $oldarray)) {
-                if ($value === $oldarray[$item]) {
+                //if ($value === $oldarray[$item]) {
+                if ($value == $oldarray[$item]) {
                     unset($newarray[$item]);
                 } // if
             } // if
@@ -4320,8 +4321,8 @@ if (!function_exists('number_unformat')) {
         	$decimal_point  = $GLOBALS['localeconv']['decimal_point'];
             $thousands_sep  = $GLOBALS['localeconv']['thousands_sep'];
         } // if
-        if ($thousands_sep == chr(160)) {
-           $thousands_sep = chr(32);
+        if ($thousands_sep == chr(160)) {   // replace non-breaking space
+           $thousands_sep = chr(32);        // with ordinary space
         } // if
 
         $number = $input;
@@ -4329,6 +4330,9 @@ if (!function_exists('number_unformat')) {
         	$number = str_replace($thousands_sep, '', $number);
         } // if
         $number = str_replace($decimal_point, '.', $number);
+
+        // strip any non-numeric characters from the end of the number
+        $number = preg_replace('/[^0-9]*$/', '', $number);
 
         return $number;
 

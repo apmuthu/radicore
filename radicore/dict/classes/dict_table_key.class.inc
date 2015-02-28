@@ -130,6 +130,12 @@ class dict_table_key extends Default_Table
         // construct a smaller array of key and column names
         $old_data_cols = array();
         foreach ($old_data as $row => $rowdata) {
+            if (preg_match('/^(primary)$/i', $rowdata['key_name'])) {
+                $rowdata['key_name'] = strtoupper($rowdata['key_name']);
+            } else {
+                $rowdata['key_name'] = strtolower($rowdata['key_name']);
+            } // if
+            $old_data[$row] = $rowdata;
             $old_data_cols[$rowdata['key_name']][$rowdata['column_id']] = $row;
         } // foreach
 
@@ -141,6 +147,12 @@ class dict_table_key extends Default_Table
         // construct a smaller array of column names
         $db_data_cols = array();
         foreach ($db_data as $row => $rowdata) {
+            if (preg_match('/^(primary)$/i', $rowdata['key_name'])) {
+                $rowdata['key_name'] = strtoupper($rowdata['key_name']);
+            } else {
+                $rowdata['key_name'] = strtolower($rowdata['key_name']);
+            } // if
+            $db_data[$row] = $rowdata;
             $db_data_cols[$rowdata['key_name']][$rowdata['column_id']] = $row;
         } // foreach
 
@@ -152,7 +164,7 @@ class dict_table_key extends Default_Table
         $this->delete_array = array();
         $this->update_array = array();
         foreach ($old_data_cols as $key_name => $key_data) {
-            $key_name = strtolower($key_name);
+            //$key_name = strtolower($key_name);
         	foreach ($key_data as $columnid => $old_row) {
                 if (array_key_exists($key_name, $db_data_cols)) {
                     if (array_key_exists($columnid, $db_data_cols[$key_name])) {

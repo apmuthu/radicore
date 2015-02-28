@@ -36,7 +36,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action, $return_string);
+        $dbobject->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form where something has been selected
     if (!empty($return_from) AND isset($selection) ) {
         // merge previous saved variables with selection from popup form
-        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
         if ($dbobject->errors) {
             $errors = $dbobject->getErrors();
         } // if

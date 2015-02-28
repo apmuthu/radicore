@@ -257,20 +257,22 @@ class dict_column_s01 extends dict_column
 
         $this->errors = $errors;
 
-        // now import the keys for the current table
-        $keyobj =& RDCsingleton::getInstance('dict_table_key');
+        if (empty($this->errors)) {
+            // now import the keys for the current table
+            $keyobj =& RDCsingleton::getInstance('dict_table_key');
 
-        $array = $keyobj->getInitialDataMultiple($this->where);
-        $array = $keyobj->insertMultiple($array);
-        if ($keyobj->getErrors()) {
-            $errors = $keyobj->getErrors();
-            foreach ($errors as $row => $error) {
-            	$this->errors[] = 'From DICT_TABLE_KEY: ' .$error;
-            } // foreach
+            $array = $keyobj->getInitialDataMultiple($this->where);
+            $array = $keyobj->insertMultiple($array);
+            if ($keyobj->getErrors()) {
+                $errors = $keyobj->getErrors();
+                foreach ($errors as $row => $error) {
+            	    $this->errors[] = 'From DICT_TABLE_KEY: ' .$error;
+                } // foreach
+            } // if
+
+            // extract any messages from $keyobj
+            $this->messages = array_merge($this->messages, $keyobj->getMessages());
         } // if
-
-        // extract any messages from $keyobj
-        $this->messages = array_merge($this->messages, $keyobj->getMessages());
 
         return $fieldarray;
 

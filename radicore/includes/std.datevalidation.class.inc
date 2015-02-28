@@ -192,11 +192,13 @@ class date_class {
 
         // check if date is already in yyyy-mm-dd format
         $pattern = '/'
-                 . '^[0-9]{4}'      // 4 digit year
+                 . '^'              // begins with
+                 . '[0-9]{4}'       // 4 digit year
                  . '-'              // '-'
                  . '[0-9]{2}'       // 2 digit month
                  . '-'              // '-
                  . '[0-9]{2}'       // 2 digit day
+                 . '$'              // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $date_format = 'yyyy-mm-dd';  //date is already in internal format
@@ -487,16 +489,30 @@ class date_class {
     // convert datetime from external format (as input by user)
     // to internal format (as used in the database)
     {
+        $pattern = '/'
+                 . '^'              // begins with
+                 . '(?<date>'       // start named pattern
+                 . '[0-9]{4}-[0-9]{2}-[0-9]{2}' // '9999-99-99'
+                 . ')'              // end named pattern
+                 . '[ ]'            // space
+                 . '(?<time>'       // start named pattern
+                 . '([0-9]{2}:[0-9]{2}){1}'     // 'HH:MM'
+                 . '(:[0-9]{2})?'               // optional ':SS'
+                 . ')'              // end named pattern
+                 . '/';
+
         // look for a time portion (ends with '99:99' or '99:99:99')
-        if (preg_match('/([0-9]{2}:[0-9]{2}){1}(:[0-9]{2})?$/', $input, $regs)) {
-            $time = $regs[0];
-            $date = substr($input, 0, -strlen($time));
+        if (preg_match($pattern, $input, $regs)) {
+            $date = $regs['date'];
+            $time = $regs['time'];
         } else {
             $date = $input;
             $time = null;
             // only a date given, so append the default time) if there is one)
             if (isset($fieldspec['default'])) {
                 $time = substr($fieldspec['default'], 11, 8);
+            } else {
+                $time = '00:00:00';
             } // if
         } // if
 
@@ -553,6 +569,16 @@ class date_class {
             } // if
         } elseif (strlen($year) == 3) {
             $year = '2' . $year;
+        } // if
+
+        if (strlen($day) > 2) {
+            $day = substr($day, 0, 2);
+        } // if
+        if (strlen($month_n) > 2) {
+            $month_n = substr($month_n, 0, 2);
+        } // if
+        if (strlen($year) > 2) {
+            $year = substr($year, 0, 4);
         } // if
 
         if (!checkdate($month_n, $day, $year)) {

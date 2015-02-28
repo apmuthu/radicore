@@ -231,7 +231,7 @@ $array['sys0205'] = "Selection has been set to INCOMPLETE";
 $array['sys0206'] = "Home Currency is missing from Product Controls";
 $array['sys0207'] = "";
 $array['sys0208'] = "%1\$s records inserted, %2\$s records updated, %3\$s records deleted in %4\$s";
-$array['sys0209'] = "";
+$array['sys0209'] = "Nothing has changed - record not updated";
 
 $array['sys0210'] = "LABEL_PRINT has not been defined in Report Structure File";
 $array['sys0211'] = "LABEL_PRINT in Report Structure File is not a positive number";

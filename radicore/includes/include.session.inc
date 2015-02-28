@@ -761,6 +761,7 @@ function initSession($save_session_data=array())
     global $report;             // name of file containing report structure
     global $report_structure;   // report structure for PDF document
     global $return_action;      // set when returning to previous screen
+    global $return_files;       // set when returning to previous screen
     global $return_from;        // set when returning to previous screen
     global $return_string;      // set when returning to previous screen (optional)
     global $screen;             // file containing screen structure
@@ -1638,6 +1639,13 @@ function initSession($save_session_data=array())
             $return_string = $selection;
         } else {
             $return_string = null;
+        } // if
+        // check for a selection of one or more files
+        if (isset($script_vars['files'])) {
+            $return_files = $script_vars['files'];
+            unset($script_vars['files']);
+        } else {
+            $return_files = null;
         } // if
     } // if
 

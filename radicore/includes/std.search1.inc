@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
     if (!empty($return_from) AND isset($selection)) {
         // merge previous saved variables with selection from popup form
-        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection);
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
         if ($dbobject->errors) {
             $errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if

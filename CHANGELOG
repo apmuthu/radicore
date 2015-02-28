@@ -1,5 +1,29 @@
 ﻿RADICORE for PHP - news
 
+2015-03-01, version 1.88.0
+Database changes:
+- none
+
+Other changes:
+- modified 'std.csv.class.inc' so that the call to ini_set('auto_detect_line_endings', true) comes before the call to fopen(), not after. This is a result of https://bugs.php.net/bug.php?id=63341
+- modified 'getChanges()' function in 'include.library.inc' so that the test uses '==' instead of '===' as this was saying that the value '6' (string) was different from the value 6 (long).
+- modified 'getCount()' method in several 'dml.???.class.inc' files so that it can deal correctly with a $where string that spans multiple lines.
+- fixed bug within 'ddl_showTableKeys()' method in file 'dml.sqlsrv.class.inc' to include 'constraint_name' in the list of selected fields.
+- modified 'dict_table_key.class.inc' so that the key name 'PRIMARY' is in uppercase and all other keys are in lowercase.
+- modified 'dict_column_s01.class.inc' so that the call to '$keyobj->getInitialDataMultiple($this->where)' is not executed if there are any errors produced by a previous call.
+- fixed bug in 'std.update1.inc' which lost the scrolling area after pressing the 'SUBMIT' button.
+- fixed bug in 'logon.php' which failed to update AUDIT_LOGON_ERRORS and MNU_USER table if the logon failed and the database engine was transactional. Previously it followed the convention where any errors would cause a rollback, but in this case it must always perform a commit in order to log the error.
+- fixed bug in 'std.datevalidation.class.inc' which allowed a date such as '1970-01-001' to be accepted as valid.
+- fixed bug in 'std.datevalidation.class.inc' which failed to strip off the microseconds from timestamps HH:MM:SS<.microseconds>
+- updated 'std.fileupload1.inc' so that if $this->allow_multiple = TRUE then a SUBMIT+stay button will be shown to prevent the task from quitting after the file has been uploaded, thus allowing another file to be uploaded.
+- updated 'std.fileupload1.inc' so that it will populate a $files array for each uploaded file. This will contain the following:
+	$file['url'] = fully-qualified file name
+    $file['filename_orig'] = 'example.pdf'
+    $file['filename'] = 'example'
+    $file['extension'] = 'pdf'
+    $file['size'] = 23400
+- amended 'std.table.class.inc' so that after returning from a fileupload task the contents of the $files array will be made available in an additional argument called $return_files in the _cm_restart(), _cm_popupReturn() and _cm_post_popupReturn() methods.
+
 2014-12-01, version 1.87.0
 Database changes:
 - none

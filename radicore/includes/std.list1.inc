@@ -62,7 +62,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action, $return_string);
+        $dbobject->restart($return_from, $return_action);
     } // if
     // refetch data for lookup lists in case they have changed
     $null = $dbobject->setLookupData($where);

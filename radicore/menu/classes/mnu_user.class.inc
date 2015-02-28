@@ -237,6 +237,10 @@ class mnu_user extends Default_Table
             $this->fieldspec['user_timezone']['nodisplay'] = 'y';
         } // if
 
+        if (empty($where) AND !empty($fieldarray)) {
+            if (!isset($fieldarray['abc'])) $fieldarray['abc'] = 'anything';
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig

@@ -560,7 +560,7 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        if (preg_match('/^(select )/i', $where)) {
+        if (preg_match('/^(select )/ims', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
         } else {

@@ -66,7 +66,7 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = unserialize($script_vars['fileobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $fileobject->restart($return_from, $return_action, $return_string);
+        $fileobject->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from this instance
     $fieldarray = $fileobject->getFieldArray();

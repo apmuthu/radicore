@@ -141,52 +141,72 @@ class mnu_subsystem extends Default_Table
         // no logging for this 'erase'
         $this->audit_logging = false;
 
-        // replace standard code (which is slow) with this hard-coded turbo version
+        list($dbname, $dbprefix, $dbengine) = findDBConfig($this->dbname);
+
         $dbobject =& RDCsingleton::getInstance('mnu_task');
+        $dbobject->audit_logging = $this->audit_logging;
         $selection ="mnu_task.subsys_id='{$fieldarray['subsys_id']}'";
         $resource = $dbobject->getData_serial($selection);
 
         $count = 0;
         $child_count = 0;
-        while ($row = $dbobject->fetchRow($resource)){
-            $from = 'mnu_task
-, help_text
-, mnu_favourite
-, mnu_initial_value_role
-, mnu_initial_value_user
-, menu_snr
-, menu_jnr
-, nav_button_snr
-, nav_button_jnr
-, mnu_role
-, mnu_role_task
-, mnu_role_taskfield
-, mnu_task_field
-, mnu_task_ip_address
-, mnu_todo';
-            $using = 'mnu_task
-LEFT JOIN help_text ON (help_text.task_id=mnu_task.task_id)
-LEFT JOIN mnu_favourite ON (mnu_favourite.task_id=mnu_task.task_id)
-LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task.task_id)
-LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task.task_id)
-LEFT JOIN mnu_menu AS menu_snr ON (menu_snr.menu_id=mnu_task.task_id)
-LEFT JOIN mnu_menu AS menu_jnr ON (menu_jnr.task_id_jnr=mnu_task.task_id)
-LEFT JOIN mnu_nav_button AS nav_button_snr ON (nav_button_snr.task_id_snr=mnu_task.task_id)
-LEFT JOIN mnu_nav_button AS nav_button_jnr ON (nav_button_jnr.task_id_jnr=mnu_task.task_id)
-LEFT JOIN mnu_role ON (mnu_role.start_task_id=mnu_task.task_id)
-LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)
-LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task.task_id)
-LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id)
-LEFT JOIN mnu_task_ip_address ON (mnu_task_ip_address.task_id=mnu_task.task_id)
-LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
+        while ($row = $dbobject->fetchRow($resource)) {
+            if ($dbengine == 'mysql') {
+                // replace standard code (which is slow) with this hard-coded turbo version
+                $from = 'mnu_task
+    , help_text
+    , mnu_favourite
+    , mnu_initial_value_role
+    , mnu_initial_value_user
+    , menu_snr
+    , menu_jnr
+    , nav_button_snr
+    , nav_button_jnr
+    , mnu_role
+    , mnu_role_task
+    , mnu_role_taskfield
+    , mnu_task_field
+    , mnu_task_ip_address
+    , mnu_todo';
+                $using = 'mnu_task
+    LEFT JOIN help_text ON (help_text.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_favourite ON (mnu_favourite.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_menu AS menu_snr ON (menu_snr.menu_id=mnu_task.task_id)
+    LEFT JOIN mnu_menu AS menu_jnr ON (menu_jnr.task_id_jnr=mnu_task.task_id)
+    LEFT JOIN mnu_nav_button AS nav_button_snr ON (nav_button_snr.task_id_snr=mnu_task.task_id)
+    LEFT JOIN mnu_nav_button AS nav_button_jnr ON (nav_button_jnr.task_id_jnr=mnu_task.task_id)
+    LEFT JOIN mnu_role ON (mnu_role.start_task_id=mnu_task.task_id)
+    LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_task_ip_address ON (mnu_task_ip_address.task_id=mnu_task.task_id)
+    LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
 
-            $selection ="mnu_task.task_id='{$row['task_id']}'";
-            $sub_count = $this->_dml_deleteSelection($selection, $from, $using);
-            $child_count = $child_count + $sub_count;
-            $count++;
+                $selection ="mnu_task.task_id='{$row['task_id']}'";
+                $sub_count = $this->_dml_deleteSelection($selection, $from, $using);
+                $child_count = $child_count + $sub_count;
+                $count++;
+            } else {
+                // do it the old fashioned way, one mnu_task at a time
+                $dbobject->startTransaction();
+                $delete = $dbobject->eraseRecord($row);
+                if ($dbobject->errors) {
+                    $this->errors[$dbobject->getClassName()] = $dbobject->errors;
+                    return $fieldarray;
+                } // if
+                $count++;
+                $dbobject->commit();
+                // re-issue getData as $resource is lost with commit()
+                $resource = $dbobject->getData_serial($selection);
+            } // if
         } // while
+        unset($dbobject);
 
         $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $dbobject->audit_logging = $this->audit_logging;
+
         $result = $dbobject->_dml_deleteSelection("record_id='{$fieldarray['subsys_id']}'");
 
         $this->messages[] = "$count task records have been deleted";

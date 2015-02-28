@@ -56,7 +56,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action);
+        $dbouter->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data rom previous instance
     $outer_data = $dbouter->getFieldArray();
@@ -101,7 +101,7 @@ if (isset($script_vars['dblink'])) {
     $dblink = unserialize($script_vars['dblink']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dblink->restart($return_from, $return_action);
+        $dblink->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data rom previous instance
     $link_data = $dblink->getFieldArray();
@@ -214,7 +214,7 @@ if (!empty($_POST) AND empty($_POST['reset'])) {
 if (!empty($return_from) AND !empty($popup_object)) {
     if (isset($selection) AND $popup_object == 'dbouter') {
         // merge previous saved variables with selection from popup form
-        $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection);
+        $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, null, $return_files);
         if ($dbouter->errors) {
         	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
@@ -303,7 +303,7 @@ if (count($outer_data) > 0) {
     if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection) AND $popup_object == 'dblink') {
             // merge previous saved variables with selection from popup form
-            $link_data = $dblink->popupReturn($link_data, basename($return_from), $selection, $popup_offset);
+            $link_data = $dblink->popupReturn($link_data, basename($return_from), $selection, $popup_offset, $return_files);
             if ($dblink->errors) {
             	$errors[$dblink->getClassName()] = $dblink->getErrors();
             } // if

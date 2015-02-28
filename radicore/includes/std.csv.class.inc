@@ -221,6 +221,9 @@ class csv_class
     function open_read ($filename)
     // open the file and read the first record to determine the delimiter and enclosure.
     {
+        // deal with files created on unix or mac computers
+        ini_set('auto_detect_line_endings', true);
+
         $this->handle = @fopen($filename, 'r');
         if ($this->handle === false) {
             $this->errors[] = "open_read: Cannot open file '$filename'";
@@ -228,7 +231,7 @@ class csv_class
         } // if
 
         // deal with files created on unix or mac computers
-        ini_set('auto_detect_line_endings', true);
+        //ini_set('auto_detect_line_endings', true);
 
         // read first record to find out whether the delimiter is comma, tab or pipe
         $first = fgets($this->handle);
