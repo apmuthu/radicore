@@ -71,6 +71,10 @@ class RDCsingleton
                         require_once 'std.csv.class.inc';
                         break;
 
+                    case 'currency_class':
+                        require_once 'std.currency.class.inc';
+                        break;
+
                     case 'date_class':
                 		require_once 'std.datevalidation.class.inc';
                 		break;

@@ -734,7 +734,11 @@ END_OF_REGEX;
             // the default is current table
             $from_str = $tablename;
         } else {
-            $from_str = $this->adjustSqlFrom($this->sql_from);
+            $from_str = $this->sql_from;
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
+            $from_str = str_replace($search_array, $replace_array, $from_str);
+            $from_str = $this->adjustFrom($from_str, $where);
         } // if
 
         // incorporate optional 'where' criteria
@@ -1233,7 +1237,7 @@ END_OF_REGEX;
             $vals = '';
         } // if
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             if (array_key_exists($item, $lob_names)) {
             	$cols .= "$item, ";
@@ -1657,7 +1661,7 @@ END_OF_REGEX;
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -1880,7 +1884,8 @@ END_OF_REGEX;
 
         // these are here just for compatability with MySQL
         $colspecs['boolean']    = array('name' => 'BOOLEAN',
-                                        'type' => 'boolean');
+                                        'type' => 'boolean',
+                                        'size' => 1);
         $colspecs['datetime']   = array('name' => 'DATETIME',
                                         'type' => 'datetime');
         $colspecs['time']       = array('name' => 'TIME',

@@ -31,6 +31,11 @@ initSession();
 //} // if
 
 if (isset($_POST['quit']) OR isset($_GET['quit'])) {
+    if (isset($script_vars['dbobject'])) {
+        require_once "classes/$table_id.class.inc";
+        $dbobject = unserialize($script_vars['dbobject']);
+        $dbobject->quitButton();  // perform any QUIT processing
+    } // if
     // cancel this screen, return to previous screen
     scriptPrevious(null, null, 'quit');
 } // if

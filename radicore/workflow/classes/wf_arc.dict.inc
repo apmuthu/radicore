@@ -1,9 +1,10 @@
 <?php
-    // file created on November 3, 2006, 11:34 am
+    // file created on May 1, 2015, 2:31 pm
     
     // field specifications for table workflow.wf_arc
     $fieldspec['workflow_id']               = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -12,7 +13,8 @@
                                                     'noedit' => 'y');
     
     $fieldspec['transition_id']             = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -22,7 +24,8 @@
                                                     'optionlist' => 'transition_id');
     
     $fieldspec['place_id']                  = array('type' => 'integer',
-                                                    'size' => 5,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -35,15 +38,12 @@
                                                     'size' => 3,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => 'IN',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'direction');
     
     $fieldspec['arc_type']                  = array('type' => 'string',
                                                     'size' => 10,
-                                                    'required' => 'y',
-                                                    'default' => 'SEQ',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'arc_type');
@@ -52,7 +52,19 @@
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
-                                                    'rows' => 5);
+                                                    'rows' => 5,
+                                                    'noedit' => 'y');
+    
+    $fieldspec['condition_field']           = array('type' => 'string',
+                                                    'size' => 40);
+    
+    $fieldspec['condition_operator']        = array('type' => 'string',
+                                                    'size' => 4,
+                                                    'control' => 'dropdown',
+                                                    'optionlist' => 'condition_operator');
+    
+    $fieldspec['condition_value']           = array('type' => 'string',
+                                                    'size' => 40);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -114,6 +126,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'workflow_id, transition_id, place_id, direction';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

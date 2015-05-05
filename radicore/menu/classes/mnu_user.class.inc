@@ -647,6 +647,11 @@ class mnu_user extends Default_Table
             $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
         } // if
 
+        if (empty($rowdata['email_addr'])) {
+            // create default value as SQLSRV does not allow duplicate keys containing NULL
+            $rowdata['email_addr'] = $rowdata['user_id'].'@null.null';
+        } // if
+
         return $rowdata;
 
     } // _cm_pre_insertRecord

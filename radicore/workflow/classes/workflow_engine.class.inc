@@ -138,11 +138,11 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find the arc(s) which leave this transition and go to other places
-        $dbarc->sql_select = 'wf_arc.*, place_type, place_name, pre_condition';
+        $dbarc->sql_select = 'wf_arc.*, place_type, place_name, condition_field, condition_operator, condition_value';
         $dbarc->sql_from   = "wf_arc "
                            . "LEFT JOIN wf_place ON (wf_place.workflow_id=wf_arc.workflow_id AND wf_place.place_id=wf_arc.place_id) ";
         $where = "workflow_id='$workflow_id' AND transition_id='$transition_id' AND direction='OUT'";
-        $dbarc->sql_orderby = 'place_name ASC';
+        $dbarc->sql_orderby = 'place_type ASC, place_name ASC';
         $arc_data = $dbarc->getData($where);
         if ($dbarc->numrows < 1) {
             // "There are no outbound arcs from transition 'X'"
@@ -207,19 +207,17 @@ class workflow_engine extends wf_workflow
 
                 // examine the pre-condition (guard) in each arc to find out if one tests as TRUE
                 foreach ($arc_data as $arc) {
-                    if (empty($arc['pre_condition'])) {
+                    if (empty($arc['condition_field'])) {
                     	// this is the default after all others have tested as FALSE
                     	$result = TRUE;
                     } else {
                         // test to see if this condition evaluates to TRUE
-                        $guard = stripslashes($arc['pre_condition']);
-                        ob_start();
-                        $result = eval($guard);
-                        $eval_result = ob_get_clean();
-                        if ($eval_result) {
-                            // there was a parse error
-                            $this->errors[] = $eval_result;
-                            return;
+                        $result = $this->evaluateCondition ($fieldarray,
+                                                            $arc['condition_field'],
+                                                            $arc['condition_operator'],
+                                                            $arc['condition_value']);
+                        if ($this->errors) {
+                            return;  // there was some sort of error
                         } // if
                     } // if
                     if ($result == TRUE) {
@@ -251,6 +249,90 @@ class workflow_engine extends wf_workflow
         return;
 
     } // finishWorkItem
+
+    // ****************************************************************************
+    function evaluateCondition ($fieldarray, $name, $operator, $value)
+    // evaluate the contents of $NAME, $OPERATOR and $VALUE
+    {
+        // check if $name is in format 'strlen(name)' or just plain 'name'
+        $strlen = false;
+        if (preg_match('/^strlen\((?<name>\w+)\)/i', $name, $regs)) {
+            $name = $regs['name'];
+            $strlen = true;
+        } // if
+
+        if (!array_key_exists($name, $fieldarray)) {
+            // "CONDITION_FIELD cannot be found in data array"
+            $this->errors = getLanguageText('e0076');
+            return false;
+        } // if
+
+        if ($strlen === true) {
+            $field = strlen($fieldarray[$name]);
+        } else {
+            $field = $fieldarray[$name];
+        } // if
+
+        if (!array_key_exists($value, $fieldarray)) {
+            // string matches a name in $fieldarray, so use its value instead
+            $value = $fieldarray[$value];
+        } // if
+
+        switch ($operator) {
+            case '<>':
+                if ($field <> $value) {
+                    return true;
+                } // if
+                break;
+            case '<=':
+                if ($field <= $value) {
+                    return true;
+                } // if
+                break;
+            case '<':
+                if ($field < $value) {
+                    return true;
+                } // if
+                break;
+            case '>=':
+                if ($field >= $value) {
+                    return true;
+                } // if
+                break;
+            case '>':
+                if ($field > $value) {
+                    return true;
+                } // if
+                break;
+            case '=':
+                if ($field == $value) {
+                    return true;
+                } // if
+                break;
+            case '!=':
+                if ($field != $value) {
+                    return true;
+                } // if
+                break;
+            case '===':
+                if ($field === $value) {
+                    return true;
+                } // if
+                break;
+            case '!==':
+                if ($field !== $value) {
+                    return true;
+                } // if
+                break;
+            default:
+                // "CONDITION_OPERATOR is not valid"
+                $this->errors = getLanguageText('e0077');
+                return false;
+        } // switch
+
+        return false;
+
+    } // evaluateCondition
 
     // ****************************************************************************
     function fireTimedEvent ($fieldarray)

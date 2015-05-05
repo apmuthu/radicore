@@ -49,7 +49,7 @@ class mnu_menu extends Default_Table
         $having_array = array();
 
         $this->sql_select = 'mnu_task.task_id, mnu_task.task_desc, mnu_menu.button_text, mnu_menu.sort_seq'
-                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) LIMIT 1) THEN 'Y' ELSE 'N' END AS access_allowed";
+                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
         $this->sql_from   = 'mnu_menu '
                           .' LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_menu.task_id_jnr)';
         if (!is_True($global_access)) {

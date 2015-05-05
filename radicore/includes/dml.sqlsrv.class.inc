@@ -87,62 +87,44 @@ class sqlsrv
     // modify string to escape any single quote with a second single quote
     // (do not use backslash as with MySQL)
     {
-        $string_out = str_replace("'", "''", $string_in);
+        $pattern = <<< END_OF_PATTERN
+/
+^                       # begins with
+\w+[ ]*\(               # 'function('
+(                       # start choice
+\w+                     # word
+|                       # or
+\(.+?\)                 # '(...)' string inside parentheses
+|,[ ]*                  # or ','
+'(?<quoted_string>.+)'  # '<quoted_string>' named pattern
+)+                      # end choice
+/imsx
+END_OF_PATTERN;
+
+        if (preg_match($pattern, $string_in, $regs, PREG_OFFSET_CAPTURE)) {
+            // found "function(......)" so see if it contains a 'quoted_string'
+            if (!empty($regs['quoted_string'][0])) {
+                // a quoted string has been found, so escape any quotes within it
+                $quoted_string = $regs['quoted_string'][0];
+                $length1 = strlen($quoted_string);
+                $offset1 = $regs['quoted_string'][1];
+                $quoted_string = str_replace("'", "''", $quoted_string);
+                $string_out = substr_replace($string_in, $quoted_string, $offset1, $length1);
+            } else {
+                $string_out = str_replace("'", "''", $string_in);
+            } // if
+        } else {
+            $string_out = str_replace("'", "''", $string_in);
+        } // if
 
         return $string_out;
 
     } // adjustData
 
     // ****************************************************************************
-    function _insertSchema ($input)
-    // adjust 'JOIN dbname.tblname ON' to 'JOIN dbname.<schema>.tblname ON'.
-    {
-        global $SQLSRV_schema;
-
-        $pattern1 = <<< END_OF_REGEX
-/
-(?<=from[ ])                # begins with 'from '
-[ ]*                        # 0 or more spaces
-["]?                        # optional quote
-\w+                         # dbname
-["]?                        # optional quote
-\.\w+                       # .tblname
-(?=[ ]+)                    # ends with 1 or more spaces
-|
-(?<=join[ ])                # begins with 'join '
-[ ]*                        # 0 or more spaces
-["]?                        # optional quote
-\w+                         # dbname
-["]?                        # optional quote
-\.\w+                       # .tblname
-(?=[ ]+)                    # ends with 1 or more spaces
-/xi
-END_OF_REGEX;
-
-        $output = $input;
-
-        if ($count = preg_match_all($pattern1, $input, $regs)) {
-            foreach ($regs[0] as $string1) {
-                $array = array();
-                list($dbname, $tblname) = explode('.', $string1);
-                // insert schema name between the two
-                $string2 = "$dbname.$SQLSRV_schema.$tblname";
-
-                $output = str_replace($string1, $string2, $output);
-            } // foreach;
-        } // if
-
-        return $output;
-
-    } // _insertSchema
-
-    // ****************************************************************************
     function adjustFrom ($from_str, $where_str)
     // make any adjustments to the FROM string
     {
-        // replace 'dbname.tablename' with 'dbname.schema.tablename'
-        $from_str = $this->_insertSchema($from_str);
-
         // look for 'CROSS JOIN x ON (...)' and move 'ON (...)' to end of $where string
         if (preg_match('/CROSS[ ]JOIN[ ]+\w*[ ]+(?<on>ON[ ]+.*?)(?=(LEFT|RIGHT))/ims', $from_str, $regs)) {
             $on_str = $regs['on'];
@@ -208,7 +190,7 @@ END_OF_REGEX;
     } // adjustGroupBy
 
     // ****************************************************************************
-    function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str)
+    function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str, $union)
     // make 'SELECT ... FROM ... WHERE ...' into a subquery so that the HAVING clause can
     // become the WHERE clause of the outer query.
     // This is because the HAVING clause cannot reference an expression by its alias name.
@@ -218,19 +200,80 @@ END_OF_REGEX;
         $replace = array( '=1',           '=0');
         $having_str = preg_replace($search, $replace, $having_str);
 
+        if (!empty($sort_str)) {
+            $sort_str = preg_replace('/^ORDER BY /i', '', $sort_str);
+            $orderby_array = explode(',', $sort_str);
+            $orderby_array = array_map("trim", $orderby_array);
+        } // if
+
+        // turn select string into an associative array of 'alias=expression' pairs
+        $select_array = extractAliasNames($select_str);
+        // convert to 'expression=alias'
+        $select_array = array_flip($select_array);
+
+        $seq_array = array();  // holds 'asc' or 'desc' for each field
+        foreach ($orderby_array as $ix => &$fieldname) {
+            if (preg_match('/( asc| desc)$/i', $fieldname, $regs)) {
+                $seq_array[$ix] = $regs[0];
+                $fieldname = trim(substr($fieldname, 0, -strlen($regs[0])));
+            } // if
+            if (array_key_exists($fieldname, $select_array)) {
+                // replace name with alias
+                $orderby_array[$ix] = $select_array[$fieldname];
+            } // if
+        } // foreach
+
+        // put back any 'asc' or 'desc' sequences
+        foreach ($seq_array as $ix => $seq) {
+            $orderby_array[$ix] = $orderby_array[$ix].$seq;
+        } // foreach
+
+        if (!empty($orderby_array)) {
+            $sort_str = 'ORDER BY '.implode(', ', $orderby_array);
+            $sort_str = unqualifyOrderBy($sort_str);
+        } // if
+
         // put current query into a subqery
         $subquery   = "    SELECT $select_str\n    FROM $from_str $where_str $group_str";
+
+        if (!empty($union)) {
+            $subquery .= "\nUNION ALL\n$union";
+            $union     = '';
+        } // if
 
         $select_str = '*';
         $from_str   = "(\n$subquery\n) AS x";
         $where_str  = "\nWHERE $having_str";
         $having_str = '';
         $group_str  = '';
-        $sort_str   = unqualifyOrderBy($sort_str);
 
-        return array($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str);
+        return array($select_str, $from_str, $where_str, $sort_str);
 
     } // adjustHaving
+
+    // ****************************************************************************
+    function adjustOrderBy ($orderby, $select)
+    // adjust for differences between MySQL and SQL Server.
+    {
+        $orderby_array = explode(',', $orderby);
+        $orderby_array = array_map("trim", $orderby_array);
+
+        // turn select string into an associative array of 'alias=expression' pairs
+        $select_array = extractFieldNamesAssoc($select);
+
+        foreach ($orderby_array as $ix => $fieldname) {
+            if (array_key_exists($fieldname, $select_array)) {
+                // cannot use alias name, so use expression instead
+                $orderby_array[$ix] = $select_array[$fieldname];
+            } // if
+        } // foreach
+
+        // turn array back into a string
+        $orderby = implode(', ', $orderby_array);
+
+        return $orderby;
+
+    } // adjustOrderBy
 
     // ****************************************************************************
     function adjustSelect ($input)
@@ -239,29 +282,96 @@ END_OF_REGEX;
         $output = $input;
 
         // replace 'SELECT ... WHERE ... LIMIT 1' with 'SELECT TOP 1 ... WHERE ...'
-        $offset = 0;
-        while ($count = preg_match("/(?<=\(select[ ]).*?LIMIT[ ]\d+/i", $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
-            $string1 = $regs[0][0];
-            $count = preg_match('/(?<=limit[ ])\d+/i', $string1, $regs2);
-            $digits = trim($regs2[0]);
-            $string2 = preg_replace("/limit $digits/i", '', $string1);
-            $string1 = str_replace(array('(',')'), array('\(','\)'), $string1);
-            $output  = preg_replace('/\(select[ ]' .$string1 .'/i', '(SELECT TOP 1 '.$string2, $output);
+        $pattern1 = <<< END_OF_REGEX
+/
+(?<select>                      # named pattern
+(,|\s|\()*[ ]*select\s[^0-9]{1} # 'SELECT x' (but not 'SELECT 1')
+)                               # end named pattern
+.*?                             # any characters, non-greedy
+(                               # start choice
+\)[ ]AS[ ]\w+                   # ') AS x'
+|                               # or
+(?<limit>LIMIT[ ]\d+)           # 'LIMIT n', named pattern
+)                               # end choice
+/xims
+END_OF_REGEX;
 
-            $offset = $regs[0][1] + strlen($string1);
-        } // if
+        $offset = 0;
+        while ($count = preg_match($pattern1, $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $string1 = $regs[0][0];
+            $start   = $regs[0][1];
+            $select  = $regs['select'][0];
+            if (!empty($regs['limit'])) {
+                $select  = substr($select, 0, -1);  // strip last character
+                $digits  = trim(substr($regs['limit'][0], 5));
+                $string2 = str_replace($regs['limit'][0], '', $string1);  // remove LIMIT
+                $string3 = substr_replace($string2, "\n{$select}TOP $digits ", 0, strlen($select));
+                $output  = substr_replace($output, $string3, $start, strlen($string1));
+                $offset = $start +  strlen($string3);
+            } else {
+                $offset = $start +  strlen($string1);  // SELECT does not end with LIMIT
+            } // if
+        } // while
+
+        // ********************************************************************
+
+        // look for any '(expression) AS alias' clauses
+        $alias_names = extractAliasNames($output);
+        $alias_names1 = array();
+        // search $alias_names array and replace any '=alias' with '=expression'
+        foreach ($alias_names as $alias => $expression) {
+            $pattern = "/=[ ]*".$alias."[^\w]/ims";
+            if (isset($alias_names1[$alias])) {
+                $expression = $alias_names1[$alias];  // replace with expression altered previously
+                $alias_names[$alias] = $expression;
+            } // if
+            foreach ($alias_names as $alias1 => $expression1) {
+                if ($alias1 != $alias) {
+                    // replace any '=alias' with '=expression'
+                    if (preg_match($pattern, $expression1, $regs)) {
+                        $expression1 = preg_replace($pattern, '='.$expression, $expression1);
+                        if (substr_count($regs[0], ')') > 0) {
+                            $expression1 .= ' )';  // append missing ')'
+                        } // if
+                        $alias_names1[$alias1] = $expression1;
+                    } // endwhile
+                    $expression1 = $alias_names[$alias1];
+                } // if
+            } // foreach
+        } // foreach
+
+        // search $output and replace any '=alias' with '=expression'
+        foreach ($alias_names as $alias => $expression) {
+            $pattern = "/=[ ]*".$alias."[^\w]/ims";
+            if (preg_match($pattern, $output, $regs)) {
+                if (substr_count($regs[0], ')') > 0) {
+                    $expression .= ' )';  // append missing ')'
+                } // if
+                $output = preg_replace($pattern, '='.$expression, $output);
+            } // endwhile
+        } // foreach
+
+        // ********************************************************************
 
         // replace: (SELECT GROUP_CONCAT(table.field ORDER BY .... SEPARATOR ',') FROM table WHERE a=b) AS alias
         // with   : alias=STUFF((SELECT ','+field FROM table WHERE user_id=mnu_user.user_id FOR XML PATH('')) , 1, 1, '' ),
-        if ($count = preg_match_all("/(?<=select[ ]group_concat\()[a-z_\., ']*\)[a-z_\.,=\(\) ']*\)[ ]AS[ ]\w+/i", $output, $regs)) {
+        if ($count = preg_match_all("/(?<= group_concat\().+?(\)[ ]AS[ ]\w+)/ims", $output, $regs)) {
             foreach ($regs[0] as $string1) {
                 $count = preg_match('/.+(?=[ ]order[ ]by)/i', $string1, $regs2);
-                $part1 = trim($regs2[0]);
+                if ($count > 0) {
+                    $part1 = trim($regs2[0]);
+                } else {
+                    $count = preg_match('/.+(?=[ ]separator)/i', $string1, $regs2);
+                    $part1 = trim($regs2[0]);
+                } // if
                 $count = preg_match('/(?<=order[ ]by[ ]).+(?=[ ]separator)/i', $string1, $regs2);
+                //$count = preg_match('/.+(?=[ ]separator)/i', $string1, $regs2);
                 if ($count > 0) {
                     $orderby = trim($regs2[0]);
                 } else {
-                    $orderby = $part1;
+                    //$orderby = $part1;
+                    preg_match('/\w+/', $part1, $regs3);
+                    $orderby = $regs3[0];
                 } // if
                 $count = preg_match("/(?<=separator[ ])'.+?'/i", $string1, $regs2);
                 $separator = trim($regs2[0]);
@@ -285,6 +395,9 @@ END_OF_REGEX;
             } // foreach
         } // if
 
+        // ********************************************************************
+
+        // replace 'CONCAT(A, B, C)' with 'A + B + C'.
         $pattern1 = <<< END_OF_REGEX
 /
 (?<=concat\()                # 'concat('
@@ -316,7 +429,6 @@ END_OF_REGEX;
 /xi
 END_OF_REGEX;
 
-        // replace 'CONCAT(A, B, C)' with 'A + B + C'.
         if ($count = preg_match_all($pattern1, $output, $regs)) {
         	foreach ($regs[0] as $string1) {
         		$array = array();
@@ -333,6 +445,116 @@ END_OF_REGEX;
         	} // foreach;
         } // if
 
+        // ********************************************************************
+
+        // replace 'CONCAT_WS(',', A, B, C)' with "(COALESCE(A, '') + COALESCE(', ' + B, '') + COALESCE(', ' + C, ''))".
+        $pattern3 = <<< END_OF_REGEX
+/
+(?<concat>concat_ws[ ]*\()   # 'concat_ws('
+(                            # start choice
+ \w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
+ |
+ (?<separator>'(([^\\\']*(\\\.)?)*)')      # quoted string
+ |
+ \w+(\.\w+)?                 # 'word' or 'word.word'
+ |
+ ,                           # comma
+ |
+ [ ]*                        # 0 or more spaces
+)                            # end choice
+*                            # 0 or more times
+[ ]*                         # 0 or more spaces
+/xims
+END_OF_REGEX;
+
+        $offset = 0;
+        while ($count = preg_match($pattern3, $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $length    = strlen($regs[0][0]);
+            $concat    = $regs['concat'];
+            $separator = $regs['separator'][0];
+            $field_string = substr($regs[0][0], strlen($regs['concat'][0])+strlen($separator)+1);
+            $field_array  = explode(',', $field_string);
+            $new_string = '(COALESCE('.array_shift($field_array).", '')";
+            while (!empty($field_array)){
+                $new_string .= " + COALESCE($separator + " .array_shift($field_array).", '')";
+            } // while
+            $output = substr_replace($output, $new_string, $regs['concat'][1], $length);
+            $offset = $offset +$regs[0][1];
+        } // while
+
+        // ********************************************************************
+
+        // look for any "CASE WHEN ... THEN ... ELSE ... END" clauses and replace
+        // any alias names with their original edxpressions
+        $pattern1 = <<<EOD
+/
+CASE[ ]+WHEN.+?[ ]END
+/imsx
+EOD;
+
+$pattern2 = <<<EOD
+/
+([ ]WHEN[ ](?<when>.+?)[ ]THEN[ ](?<then>\w+)|[ ]ELSE[ ](?<else>.+?)[ ]END)
+/imsx
+EOD;
+$pattern3 = null;
+
+        $offset = 0;
+        while (preg_match($pattern1, $output, $regs1, PREG_OFFSET_CAPTURE, $offset)) {
+            foreach ($regs1 as $result) {
+                $case_string  = $result[0];
+                $case_start   = $result[1];
+                $case_length  = strlen($case_string);
+                $offset2 = 0;
+                $search  = array();
+                $replace = array();
+                while (preg_match($pattern2, $case_string, $regs2, PREG_OFFSET_CAPTURE, $offset2)) {
+                    if (isset($regs2['when']) AND !empty($regs2['when'][0])) {
+                        $when_string = $regs2['when'][0];
+                        $when_start  = $regs2['when'][1];
+                        $when_length = strlen($when_string);
+                        $offset2 += $when_length+6;
+
+                        list($name, $operator, $value) = splitNameOperatorValue($when_string);
+                        if (array_key_exists($name, $alias_names)) {
+                            $search[]  = $name;
+                            $replace[] = $alias_names[$name];
+                        } // if
+                    } // if
+                    if (isset($regs2['then']) AND !empty($regs2['then'][0])) {
+                        $then_string = $regs2['then'][0];
+                        $then_start  = $regs2['then'][1];
+                        $then_length = strlen($then_string);
+                        $offset2 += $then_length+6;
+
+                        if (array_key_exists($then_string, $alias_names)) {
+                            $search[]  = $then_string;
+                            $replace[] = $alias_names[$then_string];
+                        } // if
+                    } // if
+                    if (isset($regs2['else']) AND !empty($regs2['else'][0])) {
+                        $else_string = $regs2['else'][0];
+                        $else_start  = $regs2['else'][1];
+                        $else_length = strlen($else_string);
+                        $offset2 += $else_length+6;
+
+                        if (array_key_exists($else_string, $alias_names)) {
+                            $search[]  = $else_string;
+                            $replace[] = $alias_names[$else_string];
+                        } // if
+                    } // if
+                } // while
+                if (!empty($replace)) {
+                    // found alias names which need to be replaced with original expressions
+                    $case_string = str_replace($search, $replace, $case_string);
+                    $output = substr_replace($output, $case_string, $case_start, $case_length);
+                } // if
+                $offset =+ $case_start + strlen($case_string);
+            } // foreach
+        } // while
+
+        // ********************************************************************
+
         // Replace TRUE/FALSE in CASE statements to 1/0.
         $search  = array('/THEN TRUE/i', '/ELSE TRUE/i', '/THEN FALSE/i', '/ELSE FALSE/i');
         $replace = array( 'THEN 1',       'ELSE 1',       'THEN 0',        'ELSE 0');
@@ -340,9 +562,6 @@ END_OF_REGEX;
 
         // Replace 'SUBSTR(...)' with 'SUBSTRING(...)'.
         $output  = preg_replace('/SUBSTR(?!ING)/i', 'SUBSTRING', $output);
-
-        // replace 'dbname.tablename' with 'dbname.schema.tablename'
-        $output = $this->_insertSchema($output);
 
         return $output;
 
@@ -399,6 +618,7 @@ END_OF_REGEX;
                 list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($value);
                 $fieldvalue = trim($fieldvalue);
                 if (preg_match("#\\\'#", $fieldvalue)) {
+                    // replace [\'] (escaped quote) with [''] (double quote)
                     $fieldvalue = str_replace("\'", "''", $fieldvalue);
                     $array[$key] = $fieldname.$operator.$fieldvalue;
                 	$modified = true;
@@ -449,6 +669,41 @@ END_OF_REGEX;
         if ($modified) {
         	$string_out = implode(' ', $array);
         } // if
+
+        // replace 'SELECT ... WHERE ... LIMIT 1' with 'SELECT TOP 1 ... WHERE ...'
+        $pattern1 = <<< END_OF_REGEX
+/
+(?<select>\([ ]*select[ ][0-9]?)    # 'SELECT ' or 'SELECT 1', named pattern
+.*?                                 # any characters, non-greedy
+(                                   # start choice
+\)[ ]AS[ ]\w+                       # ') AS x'
+|                                   # or
+(?<limit>LIMIT[ ]\d+)               # 'LIMIT n', named pattern
+|                                   # or
+(?<subselect>select[ ])             # nested 'SELECT ', named pattern
+)                                   # end choice
+/xims
+END_OF_REGEX;
+
+        $offset = 0;
+        while ($count = preg_match($pattern1, $string_out, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            $string1 = $regs[0][0];
+            $start   = $regs[0][1];
+            $prefix  = $regs['select'][0];
+            if (!empty($regs['subselect'])) {
+                $offset = $start + 10;  // select contains subselect, so skip over first select
+
+            // ignore if no LIMIT or 'SELECT 1'
+            } elseif (!empty($regs['limit']) AND !preg_match('/\d+$/', $prefix)) {
+                $digits  = trim(substr($regs['limit'][0], 5));
+                $string2 = str_replace($regs['limit'][0], '', $string1);  // remove LIMIT
+                $string3 = substr_replace($string2, "(SELECT TOP $digits ", 0, strlen($prefix));
+                $string_out  = substr_replace($string_out, $string3, $start, strlen($string1));
+                $offset = $start +  strlen($string3);
+            } else {
+                $offset = $start +  strlen($string1);  // SELECT does not end with LIMIT
+            } // if
+        } // while
 
         // Replace TRUE/FALSE to 1/0.
         $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
@@ -606,7 +861,7 @@ END_OF_REGEX;
         if (empty($where)) return;    // nothing to delete, so exit
 
         // build the query string and run it
-        $this->query = "DELETE FROM $tablename WHERE $where";
+        $this->query = "DELETE FROM {$this->dbname}.{$this->dbschema}.$tablename WHERE $where";
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         // get count of affected rows as there may be more than one
@@ -710,8 +965,6 @@ END_OF_REGEX;
         if (preg_match('/^(select )/ims', $where)) {
             // $where starts with 'SELECT' so use it as a complete query
             $this->query = $where;
-            // replace 'dbname.tablename' with 'dbname.schema.tablename'
-            $this->query = $this->_insertSchema($this->query);
         } else {
             // does not start with 'SELECT' so it must be a 'where' clause
             if (empty($where)) {
@@ -781,8 +1034,8 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
             $from_str = str_replace($search_array, $replace_array, $from_str);
             $from_str = $this->adjustFrom($from_str, $where);
         } // if
@@ -805,6 +1058,7 @@ END_OF_REGEX;
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
+            $this->sql_orderby = $this->adjustOrderBy($this->sql_orderby, $select_str);
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
@@ -812,7 +1066,10 @@ END_OF_REGEX;
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            list($select_str, $from_str, $where_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str, $this->sql_union);
+            $group_str       = null;
+            $having_str      = null;
+            $this->sql_union = null;
             //$having_str = $this->sql_having;
         } else {
             $having_str = NULL;
@@ -820,7 +1077,12 @@ END_OF_REGEX;
 
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
-            $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+            if (empty($this->sql_union)) {
+                $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+            } else {
+                // build query
+                $query = "SELECT count(*) FROM (\nSELECT $select_str \nFROM $from_str \n$where_str $group_str $having_str \nUNION ALL\n {$this->sql_union} \n) AS x";
+            } // if
             $this->numrows = $this->getCount($dbname, $tablename, $query);
 
             if ($this->numrows <= 0) {
@@ -873,34 +1135,44 @@ END_OF_REGEX;
         // build the query string and run it
         if ($rows_per_page > 0) {
             // insert code for pagination ...
-
-//            $limit  = $rows_per_page;
-//            $offset = ($pageno - 1) * $rows_per_page;
-//            $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
-//            $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
-//            // read first record starting at the specified offset
-//            if ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC, SQLSRV_SCROLL_ABSOLUTE, $offset)) {
-//                $array[] = array_change_key_case($row, CASE_LOWER);
-//                // read following rows until limit is reached
-//                $offset = 1;
-//            	while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC, SQLSRV_SCROLL_RELATIVE, $offset) AND count($array) < $limit) {
-//                    $array[] = array_change_key_case($row, CASE_LOWER);
-//                } // while
-//            } // if
-
             $min_rows = (($pageno - 1) * $rows_per_page) +1;
             $max_rows = ($min_rows + $rows_per_page) -1;
-            $this->query = "select * from ("
-                         . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
-                         . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
-                         . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+            if (empty($sort_str)) {
+                // default sort sequence is via primary key
+                $string = implode(',', $this->primary_key);
+                $string = qualifyOrderby($string, $tablename, $this->fieldspec, $select_str, $from_str);
+                $sort_str = "ORDER BY $string";
+            } // if
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT * FROM ("
+                             . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
+                             . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
+                             . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+            } else {
+                $sort_str = preg_replace('/^ORDER BY /i', '', $sort_str);  // remove leading 'ORDER BY'
+                $sort_str = "ORDER BY ".unqualifyOrderBy($sort_str);
+                $this->query = "SELECT * FROM ("
+                             . "\nSELECT *, ROW_NUMBER() OVER ($sort_str) AS rownum FROM ("
+                             . "\nSELECT $select_str"
+                             . "\nFROM $from_str \n$where_str $group_str $having_str"
+                             . "\nUNION ALL"
+                             . "\n{$this->sql_union}"
+                             . "\n) AS x) AS y"
+                             . "\nWHERE rownum BETWEEN $min_rows and $max_rows $sort_str";
+            } // if
 
         } else {
             // read all available rows
             if (!empty($sort_str)) {
             	$sort_str = "\n$sort_str";
             } // if
-            $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
+            } else {
+                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str";
+                $this->query .= "\nUNION ALL\n{$this->sql_union}";
+                $this->query .= " $sort_str";
+            } // if
         } // if
 
         $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
@@ -978,6 +1250,7 @@ END_OF_REGEX;
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
+            $this->sql_orderby = $this->adjustOrderBy($this->sql_orderby, $select_str);
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
@@ -1003,18 +1276,40 @@ END_OF_REGEX;
 
         // build the query string and run it
         if (isset($min_rows) AND isset($max_rows)) {
-            // insert code for pagination ...
-            $this->query = "select * from ("
-                         . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
-                         . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
-                         . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+            // default sort sequence is via primary key
+            if (empty($sort_str)) {
+                $sort_str = "ORDER BY ".implode(',', $this->primary_key);
+            } // if
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT * FROM ("
+                             . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
+                             . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
+                             . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+            } else {
+                $sort_str = substr($sort_str, 9);  // remove leading 'ORDER BY'
+                $sort_str = "ORDER BY ".unqualifyOrderBy($sort_str);
+                $this->query = "SELECT * FROM ("
+                             . "\nSELECT *, ROW_NUMBER() OVER ($sort_str) AS rownum FROM ("
+                             . "\nSELECT $select_str"
+                             . "\nFROM $from_str \n$where_str $group_str $having_str"
+                             . "\nUNION ALL"
+                             . "\n{$this->sql_union}"
+                             . "\n) AS x) AS y"
+                             . "\nWHERE rownum BETWEEN $min_rows and $max_rows $sort_str";
+            } // if
             $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
         } else {
             // read all available records
             if (!empty($sort_str)) {
             	$sort_str = "\n$sort_str";
             } // if
-            $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
+            if (empty($this->sql_union)) {
+                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
+            } else {
+                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str";
+                $this->query .= "\nUNION ALL\n{$this->sql_union}";
+                $this->query .= " $sort_str";
+            } // if
             $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
         } // if
 
@@ -1168,7 +1463,7 @@ END_OF_REGEX;
             } // if
         } // foreach
 
-        // find out if any field in the primary key has 'serial' (auto_increment) set
+        // find out if any field in the primary key has 'identity' (auto_increment) set
 		$auto_increment = '';
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
@@ -1245,7 +1540,7 @@ END_OF_REGEX;
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $cols = '';
@@ -1276,6 +1571,10 @@ END_OF_REGEX;
                     // cannot use empty string for numeric fields, so use NULL instead
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif ($fieldspec[$item]['type'] == 'blob' AND substr($value, 0, 2) == '0x') {
+                    // this is a headecimal number, so don't enclose in quotes
+                    $cols .= "$item, ";
+                    $vals .= "$value, ";
                 } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
                     // this is a function, so change to the new value (without enclosing quotes)
                     $cols .= "$item, ";
@@ -1380,7 +1679,7 @@ END_OF_REGEX;
                     return $result;
                 } else {
                     $array = array();
-                    while (sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+                    while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
                         $array[] = array_change_key_case($row, CASE_LOWER);
                     } // while
                     sqlsrv_free_stmt($result);
@@ -1393,6 +1692,35 @@ END_OF_REGEX;
         return $result;
 
     } // multiQuery
+
+    // ****************************************************************************
+    function prepareAndExecuteQuery ($dbname, $tablename, $query, $params, $output_type='string')
+    // prepare and execute a single query, with an optional result
+    {
+        $this->errors = array();
+
+        // connect to database
+        $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
+
+        $stmnt = sqlsrv_query($this->dbconnect, $query, $params) or trigger_error($this, E_USER_ERROR);
+
+        if (!empty($output_type)) {
+            while ( sqlsrv_fetch( $stmnt)) {
+                switch ($output_type) {
+                    case 'string':
+                        $result = sqlsrv_get_field( $stmnt, 0, SQLSRV_PHPTYPE_STRING ( SQLSRV_ENC_CHAR)) or trigger_error($this, E_USER_ERROR);
+                        break;
+                    default:
+                        $result = sqlsrv_get_field( $stmnt, 0) or trigger_error($this, E_USER_ERROR);
+                } // switch
+            } // while
+        } // if
+
+        sqlsrv_free_stmt($stmnt);
+
+        return $result;
+
+    } // prepareAndExecuteQuery
 
     // ****************************************************************************
     function rollback ($dbname)
@@ -1623,7 +1951,7 @@ END_OF_REGEX;
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -1653,6 +1981,9 @@ END_OF_REGEX;
                     } else {
                         $update .= "$item=$value,";
                     } // if
+                } elseif ($fieldspec[$item]['type'] == 'blob' AND substr($value, 0, 2) == '0x') {
+                    // this is a headecimal number, so don't enclose in quotes
+                    $update .= "$item=$value";
                 } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
                     // this is a function, so change to the new value (without enclosing quotes)
                     $update .= "$item=" .$this->adjustData($value) .", ";
@@ -1857,6 +2188,9 @@ END_OF_REGEX;
                                         'size' => 2147483647);
 
         // these are here just for compatability with MySQL
+        $colspecs['boolean']    = array('name' => 'BOOLEAN',
+                                        'type' => 'boolean',
+                                        'size' => 1);
         $colspecs['set']        = array('name' => 'SET',
                                         'type' => 'array');
         $colspecs['enum']       = array('name' => 'ENUM',

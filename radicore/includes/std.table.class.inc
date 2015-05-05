@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class Default_Table
@@ -12,6 +12,7 @@ class Default_Table
     var $allow_db_function = array();   // allow a field's value in a database insert/update to contain a function name
     var $allow_multiple = false;        // allow multiple records or files
     var $allow_scrolling = false;       // used inside ADD2 pattern to allow scrolling between selected rows
+    var $allow_zero_rows = false;       // used inside LIST3 pattern to continue if no records were read
     var $alt_language_table;            // table holding alternative language text
     var $alt_language_cols;             // columns holding alternative language text
     var $audit_logging;                 // yes/no switch
@@ -1174,6 +1175,18 @@ class Default_Table
     } // eraseRelations
 
     // ****************************************************************************
+    function executePreparedQuery ($query, $params, $output_type)
+    // prepare and eecute a query
+    {
+        $DML =& $this->_getDBMSengine($this->dbname);
+
+        $result = $DML->prepareAndExecuteQuery($this->dbname_server, $this->tablename, $query, $params, $output_type);
+
+        return $result;
+
+    } // executePreparedQuery
+
+    // ****************************************************************************
     function executeQuery ($query)
     // execute one or more pre-defined queries.
     // $query may be a string (single query) or an array (multiple queries).
@@ -1287,8 +1300,10 @@ class Default_Table
             } // if
         } // if
 
-        $snr_id = $keys['snr_id'];
-        $jnr_id = $keys['jnr_id'];
+        //$snr_id = $keys['snr_id'];
+        //$jnr_id = $keys['jnr_id'];
+        $snr_names = explode(',', $keys['snr_id']);
+        $jnr_names = explode(',', $keys['jnr_id']);
 
         $resources =& $this->resource_array;
         if (!is_array($resources)) {
@@ -1297,7 +1312,16 @@ class Default_Table
 
         if (empty($resources)) {
             // create a new resource
-            $where = "$snr_id='{$row[$jnr_id]}'";
+            //$where = "$snr_id='{$row[$jnr_id]}'";
+            foreach ($snr_names as $ix => $name) {
+                $value = $row[trim($jnr_names[$ix])];
+                if (empty($value)) {
+                    $where_array[trim($name)] = 'IS NULL';
+                } else {
+                    $where_array[trim($name)] = $value;
+                } // if
+            } // foreach
+            $where = array2where($where_array);
             $resource  = $this->getData_serial($where);
         } else {
             $resource = array_pop($resources);
@@ -1314,14 +1338,32 @@ class Default_Table
                 if (!empty($row)) {
                     $resources[] =& $resource;  // resource not exhausted yet, so put it back
                     // create a new resource for possible children
-                    $where = "$snr_id='{$row[$jnr_id]}'";
+                    //$where = "$snr_id='{$row[$jnr_id]}'";
+                    foreach ($snr_names as $ix => $name) {
+                        $value = $row[trim($jnr_names[$ix])];
+                        if (empty($value)) {
+                            $where_array[trim($name)] = 'IS NULL';
+                        } else {
+                            $where_array[trim($name)] = $value;
+                        } // if
+                    } // foreach
+                    $where = array2where($where_array);
                     $child_resource  = $this->getData_serial($where);
                     $resources[] = $child_resource;
                     break;
                 } // if
             } // while
         } else {
-            $where = "$snr_id='{$row[$jnr_id]}'";
+            //$where = "$snr_id='{$row[$jnr_id]}'";
+            foreach ($snr_names as $ix => $name) {
+                $value = $row[trim($jnr_names[$ix])];
+                if (empty($value)) {
+                    $where_array[trim($name)] = 'IS NULL';
+                } else {
+                    $where_array[trim($name)] = $value;
+                } // if
+            } // foreach
+            $where = array2where($where_array);
             $child_resource  = $this->getData_serial($where);
             $resources[] = $child_resource;
         } // if
@@ -1377,6 +1419,24 @@ class Default_Table
         return $this->upload_subdir .DIRECTORY_SEPARATOR .$output_name;
 
     } // fileUpload
+
+    // ****************************************************************************
+    function flip_currency ($fieldarray, $columns, $fn_suffix='_fn', $tx_suffix='_tx')
+    // flip values between functional currency and transaction currency
+    {
+        $object =& RDCsingleton::getInstance('currency_class');
+
+        $object->func_currency = $fieldarray['func_currency'];
+        $object->tran_currency = $fieldarray['tran_currency'];
+        $object->exchange_rate = $fieldarray['exchange_rate'];
+        $object->func_scale    = $fieldarray['func_scale'];
+        $object->tran_scale    = $fieldarray['tran_scale'];
+
+        $fieldarray = $object->flip_currency($fieldarray, $columns, $fn_suffix, $tx_suffix);
+
+        return $fieldarray;
+
+    } // flip_currency
 
     // ****************************************************************************
     function formatData ($fieldarray, &$css_array)
@@ -1704,6 +1764,22 @@ class Default_Table
         return $result;
 
     } // free_result
+
+    // ****************************************************************************
+    function getChildClass ()
+    // return class name of the child object.
+    {
+        if (!is_object($this->child_object)) {
+            return FALSE;
+        } elseif (!method_exists($this->child_object, 'getClassName')) {
+            return FALSE;
+        } // if
+
+        $child_class = $this->child_object->getClassName();
+
+        return $child_class;
+
+    } // getChildClass
 
     // ****************************************************************************
     function &getChildData ()
@@ -2222,6 +2298,19 @@ class Default_Table
             } // foreach
         } // if
 
+        // change current table configuration (optional)
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
+                $fieldarray[$key] = $this->custom_processing_object->_cm_changeConfig($where, $fieldarray[$key]);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else{
+            // change current table configuration (optional)
+            $fieldarray[$key] = $this->_cm_changeConfig($where, $fieldarray[$key]);
+        } // if
+
         // perform custom processing (such as obtaining lookup lists) on FIRST record only
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getExtraData')) {
@@ -2235,19 +2324,6 @@ class Default_Table
         } // if
 
         $fieldarray[$key] = array_change_key_case($fieldarray[$key], CASE_LOWER);
-
-        // change current table configuration (optional)
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
-                $fieldarray[$key] = $this->custom_processing_object->_cm_changeConfig($where, $fieldarray[$key]);
-            } // if
-        } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else{
-            // change current table configuration (optional)
-            $fieldarray[$key] = $this->_cm_changeConfig($where, $fieldarray[$key]);
-        } // if
 
         $pattern_id = getPatternId();
         if (preg_match('/MULTI4/i', $pattern_id) AND !empty($this->initial_values)) {
@@ -2991,6 +3067,22 @@ class Default_Table
     } // getPageNo
 
     // ****************************************************************************
+    function getParentClass ()
+    // return class name of the parent object.
+    {
+        if (!is_object($this->parent_object)) {
+            return FALSE;
+        } elseif (!method_exists($this->parent_object, 'getClassName')) {
+            return FALSE;
+        } // if
+
+        $parent_class = $this->parent_object->getClassName();
+
+        return $parent_class;
+
+    } // getParentData
+
+    // ****************************************************************************
     function &getParentData ()
     // return $fieldarray from the parent object.
     // NOTE: output is passed by reference.
@@ -3730,12 +3822,12 @@ class Default_Table
         // call customisable method in the subclass.
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_initialiseFileUpload')) {
+                $this->custom_processing_object->resize_array       =& $this->resize_array;
+                $this->custom_processing_object->upload_subdir      =& $this->upload_subdir;
+                $this->custom_processing_object->upload_filetypes   =& $this->upload_filetypes;
+                $this->custom_processing_object->upload_maxfilesize =& $this->upload_maxfilesize;
+                $this->custom_processing_object->upload_blacklist   =& $this->upload_blacklist;
                 $fieldarray = $this->custom_processing_object->_cm_initialiseFileUpload($fieldarray);
-                $this->resize_array       = $this->custom_processing_object->resize_array;
-                $this->upload_subdir      = $this->custom_processing_object->upload_subdir;
-                $this->upload_filetypes   = $this->custom_processing_object->upload_filetypes;
-                $this->upload_maxfilesize = $this->custom_processing_object->upload_maxfilesize;
-                $this->upload_blacklist   = $this->custom_processing_object->upload_blacklist;
             } // if
         } // if
         if ($this->custom_replaces_standard) {
@@ -4417,6 +4509,24 @@ class Default_Table
         return $search;
 
     } // post_search
+    // ****************************************************************************
+    function quitButton ()
+    // perform any processing when the QUIT button is pressed
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_quitButton')) {
+                $this->custom_processing_object->_cm_quitButton();
+            } // if
+        } // if
+
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $this->_cm_quitButton();
+        } // if
+        return;
+
+    } // quitButton
 
     // ****************************************************************************
     function reInitialise ($fieldarray, $where)
@@ -5649,30 +5759,32 @@ class Default_Table
             } // if
         } // if
 
-        $updatearray = $fieldarray;  // copy to temporary area
+        //$updatearray = $fieldarray;  // copy to temporary area
 
         if (empty($this->errors)) {
             // perform any custom pre-update processing
             if (is_object($this->custom_processing_object)) {
                 if (method_exists($this->custom_processing_object, '_cm_pre_updateRecord')) {
-                    $updatearray = $this->custom_processing_object->_cm_pre_updateRecord($updatearray);
+                    $fieldarray = $this->custom_processing_object->_cm_pre_updateRecord($fieldarray);
                 } // if
             } // if
             if ($this->custom_replaces_standard) {
                 $this->custom_replaces_standard = false;
             } else {
-                $updatearray = $this->_cm_pre_updateRecord($updatearray);
+                $fieldarray = $this->_cm_pre_updateRecord($fieldarray);
             } // if
         } // if
 
         if ($this->initiated_from_controller === TRUE AND $this->no_convert_timezone === FALSE) {
-            if (!empty($updatearray) AND !empty($GLOBALS['screen_structure'])) {
+            if (!empty($fieldarray) AND !empty($GLOBALS['screen_structure'])) {
                 // deal with datetimes from screen input which may be in different timezone
-                $updatearray = $this->convertTimeZone($updatearray, $this->fieldspec);
+                $fieldarray = $this->convertTimeZone($fieldarray, $this->fieldspec);
             } // if
         } // if
 
-        $updatearray = array_change_key_case($updatearray, CASE_LOWER);
+        $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
+
+        $updatearray = $fieldarray;  // copy to temporary area
 
         if (empty($this->errors) AND !empty($updatearray)) {
             // perform standard declarative checks on input data
@@ -5848,6 +5960,29 @@ class Default_Table
         return $msg;
 
     } // updateSelection
+
+    // ****************************************************************************
+    function validateChooseButton ($selection, $selected_rows)
+    // the CHOOSE button has been pressed, so validate the selection.
+    {
+        $this->errors = array();
+
+        $rowdata = splitWhereByRow($selection);
+
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_validateChooseButton')) {
+                $result = $this->custom_processing_object->_cm_validateChooseButton($rowdata, $selected_rows);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $result = $this->_cm_validateChooseButton($rowdata, $selected_rows);
+        } // if
+
+        return true;
+
+    } // validateChooseButton
 
     // ****************************************************************************
     function validateDelete ($fieldarray, $parent_table=null)
@@ -6044,9 +6179,19 @@ class Default_Table
             } // switch
         } // foreach
 
+        if ($this->initiated_from_controller) {
+            if (preg_match('/^(workflow|audit)$/i', $this->dbname) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
+                // do nothing
+            } else {
+                $where = array2where($fieldarray, $this->primary_key);
+                if (is_string($where) AND !empty($where)) {
+                    // find out if this task/context is a workitem within a workflow instance
+                    $this->_examineWorkflowInstance($where);
+                } // if
+            } // if
+        } // if
+
         // remove any duplicate error messages
-
-
         $this->errors = array_unique($this->errors);
 
         return $fieldarray;
@@ -6526,7 +6671,9 @@ class Default_Table
         $this->upload_subdir      = 'uploadedfiles';
         //$this->upload_filetypes   = array('image/x-png', 'image/gif');
         $this->upload_filetypes   = 'image';  // for any type of image
-        $this->upload_maxfilesize = 100;
+        //$this->upload_maxfilesize = 1000000;
+        //$this->upload_blacklist   = array("\.php.*", "\..*htm.*");
+        //$this->allow_multiple     = false;
 
         return $fieldarray;
 
@@ -7049,6 +7196,16 @@ class Default_Table
     } // _cm_reset
 
     // ****************************************************************************
+    function _cm_quitButton ()
+    // perform custom processing after QUIT button is pressed.
+    {
+        // customisable code goes here
+
+        return;
+
+    } // _cm_quitButton
+
+    // ****************************************************************************
     function _cm_restart ($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files)
     // script is being restarted after running a child form, so check for further action.
     {
@@ -7135,6 +7292,18 @@ class Default_Table
         } // if
 
     } // _cm_updateSelection
+
+    // ****************************************************************************
+    function _cm_validateChooseButton ($selection, $selected_rows)
+    // the CHOOSE button has been pressed, so validate the selection.
+    // $selection = an array of WHERE strings for each selected row.
+    // $selected_rows = an array indicating which rows were selected.
+    {
+        // customisable code goes here
+
+        return;
+
+    } // _cm_validateChooseButton
 
     // ****************************************************************************
     function _cm_validateDelete ($rowdata, $parent_table)
@@ -7380,25 +7549,18 @@ class Default_Table
         $DML =& $this->_getDBMSengine($this->dbname);
 
         $DML->fieldspec        = $this->fieldspec;
+        $DML->primary_key      = $this->getPkeyNames();
         $DML->pageno           = $this->pageno;
         $DML->rows_per_page    = $this->rows_per_page;
         $DML->sql_select       = $this->sql_select;
         $DML->sql_from         = $this->sql_from;
         $DML->sql_groupby      = $this->sql_groupby;
         $DML->sql_having       = $this->sql_having;
-
-        if (!empty($this->sql_union)) {
-            if (substr(trim($this->sql_union), 0, 1) != '(') {
-                // this string must be enclosed in '(' and ')'
-                $this->sql_union = '('.trim($this->sql_union).')';
-            } // if
-            $DML->sql_union    = $this->sql_union;
-        } // if
-
+        $DML->sql_union        = $this->sql_union;
         $DML->sql_orderby      = $this->getOrderBy();
         $DML->sql_orderby_seq  = $this->sql_orderby_seq;
         if (!empty($DML->sql_orderby) AND $raw === true) {
-            $DML->sql_orderby = validateSortItem2 ($DML->sql_orderby, $DML->sql_select, $DML->fieldspec);
+            $DML->sql_orderby  = validateSortItem2 ($DML->sql_orderby, $DML->sql_select, $DML->fieldspec);
         } // if
         $this->prev_sql_orderby = $DML->sql_orderby;
 
@@ -7427,27 +7589,22 @@ class Default_Table
         $DML =& $this->_getDBMSengine($this->dbname, $unbuffered_query);
 
         $DML->fieldspec        = $this->fieldspec;
+        $DML->primary_key      = $this->getPkeyNames();
         $DML->pageno           = $this->pageno;
         $DML->rows_per_page    = $this->rows_per_page;
         $DML->sql_select       = $this->sql_select;
         $DML->sql_from         = $this->sql_from;
         $DML->sql_groupby      = $this->sql_groupby;
         $DML->sql_having       = $this->sql_having;
-
-        if (!empty($this->sql_union)) {
-            if (substr(trim($this->sql_union), 0, 1) != '(') {
-                // this string must be enclosed in '(' and ')'
-                $this->sql_union = '('.trim($this->sql_union).')';
-            } // if
-            $DML->sql_union    = $this->sql_union;
-        } // if
-
+        $DML->sql_union        = $this->sql_union;
         $DML->sql_orderby      = $this->getOrderBy();
         $DML->sql_orderby_seq  = $this->sql_orderby_seq;
 
         $result = $DML->getData_serial($this->dbname_server, $this->tablename, $where, $rdc_limit, $rdc_offset);
 
         $this->numrows  = $DML->getNumRows();
+
+        $this->sql_union = null;
 
         return $result;
 
@@ -7550,6 +7707,10 @@ class Default_Table
                 // ensure this selects ALL fields from the primary table
                 if (!preg_match('/' .$this->tablename .'\.\*/', $DML->sql_select)) {
                     $DML->sql_select = $this->tablename .'.*, ' .$DML->sql_select;
+                    // replace '*' (all columns) with a list of columns names
+                    $DML->sql_select = selectAllColumns($DML->sql_select, $this->getFieldSpec_original(), $this->tablename);
+                    // remove any duplicated field names from the select string
+                    $DML->sql_select = removeDuplicateFromSelect($DML->sql_select);
                 } // if
             } // if
             $DML->sql_from         = $this->sql_from;
@@ -7633,6 +7794,13 @@ class Default_Table
 
         if (!$this->audit_logging) {
             // no audit logging, so update everything in one operation
+            if (is_array($replace)) {
+                $string = '';
+                foreach ($replace as $field => $value) {
+                    $string .= "$field='$value',";
+                } // foreach
+                $replace = rtrim($string, ', ');
+            } // if
             $count = $DML->updateSelection($this->dbname_server, $this->tablename, $replace, $selection);
             $this->errors = array_merge($this->errors, $DML->getErrors());
             if (method_exists($DML, 'getMessages')) {
@@ -7643,15 +7811,17 @@ class Default_Table
             $rows_per_page       = $this->rows_per_page;    // save
             $this->setRowsPerPage($limit);
             // audit logging is ON, so fetch everything and update one row at a time
+            if (!is_array($replace)) {
+                $replace = where2array($replace);
+            } // if
             $resource = $this->_dml_getData_serial($selection);
             $this->setRowsPerPage($rows_per_page);          // restore
             $count = 0;
             while ($row = $this->fetchRow($resource)) {
-                $update = where2array($replace);
-                $update = array_merge($row, $update);
+                $update = array_merge($row, $replace);
                 // construct primary key for original record as this may be changed in this update
                 $where  = array2where($row, $this->getPkeyNames());
-                $this->_dml_updateRecord($update, $row, $where);
+                $update = $this->_dml_updateRecord($update, $row, $where);
                 if ($this->errors) {
                     break;
                 } // if
@@ -7734,6 +7904,10 @@ class Default_Table
 
         // look for a workitem that matches this task_id and context
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+
+        // ensure that a selection of multiple rows is reduced to a single row
+        $multiples = splitWhereByRow($where);
+        $where = array_shift($multiples);
 
         $context = addslashes(trim($where, ' ()'));
         //$workitem_where = "task_id='{$GLOBALS['task_id']}' AND context='$context'";
@@ -7873,7 +8047,7 @@ class Default_Table
             } // if
             if (class_exists($class_name)) {
                 $cpo = new $class_name;
-
+                $cpo->is_custom_object   = true;
                 // make object variables available in custom object
                 $cpo->dirname            =& $this->dirname;
                 $cpo->dirname_dict       =& $this->dirname;
@@ -7883,53 +8057,54 @@ class Default_Table
                 $cpo->fieldspec          =& $this->fieldspec;
                 $cpo->fieldarray         =& $this->fieldarray;
 
-                $cpo->allow_multiple     =& $this->allow_multiple;
-                $cpo->alt_language_table =& $this->alt_language_table;
-                $cpo->alt_language_cols  =& $this->alt_language_cols;
-                $cpo->audit_logging      =& $this->audit_logging;
-                $cpo->child_relations    =& $this->child_relations;
-                $cpo->custom_replaces_standard =& $this->custom_replaces_standard;
-                $cpo->default_orderby    =& $this->default_orderby;
-                $cpo->errors             =& $this->errors;
-                $cpo->initial_values     =& $this->initial_values;
+                $cpo->allow_multiple            =& $this->allow_multiple;
+                $cpo->alt_language_table        =& $this->alt_language_table;
+                $cpo->alt_language_cols         =& $this->alt_language_cols;
+                $cpo->audit_logging             =& $this->audit_logging;
+                $cpo->child_relations           =& $this->child_relations;
+                $cpo->custom_replaces_standard  =& $this->custom_replaces_standard;
+                $cpo->default_orderby           =& $this->default_orderby;
+                $cpo->errors                    =& $this->errors;
+                $cpo->initial_values            =& $this->initial_values;
                 $cpo->initiated_from_controller =& $this->initiated_from_controller;
-                $cpo->lookup_data        =& $this->lookup_data;
-                $cpo->messages           =& $this->messages;
-                $cpo->nameof_start_date  =& $this->nameof_start_date;
-                $cpo->nameof_end_date    =& $this->nameof_end_date;
-                $cpo->no_display_count   =& $this->no_display_count;
-                $cpo->numrows            =& $this->numrows;
-                $cpo->pageno             =& $this->pageno;
-                $cpo->parent_relations   =& $this->parent_relations;
-                $cpo->primary_key        =& $this->primary_key;
-                $cpo->rows_per_page      =& $this->rows_per_page;
-                $cpo->skip_getdata       =& $this->skip_getdata;
-                $cpo->sql_from           =& $this->sql_from;
-                $cpo->sql_groupby        =& $this->sql_groupby;
-                $cpo->sql_having         =& $this->sql_having;
-                $cpo->sql_no_foreign_db  =& $this->sql_no_foreign_db;
-                $cpo->sql_orderby        =& $this->sql_orderby;
-                $cpo->sql_orderby_seq    =& $this->sql_orderby_seq;
-                $cpo->sql_orderby_table  =& $this->sql_orderby_table;
-                $cpo->sql_search         =& $this->sql_search;
-                $cpo->sql_search_orig    =& $this->sql_search_orig;
-                $cpo->sql_search_table   =& $this->sql_search_table;
-                $cpo->sql_select         =& $this->sql_select;
-                $cpo->sql_where          =& $this->sql_where;
-                $cpo->sql_union          =& $this->sql_union;
-                $cpo->unbuffered_query   =& $this->unbuffered_query;
-                $cpo->unique_keys        =& $this->unique_keys;
-                $cpo->wf_case_id         =& $this->wf_case_id;
-                $cpo->wf_workitem_id     =& $this->wf_workitem_id;
-                $cpo->wf_context         =& $this->wf_context;
-                $cpo->wf_user_id         =& $this->wf_user_id;
-                $cpo->xsl_params         =& $this->xsl_params;
-                $cpo->zone               =& $this->zone;
+                $cpo->lookup_data               =& $this->lookup_data;
+                $cpo->messages                  =& $this->messages;
+                $cpo->nameof_start_date         =& $this->nameof_start_date;
+                $cpo->nameof_end_date           =& $this->nameof_end_date;
+                $cpo->no_display_count          =& $this->no_display_count;
+                $cpo->numrows                   =& $this->numrows;
+                $cpo->pageno                    =& $this->pageno;
+                $cpo->parent_relations          =& $this->parent_relations;
+                $cpo->primary_key               =& $this->primary_key;
+                $cpo->reuse_previous_select     =& $this->reuse_previous_select;
+                $cpo->rows_per_page             =& $this->rows_per_page;
+                $cpo->skip_getdata              =& $this->skip_getdata;
+                $cpo->sql_from                  =& $this->sql_from;
+                $cpo->sql_groupby               =& $this->sql_groupby;
+                $cpo->sql_having                =& $this->sql_having;
+                $cpo->sql_no_foreign_db         =& $this->sql_no_foreign_db;
+                $cpo->sql_orderby               =& $this->sql_orderby;
+                $cpo->sql_orderby_seq           =& $this->sql_orderby_seq;
+                $cpo->sql_orderby_table         =& $this->sql_orderby_table;
+                $cpo->sql_search                =& $this->sql_search;
+                $cpo->sql_search_orig           =& $this->sql_search_orig;
+                $cpo->sql_search_table          =& $this->sql_search_table;
+                $cpo->sql_select                =& $this->sql_select;
+                $cpo->sql_where                 =& $this->sql_where;
+                $cpo->sql_union                 =& $this->sql_union;
+                $cpo->unbuffered_query          =& $this->unbuffered_query;
+                $cpo->unique_keys               =& $this->unique_keys;
+                $cpo->wf_case_id                =& $this->wf_case_id;
+                $cpo->wf_workitem_id            =& $this->wf_workitem_id;
+                $cpo->wf_context                =& $this->wf_context;
+                $cpo->wf_user_id                =& $this->wf_user_id;
+                $cpo->xsl_params                =& $this->xsl_params;
+                $cpo->zone                      =& $this->zone;
 
                 // include reference to calling object in the custom object
-                $cpo->calling_object     =& $this;
-                $cpo->child_object       =& $this->child_object;
-                $cpo->parent_object      =& $this->parent_object;
+                $cpo->calling_object            =& $this;
+                $cpo->child_object              =& $this->child_object;
+                $cpo->parent_object             =& $this->parent_object;
 
                 $this->custom_processing_object =& $cpo;
             } // if
@@ -8270,6 +8445,9 @@ class Default_Table
     // assemble the $where clause from its component parts.
     // ($where = string, $where_array = array)
     {
+        // identify database engine
+        list($dbname2, $dbprefix, $dbms_engine) = findDBConfig($this->dbname);
+
         if (is_True($this->is_link_table)) {
             // this is for an outer-link-inner relationship
             $where = $this->_sqlAssembleWhereLink($where, $where_array);
@@ -8320,6 +8498,13 @@ class Default_Table
             $this->sql_from = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
         } // if
 
+        if (preg_match('/(sqlsrv)/i', $dbms_engine)) {
+            if (preg_match('/(^\*|\w+\.\*)/', $this->sql_select, $regs)) {
+                // replace '*' (all columns) with a list of columns names
+                $this->sql_select = selectAllColumns($this->sql_select, $this->getFieldSpec_original(), $this->tablename);
+            } // if
+        } // if
+
         // remove any duplicated field names from the select string
         $this->sql_select = removeDuplicateFromSelect($this->sql_select);
 
@@ -8338,8 +8523,10 @@ class Default_Table
                 $extra = $this->_cm_filterWhere($extra);
                 $this->sql_search = filterWhere($this->sql_search, $this->fieldspec, $this->tablename, $extra);
             } // if
-            // remove anything in $this->sql_search which is duplicated in $where
-            $this->sql_search = filterWhere1Where2($where, $this->sql_search, $this->tablename);
+            if (!empty($this->sql_search) AND !empty($where)) {
+                // remove anything in $this->sql_search which is duplicated in $where
+                $this->sql_search = filterWhere1Where2($where, $this->sql_search, $this->tablename);
+            } // if
         } // if
 
         // extract entries from $sql_select which are in format 'expression AS alias'
@@ -8349,6 +8536,10 @@ class Default_Table
 
         if (empty($this->sql_from)) {
             $this->sql_from = $this->tablename;
+        } // if
+
+        if (!empty($where)) {
+            $where = $this->currentOrHistoric($where, $this->nameof_start_date, $this->nameof_end_date);
         } // if
 
         // qualify each column name to avoid possible conflicts with other tables
@@ -8463,16 +8654,6 @@ class Default_Table
             return $where;
         } // if
 
-
-
-
-
-
-
-
-
-
-
         reset($where_array);   // fix for version 4.4.1
         if (!is_string(key($where_array))) {
             $where_array = indexed2assoc($where_array);
@@ -8495,10 +8676,6 @@ class Default_Table
         foreach ($reldata['fields'] as $fldchild => $fldparent) {
             $outer_key[]        = $outer_table .'.' .$fldparent;
             $ix = count($outer_key) -1;
-
-
-
-
             if ($fldchild == $fldparent) {
                 $outer_key_as[] = $outer_key[$ix];
             } else {
@@ -9055,15 +9232,24 @@ class Default_Table
 //            unset($this->custom_processing_object);
 //        } // if
 
-        // get associative array of class variables
-        $object_vars = get_object_vars($this);
+        if (method_exists($this, 'getClassName')) {
+            if (preg_match('/^cp_/i', $this->getClassName())) {
+                if (isset($this->is_custom_object) AND is_True($this->is_custom_object)) {
+                    return array();  // this is a custom object, so does not need to be serialized
+                } // if
+            } // if
+        } // if
+
+        $object_vars = get_object_vars($this);  // get associative array of class variables
+        $keys = array_keys($object_vars);       // return the variable names, not the values
 
         // remove/clear unwanted variables
-        $object_vars['errors'] = array();
-        $object_vars['messages'] = array();
+        unset($keys['errors']);
+        unset($keys['messages']);
+        unset($keys['custom_processing_object']);  // this will be rebuilt in the __wakeup() method
 
         $pattern_id = getPatternId();
-        if (preg_match('/^(UPD|ADD|MULTI|SRCH|LINK)/i', $pattern_id)) {
+        if (preg_match('/^(UPD|ADD|MULTI|SRCH|LINK|POPUP)/i', $pattern_id)) {
             // do NOT shrink $this->fieldarray
         } else {
             // get list of primary key fields
@@ -9088,10 +9274,7 @@ class Default_Table
             } // if
         } // if
 
-        // convert to indexed array
-        $object_vars = array_keys($object_vars);
-
-        return $object_vars;
+        return $keys;
 
     } // __sleep
 
@@ -9099,7 +9282,7 @@ class Default_Table
     function __wakeup ()
     // perform object initialisation after unserialization
     {
-        // look for custom processing object
+        // rebuild data for any custom processing object
         $this->_getCustomProcessingObject();
 
     } // __wakeup

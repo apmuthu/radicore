@@ -17,6 +17,16 @@ $array['case_status']           = array('OP' => 'Open',
 $array['direction']             = array('IN'  => 'In (P -> T)',
                                         'OUT' => 'Out (P <- T)');
 
+$array['condition_operator']    = array('<>'  => '<> (not equal)',
+                                        '<='  => '<= (less than or equal)',
+                                        '<' => '< (less than)',
+                                        '>=' => '>= (greater than or equal)',
+                                        '>' => '> (greater than)',
+                                        '=' => '= (equal)',
+                                        '!=' => '!= (not equal)',
+                                        '===' => '=== (equal - same type)',
+                                        '!==' => '!== (not equal - same type)');
+
 $array['token_status']          = array('FREE' => 'Free',
                                         'LOCK' => 'Locked',
                                         'CONS' => 'Consumed',

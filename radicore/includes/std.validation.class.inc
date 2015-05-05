@@ -244,7 +244,16 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (strlen($fieldvalue) == 0) {
+        if ($fieldspec['type'] == 'boolean' AND is_bool($fieldvalue)) {
+            // convert BOOLEAN to correct values
+            if (isset($fieldspec['true']) AND $fieldvalue === true) {
+                $fieldvalue = $fieldspec['true'];
+            } elseif (isset($fieldspec['false']) AND $fieldvalue === false) {
+                $fieldvalue = $fieldspec['false'];
+            } // if
+        } // if
+
+        if (strlen($fieldvalue) == 0 AND !is_bool($fieldvalue)) {
             // field is empty - is it allowed to be?
             if (isset($fieldspec['required'])) {
                 if (isset($fieldspec['autoinsert'])
@@ -498,7 +507,7 @@ END_OF_REGEX;
 
         // step through each fieldspec entry and compare with input data
         foreach ($fieldspec as $field => $spec) {
-            if (isset($spec['novalidate']) OR isset($spec['nondb'])) {
+            if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
                 // ignore this field
             } else {
                 if (isset($fieldarray[$field])) {
@@ -727,15 +736,19 @@ END_OF_REGEX;
         // step through input data and validate each field in turn
         foreach ($fieldarray as $field => $value) {
             // (this will not carry forward any fields which do not exist in this table)
-            if (array_key_exists($field, $fieldspec) AND !isset($fieldspec[$field]['novalidate'])) {
-                // validate field using field specifications
-                $value = $this->validateField($field, $value, $fieldspec[$field]);
-                // transfer to array which will be passed to the database
-                // (allow null values as field may have been cleared)
-                if (strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
-                    $updatearray[$field] = $value;
+            if (array_key_exists($field, $fieldspec)) {
+                if (isset($fieldspec[$field]['novalidate']) OR isset($fieldspec[$field]['autoupdate'])) {
+                    // ignore this field
                 } else {
-                    $updatearray[$field] = null;
+                    // validate field using field specifications
+                    $value = $this->validateField($field, $value, $fieldspec[$field]);
+                    // transfer to array which will be passed to the database
+                    // (allow null values as field may have been cleared)
+                    if (strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
+                        $updatearray[$field] = $value;
+                    } else {
+                        $updatearray[$field] = null;
+                    } // if
                 } // if
             } elseif (preg_match('/^rdc_/i', $field)) {
                 // allow this framework instruction to carry on through

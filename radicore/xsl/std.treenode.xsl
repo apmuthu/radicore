@@ -126,7 +126,12 @@
     </span>
   </xsl:if>
 
-  <span class="text"><xsl:value-of select="$desc" /></span>
+  <span class="text"><xsl:value-of select="$desc" />
+    <!-- check if field has error attribute set -->
+    <xsl:if test="$desc/@error">
+      <br/><span class="error"><xsl:value-of select="$desc/@error"/></span>
+    </xsl:if>
+  </span>
 
 </xsl:template> <!-- tree_node -->
 

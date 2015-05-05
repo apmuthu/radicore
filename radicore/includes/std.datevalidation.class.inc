@@ -198,7 +198,7 @@ class date_class {
                  . '[0-9]{2}'       // 2 digit month
                  . '-'              // '-
                  . '[0-9]{2}'       // 2 digit day
-                 . '$'              // ends with
+                 //. '$'              // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $date_format = 'yyyy-mm-dd';  //date is already in internal format

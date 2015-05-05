@@ -1,5 +1,27 @@
 ﻿RADICORE for PHP - news
 
+2015-05-05, version 1.89.0
+Database changes:
+- run script "audit\sql\mysql\alter_table(2015-03-29).sql" to alter the 'session_data' column from TEXT to BLOB.
+- run script "workflow\sql\mysql\alter_table(2015-05-01).sql" to update the structure of the WF_ARC table in the WORKFLOW database.
+- run script "menu\sql\mysql\alter_table(2015-05-01).sql" to update the structure of the MNU_USER table in the MENU database.
+
+Other changes:
+- updated the 'getExtraData()' method within 'std.table.class.inc' so that the call to '_cm_getExtraData()' comes after the call to '_cm_changeConfig()' instead of before. This allows any extra data to be fetched after the object's configuration has been changed.
+- updated 'dml.sqlsrv.class.inc' to deal with conversion of CONCAT, CONCAT_WS and GROUP_CONCAT functions.
+- fixed bug in 'mnu_task(upd1).php' which caused the 'Run at End' and 'Run at Cancel' popups to show only the current task instead of everything but the current task.
+- updated the 'php_session' table in the AUDIT database from a TEXT to a BLOB datatype so that it can handle unusual characters. This became evident in the SQLSRV driver, but may also affect the MYSQL driver.
+- updated 'php_session.class.inc' so that the 'session_data' column for the SQLSRV database is converted from TEXT to BINARY using the CONVERT(varbinary(max), ...) function.
+- updated 'std.table.class.inc' to include the $allow_zero_rows property. This is for use in the LIST3 pattern.
+- updated 'std.list3.inc' so that if no rows are read in the 'middle' entity, but it has the $allow_zero_rows property set, it will continue to the 'inner' entity without displaying an error. This will effectively make the 'middle' entity optional.
+- updated 'std.table.class.inc' to include the 'validateChooseButton()' and '_cm_validateChooseButton()' methods.
+- updated 'include.session.inc' so that when the 'chooseButton()' function is called it will pass the selection to the object's 'validateChooseButton()' method. This will allow further processing to take place after the selection has been made and before it returns control to the calling script.
+- updated 'std.table.class.inc' to include the 'getParentClass()' and 'getChildClass()' methods which will return the names of those classes, if they exist in the current Transaction Pattern.
+- updated 'std.validation.class.inc' to convert a boolean value from TRUE/FALSE to the equivalent 'true' or 'false' value provided in the $fieldspec array.
+- updated the WF_ARC table in the WORKFLOW database to replace the 'pre_condition' field with three separate fields to remove the need to use the 'eval()' function which could possibly be used to inject malicious code.
+- updated the MNU_USER table in the MENU database to increase the size of the 'user_password' column. This is to allow a future change to the password hashing/encryption algorithm.
+
+
 2015-03-01, version 1.88.0
 Database changes:
 - none
@@ -11,7 +33,7 @@ Other changes:
 - fixed bug within 'ddl_showTableKeys()' method in file 'dml.sqlsrv.class.inc' to include 'constraint_name' in the list of selected fields.
 - modified 'dict_table_key.class.inc' so that the key name 'PRIMARY' is in uppercase and all other keys are in lowercase.
 - modified 'dict_column_s01.class.inc' so that the call to '$keyobj->getInitialDataMultiple($this->where)' is not executed if there are any errors produced by a previous call.
-- fixed bug in 'std.update1.inc' which lost the scrolling area after pressing the 'SUBMIT' button.
+- fixed bug in 'std.update1.inc' which lost scrolling area after pressing 'SUBMIT' button.
 - fixed bug in 'logon.php' which failed to update AUDIT_LOGON_ERRORS and MNU_USER table if the logon failed and the database engine was transactional. Previously it followed the convention where any errors would cause a rollback, but in this case it must always perform a commit in order to log the error.
 - fixed bug in 'std.datevalidation.class.inc' which allowed a date such as '1970-01-001' to be accepted as valid.
 - fixed bug in 'std.datevalidation.class.inc' which failed to strip off the microseconds from timestamps HH:MM:SS<.microseconds>
@@ -22,7 +44,7 @@ Other changes:
     $file['filename'] = 'example'
     $file['extension'] = 'pdf'
     $file['size'] = 23400
-- amended 'std.table.class.inc' so that after returning from a fileupload task the contents of the $files array will be made available in an additional argument called $return_files in the _cm_restart(), _cm_popupReturn() and _cm_post_popupReturn() methods.
+- amended 'std.table.class.inc' so that after returning from a fileupload task the contents of the $files array will be made available in an additional argument called $return_files in the _cm_reset(), _cm_popupReturn() and _cm_post_popupReturn() methods.
 
 2014-12-01, version 1.87.0
 Database changes:

@@ -106,7 +106,7 @@ class mnu_favourite extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.

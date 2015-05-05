@@ -46,7 +46,7 @@ class mnu_favourite_s04 extends mnu_favourite
                 // global_access is OFF so task must have an entry on MNU_ROLE_TASK
                 // (unless a task has been disabled)
                 $this->sql_select = 'mnu_task.task_id, mnu_favourite.task_desc, mnu_task.is_disabled'
-                                  .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_favourite.task_id AND role_id IN($role_list) LIMIT 1) THEN 'Y' ELSE 'N' END AS access_allowed";
+                                  .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_favourite.task_id AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
                 $this->sql_from   = "mnu_favourite"
                                   ." LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_favourite.task_id)";
                 $where_array['mnu_task.is_disabled'] = 'N';

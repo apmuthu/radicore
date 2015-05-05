@@ -89,7 +89,10 @@ if (isset($script_vars['dbobject'])) {
 
 // the 'choose' button should only be used in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbobject, 'dbobject');
+    list($choose_errors, $messages) = chooseButton($_POST, $dbobject, 'dbobject');
+    if (!empty($choose_errors)) {
+        $errors[$dbobject->getClassName()] = $choose_errors;
+    } // if
 } // if
 
 if (!empty($_POST)) {

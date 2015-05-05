@@ -266,6 +266,17 @@ $array['sys0237'] = "";
 $array['sys0238'] = "DateTimes shown in User's timezone";
 $array['sys0239'] = "DateTimes shown in Party's timezone";
 
+$array['sys0240'] = "Cannot select more than one entry from the same branch in this tree structure";
+$array['sys0241'] = "Values must be input in Home/Functional currency";
+$array['sys0242'] = "Values must be input in Transaction currency";
+$array['sys0243'] = "";
+$array['sys0244'] = "";
+$array['sys0245'] = "";
+$array['sys0246'] = "";
+$array['sys0247'] = "";
+$array['sys0248'] = "";
+$array['sys0249'] = "";
+
 // the following entries are for ACTION buttons
 $array['cancel']     = 'CANCEL';
 $array['choose']     = 'CHOOSE';

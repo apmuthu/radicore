@@ -188,8 +188,8 @@ if (!empty($_FILES) and empty($errors)) {
                 $messages = array_merge($messages, $fileobject->messages);
             } // if
             if (empty($errors)) {
-                $info = new SplFileInfo($uploadfile);
-                $file_array['url']           = realpath($uploadfile);
+                $info = new SplFileInfo($uploadfile['filepath']);
+                $file_array['url']           = realpath($uploadfile['filepath']);
                 $file_array['filename_orig'] = $info->getBasename();
                 $file_array['filename']      = $info->getBasename('.'.$info->getExtension());
                 $file_array['extension']     = $info->getExtension();

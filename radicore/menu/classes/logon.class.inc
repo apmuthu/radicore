@@ -23,6 +23,14 @@ class logon extends mnu_user
 
         $updatearray = $this->updateRecord($updatearray);
 
+        // perform any custom logon processing
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, 'user_logoff')) {
+                $updatearray['session_id'] = session_id();
+                $result = $this->custom_processing_object->user_logoff($updatearray);
+            } // if
+        } // if
+
         return $this->errors;
 
     } // user_logoff
@@ -276,6 +284,7 @@ class logon extends mnu_user
         } else {
             $_SESSION['role_list'] = "'".$fieldarray['role_id']."'";
         } // if
+        unset($array);
 
         // store locale data based on user's preferred language
         $_SESSION['locale_name'] = saveLocaleFormat($_SESSION['user_language']);
@@ -340,9 +349,34 @@ class logon extends mnu_user
 
         $_SESSION['empty_tables'] = $this->findEmptyTables($logon_user_id);
 
+        // perform any custom logon processing
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, 'user_logon')) {
+                $fieldarray['session_id'] = session_id();
+                $result = $this->custom_processing_object->user_logon($fieldarray);
+            } // if
+        } // if
+
         return $this->errors;
 
     } // user_logon
+
+    // ****************************************************************************
+    function user_new_session ($user_id)
+    // perform any custom processing when the NEW SESSION link is pressed
+    {
+        $this->errors = array();
+
+        // perform any custom processing
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, 'user_new_session')) {
+                $result = $this->custom_processing_object->user_new_session($user_id, session_id());
+            } // if
+        } // if
+
+        return $this->errors;
+
+    } // user_new_session
 
     // ****************************************************************************
     function PasswordRetries ($user_id, $user_password, $email_addr=null)

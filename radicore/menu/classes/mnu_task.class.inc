@@ -43,7 +43,7 @@ class mnu_task extends Default_Table
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
         $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, mnu_role.global_access'
-                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) LIMIT 1) THEN 'Y' ELSE 'N' END AS access_allowed";
+                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
         // - check that IP address is valid
         $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN 'Y'"
                                   ." WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id' AND ip_address='$ip_address') = 1 THEN 'Y'"
@@ -450,6 +450,38 @@ class mnu_task extends Default_Table
         } // if
 
     } // _cm_output_multi
+
+    // ****************************************************************************
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    // if a popup button has been pressed the contents of $where may need to
+    // be altered before the popup screen is called.
+    // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    {
+        // clear out the contents of $where
+        //$where = '';
+
+        // allow only one entry to be selected (the default)
+        $settings['select_one'] = true;
+
+        // allow more than one entry to be selected
+        //$settings['select_one'] = false;
+
+        // allow a single result to be selected without user intervention
+        //$settings['choose_single_row'] = true;
+
+        if ($popupname == 'mnu_task(popup1)a1' OR $popupname == 'mnu_task(popup1)a2') {
+            // replace $where for this popup
+            if (!empty($fieldarray['task_id'])) {
+                $where = "task_id != '{$fieldarray['task_id']}'";
+            } // if
+        } else {
+            $where = '';
+        } // if
+
+        return $where;
+
+    } // _cm_popupCall
 
     // ****************************************************************************
     function _cm_post_fetchRow ($fieldarray)

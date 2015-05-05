@@ -540,7 +540,7 @@ class mysql
                 $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
             } else {
                 $this->query = "(SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $lock_str)"
-                              ."\nUNION\n".$this->sql_union.' '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
+                              ."\nUNION\n(".$this->sql_union.') '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
                 $this->sql_union = null;
             } // if
             //$result = mysql_query($this->query, $this->dbconnect) or trigger_error($this, E_USER_ERROR);
@@ -951,7 +951,7 @@ class mysql
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -1325,7 +1325,7 @@ class mysql
 
         $repeat = false;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/ims';  // function(...)
         do {
             // build update string from non-pkey fields
             $update = '';

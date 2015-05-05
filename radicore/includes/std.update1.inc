@@ -226,6 +226,7 @@ if (!empty($_POST)) {
                     if ($dbobject->getNumRows() < 1) {
                         scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
                     } // if
+                    $fieldarray = $dbobject->getExtraData($fieldarray);
                     // reset 'lastitem' in scroll array
                     $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
                     $script_vars['scrolling'] = $scrolling;

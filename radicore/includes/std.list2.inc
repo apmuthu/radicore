@@ -155,7 +155,10 @@ $dbinner->setParentObject($dbouter);
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbinner, 'dbinner');
+    list($choose_errors, $messages) = chooseButton($_POST, $dbinner, 'dbinner');
+    if (!empty($choose_errors)) {
+        $errors[$dbinner->getClassName()] = $choose_errors;
+    } // if
 } // if
 
 if (!empty($_POST)) {

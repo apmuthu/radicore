@@ -165,22 +165,29 @@ class wf_arc extends Default_Table
                 ;
         } // switch
 
-        // pre_condition is only valid if arc_type = 'OR split (E)'
-        if (!empty($fieldarray['pre_condition'])) {
+        if (empty($fieldarray['condition_field'])) {
+            // CONDITION_FIELD is empty, so other values must also be empty
+            $fieldarray['condition_operator'] = null;
+            $fieldarray['condition_value']    = null;
+        } else {
             if ($arc_type != 'OR-SPLIT-E') {
-                // "pre_condition invalid unless ARC_TYPE = 'Explicit OR-split'"
-                $this->errors['pre_condition'] = getLanguageText('e0004');
+                // "Condition is invalid unless ARC_TYPE = 'Explicit OR-split'"
+                $this->errors['condition_field'] = getLanguageText('e0004');
                 return $fieldarray;
             } // if
-            $guard = stripslashes($fieldarray['pre_condition']);
-            // turn on output buffering to capture any errors from eval()
-            ob_start();
-            $result = eval($guard);
-            $eval_result = ob_get_clean();
-            if ($eval_result) {
-                // there was a parse error
-                $this->errors['pre_condition'] = $eval_result;
+            if (!preg_match('/^(strlen\(\w+\)|\w+)$/i', $fieldarray['condition_field'])) {
+                // "CONDITION_FIELD must be in format 'name' or 'strlen(name)'"
+                $this->errors['condition_field'] = getLanguageText('e0078');
                 return $fieldarray;
+            } // if
+            // CONDITION_FIELD is not empty, so other values must also be not empty
+            if (empty($fieldarray['condition_operator'])) {
+                // "Cannot specify CONDITION_FIELD without CONDITION_OPERATOR"
+                $this->errors['condition_operator'] = getLanguageText('e0074');
+            } // if
+            if (strlen($fieldarray['condition_value']) == 0) {
+                // "Cannot specify CONDITION_FIELD without CONDITION_VALUE"
+                $this->errors['condition_value'] = getLanguageText('e0075');
             } // if
         } // if
 
@@ -204,6 +211,12 @@ class wf_arc extends Default_Table
             // get array for direction and put into LOOKUP_DATA
             $array = $this->getValRep('direction');
             $this->lookup_data['direction'] = $array;
+        } // if
+
+        if (!array_key_exists('condition_operator', $this->lookup_data)) {
+            // get array for direction and put into LOOKUP_DATA
+            $array = $this->getValRep('condition_operator');
+            $this->lookup_data['condition_operator'] = $array;
         } // if
 
         if (!empty($fieldarray['workflow_id'])) {
@@ -231,22 +244,17 @@ class wf_arc extends Default_Table
         $array = array();
 
         if ($item == 'direction') {
-//            $array['']    = ' ';   // start with blank entry
-//            $array['IN']  = 'In (P -> T)';
-//            $array['OUT'] = 'Out (P <- T)';
             $array = getLanguageArray('direction');
             return $array;
         } // if
 
         if ($item == 'arc_type') {
-//            $array['']           = ' ';   // start with blank entry
-//            $array['SEQ']        = 'Sequential';
-//            $array['OR-SPLIT-E'] = 'OR-split (Explicit)';
-//            $array['OR-SPLIT-I'] = 'OR-split (Implicit)';
-//            $array['OR-JOIN']    = 'OR-join';
-//            $array['AND-SPLIT']  = 'AND-split';
-//            $array['AND-JOIN']   = 'AND-join';
             $array = getLanguageArray('arc_type');
+            return $array;
+        } // if
+
+        if ($item == 'condition_operator') {
+            $array = getLanguageArray('condition_operator');
             return $array;
         } // if
 

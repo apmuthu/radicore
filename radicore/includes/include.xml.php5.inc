@@ -885,17 +885,7 @@ class radicore_view
         } // if
         unset($_SESSION['script_start']);
 
-		// ************************************************************************************************************************
-		// Nelson Nones (11-Jul-14) begin insertion
-		// Add optional "iframe_url" parameter
-		if(!empty($_SESSION['iframe_url'])) {
-			$xsl_params['iframe_url'] = $_SESSION['iframe_url'];
-			unset($_SESSION['iframe_url']); //Unset this session variable so that the next ADD5/ADD1 would not see the same document.
-		}
-		// Nelson Nones (11-Jul-14) end insertion
-		// ************************************************************************************************************************
-
-        // now add each parameter to the XML document
+		// now add each parameter to the XML document
         $node = $doc->createElement('params');
         $node = $root->appendChild($node);
 
@@ -1413,7 +1403,7 @@ class radicore_view
         if (isset($javascript['head'])) {
             $occ = $doc->createElement('javascript');
             $occ = $root->appendChild($occ);
-    	    foreach ($javascript['head'] as $entry) {
+            foreach ($javascript['head'] as $entry) {
                 if (key($entry) == 'file') {
                     if (in_array($entry, $file_array)) {
                         // already processed, so don't repeat
@@ -1458,6 +1448,9 @@ class radicore_view
             $body = $occ->appendChild($body);
 
             foreach ($javascript['body'] as $tag => $event) {
+                if (is_array($event)) {
+                    $event = array_pop($event);  // take the last element
+                } // if
                 // add each event to the xml document
                 $body->setAttribute($tag, $event);
             } // foreach

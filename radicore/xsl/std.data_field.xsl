@@ -125,8 +125,10 @@
 <!-- display details vertically -->
 <!-- multi-column version, with each cell containing either a label or a value -->
 <xsl:template name="display_vertical">
-  <xsl:param name="zone"/>    <!-- could be 'main', 'inner', 'outer', etc -->
-  <xsl:param name="noedit"/>  <!-- 'noedit' flag for this zone -->
+  <xsl:param name="zone"/>      <!-- could be 'main', 'inner', 'outer', etc -->
+  <xsl:param name="currocc"/>   <!-- current occurrence -->
+  <xsl:param name="multiple"/>  <!-- set this for more than one occurrence -->
+  <xsl:param name="noedit"/>    <!-- 'noedit' flag for this zone -->
 
   <xsl:variable name="table" select="name()"/>          <!-- current table name -->
   <xsl:variable name="table_row" select="position()"/>  <!-- current row within table -->
@@ -184,6 +186,7 @@
           <xsl:with-param name="table"      select="$table"/>
           <xsl:with-param name="table_row"  select="$table_row"/>
           <xsl:with-param name="struct_row" select="$struct_row"/>
+          <xsl:with-param name="multiple"   select="$multiple"/>
           <xsl:with-param name="noedit"     select="$real_noedit"/>
         </xsl:call-template>
 
@@ -200,6 +203,7 @@
   <xsl:param name="table"/>       <!-- name of data table -->
   <xsl:param name="table_row"/>   <!-- position of this data element -->
   <xsl:param name="struct_row"/>  <!-- position of this structure element -->
+  <xsl:param name="multiple"/>    <!-- set this for more than one occurrence -->
   <xsl:param name="noedit"/>      <!-- y = no edit, display only -->
 
   <tr>
@@ -319,6 +323,7 @@
                   <xsl:with-param name="itemname" select="$fieldname"/>
                   <xsl:with-param name="path"     select="$table"/>
                   <xsl:with-param name="position" select="$table_row"/>
+                  <xsl:with-param name="multiple" select="$multiple"/>
                   <xsl:with-param name="noedit"   select="$noedit"/>
                   <xsl:with-param name="cellattr" select="$cellattr"/>
                   
@@ -2013,7 +2018,7 @@
           <!-- look for a sibling element called 'selected' with a value of 'true' -->
           <xsl:variable name="selected" select="//*[name()=$path][position()=$position]/selected" />
 
-          <xsl:if test="$selected='T' or $selected='1'">
+          <xsl:if test="$selected='T' or $selected='Y' or $selected='1'">
             <xsl:attribute name="checked">checked</xsl:attribute>
           </xsl:if>
 
@@ -2031,7 +2036,7 @@
           <xsl:otherwise>
             <!-- create a checkbox which allows the current row to be selected -->
             <input class="checkbox" type="checkbox" name="select[{position()}]" >
-              <xsl:if test="selected='T' or selected='1'">
+              <xsl:if test="selected='T' or selected='Y' or selected='1'">
                 <!-- this is to be marked as selected in the initial display -->
                 <xsl:attribute name="checked">checked</xsl:attribute>
               </xsl:if>

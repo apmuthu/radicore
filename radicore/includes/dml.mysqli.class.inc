@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class mysql
@@ -102,6 +102,32 @@ class mysql
         return $result;
 
     } // mysql
+
+    // ****************************************************************************
+    function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str, $union)
+    // make 'SELECT ... FROM ... WHERE ...' into a subquery so that the HAVING clause can
+    // become the WHERE clause of the outer query.
+    // This is so that when both parts of a UNION have a HAVING clause it can be turned into
+    // the WHERE clause of the outer query.
+    {
+        // put current query into a subqery
+        $subquery   = "    SELECT $select_str\n    FROM $from_str $where_str $group_str";
+
+        if (!empty($union)) {
+            $subquery .= "\nUNION ALL\n$union";
+            $union     = '';
+        } // if
+
+        $select_str = '*';
+        $from_str   = "(\n$subquery\n) AS x";
+        $where_str  = "\nWHERE $having_str";
+        $having_str = '';
+        $group_str  = '';
+        $sort_str   = unqualifyOrderBy($sort_str);
+
+        return array($select_str, $from_str, $where_str, $sort_str);
+
+    } // adjustHaving
 
     // ****************************************************************************
     function adjustWhere ($string_in)
@@ -506,8 +532,8 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
+            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
+            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
             $from_str = str_replace($search_array, $replace_array, $from_str);
         } // if
 
@@ -529,18 +555,25 @@ class mysql
             $group_str = NULL;
         } // if
 
-        // incorporate optional HAVING parameters
-        if (!empty($this->sql_having)) {
-            $having_str = "\n" ."HAVING $this->sql_having";
-        } else {
-            $having_str = NULL;
-        } // if
-
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
             $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
+        } // if
+
+        // incorporate optional HAVING parameters
+        if (!empty($this->sql_having)) {
+            if (!empty($this->sql_union)) {
+                list($select_str, $from_str, $where_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str, $this->sql_union);
+                $group_str       = null;
+                $having_str      = null;
+                $this->sql_union = null;
+            } else {
+                $having_str = "\n" ."HAVING $this->sql_having";
+            } // if
+        } else {
+            $having_str = NULL;
         } // if
 
         $lock_str = null;
@@ -583,7 +616,7 @@ class mysql
                 $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
             } else {
             	$this->query = "(SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $lock_str)"
-            	              ."\nUNION\n".$this->sql_union.' '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
+            	              ."\nUNION\n(".$this->sql_union.') '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
             	$this->sql_union = null;
             } // if
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
@@ -717,7 +750,14 @@ class mysql
         } // if
 
         // build the query string and run it
-        $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
+        if (empty($this->sql_union)) {
+            $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
+        } else {
+            $this->query = "(SELECT $select_str \nFROM $from_str $where_str $group_str $having_str)"
+                          ."\nUNION\n(".$this->sql_union.') '.unqualifyOrderBy($sort_str) .' ' .$limit_str;
+            $this->sql_union = null;
+        } // if
+
         if ($this->unbuffered_query === true) {
             $result = mysqli_real_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $this->numrows = 0;
@@ -1019,7 +1059,7 @@ class mysql
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -1444,7 +1484,7 @@ class mysql
 
         $repeat = false;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
         do {
             // build update string from non-pkey fields
             $update = '';
@@ -1571,7 +1611,8 @@ class mysql
         $colspecs['decimal']    = array('name' => 'DECIMAL',
                                         'type' => 'numeric');
         $colspecs['boolean']    = array('name' => 'BOOLEAN',
-                                        'type' => 'boolean');
+                                        'type' => 'boolean',
+                                        'size' => 1);
         $colspecs['bit']        = array('name' => 'BIT',
                                         'type' => 'bit');
         $colspecs['tinyint']    = array('name' => 'TINYINT',

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -202,6 +202,14 @@ if (!function_exists('append2ScriptSequence')) {
         } // if
 
         $next['inserted_by'] = $GLOBALS['task_id'];
+
+        if (array_key_exists('settings', $next)) {
+            if (is_array($next['settings'])) {
+                // convert from array to a string
+                $string = http_build_query($next['settings'], null, '&');
+                $next['settings'] = $string;
+            } // if
+        } // if
 
         if ($prepend == true AND is_array($_SESSION['script_sequence'])) {
             // prepend to existing array
@@ -627,9 +635,11 @@ if (!function_exists('array2where')) {
                         list($operator, $value, $delimiter) = extractOperatorValue($fieldvalue);
                         if (empty($operator)) {
                             // operator is not present, so assume it is '='
-                            if (is_null($fieldvalue) AND !array_key_exists($fieldname, $primary_key)) {
+                            //if (is_null($fieldvalue) AND !array_key_exists($fieldname, $primary_key)) {
+                            if (is_null($fieldvalue)) {
                             	$string = $fieldname .' IS NULL';
-                            } elseif (substr($fieldvalue, 0, 1) == '(') {
+                            //} elseif (substr($fieldvalue, 0, 1) == '(') {
+                            } elseif (preg_match('/^\(.*\)$/i', $fieldvalue)) {
                                 // value is '(subquery)', so output as-is
                                 $string = $fieldname ."=" .$fieldvalue;
                             } else {
@@ -1002,8 +1012,10 @@ if (!function_exists('convertEncoding')) {
                     $from_encoding = mb_detect_encoding($string);
                     //$check         = mb_check_encoding($string, $to_encoding);
                 } // if
-                if (strtoupper($from_encoding) != strtoupper($to_encoding)) {
-                    $string = mb_convert_encoding($string, $to_encoding, $from_encoding);
+                if (!empty($from_encoding)) {
+                    if (strtoupper($from_encoding) != strtoupper($to_encoding)) {
+                        $string = mb_convert_encoding($string, $to_encoding, $from_encoding);
+                    } // if
                 } // if
             } elseif (function_exists('iconv')) {
                 if (empty($from_encoding)) {
@@ -2212,6 +2224,7 @@ if (!function_exists('findDBConfig')) {
     // It may have been given a prefix, or switched to another name.
     {
         $switch_dbnames = array();
+        $dbschema       = null;
 
         if (empty($GLOBALS['servers'])) {
             // use same settings for all databases
@@ -2219,6 +2232,9 @@ if (!function_exists('findDBConfig')) {
             $dbprefix =& $GLOBALS['dbprefix'];
             if (!empty($GLOBALS['switch_dbnames']) AND is_array($GLOBALS['switch_dbnames'])) {
                 $switch_dbnames = array_merge($switch_dbnames, $GLOBALS['switch_dbnames']);
+            } // if
+            if ($dbengine == 'sqlsrv') {
+                $dbschema = $GLOBALS['SQLSRV_schema'];
             } // if
         } else {
             // different settings for each entry in $servers array
@@ -2230,6 +2246,9 @@ if (!function_exists('findDBConfig')) {
                     if (!empty($server['switch_dbnames']) AND is_array($server['switch_dbnames'])) {
                         $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
                     } // if
+                    if ($dbengine == 'sqlsrv') {
+                        $dbschema = $server['SQLSRV_schema'];
+                    } // if
                     break;
                 } else {
                     // convert list of dbnames into an array
@@ -2240,6 +2259,9 @@ if (!function_exists('findDBConfig')) {
                         $dbprefix = $server['dbprefix'];
                         if (!empty($server['switch_dbnames']) AND is_array($server['switch_dbnames'])) {
                             $switch_dbnames = array_merge($switch_dbnames, $server['switch_dbnames']);
+                        } // if
+                        if ($dbengine == 'sqlsrv') {
+                            $dbschema = $server['SQLSRV_schema'];
                         } // if
                         break;
                     } // if
@@ -2254,7 +2276,7 @@ if (!function_exists('findDBConfig')) {
             } // if
         } // if
 
-        return array($dbname, $dbprefix, $dbengine);
+        return array($dbname, $dbprefix, $dbengine, $dbschema);
 
     } // findDBConfig
 } // if
@@ -2269,7 +2291,7 @@ if (!function_exists('findDBName')) {
     // b) by using the 'dbprefix' option.
     {
         // check if the name has been prefixed or switched in the config file.
-        list($target_db_new, $target_dbprefix, $target_dbms_engine) = findDBConfig($target_db);
+        list($target_db_new, $target_dbprefix, $target_dbms_engine, $target_dbschema) = findDBConfig($target_db);
         $target_db_new = $target_dbprefix.$target_db_new;
 
         if (empty($this_db)) {
@@ -2277,7 +2299,7 @@ if (!function_exists('findDBName')) {
             $output = '"'.$target_db_new.'".';
         } else {
             // check if the name has been prefixed or switched in the config file.
-            list($this_db_new, $this_dbprefix, $this_dbms_engine) = findDBConfig($this_db);
+            list($this_db_new, $this_dbprefix, $this_dbms_engine, $target_dbschema) = findDBConfig($this_db);
             $this_db_new = $this_dbprefix.$this_db_new;
             if ($target_db_new == $this_db_new) {
                 // target dbname is the same, so does not need to be specified
@@ -2286,6 +2308,10 @@ if (!function_exists('findDBName')) {
                 // target dbname needs to be specified and enclosed in double quotes
                 $output = '"'.$target_db_new.'".';
             } // if
+        } // if
+
+        if (!empty($target_dbschema)) {
+            $output .= $target_dbschema.'.';  // this is for SQL Server
         } // if
 
         return $output;
@@ -2336,6 +2362,7 @@ if (!function_exists('fixTrueFalseArray')) {
     // to the values for $spec['true'] and $spec['false'].
     // For example, the input array of: 'true' => 'Yes', 'false' => 'No'
     // could be changed to:             'Y'    => 'Yes', 'N'     => 'No'
+    //                  or:             '1'    => 'Yes', '0'     => 'No'
     {
         $true  =& $spec['true'];
         $false =& $spec['false'];
@@ -2518,6 +2545,37 @@ if (!function_exists('formatTelephoneNumber')) {
         return $output_string;
 
     } // formatTelephoneNumber
+} // if
+
+// ****************************************************************************
+if (!function_exists('fullGroupBy')) {
+    function fullGroupBy ($groupby, $select)
+    // ensure that GROUP BY clause contains every column in the SELECT list.
+    // (this is required by some database engines)
+    {
+        $group_array = explode(',', $groupby);
+        $group_array = array_map("trim", $group_array);
+
+        // turn select string into an associative array of 'name=alias' pairs
+        $select_array = extractFieldNamesAssoc($select);
+
+        // append to $group_array anything in $select_array which is not already there
+        foreach ($select_array as $fieldname => $alias) {
+            if (preg_match('/\(.+\)/i', $alias)) {
+                // contains '(...)' so this is not a proper name and can be ignored
+            } else {
+                if (!in_array($alias, $group_array)) {
+                    $group_array[] = $alias;
+                } // if
+            } // if
+        } // foreach
+
+        // turn array bac into a string
+        $groupby = implode(', ', $group_array);
+
+        return $groupby;
+
+    } // fullGroupBy
 } // if
 
 // ****************************************************************************
@@ -3196,8 +3254,6 @@ if (!function_exists('getPatternId')) {
                 if (isset($_SESSION['pages'][$script_id])) {
             	    $pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
                 } else {
-
-
                     $pattern_id = 'unknown';
                 } // if
             } else {
@@ -3867,12 +3923,21 @@ if (!function_exists('isPkeyComplete')) {
         } else {
             // $where is already an array
             reset($where);  // fix for version 4.4.1
-            if (is_array(key($where))) {
-                // indexed by row, so use first row only
-                $fieldarray = $where[key($where)];
+            if (is_long(key($where))) {
+                $key = key($where);
+                if (is_array($where[$key])) {
+                    // indexed by row, so use first row only
+                    $fieldarray = $where[key($where)];
+                } else {
+                    $string = trim($where[$key]);
+                    if (preg_match('/^(OR|AND)[ ]*\(/i', $string, $regs)) {
+                        $string = substr($string, strlen($regs[0]));
+                        $string = substr($string, 0, -1);  // drop trailing ')'
+                    } // if
+                    $fieldarray = where2array($string);
+                } // if
             } else {
-                // use whole array
-                $fieldarray = $where;
+                $fieldarray = $where;  // this is an associative array
             } // if
         } // if
 
@@ -4813,7 +4878,7 @@ if (!function_exists('qualifyWhere')) {
         if ($array1[key($array1)] == '(' AND end($array1) == ')') {
         	// array begins with '(' and ends with ')', but does it have right number of 'OR's?
         	$count = array_count_values($array1);
-            if ($count['('] == $count[')'] AND $count['OR'] == $count['(']-1) {
+            if (isset($count['OR']) AND $count['('] == $count[')'] AND $count['OR'] == $count['(']-1) {
                 // set $array2 to hold multiple rows
             	$array2 = splitWhereByRow($array1);
             } else {
@@ -4850,22 +4915,11 @@ END_OF_REGEX;
         $pattern2 = <<< END_OF_REGEX
 /
 ^
-\([^\(\)]*\)                 # '(...)'
+\(.+\)                       # '(...)'
 [ ]*                         # 0 or more spaces
-(<>|<=|<|>=|>|!=|=|IN)       # comparison operators
+(<>|<=|<|>=|>|!=|=|IN|NOT IN|BETWEEN)       # comparison operators
 [ ]*                         # 0 or more spaces
-(ANY|ALL|SOME)?              # 'ANY' or 'ALL' or 'SOME' (0 or 1 times)
-[ ]*                         # 0 or more spaces
-\(                           # starts with '('
- (                           # start choice
-  \([^\(\)]*\)               # '(...)'
-  |                          # or
-  '(([^\\\']*(\\\.)?)*)'     # quoted string
-  |                          # or
-  .*?                        # anything else
- )                           # end choice
- +                           # 1 or more times
- \)                          # end with ')'
+.+                           # any characters
 /xis
 END_OF_REGEX;
 
@@ -4910,7 +4964,7 @@ END_OF_REGEX;
                     // format is: 'func(...)', so do not modify
                     $result = 'pattern1';
                 } elseif (preg_match($pattern2, $string)) {
-                    // format is: '(col1,col2)=(...)', so do not modify
+                    // format is: '(....)=...', so do not modify
                     $result = 'pattern2';
                 } elseif (preg_match($pattern3, $string)) {
                     // format: 'col = [ANY,ALL,SOME] (...)', so do not modify
@@ -4920,14 +4974,18 @@ END_OF_REGEX;
                 } else {
             	    // split element into its component parts
             		list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
-            		$array4 = array();
-            		$array4[$fieldname] = $operator.$fieldvalue;
-            		$array5 = qualifyField ($array4, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, $having_array);
-                    if (empty($array5)) {
-                        unset($array3[$ix]);  // remove this entry
+                    if (substr($fieldname, 0, 1) == '(' AND substr($fieldname, -1, 1) == ')') {
+                        // string begins with '(' and ends with ')', so leave it alone
                     } else {
-                        $key = key($array5);
-                        $array3[$ix] = $key.$array5[$key];
+            		    $array4 = array();
+            		    $array4[$fieldname] = $operator.$fieldvalue;
+            		    $array5 = qualifyField ($array4, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, $having_array);
+                        if (empty($array5)) {
+                            unset($array3[$ix]);  // remove this entry
+                        } else {
+                            $key = key($array5);
+                            $array3[$ix] = $key.$array5[$key];
+                        } // if
                     } // if
                 } // if
             } // foreach
@@ -5038,7 +5096,35 @@ if (!function_exists('removeDuplicateFromSelect')) {
     function removeDuplicateFromSelect ($sql_select)
     // remove duplicated field names from the select string.
     {
-        $select_array = extractFieldNamesAssoc($sql_select);
+        $select_array     = extractFieldNamesAssoc($sql_select);
+        $expression_array = extractAliasNames($sql_select);  // alias = epression
+
+        $select_keys = array_keys($select_array);   // array of field names, which may be qualified
+        $select_keys_unq = $select_keys;            // array of field names, which will be unqualified
+
+        foreach ($select_array as $alias => $original) {
+            if ($alias == $original) {
+                $key1 = array_search($alias, $select_keys);
+                if ($substring = strrchr($alias, '.')) {
+                    $alias = ltrim($substring, '.');    // contains 'table.field', so remove the tablename
+                    // see if this unqualified name already exists in the array
+                    $key2 = array_search($alias, $select_keys_unq);
+                    if ($key2 === false) {
+                        // not found
+                    } else {
+                        $qname = $select_keys[$key2];   // found, so find the qualified name
+                        unset($select_array[$qname]);   // remove it from $select_array
+                    } // if
+                    $select_keys_unq[$key1] = $alias;   // replace qualified name with unqualified version
+                } // if
+                if (array_key_exists($alias, $expression_array)) {
+                    // fieldname exists as an expression, so remove fieldname
+                    unset($select_array[$alias]);
+                } // if
+            } // if
+        } // foreach
+
+        // rebuild SELECT string using amended array
         $sql_select = '';
         foreach ($select_array as $alias => $original) {
         	if (!empty($sql_select)) {
@@ -5093,6 +5179,30 @@ if (!function_exists('removeDuplicateNameFromSelect')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('remove_directory')) {
+    function remove_directory ($directory)
+    // remove/delete the specified directory.
+    {
+        $iterator = new DirectoryIterator ( $directory );
+        foreach ( $iterator as $info ) {
+            if ($info->isDot ()) {
+                // do nothing
+            } elseif ($info->isFile ()) {
+                $res = unlink($info->getPathname());
+            } elseif ($info->isDir ()) {
+                // remove subdirectory
+                $res = remove_directory ($info->getPathname());
+            } // if
+        } // foreach
+
+        $res = rmdir($directory);
+
+        return $res;
+
+    } // remove_directory
+} // if
+
+// ****************************************************************************
 if (!function_exists('reduceOrderBy')) {
     function reduceOrderBy ($orderby)
     // reduce 'table.column1, table.column2, ...' to 'column1'
@@ -5117,7 +5227,6 @@ if (!function_exists('reduceOrderBy')) {
 
     } // reduceOrderBy
 } // if
-
 
 // ****************************************************************************
 if (!function_exists('removeStrayAndOrs')) {
@@ -5580,6 +5689,54 @@ if (!function_exists('return_bytes')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('selectAllColumns')) {
+    function selectAllColumns ($sql_select, $fieldspec, $tablename)
+    // replace '*' (all columns) with a list of columns names
+    {
+        $pattern = <<< END_OF_REGEX
+/
+(                       # start choice
+(?<count>\(\*\))        # '(*)', named pattern
+|                       # or
+^\*                     # begins with '*'
+|                       # or
+\w+\.\*                 # contains 'tablename.*'
+)                       # end choice
+/xism
+END_OF_REGEX;
+
+        if (!preg_match($pattern, $sql_select, $regs, PREG_OFFSET_CAPTURE)) {
+            return $sql_select;  // nothing to change
+        } // if
+
+        if (isset($regs['count'])) {
+            return $sql_select;  // found 'COUNT (*)' so ignore it
+        } // if
+
+        $found  = $regs[0][0];
+        $offset = $regs[0][1];
+        $namearray = explode('.', $found);
+        if (count($namearray) > 0) {
+            // $namearray[0] contains a table name
+        } // if
+
+        $fieldnames = array_keys($fieldspec);
+        foreach ($fieldnames as &$fieldname) {
+            $fieldname = $tablename.'.'.$fieldname;  // qualify each field with the tablename
+        } // foreach
+        reset($fieldnames);
+
+        // build string of column name from $fieldspec
+        $list = implode(', ', $fieldnames);
+
+        $sql_select = substr_replace($sql_select, $list, $offset, strlen($found));
+
+        return $sql_select;
+
+    } // selectAllColumns
+} // if
+
+// ****************************************************************************
 if (!function_exists('selection2null')) {
     function selection2null ($pkeyarray)
     // create WHERE clause with each pkey field set to NULL.
@@ -5984,6 +6141,8 @@ if (!function_exists('splitNameOperatorValue')) {
  \([^\(\)]*\)                # '(...)'
 |                            # or
  '(([^\\\']*(\\\.)?)*)'      # quoted string
+|                            # or
+\(CASE[ ].+?([ ]END\))+      # '(CASE ... END)[ END)]'
 )                            # end choice
 ~xi
 END_OF_REGEX;
@@ -6060,18 +6219,23 @@ END_OF_REGEX;
         if (empty($regs)) {
             $fieldname = null;
         } else {
-        	$fieldname = strtolower($regs[0]);
+        	$fieldname = $regs[0];
             $where = substr($where, strlen($fieldname));    // remove name from string
 
-            if (preg_match('/(NOT[ ]+EXISTS|EXISTS)/i', $fieldname)) {
-            	// expression is 'EXISTS (SELECT ....), so cannot be split
-            	$where = null;
-            	return array(null, null, null);
-            } // if
+            if (substr($fieldname, 0, 1) == '(' AND substr($fieldname, -1, 1) == ')') {
+                // string begins with '(' and ends with ')', so leave it alone
+            } else {
+                $fieldname = strtolower($fieldname);
+                if (preg_match('/(NOT[ ]+EXISTS|EXISTS)/i', $fieldname)) {
+            	    // expression is 'EXISTS (SELECT ....), so cannot be split
+            	    $where = null;
+            	    return array(null, null, null);
+                } // if
 
-            if (is_numeric($fieldname) AND $fieldname == (int)$fieldname) {
-                // convert this into a quoted string so that it does not get confused with an index in array2where()
-            	$fieldname = "'$fieldname'";
+                if (is_numeric($fieldname) AND $fieldname == (int)$fieldname) {
+                    // convert this into a quoted string so that it does not get confused with an index in array2where()
+            	    $fieldname = "'$fieldname'";
+                } // if
             } // if
         } // if
 
@@ -6978,26 +7142,36 @@ END_OF_REGEX;
         $pattern1b = <<< END_OF_REGEX
 ~
 ^
-(            # start group
- (           # start choice
-  \w+\(\)    # function()
-  |          # or
-  \w+        # word
- )           # end choice
- [,]*        # optional comma
- [ ]*        # optional space
-)+           # end group, 1 or more times
+(               # start group
+ (              # start choice
+  \w+\(\)       # function()
+  |             # or
+  \w+(\.\w+)?   # word [.word]
+ )              # end choice
+ [,]*           # optional comma
+ [ ]*           # optional space
+)+              # end group, 1 or more times
 ~xism
 END_OF_REGEX;
 
         $pattern1c = <<< END_OF_REGEX
 ~
 ^
-,
+(,|\))          # ',' or ')'
 ~xi
 END_OF_REGEX;
 
-        $pattern2 = <<< END_OF_REGEX
+        $pattern2a = <<< END_OF_REGEX
+/
+^                              # begins with
+[ ]*                           # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)            # comparison operators
+[ ]*                           # 0 or more spaces
+\([ ]*select[ ]+               # '(SELECT ...'
+/xism
+END_OF_REGEX;
+
+        $pattern2b = <<< END_OF_REGEX
 /
 ^                              # begins with
 [ ]*                           # 0 or more spaces
@@ -7017,6 +7191,7 @@ END_OF_REGEX;
         $where = trim(preg_replace("/\s+/", " ", $where));  // replace tabs and newlines with ' '
         $output = array();
         while (!empty($where)) {
+            $where = trim($where);
             if (!$result = preg_match($pattern1, $where, $regs)) {
             	if (!$result = preg_match($pattern1a, $where, $regs)) {
 	                if (!$result = preg_match($pattern1b, $where, $regs)) {
@@ -7049,11 +7224,16 @@ END_OF_REGEX;
                 // full expression is '(word ...) operator value'
                 $found .= findClosingParenthesis($where);  // extract '(word ...)'
                 // now look for 'operator value'
-                if (!$result = preg_match($pattern2, $where, $regs)) {
+                if ($result = preg_match($pattern2a, $where, $regs)) {
+                    // found '= (SELECT ...', so this is part of same expression
+                    $found .= findClosingParenthesis($where);
+
+                } elseif ($result = preg_match($pattern2b, $where, $regs)) {
+                    $found .= $regs[0];
+                    $where = trim(substr($where, strlen($regs[0])));
+                } else {
                     trigger_error("Cannot extract token (operator+value) from: '$where'", E_USER_ERROR);
                 } // if
-                $found .= $regs[0];
-                $where = trim(substr($where, strlen($regs[0])));
             } // if
 
             if (trim($found) == ',') {

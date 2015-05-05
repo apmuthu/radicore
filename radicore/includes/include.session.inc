@@ -182,7 +182,7 @@ function childForm ($post, $object_array, $where=null)
 
             // get current data from this object
             $fieldarray = $dbobject->getFieldArray();
-            if (is_long(key($fieldarrsay))) {
+            if (is_long(key($fieldarray))) {
                 $current_row = $fieldarray[$offset-1];  // extract current row from array of rows
             } else {
                 $current_row = $fieldarray;  // only contains one row
@@ -320,6 +320,9 @@ function chooseButton ($postarray, $dbobject, $objectname='dbobject')
     $prev_script = getPreviousScript();
     $prev_task   = $_SESSION['pages'][$prev_script]['task_id'];
 
+    $errors   = array();
+    $messages = array();
+
     if (isset($postarray['choosenull'])) {
         // return a NULL selection
         $selection = selection2null($dbobject->getPkeyNames());
@@ -340,21 +343,29 @@ function chooseButton ($postarray, $dbobject, $objectname='dbobject')
         // convert selection into SQL where format
         $pkey_array = $dbobject->getPkeyArray(null, $task_array);
         $selection = selection2where($pkey_array, $postarray['select']);
-        if (is_True($_SESSION['selection_lock'])) {
-            // save this selection for next activation
-        	$dbobject->select_string = $selection;
-        	// serialise object contents for saving in session array
-        	$GLOBALS['script_vars'][$objectname] = serialize($dbobject);
-            $_SESSION['pages'][$PHP_SELF][$curr_task] = $GLOBALS['script_vars'];
+        // perform any validation or processing on whatever has been selected
+        $result = $dbobject->validateChooseButton($selection, $postarray['select']);
+        $errors   = $dbobject->errors;
+        $messages = $dbobject->messages;
+        if (empty($errors)) {
+            if (is_True($_SESSION['selection_lock'])) {
+                // save this selection for next activation
+        	    $dbobject->select_string = $selection;
+        	    // serialise object contents for saving in session array
+        	    $GLOBALS['script_vars'][$objectname] = serialize($dbobject);
+                $_SESSION['pages'][$PHP_SELF][$curr_task] = $GLOBALS['script_vars'];
+            } // if
+            // send selection back to the previous script
+            $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+            scriptPrevious(null, null, 'choose');
         } // if
-        // send selection back to the previous script
-        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-        scriptPrevious(null, null, 'choose');
 
     } else {
         $messages[] = getLanguageText('sys0081'); // 'Nothing has been selected yet.'
-        return $messages;
+        //return $messages;
     } // if
+
+    return array($errors, $messages);
 
 } // choose button
 
@@ -899,7 +910,7 @@ function initSession($save_session_data=array())
         } // if
     } // if
 
-	// look for session variables associated with the current script
+    // look for session variables associated with the current script
     if (isset($_SESSION['pages'][$PHP_SELF])) {
         if (isset($_SESSION['pages'][$PHP_SELF]['task_id'])) {
             $task_id     = $_SESSION['pages'][$PHP_SELF]['task_id'];
@@ -1094,7 +1105,13 @@ function initSession($save_session_data=array())
 	            } // if
 	        } // foreach
 	    } // if
-	    if ($_GET['action'] == 'logout' or $_GET['action'] == 'logout_all') {
+	    if ($_GET['action'] == 'logout' OR $_GET['action'] == 'logout_all') {
+            if (!empty($_SESSION['logon_user_id'])) {
+                // perform any logout processing for the current user
+                $logon_user_id = $_SESSION['logon_user_id'];
+                $logonOBJ = RDCsingleton::getInstance('logon');
+                $errors = $logonOBJ->user_logoff($logon_user_id);
+            } // if
 	        // clear current session data
 	        $_SESSION = array();
 	        $session_obj->destroy(session_id());
@@ -1129,6 +1146,13 @@ function initSession($save_session_data=array())
 		    $_SESSION['cookie_data']['logon_screen_'.$session_name] = $logon_screen;
             // save this session data NOW!
             session_write_close();
+
+            if (!empty($_SESSION['logon_user_id'])) {
+                // perform any logout processing for the current user
+                $logon_user_id = $_SESSION['logon_user_id'];
+                $logonOBJ = RDCsingleton::getInstance('logon');
+                $errors = $logonOBJ->user_new_session($logon_user_id);
+            } // if
 
             // now restart the current script
             if (is_True($_SERVER['HTTPS'])) {
@@ -2528,7 +2552,11 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                 // now go forwards to a new script
                 $where     =& $first['where'];
                 $selection =& $first['selection'];
-                $errors    = scriptNext($first['task_id'], $where, $selection);
+                $task_array = array();
+                if (isset($first['settings'])) {
+                    $task_array['settings'] = $first['settings'];
+                } // if
+                $errors    = scriptNext($first['task_id'], $where, $selection, $task_array);
                 if (!empty($errors)) {
                     return $errors;
                 } // if

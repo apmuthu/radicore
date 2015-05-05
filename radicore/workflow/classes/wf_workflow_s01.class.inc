@@ -125,10 +125,13 @@ class wf_workflow_s01 extends wf_workflow
             $place_type    = $place['place_type'];
             $inward_count  = 0;
             $outward_count = 0;
-            $dbarc->sql_select  = "wf_place.workflow_id, wf_place.place_id, wf_arc.direction, wf_arc.arc_type, count(arc_type) as arc_count";
+            $dbarc->sql_select  = "wf_place.workflow_id, wf_place.place_id, wf_arc.direction, wf_arc.arc_type";
+            //$dbarc->sql_select .= ", count(arc_type) as arc_count";
+            $dbarc->sql_select .= ", (SELECT count(arc_type) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND place_id='$place_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS arc_count";
             $dbarc->sql_from    = "wf_place "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
-            $dbarc->sql_groupby = "wf_place.workflow_id, wf_place.place_id, direction, arc_type";
+            //$dbarc->sql_groupby = "wf_place.workflow_id, wf_place.place_id, direction, arc_type";
+            $dbarc->sql_groupby = '';
             $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND place_id='$place_id'");
             foreach ($arc_data as $arc) {
@@ -136,10 +139,10 @@ class wf_workflow_s01 extends wf_workflow
                 if ($arc['direction'] == 'OUT') $outward_count++;
                 switch ($arc['arc_type']) {
                     case 'SEQ':
-                        if ($arc['arc_count'] > 1) {
-                            // "Too many arcs of type 'Sequential' at place '$place_name'"
-                            $errors[] = getLanguageText('e0028', $place_name);
-                        } // if
+                        //if ($arc['arc_count'] > 1) {
+                        //    // "Too many arcs of type 'Sequential' at place '$place_name'"
+                        //    $errors[] = getLanguageText('e0028', $place_name);
+                        //} // if
                         break;
                     case 'OR-SPLIT-E':
                         if ($arc['direction'] != 'OUT') {
@@ -227,10 +230,15 @@ class wf_workflow_s01 extends wf_workflow
             $outward_count   = 0;
             $inward_count_by_type  = array();
             $outward_count_by_type = array();
-            $dbarc->sql_select  = "wf_transition.workflow_id, wf_transition.transition_id, wf_arc.direction, wf_arc.arc_type, count(wf_arc.pre_condition) as guard_count, count(arc_type) as arc_count";
+            $dbarc->sql_select  = "wf_transition.workflow_id, wf_transition.transition_id, wf_arc.direction, wf_arc.arc_type";
+            //$dbarc->sql_select .= ", count(wf_arc.pre_condition) as guard_count";
+            $dbarc->sql_select .= ", (SELECT count(pre_condition) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS guard_count";
+            //$dbarc->sql_select .= ", count(arc_type) as arc_count";
+            $dbarc->sql_select .= ", (SELECT count(arc_type) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS arc_count";
             $dbarc->sql_from    = "wf_transition "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_transition.workflow_id AND wf_arc.transition_id=wf_transition.transition_id) ";
-            $dbarc->sql_groupby = "wf_transition.workflow_id, wf_transition.transition_id, direction, arc_type";
+            //$dbarc->sql_groupby = "wf_transition.workflow_id, wf_transition.transition_id, direction, arc_type";
+            $dbarc->sql_groupby = '';
             $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND transition_id='$transition_id'");
             foreach ($arc_data as $arc) {

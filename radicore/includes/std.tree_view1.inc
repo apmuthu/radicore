@@ -54,6 +54,8 @@ if (isset($script_vars['dbobject'])) {
         // see if any action is required when being restarted
         $dbobject->restart($return_from, $return_action);
     } // if
+    // get current data from this instance
+    $fieldarray = $dbobject->getFieldArray();
 } else {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -69,7 +71,10 @@ if (isset($script_vars['dbobject'])) {
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbobject, 'dbobject');
+    list($choose_errors, $messages) = chooseButton($_POST, $dbobject, 'dbobject');
+    if (!empty($choose_errors)) {
+        $errors[$dbobject->getClassName()] = $choose_errors;
+    } // if
 } // if
 
 if (!empty($_POST)) {
@@ -80,67 +85,82 @@ if (!empty($_POST)) {
     } // if
 } // if
 
-// look for optional instructions from previous script
-if (!empty($instruction)) {
-    $dbobject->setInstruction($instruction);
-} // if
+if (!empty($errors)) {
+    if (isset($_POST['select'])) {
+        // reset 'selected' checkboxes in $fieldarray so that they show up in the screen
+        foreach ($fieldarray as $rownum => $rowdata) {
+            // note that $rownum start at 1 while $fieldarray starts at zero
+            if (isset($_POST['select'][$rownum+1])) {
+                $fieldarray[$rownum]['selected'] = true;
+            } else {
+                unset($fieldarray[$rownum]['selected']);
+            } // if
+        } // foreach
+        $dbobject->setFieldArray($fieldarray);
+    } // if
+} else {
+    // look for optional instructions from previous script
+    if (!empty($instruction)) {
+        $dbobject->setInstruction($instruction);
+    } // if
 
-if (isset($_SESSION['rowsperpage'])) {
-    $dbobject->setRowsPerPage($_SESSION['rowsperpage']);
-} // if
+    if (isset($_SESSION['rowsperpage'])) {
+        $dbobject->setRowsPerPage($_SESSION['rowsperpage']);
+    } // if
 
-if (isset($_GET['pagesize'])) {
-    $dbobject->setRowsPerPage($_GET['pagesize']);
-    $_SESSION['rowsperpage'] = $_GET['pagesize'];
-} // if
+    if (isset($_GET['pagesize'])) {
+        $dbobject->setRowsPerPage($_GET['pagesize']);
+        $_SESSION['rowsperpage'] = $_GET['pagesize'];
+    } // if
 
-// obtain the required page number (optional)
-if (isset($_GET['page'])) {
-    $dbobject->setPageNo($_GET['page']);
-} // if
+    // obtain the required page number (optional)
+    if (isset($_GET['page'])) {
+        $dbobject->setPageNo($_GET['page']);
+    } // if
 
-// get list of expanded nodes from session data
-$expanded = $dbobject->getExpanded();
+    // get list of expanded nodes from session data
+    $expanded = $dbobject->getExpanded();
 
-// look for instruction to expand a single node, or ALL nodes
-if (isset($_GET['expand'])) {
-    // add this node number to the list
-    $expanded[$_GET['expand']] = true;
-} // if
+    // look for instruction to expand a single node, or ALL nodes
+    if (isset($_GET['expand'])) {
+        // add this node number to the list
+        $expanded[$_GET['expand']] = true;
+    } // if
 
-if (isset($_POST['expand'])) {
-    $expanded = 'ALL';  // expand all nodes
-} elseif (empty($expanded)) {
-    if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+    if (isset($_POST['expand'])) {
         $expanded = 'ALL';  // expand all nodes
+    } elseif (empty($expanded)) {
+        if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+            $expanded = 'ALL';  // expand all nodes
+        } // if
     } // if
-} // if
 
-// look for instruction to collapse a single node, or ALL nodes
-if (isset($_GET['collapse'])) {
-    // remove this node number from the list
-    if (is_array($expanded)) {
-        unset($expanded[$_GET['collapse']]);
+    // look for instruction to collapse a single node, or ALL nodes
+    if (isset($_GET['collapse'])) {
+        // remove this node number from the list
+        if (is_array($expanded)) {
+            unset($expanded[$_GET['collapse']]);
+        } // if
     } // if
-} // if
 
-if (isset($_POST['collapse'])) {
-    // remove all nodes from the list
-    $expanded = null;
-} // if
+    if (isset($_POST['collapse'])) {
+        // remove all nodes from the list
+        $expanded = null;
+    } // if
 
-// get data for the database table, starting with the root node(s)
-$fieldarray = $dbobject->getNodeData($expanded, null);
+    // get data for the database table, starting with the root node(s)
+    $fieldarray = $dbobject->getNodeData($expanded, null);
 
-if ($dbobject->errors) {
-	$errors[$dbobject->getClassName()] = $dbobject->getErrors();
-} // if
+    if ($dbobject->errors) {
+	    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+    } // if
 
-if ($dbobject->getNumRows() < 1) {
-    $messages[] = getLanguageText('sys0085'); // 'Nothing retrieved from the database.'
-} // if
-if (isset($_GET['action'])) {
-    $fieldarray = $dbobject->setAction($_GET['action']);
+    if ($dbobject->getNumRows() < 1) {
+        $messages[] = getLanguageText('sys0085'); // 'Nothing retrieved from the database.'
+    } // if
+    if (isset($_GET['action'])) {
+        $fieldarray = $dbobject->setAction($_GET['action']);
+    } // if
 } // if
 
 // get pagination details

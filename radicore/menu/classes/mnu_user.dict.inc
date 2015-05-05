@@ -1,5 +1,5 @@
 <?php
-    // file created on August 25, 2014, 1:28 pm
+    // file created on May 2, 2015, 3:01 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',

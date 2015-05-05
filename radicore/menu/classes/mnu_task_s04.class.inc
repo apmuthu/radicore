@@ -47,6 +47,8 @@ class mnu_task_s04 extends mnu_task
     {
         $pattern_id = getPatternId();
 
+        $where_array = where2array($where, null, false);  // do not lose '!=' operator
+
         if (preg_match('/^popup/i', $pattern_id)) {
             if ($this->global_access) {
                 // if global_access is ON then all tasks can be accessed without restriction

@@ -71,7 +71,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action);
+        $dbouter->restart($return_from, $return_action, $return_string);
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
@@ -115,7 +115,7 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle = unserialize($script_vars['dbmiddle']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbmiddle->restart($return_from, $return_action);
+        $dbmiddle->restart($return_from, $return_action, $return_string);
     } // if
     // get data from previous instance
     $middle_data = $dbmiddle->getFieldArray();
@@ -152,7 +152,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action);
+        $dbinner->restart($return_from, $return_action, $return_string);
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
@@ -181,9 +181,18 @@ if (isset($script_vars['dbinner'])) {
     $null = $dbinner->initialise($original_where, $original_selection);
 } // if
 
+// make each object available to its parent or child
+$dbouter->setChildObject($dbmiddle);
+$dbmiddle->setParentObject($dbouter);
+$dbmiddle->setChildObject($dbinner);
+$dbinner->setParentObject($dbmiddle);
+
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose'])) {
-    $messages = chooseButton($_POST, $dbinner, 'dbinner');
+    list($choose_errors, $messages) = chooseButton($_POST, $dbinner, 'dbinner');
+    if (!empty($choose_errors)) {
+        $errors[$dbinner->getClassName()] = $choose_errors;
+    } // if
 } // if
 
 if (!empty($_POST)) {
@@ -279,7 +288,7 @@ if (empty($outer_data)) {
         // errors are keyed by object name
         $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
     } // if
-    if ($dbmiddle->getNumRows() == 0) {
+    if ($dbmiddle->getNumRows() == 0 AND !$dbmiddle->allow_zero_rows) {
         $errors[] = getLanguageText('sys0088', strtoupper($middle_table)); // 'No entries found on $middle_table'
         if (array_key_exists('choose', $act_buttons)) {
             // this is unusable, so remove it
@@ -332,7 +341,7 @@ if (isset($_GET['page'])) {
 // merge OUTER and MIDDLE where to get selection criteria for INNER
 $inner_where = mergeWhere($where, $middle_where);
 
-if ($dbmiddle->numrows == 0) {
+if ($dbmiddle->numrows == 0 AND !$dbmiddle->allow_zero_rows) {
     $dbinner->setFieldArray(null);
     $inner_data = array();
 } else {
@@ -359,6 +368,7 @@ if ($dbmiddle->numrows == 0) {
             unset($act_buttons['choose']);
         } // if
     } // if
+    $inner_data = $dbinner->getExtraData($inner_data);
 } // if
 
 $messages = array_merge($messages, $dbouter->getMessages());
@@ -366,7 +376,7 @@ $messages = array_merge($messages, $dbmiddle->getMessages());
 $messages = array_merge($messages, $dbinner->getMessages());
 
 if (isset($_GET['action'])) {
-    $fieldarray = $dbinner->setAction($_GET['action']);
+    $inner_data = $dbinner->setAction($_GET['action']);
 } // if
 
 // check for only one row being found in POPUP mode

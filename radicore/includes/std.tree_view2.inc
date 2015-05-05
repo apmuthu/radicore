@@ -76,7 +76,10 @@ if (isset($script_vars['dbinner'])) {
 
 // the 'choose' button should only be available in popup screens
 if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
-    $messages = chooseButton($_POST, $dbinner, 'dbinner');
+    list($choose_errors, $messages) = chooseButton($_POST, $dbinner, 'dbinner');
+    if (!empty($choose_errors)) {
+        $errors[$dbinner->getClassName()] = $choose_errors;
+    } // if
 } // if
 
 // create a class instance for the outer database table
@@ -164,60 +167,75 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 $pkeynames = $dbouter->getPkeyNamesAdjusted();
 $where = array2where($outer_data, $pkeynames, $dbouter);
 
-// look for optional instructions from previous script
-if (!empty($instruction)) {
-    $dbinner->setInstruction($instruction);
-} // if
+if (!empty($errors)) {
+    if (isset($_POST['select'])) {
+        // reset 'selected' checkboxes in $inner_data so that they show up in the screen
+        foreach ($inner_data as $rownum => $rowdata) {
+            // note that $rownum start at 1 while $fieldarray starts at zero
+            if (isset($_POST['select'][$rownum+1])) {
+                $inner_data[$rownum]['selected'] = true;
+            } else {
+                unset($inner_data[$rownum]['selected']);
+            } // if
+        } // foreach
+        $dbinner->setFieldArray($inner_data);
+    } // if
+} else {
+    // look for optional instructions from previous script
+    if (!empty($instruction)) {
+        $dbinner->setInstruction($instruction);
+    } // if
 
-if (isset($_SESSION['rowsperpage'])) {
-    $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
-} // if
+    if (isset($_SESSION['rowsperpage'])) {
+        $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
+    } // if
 
-if (isset($_GET['pagesize'])) {
-    $dbinner->setRowsPerPage($_GET['pagesize']);
-    $_SESSION['rowsperpage'] = $_GET['pagesize'];
-} // if
+    if (isset($_GET['pagesize'])) {
+        $dbinner->setRowsPerPage($_GET['pagesize']);
+        $_SESSION['rowsperpage'] = $_GET['pagesize'];
+    } // if
 
-// obtain the required page number (optional)
-if (isset($_GET['page'])) {
-    $dbinner->setPageNo($_GET['page']);
-} // if
+    // obtain the required page number (optional)
+    if (isset($_GET['page'])) {
+        $dbinner->setPageNo($_GET['page']);
+    } // if
 
-// get list of expanded nodes from session data
-$expanded = $dbinner->getExpanded();
+    // get list of expanded nodes from session data
+    $expanded = $dbinner->getExpanded();
 
-// look for instruction to expand a single node, or ALL nodes
-if (isset($_GET['expand'])) {
-    // add this node number to the list
-    $expanded[$_GET['expand']] = true;
-} // if
+    // look for instruction to expand a single node, or ALL nodes
+    if (isset($_GET['expand'])) {
+        // add this node number to the list
+        $expanded[$_GET['expand']] = true;
+    } // if
 
-if (isset($_POST['expand'])) {
-    $expanded = 'ALL';  // expand all nodes
-} elseif (empty($expanded)) {
-    if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+    if (isset($_POST['expand'])) {
         $expanded = 'ALL';  // expand all nodes
+    } elseif (empty($expanded)) {
+        if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
+            $expanded = 'ALL';  // expand all nodes
+        } // if
     } // if
-} // if
 
-// look for instruction to collapse a single node, or ALL nodes
-if (isset($_GET['collapse'])) {
-    // remove this node number from the list
-    if (is_array($expanded)) {
-        unset($expanded[$_GET['collapse']]);
+    // look for instruction to collapse a single node, or ALL nodes
+    if (isset($_GET['collapse'])) {
+        // remove this node number from the list
+        if (is_array($expanded)) {
+            unset($expanded[$_GET['collapse']]);
+        } // if
     } // if
-} // if
-if (isset($_POST['collapse'])) {
-    // remove all nodes from the list
-    $expanded = null;
-} // if
+    if (isset($_POST['collapse'])) {
+        // remove all nodes from the list
+        $expanded = null;
+    } // if
 
-// get data for the inner table
-// we start with the root node(s) for the selected tree_type
-$inner_data = $dbinner->getNodeData($expanded, $where);
+    // get data for the inner table
+    // we start with the root node(s) for the selected tree_type
+    $inner_data = $dbinner->getNodeData($expanded, $where);
 
-if ($dbinner->errors) {
-	$errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    if ($dbinner->errors) {
+	    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+    } // if
 } // if
 
 if (count($inner_data) < 1) {

@@ -32,8 +32,11 @@ CREATE TABLE IF NOT EXISTS `wf_arc` (
   `direction` varchar(3) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'IN',
   `arc_type` varchar(10) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'SEQ',
   `pre_condition` text COLLATE utf8_unicode_ci,
-  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
-  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `condition_field` varchar(40) COLLATE utf8_unicode_ci NULL,      
+  `condition_operator` varchar(4) COLLATE utf8_unicode_ci NULL,
+  `condition_value` varchar(40) COLLATE utf8_unicode_ci NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',   
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',  
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`workflow_id`,`transition_id`,`place_id`,`direction`),
@@ -62,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `wf_case` (
   PRIMARY KEY (`case_id`),
   KEY `workflow_id` (`workflow_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -103,7 +106,7 @@ CREATE TABLE IF NOT EXISTS `wf_token` (
   PRIMARY KEY (`case_id`,`token_id`),
   KEY `place_id` (`workflow_id`,`place_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -174,4 +177,4 @@ CREATE TABLE IF NOT EXISTS `wf_workitem` (
   PRIMARY KEY (`case_id`,`workitem_id`),
   KEY `transition_id` (`workflow_id`,`transition_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
