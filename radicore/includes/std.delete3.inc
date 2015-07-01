@@ -67,9 +67,9 @@ if (!empty($stdout)) {
 } // if
 
 if (empty($errors)) {
-    $action = 'OK';
+    $action = 'delete';
 } else {
-    $action = null;
+    $action = 'fail';
 } // if
 
 // return to previous screen

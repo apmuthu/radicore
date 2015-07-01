@@ -4,7 +4,7 @@
 // Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
-class Default_Table
+abstract class Default_Table
 {
     // member variables
     var $access_count;                  // count of accesses since instantiation
@@ -137,23 +137,8 @@ class Default_Table
     var $where;                         // passed from parent form
 
     // ****************************************************************************
-    // class constructor
+    // there is no constructor in an abstract class
     // ****************************************************************************
-    function Default_Table ()
-    {
-        // save directory name of current script
-        //$this->dirname   = dirname(__file__);
-
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
-        $this->tablename   = 'default';
-        $this->dbname      = 'default';
-
-        // call this method to get original field specifications
-        // (note that they may be modified at runtime)
-        $this->fieldspec = $this->getFieldSpec_original();
-
-    } // Default_Table
 
     // ****************************************************************************
     function array2string ($array)
@@ -1427,8 +1412,16 @@ class Default_Table
         $object =& RDCsingleton::getInstance('currency_class');
 
         $object->func_currency = $fieldarray['func_currency'];
-        $object->tran_currency = $fieldarray['tran_currency'];
-        $object->exchange_rate = $fieldarray['exchange_rate'];
+        if (!empty($fieldarray['tran_currency'])) {
+            $object->tran_currency = $fieldarray['tran_currency'];
+        } else {
+            $object->tran_currency = $fieldarray['func_currency'];
+        } // if
+        if (!empty($fieldarray['exchange_rate'])) {
+            $object->exchange_rate = $fieldarray['exchange_rate'];
+        } else {
+            $object->exchange_rate = 1;
+        } // if
         $object->func_scale    = $fieldarray['func_scale'];
         $object->tran_scale    = $fieldarray['tran_scale'];
 
@@ -2446,9 +2439,10 @@ class Default_Table
             $this->audit_logging = false;
         } // if
 
-        //if (empty($this->custom_processing_object)) {
         if ($this->dbname != 'default') {
-            $this->_getCustomProcessingObject();
+            if (!is_object($this->custom_processing_object)) {
+                $this->_getCustomProcessingObject();
+            } // if
         } // if
 
         return $fieldspec;
@@ -2957,8 +2951,19 @@ class Default_Table
         $rows_per_page = $this->rows_per_page;  // save
         $pageno        = empty($this->pageno) ? 1 : $this->pageno;
 
-        // pass control to custom method
-        $fieldarray = $this->_cm_getNodeData($expanded, $where, $wherearray);
+        // get data for the selected nodes
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_getNodeData')) {
+                $fieldarray = $this->custom_processing_object->_cm_getNodeData($expanded, $where, $wherearray);
+            } // if
+        } // if
+        if ($this->errors) return;
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_getNodeData($expanded, $where, $wherearray);
+            if ($this->errors) return;
+        } // if
 
         $this->rows_per_page = $rows_per_page;  // restore
         $this->lastpage      = ceil($this->numrows/$this->rows_per_page);
@@ -2966,6 +2971,10 @@ class Default_Table
             $this->pageno = $this->lastpage;
         } else {
             $this->pageno    = $pageno;
+        } // if
+
+        if (!empty($this->select_string)) {
+            $fieldarray = $this->setSelectedRows($this->select_string, $fieldarray);
         } // if
 
         if (isset($instruction)) {
@@ -3718,9 +3727,17 @@ class Default_Table
         $this->download_mode     = '';  // 'inline' will disable option to save
 
         // call customisable method in the subclass.
-        $fieldarray = $this->_cm_initialiseFileDownload($fieldarray);
-        if (!empty($this->errors)) {
-            return FALSE;
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_initialiseFileDownload')) {
+                $fieldarray = $this->custom_processing_object->_cm_initialiseFileDownload($fieldarray);
+                if (!empty($this->errors)) return false;
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $fieldarray = $this->_cm_initialiseFileDownload($fieldarray);
+            if (!empty($this->errors)) return false;
         } // if
 
         if (!isset($fieldarray['ignore_errors'])) {
@@ -3752,12 +3769,6 @@ class Default_Table
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_initialiseFilePicker')) {
                 $fieldarray = $this->custom_processing_object->_cm_initialiseFilePicker($fieldarray, $search);
-                $this->resize_array       = $this->custom_processing_object->resize_array;
-                $this->picker_subdir      = $this->custom_processing_object->picker_subdir;
-                $this->picker_filetypes   = $this->custom_processing_object->picker_filetypes;
-                $this->image_height       = $this->custom_processing_object->image_height;
-                $this->image_width        = $this->custom_processing_object->image_width;
-                $this->cache_dir          = $this->custom_processing_object->cache_dir;
             } // if
         } // if
         if ($this->custom_replaces_standard) {
@@ -3785,13 +3796,17 @@ class Default_Table
 
         // turn array of file types into a string
         $string = '';
-        foreach ($this->picker_filetypes as $filetype) {
-             if (empty($string)) {
-                 $string = "(\." .$filetype;
-             } else {
-                 $string .= "|\." .$filetype;
-             } // if
-        } // foreach
+        if (is_string($this->picker_filetypes) AND preg_match('/^(directory)$/i', $this->picker_filetypes)) {
+            return;  // this is valid, so do not adjust it
+        } elseif (is_array($this->picker_filetypes)) {
+            foreach ($this->picker_filetypes as $filetype) {
+                 if (empty($string)) {
+                     $string = "(\." .$filetype;
+                 } else {
+                     $string .= "|\." .$filetype;
+                 } // if
+            } // foreach
+        } // if
         if (empty($string)) {
             // default is any file extension
             $string = '^([^\.])'               // begins with anything but '.'
@@ -3822,11 +3837,6 @@ class Default_Table
         // call customisable method in the subclass.
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_initialiseFileUpload')) {
-                $this->custom_processing_object->resize_array       =& $this->resize_array;
-                $this->custom_processing_object->upload_subdir      =& $this->upload_subdir;
-                $this->custom_processing_object->upload_filetypes   =& $this->upload_filetypes;
-                $this->custom_processing_object->upload_maxfilesize =& $this->upload_maxfilesize;
-                $this->custom_processing_object->upload_blacklist   =& $this->upload_blacklist;
                 $fieldarray = $this->custom_processing_object->_cm_initialiseFileUpload($fieldarray);
             } // if
         } // if
@@ -4330,8 +4340,10 @@ class Default_Table
                 if (isset($spec['task_id'])) {
                     if ($spec['task_id'] == $return_from) {
                         $found = true;
-                        // now empty the description field obtained from the foreign table
-                        $single_row[$field] = $selection;
+                        if (!is_null($selection)) {
+                            // now empty the description field obtained from the foreign table
+                            $single_row[$field] = $selection;
+                        } // if
                         break;
                     } // if
                 } // if
@@ -4854,52 +4866,6 @@ class Default_Table
     } // setInstruction
 
     // ****************************************************************************
-    function setLookupData ($input=null)
-    // fetch any lookup data and load into member variable.
-    {
-        // $input may be an array or a string
-        if (is_array($input)) {
-            reset($input);   // fix for version 4.4.1
-            if (!empty($input) and !is_string(key($input))) {
-                // indexed by row, so use only row zero
-                $fieldarray = $input[key($input)];
-            } else {
-                $fieldarray = $input;
-            } // if
-            // convert into string after removing non-Pkey fields
-            $where = array2where($fieldarray, $this->getPkeyNames());
-        } else {
-            if (!empty($input)) {
-                // convert from string to an associative array
-                $fieldarray = where2array($input, false, false);
-                // convert back into string after removing non-Pkey fields
-                $where      = array2where($fieldarray, $this->getPkeyNames());
-            } else {
-                $fieldarray = array();
-                $where      = null;
-            } // if
-        } // if
-
-        // change current table configuration (optional)
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
-                $fieldarray = $this->custom_processing_object->_cm_changeConfig($where, $fieldarray);
-            } // if
-        } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $fieldarray = $this->_cm_changeConfig($where, $fieldarray);
-        } // if
-
-        // see if any additional data is required or needs to be changed
-        $fieldarray = $this->_cm_getExtraData($where, $fieldarray);
-
-        return $fieldarray;
-
-    } // setLookupData
-
-    // ****************************************************************************
     function setOrderBy ($sql_orderby, $sql_orderby_seq=null, $toggle=true)
     // this allows a sort order to be changed by the user (see getData)
     {
@@ -5116,6 +5082,66 @@ class Default_Table
         return;
 
     } // setSqlSearch
+
+    // ****************************************************************************
+    function setSqlQuickSearch ($sql_search=null, $save=false)
+    // set additional criteria to be used in sql select
+    {
+        $array = where2array($sql_search, null, false);
+
+        // verify that only a single field is specified
+        list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($sql_search);
+        $sql_search = $fieldname.' '.trim($operator).' '.$fieldvalue;
+
+        if (array_key_exists($fieldname, $this->fieldspec)) {
+            $spec = $this->fieldspec[$fieldname];
+        } else {
+            $spec = array('type' => 'string');
+        } // if
+
+        if (!preg_match('/^(like)$/i', trim($operator))) {
+            if (preg_match('/(decimal|numeric|integer|float|real|double)/i', $spec['type'])) {
+                if (is_numeric($fieldvalue)) {
+                    if ($fieldvalue == (int)$fieldvalue) {
+                        $number = (int)$fieldvalue;
+                    } elseif ($fieldvalue == (float)$fieldvalue) {
+                        $number = (float)$fieldvalue;
+                    } else {
+                        $number = null;
+                    } // if
+                    if ((string)$fieldvalue == (string)$number) {
+                        // this is a number, so do not append the wildcard character
+                        $sql_search = $fieldname ." = " .$number;
+                    } else {
+                        // put a wildcard character at the end of the string by default
+                        $sql_search = $fieldname ." LIKE '" .addslashes($fieldvalue) ."%'";
+                    } // if
+                } // if
+            } // if
+        } // if
+
+        $this->sql_search      = $sql_search;
+        $this->sql_search_orig = $sql_search;
+
+        // this causes following variables to be reset
+        $this->pageno     = 1;
+        $this->sql_having = null;
+
+        // new selection criteria has been entered, so clear what was selected previously
+        $this->select_string = null;
+
+        if (!empty($sql_search) AND $save == true) {
+            // save this so that it appears in the search screen
+            if (!empty($this->sql_search_table)) {
+                $_SESSION['search'][$this->sql_search_table] = $sql_search;
+            } else {
+                $_SESSION['search'][$this->tablename] = $sql_search;
+            } // if
+        } // if
+
+        return;
+
+    } // setSqlQuickSearch
 
     // ****************************************************************************
     function setSqlGroupBy ($sql_groupby=null)
@@ -5570,6 +5596,7 @@ class Default_Table
         $save_sql_select = $this->sql_select;
         $save_sql_from   = $this->sql_from;
         $save_sql_search = $this->sql_search;
+        $save_sql_where  = $this->sql_where;
 
         // get array of fieldnames in the primary key
         $pkeynames = $this->getPkeyNames();
@@ -5581,6 +5608,8 @@ class Default_Table
 
             // find out if this record currently exists or not
             $count = $this->getCount($where);
+
+            $rowdata['rdc_is_link_table'] = true;  // tell next operation that this is a LINK table
 
             // perform action depending on value in $select array
             if (isset($postarray['select'][$rownum+1])) {
@@ -5597,9 +5626,12 @@ class Default_Table
                 $fieldarray[$rownum]['selected'] = '';
                 // row is marked for deletion
                 if ($count > 0) {
-                    $where = array2where($rowdata, $this->getPkeyNames());
+                    $where = array2where($rowdata, $pkeynames);
                     $olddata = $this->_dml_ReadBeforeUpdate($where);
-                    $rowdata = $this->deleteRecord($olddata[0]);
+                    if (!empty($olddata)) {
+                        $rowdata = array_merge($olddata[0], $rowdata);
+                    } // if
+                    $rowdata = $this->deleteRecord($rowdata);
                 } // if
             } // if
 
@@ -5613,6 +5645,7 @@ class Default_Table
         $this->sql_select      = $save_sql_select;
         $this->sql_from        = $save_sql_from;
         $this->sql_search_orig = $save_sql_search;
+        $this->sql_where       = $save_sql_where;
 
         // perform any custom post-update processing
         if (is_object($this->custom_processing_object)) {
@@ -5741,7 +5774,7 @@ class Default_Table
             //$fieldarray = $this->convertTimeZone($fieldarray);  // (NOTE: this is now done after the _cm_pre_updateRecord() method)
         //} // if
 
-        if (isset($this->fieldspec['rdcaccount_id'])) {
+        if (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
             if (empty($_SESSION['rdcaccount_id'])) {
                 if (preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
                     // do nothing on this table
@@ -5750,12 +5783,17 @@ class Default_Table
                     $fieldarray['rdcaccount_id'] = 1;
                 } // if
             } else {
-                if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
-                    // not allowed to update a shared record
-                    $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0189');
+                if (!isset($fieldarray['rdcaccount_id'])) {
+                    // Column 'rdcaccount_id' is missing from SELECT list
+                    $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0233');
+                } else {
+                    if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                        // not allowed to update a shared record
+                        $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0189');
+                    } // if
+                    // not allowed to change the record's account
+                    $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
                 } // if
-                // not allowed to change the record's account
-                $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
             } // if
         } // if
 
@@ -6006,14 +6044,21 @@ class Default_Table
             } // if
         } // if
 
-        if (isset($this->fieldspec['rdcaccount_id'])) {
+        if (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
             if (!empty($_SESSION['rdcaccount_id'])) {
-                if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
-                    // not allowed to delete a shared record
-                    $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0188');
+                if (!isset($fieldarray['rdcaccount_id'])) {
+                    // Column 'rdcaccount_id' is missing from SELECT list
+                    $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0233');
+                } else {
+                    if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                        // not allowed to delete a shared record
+                        $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0188');
+                    } // if
                 } // if
             } // if
         } // if
+
+        if (!empty($this->errors)) return $fieldarray;
 
         // invoke custom method(s) (may be empty)
         if (is_object($this->custom_processing_object)) {
@@ -6179,7 +6224,7 @@ class Default_Table
             } // switch
         } // foreach
 
-        if ($this->initiated_from_controller) {
+        if (empty($this->errors) AND $this->initiated_from_controller) {
             if (preg_match('/^(workflow|audit)$/i', $this->dbname) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
                 // do nothing
             } else {
@@ -6659,6 +6704,9 @@ class Default_Table
         // identify the file types that may be picked
         $this->picker_filetypes   = array();  // default is ANY file extension
         $this->picker_filetypes   = array('txt', 'bmp', 'doc');
+
+        // if a file is uploaded then return it as it it was selected.
+        $this->return_uploaded_file = true;;
 
         return $fieldarray;
 
@@ -7209,7 +7257,7 @@ class Default_Table
     function _cm_restart ($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files)
     // script is being restarted after running a child form, so check for further action.
     {
-        // customisable code goes here
+        // custom code goes here
 
         return;
 
@@ -7665,8 +7713,9 @@ class Default_Table
 
         $this->query = $DML->query;  // save this in case trigger_error() is called
 
-        $this->retry_on_duplicate_key  = false;
+        $this->retry_on_duplicate_key  = '';
         $this->update_on_duplicate_key = false;
+        $this->no_duplicate_error      = false;
         $this->allow_db_function       = array();
 
         return $array;
@@ -8065,6 +8114,7 @@ class Default_Table
                 $cpo->custom_replaces_standard  =& $this->custom_replaces_standard;
                 $cpo->default_orderby           =& $this->default_orderby;
                 $cpo->errors                    =& $this->errors;
+                $cpo->expanded                  =& $this->expanded;
                 $cpo->initial_values            =& $this->initial_values;
                 $cpo->initiated_from_controller =& $this->initiated_from_controller;
                 $cpo->lookup_data               =& $this->lookup_data;
@@ -8100,6 +8150,21 @@ class Default_Table
                 $cpo->wf_user_id                =& $this->wf_user_id;
                 $cpo->xsl_params                =& $this->xsl_params;
                 $cpo->zone                      =& $this->zone;
+
+                // these are used in std.filepicker1/fileupload1/filedownload1.inc
+                $cpo->cache_dir                 =& $this->cache_dir;
+                $cpo->download_filename         =& $this->download_filename;
+                $cpo->download_mode             =& $this->download_mode;
+                $cpo->image_height              =& $this->image_height;
+                $cpo->image_width               =& $this->image_width;
+                $cpo->picker_subdir             =& $this->picker_subdir;
+                $cpo->picker_filetypes          =& $this->picker_filetypes;
+                $cpo->resize_array              =& $this->resize_array;
+                $cpo->return_uploaded_file      =& $this->return_uploaded_file;
+                $cpo->upload_blacklist          =& $this->upload_blacklist;
+                $cpo->upload_filetypes          =& $this->upload_filetypes;
+                $cpo->upload_maxfilesize        =& $this->upload_maxfilesize;
+                $cpo->upload_subdir             =& $this->upload_subdir;
 
                 // include reference to calling object in the custom object
                 $cpo->calling_object            =& $this;
@@ -8649,6 +8714,33 @@ class Default_Table
     // in a many-link-many relationship this will assemble the SQL commands for
     // the middle (link) table.
     {
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            // this table is split by account, so account_id must be supplied in WHERE string
+            if (empty($where_array['rdcaccount_id'])) {
+                if (!empty($_SESSION['rdcaccount_id'])) {
+                    $account_id = $_SESSION['rdcaccount_id'];
+                } else {
+                    $account_id = null;
+                } // if
+                if (empty($account_id) AND preg_match('/(mnu_user|mnu_account)/', $this->tablename)) {
+                    // no account id supplied, so read everything on these tables only
+                } else {
+                    if (empty($account_id) OR $account_id == 1) {
+                        $account_id_string = "$this->inner_table.rdcaccount_id='1'";
+                    } else {
+                        $account_id_string = "$this->inner_table.rdcaccount_id IN ('1', '$account_id')";
+                    } // if
+                    if (empty($this->sql_search)) {
+                        $this->sql_search = $account_id_string;
+                    } else {
+                        if (substr_count($this->sql_search, $account_id_string) == 0) {
+                            $this->sql_search .= " AND $account_id_string";
+                        } // if
+                    } // if
+                } // if
+            } // if
+        } // if
+
         if (isset($this->link_item)) {
             // this has already been processed, so don't do it again
             return $where;
@@ -8665,7 +8757,7 @@ class Default_Table
                 $outer_table     = $reldata['parent'];
                 $outer_alias     = '';
                 break;
-            } else if (isset($reldata['alias']) and $reldata['alias'] == $this->outer_table) {
+            } elseif (isset($reldata['alias']) and $reldata['alias'] == $this->outer_table) {
                 $outer_table     = $reldata['parent'];
                 $outer_alias     = $reldata['alias'];
                 break;
@@ -8765,22 +8857,30 @@ class Default_Table
         } // if
 
         // find out if the inner table contains the 'account_id' column
-        $dbobject =& RDCsingleton::getInstance($inner_table, null, false);
-        if (isset($dbobject->fieldspec['rdcaccount_id'])) {
+        $dbinner =& RDCsingleton::getInstance($inner_table, null, false);
+        if (isset($dbinner->fieldspec['rdcaccount_id'])) {
             if (empty($inner_alias)) {
                 $account_id_string = $inner_table;
             } else {
                 $account_id_string = $inner_alias;
             } // if
+
+            $sql_select .= ", {$account_id_string}.rdcaccount_id";  // retrieve value from inner table
+
             $account_id =& $_SESSION['rdcaccount_id'];
             if (empty($account_id)) {
                 $account_id_string .= ".rdcaccount_id='1'";
             } else {
                 $account_id_string .= ".rdcaccount_id IN ('1', '$account_id')";
             } // if
-            $sql_from .= " ON ($account_id_string)";
+            // append this to current $where string as an additional filter on the INNER entity
+            if (empty($this->sql_where)) {
+                $this->sql_where  = "$account_id_string";
+            } else {
+                $this->sql_where .= " AND $account_id_string";
+            } // if
         } // if
-        unset($dbobject);
+        unset($dbinner);
 
         $sql_from  .= ' LEFT JOIN ' .$this->tablename .' ON (';
         foreach ($outer_link as $link) {

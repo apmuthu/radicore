@@ -51,14 +51,16 @@ class crs_student_lesson extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     {
-        // convert 'student=X' into 'year=Y'
-        $object =& RDCsingleton::getInstance('crs_student');
-        $object->sql_select = 'year';
-        $data = $object->getData_raw($where);
-        if (isset($data[0]['year']) and $data[0]['year'] > 0) {
-            $where = "year=" .$data[0]['year'];
-        } else {
-            $where = '';
+        if (!empty($fieldarray['student_id'])) {
+            // convert 'student=X' into 'year=Y'
+            $object =& RDCsingleton::getInstance('crs_student');
+            $object->sql_select = 'year';
+            $data = $object->getData_raw($where);
+            if (isset($data[0]['year']) and $data[0]['year'] > 0) {
+                $where = "year=" .$data[0]['year'];
+            } else {
+                $where = '';
+            } // if
         } // if
 
         $settings['select_one'] = false;

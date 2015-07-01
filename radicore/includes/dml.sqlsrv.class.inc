@@ -117,6 +117,8 @@ END_OF_PATTERN;
             $string_out = str_replace("'", "''", $string_in);
         } // if
 
+        $string_out = preg_replace('/now\(\)/i', 'SYSDATETIME()', $string_out);
+
         return $string_out;
 
     } // adjustData
@@ -823,6 +825,11 @@ END_OF_REGEX;
                         $this->server_info .= ', ' .$key.": ".$value;
                     } // if
                 } // if
+
+                $this->query = "SET IMPLICIT_TRANSACTIONS OFF";
+                $result = sqlsrv_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                // write query to log file, if option is turned on
+                logSqlQuery ($dbname, null, $this->query);
 
                 $this->query = '';
             } // if
@@ -1540,7 +1547,7 @@ END_OF_REGEX;
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $cols = '';
@@ -1594,25 +1601,30 @@ END_OF_REGEX;
             $result = sqlsrv_query($this->dbconnect, $this->query);
             if ($result === false) {
                 $errno = $this->getErrorNo();
-                if ($errno == 23505 AND !empty($this->retry_on_duplicate_key)) {
-                    // increment the specified field and try again
-                    $fieldarray[$this->retry_on_duplicate_key]++;
-                    $repeat = true;
-                    $repeat_count++;
-                    if ($repeat_count > 5) {
-                        // too many retries, so turn this feature off
-                    	$this->retry_on_duplicate_key = null;
+                if ($errno == 2627) {
+                    if (!empty($this->retry_on_duplicate_key)) {
+                        // increment the specified field and try again
+                        $fieldarray[$this->retry_on_duplicate_key]++;
+                        $repeat = true;
+                        $repeat_count++;
+                        if ($repeat_count > 5) {
+                            // too many retries, so turn this feature off
+                    	    $this->retry_on_duplicate_key = null;
+                        } // if
+
+                    } elseif (is_True($this->update_on_duplicate_key)) {
+                        // switch to 'update'
+                        $old_array = where2array($primary_key);
+                        $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
+                        return $fieldarray;
+
+                    } elseif (is_True($this->no_duplicate_error)) {
+                        // this is a duplicate, but don't fail
+                        $this->numrows = 0;
+
+                    } else {
+                        trigger_error($this, E_USER_ERROR);
                     } // if
-
-                } elseif ($errno == 23505 AND is_True($this->no_duplicate_error)) {
-                    // switch to 'update'
-                    $old_array = where2array($primary_key);
-                    $fieldarray = $this->updateRecord ($dbname, $tablename, $fieldarray, $old_array);
-                    return $fieldarray;
-
-                } elseif ($errno == 23505 AND is_True($this->no_duplicate_error)) {
-                    // this is a duplicate, but don't fail
-                    $this->numrows = 0;
 
                 } else {
             	    trigger_error($this, E_USER_ERROR);
@@ -1951,7 +1963,7 @@ END_OF_REGEX;
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {
@@ -2106,7 +2118,8 @@ END_OF_REGEX;
                                         'minvalue' => -214748.3648,
                                         'maxvalue' => 214748.3647);
         $colspecs['bit']        = array('name' => 'BIT',
-                                        'type' => 'bit');
+                                        'type' => 'bit',
+                                        'size' => 1);
         $colspecs['float']      = array('name' => 'FLOAT',
                                         'type' => 'float',
                                         'size' => 53);

@@ -654,7 +654,9 @@ if (!function_exists('array2where')) {
                             // operator is alphabetic, so insert space after fieldname
                             $string = $fieldname.' '.ltrim($fieldvalue);
                             //$string = $fieldname.' '.$operator.' '.$delimiter.$value.$delimiter;
-
+                        } elseif (preg_match('/(&|~|\^|<<|>>|\|)[ ]*[0-9]+/', $operator, $regs)) {
+                            // contains biwise operator, so insert spaces
+                            $string = $fieldname.' '.$operator.' '.$value;
                         } elseif (preg_match('/^(<>|<=|<|>=|>)/', $operator, $regs)) {
                             if (is_numeric($value)) {
                                 $delimiter = null;  // numeric values need not be delimited
@@ -1369,6 +1371,13 @@ if (!function_exists('extractOperatorValue')) {
         $pattern = <<< END_OF_REGEX
 /
 ^                            # begins with
+(                       # start choice
+ [ ]*                   # 0 or more spaces
+ (&|~|\^|<<|>>|\|)      # bitwise operators
+ [ ]*                   # 0 or more spaces
+ [0-9]+                 # 1 or more digits
+ [ ]*                   # 0 or more spaces
+)?                      # end choice, 0 or 1 times
 (                            # start choice
  <>|<=|<|>=|>|!=|=           # comparison operators
  |                           # or
@@ -1814,6 +1823,22 @@ END_OF_REGEX;
 /xis
 END_OF_REGEX;
 
+        $pattern4 = <<< END_OF_REGEX
+/
+^
+(?<bitwise>            # start named pattern
+[ ]*                   # 0 or more spaces
+(&|~|\^|<<|>>|\|)      # bitwise operators
+[ ]*                   # 0 or more spaces
+[0-9]+                 # 1 or more digits
+[ ]*                   # 0 or more spaces
+)                      # end named pattern
+(                      # start choice
+<>|<=|<|>=|>|!=|=      # comparison operators
+){1}                   # end choice, occurs once
+/xis
+END_OF_REGEX;
+
         $array_out = array();
         foreach ($array2 as $rownum => $rowdata) {
             // look for 'rdc_table_name' and change name of 'id' column if necessary
@@ -1932,6 +1957,10 @@ END_OF_REGEX;
                     	    // insert this separator before the field value
                     	    $array4[] = $prev_separator;
                     	    $prev_separator = null;
+                        } // if
+                        if (preg_match($pattern4, $operator, $regs)) {
+                            $bitwise = $regs['bitwise'];
+                            $operator = ' '.$operator;  // insert leading space
                         } // if
                         if ($qualified === true) {
                         	$array4[] = $namearray[0] .'.' .$fieldname .$operator .$fieldvalue;
@@ -2491,7 +2520,7 @@ if (!function_exists('formatNumber')) {
     function formatNumber ($input, $decimal_places=2, $strip_trailing_zero=false)
     // format number according to current locale settings.
     {
-        if (empty($input)) return;
+        if (strlen($input) == 0) return;
 
         $decimal_point  = $GLOBALS['localeconv']['decimal_point'];
         $thousands_sep  = $GLOBALS['localeconv']['thousands_sep'];
@@ -4211,6 +4240,14 @@ if (!function_exists('logStuff')) {
             $logfile = $_SERVER['DOCUMENT_ROOT'].'/error_logs/errorlog.html';  // write into default file
         } // if
 
+        if (is_bool($string)) {
+            if ($string) {
+                $string = 'TRUE';
+            } else {
+                $string = 'FALSE';
+            } // if
+        } // if
+
         $header = "\r\n<p>********** " .date('Y-m-d H:i:s') .' ';
         $header .= "function: " .$function .", line: " .$line ."</p>\r\n";
         $result = error_log("$header $string", 3, $logfile);
@@ -4610,6 +4647,9 @@ if (!function_exists('qualifyField')) {
             } elseif (preg_match('/^(true|false)$/i', $fieldname, $regs)) {
                 // this is "TRUE=..." or "FALSE=...", so it cannot be qualified
                 $output_array[] = $fieldname.$fieldvalue;
+            } elseif (preg_match("/^'.*'$/i", $fieldname, $regs)) {
+                // this is a quoted string so it cannot be qualified
+                $output_array[] = $fieldname.$fieldvalue;
             } else {
                 $namearray = explode('.', $fieldname);
             	if (isset($namearray[1])) {
@@ -4974,8 +5014,10 @@ END_OF_REGEX;
                 } else {
             	    // split element into its component parts
             		list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
-                    if (substr($fieldname, 0, 1) == '(' AND substr($fieldname, -1, 1) == ')') {
-                        // string begins with '(' and ends with ')', so leave it alone
+                    if (preg_match("/^\(.*\)$/i", $fieldname)) {
+                        // fieldname begins with '(' and ends with ')', so leave it alone
+                    } elseif (preg_match("/^'.*'$/i", $fieldname)) {
+                        // fieldname is a quoted string, so leave it alone
                     } else {
             		    $array4 = array();
             		    $array4[$fieldname] = $operator.$fieldvalue;
@@ -6147,7 +6189,19 @@ if (!function_exists('splitNameOperatorValue')) {
 ~xi
 END_OF_REGEX;
 
-        $pattern2 = <<< END_OF_REGEX
+        $pattern2a = <<< END_OF_REGEX
+/
+^                      # begins with
+[ ]*                   # 0 or more spaces
+(&|~|\^|<<|>>|\|)      # bitwise operators
+[ ]*                   # 0 or more spaces
+[0-9]+                 # 1 or more digits
+[ ]*                   # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)    # comparison operators
+/xi
+END_OF_REGEX;
+
+        $pattern2b = <<< END_OF_REGEX
 /
 ^                            # begins with
 [ ]*                         # 0 or more spaces
@@ -6240,8 +6294,11 @@ END_OF_REGEX;
         } // if
 
         // extract 'operator' from 'name|operator|value'
-        $result = preg_match($pattern2, $where, $regs);
-        if (empty($regs)) {
+        $result = preg_match($pattern2a, $where, $regs);  // look for bitwise operators
+        if (!$result) {
+            $result = preg_match($pattern2b, $where, $regs);  // look for other operators
+        } // if
+        if (!$result) {
             $operator = null;
         } else {
             $operator = $regs[0];
@@ -6622,7 +6679,7 @@ END_OF_REGEX;
             		// if $fieldname is qualified with current $tablename, then unqualify it
                 	$namearray = explode('.', $fieldname);
                 	if (!empty($namearray[1])) {
-                	    if ($namearray[0] == $tablename) {
+                	    if ($namearray[0] == $tablename OR $tablename == '*') {
                 	    	$fieldname = $namearray[1];
                 	    	$array3[$ix] = $fieldname .$operator .$fieldvalue;
                 	    } // if
@@ -7119,6 +7176,21 @@ if (!function_exists('where2indexedArray')) {
 END_OF_REGEX;
 
         $pattern1a = <<< END_OF_REGEX
+/
+^
+\w+(\.\w+)?             # word[.word]
+[ ]*                    # 0 or more spaces
+(&|~|\^|<<|>>|\|)       # bitwise operators
+[ ]*                    # 0 or more spaces
+[0-9]+                  # 1 or more digits
+[ ]*                    # 0 or more spaces
+(<>|<=|<|>=|>|!=|=)     # comparison operators
+[ ]*                    # 0 or more spaces
+[0-9]+                  # 1 or more digits
+/imsx
+END_OF_REGEX;
+
+        $pattern1b = <<< END_OF_REGEX
 ~
 ^                            # begins with
 (                            # start choice
@@ -7139,7 +7211,7 @@ END_OF_REGEX;
 ~xism
 END_OF_REGEX;
 
-        $pattern1b = <<< END_OF_REGEX
+        $pattern1c = <<< END_OF_REGEX
 ~
 ^
 (               # start group
@@ -7154,7 +7226,7 @@ END_OF_REGEX;
 ~xism
 END_OF_REGEX;
 
-        $pattern1c = <<< END_OF_REGEX
+        $pattern1d = <<< END_OF_REGEX
 ~
 ^
 (,|\))          # ',' or ')'
@@ -7195,9 +7267,11 @@ END_OF_REGEX;
             if (!$result = preg_match($pattern1, $where, $regs)) {
             	if (!$result = preg_match($pattern1a, $where, $regs)) {
 	                if (!$result = preg_match($pattern1b, $where, $regs)) {
-	                    if (!$result = preg_match($pattern1c, $where, $regs)) {
-	                        trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
-	                    } // if
+                        if (!$result = preg_match($pattern1c, $where, $regs)) {
+	                        if (!$result = preg_match($pattern1d, $where, $regs)) {
+	                            trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
+	                        } // if
+                        } // if
 	                } // if
 	        	} // if
             } // if

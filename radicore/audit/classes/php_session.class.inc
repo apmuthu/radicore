@@ -55,6 +55,8 @@ class php_session extends Default_Table
     function read ($session_id)
     // read any data for this session.
     {
+        logstuff("SESSION_ID: $session_id", 'session_'.__FUNCTION__, __LINE__);
+
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
@@ -79,6 +81,8 @@ class php_session extends Default_Table
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
+        logstuff("SESSION_ID: $session_id", 'session_'.__FUNCTION__, __LINE__);
+
         $session_id = addslashes($session_id);
 
         if (!empty($this->fieldarray)) {
@@ -90,11 +94,47 @@ class php_session extends Default_Table
 
         $count = $this->getCount("session_id='$session_id'");
 
+        // deal with any UTF-8 characters
+        //$session_data = iconv('iso-8859-1', 'UTF-8//TRANSLIT', $session_data);
+
+        if ($this->fieldspec['session_data']['type'] == 'blob') {
+            // convert string data to binary data
+            list($dbname2, $dbprefix, $dbms_engine) = findDBConfig($this->dbname);
+            switch ($dbms_engine) {
+                case 'sqlsrv':
+                    // deal with any UTF-8 characters
+                    $session_data = iconv('iso-8859-1', 'UTF-8//TRANSLIT', $session_data);
+                    // cause this column to be converted into binary
+                    $this->allow_db_function[] = 'session_data';
+                    $session_data = "CONVERT(varbinary(max),'$session_data')";
+                    //$query = "SELECT CONVERT(varbinary(max),?) AS result";
+                    //$result = null;
+                    //$params = array(&$session_data);
+                    //$session_data = '0x'.$this->executePreparedQuery($query, $params, 'string');
+                    break;
+                case 'oracle':
+
+                    break;
+                case 'pgsql':
+
+                    break;
+                case 'mysql':
+
+                    break;
+                default:
+                    // do nothing
+            } // switch
+        } // if
+
         if ($count == 0) {
             // create new record
             $array['session_id']   = $session_id;
-            $array['date_created'] = date('Y-m-d H:i:s');
-            $array['last_updated'] = date('Y-m-d H:i:s');
+            //$array['date_created'] = date('Y-m-d H:i:s');
+            //$array['last_updated'] = date('Y-m-d H:i:s');
+            $array['date_created'] = 'now()';
+            $this->allow_db_function[] = 'date_created';
+            $array['last_updated'] = 'now()';
+            $this->allow_db_function[] = 'last_updated';
             $array['session_data'] = $session_data;
             $this->update_on_duplicate_key = true;
             $this->_dml_insertRecord($array);
@@ -103,7 +143,9 @@ class php_session extends Default_Table
             if (isset($_SESSION['logon_user_id'])) {
                 $array['user_id']  = $_SESSION['logon_user_id'];
             } // if
-            $array['last_updated'] = date('Y-m-d H:i:s');
+            //$array['last_updated'] = date('Y-m-d H:i:s');
+            $array['last_updated'] = 'now()';
+            $this->allow_db_function[] = 'last_updated';
             $array['session_data'] = $session_data;
             if (isset($this->fieldarray['session_id']) AND $this->fieldarray['session_id'] == $session_id) {
             	$old_data[0] = $this->fieldarray;
@@ -126,6 +168,8 @@ class php_session extends Default_Table
         // strip off any trailing characters
         $session_id = substr($session_id, 0, $this->fieldspec['session_id']['size']);
 
+        logstuff("SESSION_ID: $session_id", 'session_'.__FUNCTION__, __LINE__);
+
         $fieldarray['session_id'] = addslashes($session_id);
         $this->_dml_deleteRecord($fieldarray);
 
@@ -138,6 +182,10 @@ class php_session extends Default_Table
     // perform garbage collection.
     {
         $count = $this->_dml_deleteSelection("last_updated < DATE_SUB(NOW(), INTERVAL $max_lifetime SECOND)");
+
+        if ($count > 0) {
+            logstuff("COUNT: $count", 'session_'.__FUNCTION__, __LINE__);
+        } // if
 
         //$now = date('Y-m-d H:i:s');
         //$count = $this->_dml_deleteSelection("last_updated < DATE_SUB('$now', INTERVAL $max_lifetime SECOND)");

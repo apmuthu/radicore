@@ -37,6 +37,9 @@ function checkSelection ($task_id, $where=null)
 
         // this is a new menu, so no tab is active yet
         unset($GLOBALS['current_menu_tab']);
+        if (empty($GLOBALS['button_text'])) {
+            $GLOBALS['button_text'] = $task_array['button_text'];
+        } // if
 
         if ($task_id == $_SESSION['start_task_id']) {
             $page_stack = array();
@@ -590,7 +593,7 @@ function getPreviousScript ($curr_task=null)
     } //if
 
     // get script_id of this entry
-    if (isset($previous)) {
+    if (!empty($previous)) {
         $script_id = $previous['script_id'];
         if ($script_id == '/menu/menu.php') {
             global $query_string;
@@ -612,7 +615,13 @@ function getPreviousTask ($script_id=null)
         $script_id = getPreviousScript();
     } // if
 
-    $task_id = $_SESSION['pages'][$script_id]['task_id'];
+    if (isset($_SESSION['pages'][$script_id]) AND is_array($_SESSION['pages'][$script_id])) {
+        $task_id = $_SESSION['pages'][$script_id]['task_id'];
+    } elseif ($script_id == '/menu/menu.php') {
+        $task_id = 'menu';
+    } else {
+        $task_id = null;
+    } // if
 
     return $task_id;
 
@@ -783,6 +792,7 @@ function initSession($save_session_data=array())
     global $script_vars;        // variables belonging to current script
     global $scrolling;          // scrolling values
     global $search;             // extra selection criteria from search screen
+    global $quicksearch;        // extra selection criteria from list screen
     global $selection;          // a selection of rows made in one screen that is passed back to another
     global $session_name;       // session name, to allow multiple sessions from the same PC
     global $settings;           // optional array of settings
@@ -796,11 +806,6 @@ function initSession($save_session_data=array())
     global $title;              // script title
     global $where;              // selection criteria, used in SQL query
     global $XSLT_client_side;   // on/off switch for client-side XSL transformations
-
-//    global $stdouth;
-//    if (isset($stdouth)) {
-//        fwrite($stdouth, "<p>include.session.inc line " .__line__ ."</p>");
-//    } // if
 
     $errors   = array();
     $messages = array();
@@ -819,6 +824,10 @@ function initSession($save_session_data=array())
     } else {
         $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     } // if
+
+    // write start details to query log file, if option is turned on
+    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
+    logstuff("PHP_SELF: $PHP_SELF", __FUNCTION__, __LINE__);
 
     if (!defined('NO_SESSION_HANDLER')) {
     	// continue with existing session, or start a new one
@@ -868,7 +877,7 @@ function initSession($save_session_data=array())
         } // if
     } // if
 
-    //logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
+    logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
 
     if ($GLOBALS['mode'] == 'protx') {
         // dealing with a payment on the PROTX server, so skip the rest
@@ -914,8 +923,8 @@ function initSession($save_session_data=array())
     if (isset($_SESSION['pages'][$PHP_SELF])) {
         if (isset($_SESSION['pages'][$PHP_SELF]['task_id'])) {
             $task_id     = $_SESSION['pages'][$PHP_SELF]['task_id'];
-            $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
             $pattern_id  = $_SESSION['pages'][$PHP_SELF]['pattern_id'];
+            $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
         } else {
             $script_vars = array();
         } // if
@@ -940,9 +949,6 @@ function initSession($save_session_data=array())
             $GLOBALS['log_sql_query'] = true;
         } // if
     } // if
-
-    // write start details to query log file, if option is turned on
-    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
 
     if (version_compare(phpversion(), '5.2.0', '>=')) {
         $_SESSION['timezone_server'] = date_default_timezone_get();
@@ -988,8 +994,9 @@ function initSession($save_session_data=array())
 
 	            logstuff("location: $location", __FUNCTION__, __LINE__);
 
-	            header('Location: ' .$location);
-	            exit;
+	            session_write_close();
+                header('Location: ' .$location);
+                exit;
     		} // if
 	    } // if
 	} // if
@@ -1052,6 +1059,7 @@ function initSession($save_session_data=array())
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
 
+            session_write_close();
             header('Location: ' .$location);
             exit;
         } // if
@@ -1102,6 +1110,7 @@ function initSession($save_session_data=array())
 	            if (preg_match('/^(menu|phpsessid)/', $cookie_name, $regs)) {
                     setcookie($cookie_name, '', time()-42000, '/');
                     $session_obj->destroy($cookie_id);
+                    //logstuff("cookie_id: $cookie_id", __FUNCTION__, __LINE__);
 	            } // if
 	        } // foreach
 	    } // if
@@ -1114,6 +1123,7 @@ function initSession($save_session_data=array())
             } // if
 	        // clear current session data
 	        $_SESSION = array();
+            logstuff("session_id: ".session_id(), __FUNCTION__, __LINE__);
 	        $session_obj->destroy(session_id());
             // go back to logon screen
             if (is_True($_SERVER['HTTPS'])) {
@@ -1234,8 +1244,9 @@ function initSession($save_session_data=array())
 
 	                    logstuff("location: $location", __FUNCTION__, __LINE__);
 
-	                    header('Location: ' .$location);
-	                    exit;
+	                    session_write_close();
+                        header('Location: ' .$location);
+                        exit;
 	                } // if
 	            } // if
 	            unset($dbobject);
@@ -1337,6 +1348,7 @@ function initSession($save_session_data=array())
 
                 logstuff("location: $location", __FUNCTION__, __LINE__);
 
+                session_write_close();
                 header('Location: ' .$location);
                 exit;
             } // if
@@ -1389,6 +1401,7 @@ function initSession($save_session_data=array())
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
 
+            session_write_close();
             header('Location: ' .$location);
             exit;
         } // if
@@ -1408,7 +1421,7 @@ function initSession($save_session_data=array())
         $page_stack = array();
     } // if
 
-    if (isset($_SESSION['page_stack'])) {
+    if (!empty($_SESSION['page_stack'])) {
         if (basename($PHP_SELF) == 'help.php') {
             // continue
         } else {
@@ -1508,6 +1521,7 @@ function initSession($save_session_data=array())
                            .getParentDIR()
                            .$PHP_SELF
                            .'?session_name=' .session_name();
+                session_write_close();
                 header('Location: ' .$location);
                 exit;
             } // if
@@ -1605,7 +1619,7 @@ function initSession($save_session_data=array())
     } else {
         if (isset($_POST['quicksearch'])) {
             // search criteria has been entered in quicksearch area
-            $search = quicksearch($_POST['quicksearch_field'], $_POST['quicksearch_value']);
+            $quicksearch = quicksearch($_POST['quicksearch_field'], $_POST['quicksearch_value']);
         } elseif (isset($script_vars['search'])) {
             // search criteria has been saved in script variables
             $search = $script_vars['search'];
@@ -1758,27 +1772,10 @@ function quickSearch ($quicksearch_field, $quicksearch_value)
         if (preg_match("/^(<>|<=|<|>=|>|!=|=)/", $quicksearch_value, $regs )) {
             // strip pattern from string and use as the operator
             $quicksearch_value = substr($quicksearch_value, strlen($regs[0]));
+            $quicksearch_value = str_replace('%', '', $quicksearch_value);  // strip wildcard character
             $search = $quicksearch_field .' ' .$regs[0] ." '" .addslashes($quicksearch_value) ."'";
         } else {
-            if (is_numeric($quicksearch_value)) {
-                if ($quicksearch_value == (int)$quicksearch_value) {
-                	$number = (int)$quicksearch_value;
-                } elseif ($quicksearch_value == (float)$quicksearch_value) {
-                    $number = (float)$quicksearch_value;
-                } else {
-                    $number = null;
-                } // if
-                if ((string)$quicksearch_value == (string)$number) {
-                    // this is a number, so do not append the wildcard character
-                    $search = $quicksearch_field ." = " .$number;
-                } else {
-                    // put a wildcard character at the end of the string by default
-                    $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."%'";
-                } // if
-            } else {
-                // put a wildcard character at the end of the string by default
-                $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."%'";
-            } // if
+            $search = $quicksearch_field ." LIKE '" .addslashes($quicksearch_value) ."%'";
         } // if
     } // if
 
@@ -2139,37 +2136,54 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     // 'script_sequence' identifies script(s) to be done before latest selection
     if (!empty($_SESSION['script_sequence'])) {
-        $first = $_SESSION['script_sequence'][0];
-        $last  = $_SESSION['script_sequence'][count($_SESSION['script_sequence'])-1];
-        // check if requested task is at head of the array already
-        if ($first['task_id'] <> $task_id) {
-            // no it is not
-            if (isset($first['script_id']) and $first['script_id'] == basename($PHP_SELF))  {
-                // first entry is current script, so new selection has been requested from this
-                // script. It therefore goes to the front of the array so it can return to the
-                // current script when it has completed.
-                $prepend['task_id'] = $task_id;
-                array_unshift($_SESSION['script_sequence'], $prepend);
-            } elseif ($last['task_id'] == $task_id) {
-            	// this task has already been added to the end of the array, so do not do it again
-            } else {
-                // add it to the end of the array
-                $append['task_id'] = $task_id;
-                if (isset($query_string)) {
-                    $append['query_string'] = $query_string;
-                    unset($query_string);
+        if ($task_id == 'menu' AND empty($page_stack)) {
+            // set this menu as first entry in page_stack so that when the script_sequence
+            // has been exhausted it will return to this menu
+            $array = where2array($query_string);
+            $menu_id   = $array['selection'];
+            $script_id = '/menu/menu.php';
+            $page_stack[$menu_id] = array('script_id' => $script_id,
+                                          'button_text' => 'Home');
+            unset($array, $query_string);
+            $_SESSION['pages'][$script_id]['task_id']              = $menu_id;
+            $_SESSION['pages'][$script_id]['pattern_id']           = 'MENU';
+            $_SESSION['pages'][$script_id][$menu_id]               = $page_stack;
+            $_SESSION['pages'][$script_id][$menu_id]['keep_data']  = 'N';
+            $_SESSION['pages'][$script_id][$menu_id]['page_stack'] = $page_stack;
+
+        } else {
+            $first = $_SESSION['script_sequence'][0];
+            $last  = $_SESSION['script_sequence'][count($_SESSION['script_sequence'])-1];
+            // check if requested task is at head of the array already
+            if ($first['task_id'] <> $task_id) {
+                // no it is not
+                if (isset($first['script_id']) and $first['script_id'] == basename($PHP_SELF))  {
+                    // first entry is current script, so new selection has been requested from this
+                    // script. It therefore goes to the front of the array so it can return to the
+                    // current script when it has completed.
+                    $prepend['task_id'] = $task_id;
+                    array_unshift($_SESSION['script_sequence'], $prepend);
+                } elseif ($last['task_id'] == $task_id) {
+            	    // this task has already been added to the end of the array, so do not do it again
+                } else {
+                    // add it to the end of the array
+                    $append['task_id'] = $task_id;
+                    if (isset($query_string)) {
+                        $append['query_string'] = $query_string;
+                        unset($query_string);
+                    } // if
+                    if (isset($where)) {
+                        $append['where'] = $where;
+                        unset($where);
+                    } // if
+                    if (!empty($messages)) {
+                        $append['messages'] = $messages;
+                        unset($messages);
+                    } // if
+                    $append['previous'] = $PHP_SELF;
+                    $_SESSION['script_sequence'][] = $append;
+                    $last = $append;
                 } // if
-                if (isset($where)) {
-                    $append['where'] = $where;
-                    unset($where);
-                } // if
-                if (!empty($messages)) {
-                    $append['messages'] = $messages;
-                    unset($messages);
-                } // if
-                $append['previous'] = $PHP_SELF;
-                $_SESSION['script_sequence'][] = $append;
-                $last = $append;
             } // if
         } // if
 
@@ -2454,8 +2468,8 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     logstuff("location: $location", __FUNCTION__, __LINE__);
 
-    header('Location: ' .$location);
     session_write_close();
+    header('Location: ' .$location);
     exit;
 
 } // scriptNext
@@ -2600,8 +2614,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             $location .= "&$query_string";
         } // if
 
-        //logstuff("location: $location", __FUNCTION__, __LINE__);
+        logstuff("location: $location", __FUNCTION__, __LINE__);
 
+        session_write_close();
         header('Location: ' .$location);
         exit;
     } else {
@@ -2624,8 +2639,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
                    .$logon_screen
                    .'?session_id=' .session_id();
 
-        //logstuff("location: $location", __FUNCTION__, __LINE__);
+        logstuff("location: $location", __FUNCTION__, __LINE__);
 
+        session_write_close();
         header('Location: ' .$location);
         exit;
     } // if

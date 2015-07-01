@@ -100,8 +100,10 @@ class csv_class
                     trigger_error("Cannot open file $csvout", E_USER_ERROR);
                 } // if
             } // if
-            if (!empty($this->byte_order_mark)) {
-                $result = fwrite($csvouth, $this->byte_order_mark);
+            if ($dbobject->numrows > 0) {
+                if (!empty($this->byte_order_mark)) {
+                    $result = fwrite($csvouth, $this->byte_order_mark);
+                } // if
             } // if
         } // if
 

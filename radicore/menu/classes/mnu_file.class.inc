@@ -6,6 +6,15 @@
 require_once 'std.table.class.inc';
 class mnu_file extends Default_Table
 {
+    var $picker_subdir = 'unknown directory';
+    var $picker_filetypes = array();
+
+    var $upload_subdir = 'unknown directory';
+    var $upload_filetypes = array();
+    var $upload_blacklist = array();
+    var $upload_maxfilesize = 1000000;
+    var $return_uploaded_file = true;
+
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
@@ -99,6 +108,9 @@ class mnu_file extends Default_Table
         // by default hyperlinks are opened directly in the browser
         $this->xsl_params['hyperlink_direct'] = 'y';
 
+        // by default if a file is uoloaded it will be returned as if it was selected
+        $this->return_uploaded_file = true;
+
         if (!empty($GLOBALS['settings']['download'])) {
         	if (is_True($GLOBALS['settings']['download'])) {
         	    // redirect hyperlinks to the download task
@@ -123,6 +135,24 @@ class mnu_file extends Default_Table
         return $rowdata;
 
     } // _cm_pre_deleteRecord
+
+    // ****************************************************************************
+    function _cm_restart ($pattern_id, $zone, $return_from, $return_action, $return_string, $return_files)
+    // script is being restarted after running a child form, so check for further action.
+    {
+        if ($return_action == 'choose') {
+            // can we return this file to the previous task?
+            $prev_task = getPreviousTask();
+            if ($prev_task == 'menu') {
+                $this->return_uploaded_file = false;    // no
+            } else {
+                $this->return_uploaded_file = true;     // yes
+            } // if
+        } // if
+
+        return;
+
+    } // _cm_restart
 
 // ****************************************************************************
 } // end class

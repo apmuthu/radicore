@@ -21,6 +21,21 @@ class mnu_task_ip_address extends Default_Table
 
     } // mnu_task_ip_address
 
+    // ****************************************************************************
+    function _cm_commonValidation ($fieldarray, $originaldata)
+    // perform validation that is common to INSERT and UPDATE.
+    {
+        if (!empty($fieldarray['ip_address'])) { //If ip_address is not empty
+            if (filter_var($fieldarray['ip_address'], FILTER_VALIDATE_IP) === false) {
+                // "This is not a valid IP address"
+                $this->errors['ip_address'] = getLanguageText('sys0207');
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_commonValidation
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

@@ -69,6 +69,7 @@
                 <p><xsl:value-of select="/root/fileupload/msg1" /> <input name="userfile" type="file" size="40" /></p>
                 <p><xsl:value-of select="/root/fileupload/msg2" /></p>
                 <p><xsl:value-of select="/root/fileupload/msg3" /></p>
+                <p><xsl:value-of select="/root/fileupload/msg4" /></p>
   
               </div>
             </div>

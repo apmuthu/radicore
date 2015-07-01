@@ -188,8 +188,8 @@ if (!empty($_FILES) and empty($errors)) {
                 $messages = array_merge($messages, $fileobject->messages);
             } // if
             if (empty($errors)) {
-                $info = new SplFileInfo($uploadfile['filepath']);
-                $file_array['url']           = realpath($uploadfile['filepath']);
+                $info = new SplFileInfo($uploadfile);
+                $file_array['url']           = realpath($uploadfile);
                 $file_array['filename_orig'] = $info->getBasename();
                 $file_array['filename']      = $info->getBasename('.'.$info->getExtension());
                 $file_array['extension']     = $info->getExtension();
@@ -220,18 +220,19 @@ if (!empty($_FILES) and empty($errors)) {
 $fieldarray['filename']    = $filename;
 $fieldarray['maxfilesize'] = $maxfilesize;
 $fieldarray['msg1']        = getLanguageText('sys0120');
+$fieldarray['msg2']        = getLanguageText('sys0246', $subdir);
 if ($maxfilesize >= 1000000) {
-	$fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize/1000000 .'M');  // megabytes
+	$fieldarray['msg3']    = getLanguageText('sys0121', $maxfilesize/1000000 .'M');  // megabytes
 } elseif ($maxfilesize >= 1000) {
-	$fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize/1000 .'K');     // kilobytes
+	$fieldarray['msg3']    = getLanguageText('sys0121', $maxfilesize/1000 .'K');     // kilobytes
 } else {
-    $fieldarray['msg2']    = getLanguageText('sys0121', $maxfilesize);               // bytes
+    $fieldarray['msg3']    = getLanguageText('sys0121', $maxfilesize);               // bytes
 } // if
 if ($filetypes != '*') {
 	if (is_array($filetypes)) {
-    	$fieldarray['msg3']    = getLanguageText('sys0122', implode(',', $filetypes));   // array of values
+    	$fieldarray['msg4']    = getLanguageText('sys0122', implode(',', $filetypes));   // array of values
     } else {
-        $fieldarray['msg3']    = getLanguageText('sys0122', $filetypes);                 // single value
+        $fieldarray['msg4']    = getLanguageText('sys0122', $filetypes);                 // single value
     } // if
 } // if
 $fileobject->setFieldArray($fieldarray);

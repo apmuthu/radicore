@@ -103,9 +103,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $messages[] = getLanguageText('sys0005', $count, strtoupper($dbobject->getTableName())); // 'N records were inserted'
 
     if (empty($errors)) {
-    	$action = 'OK';
+    	$action = 'insert';
     } else {
-        $action = null;
+        $action = 'fail';
     } // if
 
     // last, return to previous screen

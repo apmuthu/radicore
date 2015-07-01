@@ -1,5 +1,21 @@
 ﻿RADICORE for PHP - news
 
+2015-07-01, version 1.90.0
+Database changes:
+- run script "menu\sql\menu.menu_export(2015-06-23).sql" to add the 'directory(up)' task to the MENU database.
+
+Other changes:
+- fixed bug in 'validateDelete()' method within 'std.table.class.inc' which caused $errors array to be cleared out by calling '_examineWorkflowInstance()' method.
+- updated 'where2array' and 'array2where' functions within 'include.library.inc' to cater for bitwise operations on columns such as "WHERE col1 & 1 = 0".
+- fixed bug in 'dict_column.class.inc' which failed to show the size of columns of type 'bit'.
+- fixed bug in 'php_session.class.inc' where the values for 'date_created' and 'last_updated' were set using PHP dates while the date comparison in the GC method (garbage collection) used 'now()' which is the current date as known to the database server. 'date_created' and 'last_updated' are now updated using 'now()'.
+- updated all the relevant 'dml.???.class.inc' classes to convert 'now()' to the equivalent function in that DBMS.
+- fixed bug in 'std.tree1.inc' and 'std.tree2.inc' which prevented selected rows from staying selected after returning from a child task with the 'locked' option set.
+- modified 'std.filepicker1.inc' so that it will list directories instead of file if the $this->picker_filetypes property is set to the string 'directory' instead of an array of file extensions. This can be used in a task which can be added as a navigation button to a standard filepicker task to switch to a subdirectory within the current directory. See <a href="http://www.tonymarston.net/php-mysql/infrastructure-faq.html#faq162">FAQ162</a> for details.
+- added a new task called 'directory(up)' to the 'Miscellaneous' subsystem which can be added as a navigation button on a filepicker task to go up a directory level instead of down to a selected subdirectory.
+- updated 'std.fileupload1.inc' so that when it is started from a navigation button in a filepicker task it will set its directory to the current directory in that filepicker task.
+- modified the screen layout used by 'std.fileupload1.inc' so that it shows the directory into which the file will be uploaded.
+
 2015-05-05, version 1.89.0
 Database changes:
 - run script "audit\sql\mysql\alter_table(2015-03-29).sql" to alter the 'session_data' column from TEXT to BLOB.
@@ -20,7 +36,6 @@ Other changes:
 - updated 'std.validation.class.inc' to convert a boolean value from TRUE/FALSE to the equivalent 'true' or 'false' value provided in the $fieldspec array.
 - updated the WF_ARC table in the WORKFLOW database to replace the 'pre_condition' field with three separate fields to remove the need to use the 'eval()' function which could possibly be used to inject malicious code.
 - updated the MNU_USER table in the MENU database to increase the size of the 'user_password' column. This is to allow a future change to the password hashing/encryption algorithm.
-
 
 2015-03-01, version 1.88.0
 Database changes:
@@ -92,7 +107,6 @@ Other changes:
 - fixed bug in 'mnu_task.class.inc', 'mnu_menu.class.inc', 'mnu_nav_button.class.inc' and 'mnu_favourite_s04.class.inc' so that queries test for the value 'Y' instead of TRUE otherwise they will fail when using the PostgreSQL database.
 - modified 'std.tree_view1.inc' and 'std.tree_view2.inc' to allow pagination, but this is for the entries which exist at level 1 only.
 - added pattern 'OUTPUT6' to extract data from a Tree View and output it to a CSV file. 
-
 
 2014-06-01, version 1.84.0
 Database changes:

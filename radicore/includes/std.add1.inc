@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add1.inc
@@ -45,8 +45,8 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    // see if any configuration settings need to be changed
-    $fieldarray = $dbobject->changeConfig($fieldarray);
+    // redo any configuration changes
+    $fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -124,8 +124,10 @@ if (!empty($_POST)) {
                         // update was OK - return to previous screen
                         $selection = array2where($fieldarray, $dbobject->getPkeyNamesAdjusted());
                         $prev_script = getPreviousScript();
-                        $prev_task   = getPreviousTask($prev_script);
-                        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+                        if (!empty($prev_script)) {
+                            $prev_task   = getPreviousTask($prev_script);
+                            $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+                        } // if
                         $messages = array_merge($messages, $dbobject->getMessages());
                         scriptPrevious(null, $messages, 'insert', $dbobject->getInstruction(), $selection);
                     } // if

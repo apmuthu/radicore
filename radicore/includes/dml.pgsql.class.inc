@@ -1055,7 +1055,7 @@ END_OF_REGEX;
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $cols = '';
@@ -1437,7 +1437,7 @@ END_OF_REGEX;
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {

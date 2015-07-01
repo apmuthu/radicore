@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -60,8 +60,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get previously retrieved data
     $outer_data = $dbouter->getFieldArray();
-    // see if any configuration settings need to be changed
-    $outer_data = $dbouter->changeConfig($outer_data);
+    // redo any configuration changes
+    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -106,8 +106,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get previously retrieved data
     $inner_data = $dbinner->getFieldArray();
-    // see if any configuration settings need to be changed
-    $inner_data = $dbinner->changeConfig($inner_data);
+    // redo any configuration changes
+    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller

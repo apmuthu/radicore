@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $messages[] = getLanguageText('sys0004', 1, strtoupper($dbobject->tablename));
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] == 1) {
                     // last item has been deleted, so return to previous screen
-                    scriptPrevious(null, $messages, 'OK', $dbobject->getInstruction());
+                    scriptPrevious(null, $messages, 'delete', $dbobject->getInstruction());
                 } // if
             } else {
                 $dbobject->rollback();

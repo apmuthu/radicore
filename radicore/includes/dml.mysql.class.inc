@@ -951,7 +951,7 @@ class mysql
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -1325,7 +1325,7 @@ class mysql
 
         $repeat = false;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/ims';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/ims';  // function(...)
         do {
             // build update string from non-pkey fields
             $update = '';

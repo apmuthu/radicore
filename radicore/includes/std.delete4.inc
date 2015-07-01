@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($errors)) {
             if ($scrolling[$dbouter->getClassName()]['lastitem'] == 1) {
                 // last item has been deleted, so return to previous screen
-                scriptPrevious(null, null, 'OK', $dbouter->getInstruction());
+                scriptPrevious(null, null, 'delete', $dbouter->getInstruction());
             } // if
         } else {
             $dbouter->rollback();

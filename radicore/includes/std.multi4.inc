@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi4.inc
@@ -43,6 +43,8 @@ $act_buttons['submitnext'] = 'submitnext';
 $act_buttons['reset']      = 'reset';
 $act_buttons['quit']       = 'cancel';
 
+$do_retrieve = false;
+
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
 if (isset($script_vars['dbouter'])) {
@@ -54,10 +56,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // see if any configuration settings need to be changed
-    $outer_data = $dbouter->changeConfig($outer_data);
-    // refetch data for lookup lists in case they have changed
-    $null = $dbouter->setLookupData($outer_data);
+    // redo any configuration changes
+    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -88,6 +88,7 @@ if (isset($script_vars['dbouter'])) {
             $dbouter->setOrderBySeq($orderby_seq);
         } // if
     } // if
+    $do_retrieve = true;
 } // if
 
 // create a class instance for the INNER database table
@@ -101,10 +102,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
-    // see if any configuration settings need to be changed
-    $inner_data = $dbinner->changeConfig($inner_data);
-    // refetch data for lookup lists in case they have changed
-    $null = $dbinner->setLookupData($inner_data);
+    // redo any configuration changes
+    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -132,8 +131,6 @@ if (isset($script_vars['dbinner'])) {
         scriptPrevious($dbinner->getErrors());
     } // if
 } // if
-
-$do_retrieve = false;
 
 $dbouter->setChildObject($dbinner);
 $dbinner->setParentObject($dbouter);
@@ -283,118 +280,128 @@ if (!empty($_POST)) {
     $inner_data = $dbinner->getFieldArray();
 } // if
 
-// check if we are returning from a child form
-if (!empty($return_from) AND !empty($popup_object)) {
-    if (isset($selection) AND $popup_object == 'dbouter') {
-        // merge previous saved variables with selection from popup form
-        $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, null, $return_files);
-        if ($dbouter->errors) {
-            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-        } // if
-    } elseif (isset($selection) AND $popup_object == 'dbinner') {
-        // merge previous saved variables with selection from popup form
-        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-        } // if
-    } // if
-
-} elseif ($_SERVER['REQUEST_METHOD'] == 'GET' OR !empty($search) OR $do_retrieve) {
-    if (isset($scrolling)) {
-        // retrieve values from scrolling array
-        $where = $scrolling[$dbouter->getClassName()]['where'];
-        if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
-            // set index number of item to be read from current $where list
-            $dbouter->setPageNo($_GET['item']);
-        } // if
-    } // if
-
-    if (empty($where)) {
-        if ($dbouter->allow_empty_where == TRUE) {
-            // this class is allowed to read multiple records
-            if (isset($search)) {
-                // load in any search criteria
-                $dbouter->setSqlSearch($search);
+if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
+    // check if we are returning from a child form
+    if (!empty($return_from) AND !empty($popup_object)) {
+        if (isset($selection) AND $popup_object == 'dbouter') {
+            // merge previous saved variables with selection from popup form
+            $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, null, $return_files);
+            if ($dbouter->errors) {
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } else {
-            scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
+        } elseif (isset($selection) AND $popup_object == 'dbinner') {
+            // merge previous saved variables with selection from popup form
+            $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
         } // if
-    } // if
 
-    if (empty($errors)) {
-        // get data from the outer table
-        $outer_data = $dbouter->getData($where);
-        $outer_data = $dbouter->getExtraData($outer_data, $where);
-        if ($dbouter->errors) {
-            // some sort of error
-            if ($dbouter->getLastPage() <= 1) {
-                // only 1 entry requested, so return to previous script
-                scriptprevious($dbouter->getErrors(), $messages);
+    } elseif ($do_retrieve) {
+        // read OUTER entity
+        if (isset($scrolling)) {
+            // retrieve values from scrolling array
+            $where = $scrolling[$dbouter->getClassName()]['where'];
+            if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+                // set index number of item to be read from current $where list
+                $dbouter->setPageNo($_GET['item']);
+            } // if
+        } // if
+
+        if (empty($where)) {
+            if ($dbouter->allow_empty_where == TRUE) {
+                // this class is allowed to read multiple records
+                if (isset($search)) {
+                    // load in any search criteria
+                    $dbouter->setSqlSearch($search);
+                } // if
             } else {
-                // multiple entries requested, so disable SUBMIT button
-                unset($act_buttons['submitBtn']);
-                if ($dbouter->errors) {
-                    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+                scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
+            } // if
+        } // if
+
+        if (empty($errors)) {
+            // get data from the outer table
+            $outer_data = $dbouter->getData($where);
+            $outer_data = $dbouter->getExtraData($outer_data, $where);
+            if ($dbouter->errors) {
+                // some sort of error
+                if ($dbouter->getLastPage() <= 1) {
+                    // only 1 entry requested, so return to previous script
+                    scriptprevious($dbouter->getErrors(), $messages);
+                } else {
+                    // multiple entries requested, so disable SUBMIT button
+                    unset($act_buttons['submitBtn']);
+                    if ($dbouter->errors) {
+                        $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+                    } // if
                 } // if
             } // if
+            if (empty($outer_data)) {
+                scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+            } // if
+            $inner_data = $dbinner->setFieldArray(null);  // force retrieval of inner data
         } // if
-        if (empty($outer_data)) {
-            scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
-        } // if
+
+        // set variables to be included in XML output
+        $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
+        $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+        $scrolling[$dbouter->getClassName()]['where']    = $where;
+    } // if
+
+    if (isset($return_action) AND preg_match('/(insert|delete)/i', $return_action)) {
         $inner_data = $dbinner->setFieldArray(null);  // force retrieval of inner data
     } // if
 
-    // set variables to be included in XML output
-    $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
-    $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
-    $scrolling[$dbouter->getClassName()]['where']    = $where;
+    if (empty($inner_data)) {
+        // read INNER entity
+        if (isset($_GET['pagesize'])) {
+            $dbinner->setRowsPerPage($_GET['pagesize']);
+            $_SESSION['rowsperpage'] = $_GET['pagesize'];
+        } elseif (isset($_SESSION['rowsperpage'])) {
+            $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
+        } // if
 
-    if (isset($_GET['pagesize'])) {
-        $dbinner->setRowsPerPage($_GET['pagesize']);
-        $_SESSION['rowsperpage'] = $_GET['pagesize'];
-    } elseif (isset($_SESSION['rowsperpage'])) {
-        $dbinner->setRowsPerPage($_SESSION['rowsperpage']);
-    } // if
+        // obtain the required page number (optional)
+        if (isset($_GET['page'])) {
+            $dbinner->setPageNo($_GET['page']);
+        } // if
 
-    // obtain the required page number (optional)
-    if (isset($_GET['page'])) {
-        $dbinner->setPageNo($_GET['page']);
-    } // if
+        // obtain the 'orderby' field (optional)
+        if (isset($_GET['orderby'])) {
+            $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
+            $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
+        } // if
 
-    // obtain the 'orderby' field (optional)
-    if (isset($_GET['orderby'])) {
-        $string = validateSortItem('inner', $_GET['orderby'], $dbinner, $screen_structure);
-        $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
-    } // if
+        // load optional criteria from search screen
+        if (isset($search)) {
+            $dbouter->restart('search', 'search', $search);
+            $dbinner->setSqlSearch($search, true);
+        } // if
 
-    // load optional criteria from search screen
-    if (isset($search)) {
-        $dbouter->restart('search', 'search', $search);
-        $dbinner->setSqlSearch($search, true);
-    } // if
+        // get primary key of row retrieved from OUTER entity
+        $pkeynames = $dbouter->getPkeyNamesAdjusted();
+        $where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 
-    // get primary key of row retrieved from OUTER entity
-    $pkeynames = $dbouter->getPkeyNamesAdjusted();
-    $where = array2where($outer_data, $pkeynames, $dbouter, false, true);
-
-    if (!empty($outer_data)) {
-        if (empty($inner_data)) {
-            // load in current data from $outer in case it is needed
-            $dbinner->setFieldArray($outer_data);
-            // get data from the database
-            $inner_data = $dbinner->getData($where);
-            $inner_data = $dbinner->getExtraData($inner_data, $where);
-        } else {
-            if (!empty($dbinner->select_string)) {
-                $inner_data = $dbinner->setSelectedRows($dbinner->select_string, $inner_data);
+        if (!empty($outer_data)) {
+            if (empty($inner_data)) {
+                // load in current data from $outer in case it is needed
+                $dbinner->setFieldArray($outer_data);
+                // get data from the database
+                $inner_data = $dbinner->getData($where);
+                $inner_data = $dbinner->getExtraData($inner_data, $where);
+            } else {
+                if (!empty($dbinner->select_string)) {
+                    $inner_data = $dbinner->setSelectedRows($dbinner->select_string, $inner_data);
+                } // if
             } // if
-        } // if
-        if (empty($inner_data)) {
-            $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
-            //unset($act_buttons['submitBtn']);
-        } // if
-        if ($dbinner->errors) {
-            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            if (empty($inner_data)) {
+                $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+                //unset($act_buttons['submitBtn']);
+            } // if
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
         } // if
     } // if
 } // if

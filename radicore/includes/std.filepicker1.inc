@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -40,19 +40,7 @@ if (isset($_POST['choosenull'])) {
     scriptPrevious(null, null, 'choose');
 } // if
 
-if (!empty($selection)) {
-    if (!empty($return_from) AND $return_action == 'choose') {
-    	// send uploaded file back to the previous script
-        $prev_script = getPreviousScript();
-        $prev_task   = getPreviousTask($prev_script);
-        $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
-        scriptPrevious(null, null, 'choose');
-    } else {
-        // $selection takes precedence over $where
-        $where     = $selection;
-        $selection = null;
-    } // if
-} // if
+$errors = array();
 
 // define action buttons
 $act_buttons['reset'] = 'reset';
@@ -67,6 +55,7 @@ if (isset($script_vars['fileobject'])) {
     if (!empty($return_from)) {
         // see if any action is required when being restarted
         $fileobject->restart($return_from, $return_action, $return_string, $return_files);
+        $errors = $fileobject->getErrors();
     } // if
     // get data from this instance
     $fieldarray = $fileobject->getFieldArray();
@@ -93,12 +82,24 @@ if (isset($script_vars['fileobject'])) {
     } // if
 } // if
 
+if (!empty($selection)) {
+    if (!empty($return_from) AND $return_action == 'choose' AND !empty($return_files)) {
+        if (is_True($fileobject->return_uploaded_file)) {
+            // send uploaded file back to the previous script
+            $prev_script = getPreviousScript();
+            $prev_task   = getPreviousTask($prev_script);
+            $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $selection;
+            scriptPrevious(null, null, 'choose');
+        } // if
+    } // if
+} // if
+
 if (isset($_GET['select'])) {
     // send selection back to the previous script
     $prev_script = getPreviousScript();
     $prev_task   = getPreviousTask($prev_script);
     if (!empty($fileobject->picker_subdir)) {
-    	$filename = $fileobject->picker_subdir .'/' .$_GET['select'];
+    	$filename = $fileobject->picker_subdir.DIRECTORY_SEPARATOR.$_GET['select'];
     } else {
         $filename = $_GET['select'];
     } // if
@@ -143,7 +144,6 @@ if (isset($_POST['reset'])) {
 $subdir   = $fileobject->picker_subdir;
 $messages[] = getLanguageText('sys0187', $subdir);  // CURRENT DIRECTORY: ???
 $filemask = $fileobject->picker_filetypes;
-if (!isset($errors)) $errors = array();
 
 $fileobject->xsl_params['file_directory'] = $subdir;
 if (!empty($fileobject->image_width)) {
@@ -197,8 +197,16 @@ if (empty($file_list)) {
 
     if (is_resource($this_dir)) {
         while (false !== ($file = readdir($this_dir))) {
-            // only files of right type are appended to array
-            if (preg_match('/'.$filemask.'/i', $file, $regs)) {
+            if ($file == '.' OR $file == '..') {
+                // ignore
+            } elseif (preg_match('/^(directory)$/i', $filemask)) {
+                // show directories instead of files
+                if (is_dir($subdir.DIRECTORY_SEPARATOR.$file)) {
+                    $file_list[$rownum]['file'] = $file;
+                    $rownum++;
+                } // if
+            } elseif (preg_match('/'.$filemask.'/i', $file, $regs)) {
+                // only files of right type are appended to array
                 if (!empty($pattern)) {
                     if (preg_match('/'.$pattern.'/i', $file)) {
             	        $file_list[$rownum]['file'] = $file;  // display filename without the directory name

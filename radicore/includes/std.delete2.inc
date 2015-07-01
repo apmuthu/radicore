@@ -58,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $messages = array_merge($messages, $dbobject->getMessages());
 
     if (empty($errors)) {
-    	$action = 'OK';
+    	$action = 'delete';
     } else {
-        $action = null;
+        $action = 'fail';
     } // if
 
     // return to previous screen

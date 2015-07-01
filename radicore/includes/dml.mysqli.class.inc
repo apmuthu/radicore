@@ -1059,7 +1059,7 @@ class mysql
         $repeat       = false;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -1484,7 +1484,7 @@ class mysql
 
         $repeat = false;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         do {
             // build update string from non-pkey fields
             $update = '';
@@ -1790,7 +1790,7 @@ class mysql
             } // if
 
             // check to see if precision and scale have been specified for numeric types
-            if (preg_match('/(integer|double|numeric|float)/i', $specs['type']) AND preg_match('/(?<=\().+(?=\))/', $row['COLUMN_TYPE'], $regs)) {
+            if (preg_match('/(integer|double|numeric|float|bit)/i', $specs['type']) AND preg_match('/(?<=\().+(?=\))/', $row['COLUMN_TYPE'], $regs)) {
             //if (preg_match('/(numeric|float)/i', $specs['type']) AND preg_match('/(?<=\().+(?=\))/', $row['COLUMN_TYPE'], $regs)) {
                 // extract value between '(' and ')'
                 $extra = $regs[0];
@@ -1810,6 +1810,13 @@ class mysql
                     } // if
                     $minvalue                   =& $specs['minvalue'];
                     $maxvalue                   =& $specs['maxvalue'];
+
+                } elseif (preg_match('/(bit)/i', $specs['type'])) {
+                    // identify how many bits can be stored in this field
+                    $columnarray['user_size']   = (int)$precision;
+                    $columnarray['col_maxsize'] = (int)$row['NUMERIC_PRECISION'];
+                    unset($precision,$scale);
+
                 } else {
                     $precision = (int)$precision;
                     $scale     = (int)$scale;

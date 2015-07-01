@@ -57,7 +57,9 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action);
+        $dbinner->restart($return_from, $return_action, $return_string, $return_files);
+        $return_errors = array_merge($errors, $dbinner->getErrors());
+        $errors        = array();
     } // if
     // get current data from this instance
     $inner_data = $dbinner->getFieldArray();
@@ -259,6 +261,11 @@ $script_vars = updateScriptVars ($script_vars);
 
 $dbouter->fieldarray = $outer_data;  // replace data lost during serialization
 $dbinner->fieldarray = $inner_data;
+
+if (isset($return_errors)) {
+    // include errors created by returning script
+    $errors = array_merge($errors, $return_errors);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbouter;

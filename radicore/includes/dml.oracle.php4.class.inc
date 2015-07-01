@@ -115,6 +115,8 @@ class oracle
     {
         $string_out = str_replace("'", "''", $string_in);
 
+        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+
         return $string_out;
 
     } // adjustData
@@ -263,6 +265,8 @@ class oracle
             $string_out = substr_replace($string_out, '', $offset-1, -$remainder);
             $offset ++;
         } // while
+
+        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
 
         return $string_out;
 
@@ -1036,6 +1040,10 @@ class oracle
                 AND strlen($value) == 0 OR strtoupper(trim($value)) == 'NULL') {
                     $cols .= "$item, ";
                     $vals .= "NULL, ";
+                } elseif (is_array($this->allow_db_function) AND in_array($item, $this->allow_db_function) AND preg_match($pattern2, $value)) {
+                    // this is a function, so change to the new value (without enclosing quotes)
+                    $cols .= "$item, ";
+                    $vals .= $this->adjustData($value) .", ";
                 } else {
                     $cols .= "$item, ";
                     $vals .= "'" .$this->adjustData($value) ."', ";
@@ -1335,7 +1343,7 @@ class oracle
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {

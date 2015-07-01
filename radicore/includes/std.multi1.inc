@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-201 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi1.inc
@@ -56,8 +56,8 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
-    // see if any configuration settings need to be changed
-    $fieldarray = $dbobject->changeConfig($fieldarray);
+    // redo any configuration changes
+    $fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;

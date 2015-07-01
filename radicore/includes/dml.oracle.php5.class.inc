@@ -91,6 +91,8 @@ class oracle
     {
         $string_out = str_replace("'", "''", $string_in);
 
+        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+
         return $string_out;
 
     } // adjustData
@@ -177,6 +179,7 @@ class oracle
         } // foreach
 
         $from_str = "(\n    $subquery\n)";
+        $having_str = unqualifyWhere($having_str, '*');
         $where_str  = "WHERE $having_str";
         $having_str = '';
         $group_str  = '';
@@ -329,33 +332,111 @@ END_OF_REGEX;
                     // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    $field3 = $fieldvalue;
-                    $fieldname = "($field1 - INTERVAL '$field2' $unit)";
-                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
-                    $modified = true;
-
-                } elseif (preg_match('/date_add/i', $fieldname)) {
-                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2'
-                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
-                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    $field3 = $fieldvalue;
-                    $fieldname = "($field1 + INTERVAL '$field2' $unit)";
-                    $array[$key] = $fieldname.' '.$operator.' '.trim($field3);
-                    $modified = true;
-
-                } elseif (preg_match('/^date_sub/i', $fieldvalue)) {
-                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
-                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
-                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    $fieldvalue = "($field1 - INTERVAL '$field2' $unit)";
+                    if (is_numeric($field2)) {
+                        $fieldname = "($field1 - INTERVAL '$field2' $unit)";
+                    } else {
+                        // $field2 is a field name, not a numeric literal
+                        $unit = strtolower($unit);
+                        switch ($unit) {
+                            case 'day':
+                                $fieldname = "($field1 - $field2)";
+                                break;
+                            case 'week':
+                                $fieldname = "($field1 - ($field2 * 7))";
+                                break;
+                            case 'month':
+                                $fieldname = "ADD_MONTHS($field1, -$field2)";
+                                break;
+                            case 'year':
+                                $fieldname = "ADD_MONTHS($field1, -($field2 * 12))";
+                                break;
+                            default:
+                        } // switch
+                    } // if
                     $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
                     $modified = true;
 
-                } elseif (preg_match('/^date_add/i', $fieldvalue)) {
+                } elseif (preg_match('/^date_add/i', $fieldname)) {
+                    // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2'
+                    preg_match('/(?<=\().+(?=\))/', $fieldname, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    if (is_numeric($field2)) {
+                        $fieldname = "($field1 + INTERVAL '$field2' $unit)";
+                    } else {
+                        // $field2 is a field name, not a numeric literal
+                        $unit = strtolower($unit);
+                        switch ($unit) {
+                            case 'day':
+                                $fieldname = "($field1 + $field2)";
+                                break;
+                            case 'week':
+                                $fieldname = "($field1 + ($field2 * 7))";
+                                break;
+                            case 'month':
+                                $fieldname = "ADD_MONTHS($field1, $field2)";
+                                break;
+                            case 'year':
+                                $fieldname = "ADD_MONTHS($field1, ($field2 * 12))";
+                                break;
+                            default:
+                        } // switch
+                    } // if
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
+                    $modified = true;
+
+                } elseif (preg_match('/date_sub/i', $fieldvalue)) {
+                    // contains 'DATE_SUB(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
+                    preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
+                    list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
+                    if (is_numeric($field2)) {
+                        $fieldvalue = "($field1 - INTERVAL '$field2' $unit)";
+                    } else {
+                        // $field2 is a field name, not a numeric literal
+                        $unit = strtolower($unit);
+                        switch ($unit) {
+                            case 'day':
+                                $fieldvalue = "($field1 - $field2)";
+                                break;
+                            case 'week':
+                                $fieldvalue = "($field1 - ($field2 * 7))";
+                                break;
+                            case 'month':
+                                $fieldvalue = "ADD_MONTHS($field1, -$field2)";
+                                break;
+                            case 'year':
+                                $fieldvalue = "ADD_MONTHS($field1, -($field2 * 12))";
+                                break;
+                            default:
+                        } // switch
+                    } // if
+                    $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
+                    $modified = true;
+
+                } elseif (preg_match('/date_add/i', $fieldvalue)) {
                     // contains 'DATE_ADD(field1, INTERVAL field2 unit)', so extract 'field1, field2, unit'
                     preg_match('/(?<=\().+(?=\))/', $fieldvalue, $regs);
                     list($field1, $interval, $field2, $unit) = preg_split("/[\s,]+/", $regs[0]);
-                    $fieldvalue = "($field1 + INTERVAL '$field2' $unit)";
+                    if (is_numeric($field2)) {
+                        $fieldvalue = "($field1 + INTERVAL '$field2' $unit)";
+                    } else {
+                        // $field2 is a field name, not a numeric literal
+                        $unit = strtolower($unit);
+                        switch ($unit) {
+                            case 'day':
+                                $fieldvalue = "($field1 + $field2)";
+                                break;
+                            case 'week':
+                                $fieldvalue = "($field1 + ($field2 * 7))";
+                                break;
+                            case 'month':
+                                $fieldvalue = "ADD_MONTHS($field1, $field2)";
+                                break;
+                            case 'year':
+                                $fieldvalue = "ADD_MONTHS($field1, ($field2 * 12))";
+                                break;
+                            default:
+                        } // switch
+                    } // if
                     $array[$key] = $fieldname.' '.$operator.' '.trim($fieldvalue);
                     $modified = true;
 
@@ -738,7 +819,7 @@ END_OF_REGEX;
             $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
             $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
             $from_str = str_replace($search_array, $replace_array, $from_str);
-            $from_str = $this->adjustFrom($from_str, $where);
+            $from_str = $this->adjustSQLFrom($from_str, $where);
         } // if
 
         // incorporate optional 'where' criteria
@@ -1139,7 +1220,7 @@ END_OF_REGEX;
     				} // switch
                 } // if
             } else {
-                if ($spec['type_native'] == 'datetime') {
+                if (isset($spec['type_native']) AND $spec['type_native'] == 'datetime') {
                     // this column requires both date and time
                     if ($spec['type'] == 'date') {
                         // only date input, so append dummy time
@@ -1148,7 +1229,7 @@ END_OF_REGEX;
                         // only time input, so prepend dummy date
                         $fieldarray[$field] = '2000-01-01 '.$fieldarray[$field];
                     } // if
-                } elseif ($spec['type'] == 'string' AND $spec['size'] > 4000) {
+                } elseif (preg_match('/(string|lob)/i', $spec['type']) AND $spec['size'] > 4000) {
                     // special processing required for LOBs (large objects)
                     if (isset($fieldarray[$field])) {
                     	//$lob_names[$field] = $this->adjustData($fieldarray[$field]);
@@ -1202,7 +1283,7 @@ END_OF_REGEX;
 	            } // if
 	            return $fieldarray;
 	        } // if
-	        $primary_key = $where;
+	        //$primary_key = $where;
 		} // if
 
         // validate any optional unique/candidate keys
@@ -1237,7 +1318,7 @@ END_OF_REGEX;
             $vals = '';
         } // if
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             if (array_key_exists($item, $lob_names)) {
             	$cols .= "$item, ";
@@ -1637,7 +1718,7 @@ END_OF_REGEX;
     						// do nothing
     				} // switch
                 } else {
-                    if ($spec['type_native'] == 'datetime') {
+                    if (isset($spec['type_native']) AND $spec['type_native'] == 'datetime') {
                         // this column requires both date and time
                         if ($spec['type'] == 'date') {
                             // only date input, so append dummy time
@@ -1646,7 +1727,7 @@ END_OF_REGEX;
                             // only time input, so prepend dummy date
                             $fieldarray[$field] = '2000-01-01 '.$fieldarray[$field];
                         } // if
-                    } elseif ($spec['type'] == 'string' AND $spec['size'] > 4000) {
+                    } elseif (preg_match('/(string|lob)/i', $spec['type']) AND $spec['size'] > 4000) {
                         // special processing required for LOBs (large objects)
                         if (isset($fieldarray[$field])) {
                         	//$lob_names[$field] = $this->adjustData($fieldarray[$field]);
@@ -1661,7 +1742,7 @@ END_OF_REGEX;
         // build update string from non-pkey fields
         $update = '';
         $pattern1 = '/(integer|decimal|numeric|float|real)/i';
-        $pattern2 = '/^\w+[ ]*\(.+\)$/imsx';  // function(...)
+        $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
         foreach ($fieldarray as $item => $value) {
             // use this item if it IS NOT part of primary key
             if (!in_array($item, $this->primary_key)) {

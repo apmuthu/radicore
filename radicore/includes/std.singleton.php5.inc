@@ -47,19 +47,40 @@ class RDCsingleton
         } // if
 
         if (substr_count($class, '/')) {
-	        // strip leading directory names
-	        $pos = strrpos($class, '/');
-	    	$classname = substr($class, $pos+1);
-	    	$filename  = "classes/$class.class.inc";
+	        // use leading directory name as the subsystem name
+	        $subsystem = basename(dirname($class));     // only one directory allowed
+	    	$classname = basename($class);              // strip leading directories
+	    	$filename  = "../$subsystem/classes/$classname.class.inc";
+            // ensure that this subsystem is in the include plath
+            $include_path = ini_get('include_path');
+            $pattern = '#'              // start pattern
+                     . '('            // start choice
+                     . '(/|\\\)'        // '/' or '\'
+                     . $subsystem       // subsystem name
+                     . PATH_SEPARATOR   // ';' or ':'
+                     . '|'            // or
+                     . '(/|\\\)'        // '/' or '\'
+                     . $subsystem       // subsystem name
+                     . '$'              // ends with
+                     . ')'            // end choice
+                     . '#i';            // end pattern, case insensitive
+            if (!preg_match($pattern, $include_path)) {
+                $include_path .= PATH_SEPARATOR ."../$subsystem";
+                ini_set('include_path', $include_path);
+            } // if
         } else {
             $classname = $class;
-            $filename  = "classes/$class.class.inc";
+            $filename  = "classes/$classname.class.inc";
 	    } // if
 
         if (!empty($instances[$server.$classname])) {
             // instance exists in array, so use it
             $instance =& $instances[$server.$classname];
         } else {
+            $cur_dir = dirname($_SERVER['SCRIPT_FILENAME']);
+            if (getcwd() != $cur_dir) {
+                chdir($cur_dir);  // current directory is wrong, so change it
+            } // if
             // load the class file (if not already loaded)
             if (!class_exists($classname)) {
             	switch ($classname) {

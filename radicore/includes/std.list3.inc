@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -75,8 +75,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // refetch data for lookup lists in case they have changed
-    $null = $dbouter->setLookupData(null);
+    // redo any configuration changes
+    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -119,8 +119,8 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // get data from previous instance
     $middle_data = $dbmiddle->getFieldArray();
-    // refetch data for lookup lists in case they have changed
-    $null = $dbmiddle->setLookupData(null);
+    // redo any configuration changes
+    $middle_data = $dbmiddle->getExtraData($middle_data);
 } else {
     // create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
@@ -156,8 +156,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
-    // refetch data for lookup lists in case they have changed
-    $null = $dbinner->setLookupData(null);
+    // redo any configuration changes
+    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -323,8 +323,12 @@ if (isset($_GET['orderby'])) {
     $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
 } // if
 
-// load optional criteria from search screen
-if (isset($search)) {
+// look for optional search criteria
+if (isset($quicksearch)) {
+    // from quicksearch area in list screen
+    $dbinner->setSqlQuickSearch($quicksearch, true);
+} elseif (isset($search)) {
+    // from search screen
     $dbinner->setSqlSearch($search, true);
 } // if
 

@@ -52,7 +52,9 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action);
+        $dbobject->restart($return_from, $return_action, $return_string, $return_files);
+        $return_errors = array_merge($errors, $dbobject->getErrors());
+        $errors        = array();
     } // if
     // get current data from this instance
     $fieldarray = $dbobject->getFieldArray();
@@ -174,6 +176,11 @@ $script_vars['dbobject'] = serialize($dbobject);
 $script_vars = updateScriptVars ($script_vars);
 
 $dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
+
+if (isset($return_errors)) {
+    // include errors created by returning script
+    $errors = array_merge($errors, $return_errors);
+} // if
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;

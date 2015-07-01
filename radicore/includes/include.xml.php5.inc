@@ -110,6 +110,14 @@ class radicore_view
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
+            // see if any custom javascript has been defined
+            $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
+            if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
+                $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
+                if (is_array($javascript) AND !empty($javascript)) {
+                    $this->javascript = array_merge($this->javascript, $javascript);
+                } // if
+            } // if
             if (!is_array($rowdata)) {
                 // this is not an array, so output as data now
 
@@ -465,21 +473,19 @@ class radicore_view
                             } // if
                         } // if
 
-						// look for custom javascipt which needs to be inserted
-                        $fn = 'custom_javascript.class.inc';
-                        if ($fp = @fopen($fn, 'r', true)) {
-                            fclose($fp);
-                            $jsobj =& RDCsingleton::getInstance('custom_javascript');
-                            $javascript = $jsobj->field_level_js($fieldname, $fieldvalue, $spec);
+                        if (is_object($jsOBJ) AND method_exists($jsOBJ, 'field_level_js')) {
+                            // look for custom javascript which needs to be inserted
+                            $javascript = $jsOBJ->field_level_js($fieldname, $fieldvalue, $spec);
                             if (!empty($javascript) AND is_array($javascript)) {
                                 foreach ($javascript as $event_name => $event_body) {
                                     $child->setAttribute($event_name, $event_body);
                                 } // foreach
                             } // if
-                            if (!empty($jsobj->form_level_js)) {
-                                $this->javascript = array_merge($this->javascript, $jsobj->form_level_js);
+                            if (!empty($jsOBJ->form_level_js)) {
+                                $this->javascript = array_merge($this->javascript, $jsOBJ->form_level_js);
                             } // if
                         } // if
+
 						// option for javascript events
                         if (isset($spec['javascript'])) {
                             foreach ($spec['javascript'] as $event_name => $event_body) {
@@ -932,6 +938,10 @@ class radicore_view
         global $task_id;
         global $xsl_file;
 
+        if (!isset($GLOBALS['project_code'])) {
+            $GLOBALS['project_code'] = '';
+        } // if
+
         $xsl_params       = array();
         $css_files        = array();
         $this->javascript = array();
@@ -967,7 +977,7 @@ class radicore_view
             // extract and merge any CSS file names
             $css_files = array_merge_recursive($css_files, (array)$object->css_files);
             // extract and merge any JavaScript code
-            $javascript = array_merge_recursive($this->javascript, $object->javascript);
+            $javascript = array_merge_recursive($this->javascript, (array)$object->javascript);
         } // foreach
 
         $object_messages = array_unique($object_messages);
@@ -1185,6 +1195,37 @@ class radicore_view
         return;
 
     } // buildXML
+
+    // ****************************************************************************
+    function getCustomJavascript ($project_code)
+    // find out if a custom javascript object has been defined
+    {
+        $jsOBJ = null;
+
+        if (class_exists('custom_javascript')) {
+            // already loaded, so instantiate object
+            $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+        } else {
+            // loo for a file with one of several possible names
+            $attempt = array();
+            if (!empty($project_code)) {
+                $attempt[] = "custom_javascript.class.{$project_code}.inc";
+            } // if
+            $attempt[] = 'custom_javascript.class.inc';
+            foreach ($attempt as $fn) {
+                if ($fp = @fopen($fn, 'r', true)) {
+                    fclose($fp);
+                    // file found, so load it and instantiate object
+                    require_once($fn);
+                    $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+                    break;
+                } // if
+            } // foreach
+        } // if
+
+        return $jsOBJ;
+
+    } // getCustomJavascript
 
     // ****************************************************************************
     function getFieldsInScreen ($screen_structure, $objectname)

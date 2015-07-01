@@ -384,6 +384,8 @@ END_OF_REGEX;
                 if (isset($fieldspec['subtype'])) {
                     // perform any subtype processing
                     switch ($fieldspec['subtype']) {
+                        case 'button':
+                            break;
                         case 'filename':
                         case 'image':
                             // check that value is a valid file name

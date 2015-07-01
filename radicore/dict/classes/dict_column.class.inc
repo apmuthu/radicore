@@ -9,6 +9,7 @@ class dict_column extends Default_Table
     // member variables
     var $colspecs = array();    // array of column specifications
     var $count;                 // record count for PDF output
+    var $target_dbms_engine;    // DBMS engine for target table
 
     // ****************************************************************************
     // class constructor
@@ -59,14 +60,36 @@ class dict_column extends Default_Table
         $type     = $fieldarray['col_type'];
         $colspecs = $this->_cm_getColSpecs($type, $fieldarray);
 
+        if (empty($this->target_dbms_engine)) {
+            list($dbname2, $dbprefix, $dbms_engine) = findDBConfig($fieldarray['database_id']);
+            $this->target_dbms_engine = $dbms_engine;
+        } // if
+
         if (preg_match('/(int|char)/i', $fieldarray['col_type'])) {
             if ($fieldarray['user_size'] == 1) {
                 $fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
             } // if
         } elseif (preg_match('/^(bit)$/i', $fieldarray['col_type'])) {
-            $fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
-            $fieldarray['col_maxsize'] = 1;
-            $fieldarray['user_size']   = 1;
+            //$fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
+            //$fieldarray['col_maxsize'] = 1;
+            //$fieldarray['user_size']   = 1;
+            switch ($this->target_dbms_engine) {
+                case 'sqlsrv':
+                    $fieldarray['col_type_native'] = $fieldarray['col_type'].',boolean';
+                    $fieldarray['user_size']       = 1;
+                    break;
+                case 'oracle':
+
+                    break;
+                case 'pgsql':
+
+                    break;
+                case 'mysql':
+
+                    break;
+                default:
+                    // do nothing
+            } // switch
         } // if
 
         if (preg_match('/^(enum|set)$/i', $type)) {
@@ -594,12 +617,13 @@ class dict_column extends Default_Table
                 $colspecs['optionlist']     = '?';
                 break;
             case 'bit':
+                $colspecs['user_size']      = 'y';
                 $colspecs['is_required']    = 'y';
-                $colspecs['control']        = '?';
-                $colspecs['optionlist']     = '?';
+                //$colspecs['control']        = '?';
+                //$colspecs['optionlist']     = '?';
         		break;
         	case 'binary':
-        	    $colspecs['user_size']           = 'y';
+        	    $colspecs['user_size']      = 'y';
         	    break;
             case 'string':
                 $colspecs['user_size']           = 'y';

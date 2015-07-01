@@ -64,8 +64,10 @@ if (isset($script_vars['dbobject'])) {
         // see if any action is required when being restarted
         $dbobject->restart($return_from, $return_action);
     } // if
-    // refetch data for lookup lists in case they have changed
-    $null = $dbobject->setLookupData($where);
+    // get data from previous instance
+    $fieldarray = $dbobject->getFieldArray();
+    // redo any configuration changes
+    $fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -123,8 +125,12 @@ if (isset($_GET['orderby'])) {
     $dbobject->setOrderBy($string, $dbobject->sql_orderby_seq);
 } // if
 
-// load optional criteria from search screen
-if (isset($search)) {
+// look for optional search criteria
+if (isset($quicksearch)) {
+    // from quicksearch area in list screen
+    $dbobject->setSqlQuickSearch($quicksearch, true);
+} elseif (isset($search)) {
+    // from search screen
     $dbobject->setSqlSearch($search, true);
 } // if
 

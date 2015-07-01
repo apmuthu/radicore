@@ -277,8 +277,12 @@ if (isset($_GET['orderby'])) {
     $dbinner->setOrderBy($string, $dbinner->sql_orderby_seq);
 } // if
 
-// load optional criteria from search screen
-if (isset($search)) {
+// look for optional search criteria
+if (isset($quicksearch)) {
+    // from quicksearch area in list screen
+    $dbinner->setSqlQuickSearch($quicksearch, true);
+} elseif (isset($search)) {
+    // from search screen
     $dbinner->setSqlSearch($search, true);
 } // if
 

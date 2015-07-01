@@ -65,9 +65,9 @@ if ($errors) {
 $messages = array_merge($messages, $dbobject->getMessages());
 
 if (empty($errors)) {
-	$action = 'OK';
+	$action = 'insert';
 } else {
-    $action = null;
+    $action = 'fail';
 } // if
 
 $batch_errors = scriptPrevious($errors, $messages, $action);

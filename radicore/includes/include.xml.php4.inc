@@ -977,7 +977,7 @@ class radicore_view
             // extract and merge any CSS file names
             $css_files = array_merge_recursive($css_files, (array)$object->css_files);
             // extract and merge any JavaScript code
-            $javascript = array_merge_recursive($this->javascript, $object->javascript);
+            $javascript = array_merge_recursive($this->javascript, (array)$object->javascript);
         } // foreach
 
         $object_messages = array_unique($object_messages);

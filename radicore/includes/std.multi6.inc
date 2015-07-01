@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi6.inc
@@ -58,8 +58,8 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // see if any configuration settings need to be changed
-    $outer_data = $dbouter->changeConfig($outer_data);
+    // redo any configuration changes
+    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -88,10 +88,8 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // get data from this instance
     $middle_data = $dbmiddle->getFieldArray();
-    // see if any configuration settings need to be changed
-    $middle_data = $dbmiddle->changeConfig($middle_data);
-    // refetch data for lookup lists in case they have changed
-    $null = $dbmiddle->setLookupData($middle_data);
+    // redo any configuration changes
+    $middle_data = $dbmiddle->getExtraData($middle_data);
 } else {
 	// create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
@@ -133,10 +131,8 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
-    // see if any configuration settings need to be changed
-    $inner_data = $dbinner->changeConfig($inner_data);
-    // refetch data for lookup lists in case they have changed
-    $null = $dbinner->setLookupData($inner_data);
+    // redo any configuration changes
+    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
