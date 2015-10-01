@@ -65,7 +65,11 @@ if (isset($script_vars['fileobject'])) {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
     $fileobject->initiated_from_controller = true;
-    $fileobject->sql_search_table = &$sql_search_table;
+    if (isset($sql_search_table)) {
+        $fileobject->sql_search_table = $sql_search_table;
+    } else {
+        $fileobject->sql_search_table = 'mnu_file';
+    } // if
     // do not create hyperlinks for column labels
     //$fileobject->xsl_params['nosort'] = 'y';
     // do not display the 'show nn' hyperlinks
@@ -99,20 +103,26 @@ if (isset($_GET['select'])) {
     $prev_script = getPreviousScript();
     $prev_task   = getPreviousTask($prev_script);
     if (!empty($fileobject->picker_subdir)) {
-    	$filename = $fileobject->picker_subdir.DIRECTORY_SEPARATOR.$_GET['select'];
+    	$filename = $fileobject->picker_subdir.'/'.$_GET['select'];
     } else {
         $filename = $_GET['select'];
     } // if
+    // set all directory separators to '/' as '\' is used as an escape character
+    $filename = str_replace('\\', '/', $filename);
     // tell the fileobject that something has been selected
     $filename = $fileobject->filePickerSelect($filename);
     $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $filename;
     scriptPrevious(null, null, 'choose');
 } // if
 
+// there is a separate cache file for each directory
+$cache_name = 'filepicker1_'.md5($fileobject->picker_subdir).'_'.session_id().'.dat';
 if (!empty($fileobject->cache_dir)) {
-    $cache = $fileobject->cache_dir.'/filepicker1_'.session_id().'.dat';
+    //$cache = $fileobject->cache_dir.'/filepicker1_'.session_id().'.dat';
+    $cache = $fileobject->cache_dir.'/'.$cache_name;
 } else {
-    $cache = ini_get('session.save_path').'/filepicker1_'.session_id().'.dat';
+    //$cache = ini_get('session.save_path').'/filepicker1_'.session_id().'.dat';
+    $cache = ini_get('session.save_path').'/'.$cache_name;
 } // if
 if (file_exists($cache)) {
     // recover file data from cache
@@ -153,23 +163,34 @@ if (!empty($fileobject->image_height)) {
 	$fileobject->xsl_params['image_height'] = $fileobject->image_height;
 } // if
 
-if (!empty($search)) {
-    $pattern = null;
-    $search_array = where2array($search);
-	if (!empty($search_array['filename'])) {
-	    $pattern = $search_array['filename'];
-	    if (substr_count($pattern, '%') > 1) {
-	        // replace SQL 'any characters' with regex equivalent
-		    $pattern = str_replace('%', '.*', $pattern);
-	    } elseif (substr($pattern, -1, 1) == '%') {
-	        // last character is SQL wild card, so set to 'begins with'
-	    	$pattern = '^' .$pattern;
-	    } elseif (substr($pattern, 0, 1) == '%') {
-	        // first character is SQL wild card, so set to 'ends with'
-	        $pattern = $pattern .'$';
-	    } // if
-		$pattern = str_replace('%', '', $pattern);
+$pattern = null;
+if (!empty($quicksearch)) {
+    $fileobject->setSqlQuickSearch($quicksearch, true);
+} elseif (!empty($search)) {
+    $fileobject->setSqlSearch($search, true);
+} // if
+$search_array = where2array($fileobject->sql_search);
+if (!empty($search_array) AND !empty($search_array['filename'])) {
+    $pattern = $search_array['filename'];
+} // if
+if (!empty($pattern)) {
+    $fileobject->search = $pattern;  // store new pattern
+} else {
+    $pattern = $fileobject->search;  // use current pattern
+} // if
+if (!empty($pattern)) {
+	if (substr_count($pattern, '%') > 1) {
+	    // replace SQL 'any characters' with regex equivalent
+		$pattern = str_replace('%', '.*', $pattern);
+	} elseif (substr($pattern, -1, 1) == '%') {
+	    // last character is SQL wild card, so set to 'begins with'
+	    $pattern = '^' .$pattern;
+	} elseif (substr($pattern, 0, 1) == '%') {
+	    // first character is SQL wild card, so set to 'ends with'
+	    $pattern = $pattern .'$';
 	} // if
+	$pattern = str_replace('%', '', $pattern);
+
 	$fileobject->search = $pattern;
     if (!empty($file_list) AND is_array($file_list)) {
         foreach ($file_list as $ix => $file_data) {
@@ -202,8 +223,15 @@ if (empty($file_list)) {
             } elseif (preg_match('/^(directory)$/i', $filemask)) {
                 // show directories instead of files
                 if (is_dir($subdir.DIRECTORY_SEPARATOR.$file)) {
-                    $file_list[$rownum]['file'] = $file;
-                    $rownum++;
+                    if (!empty($pattern)) {
+                        if (preg_match('/'.$pattern.'/i', $file)) {
+                            $file_list[$rownum]['file'] = $file;
+                            $rownum++;
+                        } // if
+                    } else {
+                        $file_list[$rownum]['file'] = $file;
+                        $rownum++;
+                    } // if
                 } // if
             } elseif (preg_match('/'.$filemask.'/i', $file, $regs)) {
                 // only files of right type are appended to array

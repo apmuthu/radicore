@@ -1,5 +1,5 @@
 <?php
-    // file created on September 17, 2007, 9:57 am
+    // file created on September 23, 2015, 3:43 pm
     
     // field specifications for table workflow.wf_case
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
@@ -7,7 +7,9 @@
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'required' => 'y',
-                                                    'default' => '1');
+                                                    'default' => '1',
+                                                    'nodisplay' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['case_id']                   = array('type' => 'integer',
                                                     'size' => 10,
@@ -108,6 +110,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'workflow_id, case_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

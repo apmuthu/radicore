@@ -319,6 +319,7 @@ $array['False']                 = 'False';
 $array['File Download']         = 'File Download';
 $array['Id']                    = 'Id';
 $array['ID']                    = 'ID';
+$array['Name']                  = 'Name';
 $array['rdc_limit']             = 'LIMIT';
 $array['rdc_offset']            = 'OFFSET';
 $array['Revised By']            = 'Revised By';

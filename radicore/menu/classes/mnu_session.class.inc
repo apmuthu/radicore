@@ -44,6 +44,9 @@ class mnu_session extends Default_Table
                                                     'optionlist' => 'css_file',
                                                     'required' => 'y');
 
+        // stop debug session?
+        $fieldspec['stop_debug_session']    = array('type' => 'boolean');
+
         $this->fieldspec = $fieldspec;
 
 //        if (empty($this->css_files)) {
@@ -91,10 +94,11 @@ class mnu_session extends Default_Table
         $this->skip_getdata = true;
 
         // construct data manually instead
-        $row['log_xml_document'] = $_SESSION['log_xml_document'];
-        $row['log_sql_query']    = $_SESSION['log_sql_query'];
-        $row['drop_saved_pages'] = false;
-        $row['css_file']         = $_SESSION['css_file'];
+        $row['log_xml_document']   = $_SESSION['log_xml_document'];
+        $row['log_sql_query']      = $_SESSION['log_sql_query'];
+        $row['drop_saved_pages']   = false;
+        $row['css_file']           = $_SESSION['css_file'];
+        $row['stop_debug_session'] = false;
 
         $this->fieldarray[0] = $row;
 
@@ -142,6 +146,13 @@ class mnu_session extends Default_Table
         // save it so that it can be reproduced when moving between HTTP and HTTPS protocols
         $_SESSION['cookie_data']['theme'] = $fieldarray['css_file'];
         $_SESSION['cookie_time']['theme'] = time()+7776000;
+
+        if (is_True($fieldarray['stop_debug_session'])) {
+            if (isset($_COOKIE['DBGSESSID'])) {
+                unset($_COOKIE['DBGSESSID']);
+                setcookie('DBGSESSID', null, time()-3600, '/');
+            } // if
+        } // if
 
         return;
 

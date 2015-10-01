@@ -220,6 +220,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } // if
     // get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
+    if ($dbobject->errors) {
+        $errors = $dbobject->getErrors();
+    } // if
 } // if
 
 if (isset($_SESSION['data'][$table_id])) {

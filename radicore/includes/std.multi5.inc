@@ -182,7 +182,7 @@ if (!empty($_POST)) {
         $inner_data = array_update_indexed($inner_data, $inner_post);
         $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
         // make any changes in outer available to the inner entity
-        $inner_data = $dbinner->setParentData($outer_data);
+        $dbinner->setParentData($outer_data);
     } // if
     if (empty($errors)) {
         // look for an action which is another script (navigation or popup button)
@@ -274,7 +274,7 @@ if (!empty($return_from) AND !empty($popup_object)) {
         } // if
     } elseif (isset($selection) AND $popup_object == 'dbinner') {
         // merge previous saved variables with selection from popup form
-        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
+        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
         if ($dbinner->errors) {
             $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if

@@ -260,7 +260,7 @@ if (!empty($_POST)) {
 // check if we are returning from a child form
 if (!empty($return_from) AND isset($selection)) {
     // merge previous saved variables with selection from popup form
-    $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
+    $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
     if ($dbinner->errors) {
         $errors[$dbinner->getClassName()] = $dbinner->getErrors();
     } // if

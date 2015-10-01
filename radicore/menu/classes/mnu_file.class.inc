@@ -108,7 +108,7 @@ class mnu_file extends Default_Table
         // by default hyperlinks are opened directly in the browser
         $this->xsl_params['hyperlink_direct'] = 'y';
 
-        // by default if a file is uoloaded it will be returned as if it was selected
+        // by default if a file is uploaded it will be returned as if it was selected
         $this->return_uploaded_file = true;
 
         if (!empty($GLOBALS['settings']['download'])) {

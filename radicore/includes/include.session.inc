@@ -1056,6 +1056,9 @@ function initSession($save_session_data=array())
                                   .getParentDIR()
                                   .$logon_screen
                                   .'?session_name=' .session_name();
+            if (isset($_SERVER['QUERY_STRING']) AND strlen($_SERVER['QUERY_STRING']) > 0) {
+                $location .= '&'.$_SERVER['QUERY_STRING'];  // carry forward this query string
+            } // if
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
 

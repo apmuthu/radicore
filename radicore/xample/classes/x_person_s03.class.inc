@@ -18,45 +18,33 @@ class x_person_s03 extends x_person
         global $mode;
 
         // specify external js files to be loaded
-        $path = 'javascript/FCKeditor/';
-        $javascript['head'][]['file'] = $path .'fckeditor.js';
-        //$javascript['head'][]['code'] = 'document.write();';
+        //$path = 'javascript/FCKeditor/';
+        //$javascript['head'][]['file'] = $path .'fckeditor.js';
+        $path = 'javascript/ckeditor/';
+        $javascript['head'][]['file'] = $path .'ckeditor.js';
+
+        $code = <<< EOD
+CKEDITOR.replace( 'fckeditor_test',
+{
+    toolbar : 'Basic',
+    uiColor : '#9AB8F3'
+});
+EOD;
 
         $option = 2;
 
         if ($option == 1) {
 
-            $code = "
-            var oFCKeditor = new FCKeditor( 'fckeditor_test' ) ;
-            oFCKeditor.BasePath = '$path' ;
-            oFCKeditor.Height = 350 ;
-            oFCKeditor.Value	= '<p>This is a paragraph with a <b>bold</b> word</p>' ;
-            oFCKeditor.Create() ;
-            ";
+            $this->fieldspec['fckeditor_test']['javascript'] = array('javascript' => "$code");
 
-            $this->fieldspec['fckeditor_test']['javascript'] = array('javascript' => "$code",
-                                                                     'hidecontrol' => 'y');
-            
         } else {
 
-            $code = "
-            var oFCKeditor = new FCKeditor( 'fckeditor_test' ) ;
-            oFCKeditor.BasePath = '$path' ;
-            oFCKeditor.Height = 350 ;
-            oFCKeditor.ReplaceTextarea() ;
-            ";
-
-            //$this->fieldspec['fckeditor_test']['javascript'] = array('javascript' => "$code");
             $javascript['head'][]['code'] = 'window.onload = function()'
                                            ."\n{\n"
                                            .$code
                                            ."\n}\n";
 
         } // if
-
-        // specify scripting events on <body> tag
-        //$javascript['body']['onload'] = 'prepareForm()';
-        //$javascript['body']['onunload'] = 'finish()';
 
         return $javascript;
 

@@ -64,22 +64,35 @@
     </xsl:attribute>
     
     <xsl:call-template name="body-head" />
+  
+    <div class="universe">
 
-    <form method="post" action="{$script}">
+      <!-- create help button -->
+      <xsl:call-template name="help" />
+
+      <!-- create menu buttons -->
+      <xsl:call-template name="menubar" />
+
+      <div class="body">
   
-      <div class="universe">
-  
-        <!-- create help button -->
-        <xsl:call-template name="help" />
-  
-        <!-- create menu buttons -->
-        <xsl:call-template name="menubar" />
-  
-        <div class="body">
-  
-          <div class="title">
-            <h1 class="title"><xsl:value-of select="$title"/></h1>
-          </div>
+        <div class="title">
+          <xsl:choose>
+            <!-- identify whether this is with or without the 'quicksearch' option -->
+            <xsl:when test="/root/lookup/quicksearch_field">
+              <xsl:attribute name="class">title with_quicksearch</xsl:attribute>
+              <xsl:call-template name="quicksearch">
+                <xsl:with-param name="non_empty" select="'y'"/>
+              </xsl:call-template>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:attribute name="class">title without_quicksearch</xsl:attribute>
+            </xsl:otherwise>
+          </xsl:choose>
+          
+          <h1 class="title"><xsl:value-of select="$title"/></h1>
+        </div> <!-- title -->
+        
+        <form method="post" action="{$script}">
   
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar">
@@ -135,12 +148,12 @@
           <!-- create standard action buttons -->
           <xsl:call-template name="actbar" />
   
-        </div>
-  
-      </div>
-  
-    </form>
+        </form>
+        
+      </div> <!-- body -->
 
+    </div> <!-- universe -->
+  
     <xsl:call-template name="body-foot" />
 
   </body>

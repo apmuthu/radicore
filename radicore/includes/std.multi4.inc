@@ -291,13 +291,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
             } // if
         } elseif (isset($selection) AND $popup_object == 'dbinner') {
             // merge previous saved variables with selection from popup form
-            $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
+            $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
             if ($dbinner->errors) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
 
-    } elseif ($do_retrieve) {
+    //} elseif ($do_retrieve) {
+    } else {
         // read OUTER entity
         if (isset($scrolling)) {
             // retrieve values from scrolling array

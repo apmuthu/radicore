@@ -413,6 +413,14 @@ if (version_compare(phpversion(), '5.0.0', '>=')) {
         $string .= ', file='.$exception->getFile();
         $string .= ', line='.$exception->getLine();
 
+        if (method_exists($exception, 'getTrace')) {
+            $trace = $exception->getTrace();
+            if (is_array($trace) AND array_key_exists('0', $trace)) {
+                $trace = $trace[0];
+            } // if
+            $string .= ', '.format_array($trace);
+        } // if
+
         trigger_error($string, E_USER_ERROR);
 
     } // exception_handler

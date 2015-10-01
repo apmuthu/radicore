@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_case extends Default_Table
@@ -31,8 +31,10 @@ class wf_case extends Default_Table
     {
         $pattern_id = strtolower(getPatternId());
 
-        if ($pattern_id == 'list2') {
+        if (preg_match('/(list1|list2|popup1)/i', $pattern_id)) {
+            // do not use multi-line textbox in this screen
         	unset($this->fieldspec['workflow_id']['control']);
+            unset($this->fieldspec['context']['control']);
         } // if
 
         return $fieldarray;

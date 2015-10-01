@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -1745,6 +1745,9 @@ END_OF_REGEX;
                             // format = "nextval('...')" which indicates an auto_increment key
                             $columnarray['col_auto_increment'] = TRUE;
                             $columnarray['col_default']        = $value;
+                        } elseif (preg_match('/^\w+[ ]*\(.*\)$/imsx', $value, $regs)) {
+                            // format = "function(...)"
+                            $columnarray['col_default'] = $value;
                         } elseif (preg_match("?\'[^\']+\'?", $value, $regs)) {
                             // extract default which is enclosed in single quotes
                             $string = substr($regs[0], 1, strlen($regs[0])-2); // strip first & last characters

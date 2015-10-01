@@ -10,5 +10,6 @@ $structure['main']['fields'][] = array('log_xml_document' => 'Log XML documents?
 $structure['main']['fields'][] = array('log_sql_query' => 'Log SQL queries?');
 $structure['main']['fields'][] = array('drop_saved_pages' => 'Drop saved pages?');
 $structure['main']['fields'][] = array('css_file' => 'Theme/Style');
+$structure['main']['fields'][] = array('stop_debug_session' => 'Stop Debug session?');
 
 ?>

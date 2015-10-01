@@ -1,5 +1,5 @@
 <?php
-    // file created on May 2, 2015, 3:01 pm
+    // file created on September 22, 2015, 10:08 am
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -9,19 +9,17 @@
                                                     'uppercase' => 'y');
     
     $fieldspec['user_name']                 = array('type' => 'string',
-                                                    'size' => 30,
-                                                    'required' => 'y');
+                                                    'size' => 30);
     
     $fieldspec['user_password']             = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'password' => 'y',
                                                     'nosearch' => 'y',
                                                     'noaudit' => 'y');
     
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
                                                     'type_native' => 'int',
-                                                    'size' => 10,
+                                                    'size' => 11,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'control' => 'dropdown',
@@ -64,10 +62,10 @@
                                                     'size' => 10,
                                                     'noedit' => 'y');
     
-    $fieldspec['language_code']             = array('type' => 'string',
+    $fieldspec['language_id']               = array('type' => 'string',
                                                     'size' => 6,
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'language_code');
+                                                    'optionlist' => 'language_id');
     
     $fieldspec['start_date']                = array('type' => 'date',
                                                     'size' => 12,
@@ -172,12 +170,6 @@
                                                     'type' => 'DEL',
                                                     'fields' => array('user_id' => 'user_id'));
     
-    $this->child_relations[]                = array('child' => 'email_signature',
-                                                    'dbname' => 'party',
-                                                    'subsys_dir' => 'party',
-                                                    'type' => 'DEL',
-                                                    'fields' => array('user_id' => 'user_id'));
-    
     $this->child_relations[]                = array('child' => 'wf_workitem',
                                                     'dbname' => 'workflow',
                                                     'subsys_dir' => 'workflow',
@@ -190,7 +182,7 @@
                                                     'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_language',
-                                                    'fields' => array('language_code' => 'language_id'));
+                                                    'fields' => array('language_id' => 'language_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;

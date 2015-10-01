@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
   
@@ -381,7 +381,8 @@
 // If no control attribute is specified the default will be 'textfield'.
 // Other control types are:
 // 'hidden' - included in POST, but not shown
-// 'button' - display a submit button
+// 'input' - display an '<input>' control
+// 'button' - display a '<button>' control
 // 'checkbox' - checkbox with a Yes/No option
 // 'checkbox_multi' - multiple checkboxes
 // 'radiogroup' - radio buttons populated from an option list
@@ -438,8 +439,15 @@
             </xsl:call-template>
           </xsl:when>
           
+          <xsl:when test="$item/@control='input'">
+            <xsl:call-template name="input">
+              <xsl:with-param name="item" select="$item"/>
+              <xsl:with-param name="multiple" select="$multiple"/>
+              <xsl:with-param name="position" select="$position"/>
+            </xsl:call-template>
+          </xsl:when>
+          
           <xsl:when test="$item/@control='button'">
-            <!-- this is a hidden field -->
             <xsl:call-template name="button">
               <xsl:with-param name="item" select="$item"/>
               <xsl:with-param name="multiple" select="$multiple"/>
@@ -628,10 +636,68 @@
 
 
 
+  <!--
+****************************************************************************************
+* INPUT - create an '<input ...>' control
+****************************************************************************************
+-->
+  <xsl:template name="input">
+    <xsl:param name="item"/>
+    <xsl:param name="multiple"/>    <!-- optional, causes position number to be added to item name -->
+    <xsl:param name="position"/>    <!-- the row number -->
+    
+    <xsl:variable name="name">
+      <xsl:choose>
+        <!-- if 'multiple' indicator is set then include position number -->
+        <xsl:when test="$multiple">
+          <xsl:value-of select="concat($item/@name,'[',$position,']')"/>
+        </xsl:when>
+        <xsl:otherwise> <!-- use item name without any position number -->
+          <xsl:value-of select="$item/@name"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    
+    <input name="{$name}" class="button" value="{$item}" >
+      
+      <xsl:if test="$item/@class">
+        <xsl:attribute name="class">
+          <xsl:value-of select="$item/@class"/> <!-- set to custom value -->
+        </xsl:attribute>
+      </xsl:if>
+      
+      <xsl:if test="$item/@id">
+        <xsl:attribute name="id">
+          <xsl:value-of select="$item/@id"/> <!-- set to custom value -->
+        </xsl:attribute>
+      </xsl:if>
+      
+      <xsl:choose>
+        <xsl:when test="$item/@subtype">
+          <xsl:attribute name="type">
+            <xsl:value-of select="$item/@subtype"/> <!-- may be set to 'button' -->
+          </xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:attribute name="type">submit</xsl:attribute> <!-- default is 'submit' -->
+        </xsl:otherwise>
+      </xsl:choose>
+      
+      <xsl:call-template name="scripting_events">
+        <!-- insert any scripting events which have been defined -->
+        <xsl:with-param name="item" select="$item"/>
+      </xsl:call-template>
+      
+    </input>
+    
+  </xsl:template> <!-- input -->
+
+
+
 
 <!--
 ****************************************************************************************
-* BUTTON - create a submit button
+* BUTTON - create a '<buuton ...>' control
 ****************************************************************************************
 -->
 <xsl:template name="button">
@@ -643,15 +709,27 @@
     <xsl:choose>
       <!-- if 'multiple' indicator is set then include position number -->
       <xsl:when test="$multiple">
-        <xsl:value-of select="concat($item/@id,'[',$position,']')"/>
+        <xsl:value-of select="concat($item/@name,'[',$position,']')"/>
       </xsl:when>
       <xsl:otherwise> <!-- use item name without any position number -->
-        <xsl:value-of select="$item/@id"/>
+        <xsl:value-of select="$item/@name"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
   
-  <input class="button" name="{$name}" id="{$name}" value="{$item}" >
+  <button class="button" name="{$name}" >
+    
+    <xsl:if test="$item/@class">
+      <xsl:attribute name="class">
+        <xsl:value-of select="$item/@class"/> <!-- set to custom value -->
+      </xsl:attribute>
+    </xsl:if>
+    
+    <xsl:if test="$item/@id">
+      <xsl:attribute name="id">
+        <xsl:value-of select="$item/@id"/> <!-- set to custom value -->
+      </xsl:attribute>
+    </xsl:if>
     
     <xsl:choose>
       <xsl:when test="$item/@subtype">
@@ -664,12 +742,21 @@
       </xsl:otherwise>
     </xsl:choose>
     
+    <xsl:if test="$item/@value">
+      <xsl:attribute name="value">
+        <xsl:value-of select="$item/@value"/> <!-- set to custom value -->
+      </xsl:attribute>
+    </xsl:if>
+    
     <xsl:call-template name="scripting_events">
       <!-- insert any scripting events which have been defined -->
       <xsl:with-param name="item" select="$item"/>
     </xsl:call-template>
     
-  </input>
+    <!-- now insert the item value -->
+    <xsl:value-of select="$item"/>
+    
+  </button>
   
 </xsl:template> <!-- button -->
   
@@ -1131,7 +1218,34 @@
   </xsl:variable>
 
   <!-- include in POST array, but make it invisible -->
-  <input type="hidden" name="{$name}" value="{$item}" />
+  <input type="hidden" name="{$name}">
+  
+    <xsl:if test="$item/@id">
+      <xsl:attribute name="id"><xsl:value-of select="$item/@id"/></xsl:attribute>
+    </xsl:if>
+    
+    <xsl:if test="$item/@value-to-attribute">
+      <xsl:attribute name="{$item/@value-to-attribute}">
+        <xsl:value-of select="$item"/>
+      </xsl:attribute>
+    </xsl:if>
+    
+    <xsl:attribute name="value">
+      <xsl:choose>
+        <xsl:when test="$item/@CDATA">
+          <!-- output as pre-formatted text without escaping '<' and '>' characters -->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="$item" />
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+          <!-- output as plain text with escaping -->
+          <xsl:value-of select="$item"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:attribute>
+    
+  </input>
 
   <xsl:if test="$item/@visible">
     <!-- override to show this as a non-editable field -->
@@ -1736,6 +1850,7 @@
 ****************************************************************************************
 -->
 <xsl:template name="quicksearch">
+  <xsl:param name="non_empty"/>      <!-- called from a filepicker -->
   
   <div class="quicksearch">
     <form method="post" action="{$script}">
@@ -1743,12 +1858,28 @@
         <!-- add a dropdown list for the selectable field names -->
         <select class="dropdown" name="quicksearch_field">
           <xsl:for-each select="/root/lookup/quicksearch_field/option">
-            <option value="{@key}" >
-              <xsl:if test="@key=/root/params/quicksearch_default">
-                <xsl:attribute name="selected">selected</xsl:attribute>
-              </xsl:if>
-              <xsl:value-of select="node()"/>
-            </option>
+            <xsl:choose>
+              <xsl:when test="$non_empty">
+                <xsl:if test="string-length(@key) > 0">
+                  <!-- include only non-blank option -->
+                  <option value="{@key}" >
+                    <xsl:if test="@key=/root/params/quicksearch_default">
+                      <xsl:attribute name="selected">selected</xsl:attribute>
+                    </xsl:if>
+                    <xsl:value-of select="node()"/>
+                  </option>
+                </xsl:if>
+              </xsl:when>
+              <xsl:otherwise>
+                <!-- include every option -->
+                <option value="{@key}" >
+                  <xsl:if test="@key=/root/params/quicksearch_default">
+                    <xsl:attribute name="selected">selected</xsl:attribute>
+                  </xsl:if>
+                  <xsl:value-of select="node()"/>
+                </option>
+              </xsl:otherwise>
+            </xsl:choose>
           </xsl:for-each>
         </select>
         <!-- add a text box and a submit button to fire the search-->
@@ -1873,7 +2004,16 @@
                  <xsl:value-of select="node()"/>
               </xsl:if>
   
-              <input type="radio" name="{$name}" id="{$name}">
+              <input type="radio" name="{$name}">
+                
+                <xsl:choose>
+                  <xsl:when test="$item/@id">
+                    <xsl:attribute name="id"><xsl:value-of select="$item/@id" /></xsl:attribute>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <xsl:attribute name="id"><xsl:value-of select="$name" /></xsl:attribute>
+                  </xsl:otherwise>
+                </xsl:choose>
   
                 <xsl:variable name="key" select="@key"/>
   
@@ -2072,11 +2212,38 @@
                  or $item/@noedit or $noedit='y'">
 
       <xsl:choose>
+        <xsl:when test="$item/@value-to-attribute">
+          <xsl:if test="$item/@class">
+            <xsl:attribute name="class"><xsl:value-of select="$item/@class"/></xsl:attribute>
+          </xsl:if>
+          <xsl:if test="$item/@id">
+            <xsl:attribute name="id"><xsl:value-of select="$item/@id"/></xsl:attribute>
+          </xsl:if>
+          <!-- move the value to a named attribute -->
+          <xsl:choose>
+            <xsl:when test="$item/@CDATA">
+              <xsl:attribute name="{$item/@value-to-attribute}">
+                <!--<xsl:value-of select="$item" disable-output-escaping="yes"/>-->
+                <xsl:call-template name="disable-output-escaping">
+                  <xsl:with-param name="string" select="$item" />
+                </xsl:call-template>
+              </xsl:attribute>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:attribute name="{$item/@value-to-attribute}">
+                <xsl:value-of select="$item"/>
+              </xsl:attribute>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
         <xsl:when test="$item/@CDATA">
           <!-- output as pre-formatted text without escaping '<' and '>' characters -->
           <pre>
-            <xsl:if test="$item/@css_class">
-              <xsl:attribute name="class"><xsl:value-of select="$item/@css_class"/></xsl:attribute>
+            <xsl:if test="$item/@class">
+              <xsl:attribute name="class"><xsl:value-of select="$item/@class"/></xsl:attribute>
+            </xsl:if>
+            <xsl:if test="$item/@id">
+              <xsl:attribute name="id"><xsl:value-of select="$item/@id"/></xsl:attribute>
             </xsl:if>
             <!--<xsl:value-of select="$item" disable-output-escaping="yes"/>-->
             <xsl:call-template name="disable-output-escaping">
@@ -2128,8 +2295,7 @@
           <xsl:otherwise>
             <xsl:choose>
               <xsl:when test="$cellattr/@class">
-                <!-- combine standard class and custom class -->
-                <xsl:attribute name="class"><xsl:value-of select="concat('text ',$cellattr/@class)"/></xsl:attribute>
+                <xsl:attribute name="class"><xsl:value-of select="$cellattr/@class"/></xsl:attribute>
               </xsl:when>
               <xsl:otherwise>
                 <xsl:attribute name="class">text</xsl:attribute>

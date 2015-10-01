@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class sqlsrv
@@ -96,7 +96,7 @@ class sqlsrv
 |                       # or
 \(.+?\)                 # '(...)' string inside parentheses
 |,[ ]*                  # or ','
-'(?<quoted_string>.+)'  # '<quoted_string>' named pattern
+'(?P<quoted_string>.+)' # '<quoted_string>' named pattern
 )+                      # end choice
 /imsx
 END_OF_PATTERN;
@@ -286,14 +286,14 @@ END_OF_PATTERN;
         // replace 'SELECT ... WHERE ... LIMIT 1' with 'SELECT TOP 1 ... WHERE ...'
         $pattern1 = <<< END_OF_REGEX
 /
-(?<select>                      # named pattern
+(?P<select>                     # named pattern
 (,|\s|\()*[ ]*select\s[^0-9]{1} # 'SELECT x' (but not 'SELECT 1')
 )                               # end named pattern
 .*?                             # any characters, non-greedy
 (                               # start choice
 \)[ ]AS[ ]\w+                   # ') AS x'
 |                               # or
-(?<limit>LIMIT[ ]\d+)           # 'LIMIT n', named pattern
+(?P<limit>LIMIT[ ]\d+)          # 'LIMIT n', named pattern
 )                               # end choice
 /xims
 END_OF_REGEX;
@@ -565,9 +565,43 @@ $pattern3 = null;
         // Replace 'SUBSTR(...)' with 'SUBSTRING(...)'.
         $output  = preg_replace('/SUBSTR(?!ING)/i', 'SUBSTRING', $output);
 
+        $output = $this->fixReservedWords($output);
+
         return $output;
 
     } // adjustSelect
+
+    // ****************************************************************************
+    function fixReservedWords($input)
+    // find any reserved words and enclose them in double quotes
+    {
+        $pattern = <<<EOD
+/
+(?<=\W)         # not a word before
+(percent|foo)   # reserved words
+(?=\W)          # not a word after
+/imsx
+EOD;
+        $output = '';
+
+        while (preg_match($pattern, $input, $regs, PREG_OFFSET_CAPTURE)) {
+            foreach ($regs as $i => $found) {
+                if ($ix == 0) {
+                    $word  = $found[0];
+                    $start = $found[1];
+                    $output .= substr($input, 0, $start);               // copy string-before
+                    $input   = substr($input, $start+strlen($word));    // remove string_before
+                    $output .= '['.$word.']';
+                    break;
+                } // if
+            } // foreach
+        } // if
+
+        $output .= $input;  // append what is left of input
+
+        return $output;
+
+    } // fixReservedWords
 
     // ****************************************************************************
     function adjustWhere ($string_in)
@@ -675,14 +709,14 @@ END_OF_REGEX;
         // replace 'SELECT ... WHERE ... LIMIT 1' with 'SELECT TOP 1 ... WHERE ...'
         $pattern1 = <<< END_OF_REGEX
 /
-(?<select>\([ ]*select[ ][0-9]?)    # 'SELECT ' or 'SELECT 1', named pattern
+(?P<select>\([ ]*select[ ][0-9]?)   # 'SELECT ' or 'SELECT 1', named pattern
 .*?                                 # any characters, non-greedy
 (                                   # start choice
 \)[ ]AS[ ]\w+                       # ') AS x'
 |                                   # or
-(?<limit>LIMIT[ ]\d+)               # 'LIMIT n', named pattern
+(?P<limit>LIMIT[ ]\d+)              # 'LIMIT n', named pattern
 |                                   # or
-(?<subselect>select[ ])             # nested 'SELECT ', named pattern
+(?P<subselect>select[ ])            # nested 'SELECT ', named pattern
 )                                   # end choice
 /xims
 END_OF_REGEX;
@@ -711,6 +745,8 @@ END_OF_REGEX;
         $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
         $replace = array( '=1',           '=0');
         $string_out = preg_replace($search, $replace, $string_out);
+
+        $string_out = $this->fixReservedWords($string_out);
 
         return $string_out;
 

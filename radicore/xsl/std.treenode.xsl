@@ -126,7 +126,19 @@
     </span>
   </xsl:if>
 
-  <span class="text"><xsl:value-of select="$desc" />
+  <span>
+    <xsl:choose>
+      <!-- default class is 'text' -->
+      <xsl:when test="$desc/@css_class">
+        <!-- include additional CSS class name(s) -->
+        <xsl:attribute name="class"><xsl:value-of select="concat('text ',$desc/@css_class)"/></xsl:attribute>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:attribute name="class">text</xsl:attribute>
+      </xsl:otherwise>
+    </xsl:choose>
+    <!-- now include the description's text -->
+    <xsl:value-of select="$desc" />
     <!-- check if field has error attribute set -->
     <xsl:if test="$desc/@error">
       <br/><span class="error"><xsl:value-of select="$desc/@error"/></span>

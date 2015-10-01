@@ -42,7 +42,7 @@ if (isset($script_vars['dbobject'])) {
     $dbobject = unserialize($script_vars['dbobject']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action);
+        $dbobject->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
@@ -56,7 +56,8 @@ if (isset($script_vars['dbobject'])) {
     if (!empty($selection)) {
     	$dbobject->sql_selection = $selection;
     } // if
-    $dbobject->no_foreign_data = TRUE;  // do not look up data for foreign keys
+    //$dbobject->no_foreign_data = TRUE;  // do not look up data for foreign keys
+    $dbobject->no_foreign_data = FALSE;
     // get any initial values
     $null = null;
     $where = $dbobject->initialise($where, $task_selection);

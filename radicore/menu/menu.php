@@ -88,6 +88,9 @@ if (isset($_GET['pagination']) AND $_GET['pagination'] == 'mnu_todo') {
 $db_todo->sql_select  = "mnu_todo.user_id, seq_no, item_desc, CONCAT(SUBSTR(item_notes, 1, 75),'...') AS item_notes, due_date, is_complete, task_id, task_context";
 $db_todo->setRowsPerPage(10);
 $where = "user_id='{$_SESSION['logon_user_id']}' AND is_complete='N' AND DATE_SUB(due_date, INTERVAL visibility DAY) <= '$today'";
+//$where = "user_id='{$_SESSION['logon_user_id']}' AND is_complete='N' AND DATE_ADD(due_date, INTERVAL visibility DAY) <= '$today'";
+//$where = "user_id='{$_SESSION['logon_user_id']}' AND is_complete='N' AND '$today' >= DATE_SUB(due_date, INTERVAL visibility DAY)";
+//$where = "user_id='{$_SESSION['logon_user_id']}' AND is_complete='N' AND '$today' >= DATE_ADD(due_date, INTERVAL visibility DAY)";
 $todo_data = $db_todo->getData($where);
 $errors = array_merge($errors, $db_todo->getErrors());
 

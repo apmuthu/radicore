@@ -18,20 +18,19 @@ class x_person_s05 extends x_person
         global $mode;
 
         // specify external js files to be loaded
-        $javascript['head'][]['file'] = 'javascript/tiny_mce/tiny_mce.js';
-        $javascript['head'][]['code'] = 'tinyMCE.init({ 
-        mode : "textareas", 
-        theme : "advanced",
-        plugins : "emotions,spellchecker,advhr,insertdatetime,preview",  
-                 
-        // Theme options - button# indicated the row# only 
-        theme_advanced_buttons1 : "newdocument,|,bold,italic,underline,|,justifyleft,justifycenter,justifyright,fontselect,fontsizeselect,formatselect", 
-        theme_advanced_buttons2 : "cut,copy,paste,|,bullist,numlist,|,outdent,indent,|,undo,redo,|,link,unlink,anchor,image,|,code,preview,|,forecolor,backcolor", 
-        theme_advanced_buttons3 : "insertdate,inserttime,|,spellchecker,advhr,,removeformat,|,sub,sup,|,charmap,emotions",       
-        theme_advanced_toolbar_location : "top", 
-        theme_advanced_toolbar_align : "left", 
-        theme_advanced_statusbar_location : "bottom", 
-        theme_advanced_resizing : true 
+        $javascript['head'][]['file'] = 'javascript/tiny_mce/tinymce.min.js';
+        $javascript['head'][]['code'] = 'tinyMCE.init({
+        selector: "textarea",
+        theme : "modern",
+        relative_urls: true,
+        plugins: [
+        "advlist autolink lists link image charmap preview hr anchor pagebreak",
+        "searchreplace wordcount visualblocks visualchars code fullscreen",
+        "insertdatetime nonbreaking save table contextmenu directionality",
+        "emoticons template paste textcolor colorpicker textpattern imagetools"
+        ],
+        toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link imagepreview | forecolor backcolor emoticons",
+        image_advtab: true
 });';
 
         return $javascript;

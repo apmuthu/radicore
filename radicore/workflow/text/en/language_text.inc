@@ -82,23 +82,12 @@ $array['e0070'] = "Must be 1 empty pre-condition for arcs of type 'OR-split (Exp
 $array['e0071'] = "Must be in format HHH:MM";
 $array['e0072'] = "Cannot specify more than 999 hours";
 $array['e0073'] = "Cannot specify more than 59 minutes";
-$array['e0074'] = "Cannot specify CONDITION_FIELD without CONDITION_OPERATOR";
-$array['e0075'] = "Cannot specify CONDITION_FIELD without CONDITION_VALUE";
-$array['e0076'] = "CONDITION_FIELD cannot be found in data array";
-$array['e0077'] = "CONDITION_OPERATOR is not valid";
-$array['e0078'] = "CONDITION_FIELD must be in format 'name' or 'strlen(name)'";
+$array['e0074'] = "";
+$array['e0075'] = "";
+$array['e0076'] = "";
+$array['e0077'] = "";
+$array['e0078'] = "";
 $array['e0079'] = "";
-
-$array['e0080'] = "";
-$array['e0081'] = "";
-$array['e0082'] = "";
-$array['e0083'] = "";
-$array['e0084'] = "";
-$array['e0085'] = "";
-$array['e0086'] = "";
-$array['e0087'] = "";
-$array['e0088'] = "";
-$array['e0089'] = "";
 
 // menu details for subsystem WORKFLOW
 $array['Case']                                    = 'Case';

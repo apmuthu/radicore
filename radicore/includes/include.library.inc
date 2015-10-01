@@ -88,18 +88,30 @@ if (!function_exists('adjustDate')) {
 
         switch (strtolower($units)) {
         	case 'days':
+            case 'day':
+            case 'd':
         		$out_date = $dateobj->addDays($date, $adjustment);
         		break;
 
         	case 'weeks':
+            case 'week':
+            case 'w':
         		$out_date = $dateobj->addWeeks($date, $adjustment);
         		break;
 
         	case 'months':
+            case 'month':
+            case 'm':
         		$out_date = $dateobj->addMonths($date, $adjustment);
         		break;
 
-        	default:
+        	case 'years':
+            case 'year':
+            case 'y':
+                $out_date = $dateobj->addYears($date, $adjustment);
+                break;
+
+            default:
         	    // "Unknown units in call to adjustDate()"
         	    trigger_error(getLanguageText('sys0118'), E_USER_ERROR);
         		break;
@@ -789,6 +801,35 @@ if (!function_exists('array2xml')) {
         return $xml_str;
 
     } // array2xml
+} // if
+
+// ****************************************************************************
+if (!function_exists('build_select_list')) {
+    function build_select_list($fieldspec, $exclude=null)
+    // build SQL 'select' list from contents of $fieldspec array, but exclude
+    // anything in the $exclude array.
+    {
+        $array = array();
+
+        if (!is_array($exclude)) {
+            $exclude = array();
+        } // if
+
+        foreach ($fieldspec as $name => $spec) {
+            if (!empty($spec['nondb'])) {
+                // ignore this entry
+            } elseif (in_array($name, $exclude)) {
+                // ignore this entry
+            } else {
+                $array[] = $name;
+            } // if
+        } // foreach
+
+        $string = implode(', ' , $array);
+
+        return $string;
+
+    } // build_select_list
 } // if
 
 // ****************************************************************************
@@ -1826,7 +1867,7 @@ END_OF_REGEX;
         $pattern4 = <<< END_OF_REGEX
 /
 ^
-(?<bitwise>            # start named pattern
+(?P<bitwise>           # start named pattern
 [ ]*                   # 0 or more spaces
 (&|~|\^|<<|>>|\|)      # bitwise operators
 [ ]*                   # 0 or more spaces
@@ -2965,15 +3006,19 @@ if (!function_exists('getLanguageArray')) {
                 trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
             } // if
             unset($array);
-            if (!empty($GLOBALS['project_code'])) {
-                // now look for a file of custom messages
-                $dir .= '/custom-processing/'.$GLOBALS['project_code'];
+        } // if
+
+        if (!empty($GLOBALS['project_code'])) {
+            // now look for a file of custom messages
+            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+            if (!empty($dir)) {
                 $fname = getLanguageFile('language_array.inc', $dir, true);
                 if ($fname) {
                     $array3 = require $fname;  // import contents of disk file
-                    // merge the two arrays so that $array3 overwrites $array2
+                    // custom values replace standard values
+                    $array1 = array_merge($array1, $array3);
                     $array2 = array_merge($array2, $array3);
-                    unset($array);
+                    unset($array3);
                 } // if
             } // if
         } // if
@@ -3013,6 +3058,10 @@ if (!function_exists('getLanguageFile')) {
     function getLanguageFile ($filename, $directory, $ignore_if_not_found=false)
     // look for '$directory/$language/$filename' where $language is variable.
     {
+        if (empty($directory)) {
+            $directory = 'text';  // default value
+        } // if
+
         $language_array = array();
 
         if (!empty($GLOBALS['party_language'])) {
@@ -3169,20 +3218,24 @@ if (!function_exists('getLanguageText')) {
                     trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
                 } // if
                 unset($array);
-                if (!empty($GLOBALS['project_code'])) {
-                    // now look for a file of custom messages
-                    $dir .= '/custom-processing/'.$GLOBALS['project_code'];
-                    $fname = getLanguageFile('language_text.inc', $dir, true);
-                    if ($fname) {
-                        $array3 = require $fname;  // import contents of disk file
-                        // merge the two arrays so that $array3 overwrites $array2
-                        $array2 = array_merge($array2, $array3);
-                        unset($array);
-                    } // if
-                } // if
     	    } else {
     	        $array2 = array();
     	    } // if
+        } // if
+
+        if (!empty($GLOBALS['project_code'])) {
+            // now look for a file of custom messages
+            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+            if (!empty($dir)) {
+                $fname = getLanguageFile('language_text.inc', $dir, true);
+                if ($fname) {
+                    $array3 = require $fname;  // import contents of disk file
+                    // custom values replace standard values
+                    $array1 = array_merge($array1, $array3);
+                    $array2 = array_merge($array2, $array3);
+                    unset($array3);
+                } // if
+            } // if
         } // if
 
         // perform lookup for specified $id ($array2 first, then $array1)
@@ -5738,7 +5791,7 @@ if (!function_exists('selectAllColumns')) {
         $pattern = <<< END_OF_REGEX
 /
 (                       # start choice
-(?<count>\(\*\))        # '(*)', named pattern
+(?P<count>\(\*\))       # '(*)', named pattern
 |                       # or
 ^\*                     # begins with '*'
 |                       # or
@@ -6099,8 +6152,11 @@ if (!function_exists('setColumnAttributes')) {
                 	foreach ($input_data as $input_field => $input_array) {
                 		if ($input_field == $field) {
                 			foreach ($input_array as $attr_name => $attr_value) {
-                			    $screen_structure[$zone]['fields'][$col][$attr_name] = $attr_value;
-                				$screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
+                                if (preg_match('/(width|align)/i', $attr_name)) {
+                                    $screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
+                                } else {
+                			        $screen_structure[$zone]['fields'][$col][$attr_name] = $attr_value;
+                                } // if
                 			} // foreach
                 		} // if
                 	} // foreach
@@ -6506,6 +6562,25 @@ if (!function_exists('timeDifference')) {
         return (int)$diff;
 
     } // timeDifference
+} // if
+
+// ****************************************************************************
+if (!function_exists('truncateNumber')) {
+    function truncateNumber ($input, $decimal_places=2)
+    // truncate a number after N decimal places.
+    // This is the equivalent of rounding DOWN instead of UP.
+    {
+        if (strlen($input) == 0) return;
+
+        $factor = $decimal_places * 10;
+
+        $integer = $input * $factor;    // put number to the left of the decimal point
+        $integer = floor($integer);     // drop all decimal places
+        $output = $integer / $factor;   // put decimal point in correct place
+
+        return $output;
+
+    } // truncate
 } // if
 
 // ****************************************************************************

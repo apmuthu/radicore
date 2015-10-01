@@ -1,5 +1,5 @@
 <?php
-    // file created on June 14, 2014, 1:39 pm
+    // file created on September 2, 2015, 4:13 pm
     
     // field specifications for table xample.test_autoincrement
     $fieldspec['id']                        = array('type' => 'integer',

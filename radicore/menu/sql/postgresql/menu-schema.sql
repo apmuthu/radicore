@@ -557,7 +557,7 @@ CREATE TABLE mnu_user (
     is_disabled character(1) DEFAULT 'N'::bpchar NOT NULL,
     logon_date date,
     logon_time time without time zone,
-    language_code character varying(6),
+    language_id character varying(6),
     start_date date DEFAULT '2000-01-01'::date NOT NULL,
     end_date date DEFAULT '9999-12-31'::date,
     ip_address character varying(40),

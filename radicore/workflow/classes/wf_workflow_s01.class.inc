@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'wf_workflow.class.inc';
 class wf_workflow_s01 extends wf_workflow
@@ -231,8 +231,8 @@ class wf_workflow_s01 extends wf_workflow
             $inward_count_by_type  = array();
             $outward_count_by_type = array();
             $dbarc->sql_select  = "wf_transition.workflow_id, wf_transition.transition_id, wf_arc.direction, wf_arc.arc_type";
-            //$dbarc->sql_select .= ", count(wf_arc.pre_condition) as guard_count";
-            $dbarc->sql_select .= ", (SELECT count(pre_condition) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS guard_count";
+            //$dbarc->sql_select .= ", count(wf_arc.condition_field) as guard_count";
+            $dbarc->sql_select .= ", (SELECT count(condition_field) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS guard_count";
             //$dbarc->sql_select .= ", count(arc_type) as arc_count";
             $dbarc->sql_select .= ", (SELECT count(arc_type) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS arc_count";
             $dbarc->sql_from    = "wf_transition "

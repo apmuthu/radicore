@@ -33,7 +33,7 @@ class wf_arc extends Default_Table
         $case_id       = $arc_data['case_id'];
 
         // get list of all the places which input to this transition
-        $this->sql_select = "wf_arc.workflow_id, transition_id, wf_arc.place_id, arc_type, direction, pre_condition, place_type";
+        $this->sql_select = "wf_arc.workflow_id, transition_id, wf_arc.place_id, arc_type, direction, condition_field, place_type";
         $this->sql_from   = "wf_arc "
                           . "LEFT JOIN wf_place ON "
                           . "(wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";

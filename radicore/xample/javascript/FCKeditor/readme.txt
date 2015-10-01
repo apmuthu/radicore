@@ -1,1 +1,0 @@
-if you want this code please download it from http://www.fckeditor.net/

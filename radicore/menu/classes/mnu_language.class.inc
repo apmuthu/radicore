@@ -65,13 +65,13 @@ class mnu_language extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if (!array_key_exists('language_id', $this->lookup_data)) {
-            // get options for language_code
+            // get options for language_id
             $array = getLanguageArray('languages');
             $this->lookup_data['language_id'] = $array;
         } // if
 
         if (!array_key_exists('date_format', $this->lookup_data)) {
-            // get options for language_code
+            // get options for date_format
             $array = getLanguageArray('date_format');
             $this->lookup_data['date_format'] = $array;
         } // if

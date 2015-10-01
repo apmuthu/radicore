@@ -536,7 +536,7 @@ CREATE TABLE mnu_user (
   is_disabled char(1) NOT NULL DEFAULT 'N',
   logon_date date DEFAULT NULL,
   logon_time time(0) DEFAULT NULL,
-  language_code nvarchar(6) DEFAULT NULL,
+  language_id nvarchar(6) DEFAULT NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',
   ip_address nvarchar(40) DEFAULT NULL,

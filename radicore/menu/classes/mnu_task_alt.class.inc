@@ -28,7 +28,7 @@ class mnu_task_alt extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if (!array_key_exists('language_id', $this->lookup_data)) {
-            // get options for language_code
+            // get options for language_id
             $dbobject =& RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id', "language_id != '{$_SESSION['default_language']}'");
             $array = array_change_key_case($array, CASE_LOWER);

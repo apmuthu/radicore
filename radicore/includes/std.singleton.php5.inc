@@ -108,15 +108,7 @@ class RDCsingleton
                 		require_once 'std.validation.class.inc';
                 		break;
 
-                	case 'custom_xsl_params':
-                        require_once 'custom_xsl_params.class.inc';
-                        break;
-
-                    case 'custom_javascript':
-                        require_once 'custom_javascript.class.inc';
-                        break;
-
-                    default:
+                	default:
                 	    require_once $filename;
                 		break;
                 } // switch

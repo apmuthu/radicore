@@ -622,7 +622,7 @@ class mysql
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $result = mysqli_query($this->dbconnect, $this->query);
             if ($result === false) {
-            	if (mysqli_errno($this->dbconnect) == 2006) {
+            	if (preg_match('/(2006|2013)/', mysqli_errno($this->dbconnect))) {
             	    // connection has been lost, so re-connect and retry
             	    $this->dbconnect = false;
                     $save_query = $this->query;

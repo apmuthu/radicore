@@ -219,7 +219,7 @@ class mnu_user extends Default_Table
 
         if ($mode == 'update') {
             $this->fieldspec['user_roles']      = array('type' => 'string',
-                                                        'control' => 'button',
+                                                        'control' => 'input',
                                                         'nondb' => 'y',
                                                         'task_id' => 'mnu_user_role(list2)');
             if (isset($fieldarray['role_list'])) {
@@ -406,7 +406,7 @@ class mnu_user extends Default_Table
             $this->lookup_data['role_id'] = $array;
         } // if
 
-        if (!array_key_exists('language_code', $this->lookup_data)) {
+        if (!array_key_exists('language_id', $this->lookup_data)) {
             // get array of all supported language codes
             $dbobject =& RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
@@ -414,7 +414,7 @@ class mnu_user extends Default_Table
 //                // remove default language as an option in this screen
 //            	unset($array[strtoupper($_SESSION['default_language'])]);
 //            } // if
-            $this->lookup_data['language_code'] = $array;
+            $this->lookup_data['language_id'] = $array;
         } // if
 
         if (!array_key_exists('rdcaccount_id', $this->lookup_data)) {

@@ -1,5 +1,25 @@
 ﻿RADICORE for PHP - news
 
+2015-10-01, version 1.91.0
+Database changes:
+- run script 'menu\sql\<dbms>\alter_table(2015-09-20).sql' to rename 'mnu_user.language_code' to 'mnu_user.language_id'.
+
+Other changes:
+- fixed bug in std.update1.inc which erroneously called the getInitialData() method after the PASTE button was pressed.
+- modified 'std.treenode.xsl' to allow additional names in 'css_class' to be added to the node description.
+- fixed bug in 'std.multi5.inc' which caused the call to $dbinner->setParentData() to initialise $inner_data.
+- updated 'std.search1.inc' to set $dbobject->no_foreign_data = FALSE instead of TRUE. This is because I have found it necessary to change it to FALSE more often than to leave it as TRUE, so the default setting should be the one that is most commonly used.
+- updated 'std.filepicker1.inc' so that it automatically includes the quicksearch area for file or directory names. This removes the need for a separate 'Search' button on the navigation bar.
+- updated 'include.xml.php5.inc' and 'std.head.xsl' to allow javascript to be added at the end of the <BODY> element.
+- updated 'include.xml.php5.inc' and 'std.data_field.xsl' to allow custom buttons to be specifed by either the <input> or <button> controls. If you currently use any 'button' controls these may have to be changed to 'input' due to the way that the button text is displayed in the screen.
+- fixed bug in 'std.multi2/3/4/5.inc' which caused a popup in the inner entity to return its result to the wrong row.
+- updated 'include.xml.php5.inc' to allow 'rdc_fieldspecs' to be an alias of 'rdc_fieldspec', and to allow either to be used in the '_cm_formatData)' method as well as the '_cm_post_getData()' method.
+- fixed bug in 'std.multi4.inc' which caused scrolling for the outer entity to fail.
+- renamed column 'language_code' to 'language_id' in the MNU_USER table to be consistent with the MNU_LANGUAGE table.
+- fixed bug in 'mnu_subsystem_s01.class.inc' which caused an invalid query to be generated when trying to export from the 'mnu_user_role' table.
+- updated TCPDF library to version 6.2.12
+- updated TINYMCE library to version 4.2.6
+
 2015-07-01, version 1.90.0
 Database changes:
 - run script "menu\sql\menu.menu_export(2015-06-23).sql" to add the 'directory(up)' task to the MENU database.

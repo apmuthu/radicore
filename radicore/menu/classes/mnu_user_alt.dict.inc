@@ -1,5 +1,5 @@
 <?php
-    // file created on May 7, 2014, 3:30 pm
+    // file created on September 21, 2015, 8:39 am
     
     // field specifications for table menu.mnu_user_alt
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -11,6 +11,7 @@
                                                     'size' => 5,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
+                                                    'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'language_id');
     

@@ -154,8 +154,10 @@ if (!empty($_POST)) {
     } elseif (isset($_POST['paste'])) {
         // merge initial data with previously saved data
         $fieldarray = pasteData($dbobject, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
-        // redo any initialisation
-        $fieldarray = $dbobject->getInitialData($fieldarray);
+        // redo any configuration changes
+        //$fieldarray = $dbobject->getInitialData($fieldarray);
+        //$dbobject->numrows = $scrolling[$dbobject->getClassName()]['lastitem'];
+        $fieldarray = $dbobject->getExtraData($fieldarray);
 
     } else {
         // identify if one of the 'submit' buttons has been pressed

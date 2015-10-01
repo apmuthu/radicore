@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -134,25 +134,50 @@ class radicore_view
             	    } // foreach
                     unset($rowdata['rdc_rowspecs']);
                 } // if
-                // look for optional attributes for individual fields within this row
-                if (array_key_exists('rdc_fieldspec', $rowdata)) {
-                    foreach ($rowdata['rdc_fieldspec'] as $field => $spec) {
-                        if (array_key_exists($field, $fieldspec)) {
-                            $fieldspec[$field] = array_merge($fieldspec[$field], $spec);
-                        } // if
-                    } // foreach
-                    unset($rowdata['rdc_fieldspec']);
-                } // if
                 $css_array = array();  // optional css class specifications
                 // format data for output (this converts dates and numbers)
                 $rowdata = $dbobject->formatData($rowdata, $css_array);
+                // look for a change in field specifications
+                if (isset($rowdata['rdc_fieldspec']) AND is_array($rowdata['rdc_fieldspec'])) {
+                    // merge 'fieldspec' with 'fieldspecs'
+                    if (!isset($rowdata['rdc_fieldspecs'])) $rowdata['rdc_fieldspecs'] = array();
+                    $rowdata['rdc_fieldspecs'] = array_merge($rowdata['rdc_fieldspecs'], $rowdata['rdc_fieldspec']);
+                    unset($rowdata['rdc_fieldspec']);
+                } // if
+                if (isset($rowdata['rdc_fieldspecs']) AND is_array($rowdata['rdc_fieldspecs'])) {
+                    // merge temporary specs for this row with general specs
+                    foreach ($rowdata['rdc_fieldspecs'] as $field => $spec) {
+                        $fieldspec[$field] = array_merge($fieldspec[$field], $spec);
+                    } // foreach
+                    unset($rowdata['rdc_fieldspecs']);
+                } // if
                 // add a child node for each field
                 foreach ($rowdata as $fieldname => $fieldvalue) {
-                    if (preg_match('/^[0-9]/', $fieldname) OR empty($fieldname)) {
-                        // this is not a valid field name, so flag it
-                        $fieldname = 'invalid_'.$fieldname;
-                    } // if
-                    $child = $doc->createElement($fieldname);
+                    //if (preg_match('/^[0-9]/', $fieldname) OR empty($fieldname)) {
+                    //    // this is not a valid field name, so flag it
+                    //    $fieldname = 'invalid_'.$fieldname;
+                    //} // if
+                    try {
+                        $child = $doc->createElement($fieldname);
+                    } catch (Exception $e) {
+                        //if ($e->getCode() == 5) {
+                        //    // do not abort with an invalid character
+                        //    $fieldname = 'invalid_'.$fieldname;
+                        //    $child = $doc->createElement($fieldname);
+                        //} else {
+                            $trace = $e->getTrace();
+                            if (is_array($trace) AND array_key_exists('0', $trace)) {
+                                $trace = $trace[0];
+                            } // if
+                            $trace['msg']        = $e->getMessage();
+                            $trace['code']       = $e->getCode();
+                            $trace['fieldname']  = $fieldname;
+                            $trace['fieldvalue'] = $fieldvalue;
+                            $trace['rowdata']    = $rowdata;
+                            $result = format_array($trace);
+                            trigger_error($result, E_USER_ERROR);
+                        //} // if
+                    } // try
                     $child = $node->appendChild($child);
                     if (array_key_exists($fieldname, $css_array)) {
                         // include css class name(s)
@@ -345,9 +370,6 @@ class radicore_view
                                 if (isset($spec['align_lr'])) {
                             	    $child->setAttribute('align_lr', strtolower($spec['align_lr']));
                                 } // if
-                                if (isset($spec['class'])) {
-                            	    $child->setAttribute('class', strtolower($spec['class']));
-                                } // if
                             } // if
 
                             // option for multiple checkboxes
@@ -446,9 +468,9 @@ class radicore_view
                                 } // if
                             } // if
 
-                            // option for submit buttons
-                            if ($spec['control'] == 'button') {
-                                $child->setAttribute('control', 'button');
+                            // option for 'button' controls
+                            if ($spec['control'] == 'button' OR $spec['control'] == 'input') {
+                                $child->setAttribute('control', $spec['control']);
                                 if (isset($spec['subtype'])) {
                                     $child->setAttribute('subtype', $spec['subtype']);
                                 } // if
@@ -456,21 +478,40 @@ class radicore_view
                                     if (substr($spec['task_id'], 0, 2) == '%%') {
                                         // extract name of field which contains task_id
                                         $button_task_id = substr($spec['task_id'], 2);
-                                	    if (isset($rowdata[$button_task_id])) {
-                                		    $child->setAttribute('id', 'task#'.$rowdata[$button_task_id]);
-                                	    } else {
-                                	        $child->setAttribute('id', 'task#'.$spec['task_id']);
-                                	    } // if
+                                        if (isset($rowdata[$button_task_id])) {
+                                            $child->setAttribute('name', 'task#'.$rowdata[$button_task_id]);
+                                        } else {
+                                            $child->setAttribute('name', 'task#'.$spec['task_id']);
+                                        } // if
                                     } else {
-                            	        $child->setAttribute('id', 'task#'.$spec['task_id']);
+                                        $child->setAttribute('name', 'task#'.$spec['task_id']);
                                     } // if
                                 } else {
-                                    $child->setAttribute('id', 'button#'.$fieldname);
+                                    // no custom value specified so use default
+                                    $child->setAttribute('name', 'button#'.$fieldname);
+                                } // if
+                                if ($spec['control'] == 'button') {
+                                    if (isset($spec['value'])) {
+                                        $child->setAttribute('value', $spec['value']);
+                                    } // if
                                 } // if
                                 if (empty($fieldvalue)) {
-                            	    $fieldvalue = getLanguageText($fieldname);
+                                    $fieldvalue = getLanguageText($fieldname);
                                 } // if
                             } // if
+                        } // if
+
+                        if (isset($spec['id']) AND !empty($spec['id'])) {
+                            $child->setAttribute('id', $spec['id']);
+                        } // if
+
+                        if (isset($spec['class']) AND !empty($spec['class'])) {
+                            $child->setAttribute('class', $spec['class']);
+                        } // if
+
+                        if (isset($spec['value-to-attribute']) AND !empty($spec['value-to-attribute'])) {
+                            // move the value to an attribute for security reasons
+                            $child->setAttribute('value-to-attribute', $spec['value-to-attribute']);
                         } // if
 
                         if (is_object($jsOBJ) AND method_exists($jsOBJ, 'field_level_js')) {
@@ -743,10 +784,11 @@ class radicore_view
         } // if
 
         $xsl_params['script_short'] = basename($_SERVER['PHP_SELF'], '.php');
-        // replace parentheses with underscores so that this can be used as a CSS class name
-        $xsl_params['script_short'] = str_replace(array('(', ')'),
-                                                  array('_', '_'),
+        // replace parentheses and dots with underscores so that this can be used as a CSS class name
+        $xsl_params['script_short'] = str_replace(array('(', ')', '.'),
+                                                  array('_', '_', '_'),
                                                   $xsl_params['script_short']);
+        $xsl_params['script_short'] = rtrim($xsl_params['script_short'], '_'); // remove trailing '_'
 
         $xsl_params['session_name'] = session_name();
         //$xsl_params['session_id']   = session_id();
@@ -780,18 +822,12 @@ class radicore_view
         } // if
 
         // insert various pieces of text
-        $xsl_params['text']['logout-all']        = getLanguageText('xsl_logout_all');
         $xsl_params['text']['recover-pswd']      = getLanguageText('xsl_recover_pswd');
         $xsl_params['text']['new-session']       = getLanguageText('xsl_new_session');
         $xsl_params['text']['print']             = getLanguageText('xsl_print');
         $xsl_params['text']['noprint']           = getLanguageText('xsl_noprint');
         $xsl_params['text']['add-to-favourites'] = getLanguageText('xsl_add_to_favourites');
         $xsl_params['text']['quick-search']      = getLanguageText('xsl_quick_search');
-
-        if (file_exists('../css/xsl_params.inc')) {
-            // include overrides from optional file
-            include('../css/xsl_params.inc');
-        } // if
 
         $xsl_params['text']['page']           = getLanguageText('xsl_page');
         $xsl_params['text']['item']           = getLanguageText('xsl_item');
@@ -802,6 +838,7 @@ class radicore_view
         $xsl_params['text']['next']           = getLanguageText('xsl_next');
         $xsl_params['text']['show']           = getLanguageText('xsl_show');
         $xsl_params['text']['logout']         = getLanguageText('xsl_logout');
+        $xsl_params['text']['logout-all']     = getLanguageText('xsl_logout_all');
         $xsl_params['text']['help']           = getLanguageText('xsl_help');
         $xsl_params['text']['page-created']   = getLanguageText('xsl_page_created');
         $xsl_params['text']['seconds']        = getLanguageText('xsl_seconds');
@@ -809,17 +846,49 @@ class radicore_view
             $xsl_params['client-side'] = 'true';
         } // if
 
-		if (isset($_SESSION['logon_user_name'])) {
+//        if (file_exists('../css/xsl_params.inc')) {
+//            // include overrides from optional file
+//            include('../css/xsl_params.inc');
+//        } // if
+        $try = array();
+        if (!empty($GLOBALS['project_code'])) {
+            $try[] = "../css/xsl_params.{$GLOBALS['project_code']}.inc";
+        } // if
+        $try[] = '../css/xsl_params.inc';
+        foreach ($try as $fname) {
+            if (file_exists($fname)) {
+                include($fname);
+                break;
+            } // if
+        } // foreach
+
+        if (isset($_SESSION['logon_user_name'])) {
     	    $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
             $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
             // look for custom text which needs to be inserted
-            $fn = 'custom_xsl_params.class.inc';
-            if ($fp = fopen($fn, 'r', true)) {
-                fclose($fp);
-                $tempobj =& RDCsingleton::getInstance('custom_xsl_params');
-                $xsl_params = $tempobj->amend_text($xsl_params);
-                unset($tempobj);
+//            $fn = 'custom_xsl_params.class.inc';
+//            if ($fp = fopen($fn, 'r', true)) {
+//                fclose($fp);
+//                $tempobj =& RDCsingleton::getInstance('custom_xsl_params');
+//                $xsl_params = $tempobj->amend_text($xsl_params);
+//                unset($tempobj);
+//            } // if
+            $try = array();
+            if (!empty($GLOBALS['project_code'])) {
+                $try[] = "custom_xsl_params.class.{$GLOBALS['project_code']}.inc";
             } // if
+            $try[] = 'custom_xsl_params.class.inc';
+            foreach ($try as $fname) {
+                if ($fp = fopen($fname, 'r', true)) {
+                    fclose($fp);
+                    // file found, so load it and instantiate object
+                    require_once($fname);
+                    $tempobj = new custom_xsl_params();
+                    $xsl_params = $tempobj->amend_text($xsl_params);
+                    unset($tempobj);
+                    break;
+                } // if
+            } // foreach
         } // if
 
 		$xsl_params['text']['selections']     = getLanguageText('xsl_selections');
@@ -1206,13 +1275,13 @@ class radicore_view
             // already loaded, so instantiate object
             $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
         } else {
-            // loo for a file with one of several possible names
-            $attempt = array();
+            // look for a file with one of several possible names
+            $try = array();
             if (!empty($project_code)) {
-                $attempt[] = "custom_javascript.class.{$project_code}.inc";
+                $try[] = "custom_javascript.class.{$project_code}.inc";
             } // if
-            $attempt[] = 'custom_javascript.class.inc';
-            foreach ($attempt as $fn) {
+            $try[] = 'custom_javascript.class.inc';
+            foreach ($try as $fn) {
                 if ($fp = @fopen($fn, 'r', true)) {
                     fclose($fp);
                     // file found, so load it and instantiate object
@@ -1358,31 +1427,34 @@ class radicore_view
     } // setActBar
 
     // ****************************************************************************
-    function setCSSfiles ($doc, $root, $css_files)
-    // add contents of $css_files to the current XML document
+    function setCSSfiles ($doc, $root, $css_files_in)
+    // add contents of $css_files_in to the current XML document
     {
         // convert from string to array, if necessary
-        if (!is_array($css_files)) {
-            $css_files = (array)$css_files;
+        if (!is_array($css_files_in)) {
+            $css_files_in = (array)$css_files_in;
         } // if
 
-        // if no stylesheet is specified use 'style_custom.css' in local directory
+        // try 'style_custom.css' in local directory
         // also try 'style_custom.XXX.css' where 'XXX' is the current project code
-        if (empty($css_files)) {
-            $try[] = 'style_custom.css';
-            if (!empty($GLOBALS['project_code'])) {
-        	    $try[] = 'style_custom.'.$GLOBALS['project_code'].'.css';
-            } // if
-            foreach ($try as $fname) {
-        	    if (file_exists($fname)) {
-            	    $css_files[] = $fname;
-                } // if
-            } // foreach
+        $try[] = 'style_custom.css';
+        if (!empty($GLOBALS['project_code'])) {
+        	$try[] = 'style_custom.'.$GLOBALS['project_code'].'.css';
         } // if
+        if (!empty($css_files_in)) {
+            // include any custom css files
+            $try = array_merge($try, $css_files_in);
+        } // if
+        foreach ($try as $fname) {
+        	if (file_exists($fname)) {
+            	$css_files[] = $fname;
+            } // if
+        } // foreach
 
         foreach ($css_files as $filenum => $filename) {
-            if (dirname($filename) == '.') {
-                // prepend file name with directory name
+            //if (dirname($filename) == '.') {
+            if (substr($filename, 0, 1) != '.') {
+                // path is not relative, so prepend file name with directory name
         	    $css_files[$filenum] = dirname($_SERVER['PHP_SELF']) .'/' .$filename;
             } // if
         } // foreach
@@ -1441,9 +1513,22 @@ class radicore_view
     {
         $file_array = array();  // array of 'file' entries
 
+        $PHP_SELF = $_SERVER['PHP_SELF'];
+        if (!empty($GLOBALS['https_server_suffix'])) {
+            // if path name begins with https_server_suffix it must be stripped off
+            $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
+            if (preg_match($pattern, $PHP_SELF, $regs)) {
+                $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
+            } // if
+        } // if
+
+        if (isset($javascript) AND is_array($javascript) AND !empty($javascript)) {
+            $js = $doc->createElement('javascript');
+            $js = $root->appendChild($js);
+        } // if
+
         if (isset($javascript['head'])) {
-            $occ = $doc->createElement('javascript');
-            $occ = $root->appendChild($occ);
+            $file_array = array();
             foreach ($javascript['head'] as $entry) {
                 if (key($entry) == 'file') {
                     if (in_array($entry, $file_array)) {
@@ -1453,20 +1538,11 @@ class radicore_view
                         // add a reference to a file
                         $head = $doc->createElement('head');
                         $head->setAttribute('type', 'file');
-                        $head = $occ->appendChild($head);
-
-                        $PHP_SELF = $_SERVER['PHP_SELF'];
-                        if (!empty($GLOBALS['https_server_suffix'])) {
-                            // if path name begins with https_server_suffix it must be stripped off
-                            $pattern = '#^'.$GLOBALS['https_server_suffix'].'#i';
-                            if (preg_match($pattern, $PHP_SELF, $regs)) {
-                                $PHP_SELF = substr($PHP_SELF, strlen($GLOBALS['https_server_suffix']));
-                            } // if
-                        } // if
+                        $head = $js->appendChild($head);
 
                         $url = $GLOBALS['url_files'] .dirname($PHP_SELF) .'/' .$entry[key($entry)];
 
-                        $head  = $occ->appendChild($head);
+                        $head  = $js->appendChild($head);
                         $value = $doc->createTextNode($url);
                         $value = $head->appendChild($value);
                     } // if
@@ -1476,7 +1552,7 @@ class radicore_view
             	    // add a block of javascript code
                     $head = $doc->createElement('head');
                     $head->setAttribute('type', 'code');
-                    $head  = $occ->appendChild($head);
+                    $head  = $js->appendChild($head);
                     $value = $doc->createTextNode($entry[key($entry)]);
                     $value = $head->appendChild($value);
                 } // if
@@ -1484,9 +1560,9 @@ class radicore_view
         } // if
 
         if (isset($javascript['body'])) {
-            // add element containing action buttons
+            // add element for <body>
             $body = $doc->createElement('body');
-            $body = $occ->appendChild($body);
+            $body = $js->appendChild($body);
 
             foreach ($javascript['body'] as $tag => $event) {
                 if (is_array($event)) {
@@ -1498,9 +1574,9 @@ class radicore_view
         } // if
 
         if (isset($javascript['tbody'])) {
-            // add element containing action buttons
+            // add element for <tbody>
             $body = $doc->createElement('tbody');
-            $body = $occ->appendChild($body);
+            $body = $js->appendChild($body);
 
             foreach ($javascript['tbody'] as $tag => $event) {
                 // add each event to the xml document
@@ -1512,10 +1588,33 @@ class radicore_view
 			// add a block of javascript code to body
 			$body = $doc->createElement('script');
 			$body->setAttribute('type', 'code');
-			$body = $occ->appendChild($body);
+			$body = $js->appendChild($body);
 			$value = $doc->createTextNode($javascript['script']);
 			$value = $body->appendChild($value);
 		} // if
+
+        if (isset($javascript['foot'])) {
+            $file_array = array();
+            foreach ($javascript['foot'] as $entry) {
+                if (key($entry) == 'file') {
+                    if (in_array($entry, $file_array)) {
+                        // already processed, so don't repeat
+                    } else {
+                        $file_array[] = $entry;
+                        // add a reference to a file
+                        $foot = $doc->createElement('foot');
+                        $foot->setAttribute('type', 'file');
+                        $foot = $js->appendChild($foot);
+
+                        $url = $GLOBALS['url_files'] .dirname($PHP_SELF) .'/' .$entry[key($entry)];
+
+                        $foot  = $js->appendChild($foot);
+                        $value = $doc->createTextNode($url);
+                        $value = $foot->appendChild($value);
+                    } // if
+                } // if
+            } // foreach
+        } // if
 
         return;
 

@@ -103,6 +103,9 @@ if (count($_SESSION) <= 1) {
     // if $_SESSION is empty then $_POST must be empty as well
     $_POST = array();
 } // if
+if (!empty($_SESSION['QUERY_STRING'] )) {
+    $QUERY_STRING = $_SESSION['QUERY_STRING'];
+} // if
 
 if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
     // script will be restarted using HTTPS protocol, so do not clear session data
@@ -113,6 +116,20 @@ if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
 
 if (isset($messages_bf)) {
     $_SESSION['messages'] = $messages_bf;   // put these messages back
+} // if
+
+if (!empty($_SERVER['QUERY_STRING'])) {
+    $_SERVER['QUERY_STRING'] = str_replace('&amp;', '&', $_SERVER['QUERY_STRING']);
+    parse_str($_SERVER['QUERY_STRING'], $QUERY_STRING);
+    unset($QUERY_STRING['session_name']);
+    unset($QUERY_STRING['session_id']);
+    if (!empty($QUERY_STRING)) {
+        $_SESSION['QUERY_STRING'] = http_build_query($QUERY_STRING);
+    } else {
+        unset($_SESSION['QUERY_STRING']);
+    } // if
+} elseif (!empty($QUERY_STRING) AND is_string($QUERY_STRING)) {
+    $_SESSION['QUERY_STRING'] = $QUERY_STRING;
 } // if
 
 // initialise a new session (but add saved data)

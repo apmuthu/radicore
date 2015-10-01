@@ -757,7 +757,7 @@ class date_class {
 
     // ****************************************************************************
     function addWeeks ($internaldate, $weeks)
-    // add a number of days (may be negative) to $internaldate (YYYY-MM-DD)
+    // add a number of weeks (may be negative) to $internaldate (YYYY-MM-DD)
     // and return the result in the same format
     {
         // multiply weeks by 7 to get days
@@ -769,14 +769,20 @@ class date_class {
 
     // ****************************************************************************
     function addMonths ($internaldate, $months)
-    // add a number of days (may be negative) to $internaldate (YYYY-MM-DD)
+    // add a number of months (may be negative) to $internaldate (YYYY-MM-DD)
     // and return the result in the same format
     {
         // ensure date is in internal format
         $internaldate = $this->getInternalDate($internaldate);
 
-        // adjust it by speciied number of months
-        $timestamp = strtotime($internaldate .' + ' .$months .' months');
+        // adjust it by specified number of months
+        if ($months < 0) {
+            $symbol = ' - ';
+            $months = abs($months);
+        } else {
+            $symbol = ' + ';
+        } // if
+        $timestamp = strtotime($internaldate .$symbol .$months .' months');
 
         // convert from unix timestamp into a human-readable date
         $result = date('Y-m-d', $timestamp);
@@ -784,6 +790,30 @@ class date_class {
         return $result;
 
     } // addMonths
+
+    // ****************************************************************************
+    function addYears ($internaldate, $years)
+    // add a number of years (may be negative) to $internaldate (YYYY-MM-DD)
+    // and return the result in the same format
+    {
+        // ensure date is in internal format
+        $internaldate = $this->getInternalDate($internaldate);
+
+        // adjust it by specified number of years
+        if ($years < 0) {
+            $symbol = ' - ';
+            $years = abs($years);
+        } else {
+            $symbol = ' + ';
+        } // if
+        $timestamp = strtotime($internaldate .$symbol .$years .' $years');
+
+        // convert from unix timestamp into a human-readable date
+        $result = date('Y-m-d', $timestamp);
+
+        return $result;
+
+    } // addYears
 
     // ****************************************************************************
     function getDateLength ($format, $type)

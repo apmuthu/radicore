@@ -947,7 +947,7 @@ abstract class Default_Table
 
         return $where;
 
-    } // deletetScrollItem
+    } // deleteScrollItem
 
     // ****************************************************************************
     function deleteSelection ($selection)
@@ -2215,6 +2215,29 @@ abstract class Default_Table
     } // getDBname
 
     // ****************************************************************************
+    function getEmailParams ($where, $customer_data, $entity_data)
+    // get values to be inserted into the email template.
+    {
+        $params = array();
+
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_getEmailParams')) {
+                $params = $this->custom_processing_object->_cm_getEmailParams($where, $params, $customer_data, $entity_data);
+            } // if
+        } // if
+        if ($this->errors) return;
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $params = $this->_cm_getEmailParams($where, $params, $customer_data, $entity_data);
+            if ($this->errors) return;
+        } // if
+
+        return $params;
+
+    } // getEmailParams
+
+    // ****************************************************************************
     function getEnum ($fieldname)
     // get the contents of an ENUM field and return it as an array.
     {
@@ -2837,7 +2860,7 @@ abstract class Default_Table
         } // foreach
 
         // create entries for languages which are missing
-        foreach ($language_array as $language_id => $language_code) {
+        foreach ($language_array as $language_id => $language_data) {
             $fieldarray = $parent_data;
             $fieldarray['language_id'] = $language_id;
             //$new_data[] = $fieldarray;
@@ -3671,16 +3694,7 @@ abstract class Default_Table
 
         } // if
 
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_setJavaScript')) {
-                $this->javascript = $this->custom_processing_object->_cm_setJavaScript($this->javascript);
-            } // if
-        } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $this->javascript = $this->_cm_setJavaScript($this->javascript);
-        } // if
+        $this->javascript = $this->setJavaScript($this->javascript);
 
         if (isset($GLOBALS['mode']) AND preg_match('/(search|list|read)/i', $GLOBALS['mode'])) {
             // ignore this next bit
@@ -3793,6 +3807,10 @@ abstract class Default_Table
                 } // if
             } // if
         } // if
+
+        // activate the QUICKSEARCH bar for the filename
+        $this->lookup_data['quicksearch_field'] = array('filename' => getLanguageText('Name'));
+        $this->xsl_params['quicksearch_default'] = 'filename';
 
         // turn array of file types into a string
         $string = '';
@@ -4521,6 +4539,7 @@ abstract class Default_Table
         return $search;
 
     } // post_search
+
     // ****************************************************************************
     function quitButton ()
     // perform any processing when the QUIT button is pressed
@@ -4559,6 +4578,8 @@ abstract class Default_Table
     function reset ($where=null, $keep_orderby=false)
     // reset all screen settings before starting afresh.
     {
+        $patten_id = getPatternId();
+
         $this->setSqlSearch(null);
 
         if (!is_True($keep_orderby)) {
@@ -4568,6 +4589,10 @@ abstract class Default_Table
 
         $this->fieldarray = array();
         $null = $this->initialise($where);
+
+        if (preg_match('/filepicker/i', $patten_id)) {
+            $this->initialiseFilePicker($where);
+        } // if
 
         $this->setPageNo(1);
 
@@ -4583,6 +4608,10 @@ abstract class Default_Table
     {
         $pattern_id = getPatternId();
         $zone       = $this->zone;
+
+        if ($return_action == 'search' AND empty($return_string)) {
+            $this->setSqlSearch(null);
+        } // if
 
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_restart')) {
@@ -4660,6 +4689,124 @@ abstract class Default_Table
         return $result;
 
     } // selectDB
+
+    // ****************************************************************************
+    function sendEmail ($template_id, $where, $input_data=array())
+    // send an email to the customer using data from the current object.
+    // $template_id identifies the email text into which user values can be inserted.
+    {
+        $keys = where2array($where);
+
+        if (empty($keys['party_id'])) {
+            // party has not been identified, so fetch data from this object
+            $fieldarray = $this->getData($where);
+            if (!empty($fieldarray)) {
+                $fieldarray = $fieldarray[0];
+            } // if
+            // external party_id may have different names
+            if (!empty($fieldarray['party_id_bill_to'])) {
+                $keys['party_id'] = $fieldarray['party_id_bill_to'];
+            } elseif (!empty($fieldarray['customer_id'])) {
+                $keys['party_id'] = $fieldarray['customer_id'];
+            } elseif (!empty($fieldarray['supplier_id'])) {
+                $keys['party_id'] = $fieldarray['supplier_id'];
+            } elseif (!empty($fieldarray['party_id'])) {
+                $keys['party_id'] = $fieldarray['party_id'];
+            } // if
+        } // if
+
+        $customer_data = array();
+        if (!empty($keys['party_id'])) {
+            // fetch data for this party
+            $dbobject2 =& RDCsingleton::getInstance('party');
+            $where1 = "party_id='{$keys['party_id']}'";
+            $customer_data = $dbobject2->getData($where1);
+            if (!empty($customer_data)) {
+                $customer_data = $customer_data[0];
+                if (empty($customer_data['email']) AND $customer_data['party_type'] == 'ORG') {
+                    $dbobject4 =& RDCsingleton::getInstance('party_relationship');
+                    $relation = $dbobject4->getData($where1);
+                    if (!empty($relation)) {
+                        $relation = $relation[0];
+                        if ($relation['role_type_id'] == 'PER' AND $relation['role_subtype_id'] == 'CUSTCONT') {
+                            $contact_data = $dbobject2->getData("party_id='{$relation['party_id']}'");
+                            if (!empty($contact_data)) {
+                                $contact_data = $contact_data[0];
+                                $customer_data['email'] = $contact_data['email'];
+                            } // if
+                        } // if
+                    } // if
+                    unset($dbobject4);
+                } // if
+            } // if
+            unset($dbobject2);
+        } // if
+
+        $user_data = array();
+        if (!empty($input_data['workflow_id'])) {
+            if (!empty($input_data['user_id'])) {
+                // fetch data for this party
+                $dbobject2 =& RDCsingleton::getInstance('mnu_user');
+                $where1 = "user_id='{$input_data['user_id']}'";
+                $user_data = $dbobject2->getData($where1);
+                if (!empty($user_data)) {
+                    $user_data = $user_data[0];
+                } // if
+                unset($dbobject2);
+            } else {
+                $user_data['language_id'] = $_SESSION['default_language'];
+            } // if
+        } // if
+
+        // identify language_id for this party for retrieval of database text
+        if (!empty($user_data)) {
+            if (!empty($user_data['language_id'])) {
+                $GLOBALS['party_language'] = $user_data['language_id'];
+            } else {
+                $GLOBALS['party_language'] = $_SESSION['default_language'];
+            } // if
+        } elseif (!empty($customer_data['language_id'])) {
+            $GLOBALS['party_language'] = $customer_data['language_id'];
+        } else {
+            $GLOBALS['party_language'] = $_SESSION['default_language'];
+        } // if
+
+        $attachments = null;
+        // get optional values to be inserted into email message template
+        $params = $this->getEmailParams($where, $customer_data, $input_data);
+        if (!empty($params['attachments'])) {
+            // extract and remove any attachments
+            $attachments = $params['attachments'];
+            unset($params['attachments']);
+        } // if
+
+        // save extra data in case this template requires a follow-up
+        $dirname = $this->dirname;
+        $basename = basename($dirname);
+        while ($basename == 'classes'){
+            $dirname = dirname($dirname);
+            $basename = basename($dirname);
+        } // while
+        $params['object_id'] = $basename.'/'.$this->getClassName();
+        $params['context']   = $where;
+
+        if (array_key_exists('rdc_no_scheduling', $input_data)) {
+            $params['rdc_no_scheduling'] = true;
+        } // if
+
+        // use template object to send this message
+        $dbobject3 =& RDCsingleton::getInstance('email_template');
+        $result = $dbobject3->sendEmailTemplate($template_id, $keys, $params, $attachments);
+        if ($dbobject3->errors) {
+            $this->errors[$dbobject3->getClassName()] = $dbobject3->errors;
+        } // if
+        if ($dbobject3->messages) {
+            $this->messages = array_merge($this->messages, $dbobject3->messages);
+        } // if
+
+        return $result;
+
+    } // sendEmail
 
     // ****************************************************************************
     function setAction ($action)
@@ -4864,6 +5011,25 @@ abstract class Default_Table
         return;
 
     } // setInstruction
+
+    // ****************************************************************************
+    function setJavaScript ($javascript)
+    // load an optional instruction from the previous script.
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_setJavaScript')) {
+                $javascript = $this->custom_processing_object->_cm_setJavaScript($javascript);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $javascript = $this->_cm_setJavaScript($javascript);
+        } // if
+
+        return $javascript;
+
+    } // setJavaScript
 
     // ****************************************************************************
     function setOrderBy ($sql_orderby, $sql_orderby_seq=null, $toggle=true)
@@ -6109,6 +6275,11 @@ abstract class Default_Table
                         //    break;
                         //} // if
                         if (!empty($fldchild)) {
+                            if ($fldchild == 'alt_language_table' AND empty($fieldarray['alt_language_table'])) {
+                                if ($fieldarray[$fldparent] == $fieldarray['table_id']) {
+                                    break 2;  // this is referencing itself, so ignore
+                                } // if
+                            } // if
                             if (empty($where)) {
                                 $where = "$fldchild='" .addslashes($fieldarray[$fldparent]) ."'";
                             } else {
@@ -6140,11 +6311,11 @@ abstract class Default_Table
                             $childobject->dbname     = $this->dbname;
                         } // if
                         $count = $childobject->getCount($where);
-                        unset($childobject);
                         if ($count <> 0) {
                             // 'Cannot delete - record still linked to $tblchild table'
                             $this->errors[] = $this->getLanguageText('sys0008', strtoupper($tblchild));
                         } // if
+                        unset($childobject);
                     } // if
                     break;
 
@@ -6453,6 +6624,16 @@ abstract class Default_Table
         return $lock_array;
 
     } // _cm_getDatabaseLock
+
+    // ****************************************************************************
+    function _cm_getEmailParams ($where, $params, $customer_data, $entity_data)
+    // get values to be inserted into the email template.
+    {
+        // custom code goes here
+
+        return $params;
+
+    } // _cm_getEmailParams
 
     // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
@@ -9349,7 +9530,7 @@ abstract class Default_Table
         unset($keys['custom_processing_object']);  // this will be rebuilt in the __wakeup() method
 
         $pattern_id = getPatternId();
-        if (preg_match('/^(UPD|ADD|MULTI|SRCH|LINK|POPUP)/i', $pattern_id)) {
+        if (preg_match('/^(UPD|ADD|MULTI|MULTI2|SRCH|LINK|POPUP)/i', $pattern_id)) {
             // do NOT shrink $this->fieldarray
         } else {
             // get list of primary key fields

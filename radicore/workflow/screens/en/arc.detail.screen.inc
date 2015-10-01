@@ -3,7 +3,7 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 
 $structure['tables']['main'] = 'wf_arc';
 
-$structure['main']['columns'][] = array('width' => '25%');
+$structure['main']['columns'][] = array('width' => '20%');
 $structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('workflow_name' => 'Workflow Name');

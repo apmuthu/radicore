@@ -268,7 +268,7 @@ class mnu_control extends Default_Table
                                                         'required' => 'y',
                                                         'lowercase' => 'y',
                                                         'control' => 'dropdown',
-                                                        'optionlist' => 'language_code');
+                                                        'optionlist' => 'language_id');
 
             // login type
             $fieldspec['login_type']            = array('type' => 'string',
@@ -562,10 +562,10 @@ class mnu_control extends Default_Table
             $this->lookup_data['pswd_change'] = $array;
         } // if
 
-        if (!array_key_exists('language_code', $this->lookup_data)) {
+        if (!array_key_exists('language_id', $this->lookup_data)) {
             // get options for dropdown/radiogroup and insert in LOOKUP data
             $array = getLanguageArray('languages');
-            $this->lookup_data['language_code'] = $array;
+            $this->lookup_data['language_id'] = $array;
         } // if
 
         if (!array_key_exists('authentication', $this->lookup_data)) {

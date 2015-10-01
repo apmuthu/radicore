@@ -444,55 +444,48 @@ class mnu_subsystem_s01 extends mnu_subsystem
             	$user_id = $user_data['user_id'];
 
             	// export contents of MNU_USER_ROLE for this user
-                $userobj->sql_select = '*';
-                $userobj->sql_from   = 'mnu_user_role';
-                $userobj->sql_orderby = 'user_id ASC, is_primary DESC, role_id ASC';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $user_role_obj = RDCsingleton::getInstance('mnu_user_role');
+                $user_role_obj->sql_orderby = 'user_id ASC, is_primary DESC, role_id ASC';
+                $data2 = $user_role_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_user_role', $data2, $output);
 
                 // export the contents of MNU_INITIAL_VALUE_USER for this user
-            	$userobj->sql_select = 'mnu_initial_value_user.*';
-            	$userobj->sql_from   = 'mnu_initial_value_user';
-            	$userobj->sql_orderby = 'field_id,user_id';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $initial_value_user_obj = RDCsingleton::getInstance('mnu_user_role');
+            	$initial_value_user_obj->sql_orderby = 'field_id,user_id';
+                $data2 = $initial_value_user_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
 
             	// export contents of MNU_TODO for this user
-            	$userobj->sql_select = '*';
-            	$userobj->sql_from   = 'mnu_todo';
-            	$userobj->sql_orderby = 'user_id, seq_no';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $todo_obj = RDCsingleton::getInstance('mnu_todo');
+            	$todo_obj->sql_orderby = 'user_id, seq_no';
+                $data2 = $todo_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_todo', $data2, $output);
 
                 // export the contents of MNU_USER_IP_ADDRESS for this user
-            	$userobj->sql_select = 'mnu_user_ip_address.*';
-            	$userobj->sql_from   = 'mnu_user_ip_address';
-            	$userobj->sql_orderby = 'user_id,ip_address';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $user_ip_address_obj = RDCsingleton::getInstance('mnu_user_ip_address');
+            	$user_ip_address_obj->sql_orderby = 'user_id,ip_address';
+                $data2 = $user_ip_address_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_user_ip_address', $data2, $output);
 
                 // export the contents of MNU_FAVOURITE for this user
-            	$userobj->sql_select = 'mnu_favourite.*';
-            	$userobj->sql_from   = 'mnu_favourite';
-            	$userobj->sql_orderby = 'user_id,sort_seq';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $favourite_obj = RDCsingleton::getInstance('mnu_favourite');
+            	$favourite_obj->sql_orderby = 'user_id,sort_seq';
+                $data2 = $favourite_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_favourite', $data2, $output);
 
                 // export the contents of MNU_TIME_LIMIT_USER for this user
-                $userobj->sql_select = 'mnu_time_limit_user.*';
-                $userobj->sql_from   = 'mnu_time_limit_user';
-                $userobj->sql_orderby = 'user_id,seq_no';
-                $data2 = $userobj->getData_raw("user_id='$user_id'");
+                $time_limit_user_obj = RDCsingleton::getInstance('mnu_time_limit_user');
+                $time_limit_user_obj->sql_orderby = 'user_id,seq_no';
+                $data2 = $time_limit_user_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_time_limit_user', $data2, $output);
 
             } // foreach
 
         } else {
             // export contents of MNU_CONTROL where record_id='<subsystem>'
-        	$taskobj->sql_select = '*';
-        	$taskobj->sql_from   = 'mnu_control';
-        	$taskobj->sql_orderby = 'record_id, field_id';
-            $data = $taskobj->getData_raw("record_id='" .strtoupper($subsys_id) ."'");
+            $control_obj = RDCsingleton::getInstance('mnu_control');
+        	$control_obj->sql_orderby = 'record_id, field_id';
+            $data = $control_obj->getData_raw("record_id='" .strtoupper($subsys_id) ."'");
             $output = $this->_exportSqlData('mnu_control', $data, $output);
         } // if
 

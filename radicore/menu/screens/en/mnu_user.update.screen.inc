@@ -30,7 +30,7 @@ $structure['main']['fields'][8] = array('is_disabled' => 'User Disabled', 'colsp
 
 $structure['main']['fields'][9] = array('email_addr' => 'E-mail Address', 'colspan' => 3);
 
-$structure['main']['fields'][10] = array('language_code' => 'Language Code', 'colspan' => 3);
+$structure['main']['fields'][10] = array('language_id' => 'Language Id', 'colspan' => 3);
 
 $structure['main']['fields'][11] = array('user_timezone' => 'Time Zone', 'colspan' => 3);
 

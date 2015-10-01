@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -95,6 +95,22 @@
       </xsl:call-template>
     </div>
   </xsl:if>
+  
+  <xsl:for-each select="/root/javascript/foot">
+    <xsl:choose>
+      <xsl:when test="@type='file'">
+        <script language="javascript" src="{node()}" />
+      </xsl:when>
+      <xsl:when test="@type='code'">
+        <script language="javascript">
+          <!--<xsl:value-of select="node()" disable-output-escaping="yes"/>-->
+          <xsl:call-template name="disable-output-escaping">
+            <xsl:with-param name="string" select="node()" />
+          </xsl:call-template>
+        </script>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:for-each>
 
 </xsl:template>
 

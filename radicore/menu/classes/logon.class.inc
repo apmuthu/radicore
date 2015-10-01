@@ -139,7 +139,7 @@ class logon extends mnu_user
         $ip_address = getRealIPAddress();
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'mnu_user.user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, language_code, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
+        $this->sql_select = 'mnu_user.user_id, user_name, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
         $this->sql_from   = 'mnu_user'
                           ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
                           .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
@@ -153,7 +153,7 @@ class logon extends mnu_user
         $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id=mnu_user.user_id) AS role_list";
         // fetch the user's language with any date formats
         $this->sql_select .= ', mnu_language.input_date_format, mnu_language.output_date_format';
-        $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_code, '{$_SESSION['default_language']}'))";
+        $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_id, '{$_SESSION['default_language']}'))";
         if ($auth_array['authentication'] == 'INTERNAL') {
             // include user_password in selection criteria
             $where .= " AND user_password='" .addslashes($logon_password) ."'";
@@ -171,9 +171,9 @@ class logon extends mnu_user
 
         $fieldarray = $fieldarray[0];
 
-        if (strlen($fieldarray['language_code']) > 0) {
+        if (strlen($fieldarray['language_id']) > 0) {
             // user has a pre-set language code
-            $_SESSION['user_language'] = strtolower($fieldarray['language_code']);
+            $_SESSION['user_language'] = strtolower($fieldarray['language_id']);
         } else {
             $_SESSION['user_language'] = $_SESSION['default_language'];
         } // if
@@ -335,10 +335,12 @@ class logon extends mnu_user
             } // if
         } // if
 
-        // show MOTD (Message of the Day) screen
-        //$motd['task_id']  = 'mnu_motd(show)';
-        //$motd['where']    = "motd_id IS NOT NULL";
-        //append2ScriptSequence($motd);
+        if (!empty($_SESSION['QUERY_STRING'])) {
+            // see if QUERY_STRING requires extra processing
+            $this->processQueryString($_SESSION['QUERY_STRING']);
+            unset($_SESSION['QUERY_STRING']);
+        } // if
+
 
         $data = $mnu_control->getControlData('pagination');
         $_SESSION['pagination_width'] = $data['pagination_width'];
@@ -461,6 +463,30 @@ class logon extends mnu_user
         return;
 
     } // PasswordRetries
+
+    // ****************************************************************************
+    function processQueryString($query_string)
+    // see if QUERY_STRING requires extra processing
+    {
+        $query_string = str_replace('&amp;', '&', $query_string);
+        parse_str($query_string, $array);
+
+        if (array_key_exists('case_id', $array) AND array_key_exists('workitem_id', $array)) {
+            $dbobject =& RDCsingleton::getInstance('wf_workitem');
+            $array = array_map('addslashes', $array);
+            $where = "case_id='{$array['case_id']}' AND workitem_id='{$array['workitem_id']}'";
+            $data = $dbobject->getData($where);
+            if (!empty($data)) {
+                $data = $data[0];
+                $next['task_id'] = $data['task_id'];
+                $next['where']   = $data['context'];
+                append2ScriptSequence($next);
+            } // if
+        } // if
+
+        return;
+
+    } // processQueryString
 
     // ****************************************************************************
     function findEmptyTables ($user_id)
