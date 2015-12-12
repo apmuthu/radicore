@@ -39,9 +39,7 @@ class audit_trn extends Default_Table
             // try incrementing this value if a duplicate is detected
             $this->retry_on_duplicate_key = 'tran_seq_no';
             // fill in other data
-            $fieldarray['task_id']  = $GLOBALS['task_id'];
-            $fieldarray['trn_date'] = getTimeStamp('date');
-            $fieldarray['trn_time'] = getTimeStamp('time');
+            $fieldarray['task_id'] = $GLOBALS['task_id'];
         } // if
 
         return $fieldarray;

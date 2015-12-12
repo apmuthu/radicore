@@ -135,13 +135,13 @@ $where = array2where($fieldarray, $pkeynames, $dbobject);
 if (!empty($_POST)) {
     if (isset($_POST['copy'])) {
         $messages = copyForm($_POST, $dbobject);
-    } else {
+    } elseif ($task_button = check_task_button($_POST)) {
         // look for an action which is another script
-        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
         if (is_array($child_errors)) {
             $errors = array_merge($errors, $child_errors);
         } // if
-    } // endif
+    } // if
 } // if
 
 // build list of objects for output to XML data

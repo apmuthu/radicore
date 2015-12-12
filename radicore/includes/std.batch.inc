@@ -243,17 +243,10 @@ function check_errors ($object)
         } // if
 
         // $errors should be an associative array, but it may be indexed
-        $array_in = $errors;
+        $array_in  = $errors;
+        $array_out = array();
 	    foreach ($array_in as $ix1 => $error1) {
-	        if (is_string($error1)) {
-	            // merge key and value into a single string
-	        	$array_out[] = $ix1 .': ' .$error1;
-	        } elseif (is_array($error1)) {
-	            foreach ($error1 as $ix2 => $error2) {
-	                // merge index, key and value into a single string
-	            	$array_out[] = '['.$ix1.'] '.$ix2 .': ' .$error2;
-	            } // foreach
-	        } // if
+            $array_out[] = format_array($error1, '['.$ix1.']');
 	    } // foreach
 	    $errors = $array_out;
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);

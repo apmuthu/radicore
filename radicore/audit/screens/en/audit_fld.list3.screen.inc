@@ -16,15 +16,14 @@ $structure['middle']['columns'][] = array('width' => '10%');
 $structure['middle']['columns'][] = array('width' => '15%');
 $structure['middle']['columns'][] = array('width' => '10%');
 $structure['middle']['columns'][] = array('width' => '15%');
-$structure['middle']['columns'][] = array('width' => '3%');
-$structure['middle']['columns'][] = array('width' => '15%');
-$structure['middle']['columns'][] = array('width' => '3%');
+//$structure['middle']['columns'][] = array('width' => '3%');
+$structure['middle']['columns'][] = array('width' => '10%');
+$structure['middle']['columns'][] = array('width' => '*');
 
 $structure['middle']['fields'][1][] = array('label' => 'User Id');
 $structure['middle']['fields'][1][] = array('field' => 'user_id');
 $structure['middle']['fields'][1][] = array('label' => 'Date');
-$structure['middle']['fields'][1][] = array('field' => 'trn_date');
-$structure['middle']['fields'][1][] = array('field' => 'trn_time');
+$structure['middle']['fields'][1][] = array('field' => 'trn_datetime');
 $structure['middle']['fields'][1][] = array('label' => 'Tran Seq');
 $structure['middle']['fields'][1][] = array('field' => 'tran_seq_no');
 $structure['middle']['fields'][1][] = array('label' => 'Table Seq');
@@ -33,7 +32,7 @@ $structure['middle']['fields'][1][] = array('field' => 'table_seq_no');
 $structure['middle']['fields'][2][] = array('label' => 'Task');
 $structure['middle']['fields'][2][] = array('field' => 'task_id');
 $structure['middle']['fields'][2][] = array('label' => 'DBname');
-$structure['middle']['fields'][2][] = array('field' => 'base_name', 'colspan' => 2);
+$structure['middle']['fields'][2][] = array('field' => 'base_name');
 $structure['middle']['fields'][2][] = array('label' => 'Table Name');
 $structure['middle']['fields'][2][] = array('field' => 'table_name', 'colspan' => 3);
 

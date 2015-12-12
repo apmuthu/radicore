@@ -1,5 +1,5 @@
 <?php
-    // file created on September 10, 2007, 5:48 pm
+    // file created on December 1, 2015, 4:10 pm
     
     // field specifications for table survey.survey_answer_hdr
     $fieldspec['survey_answer_id']          = array('type' => 'integer',
@@ -43,6 +43,7 @@
                                                     'foreign_field' => 'node_desc');
     
     $fieldspec['is_complete']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -95,6 +96,8 @@
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'user_name',
+                                                    'alt_language_table' => 'mnu_user_alt',
+                                                    'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->parent_relations[]               = array('parent' => 'survey_hdr',
@@ -110,6 +113,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

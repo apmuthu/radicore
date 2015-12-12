@@ -130,11 +130,12 @@ class wf_case extends Default_Table
         // create a token for the start point
         require_once 'classes/wf_token.class.inc';
         $dbtoken =& RDCsingleton::getInstance('wf_token');
-        $token_array['workflow_id'] = $fieldarray['workflow_id'];
-        $token_array['place_id']    = $place_data[0]['place_id'];
-        $token_array['place_type']  = $place_data[0]['place_type'];
-        $token_array['case_id']     = $fieldarray['case_id'];
-        $token_array['context']     = $fieldarray['context'];
+        $token_array['workflow_id']   = $fieldarray['workflow_id'];
+        $token_array['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
+        $token_array['place_id']      = $place_data[0]['place_id'];
+        $token_array['place_type']    = $place_data[0]['place_type'];
+        $token_array['case_id']       = $fieldarray['case_id'];
+        $token_array['context']       = $fieldarray['context'];
         $token_array = $dbtoken->insertRecord($token_array);
         if ($dbtoken->errors) {
             $this->errors = array_merge($this->errors, $dbtoken->getErrors());

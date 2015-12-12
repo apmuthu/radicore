@@ -43,7 +43,12 @@ $act_buttons['submitnext'] = 'submitnext';
 $act_buttons['reset']      = 'reset';
 $act_buttons['quit']       = 'cancel';
 
-$do_retrieve = false;
+if (preg_match('/(insert|update|delete)/i', $return_action)) {
+    $do_retrieve = true;
+    $selection   = null;
+} else {
+    $do_retrieve = false;
+} // if
 
 // create a class instance for the OUTER database table
 require_once "classes/$outer_table.class.inc";
@@ -78,7 +83,8 @@ if (isset($script_vars['dbouter'])) {
     // perform any initialisation
     $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->getErrors());
+        $messages = array_merge($messages, $dbouter->getMessages());
+        scriptPrevious($dbouter->getErrors(), $messages, 'fail');
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -128,7 +134,8 @@ if (isset($script_vars['dbinner'])) {
     // perform any initialisation
     $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->getErrors());
+        $messages = array_merge($messages, $dbinner->getMessages());
+        scriptPrevious($dbinner->getErrors(), $messages, 'fail');
     } // if
 } // if
 
@@ -147,8 +154,51 @@ if (isset($_POST['reset'])) {
 
 if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
-    $submit_button = check_submit_button ($act_buttons, $_POST);
-    if (empty($submit_button)) {
+    $submit_button = check_submit_button($act_buttons, $_POST);
+    $task_button   = check_task_button($_POST);
+    if (!empty($submit_button) OR !empty($task_button)) {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
+        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
+        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
+        // repeat for the inner entity
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
+
+        if (!empty($task_button)) {
+            // look for a navigation or popup button which jumps to another script
+            $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner), $task_button);
+            if (is_array($child_errors)) {
+                $errors = array_merge($errors, $child_errors);
+            } // if
+        } // if
+
+    } elseif ($custom_button_array = check_custom_button($_POST)) {
+        list($custom_button, $button_row, $button_zone) = $custom_button_array;
+        // a custom button was pressed - send it to all relevant entities
+        $dbinner->startTransaction();
+        if ($button_zone == $dbouter->zone) {
+            $outer_data = $dbouter->customButton($outer_data, $custom_button, $_POST);
+            if ($dbouter->errors) {
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+        } elseif ($button_zone == $dbinner->zone) {
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->customButton($inner_data, $custom_button, $_POST, $button_row);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+        if (empty($errors)) {
+            $dbinner->commit();
+            $do_retrieve = true;
+        } else {
+            $dbinner->rollback();
+        } // if
+
+    } else {
         // deal with a javascript 'submit()'.
         $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
         if ($dbouter->errors) {
@@ -162,117 +212,62 @@ if (!empty($_POST)) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
-    } else {
-        // merge original data with POSTed data (so that fields which were displayed
-        // but not POSTed are sent back if any errors are displayed).
-        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
-        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
-        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
-        // repeat for the inner entity
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
-        $inner_data = array_update_indexed($inner_data, $inner_post);
-        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
     } // if
-    if (empty($errors)) {
-        // look for an action which is another script (navigation or popup button)
-        $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
-        if (is_array($child_errors)) {
-            $errors = array_merge($errors, $child_errors);
-        } // if
-    } // if
-    if (empty($errors)) {
-        if (!empty($submit_button)) {
-            // update the database with all POSTed data
-            $dbouter->startTransaction();
-            // update the outer table
-            $outer_data = $dbouter->updateRecord($outer_data);
-            $outer_data = $dbouter->getExtraData($outer_data, $where);
-            $messages = $dbouter->getMessages();
-            if ($dbouter->errors) {
-                // errors are keyed by object name
-                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-            } else {
-                if (is_True($dbouter->no_display_count)) {
-                    // do not display the record count
-                } else {
-                    // '$count records were updated in $tablename'
-                    $messages[] = getLanguageText('sys0006', $dbouter->numrows, strtoupper($dbouter->tablename));
-                } // if
-            } // if
-            if (empty($errors)) {
-                // update database with changes in POST array
-                $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
-                $inner_data = $dbinner->getExtraData($inner_data, $where);
-                if ($dbinner->errors) {
-                    // errors are keyed by object name
-                    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-                } // if
-            } // if
-            if (empty($errors)) {
-                // update was OK
-                $messages = array_merge($messages, $dbinner->getMessages());
-                $dbinner->wf_case_id     = $dbouter->wf_case_id;
-                $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
-                $dbinner->wf_context     = $dbouter->wf_context;
-                $errors = $dbinner->commit();
-                if (isset($_POST['submitnext'])) {
-                    $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
-                    $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
-                    if ($curitem < $lastitem) {
-                        // skip to the next item
-                        $curitem++;
-                        $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
-                        $dbouter->setPageNo($curitem);
-                        $where = $scrolling[$dbouter->getClassName()]['where'];
-                        $outer_data = $dbouter->getData($where);
-                        $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
-                        $inner_data = $dbinner->setFieldArray(null);
-                    } else {
-                        // update was OK - return to previous screen
-                        scriptPrevious($errors, $messages, 'OK', $dbinner->getInstruction());
-                    } // if
-                } // if
-                $do_retrieve = true;
-            } else {
-                $dbinner->rollback();
-            } // if
 
+    if (empty($errors) AND !empty($submit_button)) {
+        // update the database with all POSTed data
+        $dbouter->startTransaction();
+        // update the outer table
+        $outer_data = $dbouter->updateRecord($outer_data);
+        $outer_data = $dbouter->getExtraData($outer_data, $where);
+        $messages = array_merge($messages, $dbouter->getMessages());
+        if ($dbouter->errors) {
+            // errors are keyed by object name
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } else {
-            // form posted WITHOUT one of the submit buttons
-            // look for a custom button (a field which begins with 'button#')
-            $button = false;
-            foreach ($_POST as $postname => $postvalue) {
-                if (preg_match('/^button#/i', $postname, $regs)) {
-                    // strip off the prefix to leave the original field name
-                    $button = str_replace($regs[0], '', $postname);
-                    if (is_array($postvalue)) {
-                        $button_row = key($postvalue);
-                    } else {
-                        $button_row = null;
-                    } // if
-                    break;
-                } // if
-            } // foreach
-            if ($button) {
-                $dbinner->startTransaction();
-                // a custom button was pressed - send it to both entities
-                $outer_data = $dbouter->customButton($outer_data, $button, $_POST);
-                if ($dbouter->errors) {
-                    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-                } // if
-                if (empty($errors)) {
-                    $inner_data = $dbinner->customButton($inner_data, $button, $_POST, $button_row);
-                    if ($dbinner->errors) {
-                        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-                    } // if
-                } // if
-                if (empty($errors)) {
-                    $dbinner->commit();
-                    $do_retrieve = true;
+            if (is_True($dbouter->no_display_count)) {
+                // do not display the record count
+            } else {
+                // '$count records were updated in $tablename'
+                $messages[] = getLanguageText('sys0006', $dbouter->numrows, strtoupper($dbouter->tablename));
+            } // if
+        } // if
+        if (empty($errors)) {
+            // update database with changes in POST array
+            $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
+            $inner_data = $dbinner->getExtraData($inner_data, $where);
+            if ($dbinner->errors) {
+                // errors are keyed by object name
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+        if (empty($errors)) {
+            // update was OK
+            $dbinner->wf_case_id     = $dbouter->wf_case_id;
+            $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
+            $dbinner->wf_context     = $dbouter->wf_context;
+            $errors = $dbinner->commit();
+            if (isset($_POST['submitnext'])) {
+                $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
+                $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
+                if ($curitem < $lastitem) {
+                    // skip to the next item
+                    $curitem++;
+                    $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
+                    $dbouter->setPageNo($curitem);
+                    $where = $scrolling[$dbouter->getClassName()]['where'];
+                    $outer_data = $dbouter->getData($where);
+                    $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+                    $inner_data = $dbinner->setFieldArray(null);
                 } else {
-                    $dbinner->rollback();
+                    // update was OK - return to previous screen
+                    $messages = array_merge($messages, $dbinner->getMessages());
+                    scriptPrevious($errors, $messages, 'update', $dbinner->getInstruction());
                 } // if
             } // if
+            $do_retrieve = true;
+        } else {
+            $dbinner->rollback();
         } // if
     } // if
     // refetch data in case it has changed
@@ -329,7 +324,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
                 // some sort of error
                 if ($dbouter->getLastPage() <= 1) {
                     // only 1 entry requested, so return to previous script
-                    scriptprevious($dbouter->getErrors(), $messages);
+                    $messages = array_merge($messages, $dbinner->getMessages());
+                    scriptprevious($dbouter->getErrors(), $messages, 'fail');
                 } else {
                     // multiple entries requested, so disable SUBMIT button
                     unset($act_buttons['submitBtn']);
@@ -386,8 +382,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
 
         if (!empty($outer_data)) {
             if (empty($inner_data)) {
-                // load in current data from $outer in case it is needed
-                $dbinner->setFieldArray($outer_data);
                 // get data from the database
                 $inner_data = $dbinner->getData($where);
                 $inner_data = $dbinner->getExtraData($inner_data, $where);
@@ -410,6 +404,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
 if (isset($_GET['action'])) {
     $inner_data = $dbinner->setAction($_GET['action']);
 } // if
+
+$messages = array_merge($messages, $dbouter->getMessages());
+$messages = array_merge($messages, $dbinner->getMessages());
 
 // get pagination details
 $pagination['inner']['numrows']  = $dbinner->getNumRows();

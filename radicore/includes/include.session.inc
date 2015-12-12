@@ -80,7 +80,7 @@ function checkSelection ($task_id, $where=null)
 } // checkSelection
 
 // ****************************************************************************
-function childForm ($post, $object_array, $where=null)
+function childForm ($post, $object_array, $task_id, $where=null)
 // look for an action which is another script.
 // (this may be from a navigation button or a popup button)
 {
@@ -106,7 +106,8 @@ function childForm ($post, $object_array, $where=null)
     	$_SESSION['selection_lock'] = $post['rdc_selection_lock'];
     } // if
 
-    if (isset($post['task#previous_search'])) {
+    //if (isset($post['task#previous_search'])) {
+    if ($task_id == 'task#previous_search') {
         // use previous search criteria (from one of two tables)
         if (!empty($dbobject->sql_search_table)) {
         	$search_table = $dbobject->sql_search_table;
@@ -128,29 +129,18 @@ function childForm ($post, $object_array, $where=null)
 
     $pattern_id = getPatternId();  // pattern for the current task
 
-    foreach ($post as $key => $value) {
-        // look for a variable beginning with 'task#' or 'favourite#'
-        if (preg_match('/^(task#|favourite#)/i', $key, $regs)) {
-            // strip pattern prefix
-            $next_task = str_replace($regs[0], '', $key);
-            // note: if the button is replaced with an image the key name returned
-            // will be appended by '_x' as part of the x/y coordinates of the image.
-            if (preg_match('/_x$/i', $next_task)) {
-                // '_x' found, so strip it off.
-                $next_task = substr_replace($next_task, '', -2);
-            } // if
-            // obtain row number in which this button was pressed
-            if (is_array($value)) {
-            	$offset   = key($value);
-            	$multiple = true;
-            } else {
-                $offset   = 1;
-                $multiple = false;
-            } // if
-
-            break;
-        } // if
-    } // foreach
+    preg_match('/^(task#|favourite#)/i', $task_id, $regs);
+    // strip pattern prefix
+    $next_task = str_replace($regs[0], '', $task_id);
+    // obtain row number in which this button was pressed
+    $value = $post[$task_id];
+    if (is_array($value)) {
+        $offset   = key($value);
+        $multiple = true;
+    } else {
+        $offset   = 1;
+        $multiple = false;
+    } // if
 
     if (!isset($next_task)) {
         return;
@@ -208,7 +198,7 @@ function childForm ($post, $object_array, $where=null)
 
             // allow $where and $settings to be modified
         	$settings = null;
-            $where = $dbobject->popupcall($next_task, $where, $script_vars, $current_row, $settings);
+            $where = $dbobject->popupcall($next_task, $where, $script_vars, $current_row, $settings, $offset);
             if ($dbobject->errors) {
         		return $dbobject->errors;
         	} // if
@@ -1056,6 +1046,10 @@ function initSession($save_session_data=array())
                                   .getParentDIR()
                                   .$logon_screen
                                   .'?session_name=' .session_name();
+            if (isset($GLOBALS['SSO']) AND is_True($GLOBALS['SSO'])) {
+                $_SESSION['SSO'] = getSelf();  // Single Sign On requested from this script
+                $location .= '&session_id='.session_id();  //continue using this session
+            } // if
             if (isset($_SERVER['QUERY_STRING']) AND strlen($_SERVER['QUERY_STRING']) > 0) {
                 $location .= '&'.$_SERVER['QUERY_STRING'];  // carry forward this query string
             } // if
@@ -2027,7 +2021,6 @@ function runInBackground ($task_array, $save_script_vars)
                     $replace  = array();
                     $message = preg_replace($search, $replace, $message);
 
-
                     $errors[] = "CURL error: $message";
                     return $errors;
                 } else {
@@ -2049,8 +2042,19 @@ function runInBackground ($task_array, $save_script_vars)
     $GLOBALS['script_vars'] = $save_script_vars;
     $_SESSION['search'] = $save_session_search;
 
-    // jump to the 'Show batch log file' task
-    $errors = scriptNext('batch_log(filepicker)');
+    if (!empty($task_array['settings'])) {
+        parse_str($task_array['settings'], $settings);
+        $settings = array_change_key_case($settings, CASE_LOWER);
+    } else {
+        $settings = array();
+    } // if
+
+    if (array_key_exists('no_filepicker', $settings)) {
+        // skip the next bit
+    } else {
+        // jump to the 'Show batch log file' task
+        $errors = scriptNext('batch_log(filepicker)');
+    } //if
 
     return array();
 
@@ -2166,6 +2170,17 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
                     // current script when it has completed.
                     $prepend['task_id'] = $task_id;
                     array_unshift($_SESSION['script_sequence'], $prepend);
+
+                } elseif ($first['task_id'] == $GLOBALS['task_id']) {
+                    // this is already the current task, so remove it
+                    $null = array_shift($_SESSION['script_sequence']);
+                    $next = $task_id;
+                    foreach ($_SESSION['script_sequence'] as $seqno => $seqdata) {
+                        if ($seqdata['task_id'] == $GLOBALS['task_id']) {
+                            unset($_SESSION['script_sequence'][$seqno]);
+                        } // if
+                    } // foreach
+
                 } elseif ($last['task_id'] == $task_id) {
             	    // this task has already been added to the end of the array, so do not do it again
                 } else {
@@ -2190,44 +2205,46 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             } // if
         } // if
 
-        if (!isset($append) AND $last['task_id'] == $task_id) {
-        	// obtain last entry in array and process it now
-            $next = $last;
-        } else {
-            // obtain first entry in array and process it now
-            $next = $_SESSION['script_sequence'][0];
-        } // if
-        $task_id = $next['task_id'];
-        if (array_key_exists('query_string', $next)) {
-            $query_string = $next['query_string'];
-        } // if
-        if (array_key_exists('where', $next)) {
-            $where = $next['where'];
-        } // if
-        if (array_key_exists('selection', $next)) {
-            $selection = $next['selection'];
-        } // if
-        if (array_key_exists('search', $next)) {
-            $search = $next['search'];
-        } // if
-        if (array_key_exists('messages', $next)) {
-            if (!empty($messages) AND is_array($messages)) {
-            	$messages = array_merge($messages, $next['messages']);
+        if (empty($next)) {
+            if (!isset($append) AND $last['task_id'] == $task_id) {
+        	    // obtain last entry in array and process it now
+                $next = $last;
             } else {
-                $messages = $next['messages'];
+                // obtain first entry in array and process it now
+                $next = $_SESSION['script_sequence'][0];
             } // if
+            $task_id = $next['task_id'];
+            if (array_key_exists('query_string', $next)) {
+                $query_string = $next['query_string'];
+            } // if
+            if (array_key_exists('where', $next)) {
+                $where = $next['where'];
+            } // if
+            if (array_key_exists('selection', $next)) {
+                $selection = $next['selection'];
+            } // if
+            if (array_key_exists('search', $next)) {
+                $search = $next['search'];
+            } // if
+            if (array_key_exists('messages', $next)) {
+                if (!empty($messages) AND is_array($messages)) {
+            	    $messages = array_merge($messages, $next['messages']);
+                } else {
+                    $messages = $next['messages'];
+                } // if
+            } // if
+            if (array_key_exists('previous', $next)) {
+                $previous = $next['previous'];
+            } // if
+            if ($task_id == $first['task_id']) {
+        	    if (empty($first['action'])) {
+        		    // no action is required, so no need to keep this entry
+        		    $null = array_shift($_SESSION['script_sequence']);
+        	    } // if
+            } // if
+            // force script details for this task to be loaded
+            unset($task_array['script_id']);
         } // if
-        if (array_key_exists('previous', $next)) {
-            $previous = $next['previous'];
-        } // if
-        if ($task_id == $first['task_id']) {
-        	if (empty($first['action'])) {
-        		// no action is required, so no need to keep this entry
-        		$null = array_shift($_SESSION['script_sequence']);
-        	} // if
-        } // if
-        // force script details for this task to be loaded
-        unset($task_array['script_id']);
     } // if
 
     if (!isset($task_array['script_id'])) {
@@ -2445,6 +2462,11 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         if (!empty($selection)) {
         	$task_array['selection'] = $selection;
         } // if
+        if (is_array($next) AND !empty($next['settings'])) {
+            $task_array['settings'] = mergeSettings($task_array['settings'], $next['settings']);
+        } elseif (!empty($settings_bf)) {
+            $task_array['settings'] = mergeSettings($task_array['settings'], $settings_bf);
+        } // if
         $errors = runInBackground($task_array, $save_script_vars);
         return $errors;
 	} // if
@@ -2521,11 +2543,15 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             // current task is first task in list
             if (!empty($first['action'])) {
                 if ($first['action'] <> $action) {
-                    // current script did not terminate with required action,
-                    // so it must be done again
-                    $GLOBALS['messages'] = getLanguageText('sys0034');
-                    $where =& $first['where'];
-                    $errors = scriptNext($first['task_id'], $where);
+                    if ($first['action'] == 'OK' AND preg_match('/(insert|update)/i', $action)) {
+                        // either of these two actions is OK, so continue
+                    } else {
+                        // current script did not terminate with required action,
+                        // so it must be done again
+                        $GLOBALS['messages'] = getLanguageText('sys0034');
+                        $where =& $first['where'];
+                        $errors = scriptNext($first['task_id'], $where);
+                    } // if
                 } // if
             } // if
             // script is done, so drop it from array
@@ -2563,6 +2589,10 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             } elseif ($last['task_id'] == $last_task) {
                 // yes, so go back to previous script
                 $yes = true;
+            } elseif ($first['task_id'] == 'logon') {
+                // go back to logon screen
+                $prev_script = null;
+                $prev_task   = null;
             } else {
                 // no, so remove current task from $page_stack
                 unset($page_stack[$task_id]);
@@ -2581,7 +2611,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
          } // if
     } // if
 
-    if (isset($prev_script)) {
+    if (!empty($prev_script) AND !empty($prev_task)) {
         // put any messages into session array
         if (!empty($messages)) {
             $_SESSION['pages'][$prev_script][$prev_task]['messages'] = $messages;

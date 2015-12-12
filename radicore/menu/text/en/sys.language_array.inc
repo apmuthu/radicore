@@ -217,6 +217,11 @@ $array['languages'] = array('af' => 'Afrikaans [af]',
 $array['selected']  = array('Y' => 'Selected',
                             'N' => 'No');
 
+$array['time_period']  = array('DAY' => 'Days',
+                               'WEEK' => 'Weeks',
+                               'MONTH' => 'Months',
+                               'YEAR' => 'Years');
+
 return $array;
 
 ?>

@@ -5,7 +5,7 @@
 // the contents by activating other screens via navigation buttons.
 //*****************************************************************************
 
-$outer_table = 'dict_database';                     // name of outer table
+$outer_table = 'dict_database_jnr';                 // name of outer table
 $inner_table = 'dict_relationship_snr';             // name of inner table
 $screen   = 'dict_relationship.list2d.screen.inc';  // file identifying screen structure
 

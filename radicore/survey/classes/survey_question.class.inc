@@ -62,13 +62,14 @@ class survey_question extends Default_Table
         } // if
 
         global $mode;
-        if ($mode != 'insert' and $mode != 'search') {
+        if (!preg_match('/(insert|search)/i', $mode) AND !empty($fieldarray)) {
             // get contents of QUESTION_PROMPT and concatenate into a single string
             $dbobject =& RDCsingleton::getInstance('question_prompt');
             $dbobject->sql_select = "prompt_desc";
             $dbobject->sql_from   = "question_prompt "
                                   . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
-            $where2 = filterWhere($where, $dbobject->getPkeynames(), $dbobject->getTableName());
+            //$where2 = filterWhere($where1, $dbobject->getPkeynames(), $dbobject->getTableName());
+            $where2 = array2where($fieldarray, $dbobject->getPkeynames());
             $data_array = $dbobject->getData($where2);
             unset($dbobject);
             $prompt_list = '';
@@ -88,7 +89,8 @@ class survey_question extends Default_Table
             		// get contents of ANSWER_OPTION and concatenate into a single string
                     $dbobject =& RDCsingleton::getInstance('answer_option');
                     $dbobject->sql_select = "answer_text";
-                    $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());
+                    //$where2 = filterWhere($where1, $dbobject->getPkeynames(), $dbobject->getTableName());
+                    $where2 = array2where($fieldarray, $dbobject->getPkeynames());
                     $data_array = $dbobject->getData($where2);
                     unset($dbobject);
                     $answer_list = '';
@@ -105,7 +107,8 @@ class survey_question extends Default_Table
             		// get contents of NUMBER_OPTION and concatenate into a single string
                     $dbobject =& RDCsingleton::getInstance('number_option');
                     $dbobject->sql_select = "min_value, max_value";
-                    $where2 = whereFilter($where, $dbobject->getPkeynames(), $dbobject->getTableName());
+                    //$where2 = filterWhere($where1, $dbobject->getPkeynames(), $dbobject->getTableName());
+                    $where2 = array2where($fieldarray, $dbobject->getPkeynames());
                     $data_array = $dbobject->getData($where2);
                     unset($dbobject);
                     $answer_list = null;
@@ -148,7 +151,7 @@ class survey_question extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item = '', $where)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -218,30 +221,32 @@ class survey_question extends Default_Table
     {
         $where = array2where($fieldarray, $this->getPkeyNames());
 
-        switch ($fieldarray['answer_type']) {
-            case 'M':
-                $next['task_id'] = 'srv_answer_option(multi)';
-                $next['where']   = $where;
-                $next['action']  = 'OK';
-                // this is processed by scriptnext() and scriptprevious()
-                $_SESSION['script_sequence'][] = $next;
-                break;
-            case 'N':
-                $next['task_id'] = 'srv_number_option(multi)';
-                $next['where']   = $where;
-                $next['action']  = 'OK';
-                // this is processed by scriptnext() and scriptprevious()
-                $_SESSION['script_sequence'][] = $next;
-                break;
-            default:
-                ;
-        } // switch
+        if (!isset($_POST['submitstay'])) {
+            // may need to jump to another screen to provide the answer options
+            switch ($fieldarray['answer_type']) {
+                case 'M':
+                    $next['task_id'] = 'srv_answer_option(multi)';
+                    $next['where']   = $where;
+                    $next['action']  = 'OK';
+                    // this is processed by scriptnext() and scriptprevious()
+                    append2ScriptSequence($next);
+                    break;
+                case 'N':
+                    $next['task_id'] = 'srv_number_option(multi)';
+                    $next['where']   = $where;
+                    $next['action']  = 'OK';
+                    // this is processed by scriptnext() and scriptprevious()
+                    append2ScriptSequence($next);
+                    break;
+                default:
+                    ;
+            } // switch
+        } // if
 
-        $next['task_id'] = 'srv_question_prompt(link)';
-        $next['where']   = $where;
-        unset($next['action']);
-        // this is processed by scriptnext() and scriptprevious()
-        $_SESSION['script_sequence'][] = $next;
+//        $next['task_id'] = 'srv_question_prompt(link)';
+//        $next['where']   = $where;
+//        unset($next['action']);
+//        $_SESSION['script_sequence'][] = $next;
 
         return $fieldarray;
 

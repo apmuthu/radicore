@@ -25,7 +25,7 @@ class risk_weighting extends Default_Table
     } // risk_weighting
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

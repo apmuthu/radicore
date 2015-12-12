@@ -26,6 +26,7 @@ $structure['main']['fields'][] = array('outer_table' => 'Outer Table Name', 'col
 $structure['main']['fields'][] = array('outer_table_alias' => 'Outer Table Alias', 'colspan' => 3);
 $structure['main']['fields'][] = array('link_table' => 'Link Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('middle_table' => 'Middle Table Name', 'colspan' => 3);
+$structure['main']['fields'][] = array('database_id_inner' => 'Inner Database', 'colspan' => 3);
 $structure['main']['fields'][] = array('inner_table' => 'Inner Table Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('inner_table_alias' => 'Inner Table Alias', 'colspan' => 3);
 $structure['main']['fields'][] = array('screen_file' => 'Screen Structure', 'colspan' => 3);

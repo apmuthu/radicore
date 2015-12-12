@@ -95,13 +95,18 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
     if (!empty($choose_errors)) {
         $errors[$dbobject->getClassName()] = $choose_errors;
     } // if
-} // if
 
-if (!empty($_POST)) {
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('dbobject' => $dbobject));
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
+} elseif (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $where = $dbobject->reset($where);
+
+} elseif (!empty($_POST)) {
+    if ($task_button = check_task_button($_POST)) {
+        // look for an action which is another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
     } // if
 } // if
 
@@ -137,11 +142,6 @@ if (isset($quicksearch)) {
 if (isset($instruction)) {
     // load instruction returned by a child script
     $dbobject->setInstruction($instruction);
-} // if
-
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $where = $dbobject->reset($where);
 } // if
 
 // get data from the database

@@ -73,17 +73,23 @@ if (isset($script_vars['dbobject'])) {
     } // if
 } // if
 
-// look for SUBMIT button
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['copy'])) {
         $messages = copyForm($_POST, $dbobject);
+
     } else {
-        // look for an action which is another script
-        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
-        if (is_array($child_errors)) {
-            $errors = array_merge($errors, $child_errors);
-        } // if
-        if (empty($errors)) {
+        // identify if one of the 'submit' buttons has been pressed
+        $submit_button = check_submit_button($act_buttons, $_POST);
+        $task_button   = check_task_button($_POST);
+        if (!empty($task_button)) {
+            // look for an action which is another script
+            $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+            if (is_array($child_errors)) {
+                $errors[$dbobject->getClassName()] = $child_errors;
+            } // if
+
+        } elseif (!empty($submit_button) AND empty($errors)) {
+            // the 'erase' button has been pressed
             $dbobject->startTransaction();
             // delete this record from the database
             $fieldarray = $dbobject->eraseRecord($fieldarray);

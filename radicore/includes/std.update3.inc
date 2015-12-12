@@ -63,7 +63,7 @@ if (isset($script_vars['dbobject'])) {
     // perform any initialisation
     $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {
-        scriptPrevious($dbobject->getErrors());
+        scriptPrevious($dbobject->getErrors(), $messages, 'fail');
     } // if
 } // if
 
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $fieldarray = $dbobject->getExtraData($fieldarray);
         if ($dbobject->errors) {
             // some sort of error - return to previous script
-            scriptprevious($dbobject->getErrors(), $messages);
+            scriptprevious($dbobject->getErrors(), $messages, 'fail');
         } // if
     } // if
 
@@ -95,45 +95,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
 if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
-    $submit_button = check_submit_button ($act_buttons, $_POST);
-    if (empty($submit_button)) {
-        // deal with a javascript 'submit()'.
-        $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
-        if ($dbobject->errors) {
-            $errors = $dbobject->getErrors();
-        } // if
-    } else {
+    $submit_button = check_submit_button($act_buttons, $_POST);
+    $task_button   = check_task_button($_POST);
+    if (!empty($submit_button) OR !empty($task_button)) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
-    } // if
-    if (empty($errors)) {
-        // look for a navigation or popup button which jumps to another script
-        $child_errors = childForm($_POST, array('dbobject' => $dbobject));
-        if (is_array($child_errors)) {
-            $errors = array_merge($errors, $child_errors);
+
+        if (!empty($task_button)) {
+            // look for a navigation or popup button which jumps to another script
+            $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+            if (is_array($child_errors)) {
+                $errors[$dbobject->getClassName()] = $child_errors;
+            } // if
+        } // if
+
+    } elseif ($custom_button_array = check_custom_button($_POST)) {
+        list($custom_button, $button_row, $button_zone) = $custom_button_array;
+        // a custom button was pressed
+        $dbobject->startTransaction();
+        $fieldarray = $dbobject->customButton($fieldarray, $custom_button, $_POST);
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            $dbobject->rollback();
+        } else {
+            $dbobject->commit();
+        } // if
+
+    } else {
+        // deal with a javascript 'submit()'.
+        $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
     } // if
-    if (empty($errors)) {
-        if (!empty($submit_button)) {
-            $dbobject->startTransaction();
-            // update this data in the database
-            $msg = $dbobject->updateSelection($fieldarray, null);
-            if ($dbobject->errors) {
-		        // errors are keyed by object name
-		        $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-	        } // if
+
+    if (empty($errors) AND !empty($submit_button)) {
+        $dbobject->startTransaction();
+        // update this data in the database
+        $msg = $dbobject->updateSelection($fieldarray, null);
+        if ($dbobject->errors) {
+		    // errors are keyed by object name
+		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+	    } // if
+        if (empty($errors)) {
+            $errors = $dbobject->commit();
             if (empty($errors)) {
-                $errors = $dbobject->commit();
-                if (empty($errors)) {
-                    // update was OK - return to previous screen
-                    scriptPrevious(null, $msg, 'OK', $dbobject->getInstruction());
-                } // if
-            } else {
-                $dbobject->rollback();
+                // update was OK - return to previous screen
+                scriptPrevious(null, $msg, 'update', $dbobject->getInstruction());
             } // if
+        } else {
+            $dbobject->rollback();
         } // if
     } // if
 } // if

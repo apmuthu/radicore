@@ -25,6 +25,23 @@ class x_person extends Default_Table
     } // x_person
 
     // ****************************************************************************
+    function getFieldSpec_original ()
+    // set the specifications for this database table.
+    {
+        $fieldspec = parent::getFieldSpec_original();
+
+        // if using the Oracle database then exclude field 'favourite_food'
+        // as the OCI8 driver cannot deal with VARRAY types.
+        //if ($this->dbms_engine == 'oracle' AND version_compare(phpversion(), '5.0.0', '<')) {
+        if (preg_match('/(oracle|sqlsrv)/i', $this->dbms_engine)) {
+            unset($fieldspec['favourite_food']);
+        } // if
+
+        return $fieldspec;
+
+    } // if
+
+    // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.
@@ -42,13 +59,6 @@ class x_person extends Default_Table
             // include fields from PERSON_ADDR table
             $this->fieldspec['county']      = array('type' => 'string', 'size' => 30);
             $this->fieldspec['postcode']    = array('type' => 'string', 'size' => 10);
-        } // if
-
-        // if using the Oracle database then exclude field 'favourite_food'
-        // as the OCI8 driver cannot deal with VARRAY types.
-        //if ($this->dbms_engine == 'oracle' AND version_compare(phpversion(), '5.0.0', '<')) {
-        if ($this->dbms_engine == 'oracle') {
-        	unset($this->fieldspec['favourite_food']);
         } // if
 
         return $fieldarray;
@@ -75,18 +85,46 @@ class x_person extends Default_Table
     // perform custom formatting before values are shown to the user.
     // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
-        if (!isset($fieldarray['person_name'])) {
-            // merge first_name and last_name into person_name
-            if (isset($fieldarray['first_name']) AND isset($fieldarray['last_name'])) {
-                $fieldarray['person_name'] = $fieldarray['first_name']
-                                           . ' '
-                                           . $fieldarray['last_name'];
-            } // if
-        } // if
+//        if (!isset($fieldarray['person_name'])) {
+//            // merge first_name and last_name into person_name
+//            if (isset($fieldarray['first_name']) AND isset($fieldarray['last_name'])) {
+//                $fieldarray['person_name'] = $fieldarray['first_name']
+//                                           . ' '
+//                                           . $fieldarray['last_name'];
+//            } // if
+//        } // if
 
         return $fieldarray;
 
     } // _cm_formatData
+
+    // ****************************************************************************
+    function _cm_getColumnNames ($fieldarray)
+    // modify data to be used by 'std.output4.inc'.
+    {
+        $fieldarray = array();  // clear current list
+
+        $fieldarray['person_id'] = 'Y';
+        $fieldarray['first_name'] = 'N';
+        $fieldarray['last_name'] = 'N';
+        $fieldarray['initials'] = 'N';
+        $fieldarray['person_name'] = 'Y';
+        $fieldarray['pers_type_id'] = 'N';
+        $fieldarray['pers_type_desc'] = 'Y';
+        $fieldarray['node_id'] = 'N';
+        $fieldarray['node_desc'] = 'N';
+        $fieldarray['nat_ins_no'] = 'N';
+        $fieldarray['star_sign'] = 'N';
+        $fieldarray['email_addr'] = 'Y';
+        $fieldarray['value1'] = 'Y';
+        $fieldarray['value2'] = 'Y';
+        $fieldarray['start_date'] = 'Y';
+        $fieldarray['end_date'] = 'Y';
+        $fieldarray['favourite_food'] = 'N';
+
+        return $fieldarray;
+
+    } // _cm_getColumnNames
 
     // ****************************************************************************
     function _cm_getDatabaseLock ()
@@ -205,6 +243,8 @@ class x_person extends Default_Table
             $this->sql_groupby = null;
             $this->sql_having  = null;
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+            // combine two fields intoone
+            $this->sql_select .= ", CONCAT(first_name, ' ', last_name) AS person_name";
             // ***** TEST *****
             //$this->sql_select .= ", (SELECT SUM(credit_amount) FROM test_credit WHERE test_credit.person_id=x_person.person_id) AS credit_amount";
             //$this->sql_select .= ", (SELECT SUM(debit_amount) FROM test_debit WHERE test_debit.person_id=x_person.person_id) AS debit_amount";

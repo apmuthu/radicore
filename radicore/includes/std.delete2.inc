@@ -33,6 +33,11 @@ $dbobject = new $table_id;
 $dbobject->initiated_from_controller = true;
 // perform any initialisation
 $where = $dbobject->initialise ($where, $selection);
+$errors   = array_merge($errors, $dbobject->getErrors());
+$messages = array_merge($messages, $dbobject->getMessages());
+if ($errors) {
+    scriptPrevious($errors, $messages, 'fail');
+} // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // retrieve profile must have been set by previous screen

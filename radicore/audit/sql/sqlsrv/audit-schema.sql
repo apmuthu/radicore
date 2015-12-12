@@ -89,7 +89,7 @@ go
 
 CREATE TABLE audit_logon_errors (
   id int NOT NULL IDENTITY(1,1),
-  err_timestamp datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  err_timestamp datetime2  NOT NULL DEFAULT '0000-00-00 00:00:00',
   ip_address nvarchar(40) NOT NULL DEFAULT '0.0.0.0',
   user_id nvarchar(16) DEFAULT NULL,
   user_password nvarchar(16) NOT NULL DEFAULT '',
@@ -106,10 +106,11 @@ go
 CREATE TABLE audit_ssn (
   session_id bigint NOT NULL IDENTITY(1,1),
   user_id nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  ssn_date date NOT NULL DEFAULT '2000-01-01',
-  ssn_time time NOT NULL DEFAULT '00:00:00',
+  ssn_datetime datetime2 NOT NULL default '2000-01-01 00:00:00',
   PRIMARY KEY (session_id)
 );
+go
+CREATE INDEX audit_ssn_datetime ON audit_ssn (ssn_datetime);
 go
 -- --------------------------------------------------------
 
@@ -137,11 +138,12 @@ go
 CREATE TABLE audit_trn (
   session_id bigint NOT NULL DEFAULT '0',
   tran_seq_no smallint NOT NULL DEFAULT '0',
-  trn_date date NOT NULL DEFAULT '2000-01-01',
-  trn_time time NOT NULL DEFAULT '00:00:00',
+  trn_datetime datetime2 NOT NULL default '2000-01-01 00:00:00',
   task_id nvarchar(80) NOT NULL DEFAULT '',
   PRIMARY KEY (session_id,tran_seq_no)
 );
+go
+CREATE INDEX audit_trn_datetime ON audit_trn (trn_datetime);
 go
 -- --------------------------------------------------------
 
@@ -152,9 +154,9 @@ go
 CREATE TABLE php_session (
   session_id nvarchar(32) NOT NULL DEFAULT '',
   user_id nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  date_created datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
-  last_updated datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
-  session_data ntext,
+  date_created datetime2  NOT NULL DEFAULT '2000-01-01 00:00:00',
+  last_updated datetime2  NOT NULL DEFAULT '2000-01-01 00:00:00',
+  session_data varbinary(max),
   PRIMARY KEY (session_id)
 );
 CREATE INDEX php_session_last_updated ON php_session (last_updated);

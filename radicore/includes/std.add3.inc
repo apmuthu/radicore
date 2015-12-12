@@ -31,7 +31,7 @@ $null = null;
 $where = $dbobject->initialise($where, $null);
 if ($dbobject->errors) {
     $messages = array_merge($messages, $dbobject->getMessages());
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, 'fail');
     return $batch_errors;
 } // if
 

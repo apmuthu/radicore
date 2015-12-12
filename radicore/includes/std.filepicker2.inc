@@ -103,10 +103,13 @@ if (isset($_GET['select'])) {
 } // if
 
 if (!empty($_POST)) {
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
+    $task_button = check_task_button($_POST);
+    if (!empty($task_button)) {
+        // look for an action which is another script
+        $child_errors = childForm($_POST, array('dbobject' => &$fileobject), $task_button, $where);
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
     } // if
 } // if
 

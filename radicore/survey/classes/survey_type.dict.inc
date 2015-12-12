@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:31 am
+    // file created on December 1, 2015, 4:10 pm
     
     // field specifications for table survey.survey_type
     $fieldspec['survey_type_id']            = array('type' => 'string',
@@ -59,6 +59,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

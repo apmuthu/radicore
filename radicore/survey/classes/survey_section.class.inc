@@ -55,7 +55,7 @@ class survey_section extends Default_Table
         // to absorb the now vacant number.
         $survey_id   = $fieldarray['survey_id'];
         $section_seq = $fieldarray['section_seq'];
-        $where       = "survey_id='$survey_id' and section_seq > $section_seq";
+        $where       = "survey_section.survey_id='$survey_id' and section_seq > $section_seq";
         $this->sql_orderby = 'section_seq';
         $rowdata = $this->getData_raw($where);
         if ($this->numrows == 0) {

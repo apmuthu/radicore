@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class RDCsingleton
@@ -54,15 +54,15 @@ class RDCsingleton
             // ensure that this subsystem is in the include plath
             $include_path = ini_get('include_path');
             $pattern = '#'              // start pattern
-                     . '('            // start choice
+                     . '('              // start choice
                      . '(/|\\\)'        // '/' or '\'
                      . $subsystem       // subsystem name
                      . PATH_SEPARATOR   // ';' or ':'
-                     . '|'            // or
+                     . '|'              // or
                      . '(/|\\\)'        // '/' or '\'
                      . $subsystem       // subsystem name
                      . '$'              // ends with
-                     . ')'            // end choice
+                     . ')'              // end choice
                      . '#i';            // end pattern, case insensitive
             if (!preg_match($pattern, $include_path)) {
                 $include_path .= PATH_SEPARATOR ."../$subsystem";

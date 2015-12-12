@@ -23,7 +23,7 @@ $today     = getTimeStamp('date');
 $role_id   = $_SESSION['role_id'];
 $role_list = $_SESSION['role_list'];
 
-if (isset($_SESSION['motd'])) {
+if (isset($_SESSION['motd']) AND empty($errors)) {
     unset($_SESSION['motd']);
     $motd =& RDCsingleton::getInstance('mnu_motd');
     $where = "motd_id IS NOT NULL AND start_date<='$today' AND end_date>='$today' AND (role_id IS NULL OR role_id IN ($role_list))";
@@ -102,8 +102,10 @@ $pagination['mnu_todo']['lastpage'] = $db_todo->getLastPage();
 // ****************************************************************************
 
 if (!empty($_POST)) {
-    // look for an action which is another script
-    $errors = childForm($_POST, null, null);
+    if ($task_button = check_task_button($_POST)) {
+        // look for an action which is another script
+        $errors = childForm($_POST, null, $task_button);
+    } // if
 } // if
 
 // ****************************************************************************

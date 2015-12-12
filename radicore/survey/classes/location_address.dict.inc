@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:31 am
+    // file created on December 1, 2015, 4:07 pm
     
     // field specifications for table survey.location_address
     $fieldspec['node_id']                   = array('type' => 'integer',
@@ -84,6 +84,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'node_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

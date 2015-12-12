@@ -58,11 +58,12 @@ GRANT SELECT,ALTER ON audit_logon_errors_seq TO PUBLIC;
 
 CREATE TABLE audit_ssn (
   session_id number(20) NOT NULL,
-  user_id varchar2(16) NOT NULL,
-  ssn_date date NOT NULL,
-  ssn_time char(8) NOT NULL,
+  user_id varchar2(16) NOT NULL DEFAULT 'UNKNOWN',
+  ssn_datetime timestamp NOT NULL,
   PRIMARY KEY  (session_id)
 );
+CREATE INDEX "AUDIT_SSN_DATETIME" ON "AUDIT_SSN" ("SSN_DATETIME");
+
 REVOKE ALL ON audit_ssn FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON audit_ssn TO PUBLIC;
 
@@ -95,11 +96,11 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON audit_tbl TO PUBLIC;
 CREATE TABLE audit_trn (
   session_id number(20) NOT NULL,
   tran_seq_no number(6) NOT NULL,
-  trn_date date NOT NULL,
-  trn_time char(8) NOT NULL,
+  trn_datetime timestamp NOT NULL,
   task_id varchar2(80) NOT NULL,
   PRIMARY KEY  (session_id,tran_seq_no)
 );
+CREATE INDEX "AUDIT_TRN_DATETIME" ON "AUDIT_TRN" ("TRN_DATETIME");
 
 REVOKE ALL ON audit_trn FROM PUBLIC;
 GRANT SELECT,INSERT,DELETE,UPDATE ON audit_trn TO PUBLIC;

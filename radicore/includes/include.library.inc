@@ -305,7 +305,8 @@ if (!function_exists('array_update_associative')) {
                         } // if
                     } // if
                 } // if
-                if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
+                //if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
+				if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
                     $array1[$fieldname] = $array2[$fieldname];  // both arrays, so update
                 } elseif (!is_array($array2[$fieldname]) AND !is_array($array1[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both scalars, so update
@@ -833,6 +834,36 @@ if (!function_exists('build_select_list')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('check_custom_button')) {
+    function check_custom_button ($post)
+    // check to see if a CUSTOM button was pressed.
+    // (a field which begins with 'button#')
+    {
+        $button = false;
+        // look for 'button#<zone>#name' where '<zone>#' is optional
+        $pattern = '/^((?P<prefix>\w+\#)){1}(?P<zone>\w+\#)?/i';
+        foreach ($_POST as $postname => $postvalue) {
+            //if (preg_match('/^button#/i', $postname, $regs)) {
+            if (preg_match($pattern, $postname, $regs)) {
+                // strip off the prefix to leave the original field name
+                $zone   =& $regs['zone'];
+                $button = str_replace($regs['prefix'].$zone, '', $postname);
+                $zone   = str_replace('#', '', $zone);
+                if (is_array($postvalue)) {
+                    $button_row = key($postvalue);
+                    return array($button, $button_row, $zone);
+                } else {
+                    return array($button, false, $zone);
+                } // if
+            } // if
+        } // foreach
+
+        return false;
+
+    } // check_custom_button
+} // if
+
+// ****************************************************************************
 if (!function_exists('check_memory_limit')) {
     function check_memory_limit ($quiet=false)
     // check memory usage and double it if too close to the limit
@@ -883,6 +914,29 @@ if (!function_exists('check_submit_button')) {
         return false;
 
     } // check_submit_button
+} // if
+
+// ****************************************************************************
+if (!function_exists('check_task_button')) {
+    function check_task_button ($post)
+    // check to see if a TASK button was pressed.
+    // (a field which begins with 'task#' or 'favourite')
+    {
+        if (isset($post['rdc_selection_lock'])) {
+            $_SESSION['selection_lock'] = $post['rdc_selection_lock'];
+        } // if
+
+        $button = false;
+        foreach ($_POST as $postname => $postvalue) {
+            if (preg_match('/^(task#|favourite#)/i', $postname, $regs)) {
+                $button = $postname;
+                break;
+            } // if
+        } // foreach
+
+        return $button;
+
+    } // check_task_button
 } // if
 
 // ****************************************************************************
@@ -2933,22 +2987,24 @@ if (!function_exists('getLanguageArray')) {
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
-            $res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
+            //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
         } // if
         $cwd = getcwd();
 
         if (!empty($GLOBALS['classdir'])) {
             if ($curr_dir != $GLOBALS['classdir']) {
                 $curr_dir  = $GLOBALS['classdir'];
-                $array2    = false;  // cause this to be reloaded
             } // if
         } elseif (defined('TEXT_DIRECTORY')) {
             if ($curr_dir != TEXT_DIRECTORY) {
                 $curr_dir  = TEXT_DIRECTORY;
-                $array2    = false;  // cause this to be reloaded
             } // if
-        } elseif ($curr_dir != $cwd) {
-            $curr_dir = $cwd;
+        } elseif ($curr_dir != $dir_script) {
+            $curr_dir = $dir_script;
+        } // if
+        if (!empty($curr_dir) AND $curr_dir != $cwd) {
+            $cwd = $curr_dir;
+            $res = chdir($curr_dir);
             $array2   = false;  // cause this to be reloaded
         } else {
             $curr_dir = $cwd;
@@ -3127,21 +3183,23 @@ if (!function_exists('getLanguageText')) {
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
-            $res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
+            //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
         } // if
         $cwd = getcwd();
         if (!empty($GLOBALS['classdir'])) {
             if ($curr_dir != $GLOBALS['classdir']) {
                 $curr_dir  = $GLOBALS['classdir'];
-                $array2    = false;  // cause this to be reloaded
             } // if
         } elseif (defined('TEXT_DIRECTORY')) {
             if ($curr_dir != TEXT_DIRECTORY) {
                 $curr_dir  = TEXT_DIRECTORY;
-                $array2    = false;  // cause this to be reloaded
             } // if
-        } elseif ($curr_dir != $cwd) {
-            $curr_dir = $cwd;
+        } elseif ($curr_dir != $dir_script) {
+            $curr_dir = $dir_script;
+        } // if
+        if (!empty($curr_dir) AND $curr_dir != $cwd) {
+            $cwd = $curr_dir;
+            $res = chdir($cwd);
             $array2   = false;  // cause this to be reloaded
         } else {
             $curr_dir = $cwd;
@@ -3411,6 +3469,68 @@ if (!function_exists('getFileStructure')) {
         return $structure;
 
     } // getFileStructure
+} // if
+
+// ****************************************************************************
+if (!function_exists('getForeignKeyValues')) {
+    function getForeignKeyValues ($parentOBJ, $parent_data, $childOBJ)
+    // identify any mapping between the column names for the foreign key on the
+    // CHILD object and the corresponding primary/unique key on the PARENT object.
+    {
+        if (!is_object($parentOBJ)) {
+            // "1st argument must be an object"
+            trigger_error(getLanguageText('sys0227'), E_USER_ERROR);
+        } // if
+
+        if (!is_object($childOBJ)) {
+            // "3rd argument must be an object"
+            trigger_error(getLanguageText('sys0228'), E_USER_ERROR);
+        } // if
+
+        if (!is_array($parent_data)) {
+            $parent_data = array();
+        } // if
+
+        $parent_table = $parentOBJ->getClassName(); // may be a sub-class
+        $child_table  = $childOBJ->tablename;       // use actual name
+
+        $found = false;
+        // first look for alias names
+        foreach ($childOBJ->parent_relations as $reldata) {
+            if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
+                $found = true;
+                break;
+            } // if
+        } // foreach
+
+        if (!$found) {
+            reset($childOBJ->parent_relations);
+            // now look for a non-aliased name
+            foreach ($childOBJ->parent_relations as $reldata) {
+                if ($reldata['parent'] == $parent_table) {
+                    $found = true;
+                    break;
+                } // if
+            } // foreach
+        } // if
+
+//        if (!$found) {
+//            // "No relationship found between the PARENT object and the CHILD object"
+//            trigger_error(getLanguageText('sys0229'), E_USER_ERROR);
+//        } // if
+
+        $child_data = array();
+
+        foreach ($reldata['fields'] as $child_field => $parent_field) {
+            // swap the field names between the PARENT and CHILD tables
+            if (isset($parent_data[$parent_field])) {
+                $child_data[$child_field] = $parent_data[$parent_field];
+            } // if
+        } // foreach
+
+        return $child_data;
+
+    } // getForeignKeyValues
 } // if
 
 // ****************************************************************************
@@ -5101,51 +5221,78 @@ END_OF_REGEX;
 
 // ****************************************************************************
 if (!function_exists('rangeFromTo')) {
-    function rangeFromTo (&$from, &$to, $is_date=false)
+    function rangeFromTo ($from, $to, $is_date=false)
     // if FROM and TO values exist then set FIELD to 'BETWEEN $from AND $to'.
     // IS_DATE is TRUE for date fields, FALSE for other fields
     {
         $field = null;
+        $from = trim($from);
+        $to   = trim($to);
 
-        if (!empty($from)) {
-            $from = stripOperators($from);
-            if (substr($from, -1) == '%') {
-            	$from = substr($from, 0, -1);  // remove trailing '%'
+        $pattern = <<<EOP
+/
+(?P<date>[0-9]{4}-[0-9]{2}-[0-9]{2})?     # YYYY-MM-DD (0 or 1 times)
+(?P<time>[0-9]{2}:[0-9]{2}(:[0-9]{2})?)?  # HH:MM[:SS] (0 or 1 times)
+/imsx
+EOP;
+
+        $search  = "/[^\d\.: -]/";  // strip anything except digits, hyphens, colons, periods and spaces
+        $replace = null;
+
+        if (strlen($from) > 0) {
+            $from = preg_replace($search, $replace, $from);
+            if ($is_date) {
+                preg_match_all($pattern, $from, $regs);
+                if (empty($regs['date'])) {
+                    return $field;  // there is no date, so this is invalid
+                } // if
+                foreach ($regs['date'] as $from_date) {
+                    if (!empty($from_date)) break;
+                } // foreach
+                if (!empty($regs['time'])) {
+                    foreach ($regs['time'] as $from_time) {
+                        if (!empty($from_time)) break;
+                    } // foreach
+                } // if
+                if (empty($from_time)) {
+                    $from_time = '00:00:00';  // not supplied, so use earliest possible time
+                } // if
+                $from = $from_date.' '.$from_time;
             } // if
-            if (!empty($to)) {
-                $to = stripOperators($to);
-                if (substr($to, -1) == '%') {
-                	$to = substr($to, 0, -1);  // remove trailing '%'
-                } // if
-                if ($is_date) {
-                	$field = "BETWEEN '$from 00:00:00' AND '$to 23:59:59'";
-                } else {
-                    if ($from == $to) {
-                        // values are the same, so use '='
-                	    $field = $from;
-                    } else {
-                        $field = "BETWEEN '$from' AND '$to'";
-                    } // if
-                } // if
-            } else {
-                if ($is_date) {
-                    $field = ">= '$from 00:00:00'";
-                } else {
-                    $field = ">= '$from'";
-                } // if
-            } // if
-            $from = null;
-            $to   = null;
         } // if
 
-        if (!empty($to)) {
-            $to = stripOperators($to);
+        if (strlen($to) > 0) {
+            $to = preg_replace($search, $replace, $to);
             if ($is_date) {
-                $field = "<= '$to 23:59:59'";
-            } else {
-                $field = "<= '$to'";
+                preg_match_all($pattern, $to, $regs);
+                foreach ($regs['date'] as $to_date) {
+                    if (!empty($to_date)) break;
+                } // foreach
+                if (empty($to_date)) $to_date = $from_date;  // default to FROM_DATE
+                if (!empty($regs['time'])) {
+                    foreach ($regs['time'] as $to_time) {
+                        if (!empty($to_time)) break;
+                    } // foreach
+                } // if
+                if (empty($to_time)) {
+                    $to_time = '23:59:59';  // not supplied, so use latest possible time
+                } // if
+                $to = $to_date.' '.$to_time;
             } // if
-            $to = null;
+        } // if
+
+        if (!empty($from)) {
+            if (!empty($to)) {
+                if ($from == $to) {
+                    $field = "= '$from'";  // values are the same, so use '='
+                } else {
+                    $field = "BETWEEN '$from' AND '$to'";
+                } // if
+            } else {
+                $field = ">= '$from'";
+            } // if
+        } elseif (!empty($to)) {
+            $field = "<= '$to'";
         } // if
 
         return $field;
@@ -6228,6 +6375,8 @@ if (!function_exists('splitNameOperatorValue')) {
    |                         # or
    \(\)                      # ()
    |                         # or
+   \(\w+\)                   # (word)
+   |                         # or
    '(([^\\\']*(\\\.)?)*)'    # quoted string
   )                          # end choice
  )                           # end atomic group
@@ -6546,7 +6695,7 @@ if (!function_exists('text2image')) {
 // ****************************************************************************
 if (!function_exists('timeDifference')) {
     function timeDifference ($datetime1, $datetime2)
-    // calculate the difference between two date+timess
+    // calculate the difference between two date+times
     {
         if (version_compare(phpversion(), '5.3.0', '<')) {
             $time1 = strtotime($datetime1);
@@ -7162,6 +7311,8 @@ if (!function_exists('where2indexedArray')) {
    |                             # or
    \(\)                          # ()
    |                             # or
+   \(\w+\)                       # (word)
+   |                             # or
    '(([^\\\']*(\\\.)?)*)'        # quoted string
    |                             # or
    [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
@@ -7202,6 +7353,8 @@ if (!function_exists('where2indexedArray')) {
    [\w ,\./*+-]                  # word or ',. /*+-'
    |                             # or
    \(\)                          # ()
+   |                             # or
+   \(\w+\)                       # (word)
    |                             # or
    '(([^\\\']*(\\\.)?)*)'        # quoted string
    |                             # or

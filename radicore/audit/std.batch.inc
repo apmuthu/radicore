@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -60,7 +60,8 @@ function batchInit ($batchfile)
     } // if
 
     echo "<html>\n";
-    echo '<p>** started at ' .date('F j, Y, g:i a') ."</p>\n";
+    //echo '<p>** started at ' .date('F j, Y, H:i:s')."</p>\n";
+    echo '<p>** started at ' .date(DATE_RFC850)."</p>\n";
 
     $_SERVER['SCRIPT_FILENAME']          = $curr_file;
 
@@ -201,7 +202,9 @@ function batchEnd ($errors=null)
     	} // if
     } // if
 
-    echo '<p>** finished at ' .date('F j, Y, g:i a') ."</p>\n";
+    //echo '<p>** finished at ' .date('F j, Y, H:i:s')."</p>\n";
+    echo '<p>** finished at ' .date('F j, Y, ').getTimeStamp('time') ."</p>\n";
+    //echo '<p>** finished at ' .date(DATE_RFC850) ."</p>\n";
     echo "</html>";
 
     global $stdout, $stdouth;
@@ -240,17 +243,10 @@ function check_errors ($object)
         } // if
 
         // $errors should be an associative array, but it may be indexed
-        $array_in = $errors;
+        $array_in  = $errors;
+        $array_out = array();
 	    foreach ($array_in as $ix1 => $error1) {
-	        if (is_string($error1)) {
-	            // merge key and value into a single string
-	        	$array_out[] = $ix1 .': ' .$error1;
-	        } elseif (is_array($error1)) {
-	            foreach ($error1 as $ix2 => $error2) {
-	                // merge index, key and value into a single string
-	            	$array_out[] = '['.$ix1.'] '.$ix2 .': ' .$error2;
-	            } // foreach
-	        } // if
+            $array_out[] = format_array($error1, '['.$ix1.']');
 	    } // foreach
 	    $errors = $array_out;
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);

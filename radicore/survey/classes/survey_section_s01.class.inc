@@ -42,7 +42,7 @@ class survey_section_s01 extends survey_section
         $rowdata[0]['section_seq'] = $prev_seq;
 
         // get id of previous row in current sequence
-        $where = "survey_id='$survey_id' and section_seq='$prev_seq'";
+        $where = "survey_section.survey_id='$survey_id' and section_seq='$prev_seq'";
         $this->sql_select = 'section_id';
         $prev_row = $this->getData_raw($where);
         if ($this->numrows <> 1) {

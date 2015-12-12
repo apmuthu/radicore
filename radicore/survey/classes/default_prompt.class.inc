@@ -58,6 +58,7 @@ class default_prompt extends Default_Table
             $query = "SELECT max(prompt_id) FROM $this->tablename WHERE $where";
             $count = $this->getCount($query);
             $fieldarray['prompt_id'] = $count + 1;
+            $this->retry_on_duplicate_key = 'prompt_id';
         } // if
 
         $this->fieldspec['prompt_id']['noedit'] = 'y';
@@ -67,7 +68,7 @@ class default_prompt extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

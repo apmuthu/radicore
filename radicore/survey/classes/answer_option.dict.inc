@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:31 am
+    // file created on December 1, 2015, 4:07 pm
     
     // field specifications for table survey.answer_option
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -45,8 +45,7 @@
     
     $fieldspec['answer_text']               = array('type' => 'string',
                                                     'size' => 255,
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'required' => 'y');
     
     $fieldspec['jumpto_section_seq']        = array('type' => 'integer',
                                                     'size' => 5,
@@ -104,6 +103,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

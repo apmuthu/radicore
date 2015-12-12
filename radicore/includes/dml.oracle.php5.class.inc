@@ -667,9 +667,11 @@ END_OF_REGEX;
         $selection = $this->adjustWhere($selection);
 
         if (!empty($from) AND !empty($using)) {
-            $count = 1;
-            //$this->query = "DELETE FROM $from USING $using \nWHERE $selection";
-            return $count;
+            //$this->query = "DELETE FROM $from USING $using WHERE $selection";
+            // multi-table delete does not work in this DBMS, so use standard delete with foreign keys
+            $query = "SELECT count(*) FROM $tablename WHERE $selection";
+            $count = $this->getCount($schema, $tablename, $query);
+            $this->query = "DELETE FROM $tablename WHERE $selection";
         } else {
             // get count of affected rows as there may be more than one
             $query = "SELECT count(*) FROM $tablename WHERE $selection";
@@ -1056,13 +1058,7 @@ END_OF_REGEX;
 
         // build the query string and run it
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
-        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
-        	$min_rows = $rdc_limit;
-        	$max_rows = $min_rows + $rdc_offset;
-        	$this->query = 'select * from ( select a.*, rownum as rnum from ( '
-                         . $this->query
-                         . ") a where rownum <= $max_rows ) where rnum >= $min_rows";
-        } elseif ($rows_per_page > 0) {
+        if ($rows_per_page > 0) {
             // insert code for pagination
             $min_rows = (($pageno - 1) * $rows_per_page) +1;
             $max_rows = ($min_rows + $rows_per_page) -1;

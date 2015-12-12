@@ -79,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     } // if
 
     if (empty($errors)) {
-    	$action = 'OK';
+    	$action = 'update';
     } else {
-        $action = null;
+        $action = 'fail';
     } // if
 
     // return to previous screen

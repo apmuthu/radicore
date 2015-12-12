@@ -62,7 +62,6 @@ class wf_token extends Default_Table
     function _cm_getForeignData ($fieldarray)
     // Retrieve data from foreign entities.
     {
-        //DebugBreak();
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
             require_once 'wf_case.class.inc';
@@ -84,7 +83,6 @@ class wf_token extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set workflow_id to next available number
         $query = "SELECT max(token_id) FROM $this->tablename WHERE case_id='{$fieldarray['case_id']}'";
         $count = $this->getCount($query);
@@ -124,13 +122,13 @@ class wf_token extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         //$fieldarray['context'] = $fieldarray['context'];
 
         if ($fieldarray['place_type'] == '9') {
             // this is the END place, so ....
             // mark this token as consumed
             $token_data['case_id']       = $fieldarray['case_id'];
+            $token_data['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
             $token_data['token_id']      = $fieldarray['token_id'];
             $token_data['token_status']  = 'CONS';
             $token_data['consumed_date'] = getTimeStamp();
@@ -155,9 +153,10 @@ class wf_token extends Default_Table
             // mark this case as closed
             require_once 'classes/wf_case.class.inc';
             $dbcase =& RDCsingleton::getInstance('wf_case');
-            $case_data['case_id']     = $fieldarray['case_id'];
-            $case_data['case_status'] = 'CL';
-            $case_data['end_date']    = getTimeStamp();
+            $case_data['case_id']       = $fieldarray['case_id'];
+            $case_data['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
+            $case_data['case_status']   = 'CL';
+            $case_data['end_date']      = getTimeStamp();
             $case_data = $dbcase->updateRecord($case_data);
             if ($dbcase->errors) {
                 $this->errors = array_merge($this->errors, $dbcase->getErrors());

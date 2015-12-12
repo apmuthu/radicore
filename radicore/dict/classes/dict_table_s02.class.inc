@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-201 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
@@ -259,7 +259,8 @@ class dict_table_s02 extends dict_table
         // obtain standard column specs for this DBMS
         static $colspecs;
         if (!isset($colspecs)) {
-            $colspecs = $this->_ddl_getColumnSpecs();
+            $dbname = $column_array[0]['database_id'];
+            $colspecs = $this->_ddl_getColumnSpecs($dbname);
         } // if
 
         $indent  = str_pad('', 4);

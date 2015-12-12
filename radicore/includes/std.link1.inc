@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.link1.inc
@@ -129,18 +129,59 @@ if (isset($script_vars['dblink'])) {
     $dblink->is_link_table  = TRUE;
 } // if
 
-if (!empty($_POST) AND empty($_POST['reset'])) {
-    // merge original data with user's input (so that fields which were displayed
-    // but not POSTed are sent back if any errors are displayed).
-    $link_data = array_update_indexed($link_data, $_POST);
-    // ensure that changes are stored inside relevant object
-    $dblink->setFieldArray($link_data);
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('dblink' => $dblink));
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
+// make each object available to its parent or child
+$dbouter->setChildObject($dblink);
+$dblink->setParentObject($dbouter);
+
+if (!empty($_POST)) {
+    // identify if one of the 'submit' buttons has been pressed
+    $submit_button = check_submit_button($act_buttons, $_POST);
+    $task_button   = check_task_button($_POST);
+    if (!empty($submit_button) OR !empty($task_button)) {
+        // merge original data with user's input (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $link_data = array_update_indexed($link_data, $_POST);
+        // ensure that changes are stored inside relevant object
+        $dblink->setFieldArray($link_data);
+
+        if (!empty($task_button)) {
+            // look for a navigation or popup button which jumps to another script
+            $child_errors = childForm($_POST, array('dblink' => $dblink), $task_button);
+            if (is_array($child_errors)) {
+                $errors[$dblink->getClassName()] = $child_errors;
+            } // if
+        } // if
+
+    } elseif ($custom_button_array = check_custom_button($_POST)) {
+        list($custom_button, $button_row, $button_zone) = $custom_button_array;
+        // a custom button was pressed
+        $dblink->startTransaction();
+        if ($button_zone == $dbouter->zone) {
+            $outer_data = $dbouter->customButton($outer_data, $custom_button, $_POST);
+            if ($dbouter->errors) {
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+        } elseif ($button_zone == $dblink->zone) {
+            $link_data = $dblink->customButton($link_data, $custom_button, $_POST, $button_row);
+            if ($dblink->errors) {
+                $errors[$dblink->getClassName()] = $dblink->getErrors();
+            } // if
+        } // if
+        if (empty($errors)) {
+            $dblink->rollback();
+        } else {
+            $dblink->commit();
+        } // if
+
+    } else {
+        // deal with a javascript 'submit()'.
+        $link_data = $dblink->updateFieldArray($link_data, $_POST);
+        if ($dblink->errors) {
+            $errors[$dblink->getClassName()] = $dblink->getErrors();
+        } // if
     } // if
-    if (empty($errors) AND empty($search)) {
+
+    if (empty($errors) AND !empty($submit_button) AND empty($search)) {
     	// update this data in the database
         $dblink->startTransaction();
         $save_pageno = $dblink->pageno;
@@ -286,17 +327,23 @@ if (isset($search)) {
     $dblink->setSqlSearch($search, true);
 } // if
 
-// get primary key of current row retrieved from OUTER entity
-$pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter);
+// convert to foreign key names which relate this child to this parent
+$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dblink);
+if (!empty($fkeyvalues)) {
+    $link_where = array2where($fkeyvalues);
+} else {
+    // get primary key of current row retrieved from OUTER entity
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();
+    $link_where = array2where($outer_data, $pkeynames, $dbouter);
+} // if
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $where = $dblink->reset($where);
+    $link_where = $dblink->reset($link_where);
 } // if
 
 // ensure that column names are qualified in the 'where' clause
-$link_where = qualifyWhere($where, $dbouter->tablename, $dbouter->getFieldSpec());
+$link_where = qualifyWhere($link_where, $dbouter->tablename, $dbouter->getFieldSpec());
 
 if (count($outer_data) > 0) {
     // check if we are returning from a child form

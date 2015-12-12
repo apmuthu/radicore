@@ -9,7 +9,7 @@
 // relevant buttons on the navigation bar.
 //*****************************************************************************
 
-$outer_table = 'dict_relationship';				    // name of outer table
+$outer_table = 'dict_relationship_snr';				// name of outer table
 $inner_table = 'dict_related_column_jnr';           // name of inner table
 $screen = 'dict_related_column.multi4a.screen.inc'; // file identifying screen structure
 

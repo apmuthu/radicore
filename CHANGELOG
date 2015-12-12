@@ -1,5 +1,27 @@
 ﻿RADICORE for PHP - news
 
+2015-12-12, version 1.92.0
+Database changes:
+- run script 'audit\sql\mysql\alter_table(2015-10-15).sql' to alter the structure of the AUDIT database.
+- run script 'menu\sql\mysql\alter_table(2015-11-19).sql' to alter the structure of the MENU database.
+- run script 'menu\sql\menu.menu_export(2015-11-20).sql' to alter the contents of the MENU database.
+
+Other changes:
+- modified tables 'audit_ssn' and 'audit_trn' in the AUDIT database to replace separate 'date' and 'time' columns with a single 'datetime' column. This will allow more accurate selections between different dates.
+- modified the 'Menu Control' screen to allow the 'Audit Delete' values to specify a time period in days, weeks, months or years instead of just years.
+- modified 'std.csv.class.inc' to include the 'appendToCSV()' method to allow additional data to be appended to the CSV output following the calls to 'getData_serial()' and 'fetchRow()'.
+- fixed bug in workflow engine caused by a case being started by a user whose rdcaccount_id is set to '1'.
+- updated 'std.output4.inc' to allow the use of popup buttons, custom buttons and javascript.
+- fixed bug in 'std.fileupload1.inc' caused by wrong arguments being passed to SplFileInfo object.
+- amended the MENU database by adding tables MNU_SAVED_SELECTION and MNU_SAVED_SELECTION_DATA for use in transactions which use the OUTPUT4 pattern.
+- fixed bug in 'dml.oracle.php.class.inc' when performing getData_serial() with $rows_per_page > 0.
+- fixed bug in 'dict_table_s02.class.inc' when exporting dictionary data as reported in http://radicore.org/fud/index.php?t=msg&goto=5177
+- updated 'std.table.class.inc' to add the $offset argument to the _cm_popupCall() method so that if this is used in an area with multiple rows it will show the HTML row number (which starts from 1 not zero).
+- updated '_cm_pre_getData)' method in 'std.table.class.inc' to rename 3rd argument from $fieldarray to $parent_data.
+- updated 'dict_table_s04.class.inc' so when generating the scripts for a LINK1 pattern it will allow the INNER table to be in a different database.
+- updated 'std.table.class.inc' to rename '_validateInsert()' and '_validateUpdate()' methods to '_validateInsertPrimary()' and '_validateUpdatePrimary()' in order to avoid confusion with other validation methods with similar names.
+
+
 2015-10-01, version 1.91.0
 Database changes:
 - run script 'menu\sql\<dbms>\alter_table(2015-09-20).sql' to rename 'mnu_user.language_code' to 'mnu_user.language_id'.

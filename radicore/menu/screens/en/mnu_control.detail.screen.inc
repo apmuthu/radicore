@@ -66,6 +66,8 @@ $structure['main']['fields'][13][] = array('field' => 'shutdown_friday');
 $structure['main']['fields'][13][] = array('field' => 'shutdown_saturday');
 $structure['main']['fields'][13][] = array('field' => 'shutdown_sunday');
 
-$structure['main']['fields'][14] = array('audit_delete' => 'AUDIT entries age (years)', 'colspan' => 7);
+$structure['main']['fields'][14][] = array('label' => 'AUDIT entries age');
+$structure['main']['fields'][14][] = array('field' => 'audit_delete');
+$structure['main']['fields'][14][] = array('field' => 'audit_delete_period', 'colspan' => 6);
 
 ?>

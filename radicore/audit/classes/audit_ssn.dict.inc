@@ -1,9 +1,10 @@
 <?php
-    // file created on October 3, 2012, 4:37 pm
+    // file created on October 20, 2015, 8:39 am
     
     // field specifications for table audit.audit_ssn
     $fieldspec['session_id']                = array('type' => 'integer',
-                                                    'size' => 21,
+                                                    'type_native' => 'bigint',
+                                                    'size' => 20,
                                                     'auto_increment' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.84467440737096e19,
@@ -18,17 +19,10 @@
                                                     'uppercase' => 'y',
                                                     'noedit' => 'y');
     
-    $fieldspec['ssn_date']                  = array('type' => 'date',
-                                                    'size' => 12,
+    $fieldspec['ssn_datetime']              = array('type' => 'datetime',
+                                                    'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '2000-01-01',
-                                                    'noedit' => 'y');
-    
-    $fieldspec['ssn_time']                  = array('type' => 'time',
-                                                    'size' => 10,
-                                                    'required' => 'y',
-                                                    'default' => '00:00:00',
-                                                    'noedit' => 'y');
+                                                    'autoinsert' => 'y');
     
     // primary key details 
     $this->primary_key                      = array('session_id');

@@ -65,7 +65,7 @@ $array['e0055'] = "There are no columns which are common in these two tables";
 $array['e0056'] = "";
 $array['e0057'] = "";
 $array['e0058'] = "";
-$array['e0059'] = "";
+$array['e0059'] = "There are no new tables to be imported";
 
 $array['e0060'] = "Alias name for START_DATE cannot be same as alias name for END_DATE";
 $array['e0061'] = "Alias name for END_DATE cannot be same as alias name for START_DATE";

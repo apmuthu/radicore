@@ -53,19 +53,19 @@ class mnu_todo extends Default_Table
         if (empty($fieldarray['repeat_interval'])) {
         	if (!empty($fieldarray['repeat_unit'])) {
         	    // 'Unit is invalid without Interval'
-        		$this->errors['repeat_unit'] = getLanguageText('e0060');
+        		$this->errors['repeat_unit'] = $this->getLanguageText('e0060');
         	} // if
         } else {
             if (empty($fieldarray['repeat_unit'])) {
         	    // 'Repeat Unit is required with Repeat Interval'
-        		$this->errors['repeat_unit'] = getLanguageText('e0061');
+        		$this->errors['repeat_unit'] = $this->getLanguageText('e0061');
         	} // if
         } // if
 
         if (!empty($fieldarray['task_context'])) {
         	if (empty($fieldarray['task_id'])) {
         	    // 'Context is invalid without Task'
-        		$this->errors['task_context'] = getLanguageText('e0062');
+        		$this->errors['task_context'] = $this->getLanguageText('e0062');
         	} // if
         } // if
 
@@ -141,9 +141,10 @@ class mnu_todo extends Default_Table
 
         if (isset($fieldarray['user_id']) and !empty($fieldarray['user_id'])) {
             // obtain the next value for table_seq_no
-            $select = "SELECT max(seq_no) FROM $this->tablename WHERE user_id='{$fieldarray['user_id']}'";
+            $select = "SELECT MAX(seq_no) FROM $this->tablename WHERE user_id='{$fieldarray['user_id']}'";
             $count = $this->getCount($select);
             $fieldarray['seq_no'] = $count + 1;
+            $this->retry_on_duplicate_key = 'seq_no';
         } // if
 
         if (empty($fieldarray['visibility'])) {
@@ -237,7 +238,7 @@ class mnu_todo extends Default_Table
 
         if ($due_date <= getTimeStamp ('date')) {
             // 'Due Date must be in the future'
-        	$this->errors['due_date'] = getLanguageText('e0033');
+        	$this->errors['due_date'] = $this->getLanguageText('e0033');
         } // if
 
         return $fieldarray;

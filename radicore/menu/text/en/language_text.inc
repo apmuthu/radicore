@@ -18,7 +18,6 @@ $array['e0011'] = "Cannot add a menu to itself.";
 $array['e0012'] = "Cannot add a task to itself.";
 $array['e0013'] = "Cannot add a task of type MENU.";
 $array['e0014'] = "start_task_id must be of type MENU.";
-$array['e0014'] = "Task '%1\$s' does not exist.";
 $array['e0015'] = "Task '%1\$s' has been disabled.";
 $array['e0016'] = "Access to task '%1\$s' has not been allowed.";
 $array['e0017'] = "Unknown value in TASK_TYPE (%1\$s).";

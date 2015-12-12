@@ -70,7 +70,7 @@ if (isset($script_vars['dbouter'])) {
     // perform any initialisation
     $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->getErrors());
+        scriptPrevious($dbouter->getErrors(), $messages, 'fail');
     } // if
     $dbouter->no_foreign_data = TRUE;  // do not look up data for foreign keys
     // add a 'retrieve' button
@@ -116,7 +116,7 @@ if (isset($script_vars['dbmiddle'])) {
     // perform any initialisation
     $null = $dbmiddle->initialise($original_where, $original_selection);
     if ($dbmiddle->errors) {
-        scriptPrevious($dbmiddle->getErrors());
+        scriptPrevious($dbmiddle->getErrors(), $messages, 'fail');
     } // if
 } // if
 
@@ -157,7 +157,7 @@ if (isset($script_vars['dbinner'])) {
     // perform any initialisation
     $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->getErrors());
+        scriptPrevious($dbinner->getErrors(), $messages, 'fail');
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -169,7 +169,12 @@ if (isset($script_vars['dbinner'])) {
     } // if
 } // if
 
-$do_retrieve = false;
+if (preg_match('/(insert|update|delete)/i', $return_action)) {
+    $do_retrieve = true;
+    $selection   = null;
+} else {
+    $do_retrieve = false;
+} // if
 
 // make each object available to its parent or child
 $dbouter->setChildObject($dbmiddle);
@@ -196,8 +201,65 @@ $dbouter->setFieldArray($outer_data);
 
 if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
-    $submit_button = check_submit_button ($act_buttons, $_POST);
-    if (empty($submit_button)) {
+    $submit_button = check_submit_button($act_buttons, $_POST);
+    $task_button   = check_task_button($_POST);
+    if (!empty($submit_button) OR !empty($task_button)) {
+        // merge original data with POSTed data (so that fields which were displayed
+        // but not POSTed are sent back if any errors are displayed).
+        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
+        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
+        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
+        // repeat for the middle entity
+        $middle_post = getPostArray($_POST, $dbmiddle->getFieldSpec());
+        $middle_data = array_update_associative($middle_data, $middle_post);
+        $dbmiddle->setFieldArray($middle_data);  // ensure that changes are stored inside relevant object
+        // repeat for the inner entity
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_data = array_update_indexed($inner_data, $inner_post);
+        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
+
+        if (!empty($task_button)) {
+            // look for an action which is another script (navigation or popup button)
+            $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner));
+            if (is_array($child_errors)) {
+                $errors = array_merge($errors, $child_errors);
+            } // if
+        } // if
+
+    } elseif ($custom_button_array = check_custom_button($_POST)) {
+        list($custom_button, $button_row, $button_zone) = $custom_button_array;
+        // a custom button was pressed - send it to all relevant entities
+        $dbinner->startTransaction();
+        if ($button_zone == $dbouter->zone) {
+            $outer_data = $dbouter->customButton($outer_data, $custom_button, $_POST);
+            if ($dbouter->errors) {
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+        } elseif ($button_zone == $dbmiddle->zone) {
+            $middle_data = $dbmiddle->getFieldArray();
+            if ($dbmiddle->rows_per_page == 1) {
+                $middle_data = $dbmiddle->customButton($middle_data, $custom_button, $POST);
+            } else {
+                $middle_data = $dbmiddle->customButton($middle_data, $custom_button, $_POST, $button_row);
+            } // if
+            if ($dbmiddle->errors) {
+                $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+            } // if
+        } elseif ($button_zone == $dbinner->zone) {
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->customButton($inner_data, $custom_button, $_POST, $button_row);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+        if (empty($errors)) {
+            $dbinner->commit();
+            $do_retrieve = true;
+        } else {
+            $dbinner->rollback();
+        } // if
+
+    } else {
         // deal with a javascript 'submit()'.
         $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
         if ($dbouter->errors) {
@@ -219,113 +281,42 @@ if (!empty($_POST)) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
-    } else {
-        // merge original data with POSTed data (so that fields which were displayed
-        // but not POSTed are sent back if any errors are displayed).
-        $outer_post = getPostArray($_POST, $dbouter->getFieldSpec());
-        $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
-        $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
-        // repeat for the middle entity
-        $middle_post = getPostArray($_POST, $dbmiddle->getFieldSpec());
-        $middle_data = array_update_associative($middle_data, $middle_post);
-        $dbmiddle->setFieldArray($middle_data);  // ensure that changes are stored inside relevant object
-        // repeat for the inner entity
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
-        $inner_data = array_update_indexed($inner_data, $inner_post);
-        $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
     } // if
-    if (empty($errors)) {
-        // look for an action which is another script (navigation or popup button)
-        $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner));
-        if (is_array($child_errors)) {
-            $errors = array_merge($errors, $child_errors);
-        } // if
-    } // if
-    if (empty($errors)) {
-        if (!empty($submit_button)) {
-            $dbinner->startTransaction();
-            // update database with changes in POST array
-            if ($dbmiddle->rows_per_page == 1) {
-                $middle_data = $dbmiddle->updateRecord($middle_data);
-            } else {
-                $middle_data = $dbmiddle->updateMultiple($middle_data, $_POST);
-            } // if
-            if ($dbmiddle->errors) {
-                // errors are keyed by object name
-                $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
-            } // if
-            if (empty($errors)) {
-                $inner_data = $dbinner->getFieldArray();
-                $inner_data = $dbinner->updateRecord($inner_data);
-                if ($dbinner->errors) {
-                    // errors are keyed by object name
-                    $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-                } // if
-            } // if
-            if (empty($errors)) {
-                // update was OK
-                $messages = array_merge($messages, $dbinner->getMessages());
-                $dbinner->wf_case_id     = $dbouter->wf_case_id;
-                $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
-                $dbinner->wf_context     = $dbouter->wf_context;
-                $errors = $dbinner->commit();
-                if (isset($_POST['submitnext'])) {
-                    // update was OK - return to previous screen
-                    scriptPrevious($errors, $messages, 'OK', $dbinner->getInstruction());
-                } // if
-                $do_retrieve = true;
-            } else {
-                $dbinner->rollback();
-            } // if
 
+    if (empty($errors) AND !empty($submit_button)) {
+        $dbinner->startTransaction();
+        // update database with changes in POST array
+        if ($dbmiddle->rows_per_page == 1) {
+            $middle_data = $dbmiddle->updateRecord($middle_data);
         } else {
-            // form posted WITHOUT one of the submit buttons
-            // look for a custom button (a field which begins with 'button#')
-            $button = false;
-            foreach ($_POST as $postname => $postvalue) {
-                if (preg_match('/^button#/i', $postname, $regs)) {
-                    // strip off the prefix to leave the original field name
-                    $button = str_replace($regs[0], '', $postname);
-                    if (is_array($postvalue)) {
-                        $button_row = key($postvalue);
-                    } else {
-                        $button_row = null;
-                    } // if
-                    break;
-                } // if
-            } // foreach
-            if ($button) {
-                $dbinner->startTransaction();
-                // a custom button was pressed - send it to all entities
-                $outer_data = $dbouter->customButton($outer_data, $button, $_POST);
-                if ($dbouter->errors) {
-                    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-                } // if
-                if (empty($errors)) {
-                    $middle_data = $dbmiddle->getFieldArray();
-                    if ($dbmiddle->rows_per_page == 1) {
-                        $middle_data = $dbmiddle->customButton($middle_data, $button, $POST);
-                    } else {
-                        $middle_data = $dbmiddle->customButton($middle_data, $button, $_POST, $button_row);
-                    } // if
-                    if ($dbmiddle->errors) {
-                        $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
-                    } // if
-                } // if
-                if (empty($errors)) {
-                    $inner_data = $dbinner->getFieldArray();
-                    $inner_data = $dbinner->customButton($inner_data, $button, $_POST, $button_row);
-                    if ($dbinner->errors) {
-                        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-                    } // if
-                } // if
-                if (empty($errors)) {
-                    $dbinner->commit();
-                    $do_retrieve = true;
-                } else {
-                    $dbinner->rollback();
-                } // if
+            $middle_data = $dbmiddle->updateMultiple($middle_data, $_POST);
+        } // if
+        if ($dbmiddle->errors) {
+            // errors are keyed by object name
+            $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
+        } // if
+        if (empty($errors)) {
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->updateRecord($inner_data);
+            if ($dbinner->errors) {
+                // errors are keyed by object name
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
+        } // if
+        if (empty($errors)) {
+            // update was OK
+            $messages = array_merge($messages, $dbinner->getMessages());
+            $dbinner->wf_case_id     = $dbouter->wf_case_id;
+            $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
+            $dbinner->wf_context     = $dbouter->wf_context;
+            $errors = $dbinner->commit();
+            if (isset($_POST['submitnext'])) {
+                // update was OK - return to previous screen
+                scriptPrevious($errors, $messages, 'update', $dbinner->getInstruction());
+            } // if
+            $do_retrieve = true;
+        } else {
+            $dbinner->rollback();
         } // if
     } // if
     // refetch data in case it has changed
@@ -406,8 +397,6 @@ if (!empty($return_from) AND !empty($popup_object)) {
             $middle_count = count($middle_data[0]);
         } // if
         if ($middle_count == 0) {
-            // load in current data from $outer in case it is needed
-            $dbmiddle->setFieldArray($outer_data);
             if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
                 // set index number of item to be read from current $where list
                 $dbmiddle->setPageNo($_GET['item']);
@@ -447,8 +436,6 @@ if (!empty($return_from) AND !empty($popup_object)) {
     } // if
     if ($middle_count > 0) {
         if (empty($inner_data)) {
-            // load in current data from $middle in case it is needed
-            $dbinner->setFieldArray($middle_data);
             // get data from the database
             $inner_data = $dbinner->getData($where);
             $inner_data = $dbinner->getExtraData($inner_data);

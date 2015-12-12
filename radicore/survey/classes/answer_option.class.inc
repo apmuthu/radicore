@@ -101,7 +101,7 @@ class answer_option extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

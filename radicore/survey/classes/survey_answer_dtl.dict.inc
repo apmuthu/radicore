@@ -1,5 +1,5 @@
 <?php
-    // file created on January 4, 2007, 1:49 pm
+    // file created on December 1, 2015, 4:18 pm
     
     // field specifications for table survey.survey_answer_dtl
     $fieldspec['survey_answer_id']          = array('type' => 'integer',
@@ -49,6 +49,7 @@
                                                     'optionlist' => 'weighting_id');
     
     $fieldspec['measure_adequate']          = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -113,6 +114,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

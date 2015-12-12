@@ -153,287 +153,306 @@ class radicore_view
                 } // if
                 // add a child node for each field
                 foreach ($rowdata as $fieldname => $fieldvalue) {
-                    //if (preg_match('/^[0-9]/', $fieldname) OR empty($fieldname)) {
-                    //    // this is not a valid field name, so flag it
-                    //    $fieldname = 'invalid_'.$fieldname;
-                    //} // if
-                    try {
-                        $child = $doc->createElement($fieldname);
-                    } catch (Exception $e) {
-                        //if ($e->getCode() == 5) {
-                        //    // do not abort with an invalid character
-                        //    $fieldname = 'invalid_'.$fieldname;
-                        //    $child = $doc->createElement($fieldname);
-                        //} else {
-                            $trace = $e->getTrace();
-                            if (is_array($trace) AND array_key_exists('0', $trace)) {
-                                $trace = $trace[0];
-                            } // if
-                            $trace['msg']        = $e->getMessage();
-                            $trace['code']       = $e->getCode();
-                            $trace['fieldname']  = $fieldname;
-                            $trace['fieldvalue'] = $fieldvalue;
-                            $trace['rowdata']    = $rowdata;
-                            $result = format_array($trace);
-                            trigger_error($result, E_USER_ERROR);
-                        //} // if
-                    } // try
-                    $child = $node->appendChild($child);
-                    if (array_key_exists($fieldname, $css_array)) {
-                        // include css class name(s)
-                	    $child->setAttribute('css_class', $css_array[$fieldname]);
-                    } // if
-                    if (isset($fieldspec[$fieldname])) {
-                        // field exists in $fieldspec, so get field specifications
-                        $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
-                        // add field size as an attribute
-                        if (isset($spec['size'])) {
-                            $child->setAttribute('size', $spec['size']);
+                    if (preg_match('/^task#/', $fieldname)) {
+                        // ignore this field
+                        $ignore = true;
+                    } else {
+                        try {
+                            $child = $doc->createElement($fieldname);
+                        } catch (Exception $e) {
+                            //if ($e->getCode() == 5) {
+                            //    // do not abort with an invalid character
+                            //    $fieldname = 'invalid_'.$fieldname;
+                            //    $child = $doc->createElement($fieldname);
+                            //} else {
+                                $trace = $e->getTrace();
+                                if (is_array($trace) AND array_key_exists('0', $trace)) {
+                                    $trace = $trace[0];
+                                } // if
+                                $trace['msg']        = $e->getMessage();
+                                $trace['code']       = $e->getCode();
+                                $trace['fieldname']  = $fieldname;
+                                $trace['fieldvalue'] = $fieldvalue;
+                                $trace['rowdata']    = $rowdata;
+                                $result = format_array($trace);
+                                trigger_error($result, E_USER_ERROR);
+                            //} // if
+                        } // try
+                        $child = $node->appendChild($child);
+                        if (array_key_exists($fieldname, $css_array)) {
+                            // include css class name(s)
+                	        $child->setAttribute('css_class', $css_array[$fieldname]);
                         } // if
+                        if (isset($fieldspec[$fieldname])) {
+                            // field exists in $fieldspec, so get field specifications
+                            $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
+                            // add field size as an attribute
+                            if (isset($spec['size'])) {
+                                $child->setAttribute('size', $spec['size']);
+                            } // if
 
-                        // look for 'noedit' attribute
-                        if (isset($spec['noedit'])) {
-                            $child->setAttribute('noedit', 'y');
-                        } else {
-                            // look for primary key attribute
-                            if (isset($spec['pkey'])) {
-                                $child->setAttribute('pkey', 'y');
+                            // look for 'noedit' attribute
+                            if (isset($spec['noedit'])) {
+                                $child->setAttribute('noedit', 'y');
+                            } else {
+                                // look for primary key attribute
+                                if (isset($spec['pkey'])) {
+                                    $child->setAttribute('pkey', 'y');
+                                } // if
+                                if (isset($spec['required'])) {
+                                    $child->setAttribute('required', 'y');
+                                } // if
+                                // option for password fields
+                                if (isset($spec['password'])) {
+                                    $child->setAttribute('password', 'y');
+                                } // if
                             } // if
-                            if (isset($spec['required'])) {
-                                $child->setAttribute('required', 'y');
-                            } // if
-                            // option for password fields
-                            if (isset($spec['password'])) {
-                                $child->setAttribute('password', 'y');
-                            } // if
-                        } // if
 
-                        // look for nodisplay attribute (value is not contained within form)
-                        if (isset($spec['nodisplay'])) {
-                            $child->setAttribute('nodisplay', 'y');
-                            $fieldvalue = '**hidden**';
-                        } else {
-                            // if an error message exists for this row/field put it into the field's error attribute
-                            if (!empty($object_errors)) {
-                                if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
-                                    if (array_key_exists($fieldname, $object_errors[$rownum])) {
-                                        $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
-                                        if (array_search($fieldname, $screen_fields) !== FALSE) {
-                                            // field is in the screen, so delete this message
-                                            unset($object_errors[$rownum][$fieldname]);
-                                            if (empty($object_errors[$rownum])) {
-                                    	        unset($object_errors[$rownum]);
+                            // look for nodisplay attribute (value is not contained within form)
+                            if (isset($spec['nodisplay'])) {
+                                $child->setAttribute('nodisplay', 'y');
+                                $fieldvalue = '**hidden**';
+                            } else {
+                                // if an error message exists for this row/field put it into the field's error attribute
+                                if (!empty($object_errors)) {
+                                    if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
+                                        if (array_key_exists($fieldname, $object_errors[$rownum])) {
+                                            $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
+                                            if (array_search($fieldname, $screen_fields) !== FALSE) {
+                                                // field is in the screen, so delete this message
+                                                unset($object_errors[$rownum][$fieldname]);
+                                                if (empty($object_errors[$rownum])) {
+                                    	            unset($object_errors[$rownum]);
+                                                } // if
                                             } // if
                                         } // if
                                     } // if
                                 } // if
                             } // if
-                        } // if
 
-                        if (isset($spec['type'])) {
-                            if ($spec['type'] == 'integer' AND isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
-                                // type should have been set to TINYINT, but was not
-                                $spec['type']  = 'boolean';
-                                $spec['true']  = 1;
-                                $spec['false'] = 0;
-                            } // if
-                            if ($spec['type'] == 'boolean') {
-                                if (!isset($spec['control'])) {
-                                    // no 'control' set, so default to radiogroup
-                            	    $spec['control'] = 'radiogroup';
+                            if (isset($spec['type'])) {
+                                if ($spec['type'] == 'integer' AND isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
+                                    // type should have been set to TINYINT, but was not
+                                    $spec['type']  = 'boolean';
+                                    $spec['true']  = 1;
+                                    $spec['false'] = 0;
                                 } // if
-                                if (!isset($spec['optionlist'])) {
-                                    // no 'optionlist' set, so default to $fieldname
-                            	    $spec['optionlist'] = $fieldname;
-                                } // if
-                                $optionlist = $spec['optionlist'];
-                                if (isset($dbobject->lookup_data[$optionlist])) {
-                                    $lookup = $dbobject->lookup_data[$optionlist];
-                                } else {
-                        	        // no list set, so use default (true=Yes, false=No)
-                        		    $lookup = getLanguageArray('boolean');
-                                } // if
-                                // ensure 'true' and 'false' are set to field specifications
-                                $lookup = fixTrueFalseArray($lookup, $spec);
-                                // now put back into object's internal data
-                        	    $dbobject->lookup_data[$optionlist] = $lookup;
-                            } // if
-                        } // if
-
-                        if (isset($spec['control'])) {
-                            // option for hidden field (included in POST array but not shown)
-                            if ($spec['control'] == 'hidden') {
-                                $child->setAttribute('control', 'hidden');
-                                if (isset($spec['visible'])) {
-                                    // override to display value as non-editable
-                            	    $child->setAttribute('visible', $spec['visible']);
+                                if ($spec['type'] == 'boolean') {
+                                    if (!isset($spec['control'])) {
+                                        // no 'control' set, so default to radiogroup
+                            	        $spec['control'] = 'radiogroup';
+                                    } // if
+                                    if (!isset($spec['optionlist'])) {
+                                        // no 'optionlist' set, so default to $fieldname
+                            	        $spec['optionlist'] = $fieldname;
+                                    } // if
+                                    $optionlist = $spec['optionlist'];
+                                    if (isset($dbobject->lookup_data[$optionlist])) {
+                                        $lookup = $dbobject->lookup_data[$optionlist];
+                                    } else {
+                        	            // no list set, so use default (true=Yes, false=No)
+                        		        $lookup = getLanguageArray('boolean');
+                                    } // if
+                                    // ensure 'true' and 'false' are set to field specifications
+                                    $lookup = fixTrueFalseArray($lookup, $spec);
+                                    // now put back into object's internal data
+                        	        $dbobject->lookup_data[$optionlist] = $lookup;
                                 } // if
                             } // if
 
-                            // option for dropdown fields
-                            if ($spec['control'] == 'dropdown') {
-                                $child->setAttribute('control', 'dropdown');
-                                $child->setAttribute('optionlist', $spec['optionlist']);
-                                if (isset($spec['rows'])) {
-                            	    $child->setAttribute('rows', $spec['rows']);
+                            if (isset($spec['control'])) {
+                                // option for hidden field (included in POST array but not shown)
+                                if ($spec['control'] == 'hidden') {
+                                    $child->setAttribute('control', 'hidden');
+                                    if (isset($spec['visible'])) {
+                                        // override to display value as non-editable
+                            	        $child->setAttribute('visible', $spec['visible']);
+                                    } // if
                                 } // if
-                            } // if
 
-                            // option for multi-dropdown fields
-                            if ($spec['control'] == 'multidrop') {
-                                $child->setAttribute('control', 'multidrop');
-                                $child->setAttribute('optionlist', $spec['optionlist']);
-                                if (isset($spec['rows'])) {
+                                // option for dropdown fields
+                                if ($spec['control'] == 'dropdown') {
+                                    $child->setAttribute('control', 'dropdown');
+                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['rows'])) {
+                            	        $child->setAttribute('rows', $spec['rows']);
+                                    } // if
+                                } // if
+
+                                // option for multi-dropdown fields
+                                if ($spec['control'] == 'multidrop') {
+                                    $child->setAttribute('control', 'multidrop');
+                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['rows'])) {
+                                        $child->setAttribute('rows', $spec['rows']);
+                                    } // if
+                                } // if
+
+                                // option for radio buttons
+                                if ($spec['control'] == 'radiogroup' or $spec['control'] == 'radio') {
+                                    $child->setAttribute('control', 'radiogroup');
+                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['align_hv'])) {
+                                        $child->setAttribute('align_hv', strtolower($spec['align_hv']));
+                                    } // if
+                                    if (isset($spec['align_lr'])) {
+                                        $child->setAttribute('align_lr', strtolower($spec['align_lr']));
+                                    } // if
+                                } // if
+
+                                if (isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
+                                    if (!isset($dbobject->lookup_data['boolean'])) {
+                                        // not loaded yet, so do it now
+                                        $dbobject->lookup_data['boolean'] = getLanguageArray('boolean');
+                                    } // if
+                                } // if
+
+                                // option for filename fields
+                                if ($spec['control'] == 'filepicker') {
+                                    $child->setAttribute('control', 'filepicker');
+                                    if (isset($spec['task_id'])) {
+                                        $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                    } // if
+                                    if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
+                                        $child->setAttribute('image', 'y');
+                                        if (isset($spec['imagewidth'])) {
+                                            $child->setAttribute('imagewidth', $spec['imagewidth']);
+                                        } // if
+                                        if (isset($spec['imageheight'])) {
+                                            $child->setAttribute('imageheight', $spec['imageheight']);
+                                        } // if
+                                        // look for '[alt=...]' at the end of the string
+                                        if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                            $alt = $regs[0];  // extract alt text
+                                            $child->setAttribute('alt', $alt);
+                                            // remove '[alt=...]' from the value
+                                            $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                        } // if
+                                    } // if
+                                    if (isset($spec['notext'])) {
+                                        // display the image without any filename text
+                                        $child->setAttribute('notext', "{$spec['notext']}");
+                                    } // if
+                                } // if
+
+                                // options for multiline fields
+                                if ($spec['control'] == 'multiline') {
+                                    $child->setAttribute('control', 'multiline');
+                                    $child->setAttribute('cols', $spec['cols']);
                                     $child->setAttribute('rows', $spec['rows']);
                                 } // if
-                            } // if
 
-                            // option for radio buttons
-                            if ($spec['control'] == 'radiogroup' or $spec['control'] == 'radio') {
-                                $child->setAttribute('control', 'radiogroup');
-                                $child->setAttribute('optionlist', $spec['optionlist']);
-                                if (isset($spec['align_hv'])) {
-                                    $child->setAttribute('align_hv', strtolower($spec['align_hv']));
-                                } // if
-                                if (isset($spec['align_lr'])) {
-                                    $child->setAttribute('align_lr', strtolower($spec['align_lr']));
-                                } // if
-                            } // if
-
-                            if (isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
-                                if (!isset($dbobject->lookup_data['boolean'])) {
-                                    // not loaded yet, so do it now
-                                    $dbobject->lookup_data['boolean'] = getLanguageArray('boolean');
-                                } // if
-                            } // if
-
-                            // option for filename fields
-                            if ($spec['control'] == 'filepicker') {
-                                $child->setAttribute('control', 'filepicker');
-                                if (isset($spec['task_id'])) {
-                                    $child->setAttribute('task_id', "task#{$spec['task_id']}");
-                                } // if
-                                if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
-                                    $child->setAttribute('image', 'y');
-                                    if (isset($spec['imagewidth'])) {
-                                        $child->setAttribute('imagewidth', $spec['imagewidth']);
+                                // option for popup fields
+                                if ($spec['control'] == 'popup') {
+                                    $child->setAttribute('control', 'popup');
+                                    if (isset($spec['foreign_field'])) {
+                                        $child->setAttribute('foreign_field', $spec['foreign_field']);
                                     } // if
-                                    if (isset($spec['imageheight'])) {
-                                        $child->setAttribute('imageheight', $spec['imageheight']);
+                                    if (isset($spec['task_id'])) {
+                                        $child->setAttribute('task_id', "task#{$spec['task_id']}");
                                     } // if
-                                    // look for '[alt=...]' at the end of the string
-                                    if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
-                                        $alt = $regs[0];  // extract alt text
-                                        $child->setAttribute('alt', $alt);
-                                        // remove '[alt=...]' from the value
-                                        $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                    if (isset($spec['allow_input'])) {
+                                        $child->setAttribute('allow_input', $spec['allow_input']);
                                     } // if
                                 } // if
-                                if (isset($spec['notext'])) {
-                                    // display the image without any filename text
-                                    $child->setAttribute('notext', "{$spec['notext']}");
-                                } // if
-                            } // if
 
-                            // options for multiline fields
-                            if ($spec['control'] == 'multiline') {
-                                $child->setAttribute('control', 'multiline');
-                                $child->setAttribute('cols', $spec['cols']);
-                                $child->setAttribute('rows', $spec['rows']);
-                            } // if
+                                // option for a single checkbox
+                                if ($spec['control'] == 'checkbox') {
+                                    $child->setAttribute('control', 'checkbox');
+                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['label'])) {
+                                        $spec['label'] = convertEncoding($spec['label'], 'UTF-8');
+                            	        $child->setAttribute('label', $spec['label']);
+                                    } // if
+                                    if (isset($spec['align_hv'])) {
+                                        $child->setAttribute('align_hv', strtolower($spec['align_hv']));
+                                    } // if
+                                    if (isset($spec['align_lr'])) {
+                            	        $child->setAttribute('align_lr', strtolower($spec['align_lr']));
+                                    } // if
+                                } // if
 
-                            // option for popup fields
-                            if ($spec['control'] == 'popup') {
-                                $child->setAttribute('control', 'popup');
-                                if (isset($spec['foreign_field'])) {
-                                    $child->setAttribute('foreign_field', $spec['foreign_field']);
+                                // option for multiple checkboxes
+                                if ($spec['control'] == 'm_checkbox' OR $spec['control'] == 'checkbox_multi') {
+                                    $child->setAttribute('control', 'checkbox_multi');
+                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['align_hv'])) {
+                            	        $child->setAttribute('align_hv', strtolower($spec['align_hv']));
+                                    } // if
+                                    if (isset($spec['align_lr'])) {
+                            	        $child->setAttribute('align_lr', strtolower($spec['align_lr']));
+                                    } // if
                                 } // if
-                                if (isset($spec['task_id'])) {
-                                    $child->setAttribute('task_id', "task#{$spec['task_id']}");
-                                } // if
-                                if (isset($spec['allow_input'])) {
-                                    $child->setAttribute('allow_input', $spec['allow_input']);
-                                } // if
-                            } // if
 
-                            // option for a single checkbox
-                            if ($spec['control'] == 'checkbox') {
-                                $child->setAttribute('control', 'checkbox');
-                                $child->setAttribute('optionlist', $spec['optionlist']);
-                                if (isset($spec['label'])) {
-                                    $spec['label'] = convertEncoding($spec['label'], 'UTF-8');
-                            	    $child->setAttribute('label', $spec['label']);
-                                } // if
-                                if (isset($spec['align_hv'])) {
-                                    $child->setAttribute('align_hv', strtolower($spec['align_hv']));
-                                } // if
-                                if (isset($spec['align_lr'])) {
-                            	    $child->setAttribute('align_lr', strtolower($spec['align_lr']));
-                                } // if
-                            } // if
-
-                            // option for multiple checkboxes
-                            if ($spec['control'] == 'm_checkbox' OR $spec['control'] == 'checkbox_multi') {
-                                $child->setAttribute('control', 'checkbox_multi');
-                                $child->setAttribute('optionlist', $spec['optionlist']);
-                                if (isset($spec['align_hv'])) {
-                            	    $child->setAttribute('align_hv', strtolower($spec['align_hv']));
-                                } // if
-                                if (isset($spec['align_lr'])) {
-                            	    $child->setAttribute('align_lr', strtolower($spec['align_lr']));
-                                } // if
-                            } // if
-
-                            // option for hyperlink (single or multiple)
-                            if ($spec['control'] == 'hyperlink') {
-                                $array_in  = array();
-                                $array_out = array();
-                                $child->setAttribute('control', 'hyperlink');
-                                if (is_array($fieldvalue)) {
-                            	    $array_in   = $fieldvalue;  // multiple
-                                } else {
-                                    $array_in[] = $fieldvalue;  // single
-                                } // if
-                                foreach ($array_in as $ix => $hyperlink) {
-                            	    // look for '[url=...]' at the end of the string
-                                    if (preg_match('/(?<=\[url=).*(?=\])/', $hyperlink, $regs)) {
-                                        $url = $regs[0];  // extract url
-                                        // remove '[url=...]' from the value
-                                        $label = preg_replace('/\[url=.*\]/', '', $hyperlink);
-                                        // store label and url as separate parts
-                                        $array_out[$ix]['label'] = $label;
-                                        $array_out[$ix]['url']   = $url;
+                                // option for hyperlink (single or multiple)
+                                if ($spec['control'] == 'hyperlink') {
+                                    $array_in  = array();
+                                    $array_out = array();
+                                    $child->setAttribute('control', 'hyperlink');
+                                    if (is_array($fieldvalue)) {
+                            	        $array_in   = $fieldvalue;  // multiple
                                     } else {
-                                        $array_out[$ix]['label'] = $hyperlink;
-                            	    } // if
-                                } // foreach
-                                // store 'label' as the value and 'url' as an attribute
-                                if (count($array_out) == 1) {
-                                    $array_out = $array_out[0];
-                                    if (!empty($array_out['url'])) {
-                                	    $child->setAttribute('url', $array_out['url']);
+                                        $array_in[] = $fieldvalue;  // single
                                     } // if
-                                    $fieldvalue = $array_out['label'];
-                                } else {
-                                    foreach ($array_out as $entry) {
-                                        // add "<array url='...'>label</array>"
-                                	    $array_value = $doc->createElement('array');
-                                        $array_value = $child->appendChild($array_value);
-                                        if (!empty($entry['url'])) {
-                                            $array_value->setAttribute('url', $entry['url']);
-                                        } // if
-                                        $value = $doc->createTextNode($entry['label']);
-                                        $value = $array_value->appendChild($value);
+                                    foreach ($array_in as $ix => $hyperlink) {
+                            	        // look for '[url=...]' at the end of the string
+                                        if (preg_match('/(?<=\[url=).*(?=\])/', $hyperlink, $regs)) {
+                                            $url = $regs[0];  // extract url
+                                            // remove '[url=...]' from the value
+                                            $label = preg_replace('/\[url=.*\]/', '', $hyperlink);
+                                            // store label and url as separate parts
+                                            $array_out[$ix]['label'] = $label;
+                                            $array_out[$ix]['url']   = $url;
+                                        } else {
+                                            $array_out[$ix]['label'] = $hyperlink;
+                            	        } // if
                                     } // foreach
-                                    $fieldvalue = null;
+                                    // store 'label' as the value and 'url' as an attribute
+                                    if (count($array_out) == 1) {
+                                        $array_out = $array_out[0];
+                                        if (!empty($array_out['url'])) {
+                                	        $child->setAttribute('url', $array_out['url']);
+                                        } // if
+                                        $fieldvalue = $array_out['label'];
+                                    } else {
+                                        foreach ($array_out as $entry) {
+                                            // add "<array url='...'>label</array>"
+                                	        $array_value = $doc->createElement('array');
+                                            $array_value = $child->appendChild($array_value);
+                                            if (!empty($entry['url'])) {
+                                                $array_value->setAttribute('url', $entry['url']);
+                                            } // if
+                                            $value = $doc->createTextNode($entry['label']);
+                                            $value = $array_value->appendChild($value);
+                                        } // foreach
+                                        $fieldvalue = null;
+                                    } // if
                                 } // if
-                            } // if
 
-                            // option for hyperlink around an image
-                            if ($spec['control'] == 'imagehyper') {
-                                $child->setAttribute('control', 'image_hyperlink');
-                                if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
-                                    $child->setAttribute('image', 'y');
+                                // option for hyperlink around an image
+                                if ($spec['control'] == 'imagehyper') {
+                                    $child->setAttribute('control', 'image_hyperlink');
+                                    if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
+                                        $child->setAttribute('image', 'y');
+                                        if (isset($spec['imagewidth'])) {
+                                            $child->setAttribute('imagewidth', $spec['imagewidth']);
+                                        } // if
+                                        if (isset($spec['imageheight'])) {
+                                            $child->setAttribute('imageheight', $spec['imageheight']);
+                                        } // if
+                                        // look for '[alt=...]' at the end of the string
+                                        if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                            $alt = $regs[0];  // extract alt text
+                                            $child->setAttribute('alt', $alt);
+                                            // remove '[alt=...]' from the value
+                                            $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                        } // if
+                                    } // if
+                                } // if
+
+                                // option for image fields
+                                if ($spec['control'] == 'image') {
+                                    $child->setAttribute('control', 'image');
                                     if (isset($spec['imagewidth'])) {
                                         $child->setAttribute('imagewidth', $spec['imagewidth']);
                                     } // if
@@ -448,127 +467,114 @@ class radicore_view
                                         $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
                                     } // if
                                 } // if
-                            } // if
 
-                            // option for image fields
-                            if ($spec['control'] == 'image') {
-                                $child->setAttribute('control', 'image');
-                                if (isset($spec['imagewidth'])) {
-                                    $child->setAttribute('imagewidth', $spec['imagewidth']);
-                                } // if
-                                if (isset($spec['imageheight'])) {
-                                    $child->setAttribute('imageheight', $spec['imageheight']);
-                                } // if
-                                // look for '[alt=...]' at the end of the string
-                                if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
-                                    $alt = $regs[0];  // extract alt text
-                                    $child->setAttribute('alt', $alt);
-                                    // remove '[alt=...]' from the value
-                                    $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
-                                } // if
-                            } // if
-
-                            // option for 'button' controls
-                            if ($spec['control'] == 'button' OR $spec['control'] == 'input') {
-                                $child->setAttribute('control', $spec['control']);
-                                if (isset($spec['subtype'])) {
-                                    $child->setAttribute('subtype', $spec['subtype']);
-                                } // if
-                                if (isset($spec['task_id'])) {
-                                    if (substr($spec['task_id'], 0, 2) == '%%') {
-                                        // extract name of field which contains task_id
-                                        $button_task_id = substr($spec['task_id'], 2);
-                                        if (isset($rowdata[$button_task_id])) {
-                                            $child->setAttribute('name', 'task#'.$rowdata[$button_task_id]);
+                                // option for 'button' controls
+                                if ($spec['control'] == 'button' OR $spec['control'] == 'input') {
+                                    if (!empty($dbobject->zone)) {
+                                        $zone = $dbobject->zone.'#';
+                                    } else {
+                                        $zone = null;
+                                    } // if
+                                    $child->setAttribute('control', $spec['control']);
+                                    if (isset($spec['subtype'])) {
+                                        $child->setAttribute('subtype', $spec['subtype']);
+                                    } // if
+                                    if (isset($spec['task_id'])) {
+                                        if (substr($spec['task_id'], 0, 2) == '%%') {
+                                            // extract name of field which contains task_id
+                                            $button_task_id = substr($spec['task_id'], 2);
+                                            if (isset($rowdata[$button_task_id])) {
+                                                $child->setAttribute('name', 'task#'.$rowdata[$button_task_id]);
+                                            } else {
+                                                $child->setAttribute('name', 'task#'.$spec['task_id']);
+                                            } // if
                                         } else {
                                             $child->setAttribute('name', 'task#'.$spec['task_id']);
                                         } // if
                                     } else {
-                                        $child->setAttribute('name', 'task#'.$spec['task_id']);
+                                        // no custom value specified so use default
+                                        $child->setAttribute('name', 'button#'.$zone.$fieldname);
                                     } // if
-                                } else {
-                                    // no custom value specified so use default
-                                    $child->setAttribute('name', 'button#'.$fieldname);
-                                } // if
-                                if ($spec['control'] == 'button') {
-                                    if (isset($spec['value'])) {
-                                        $child->setAttribute('value', $spec['value']);
+                                    if ($spec['control'] == 'button') {
+                                        if (isset($spec['value'])) {
+                                            $child->setAttribute('value', $spec['value']);
+                                        } // if
                                     } // if
-                                } // if
-                                if (empty($fieldvalue)) {
-                                    $fieldvalue = getLanguageText($fieldname);
+                                    if (empty($fieldvalue)) {
+                                        $fieldvalue = getLanguageText($fieldname);
+                                    } // if
                                 } // if
                             } // if
-                        } // if
 
-                        if (isset($spec['id']) AND !empty($spec['id'])) {
-                            $child->setAttribute('id', $spec['id']);
-                        } // if
+                            if (isset($spec['id']) AND !empty($spec['id'])) {
+                                $child->setAttribute('id', $spec['id']);
+                            } // if
 
-                        if (isset($spec['class']) AND !empty($spec['class'])) {
-                            $child->setAttribute('class', $spec['class']);
-                        } // if
+                            if (isset($spec['class']) AND !empty($spec['class'])) {
+                                $child->setAttribute('class', $spec['class']);
+                            } // if
 
-                        if (isset($spec['value-to-attribute']) AND !empty($spec['value-to-attribute'])) {
-                            // move the value to an attribute for security reasons
-                            $child->setAttribute('value-to-attribute', $spec['value-to-attribute']);
-                        } // if
+                            if (isset($spec['value-to-attribute']) AND !empty($spec['value-to-attribute'])) {
+                                // move the value to an attribute for security reasons
+                                $child->setAttribute('value-to-attribute', $spec['value-to-attribute']);
+                            } // if
 
-                        if (is_object($jsOBJ) AND method_exists($jsOBJ, 'field_level_js')) {
-                            // look for custom javascript which needs to be inserted
-                            $javascript = $jsOBJ->field_level_js($fieldname, $fieldvalue, $spec);
-                            if (!empty($javascript) AND is_array($javascript)) {
-                                foreach ($javascript as $event_name => $event_body) {
-                                    $child->setAttribute($event_name, $event_body);
+                            if (is_object($jsOBJ) AND method_exists($jsOBJ, 'field_level_js')) {
+                                // look for custom javascript which needs to be inserted
+                                $javascript = $jsOBJ->field_level_js($fieldname, $fieldvalue, $spec);
+                                if (!empty($javascript) AND is_array($javascript)) {
+                                    foreach ($javascript as $event_name => $event_body) {
+                                        $child->setAttribute($event_name, $event_body);
+                                    } // foreach
+                                } // if
+                                if (!empty($jsOBJ->form_level_js)) {
+                                    $this->javascript = array_merge($this->javascript, $jsOBJ->form_level_js);
+                                } // if
+                            } // if
+
+						    // option for javascript events
+                            if (isset($spec['javascript'])) {
+                                foreach ($spec['javascript'] as $event_name => $event_body) {
+                        	        $child->setAttribute($event_name, $event_body);
                                 } // foreach
                             } // if
-                            if (!empty($jsOBJ->form_level_js)) {
-                                $this->javascript = array_merge($this->javascript, $jsOBJ->form_level_js);
-                            } // if
-                        } // if
 
-						// option for javascript events
-                        if (isset($spec['javascript'])) {
-                            foreach ($spec['javascript'] as $event_name => $event_body) {
-                        	    $child->setAttribute($event_name, $event_body);
-                            } // foreach
-                        } // if
-
-                    } else {
-                        // field does not exist in $fieldspec, so make it non-editable
-                        $child->setAttribute('noedit', 'y');
-                        // if an error message exists put it into the error attribute
-                        if (!empty($object_errors)) {
-                            if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
-                                if (array_key_exists($fieldname, $object_errors[$rownum])) {
-                                    $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
-                                    unset($object_errors[$rownum][$fieldname]);
+                        } else {
+                            // field does not exist in $fieldspec, so make it non-editable
+                            $child->setAttribute('noedit', 'y');
+                            // if an error message exists put it into the error attribute
+                            if (!empty($object_errors)) {
+                                if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
+                                    if (array_key_exists($fieldname, $object_errors[$rownum])) {
+                                        $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
+                                        unset($object_errors[$rownum][$fieldname]);
+                                    } // if
                                 } // if
                             } // if
                         } // if
-                    } // if
 
-                    if (is_array($fieldvalue)) {
-                        // output each entry as a separate child node
-                        foreach ($fieldvalue as $entry_key => $entry_value) {
-                    	    $array_value = $doc->createElement('array');
-                            $array_value = $child->appendChild($array_value);
-                            $array_value->setAttribute('key', $entry_key);
-                            $array_value = $child->appendChild($array_value);
-                            $array_value->setAttribute('value', $entry_value);
-                        } // foreach
-                    } else {
-                        $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
-
-                        if (isset($spec['xml']) AND $spec['xml'] == 'CDATA') {
-                            $child->setAttribute('CDATA', 'y');
-                    	    // insert as CDATA element for the current node
-                            $value = $doc->createCDATASection($fieldvalue);
-                            $value = $child->appendChild($value);
+                        if (is_array($fieldvalue)) {
+                            // output each entry as a separate child node
+                            foreach ($fieldvalue as $entry_key => $entry_value) {
+                    	        $array_value = $doc->createElement('array');
+                                $array_value = $child->appendChild($array_value);
+                                $array_value->setAttribute('key', $entry_key);
+                                $array_value = $child->appendChild($array_value);
+                                $array_value->setAttribute('value', $entry_value);
+                            } // foreach
                         } else {
-                            // insert as text element for the current node
-                            $value = $doc->createTextNode($fieldvalue);
-                            $value = $child->appendChild($value);
+                            $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
+
+                            if (isset($spec['xml']) AND $spec['xml'] == 'CDATA') {
+                                $child->setAttribute('CDATA', 'y');
+                    	        // insert as CDATA element for the current node
+                                $value = $doc->createCDATASection($fieldvalue);
+                                $value = $child->appendChild($value);
+                            } else {
+                                // insert as text element for the current node
+                                $value = $doc->createTextNode($fieldvalue);
+                                $value = $child->appendChild($value);
+                            } // if
                         } // if
                     } // if
                 } // foreach
@@ -866,13 +872,6 @@ class radicore_view
     	    $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
             $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
             // look for custom text which needs to be inserted
-//            $fn = 'custom_xsl_params.class.inc';
-//            if ($fp = fopen($fn, 'r', true)) {
-//                fclose($fp);
-//                $tempobj =& RDCsingleton::getInstance('custom_xsl_params');
-//                $xsl_params = $tempobj->amend_text($xsl_params);
-//                unset($tempobj);
-//            } // if
             $try = array();
             if (!empty($GLOBALS['project_code'])) {
                 $try[] = "custom_xsl_params.class.{$GLOBALS['project_code']}.inc";

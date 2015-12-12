@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s01 extends dict_table
@@ -27,19 +27,20 @@ class dict_table_s01 extends dict_table
         $i = 0;
         foreach ($array as $tablename) {
             $tablename = strtolower($tablename);
-            //if ($dbname == 'staging' AND preg_match('/^sym_entries_data/', $tablename)) {
-            	// ignore these tables
-            //} else {
-            	$count = $this->getCount("database_id='$dbname' AND table_id='$tablename'");
-                if ($count == 0) {
-                    // insert details of new database table
-                    $fieldarray[$i]['database_id'] = $dbname;
-                    $fieldarray[$i]['table_id']    = $tablename;
-                    $fieldarray[$i]['table_desc']  = ucwords(str_replace('_', ' ', $tablename));
-                    $i++;
-                } // if
-            //} // if
+            $count = $this->getCount("database_id='$dbname' AND table_id='$tablename'");
+            if ($count == 0) {
+                // insert details of new database table
+                $fieldarray[$i]['database_id'] = $dbname;
+                $fieldarray[$i]['table_id']    = $tablename;
+                $fieldarray[$i]['table_desc']  = ucwords(str_replace('_', ' ', $tablename));
+                $i++;
+            } // if
         } // foreach
+
+        if (empty($fieldarray)) {
+            // "There are no new tables to be imported"
+            $this->messages[] = getLanguageText('e0059');
+        } // if
 
         return $fieldarray;
 

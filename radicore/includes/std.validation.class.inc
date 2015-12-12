@@ -451,7 +451,9 @@ END_OF_REGEX;
 
             case 'datetime':
             case 'timestamp':
-                if ($fieldvalue == '0000-00-00 00:00:00') {
+                if ($fieldvalue == 'now()') {
+                    // let this through
+                } elseif ($fieldvalue == '0000-00-00 00:00:00') {
                     // let this through
                 } else {
                     // value must be a combined date and time

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -127,13 +127,19 @@ class dict_table_s04 extends dict_table
                                                         'size' => 80,
                                                         'required' => 'y',
                                                         'control' => 'dropdown',
-                                                        'optionlist' => 'table_id');
-        } // if
-
-        if (!isset($this->fieldspec['inner_table_alias'])) {
+                                                        'optionlist' => 'table_id_inner');
             $this->fieldspec['inner_table_alias']   = array('type' => 'string',
                                                             'size' => 40,
                                                             'lowercase' => 'y');
+            $this->fieldspec['database_id_inner']   = array('type' => 'string',
+                                                            'size' => 80,
+                                                            'required' => 'y',
+                                                            'control' => 'popup',
+                                                            'task_id' => 'dict_database(popup1)inner',
+                                                            'foreign_field' => 'database_id_inner');
+            $this->parent_relations[]               = array('parent' => 'dict_database',
+                                                            'parent_field' => 'database_desc AS inner_database_desc',
+                                                            'fields' => array('database_id_inner' => 'database_id'));
         } // if
 
         if (!isset($this->fieldspec['popup_task_id'])) {
@@ -214,6 +220,22 @@ class dict_table_s04 extends dict_table
             ksort($this->lookup_data['table_id_middle']);
         } // if
 
+        if (isset($fieldarray['database_id_inner']) AND $fieldarray['pattern_id'] == 'link1') {
+            $database_id = $fieldarray['database_id_inner'];
+            // get list of tables from inner database
+            $dbobject =& RDCsingleton::getInstance('dict_table');
+            $array1    = $dbobject->getValRep('table_id', "database_id='$database_id'");
+
+            // get alias names from any relationships
+            $dbobject =& RDCsingleton::getInstance('dict_relationship');
+            $array2   = $dbobject->getValRep('table_alias_snr', "database_id_snr='$database_id'");
+            $array3   = $dbobject->getValRep('table_alias_jnr', "database_id_jnr='$database_id'");
+
+            // merge the three arrays into one
+            $this->lookup_data['table_id_inner'] = array_merge($array1, $array2, $array3);
+            ksort($this->lookup_data['table_id_inner']);
+        } // if
+
 		return $fieldarray;
 
     } // _cm_getExtraData
@@ -245,7 +267,7 @@ class dict_table_s04 extends dict_table
     } // _cm_initialise
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
@@ -275,7 +297,7 @@ class dict_table_s04 extends dict_table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
@@ -347,6 +369,7 @@ class dict_table_s04 extends dict_table
         	case 'link1':
         	    $fieldarray['child_forms'] = getLanguageText('t0005');  // 'Search';
         	    $fieldarray['database_id_outer'] = $fieldarray['database_id'];
+                $fieldarray['database_id_inner'] = $fieldarray['database_id'];
         	    break;
 
         	case 'multi2':
@@ -584,6 +607,10 @@ class dict_table_s04 extends dict_table
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update.
     {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return $fieldarray;  // do not process until method = POST
+        } // if
+
         $task_id    = $fieldarray['task_id'];
         $script_id  = $fieldarray['script_id'];
         $subsys_id  = $this->subsys_id;
@@ -662,7 +689,7 @@ class dict_table_s04 extends dict_table
                     $this->errors['inner_table_alias'] = getLanguageText('e0044', $fieldarray['inner_table']);
                 } // if
             } // if
-        } if (preg_match('/^(multi6)$/i', $fieldarray['pattern_id'])) {
+        } elseif (preg_match('/^(multi6)$/i', $fieldarray['pattern_id'])) {
             // unrelated tables are allowed, but if same table is used for outer, middle and inner one of them must be aliased
             if ($fieldarray['outer_table'] == $fieldarray['middle_table']) {
                 if (empty($fieldarray['outer_table_alias']) AND empty($fieldarray['middle_table_alias'])) {
@@ -692,7 +719,7 @@ class dict_table_s04 extends dict_table
         	        if ($error) {
         	    	    $this->errors['outer_table'] = $error;
         	        } // if
-    	            $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id'], $fieldarray['link_table'], $fieldarray['database_id']);
+    	            $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id_inner'], $fieldarray['link_table'], $fieldarray['database_id']);
         	        if ($error) {
         	    	    $this->errors['inner_table'] = $error;
         	        } // if
@@ -822,10 +849,12 @@ class dict_table_s04 extends dict_table
 
         } elseif ($this->pattern_id == 'link1') {
             $fieldarray['table_id'] = $fieldarray['inner_table'];
-            $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-        	// build single screen structure file for all these children
-        	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-        	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+            if ($fieldarray['database_id_inner'] == $fieldarray['database_id']) {
+                $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+        	    // build single screen structure file for all these children
+        	    $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+        	    $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+            } // if
 
         } elseif ($this->pattern_id == 'multi2') {
             if ($fieldarray['child_forms'] == '1') {

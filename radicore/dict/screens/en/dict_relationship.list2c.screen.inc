@@ -1,7 +1,7 @@
 <?php
 $structure['xsl_file'] = 'std.list2.xsl';
 
-$structure['tables']['outer'] = 'dict_database';
+$structure['tables']['outer'] = 'dict_database_snr';
 
 $structure['outer']['columns'][] = array('width' => '25%');
 $structure['outer']['columns'][] = array('width' => '*');

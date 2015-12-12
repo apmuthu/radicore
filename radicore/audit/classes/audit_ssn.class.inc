@@ -32,8 +32,6 @@ class audit_ssn extends Default_Table
     {
         if (!isset($fieldarray['user_id'])) {
             $fieldarray['user_id']  = $_SESSION['logon_user_id'];
-            $fieldarray['ssn_date'] = getTimeStamp('date');
-            $fieldarray['ssn_time'] = getTimeStamp('time');
         } // if
 
         return $fieldarray;

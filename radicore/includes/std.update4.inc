@@ -61,7 +61,7 @@ if (empty($where)) {
 $fieldarray = $dbobject->getData($where);
 if ($dbobject->errors) {
     // some sort of error - return to previous script
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, null, $dbobject->getInstruction());
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, 'fail', $dbobject->getInstruction());
     return $batch_errors;
 } // if
 if ($dbobject->getNumRows() < 1) {
@@ -69,7 +69,7 @@ if ($dbobject->getNumRows() < 1) {
     return $batch_errors;
 } // if
 
-$messages = $dbobject->getMessages();
+$messages = array_merge($messages, $dbobject->getMessages());
 
 // update this data in the database
 $post = array();
@@ -91,9 +91,9 @@ if (!empty($stdout)) {
 } // if
 
 if (empty($errors)) {
-	$action = 'OK';
+	$action = 'update';
 } else {
-    $action = null;
+    $action = 'fail';
 } // if
 
 $batch_errors = scriptPrevious($errors, $messages, $action, $dbobject->getInstruction());

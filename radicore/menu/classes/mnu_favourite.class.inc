@@ -78,7 +78,7 @@ class mnu_favourite extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.

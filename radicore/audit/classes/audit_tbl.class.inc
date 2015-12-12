@@ -282,12 +282,10 @@ class audit_tbl extends Default_Table
             unset($this->fieldspec['table_seq_no']);
             unset($this->fieldspec['tran_seq_no']);
         } else {
-            $this->fieldspec['trn_date']  = array('type' => 'date',
-                                                  'size' => 12,
-                                                  'nondb' => 'y');
-            $this->fieldspec['trn_time']  = array('type' => 'time',
-                                                  'size' => 8,
-                                                  'nondb' => 'y');
+            // this entry will cause the field to be properly formatted
+            $this->fieldspec['trn_datetime']    = array('type' => 'datetime',
+                                                        'size' => 20,
+                                                        'nondb' => 'y');
         } // if
 
         return $fieldarray;
@@ -351,16 +349,19 @@ class audit_tbl extends Default_Table
 
         if (!empty($this->sql_search)) {
             $search_array = where2array($this->sql_search, false, false);
+            if (empty($search_array['date_from'])) $search_array['date_from'] = null;
+            if (empty($search_array['date_to']))   $search_array['date_to']   = null;
+            if (empty($search_array['time_from'])) $search_array['time_from'] = null;
+            if (empty($search_array['time_to']))   $search_array['time_to']   = null;
 
             // deal with values which have ranges
-            if (!empty($search_array['date_from']) OR !empty($search_array['date_to'])) {
-                $search_array['trn_date'] = rangeFromTo($search_array['date_from'], $search_array['date_to'], true);
+            if (!empty($search_array['date_from']) OR !empty($search_array['date_to'])
+             OR !empty($search_array['time_from']) OR !empty($search_array['time_to'])) {
+                $search_array['trn_datetime'] = rangeFromTo($search_array['date_from'].' '.$search_array['time_from'],
+                                                            $search_array['date_to'].' '.$search_array['time_to'],
+                                                            true);
                 unset($search_array['date_from']);
                 unset($search_array['date_to']);
-            } // if
-
-            if (!empty($search_array['time_from']) OR !empty($search_array['time_to'])) {
-            	$search_array['trn_time'] = rangeFromTo($search_array['time_from'], $search_array['time_to']);
                 unset($search_array['time_from']);
                 unset($search_array['time_to']);
             } // if

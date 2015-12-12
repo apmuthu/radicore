@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'audit_ssn.class.inc';
 class audit_ssn_s01 extends audit_ssn
@@ -25,7 +25,7 @@ class audit_ssn_s01 extends audit_ssn
         $count = 0;
         while ($row = $this->fetchRow($resource)){
             if (!empty($stdout)) {
-                $result = fwrite($stdouth, "<p>Deleting records for session_id '{$row['session_id']}', date: '{$row['ssn_date']}, time: '{$row['ssn_time']}'");
+                $result = fwrite($stdouth, "<p>Deleting records for session_id '{$row['session_id']}', date/time: '{$row['ssn_datetime']}");
             } // if
             $from = 'ssn, trn, tbl, fld';
             $using = 'audit_ssn AS ssn'
@@ -56,13 +56,16 @@ class audit_ssn_s01 extends audit_ssn
     {
         // this is the batch delete, so set selection criteria
         $dbobject =& RDCsingleton::getInstance('mnu_control');
-        $years = $dbobject->getControlData('audit_delete');
-        if ($years < 1) {
-            $years = 99;
-        } // if
+        $data = $dbobject->getControlData('audit_delete');
+        $number =& $data['audit_delete'];
+        if ($number < 1) $number = 99;
+        $period =& $data['audit_delete_period'];
+        if (empty($period)) $period = 'YEAR';
+
         $today = getTimeStamp('date');
-        $selection = "DATE_ADD(ssn_date, INTERVAL $years YEAR) < '$today'";
-        $count = $this->getCount("SELECT COUNT(*) FROM audit_ssn WHERE $selection");
+        //$selection = "DATE_ADD(DATE(ssn_datetime), INTERVAL $years YEAR) < '$today'";
+        $selection = "ssn_datetime < DATE_SUB('$today', INTERVAL $number $period)";
+        $count = $this->getCount($selection);
         // add a message to the output file
         global $stdout, $stdouth;
         if (!empty($stdout)) {

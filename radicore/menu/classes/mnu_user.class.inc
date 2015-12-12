@@ -49,7 +49,7 @@ class mnu_user extends Default_Table
     } // getFieldSpec_original
 
     // ****************************************************************************
-    function checkPasswords ($switch)
+    function switchPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
         $crypt_obj =& RDCsingleton::getInstance('encryption_class');
@@ -82,7 +82,156 @@ class mnu_user extends Default_Table
 
         return $this->errors;
 
-    } // checkPasswords
+    } // switchPasswords
+
+    // ****************************************************************************
+    function validatePassword ($user_id, $password, $ip_address=null, $external_auth_off=false)
+    // check that this user's password matches that in the database
+    {
+        $logonarray['user_id']       = $user_id;
+        $logonarray['user_password'] = $password;
+
+        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+
+        if (is_True($external_auth_off)) {
+            // do not use External Authentication
+            $auth_array['authentication'] = 'INTERNAL';
+        } else {
+            $auth_array = $mnu_control->getControlData('authentication');
+            if (empty($auth_array)) {
+                $auth_array['authentication'] = 'INTERNAL';  // data missing, so use this default
+            } // if
+        } // if
+
+        if ($auth_array['authentication'] != 'INTERNAL') {
+            // external authentication is turned ON globally, but is it turned off for this USER or ROLE
+            $this->sql_select = 'mnu_user.user_id, mnu_user_role.role_id'
+                              . ", CASE WHEN mnu_user.is_external_auth_off='Y' THEN 'Y' ELSE mnu_role.is_external_auth_off END AS is_external_auth_off";
+            $this->sql_from   = 'mnu_user'
+                              ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                              .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
+            $where = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+            $fieldarray = $this->getData_raw($where);
+            if (is_True($fieldarray[0]['is_external_auth_off'])) {
+                $auth_array['authentication'] = 'INTERNAL';
+            } // if
+        } // if
+        if ($auth_array['authentication'] != 'INTERNAL') {
+            $this->fieldspec['user_password']['size'] = 40;
+        } // if
+
+        if (is_True($external_auth_off)) {
+            // do not use External Authentication
+            $auth_array['authentication'] = 'INTERNAL';
+        } else {
+            $auth_array = $mnu_control->getControlData('authentication');
+            if (empty($auth_array)) {
+                $auth_array['authentication'] = 'INTERNAL';  // data missing, so use this default
+            } // if
+            if ($auth_array['authentication'] != 'INTERNAL') {
+                // external authentication is turned ON globally, but is it turned off for this USER or ROLE
+                $this->sql_select = 'mnu_user.user_id, mnu_user_role.role_id'
+                                  . ", CASE WHEN mnu_user.is_external_auth_off='Y' THEN 'Y' ELSE mnu_role.is_external_auth_off END AS is_external_auth_off";
+                $this->sql_from   = 'mnu_user'
+                                  ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                                  .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
+                $where = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+                $fieldarray = $this->getData_raw($where);
+                if (is_True($fieldarray[0]['is_external_auth_off'])) {
+                    $auth_array['authentication'] = 'INTERNAL';
+                } // if
+            } // if
+            if ($auth_array['authentication'] != 'INTERNAL') {
+                $this->fieldspec['user_password']['size'] = 40;
+            } // if
+        } // if
+
+        $updatearray['user_password'] = $password;
+        $updatearray['user_id']       = $user_id;
+
+        $this->fieldarray = $updatearray;
+        if (!empty($this->errors)) return $this->errors;
+
+        // find out if user passwords are encrypted or not
+        $encrypt_flag = $mnu_control->getControlData('pswd_encrypt');
+
+        if ($auth_array['authentication'] != 'INTERNAL') {
+            // no need to encrypt the password
+            $logon_password = $password;
+        } elseif ($encrypt_flag == true) {
+            // encrypt the password to include in database lookup
+            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+            $spec = $this->fieldspec['user_password'];
+            $logon_password = $crypt_obj->encrypt($user_id, $password, $spec['size']);
+            if ($crypt_obj->errors) {
+                $this->errors = $crypt_obj->errors;
+                return false;
+            } // if
+            unset($crypt_obj);
+        } // if
+
+        // join to MNU_ROLE to obtain start_task_id
+        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
+        $this->sql_from   = 'mnu_user'
+                          ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                          .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
+        $where = "mnu_user.user_id='" .addslashes($user_id) ."'";
+        $user_id = addslashes($user_id);
+        if (!empty($ip_address)) {
+            // lookup on MNU_USER_IP_ADDRESS to see if this IP address is valid
+            $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+                                      ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
+                                      ." ELSE false"
+                                 ." END AS ip_address_valid";
+        } // if
+        $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id=mnu_user.user_id) AS role_list";
+        // fetch the user's language with any date formats
+        $this->sql_select .= ', mnu_language.input_date_format, mnu_language.output_date_format';
+        $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_id, '{$_SESSION['default_language']}'))";
+        if ($auth_array['authentication'] == 'INTERNAL') {
+            // include user_password in selection criteria
+            $where .= " AND user_password='" .addslashes($logon_password) ."'";
+        } // if
+        $fieldarray = $this->getData_raw($where);
+        if ($this->numrows <> 1) {
+            $this->errors['user_password'] = getLanguageText('sys0142'); // 'Security violation';
+            return $logonarray;
+        } // if
+        $fieldarray = $fieldarray[0];
+
+        if ($auth_array['authentication'] != 'INTERNAL') {
+            if (empty($fieldarray['external_id'])) {
+                $fieldarray['external_id'] = $logon_user_id;
+            } // if
+            if ($auth_array['authentication'] == 'RADIUS') {
+                $radius = RDCsingleton::getInstance('radius_class');
+                $result = $radius->authenticate($fieldarray['external_id'], $logon_password);
+                if ($result == RADIUS_ACCESS_ACCEPT) {
+                    // continue
+                } else {
+                    // 'RADIUS authentication has failed'
+                    $this->errors[] = getLanguageText('sys0174');
+                    $fieldarray = $logonarray;
+                    return $this->errors;
+                } // if
+            } elseif ($auth_array['authentication'] == 'LDAP') {
+                $ldap = RDCsingleton::getInstance('ldap_class');
+                $result = $ldap->authenticate($fieldarray['external_id'], $logon_password);
+                if ($result === true) {
+                    // continue
+                } else {
+                    // 'LDAP authentication has failed'
+                    $this->errors[] = getLanguageText('sys0176');
+                    $this->errors[] = getLanguageText('sys0177', $result);
+                    $fieldarray = $logonarray;
+                    return $this->errors;
+                } // if
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // validatePassword
 
     // ****************************************************************************
     function setPasswords ($switch)
@@ -128,7 +277,7 @@ class mnu_user extends Default_Table
     } // setPasswords
 
     // ****************************************************************************
-    function validatePassword ($password, $format)
+    function validatePasswordFormat ($password, $format)
     // validate $password against specification in $format
     {
         $format_minlen = (int)$format['pswd_format_minlen'];
@@ -165,7 +314,7 @@ class mnu_user extends Default_Table
 
         return;
 
-    } // validatePassword
+    } // validatePasswordFormat
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -276,7 +425,7 @@ class mnu_user extends Default_Table
         if (isset($fieldarray[$password_name])) {
             $password_value = $fieldarray[$password_name];
             // check that password has correct format
-            if ($error = $this->validatePassword ($password_value, $this->pswd_format)) {
+            if ($error = $this->validatePasswordFormat ($password_value, $this->pswd_format)) {
                 $this->errors[$password_name] = $error;
                 return $fieldarray;
             } // if

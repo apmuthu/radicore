@@ -236,10 +236,13 @@ class mnu_control extends Default_Table
                 break;
 
         	case 'AUDIT_DELETE';
-                $where = "record_id='SYSTEM' AND field_id='AUDIT_DELETE'";
-                $data = $this->getData_raw($where);
+                $where = "record_id='SYSTEM' AND field_id LIKE 'AUDIT_DELETE%'";
+                $rowdata = $this->getData_raw($where);
+                // turn multiple rows into a single associative array
+                foreach ($rowdata as $row) {
+                    $result[strtolower($row['field_id'])] = $row['field_value'];
+                } // foreach
 
-                $result = $data[0]['field_value'];
                 break;
 
             default:
@@ -399,12 +402,16 @@ class mnu_control extends Default_Table
                                                         'label' => $day_names['sun'],
                                                         'align_lr' => 'left');
 
-            // define lockout times between which system is unavailable
+            // define period after which entries on the ADIT database will be deleted
             $fieldspec['audit_delete']          = array('type' => 'integer',
                                                         'size' => 2,
                                                         'unsigned' => 'y',
                                                         'minvalue' => 1,
                                                         'maxvalue' => 99);
+
+            $fieldspec['audit_delete_period']   = array('type' => 'string',
+                                                        'control' => 'dropdown',
+                                                        'optionlist' => 'time_period');
 
             $this->fieldspec = $fieldspec;
         } // if
@@ -585,6 +592,18 @@ class mnu_control extends Default_Table
             $this->lookup_data['login_type'] = $array;
         } // if
 
+        if (!array_key_exists('time_period', $this->lookup_data)) {
+            // get options for dropdown/radiogroup and insert in LOOKUP data
+            $array = getLanguageArray('time_period');
+            $this->lookup_data['time_period'] = $array;
+        } // if
+
+        if (array_key_exists('audit_delete_period', $fieldarray)) {
+            if (empty($fieldarray['audit_delete_period'])) {
+                $fieldarray['audit_delete_period'] = 'YEAR';  // default value
+            } // if
+        } // if
+
         if ($GLOBALS['task_id'] == 'mnu_control(upd3)') {
         	if ($_SESSION['role_id'] != 'GLOBAL' ) {
         		// set screen to READ ONLY (all fields are NOEDIT)
@@ -738,7 +757,7 @@ class mnu_control extends Default_Table
         $this->fieldarray = $fieldarray;
 
         // perform standard declarative checks on input data
-        $updatearray = $this->_validateUpdate($fieldarray);
+        $updatearray = $this->_validateUpdatePrimary($fieldarray);
         if (!empty($this->errors)) {
             // replace any empty fields with their default values
             $this->fieldarray = array_update_empty ($fieldarray, $updatearray, false, $this->fieldspec);
@@ -766,7 +785,7 @@ class mnu_control extends Default_Table
                 // open up a dialog with the user class
                 $dbobject =& RDCsingleton::getInstance('mnu_user');
                 // encrypt or decrypt all user passwords as required
-                $errors = $dbobject->checkPasswords($fieldarray['pswd_encrypt']);
+                $errors = $dbobject->switchPasswords($fieldarray['pswd_encrypt']);
                 if ($dbobject->errors) {
                     $this->errors['pswd_encrypt'] = $dbobject->errors['user_password'];
                     unset($dbobject->errors['user_password']);

@@ -38,6 +38,10 @@ class mnu_task_s02 extends mnu_task
     function _cm_validateUpdate ($fieldarray, $originaldata)
     // perform custom validation before update.
     {
+        if (empty($fieldarray['new_task_id'])) {
+            return $fieldarray;  // nothing to do, so quit
+        } // if
+
         $where = "task_id='{$fieldarray['new_task_id']}'";
         $count = $this->getCount($where);
         if ($count > 0) {

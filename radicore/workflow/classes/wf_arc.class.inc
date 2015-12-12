@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-201 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_arc extends Default_Table
@@ -22,90 +22,6 @@ class wf_arc extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // wf_arc
-
-    // ***************************************************************************
-    function examineInwardArc ($arc_data)
-    // examine an INWARD arc (from a place into a transition) to see if a
-    // workitem can be created for the transition.
-    {
-        $workflow_id   = $arc_data['workflow_id'];
-        $transition_id = $arc_data['transition_id'];
-        $case_id       = $arc_data['case_id'];
-
-        // get list of all the places which input to this transition
-        $this->sql_select = "wf_arc.workflow_id, transition_id, wf_arc.place_id, arc_type, direction, condition_field, place_type";
-        $this->sql_from   = "wf_arc "
-                          . "LEFT JOIN wf_place ON "
-                          . "(wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
-        $where = "workflow_id='$workflow_id' AND transition_id='$transition_id' AND direction='IN'";
-        $place_data = $this->getData($where);
-        if ($this->errors) return;
-
-        // now check that these places have the correct number of tokens
-        require_once 'classes/wf_token.class.inc';
-        $dbtoken =& RDCsingleton::getInstance('wf_token');
-
-        $token_array = array();
-
-        foreach ($place_data as $place) {
-            $place_id = $place['place_id'];
-            $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND case_id='$case_id' AND token_status='FREE'";
-            $token_data = $dbtoken->getData_raw($where);
-            $token_count = count($token_data);
-            if ($token_count == 0) {
-                // no tokens at this place, so unable to proceed
-                return;
-            } // if
-            // merge token data from this place with all other places
-            $token_array = array_merge($token_data, $token_array);
-
-            if ($place['arc_type'] == 'OR_JOIN') {
-                // needs a separate token for each transition which outputs to this place
-                $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND direction='OUT'";
-                $transition_count = $this->getCount($where);
-                if ($token_count != $transition_count) {
-                    // not enough tokens, so unable to proceed
-                    return;
-                } // if
-            } // if
-        } // foreach
-
-        // transition has enough input tokens, so create a workitem
-        require_once 'classes/wf_workitem.class.inc';
-        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
-        $workitem_data['workflow_id']        = $workflow_id;
-        $workitem_data['transition_id']      = $transition_id;
-        $workitem_data['case_id']            = $case_id;
-        $workitem_data['role_id']            = $arc_data['role_id'];
-        $workitem_data['user_id']            = $arc_data['user_id'];
-        $workitem_data['task_id']            = $arc_data['task_id'];
-        $workitem_data['context']            = $arc_data['context'];
-        $workitem_data['transition_trigger'] = $arc_data['transition_trigger'];
-        if ($arc_data['transition_trigger'] == 'TIME') {
-        	//$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
-        	$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} minutes");
-        } // if
-
-        $workitem_data = $dbworkitem->insertRecord($workitem_data);
-        if ($dbworkitem->errors) {
-            $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
-            return;
-        } // if
-
-        if ($arc_data['transition_trigger'] == 'AUTO') {
-            // trigger is 'AUTO', so commit current updates and process this workitem now
-            $this->errors = $dbworkitem->commit();
-            $next['task_id'] = $arc_data['task_id'];
-            $next['where']   = $arc_data['context'];
-            // prepend so that workflow tasks are executed before non-workflow tasks
-            append2ScriptSequence($next, true);
-            // terminate current script and activate designated task
-            scriptPrevious();
-        } // if
-
-        return;
-
-    } // examineInwardArc
 
     // ****************************************************************************
     function _cm_commonValidation ($fieldarray, $originaldata)
@@ -313,6 +229,91 @@ class wf_arc extends Default_Table
         return $where;
 
     } // _cm_pre_getData
+
+    // ***************************************************************************
+    function examineInwardArc ($arc_data)
+    // examine an INWARD arc (from a place into a transition) to see if a
+    // workitem can be created for the transition.
+    {
+        $workflow_id   = $arc_data['workflow_id'];
+        $transition_id = $arc_data['transition_id'];
+        $case_id       = $arc_data['case_id'];
+
+        // get list of all the places which input to this transition
+        $this->sql_select = "wf_arc.workflow_id, transition_id, wf_arc.place_id, arc_type, direction, condition_field, place_type";
+        $this->sql_from   = "wf_arc "
+                          . "LEFT JOIN wf_place ON "
+                          . "(wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
+        $where = "workflow_id='$workflow_id' AND transition_id='$transition_id' AND direction='IN'";
+        $place_data = $this->getData($where);
+        if ($this->errors) return;
+
+        // now check that these places have the correct number of tokens
+        require_once 'classes/wf_token.class.inc';
+        $dbtoken =& RDCsingleton::getInstance('wf_token');
+
+        $token_array = array();
+
+        foreach ($place_data as $place) {
+            $place_id = $place['place_id'];
+            $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND case_id='$case_id' AND token_status='FREE'";
+            $token_data = $dbtoken->getData_raw($where);
+            $token_count = count($token_data);
+            if ($token_count == 0) {
+                // no tokens at this place, so unable to proceed
+                return;
+            } // if
+            // merge token data from this place with all other places
+            $token_array = array_merge($token_data, $token_array);
+
+            if ($place['arc_type'] == 'OR_JOIN') {
+                // needs a separate token for each transition which outputs to this place
+                $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND direction='OUT'";
+                $transition_count = $this->getCount($where);
+                if ($token_count != $transition_count) {
+                    // not enough tokens, so unable to proceed
+                    return;
+                } // if
+            } // if
+        } // foreach
+
+        // transition has enough input tokens, so create a workitem
+        require_once 'classes/wf_workitem.class.inc';
+        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+        $workitem_data['workflow_id']        = $workflow_id;
+        $workitem_data['rdcaccount_id']      = $token_array[0]['rdcaccount_id'];
+        $workitem_data['transition_id']      = $transition_id;
+        $workitem_data['case_id']            = $case_id;
+        $workitem_data['role_id']            = $arc_data['role_id'];
+        $workitem_data['user_id']            = $arc_data['user_id'];
+        $workitem_data['task_id']            = $arc_data['task_id'];
+        $workitem_data['context']            = $arc_data['context'];
+        $workitem_data['transition_trigger'] = $arc_data['transition_trigger'];
+        if ($arc_data['transition_trigger'] == 'TIME') {
+            //$workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} hours");
+            $workitem_data['deadline'] = adjustDateTime(time(), "+{$arc_data['time_limit']} minutes");
+        } // if
+
+        $workitem_data = $dbworkitem->insertRecord($workitem_data);
+        if ($dbworkitem->errors) {
+            $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
+            return;
+        } // if
+
+        if ($arc_data['transition_trigger'] == 'AUTO') {
+            // trigger is 'AUTO', so commit current updates and process this workitem now
+            $this->errors = $dbworkitem->commit();
+            $next['task_id'] = $arc_data['task_id'];
+            $next['where']   = $arc_data['context'];
+            // prepend so that workflow tasks are executed before non-workflow tasks
+            append2ScriptSequence($next, true);
+            // terminate current script and activate designated task
+            scriptPrevious();
+        } // if
+
+        return;
+
+    } // examineInwardArc
 
 // ****************************************************************************
 } // end class

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete4.inc
@@ -72,7 +72,7 @@ if (isset($script_vars['dbouter'])) {
     // perform any initialisation
     $where = $dbouter->initialise($original_where, $original_selection);
     if ($dbouter->errors) {
-        scriptPrevious($dbouter->getErrors());
+        scriptPrevious($dbouter->getErrors(), $messages, 'fail');
     } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
@@ -87,26 +87,33 @@ if (isset($script_vars['dbouter'])) {
 // look for SUBMIT button
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // look for an action which is another script
-    $child_errors = childForm($_POST, array('dbouter'=> $dbouter));
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
-    } // if
-    if (empty($errors)) {
-        $dbouter->startTransaction();
-        // delete this record from the database
-        $outer_data = $dbouter->deleteRecord($outer_data);
-        // retrieve errors from database object
-        $errors = $dbouter->getErrors();
-        if (empty($errors)) {
-            $errors = $dbouter->commit();
+    $task_button = check_task_button($_POST);
+    if (!empty($task_button)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+        if (is_array($child_errors)) {
+            $errors[$dbobject->getClassName()] = $child_errors;
         } // if
-        if (empty($errors)) {
-            if ($scrolling[$dbouter->getClassName()]['lastitem'] == 1) {
-                // last item has been deleted, so return to previous screen
-                scriptPrevious(null, null, 'delete', $dbouter->getInstruction());
+
+    } else {
+        $submit_button = check_submit_button($act_buttons, $_POST);
+        if (empty($errors) AND !empty($submit_button)) {
+            $dbouter->startTransaction();
+            // delete this record from the database
+            $outer_data = $dbouter->deleteRecord($outer_data);
+            // retrieve errors from database object
+            $errors = $dbouter->getErrors();
+            if (empty($errors)) {
+                $errors = $dbouter->commit();
             } // if
-        } else {
-            $dbouter->rollback();
+            if (empty($errors)) {
+                if ($scrolling[$dbouter->getClassName()]['lastitem'] == 1) {
+                    // last item has been deleted, so return to previous screen
+                    scriptPrevious(null, null, 'delete', $dbouter->getInstruction());
+                } // if
+            } else {
+                $dbouter->rollback();
+            } // if
         } // if
     } // if
 } // if
@@ -137,9 +144,13 @@ if (isset($script_vars['dbinner'])) {
     // perform any initialisation
     $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {
-        scriptPrevious($dbinner->getErrors());
+        scriptPrevious($dbinner->getErrors(), $messages, 'fail');
     } // if
 } // if
+
+// make each object available to its parent or child
+$dbouter->setChildObject($dbinner);
+$dbinner->setParentObject($dbouter);
 
 if (isset($scrolling)) {
     // retrieve values from scrolling array
@@ -174,7 +185,7 @@ if ($dbouter->errors) {
     // some sort of error
     if ($dbouter->getLastPage() <= 1) {
         // only 1 entry requested, so return to previous script
-        scriptprevious($dbouter->getErrors(), $messages);
+        scriptprevious($dbouter->getErrors(), $messages, 'fail');
     } else {
         // multiple entries requested, so display error message
         $errors = $dbouter->getErrors();
@@ -235,9 +246,6 @@ if (isset($instruction)) {
 if (isset($_GET['page'])) {
     $dbinner->setPageNo($_GET['page']);
 } // if
-
-// load in current data from $outer in case it is needed
-$dbinner->setFieldArray($outer_data);
 
 // get primary key of row retrieved from OUTER entity
 $pkeynames = $dbouter->getPkeyNamesAdjusted();

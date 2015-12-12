@@ -179,10 +179,7 @@ if (!empty($_FILES) and empty($errors)) {
                 } // foreach
             } // if
             // allow uploaded file to be processed
-            $result = $fileobject->post_fileUpload($uploadfile, $_FILES['userfile']['size']);
-            if (!empty($result)) {
-            	$uploadfile = $result;
-            } // if
+            $uploadfile_data = $fileobject->post_fileUpload($uploadfile, $_FILES['userfile']['size']);
             $errors = $fileobject->getErrors();
             if (!empty($fileobject->messages)) {
                 $messages = array_merge($messages, $fileobject->messages);
@@ -190,7 +187,8 @@ if (!empty($_FILES) and empty($errors)) {
             if (empty($errors)) {
                 $info = new SplFileInfo($uploadfile);
                 $file_array['url']           = realpath($uploadfile);
-                $file_array['filename_orig'] = $info->getBasename();
+                //$file_array['filename_orig'] = $info->getBasename();
+                $file_array['filename_orig'] = $_FILES['userfile']['name'];
                 $file_array['filename']      = $info->getBasename('.'.$info->getExtension());
                 $file_array['extension']     = $info->getExtension();
                 $file_array['size']          = $_FILES['userfile']['size'];
@@ -204,7 +202,7 @@ if (!empty($_FILES) and empty($errors)) {
                     if (!empty($script_vars['files'])) {
                         $_SESSION['pages'][$prev_script][$prev_task]['files'] = $script_vars['files'];
                     } // if
-                    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile;
+                    $_SESSION['pages'][$prev_script][$prev_task]['selection'] = $uploadfile_data;
                     $errors = scriptPrevious($errors, $messages, 'choose');
                 } // if
             } else {

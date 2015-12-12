@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list2.inc
@@ -67,7 +67,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action, $return_string);
+        $dbouter->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
@@ -115,7 +115,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action, $return_string);
+        $dbinner->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
@@ -159,13 +159,18 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
     if (!empty($choose_errors)) {
         $errors[$dbinner->getClassName()] = $choose_errors;
     } // if
-} // if
 
-if (!empty($_POST)) {
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner));
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
+} elseif (isset($_POST['reset'])) {
+    // initialise all settings to start afresh
+    $where = $dbouter->reset($where, true);  // but do not lose current ORDERBY settings
+
+} elseif (!empty($_POST)) {
+    if ($task_button = check_task_button($_POST)) {
+        // look for an action which is another script
+        $child_errors = childForm($_POST, array('dbouter' => &$dbouter, 'dbinner' => &$dbinner), $task_button);
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
     } // if
 } // if
 
@@ -195,11 +200,6 @@ if (empty($where)) {
         // 'No parent has been selected yet.'
         scriptPrevious(getLanguageText('sys0082'));
     } // if
-} // if
-
-if (isset($_POST['reset'])) {
-    // initialise all settings to start afresh
-    $where = $dbouter->reset($where, true);  // but do not lose current ORDERBY settings
 } // if
 
 // get data for the outer table
@@ -291,9 +291,15 @@ if (isset($instruction)) {
     $dbinner->setInstruction($instruction);
 } // if
 
-// get primary key of current row retrieved from OUTER entity
-$pkeynames = $dbouter->getPkeyNamesAdjusted();
-$inner_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+// convert to foreign key names which relate this child to this parent
+$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dbinner);
+if (!empty($fkeyvalues)) {
+    $inner_where = array2where($fkeyvalues);
+} else {
+    // get primary key of current row retrieved from OUTER entity
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();
+    $inner_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+} // if
 
 // obtain the required page number (optional)
 if (isset($_GET['page'])) {
@@ -308,8 +314,6 @@ if (isset($_POST['reset'])) {
 if (empty($outer_data)) {
     $inner_data = $dbinner->setFieldArray(null);
 } else {
-    // load in current data from $outer in case it is needed
-    $dbinner->setFieldArray($outer_data);
     // get data for the inner entity from the database
 	$inner_data = $dbinner->getData($inner_where);
 

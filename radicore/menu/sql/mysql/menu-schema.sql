@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.6.26-log - MySQL Community Server (GPL)
+-- Server version:               5.6.27-log - MySQL Community Server (GPL)
 -- Server OS:                    Win64
--- HeidiSQL Version:             9.3.0.4992
+-- HeidiSQL Version:             9.3.0.5009
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -257,6 +257,37 @@ CREATE TABLE IF NOT EXISTS `mnu_role_taskfield` (
 -- Data exporting was unselected.
 
 
+-- Dumping structure for table santiago_menu.mnu_saved_selection
+CREATE TABLE IF NOT EXISTS `mnu_saved_selection` (
+  `selection_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `selection_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
+  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`selection_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
+-- Dumping structure for table santiago_menu.mnu_saved_selection_data
+CREATE TABLE IF NOT EXISTS `mnu_saved_selection_data` (
+  `selection_id` int(10) unsigned NOT NULL,
+  `fieldname` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
+  `fieldvalue` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`selection_id`,`fieldname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
+
 -- Dumping structure for table santiago_menu.mnu_subsystem
 CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
   `subsys_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
@@ -494,7 +525,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user_role` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`,`role_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

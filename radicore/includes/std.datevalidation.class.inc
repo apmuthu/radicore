@@ -192,13 +192,13 @@ class date_class {
 
         // check if date is already in yyyy-mm-dd format
         $pattern = '/'
-                 . '^'              // begins with
-                 . '[0-9]{4}'       // 4 digit year
-                 . '-'              // '-'
-                 . '[0-9]{2}'       // 2 digit month
-                 . '-'              // '-
-                 . '[0-9]{2}'       // 2 digit day
-                 //. '$'              // ends with
+                 . '^'          // begins with
+                 . '[\d]{4}'    // 4 digit year
+                 . '-'          // '-'
+                 . '[\d]{2}'    // 2 digit month
+                 . '-'          // '-
+                 . '[\d]{2}'    // 2 digit day
+                 //. '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $date_format = 'yyyy-mm-dd';  //date is already in internal format
@@ -211,7 +211,7 @@ class date_class {
                 case 'yyyy-mm-dd':
                 case 'yyyy/mm/dd':
                 case 'yyyy.mm.dd':
-                    preg_match_all('/[0-9]+/', $input, $regs);
+                    preg_match_all('/[\d]+/', $input, $regs);
                     $year  = $regs[0][0];
                     $month = $regs[0][1];
                     $day   = $regs[0][2];
@@ -242,7 +242,7 @@ class date_class {
                 case 'd.m.yyyy':
                 case 'd. m. yyyy':
                 case 'dd. mm. yyyy.':
-                    preg_match_all('/[0-9]+/', $input, $regs);
+                    preg_match_all('/[\d]+/', $input, $regs);
                     $day   = $regs[0][0];
                     $month = $regs[0][1];
                     $year  = $regs[0][2];
@@ -250,7 +250,7 @@ class date_class {
 
                 case 'mm dd yyyy':
                 case 'm/d/yyyy':
-                    preg_match_all('/[0-9]+/', $input, $regs);
+                    preg_match_all('/[\d]+/', $input, $regs);
                     $month = $regs[0][0];
                     $day   = $regs[0][1];
                     $year  = $regs[0][2];
@@ -267,7 +267,7 @@ class date_class {
                 case 'yyyy#mm#dd# [ja]':
                 case 'yyyy# mm# dd# [ko]':
                 case 'yyyy#m#d# [zh_xx]':
-                    preg_match_all('/[0-9]+/', $input, $regs);
+                    preg_match_all('/[\d]+/', $input, $regs);
                     $year  = $regs[0][0];
                     $month = $regs[0][1];
                     $day   = $regs[0][2];
@@ -291,11 +291,13 @@ class date_class {
 
         // look for d(d)?m(m)?(yyyy) format (may also be m(m)?d(d)?y(yyy) format)
         $pattern = '/'
-                 . '(^[0-9]{1,2})'      // 1 or 2 digits
-                 . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,2})'       // 1 or 2 digits
-                 . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{0,4}$)'      // 0 to 4 digits
+                 . '^'              // begins with
+                 . '([\d]{1,2})'    // 1 or 2 digits
+                 . '([^0-9a-zA-Z])' // not alpha or numeric
+                 . '([\d]{1,2})'    // 1 or 2 digits
+                 . '([^0-9a-zA-Z])' // not alpha or numeric
+                 . '([\d]{0,4})'    // 0 to 4 digits
+                 . '$'              // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             if (preg_match('#^(dmy|dd/mm/yyyy|dd\.mm\.yyyy|dd/mm/yy)$#i', $date_format)) {
@@ -308,11 +310,13 @@ class date_class {
 
         // look for d(d)?MMM?(yyyy) format
         $pattern = '/'
-                 . '(^[0-9]{1,2})'      // 1 or 2 digits
+                 . '^'          // begins with
+                 . '([\d]{1,2})'        // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([a-zA-Z]{1,})'     // 1 or more alpha
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{0,4}$)'      // 0 to 4 digits
+                 . '([\d]{0,4})'        // 0 to 4 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[1], $regs[3], $regs[5]);
@@ -321,9 +325,11 @@ class date_class {
 
         // look for d(d)MMM(yyyy) format
         $pattern = '/'
-                 . '(^[0-9]{1,2})'      // 1 or 2 digits
+                 . '^'          // begins with
+                 . '([\d]{1,2})'        // 1 or 2 digits
                  . '([a-zA-Z]{1,})'     // 1 or more alpha
-                 . '([0-9]{0,4}$)'      // 0 to 4 digits
+                 . '([\d]{0,4})'        // 0 to 4 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[1], $regs[2], $regs[3]);
@@ -332,11 +338,13 @@ class date_class {
 
         // look for MMM?d(d)?(yyyy) format
         $pattern = '/'
+                 . '^'          // begins with
                  . '(^[a-zA-Z]{1,})'    // 1 or more alpha
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,2})'       // 1 or 2 digits
+                 . '([\d]{1,2})'        // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,4}$)'      // 0 to 4 digits
+                 . '([\d]{1,4})'        // 0 to 4 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[3], $regs[1], $regs[5]);
@@ -345,9 +353,11 @@ class date_class {
 
         // look for MMMddyyyy format
         $pattern = '/'
-                 . '(^[a-zA-Z]{1,})'    // 1 or more alpha
-                 . '([0-9]{2})'         // 2 digits
-                 . '([0-9]{4}$)'        // 4 digits
+                 . '^'          // begins with
+                 . '([a-zA-Z]{1,})'    // 1 or more alpha
+                 . '([\d]{2})'         // 2 digits
+                 . '([\d]{4})'         // 4 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[2], $regs[1], $regs[3]);
@@ -356,11 +366,13 @@ class date_class {
 
         // look for yyyy?m(m)?d(d) format
         $pattern = '/'
-                 . '(^[0-9]{4})'        // 4 digits
+                 . '^'          // begins with
+                 . '([\d]{4})'          // 4 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,2})'       // 1 or 2 digits
+                 . '([\d]{1,2})'        // 1 or 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,2}$)'      // 1 to 2 digits
+                 . '([\d]{1,2})'        // 1 to 2 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[5], $regs[3], $regs[1]);
@@ -370,9 +382,11 @@ class date_class {
         if (preg_match('/^(dmy|mdy)$/i', $date_format)) {
             // look for ddmmyyyy format (may also be mmddyyyy format)
             $pattern = '/'
-                     . '(^[0-9]{2})'        // 2 digits
-                     . '([0-9]{2})'         // 2 digits
-                     . '([0-9]{4}$)'        // 4 digits
+                     . '^'          // begins with
+                     . '([\d]{2})'      // 2 digits
+                     . '([\d]{2})'      // 2 digits
+                     . '([\d]{4})'      // 4 digits
+                     . '$'          // ends with
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if (preg_match('/^(dmy)$/i', $date_format)) {
@@ -387,9 +401,11 @@ class date_class {
         if (preg_match('/^(ymd)$/i', $date_format)) {
             // look for yyyymmdd format
             $pattern = '/'
-                     . '(^[0-9]{4})'        // 4 digits
-                     . '([0-9]{2})'         // 2 digits
-                     . '([0-9]{2}$)'        // 2 digits
+                     . '^'          // begins with
+                     . '([\d]{4})'      // 4 digits
+                     . '([\d]{2})'      // 2 digits
+                     . '([\d]{2})'      // 2 digits
+                     . '$'          // ends with
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 $result = $this->verifyDate($regs[3], $regs[2], $regs[1]);
@@ -399,11 +415,13 @@ class date_class {
 
         // look for yyyy?MMM?d(d) format
         $pattern = '/'
-                 . '(^[0-9]{4})'        // 4 digits
+                 . '^'          // begins with
+                 . '([\d]{4})'          // 4 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
                  . '([a-zA-Z]{1,})'     // 1 or more alpha
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{1,2}$)'      // 1 to 2 digits
+                 . '([\d]{1,2})'        // 1 to 2 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyDate($regs[5], $regs[3], $regs[1]);
@@ -434,12 +452,14 @@ class date_class {
     {
         // look for HH?MM?SS format
         $pattern = '/'
-                 . '(^[0-9]{2})'        // 2 digits
+                 . '^'          // begins with
+                 . '([\d]{2})'          // 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{2})'         // 2 digits
+                 . '([\d]{2})'          // 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{2})'         // 2 digits
-                 . '(\.[0-9]+)?$'       // optional '.nnn' microseconds (for SQL Server)
+                 . '([\d]{2})'          // 2 digits
+                 . '(\.[\d]+)?'         // optional '.nnn' microseconds (for SQL Server)
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyTime($regs[1], $regs[3], $regs[5]);
@@ -448,9 +468,11 @@ class date_class {
 
         // look for HHMMSS format
         $pattern = '/'
-                 . '(^[0-9]{2})'        // 2 digits
-                 . '([0-9]{2})'         // 2 digits
-                 . '([0-9]{2}$)'        // 2 digits
+                 . '^'          // begins with
+                 . '([\d]{2})'      // 2 digits
+                 . '([\d]{2})'      // 2 digits
+                 . '([\d]{2})'      // 2 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyTime($regs[1], $regs[2], $regs[3]);
@@ -459,9 +481,11 @@ class date_class {
 
         // look for HH?MM format
         $pattern = '/'
-                 . '(^[0-9]{2})'        // 2 digits
+                 . '^'          // begins with
+                 . '([\d]{2})'          // 2 digits
                  . '([^0-9a-zA-Z])'     // not alpha or numeric
-                 . '([0-9]{2}$)'        // 2 digits
+                 . '([\d]{2})'          // 2 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyTime($regs[1], $regs[3], '00');
@@ -470,8 +494,10 @@ class date_class {
 
         // look for HHMM format
         $pattern = '/'
-                 . '(^[0-9]{2})'        // 2 digits
-                 . '([0-9]{2}$)'        // 2 digits
+                 . '^'          // begins with
+                 . '([\d]{2})'  // 2 digits
+                 . '([\d]{2})'  // 2 digits
+                 . '$'          // ends with
                  . '/';
         if (preg_match($pattern, $input, $regs)) {
             $result = $this->verifyTime($regs[1], $regs[2], '00');
@@ -490,15 +516,15 @@ class date_class {
     // to internal format (as used in the database)
     {
         $pattern = '/'
-                 . '^'              // begins with
-                 . '(?<date>'       // start named pattern
-                 . '[0-9]{4}-[0-9]{2}-[0-9]{2}' // '9999-99-99'
-                 . ')'              // end named pattern
-                 . '[ ]'            // space
-                 . '(?<time>'       // start named pattern
-                 . '([0-9]{2}:[0-9]{2}){1}'     // 'HH:MM'
-                 . '(:[0-9]{2})?'               // optional ':SS'
-                 . ')'              // end named pattern
+                 . '^'               // begins with
+                 . '(?P<date>'       // start named pattern
+                 . '[\d]{4}-[\d]{2}-[\d]{2}'    // '9999-99-99'
+                 . ')'               // end named pattern
+                 . '[ ]*'            // space
+                 . '(?P<time>'       // start named pattern
+                 . '([\d]{2}:[\d]{2}){1}'       // 'HH:MM'
+                 . '(:[\d]{2})?'                // optional ':SS'
+                 . ')'               // end named pattern
                  . '/';
 
         // look for a time portion (ends with '99:99' or '99:99:99')
@@ -641,9 +667,11 @@ class date_class {
         if (strlen($input) == 8) {
             // test for 'yyyymmdd'
             $pattern = '/'
-                     . '(^[0-9]{4})'    // 4 digits (yyyy)
-                     . '([0-9]{2})'     // 2 digits (mm)
-                     . '([0-9]{2}$)'    // 2 digits (dd)
+                     . '^'          // begins with
+                     . '([\d]{4})'  // 4 digits (yyyy)
+                     . '([\d]{2})'  // 2 digits (mm)
+                     . '([\d]{2})'  // 2 digits (dd)
+                     . '$'          // ends with
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($input == '00000000') {
@@ -664,11 +692,13 @@ class date_class {
         if (strlen($input) == 9) {
             // test for 'dd-Mmm-yy'
             $pattern = '/'
-                     . '(^[0-9]{2})'    // 2 digits (dd)
+                     . '^'          // begins with
+                     . '([\d]{2})'      // 2 digits (dd)
                      . '([^0-9])'       // not a digit
                      . '([a-zA-Z]{3})'  // 3 alpha (Mmm)
                      . '([^0-9])'       // not a digit
-                     . '([0-9]{2}$)'    // 2 digits (yy)
+                     . '([\d]{2})'      // 2 digits (yy)
+                     . '$'          // ends with
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($result = $this->verifyDate($regs[1], $regs[3], $regs[5])) {
@@ -684,11 +714,13 @@ class date_class {
         if (strlen($input) == 10) {
             // test for 'yyyy-mm-dd'
             $pattern = '/'
-                     . '(^[0-9]{4})'    // 4 digits (yyyy)
-                     . '([^0-9])'       // not a digit
-                     . '([0-9]{2})'     // 2 digits (mm)
-                     . '([^0-9])'       // not a digit
-                     . '([0-9]{2}$)'    // 2 digits (dd)
+                     . '^'          // begins with
+                     . '([\d]{4})'  // 4 digits (yyyy)
+                     . '([^0-9])'   // not a digit
+                     . '([\d]{2})'  // 2 digits (mm)
+                     . '([^0-9])'   // not a digit
+                     . '([\d]{2})'  // 2 digits (dd)
+                     . '$'          // ends with
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($input == '0000-00-00') {

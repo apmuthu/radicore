@@ -47,7 +47,7 @@ if ($dbobject->messages) {
 
 if ($dbobject->errors) {
     // some sort of error - return to previous script
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, null, $dbobject->getInstruction());
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, 'fail', $dbobject->getInstruction());
     return $batch_errors;
 } // if
 
@@ -73,9 +73,9 @@ if (!empty($dbobject->messages)) {
 } // if
 
 if (empty($errors)) {
-	$action = 'OK';
+	$action = 'update';
 } else {
-    $action = null;
+    $action = 'fail';
 } // if
 
 $batch_errors = scriptPrevious($errors, $messages, $action, $dbobject->getInstruction());

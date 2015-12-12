@@ -193,17 +193,8 @@ if (isset($_POST['choose'])) {
     if (!empty($choose_errors)) {
         $errors[$dbinner->getClassName()] = $choose_errors;
     } // if
-} // if
 
-if (!empty($_POST)) {
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner));
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
-    } // if
-} // if
-
-if (isset($_POST['reset'])) {
+} elseif (isset($_POST['reset'])) {
     // initialise all settings to start afresh
     $where = $dbouter->reset($where, true);  // but do not lose current ORDERBY settings
     $outer_data = $dbouter->getFieldArray();
@@ -211,6 +202,15 @@ if (isset($_POST['reset'])) {
     $middle_data = $dbmiddle->getFieldArray();
     $where = $dbinner->reset($where);
     $inner_data = $dbinner->getFieldArray();
+
+} elseif (!empty($_POST)) {
+    if ($task_button = check_task_button($_POST)) {
+        // look for an action which is another script
+        $child_errors = childForm($_POST, array('dbmiddle' => &$dbmiddle, 'dbinner' => &$dbinner), $task_button);
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
+    } // if
 } // if
 
 if (isset($scrolling)) {
@@ -268,22 +268,26 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 // get any additional data for current record
 $outer_data = $dbouter->getExtraData($outer_data);
 
-// get primary key of current row retrieved from OUTER entity
-$pkeynames = $dbouter->getPkeyNamesAdjusted();
-$where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+// convert to foreign key names which relate this child to this parent
+$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dbmiddle);
+if (!empty($fkeyvalues)) {
+    $middle_where = array2where($fkeyvalues);
+} else {
+    // get primary key of current row retrieved from OUTER entity
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();
+    $middle_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+} // if
 
 if (empty($outer_data)) {
     $dbmiddle->setFieldArray(null);
     $middle_data = array();
 } else {
-    // load in current data from $outer in case it is needed
-    $dbmiddle->setFieldArray($outer_data);
     if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
         // set index number of item to be read from current $where list
         $dbmiddle->setPageNo($_GET['item']);
     } // if
     // get data from the middle table
-    $middle_data = $dbmiddle->getData($where);
+    $middle_data = $dbmiddle->getData($middle_where);
     if ($dbmiddle->errors) {
         // errors are keyed by object name
         $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
@@ -297,11 +301,21 @@ if (empty($outer_data)) {
     } // if
     // get any additional data for current record
     $middle_data = $dbmiddle->getExtraData($middle_data);
+
+    // get primary key of current row retrieved from MIDDLE entity
+    $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
+    $middle_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
 } // if
 
-// get primary key of current row retrieved from middle entity
-$pkeynames = $dbmiddle->getPkeyNamesAdjusted();
-$middle_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
+// convert to foreign key names which relate this child to this parent
+$fkeyvalues = getForeignKeyValues($dbmiddle, $middle_data, $dbinner);
+if (!empty($fkeyvalues)) {
+    $inner_where = array2where($fkeyvalues);
+} else {
+    // get primary key of current row retrieved from middle entity
+    $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
+    $inner_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
+} // if
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -343,14 +357,12 @@ if (isset($_GET['page'])) {
 } // if
 
 // merge OUTER and MIDDLE where to get selection criteria for INNER
-$inner_where = mergeWhere($where, $middle_where);
+//$inner_where = mergeWhere($where, $middle_where);
 
 if ($dbmiddle->numrows == 0 AND !$dbmiddle->allow_zero_rows) {
     $dbinner->setFieldArray(null);
     $inner_data = array();
 } else {
-    // load in current data from $middle in case it is needed
-    $dbinner->setFieldArray($middle_data);
 	// get data from the database
     $inner_data = $dbinner->getData($inner_where);
     if ($dbinner->errors) {

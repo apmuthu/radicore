@@ -188,14 +188,13 @@ class survey_answer_hdr extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //DebugBreak();
         $where = array2where($fieldarray, $this->getPkeyNames());
 
         $next['task_id'] = 'srv_survey_answer_dtl(multi)';
         $next['where']   = $where;
 
         // this is processed by scriptnext() and scriptprevious()
-        $_SESSION['script_sequence'][] = $next;
+        append2ScriptSequence($next);
 
         return $fieldarray;
 

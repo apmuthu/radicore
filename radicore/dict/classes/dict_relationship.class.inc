@@ -33,21 +33,20 @@ class dict_relationship extends Default_Table
     {
         global $mode;
         if ($mode == 'search') {
+            // remove NOEDIT switches
+            unset($this->fieldspec['table_id_snr']['noedit']);
+            unset($this->fieldspec['table_id_jnr']['noedit']);
             if (isset($fieldarray['table_id_jnr'])) {
                 // in SEARCH mode set control to POPUP
                 $this->fieldspec['table_id_snr']['control']       = 'popup';
                 $this->fieldspec['table_id_snr']['task_id']       = 'dict_table(popup2)snr';
                 $this->fieldspec['table_id_snr']['foreign_field'] = 'table_id_snr';
-                // remove NOEDIT switch
-                unset($this->fieldspec['table_id_snr']['noedit']);
 
             } elseif (isset($fieldarray['table_id_snr'])) {
                 // in SEARCH mode set control to POPUP
                 $this->fieldspec['table_id_jnr']['control']       = 'popup';
                 $this->fieldspec['table_id_jnr']['task_id']       = 'dict_table(popup2)jnr';
                 $this->fieldspec['table_id_jnr']['foreign_field'] = 'table_id_jnr';
-                // remove NOEDIT switch
-                unset($this->fieldspec['table_id_jnr']['noedit']);
             } // if
             // change from DROPDOWN to TEXT field
             unset($this->fieldspec['parent_field']['control']);
@@ -109,6 +108,26 @@ class dict_relationship extends Default_Table
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        $pattern_id = getPatternId();
+        if (preg_match('/^(list1)/i', $pattern_id)
+          OR preg_match('/^(list2)/i', $pattern_id) AND $this->zone == 'inner') {
+            if (!empty($fieldarray['table_alias_snr'])) {
+                $fieldarray['table_id_snr'] .= ' ('.$fieldarray['table_alias_snr'].')';
+            } // if
+            if (!empty($fieldarray['table_alias_jnr'])) {
+                $fieldarray['table_id_jnr'] .= ' ('.$fieldarray['table_alias_jnr'].')';
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
     // ****************************************************************************
     function _cm_getDatabaseLock ()
@@ -317,7 +336,7 @@ class dict_relationship extends Default_Table
     } // _cm_output_multi
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
@@ -349,7 +368,7 @@ class dict_relationship extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
-    function _cm_popupReturn ($fieldarray, $return_from, &$select_array)
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.

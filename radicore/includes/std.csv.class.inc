@@ -67,8 +67,10 @@ class csv_class
     } // getErrors
 
     // ****************************************************************************
-    function outputCSV ($resource, $exclude=null)
+    function outputCSV ($resource, $fieldlist=null)
     // read database resource one record at a time and output to a CSV file.
+    // $fieldlist (optional) has a Yes/No flag against each field name, and
+    // only those with a 'Yes' flag should be included in the output.
     {
         $output = '';
         $row_count = 0;
@@ -119,25 +121,34 @@ class csv_class
         $replace = array("  ", null, null, "'");
 
         // fetch database rows one at a time
+        $header = array();
         while ($fieldarray = $dbobject->fetchRow($resource)) {
             if ($dbobject->errors) {
                 $this->errors = $dbobject->errors;
                 return false;
             } // if
             $row_count++;
-            if (!empty($exclude) AND is_array($exclude)) {
-                // this contains a list of field names which may have to be excluded
-                foreach ($fieldarray as $key => $value) {
-                    if (isset($exclude[$key]) AND $exclude[$key] == 'Y') {
-                        // this has been selected, so leave it in
-                    } else {
-                        unset($fieldarray[$key]);  // do not output this field
+            if (!empty($fieldlist) AND is_array($fieldlist)) {
+                // $fieldlist contains a list of field names which should be included in the output.
+                // $save_selection identifies the order in which they should be output.
+                if (!is_array($dbobject->save_selection) OR empty($dbobject->save_selection)) {
+                    $dbobject->save_selection = $fieldlist;
+                } // if
+                $sorted = array();
+                // now resequence and edit the data
+                foreach ($dbobject->save_selection as $name => $flag) {
+                    if (array_key_exists($name, $fieldarray)) {
+                        if ($fieldlist[$name] == 'Y') {
+                            $sorted[$name] = $fieldarray[$name];
+                        } // if
                     } // if
                 } // foreach
+                $fieldarray = $sorted;
             } // if
             if ($row_count == 1 AND !is_True($dbobject->no_csv_header)) {
                 // first row, so output field names as labels
                 foreach ($fieldarray as $fieldname => $fieldvalue) {
+                    $header[] = $fieldname;
                     $fieldname = getLanguageText($fieldname);
                     if ($tab_delimited) {
                         $output .= $fieldname ."\t";
@@ -193,6 +204,30 @@ class csv_class
             } while (!empty($fieldarray));
 
         } // while
+
+        $append_rows = $dbobject->appendToCSV($header);
+        foreach ($append_rows as $fieldarray) {
+            $fieldarray = $dbobject->formatData($fieldarray, $null);
+            foreach ($fieldarray as $fieldname => $fieldvalue) {
+                // replace any tab characters which may be in the data
+                $fieldvalue = str_replace($search, $replace, $fieldvalue);
+                if ($tab_delimited) {
+                    $output .= $fieldvalue ."\t";
+                    //$output .= '"' .$fieldvalue .'"' ."\t";
+                } else {
+                    $output .= '"' .$fieldvalue .'",';
+                } // if
+            } // foreach
+            // strip last ',' or "\t" and append <newline>
+            $output = rtrim($output, $delimiter);
+            $output .= "\r\n";
+            if (isset($csvouth) AND !empty($csvout)) {
+                if (!$result = fwrite($csvouth, $output)) {
+                    trigger_error("Cannot write to file $csvout", E_USER_ERROR);
+                } // if
+                $output = '';
+            } // if
+        } // foreach
 
         if (isset($GLOBALS['transaction_has_started']) AND is_True($GLOBALS['transaction_has_started'])) {
             $errors = $dbobject->commit();

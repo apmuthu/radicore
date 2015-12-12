@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 if (!class_exists('wf_workflow')) {
 	require_once 'wf_workflow.class.inc';
@@ -33,8 +33,13 @@ class workflow_engine extends wf_workflow
 
         // there may be more than one workflow, but it is unlikely
         foreach ($data as $workflow) {
-            $case_data['workflow_id'] = $workflow['workflow_id'];
-            $case_data['context']     = $context;
+            $case_data['workflow_id']   = $workflow['workflow_id'];
+            $case_data['context']       = $context;
+            if (!empty($_SESSION['rdcaccount_id'])) {
+                $case_data['rdcaccount_id'] = $_SESSION['rdcaccount_id'];   // use same account as current user
+            } else {
+                $case_data['rdcaccount_id'] = 1;                            // use shared account
+            } // if
             $case_data = $dbcase->insertRecord($case_data);
             if ($dbcase->errors) {
                 $this->errors = array_merge($this->errors, $dbcase->getErrors());
@@ -68,10 +73,12 @@ class workflow_engine extends wf_workflow
         } // if
 
         $workitem_user = $data[0]['user_id'];
+        $rdcaccount_id = $data[0]['rdcaccount_id'];
 
         // mark this workitem as finished
         $workitem_array['case_id']         = $case_id;
         $workitem_array['workitem_id']     = $workitem_id;
+        $workitem_array['rdcaccount_id']   = $rdcaccount_id;
         $workitem_array['workitem_status'] = 'FI';
         $workitem_array['finished_date']   = getTimeStamp();
         if (!empty($workitem_user)) {
@@ -116,6 +123,7 @@ class workflow_engine extends wf_workflow
             if ($arc['token_status'] == 'FREE') {
             	$arc['token_status']  = 'CONS';
                 $arc['consumed_date'] = getTimeStamp();
+                $arc['rdcaccount_id'] = $rdcaccount_id;
                 $token_data = $dbtoken->updateRecord($arc);
                 if ($dbtoken->errors) {
                     $this->errors = array_merge($this->errors, $dbtoken->getErrors());
@@ -167,10 +175,11 @@ class workflow_engine extends wf_workflow
         } // foreach
 
         $token_data = array();      // initialise
-        $token_data['case_id']     = $case_id;
-        $token_data['workflow_id'] = $workflow_id;
-        $token_data['context']     = $context;
-        $token_data['user_id']     = $workitem_user;
+        $token_data['case_id']       = $case_id;
+        $token_data['workflow_id']   = $workflow_id;
+        $token_data['context']       = $context;
+        $token_data['user_id']       = $workitem_user;
+        $token_data['rdcaccount_id'] = $rdcaccount_id;
 
         // process arc according to it's type
         switch ($arc_type) {
@@ -268,13 +277,13 @@ class workflow_engine extends wf_workflow
         } // if
 
         if ($strlen === true) {
-            $field = strlen($fieldarray[$name]);
+            $field = strlen($fieldarray[$name]);    // use the length of the field's value
         } else {
-            $field = $fieldarray[$name];
+            $field = $fieldarray[$name];            // use the field's value
         } // if
 
-        if (!array_key_exists($value, $fieldarray)) {
-            // string matches a name in $fieldarray, so use its value instead
+        if (array_key_exists($value, $fieldarray)) {
+            // string matches a name in $fieldarray, so use that field's value instead
             $value = $fieldarray[$value];
         } // if
 
@@ -305,6 +314,7 @@ class workflow_engine extends wf_workflow
                 } // if
                 break;
             case '=':
+            case '==':
                 if ($field == $value) {
                     return true;
                 } // if

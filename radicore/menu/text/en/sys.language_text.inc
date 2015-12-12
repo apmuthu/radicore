@@ -251,9 +251,9 @@ $array['sys0223'] = "LIMIT must be a number which is greater than or equal to 1"
 $array['sys0224'] = "OFFSET must be a number which is greater than or equal to 0";
 $array['sys0225'] = "";
 $array['sys0226'] = "";
-$array['sys0227'] = "";
-$array['sys0228'] = "";
-$array['sys0229'] = "";
+$array['sys0227'] = "1st argument must be an object";
+$array['sys0228'] = "3rd argument must be an object";
+$array['sys0229'] = "No relationship found between the PARENT object and the CHILD object";
 
 $array['sys0230'] = "This user does not have a primary role";
 $array['sys0231'] = "This user does not have a starting task";
@@ -276,6 +276,17 @@ $array['sys0246'] = "Into directory: %1\$s";
 $array['sys0247'] = "";
 $array['sys0248'] = "";
 $array['sys0249'] = "";
+
+$array['sys0250'] = "Cannot save this selection without a description";
+$array['sys0251'] = "Screen Structure file has not been supplied";
+$array['sys0252'] = "User 'anonymous' has not been defined";
+$array['sys0253'] = "";
+$array['sys0254'] = "";
+$array['sys0255'] = "";
+$array['sys0256'] = "";
+$array['sys0257'] = "";
+$array['sys0258'] = "";
+$array['sys0259'] = "";
 
 // the following entries are for ACTION buttons
 $array['cancel']     = 'CANCEL';

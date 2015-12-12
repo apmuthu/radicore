@@ -367,7 +367,6 @@ END_OF_REGEX;
                     $part1 = trim($regs2[0]);
                 } // if
                 $count = preg_match('/(?<=order[ ]by[ ]).+(?=[ ]separator)/i', $string1, $regs2);
-                //$count = preg_match('/.+(?=[ ]separator)/i', $string1, $regs2);
                 if ($count > 0) {
                     $orderby = trim($regs2[0]);
                 } else {
@@ -384,15 +383,19 @@ END_OF_REGEX;
                     if (substr($from, -strlen($search)) == $search) {
                         $from = substr($from, 0, strlen($from)-strlen($search));
                     } // if
-                    //$from = str_replace($search, '', $from, 1);
                 } // if
                 $count = preg_match('/(?<=where[ ])[^\)]*(?=[ ]order[ ]by)?/i', $string1, $regs2);
                 $where = trim($regs2[0]);
                 $count = preg_match('/(?<=\)[ ]as[ ])\w+/i', $string1, $regs2);
                 $alias = trim($regs2[0]);
 
+                $string1 = str_replace('(', "\(", $string1);
+                $string1 = str_replace(')', "\)", $string1);
+                $string1 = str_replace('[', "\[", $string1);
+                $string1 = str_replace(']', "\]", $string1);
+                $string1 = str_replace('.', "\.", $string1);
+                $string1 = str_replace('?', "\?", $string1);
                 $string2 = "$alias=STUFF((SELECT $separator+$part1 FROM $from WHERE $where ORDER BY $orderby FOR XML PATH('')) , 1, 1, '' )";
-                $string1 = str_replace(array('(',')'), array('\(','\)'), $string1);
                 $output  = preg_replace('/\(select[ ]group_concat\(' .$string1 .'/i', $string2, $output, 1);
             } // foreach
         } // if
@@ -416,7 +419,7 @@ END_OF_REGEX;
 )                            # end choice
 *                            # 0 or more times
 [ ]*                         # 0 or more spaces
-/xi
+/xims
 END_OF_REGEX;
 
         $pattern2 = <<< END_OF_REGEX
@@ -428,7 +431,7 @@ END_OF_REGEX;
 \w+\.\w+                    # word dot word
 |
 \w+                         # word
-/xi
+/xims
 END_OF_REGEX;
 
         if ($count = preg_match_all($pattern1, $output, $regs)) {
@@ -437,12 +440,22 @@ END_OF_REGEX;
         		$count = preg_match_all($pattern2, $string1, $regs2);
         		foreach ($regs2[0] as $value) {
         		    // trim leading and trailing spaces from each entry
-        			$array[] = trim($value);
+                    if (substr($value, 0, 1) == "'") {
+                        // value is quoted so use as-is
+                        $array[] = trim($value);
+                    } else {
+                        // this is a field, so cast it to string to avoid conversion errors
+        			    $array[] = "CAST(".trim($value)." AS VARCHAR)";
+                    } // if
         		} // foreach
         		$string2 = implode('+', $array);     // rejoin with '+' as separator
         		// escape any '(' and ')' for use in a pattern
         		$string1 = str_replace('(', "\(", $string1);
         		$string1 = str_replace(')', "\)", $string1);
+                $string1 = str_replace('[', "\[", $string1);
+                $string1 = str_replace(']', "\]", $string1);
+                $string1 = str_replace('.', "\.", $string1);
+                $string1 = str_replace('?', "\?", $string1);
         		$output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
         	} // foreach;
         } // if
@@ -487,7 +500,7 @@ END_OF_REGEX;
         // ********************************************************************
 
         // look for any "CASE WHEN ... THEN ... ELSE ... END" clauses and replace
-        // any alias names with their original edxpressions
+        // any alias names with their original expressions
         $pattern1 = <<<EOD
 /
 CASE[ ]+WHEN.+?[ ]END
@@ -496,10 +509,15 @@ EOD;
 
 $pattern2 = <<<EOD
 /
-([ ]WHEN[ ](?<when>.+?)[ ]THEN[ ](?<then>\w+)|[ ]ELSE[ ](?<else>.+?)[ ]END)
+(?<=[ ]when[ ])(?P<when>.+?)(?<=[ ]then[ ])(?P<then>.+?)
 /imsx
 EOD;
-$pattern3 = null;
+
+$pattern3 = <<<EOD
+/
+(?<=[ ]else[ ])(?P<else>.+?)END
+/imsx
+EOD;
 
         $offset = 0;
         while (preg_match($pattern1, $output, $regs1, PREG_OFFSET_CAPTURE, $offset)) {
@@ -517,11 +535,15 @@ $pattern3 = null;
                         $when_length = strlen($when_string);
                         $offset2 += $when_length+6;
 
-                        list($name, $operator, $value) = splitNameOperatorValue($when_string);
-                        if (array_key_exists($name, $alias_names)) {
-                            $search[]  = $name;
-                            $replace[] = $alias_names[$name];
+                        $parts = preg_split('/[ ](AND|OR)[ ]/i', $when_string, $regs2a);
+                        foreach ($parts as $part) {
+                            list($name, $operator, $value) = splitNameOperatorValue($part);
+                            if (array_key_exists($name, $alias_names)) {
+                                $search[]  = $name;
+                                $replace[] = $alias_names[$name];
+                            } // if
                         } // if
+
                     } // if
                     if (isset($regs2['then']) AND !empty($regs2['then'][0])) {
                         $then_string = $regs2['then'][0];
@@ -534,18 +556,19 @@ $pattern3 = null;
                             $replace[] = $alias_names[$then_string];
                         } // if
                     } // if
-                    if (isset($regs2['else']) AND !empty($regs2['else'][0])) {
-                        $else_string = $regs2['else'][0];
-                        $else_start  = $regs2['else'][1];
+                } // while
+                if (preg_match($pattern3, $case_string, $regs3, PREG_OFFSET_CAPTURE, $offset2)) {
+                    if (isset($regs3['else']) AND !empty($regs3['else'][0])) {
+                        $else_string = $regs3['else'][0];
+                        $else_start  = $regs3['else'][1];
                         $else_length = strlen($else_string);
-                        $offset2 += $else_length+6;
 
                         if (array_key_exists($else_string, $alias_names)) {
                             $search[]  = $else_string;
                             $replace[] = $alias_names[$else_string];
                         } // if
                     } // if
-                } // while
+                } // if
                 if (!empty($replace)) {
                     // found alias names which need to be replaced with original expressions
                     $case_string = str_replace($search, $replace, $case_string);
@@ -741,7 +764,7 @@ END_OF_REGEX;
             } // if
         } // while
 
-        // Replace TRUE/FALSE to 1/0.
+        // Replace TRUE/FALSE with 1/0.
         $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
         $replace = array( '=1',           '=0');
         $string_out = preg_replace($search, $replace, $string_out);
@@ -940,7 +963,9 @@ END_OF_REGEX;
         $selection = $this->adjustWhere($selection);
 
         if (!empty($from) AND !empty($using)) {
-            $this->query = "DELETE FROM $from USING $using WHERE $selection";
+            //$this->query = "DELETE FROM $from USING $using WHERE $selection";
+            // multi-table delete does not work in this DBMS, so use standard delete with foreign keys
+            $this->query = "DELETE FROM $tablename WHERE $selection";
         } else {
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } // if

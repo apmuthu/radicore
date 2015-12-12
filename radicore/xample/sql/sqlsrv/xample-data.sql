@@ -1,4 +1,4 @@
-USE xample;
+USE [xample];
 go
 
 -- 

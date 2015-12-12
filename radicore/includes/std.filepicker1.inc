@@ -137,10 +137,13 @@ if (file_exists($cache)) {
 } // if
 
 if (!empty($_POST)) {
-    // look for an action which is another script
-    $child_errors = childForm($_POST, array('fileobject' => &$fileobject), $where);
-    if (is_array($child_errors)) {
-        $errors = array_merge($errors, $child_errors);
+    $task_button = check_task_button($_POST);
+    if (!empty($task_button)) {
+        // look for an action which is another script
+        $child_errors = childForm($_POST, array('dbobject' => &$fileobject), $task_button, $where);
+        if (is_array($child_errors)) {
+            $errors = array_merge($errors, $child_errors);
+        } // if
     } // if
 } // if
 
@@ -337,7 +340,6 @@ if ($last_page == 0) {
 $pagination['main']['curpage']  = $curr_page;
 $pagination['main']['lastpage'] = $last_page;
 
-//$fileobject->setFieldArray(null);  // remove data before object is serialised
 $fileobject->setFieldArray($file_list);  // save data for next iteration
 $script_vars['fileobject'] = serialize($fileobject);
 $script_vars = updateScriptVars ($script_vars);

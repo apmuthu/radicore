@@ -8,7 +8,7 @@ $inner_table = 'audit_fld';                     // name of inner table
 $screen      = 'audit_fld.list2.screen.inc';    // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'audit_tbl.*, trn_date, trn_time, task_id, user_id ';
+$outer_sql_select = 'audit_tbl.*, trn_datetime, task_id, user_id ';
 $outer_sql_from   = 'audit_tbl '
                    .'LEFT JOIN audit_trn ON (audit_trn.session_id=audit_tbl.session_id AND audit_trn.tran_seq_no=audit_tbl.tran_seq_no) '
                    .'LEFT JOIN audit_ssn ON (audit_ssn.session_id=audit_trn.session_id) ';
@@ -20,7 +20,7 @@ $inner_sql_where  = '';
 $inner_search_table = 'audit_tbl'; // this enable the 'previous search' button
 
 // set default sort sequence
-$outer_sql_orderby = 'trn_date, trn_time, audit_tbl.tran_seq_no, table_seq_no';
+$outer_sql_orderby = 'trn_datetime, audit_tbl.tran_seq_no, table_seq_no';
 
 require 'std.list2.inc';                        // activate page controller
 

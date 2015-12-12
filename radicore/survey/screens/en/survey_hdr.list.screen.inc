@@ -4,7 +4,7 @@ $structure['xsl_file'] = 'std.list1.xsl';
 $structure['tables']['main'] = 'survey_hdr';
 
 $structure['main']['columns'][] = array('width' => 5);
-$structure['main']['columns'][] = array('width' => 150);
+$structure['main']['columns'][] = array('width' => 300);
 $structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');

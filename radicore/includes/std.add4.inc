@@ -38,6 +38,11 @@ $dbobject->sql_where   = &$sql_where;
 $dbobject->sql_groupby = &$sql_groupby;
 $dbobject->sql_having  = &$sql_having;
 
+if (!empty($return_from)) {
+    // see if any action is required when being restarted
+    $dbobject->restart($return_from, $return_action, $return_string, $return_files);
+} // if
+
 // get initial data for new record(s)
 $where = $dbobject->initialise($where, $selection);
 if (empty($dbobject->errors)) {
@@ -48,7 +53,7 @@ if (!empty($dbobject->messages)) {
 } // if
 if ($dbobject->errors) {
     // error detected, so quit now
-    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages);
+    $batch_errors = scriptPrevious($dbobject->getErrors(), $messages, 'fail');
     return $batch_errors;
 } // if
 
