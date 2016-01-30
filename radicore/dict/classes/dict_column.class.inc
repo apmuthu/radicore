@@ -580,8 +580,12 @@ class dict_column extends Default_Table
             } // switch
         } // if
 
-        // initialise any fields which are not valid for this column type
-        $fieldarray = $this->_cm_checkColumnType($fieldarray);
+        if ($GLOBALS['mode'] == 'batch') {
+            // skip this next bit
+        } else {
+            // initialise any fields which are not valid for this column type
+            $fieldarray = $this->_cm_checkColumnType($fieldarray);
+        } // if
 
         return $fieldarray;
 
@@ -643,6 +647,9 @@ class dict_column extends Default_Table
                     $colspecs['multi_rows']      = '?';
                 } else {
                     $colspecs['control']         = '?';
+                    $colspecs['optionlist']      = '?';
+                    $colspecs['task_id']         = '?';
+                    $colspecs['foreign_field']   = '?';
                     $colspecs['multi_cols']      = '?';
                     $colspecs['multi_rows']      = '?';
                 } // if
@@ -1102,6 +1109,26 @@ class dict_column extends Default_Table
         return $where;
 
     } // _cm_pre_getData
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($fieldarray)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        //$this->row_locks = 'SH';    // shared
+        //$this->row_locks = 'EX';    // exclusive
+        //$this->row_locks_supp = '?' // DBMS-specific
+
+        // reuse existing SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = true;
+
+        if (preg_match('/^(deprecated)/i', $fieldarray['column_desc'])) {
+            $fieldarray['column_desc'] = 'DEPRECATED';
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_pre_updateRecord
 
     // ****************************************************************************
     function _cm_validateUpdate ($fieldarray, $originaldata)

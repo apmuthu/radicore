@@ -35,7 +35,7 @@ class mnu_task extends Default_Table
         $ip_address    = getRealIPAddress();
 
         if (empty($role_id))   $role_id   = 'UNDEFINED';
-        if (empty($role_list)) $role_list = "'UNDEFINED'";
+        if (empty($role_list)) $role_list = "'$role_id'";
 
         // load options for SQL SELECT statement
         // NOTE that task access is affected by the following:

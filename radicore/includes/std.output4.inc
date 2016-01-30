@@ -105,32 +105,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // identify if one of the 'submit' buttons has been pressed
     $submit_button = check_submit_button($act_buttons, $_POST);
     $task_button   = check_task_button($_POST);
-    if (!empty($submit_button) OR !empty($task_button)) {
+    $custom_button = check_custom_button($_POST);
+    if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
-
-        if (!empty($task_button)) {
-            // look for a navigation or popup button which jumps to another script
-            $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
-            if (is_array($child_errors)) {
-                $errors[$dbobject->getClassName()] = $child_errors;
-            } // if
-        } // if
-
-    } elseif ($custom_button_array = check_custom_button($_POST)) {
-        list($custom_button, $button_row, $button_zone) = $custom_button_array;
-        // a custom button was pressed
-        $dbobject->startTransaction();
-        $fieldarray = $dbobject->customButton($fieldarray, $custom_button, $_POST);
-        if ($dbobject->errors) {
-            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-            $dbobject->rollback();
-        } else {
-            $dbobject->commit();
-        } // if
 
     } else {
         // deal with a javascript 'submit()'.
@@ -140,10 +121,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } // if
     } // if
 
-    if (empty($errors) AND !empty($submit_button)) {
+    if (empty($errors) AND !empty($task_button)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+        if (is_array($child_errors)) {
+            $errors[$dbobject->getClassName()] = $child_errors;
+        } // if
+
+    } elseif (empty($errors) AND !empty($custom_button)) {
+        // a custom button was pressed
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
+        $dbobject->startTransaction();
+        $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            $dbobject->rollback();
+        } else {
+            $dbobject->commit();
+        } // if
+
+    } elseif (empty($errors) AND !empty($submit_button)) {
+        // ensure current selection is saved inside the object
+        $dbobject->saved_selection = $fieldarray;
         // reset original field specifications
-        //$dbobject->fieldspec = $dbobject->getFieldspec_original();
-        //$fieldarray = $dbobject->changeConfig($_POST);
+        $dbobject->fieldspec = $dbobject->getFieldspec_original();
+        $fieldarray = $dbobject->changeConfig($fieldarray);
 
         // look for LIMIT and OFFSET values
         $rdc_limit  =& $_POST['rdc_limit'];
@@ -163,50 +165,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $resource = $dbobject->getData_serial($where, $rdc_limit, $rdc_offset);
 
             if ($dbobject->getNumRows() <= 0) {
-                scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
+                // 'Nothing retrieved from the database.'
+                //scriptPrevious(getLanguageText('sys0085'));
+                $errors[] = getLanguageText('sys0085');
             } // if
 
-            if (empty($csvout)) {
-                // set default value
-    	        $csvout = $table_id .'.csv';
-            } // if
+            if (empty($errors)) {
+                if (empty($csvout)) {
+                    // set default value
+    	            $csvout = $table_id .'.csv';
+                } // if
 
-            // create an instance of the CSV object
-            require_once 'std.csv.class.inc';
-            $csv = new csv_class($dbobject);
+                // create an instance of the CSV object
+                require_once 'std.csv.class.inc';
+                $csv = new csv_class($dbobject);
 
-            // transform output to CSV format
-            $output = $csv->outputCSV($resource, $_POST);
-            if ($csv->errors) {
-                $string = format_array($csv->errors);
-                display_on_stdout($string);
-            } // if
-            //$errors = $dbobject->getErrors();
-            $messages = $dbobject->getMessages();
+                // transform output to CSV format
+                $output = $csv->outputCSV($resource, $_POST);
+                if ($csv->errors) {
+                    $string = format_array($csv->errors);
+                    display_on_stdout($string);
+                } // if
+                //$errors = $dbobject->getErrors();
+                $messages = $dbobject->getMessages();
 
-            if (!empty($output)) {
-    	        // download to client browser
-                header("Content-type: text/comma-separated-values");
-                header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
-                header("Content-Disposition: attachment; filename=" .$csvout);
-                header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-                header('Pragma: public');
-                echo $output;
+                if (!empty($output)) {
+    	            // download to client browser
+                    header("Content-type: text/comma-separated-values");
+                    header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+                    header("Content-Disposition: attachment; filename=" .$csvout);
+                    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+                    header('Pragma: public');
+                    echo $output;
+                } // if
+                //unset($_SESSION['pages'][getSelf()]);
+                //scriptPrevious($errors, $messages);
+                exit;
             } // if
-            //unset($_SESSION['pages'][getSelf()]);
-            //scriptPrevious($errors, $messages);
-            exit;
         } // if
     } // if
 } // if
 
 $mode = 'update';      // identify mode for building the screen
 
-if (empty($dbobject->save_selection)) {
+if (empty($dbobject->saved_selection)) {
     $fieldarray = $dbobject->getColumnNames($where);  // not done yet, so do it now
 } // if
 
-$screen_structure = $dbobject->save_screen_structure;  // use generated structure
+$screen_structure = $dbobject->saved_screen_structure;   // use generated structure
+$dbobject->fieldspec = $dbobject->saved_fieldspec;       // use generated field specs
 
 // save these variables for later in the same session
 $script_vars['where']     = $where;

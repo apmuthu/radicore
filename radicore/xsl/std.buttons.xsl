@@ -525,45 +525,54 @@
       </p>
     </xsl:if>
 
-    <xsl:if test="not($noselect)">
-      <xsl:choose>
-        <xsl:when test="not($select_one)">
-          <!-- only display if the $select_one parameter is not set -->
-          <p class="selection">
-            <!-- these links will allow the user to toggle all select boxes either ON or OFF -->
-            <!-- do this only if there is a field called 'selectbox' -->
-            <xsl:if test="/root/structure/*/row/cell[@field='selectbox']">
-              <xsl:value-of select="$selections"/><xsl:text>&#160;</xsl:text>
-              <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
-              <xsl:text> | </xsl:text>
-              <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>
-              
-              <xsl:if test="$selection-lock">  <!-- optional -->
+    <xsl:choose>
+      <xsl:when test="$noselect">
+        <!-- do not display anything in SELECT area -->
+        <xsl:if test="not($noshow)">
+          <!-- if 'show' paragraph has been created there must be an empty 'selection' paragraph -->
+          <p class="selection">&#160;</p>
+        </xsl:if>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:choose>
+          <xsl:when test="not($select_one)">
+            <!-- only display if the $select_one parameter is not set -->
+            <p class="selection">
+              <!-- these links will allow the user to toggle all select boxes either ON or OFF -->
+              <!-- do this only if there is a field called 'selectbox' -->
+              <xsl:if test="/root/structure/*/row/cell[@field='selectbox']">
+                <xsl:value-of select="$selections"/><xsl:text>&#160;</xsl:text>
+                <a href="{$script}?{$session}&amp;action=selectall"><xsl:value-of select="$select-all"/></a>
                 <xsl:text> | </xsl:text>
-                <!-- allow the selection to be locked so that the same records are marked as 'selected' 
-                     when returning to this screen -->
-                <label for="rdc_selection_lock"><xsl:value-of select="$selection-lock"/></label>
-                <input type="hidden"   name="rdc_selection_lock" value="0" />              <!-- default is OFF -->
-                <input type="checkbox" name="rdc_selection_lock" id="rdc_selection_lock">  <!-- may be changed to ON -->
-                  <xsl:if test="/root/params/selection_lock">
-                    <xsl:attribute name="checked">checked</xsl:attribute>
-                  </xsl:if>
-                </input>
+                <a href="{$script}?{$session}&amp;action=unselectall"><xsl:value-of select="$unselect-all"/></a>
+                
+                <xsl:if test="$selection-lock">  <!-- optional -->
+                  <xsl:text> | </xsl:text>
+                  <!-- allow the selection to be locked so that the same records are marked as 'selected' 
+                       when returning to this screen -->
+                  <label for="rdc_selection_lock"><xsl:value-of select="$selection-lock"/></label>
+                  <input type="hidden"   name="rdc_selection_lock" value="0" />              <!-- default is OFF -->
+                  <input type="checkbox" name="rdc_selection_lock" id="rdc_selection_lock">  <!-- may be changed to ON -->
+                    <xsl:if test="/root/params/selection_lock">
+                      <xsl:attribute name="checked">checked</xsl:attribute>
+                    </xsl:if>
+                  </input>
+                </xsl:if>
+                
               </xsl:if>
-              
+              <!-- insert a non-breaking space -->
+              <xsl:text>&#160;</xsl:text>
+            </p>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:if test="not($noshow)">
+              <!-- if 'show' paragraph has been created there must be an empty 'selection' paragraph -->
+              <p class="selection">&#160;</p>
             </xsl:if>
-            <!-- insert a non-breaking space -->
-            <xsl:text>&#160;</xsl:text>
-          </p>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:if test="not($noshow)">
-            <!-- if 'show' paragraph has been created there must be an empty 'selection' paragraph -->
-            <p class="selection">&#160;</p>
-          </xsl:if>
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:if>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:otherwise>
+    </xsl:choose>
 
     <xsl:if test="/root/navbar/*[@context_preselect='Y']">
       <!-- pick out the entries that require a selection to be made before the button is pressed -->

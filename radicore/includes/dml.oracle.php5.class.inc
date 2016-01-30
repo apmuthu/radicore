@@ -91,7 +91,7 @@ class oracle
     {
         $string_out = str_replace("'", "''", $string_in);
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSTIMESTAMP', $string_out);
 
         return $string_out;
 
@@ -155,8 +155,8 @@ class oracle
     // This is because the HAVING clause cannot reference an expression by its alias name.
     {
         // Replace TRUE/FALSE to 1/0.
-        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
-        $replace = array( '=1',           '=0');
+        $search  = array('/=[ ]*TRUE/ui', '/=[ ]*FALSE/iu');
+        $replace = array( '=1',            '=0');
         $having_str = preg_replace($search, $replace, $having_str);
 
         // put current query into a subqery
@@ -201,7 +201,7 @@ class oracle
             $string1 = $regs[0][0];
             $count = preg_match('/(?<=limit[ ])\d+/i', $string1, $regs2);
             $digits = trim($regs2[0]);
-            $output  = preg_replace('/limit ' .$digits .'/i', " AND rownum=$digits", $output);
+            $output  = preg_replace('/limit ' .$digits .'/iu', " AND rownum=$digits", $output);
 
             $offset = $regs[0][1] + strlen($string1);
         } // if
@@ -222,7 +222,7 @@ class oracle
                 $separator = trim($regs2[0]);
 
         		$string2 = 'LISTAGG('.$part1.','.$separator.') WITHIN GROUP(ORDER BY '.$orderby.') "listagg_alias"';
-        		$output  = preg_replace('/group_concat\(' .$string1 .'\)/i', $string2, $output);
+        		$output  = preg_replace('/group_concat\(' .$string1 .'\)/iu', $string2, $output);
         	} // foreach
         } // if
 
@@ -244,13 +244,13 @@ class oracle
                     $array[] = trim($value);
                 } // foreach
                 $string2 = implode('||', $array);     // rejoin with '||' as separator
-                $output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
+                $output  = preg_replace('/concat\(' .$string1 .'\)/iu', $string2, $output);
             } // foreach
         } // if
 
         // Replace TRUE/FALSE in CASE statements to 1/0.
-        $search  = array('/THEN TRUE/i', '/ELSE TRUE/i', '/THEN FALSE/i', '/ELSE FALSE/i');
-        $replace = array( 'THEN 1',       'ELSE 1',       'THEN 0',        'ELSE 0');
+        $search  = array('/THEN TRUE/iu', '/ELSE TRUE/iu', '/THEN FALSE/iu', '/ELSE FALSE/iu');
+        $replace = array( 'THEN 1',        'ELSE 1',        'THEN 0',         'ELSE 0');
         $output  = preg_replace($search, $replace, $output);
 
         return $output;
@@ -264,7 +264,7 @@ class oracle
         $string_out = $string_in;
 
         // remove the ' AS ' in 'table AS alias'
-        $string_out = preg_replace('/ as /i', ' ', $string_out);
+        $string_out = preg_replace('/ as /iu', ' ', $string_out);
 
         // look for any words enclosed in double quotes
         $count = preg_match_all('/"\w+"/', $string_in, $regs);
@@ -288,7 +288,7 @@ class oracle
     {
         $string_out = $string_in;
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSTIMESTAMP', $string_out);
 
         $modified = false;
 
@@ -469,7 +469,7 @@ END_OF_REGEX;
         } // while
 
         // Replace TRUE/FALSE to 1/0.
-        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
+        $search  = array('/=[ ]*TRUE/iu', '/=[ ]*FALSE/iu');
         $replace = array( '=1',           '=0');
         $string_out = preg_replace($search, $replace, $string_out);
 

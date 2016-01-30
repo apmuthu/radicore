@@ -142,4 +142,7 @@ $GLOBALS['use_https'] = false;
 // causes the database session handler to be ignored
 //define('NO_SESSION_HANDLER', true);
 
+// defines the path to the PHP executable on Windows
+//define('PATH_TO_PHP_EXECUTABLE', 'f:/PHP5/php.exe');
+
 ?>

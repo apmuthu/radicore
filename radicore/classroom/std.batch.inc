@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -10,7 +10,7 @@
 function batchInit ($batchfile)
 // initialisation for a batch process
 {
-    global $stdout, $stdouth;
+    global $stdout, $stdouth, $argv;
 
     error_reporting(-1);                // report everything
     ini_set('display_errors', true);    // display everything
@@ -31,14 +31,16 @@ function batchInit ($batchfile)
         $ini_array = parse_ini_file('batch.ini.default');   // use default file
     } // if
 
-    if (isset($stdout)) {
+    if (isset($stdout) AND !preg_match('~(/dev/null)$~i', $stdout)) {
         if (realpath($stdout) != false) {
             $stdout = realpath($stdout);
         } // if
     	if (!$stdouth = fopen($stdout, 'w')) {
-    	    $message = "Error in script ".basename($curr_file);
-    	    $message .= "Cannot open file $stdout";
-    	    if (!empty($_SERVER['SERVER_ADMIN'])) {
+    	    $message = "Error in script ".basename($curr_file)."\n";
+    	    $message .= "Cannot open file '$stdout'";
+    	    if (!empty($ini_array['server_admin'])) {
+    	    	$mailto = $ini_array['server_admin'];
+    	    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
             	$mailto = $_SERVER['SERVER_ADMIN'];
     	    } else {
     	        $mailto = 'webmaster@'.$ini_array['server_name'];
@@ -48,17 +50,20 @@ function batchInit ($batchfile)
     	    //trigger_error("Cannot open file $stdout", E_USER_ERROR);
     	    exit;
         } // if
-        // start output buffering
-        if (!ob_start()) {
-            trigger_error("Cannot turn on output buffering", E_USER_ERROR);
-        } // if
         if (!preg_match('/^WIN/i', PHP_OS)) {
         	$result = @chmod($stdout, 0777);
         } // if
     } // if
 
+    // start output buffering
+    if (!ob_start()) {
+        trigger_error("Cannot turn on output buffering", E_USER_ERROR);
+    } // if
+
     echo "<html>\n";
-    echo '<p>** started at ' .date('F j, Y, g:i a') ."</p>\n";
+    echo '<p>** started at ' .date(DATE_RFC850)."</p>\n";
+
+    $_SERVER['SCRIPT_FILENAME']          = $curr_file;
 
     if (empty($_SERVER['SERVER_NAME'])) {
     	$_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
@@ -69,14 +74,12 @@ function batchInit ($batchfile)
     if (empty($_SERVER['DOCUMENT_ROOT'])) {
     	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
     } // if
+    $_SERVER['PHP_SELF']                 = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
     } // if
     if (empty($_SERVER['REMOTE_ADDR'])) {
     	$_SERVER['REMOTE_ADDR']          = 'batch';
-    } // if
-    if (empty($_SERVER['REQUEST_URI'])) {
-    	$_SERVER['REQUEST_URI']          = $curr_file;
     } // if
     if (empty($_SERVER['SERVER_ADMIN'])) {
         $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
@@ -85,10 +88,8 @@ function batchInit ($batchfile)
         } // if
     } // if
 
-    $_SERVER['SCRIPT_FILENAME']      = $curr_file;
-
     // if multiple accounts are being used, then default to the shared account
-    $_SESSION['rdcaccount_id']       = 1;
+    //
 
     // look for INCLUDE_PATH in optional htaccess file
     if (file_exists('.htaccess')) {
@@ -138,18 +139,18 @@ function batchInit ($batchfile)
         unset($fn);
     } //
 
-    echo '<p>script name  : ' .$curr_file ."</p>\n";
-    echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
+    echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
+    echo '<p>script name  : ' .$_SERVER['SCRIPT_FILENAME'] ."</p>\n";
+    echo '<p>php_self     : ' .$_SERVER['PHP_SELF'] ."</p>\n";
     echo '<p>server API   : ' .php_sapi_name() ."</p>\n";
     echo '<p>language     : ' .$_SERVER["HTTP_ACCEPT_LANGUAGE"] ."</p>\n";
     echo '<p>server_admin : ' .$_SERVER["SERVER_ADMIN"] ."</p>\n";
 
-    $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $curr_file);
-
-    $_SESSION['role_id']       = 'batch';
-    $_SESSION['logon_user_id'] = 'batch';
-    $GLOBALS['task_id']        = basename($PHP_SELF);
+    $_SESSION['logon_user_id'] = 'batch';   // default - may be replaced if session data is read
+    $_SESSION['role_id']       = 'batch';   // default - may be replaced if session data is read
+    $_SESSION['rdcaccount_id'] = 1;         // default - may be replaced if session data is read
+    $GLOBALS['task_id']        = basename($_SERVER['PHP_SELF']);
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
 
@@ -161,22 +162,45 @@ function batchInit ($batchfile)
     echo '<p>include_path : ' .ini_get('include_path') ."</p>\n";
     echo '<p>project_code : ' .$GLOBALS["project_code"] ."</p>\n";
 
-    $_SERVER['PHP_SELF'] = $PHP_SELF;
+    if (!empty($argv)) {
+        $count = count($argv)-1;
+        for ($i=1;$i<=$count;$i++) {
+            echo "<p>ARGV[$i]={$argv[$i]}</p>\n";
+        } // for
+    } // if
 
-    if (!empty($_SERVER['SERVER_PROTOCOL'])) {
+    if (!empty($_SERVER['SERVER_PROTOCOL']) OR !empty($argv)) {
         initSession();
     } // if
 
-    echo '<p>user_id : ' .$_SESSION['logon_user_id'] ."</p>\n";
-    echo '<p>role_id : ' .$_SESSION['role_id'] ."</p>\n";
+    if (empty($_SESSION['role_list'])) {
+        $dbobject =& RDCsingleton::getInstance('menu/mnu_user_role');
+        $data = $dbobject->getData("user_id='{$_SESSION['logon_user_id']}'");
+        if (!empty($data)) {
+            $role_array = array();
+            foreach ($data as $rowdata) {
+                $role_array[] = $rowdata['role_id'];
+            } // foreach
+            $role_list = "'".implode("','", $role_array)."'";
+            $_SESSION['role_list'] = $role_list;
+        } //if
+        unset($dbobject);
+    } // if
 
-    if (isset($stdout)) {
+    echo '<p>user_id  : ' .$_SESSION['logon_user_id'] ."</p>\n";
+    echo '<p>role_id  : ' .$_SESSION['role_id'] ."</p>\n";
+    echo '<p>role_list: ' .$_SESSION['role_list'] ."</p>\n";
+
+    if (isset($stdouth)) {
         $output = ob_get_contents();
         $result = fwrite($stdouth, $output);
         if ($result === false) {
             trigger_error("Cannot write to file $stdout", E_USER_ERROR);
         } // if
         ob_flush();
+    } else {
+        ob_end_clean();
+        ob_start();
     } // if
 
     return;
@@ -197,24 +221,58 @@ function batchEnd ($errors=null)
     	} // if
     } // if
 
-    echo '<p>** finished at ' .date('F j, Y, g:i a') ."</p>\n";
+    $errors = batchScriptSequence();  // process anything put in $_SESSION['script_sequence']
+
+    echo '<p>** finished at ' .date('F j, Y, ').getTimeStamp('time') ."</p>\n";
+
     echo "</html>";
 
     global $stdout, $stdouth;
 
-    if (isset($stdout)) {
-    	$output = ob_get_contents();
+    if (isset($stdouth)) {
+        $output = ob_get_contents();
         $result = fwrite($stdouth, $output);
         if ($result === false) {
             trigger_error("Cannot write to file $stdout", E_USER_ERROR);
         } // if
-        ob_flush();                 // flush current output
+        ob_flush();
         fclose($stdouth);
+    } else {
+        ob_end_clean();
     } // if
 
     return;
 
 } // batchEnd
+
+// ****************************************************************************
+function batchScriptSequence ()
+// process $_SESSION['script_sequence'] when running in batch mode.
+{
+    $script_sequence = $_SESSION['script_sequence'];
+    unset($_SESSION['script_sequence']);
+    //session_write_close();
+
+    while (!empty($script_sequence)) {
+        $next = array_shift($script_sequence);
+        $task_id = $next['task_id'];
+        $where   = $next['where'];
+
+        echo "<p>INITIATING TASK: {$task_id}, WHERE: {$where} </p>\n";
+
+        $task_array['settings'] = 'rdc_wait=Y';
+        $errors = scriptNext($task_id, $where, null, $task_array);
+        if ($errors) {
+            foreach ($errors as $key => $value) {
+                echo "<p>[" .$key ."] " .$value ."</p>\n";
+            } // foreach
+            break;
+        } // if
+    } // while
+
+    return $errors;
+
+} // batchScriptSequence
 
 // ****************************************************************************
 function check_errors ($object)
@@ -225,24 +283,21 @@ function check_errors ($object)
 
     $errors = $object->getErrors();
 
-	if ($errors) {
+	if (!empty($errors)) {
 	    if (!empty($object->query)) {
 	        // append database query to array
         	$errors['query'] = $object->query;
         } // if
 
+        if (isset($GLOBALS['initial_values_task_id']) AND !empty($GLOBALS['initial_values_task_id'])) {
+            $errors['initial_values_task_id'] = $GLOBALS['initial_values_task_id'];
+        } // if
+
         // $errors should be an associative array, but it may be indexed
-        $array_in = $errors;
+        $array_in  = $errors;
+        $array_out = array();
 	    foreach ($array_in as $ix1 => $error1) {
-	        if (is_string($error1)) {
-	            // merge key and value into a single string
-	        	$array_out[] = $ix1 .': ' .$error1;
-	        } elseif (is_array($error1)) {
-	            foreach ($error1 as $ix2 => $error2) {
-	                // merge index, key and value into a single string
-	            	$array_out[] = '['.$ix1.'] '.$ix2 .': ' .$error2;
-	            } // foreach
-	        } // if
+            $array_out[] = format_array($error1, '['.$ix1.']');
 	    } // foreach
 	    $errors = $array_out;
 	    unset($array_in, $array_out, $ix1, $ix2, $error1);
@@ -315,16 +370,24 @@ function checkFileExists ($fname)
 } // checkFileExists
 
 // ****************************************************************************
-function send_to_stdout($string)
+function send_to_stdout($message, $prefix="<p>", $suffix="</p>\n")
 // either echo the string or write it to stdout
 {
     global $stdout, $stdouth;
 
-    if (empty($stdout)) {
-        echo $string;
+    $message = $prefix.$message.$suffix;
+
+    if (preg_match('~(/dev/null)$~i', $stdout)) {
+        // all out is suppressed
     } else {
-        $result = fwrite($stdouth, $string);
+        if (empty($stdout)) {
+            echo $message;
+        } else {
+            $result = fwrite($stdouth, $message);
+        } // if
     } // if
+
+    return;
 
 } // send_to_stdout
 

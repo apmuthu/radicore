@@ -30,46 +30,57 @@ class mnu_role extends Default_Table
     // return the role details for the current user.
     {
         $this->errors = array();
+        $result       = array();
 
-        if (!isset($_SESSION['role_id'])) {
-            // not found, so assume user has global access
-            $array['role_id']       = 'GLOBAL';
-            $array['role_list']     = "'GLOBAL'";
-            $array['global_access'] = TRUE;
-
-        } elseif (isset($_SESSION['global_access'])) {
-            $array['role_id']       = $_SESSION['role_id'];
-            $array['role_list']     = $_SESSION['role_list'];
-            $array['global_access'] = $_SESSION['global_access'];
-
-        } else {
-            if (empty($user_id)) {
-                $user_id = $_SESSION['logon_user_id'];
-            } // if
-            // look for security class from logon screen
-            $role_id = $_SESSION['role_id'];
-            $this->sql_select = 'role_id, global_access';
-            //$this->sql_select .= ", (SELECT GROUP_CONCAT('\'', role_id, '\'' ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='$user_id') AS role_list";
-            $role_data = $this->getData_raw("role_id='$role_id'");
-            if ($this->errors) {
-                return FALSE;
-            } // if
-            if ($this->numrows <> 1) {
-                // 'Role does not exist';
-                $this->errors[] = getLanguageText('sys0013');
-                return FALSE;
-            } // if
-            $array = $role_data[0];
-            if (is_true($array['global_access'])) {
-                $array['global_access'] = TRUE;
-            } else {
-                $array['global_access'] = FALSE;
-            } // if
-            $_SESSION['global_access'] = $array['global_access'];
-            $array['role_list']        = $_SESSION['role_list'];
+        if (empty($user_id)) {
+            $user_id = $_SESSION['logon_user_id'];
         } // if
 
-        return $array;
+        if (isset($_SESSION['role_id'])) {
+            $result['role_id']           = $_SESSION['role_id'];
+            if (isset($_SESSION['role_list'])) {
+                $result['role_list']     = $_SESSION['role_list'];
+            } // if
+            if (isset($_SESSION['global_access'])) {
+                $result['global_access'] = $_SESSION['global_access'];
+            } // if
+        } // if
+
+        if (!isset($result['role_list']) OR !isset($result['global_access'])) {
+            // look for security details for the specified user
+            // NOTE: 'global_access' is taken from the primary role
+            $this->sql_select = 'mnu_role.role_id, global_access';
+            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}') AS role_list";
+            $this->sql_from   = "mnu_role
+LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='Y')";
+            $role_data = $this->getData_raw("mnu_role.role_id=mur.role_id");
+            if ($this->numrows <> 1) {
+                // 'Role does not exist for user ''';
+                $this->errors[] = getLanguageText('sys0013', $user_id);
+                return FALSE;
+            } // if
+            $role_data = $role_data[0];
+            $result['role_id']   = $role_data['role_id'];
+            // convert from comma separated list to format for 'IN (...)' clause of SQL query
+            $array = explode(',', $role_data['role_list']);
+            if (!empty($array)) {
+                $result['role_list'] = "'".implode("','", $array)."'";
+            } else {
+                $result['role_list'] = "'".$role_data['role_id']."'";
+            } // if
+            unset($array);
+            if (is_true($role_data['global_access'])) {
+                $result['global_access'] = TRUE;
+            } else {
+                $result['global_access'] = FALSE;
+            } // if
+        } // if
+
+        $_SESSION['role_id']       = $result['role_id'];
+        $_SESSION['role_list']     = $result['role_list'];
+        $_SESSION['global_access'] = $result['global_access'];
+
+        return $result;
 
     } // getRole
 

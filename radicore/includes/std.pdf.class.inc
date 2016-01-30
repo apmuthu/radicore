@@ -415,6 +415,16 @@ class PDF extends TCPDF
                                     $cellspec['barcode'] = '';
                                 } // if
 
+                            } elseif (array_key_exists('image', $cellspec)) {
+                                if (substr($cellspec['image'], 0, 2) == '%%') {
+                                    // replace field name with field data
+                                    $imagename = substr($cellspec['image'], 2);
+                                    if (isset($fieldarray[$imagename])) {
+                                        $imagename = $fieldarray[$imagename];
+                                    } // if
+                                    $cellspec['image'] = $imagename;
+                                } // if
+
                             } // if
 
                             $print_array[] = $cellspec;
@@ -1338,7 +1348,8 @@ class PDF extends TCPDF
                     $this->fieldarray = $current_row;  // make this data accessible to Header() method
 
                     // find out if any rows need to be printed before this one
-                    $before = $dbobject->_cm_ListView_print_before($previous_row, $current_row);
+                    //$before = $dbobject->_cm_ListView_print_before($previous_row, $current_row);
+                    $before = $this->ListView_print_before($dbobject, $previous_row, $current_row);
                     if (!empty($before)) {
                     	$fill = $this->listView_print($before, $border, $fill, $style_array, $dbobject);
                     } // if
@@ -1358,7 +1369,8 @@ class PDF extends TCPDF
                     } // if
 
                     // find out if any rows need to be printed after this one
-                    $after = $dbobject->_cm_ListView_print_after($current_row, $next_row);
+                    //$after = $dbobject->_cm_ListView_print_after($current_row, $next_row);
+                    $after = $this->ListView_print_after($dbobject, $current_row, $next_row);
                     if (!empty($after)) {
                     	$fill = $this->listView_print($after, $border, $fill, $style_array, $dbobject);
                     } // if
@@ -1514,6 +1526,57 @@ class PDF extends TCPDF
     } // listView_print
 
     // ****************************************************************************
+    function ListView_print_before($dbobject, $previous_row, $current_row)
+    // allow extra rows to be created in PDF List View
+    {
+        //$before = $dbobject->_cm_ListView_print_before($previous_row, $current_row);
+        $before1 = array();
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_ListView_print_before')) {
+                $before1 = $dbobject->custom_processing_object->_cm_ListView_print_before($previous_row, $current_row);
+            } // if
+        } // if
+        if ($dbobject->errors) return;
+
+        $before2 = array();
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $before2 = $dbobject->_cm_ListView_print_before($previous_row, $current_row);
+            if ($dbobject->errors) return;
+        } // if
+
+        $before = array_merge($before1, $before2);
+        return $before;
+
+    } // ListView_print_before
+
+    // ****************************************************************************
+    function ListView_print_after($dbobject, $current_row, $next_row)
+    // allow extra rows to be created in PDF List View
+    {
+        $after1 = array();
+        if (is_object($dbobject->custom_processing_object)) {
+            if (method_exists($dbobject->custom_processing_object, '_cm_ListView_print_before')) {
+                $after1 = $dbobject->custom_processing_object->_cm_ListView_print_after($current_row, $next_row);
+            } // if
+        } // if
+        if ($dbobject->errors) return;
+
+        $after2 = array();
+        if ($dbobject->custom_replaces_standard) {
+            $dbobject->custom_replaces_standard = false;
+        } else {
+            $after2 = $dbobject->_cm_ListView_print_after($current_row, $next_row);
+            if ($dbobject->errors) return;
+        } // if
+
+        $after = array_merge($after1, $after2);
+        return $after;
+
+    } // ListView_print_after
+
+    // ****************************************************************************
     function loadStyleFile ()
     // load file(s) containing style details
     {
@@ -1659,7 +1722,7 @@ class PDF extends TCPDF
         // reset language it case it was changed
         $GLOBALS['party_language'] = $_SESSION['user_language'];
 
-        if ($dbobject->dbname != 'default' AND !isset($GLOBALS['batch'])) {
+        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
             if (empty($dbobject->errors)) {
                 $this->errors = $dbobject->commit();
             } // if
@@ -1747,7 +1810,7 @@ class PDF extends TCPDF
         // reset language it case it was changed
         $GLOBALS['party_language'] = $_SESSION['user_language'];
 
-        if ($dbobject->dbname != 'default') {
+        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
             if (empty($dbobject->errors)) {
                 $this->errors = $dbobject->commit();
             } // if
@@ -1833,11 +1896,13 @@ class PDF extends TCPDF
             $string = $dbobject->_cm_post_output($string, $dbobject->pdf_filename);
         } // if
 
-        if (empty($dbobject->errors)) {
-            $this->errors = $dbobject->commit();
-        } // if
-        if (!empty($this->errors)) {
-            $dbobject->rollback();
+        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
+            if (empty($dbobject->errors)) {
+                $this->errors = $dbobject->commit();
+            } // if
+            if (!empty($this->errors)) {
+                $dbobject->rollback();
+            } // if
         } // if
 
         return $string;

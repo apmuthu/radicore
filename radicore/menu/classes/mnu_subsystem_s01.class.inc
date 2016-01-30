@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -305,13 +305,27 @@ class mnu_subsystem_s01 extends mnu_subsystem
 //                $data = $taskobj->getData_raw("role_id IN ($range)");
 //                $output = $this->_exportSqlData('mnu_role', $data, $output);
 //            } // if
+        } else {
+            // export the contents of MNU_ROLE which contains tasks within this subsystem
+            $taskobj->sql_select = 'mnu_role.*';
+            $taskobj->sql_from   = 'mnu_role';
+            $taskobj->sql_orderby = 'role_id';
+            $where = "EXISTS(SELECT 1
+FROM mnu_role_task
+LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role_task.task_id)
+WHERE mnu_task.subsys_id='$subsys_id'
+  AND mnu_role_task.role_id=mnu_role.role_id
+)";
+            $data2 = $taskobj->getData_raw($where);
+            $output = $this->_exportSqlData('mnu_role', $data2, $output);
         } // if
 
         // export contents of MNU_TASK for this subsystem (where type = 'PROC')
     	$taskobj->sql_select = '*';
     	$taskobj->sql_from   = '';
     	$taskobj->sql_orderby = 'task_id';
-        $data = $taskobj->getData_raw("subsys_id='$subsys_id' AND task_type='PROC'");
+        //$data = $taskobj->getData_raw("subsys_id='$subsys_id' AND task_type='PROC'");
+        $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         foreach ($data as $task_data) {
         	$output = $this->_exportSqlData('mnu_task', $task_data, $output);
         	$task_id = $task_data['task_id'];

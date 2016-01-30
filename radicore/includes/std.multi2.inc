@@ -158,44 +158,14 @@ if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
     $submit_button = check_submit_button($act_buttons, $_POST);
     $task_button   = check_task_button($_POST);
-    if (!empty($submit_button) OR !empty($task_button)) {
+    $custom_button = check_custom_button($_POST);
+    if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
         $inner_data = array_update_indexed($inner_data, $inner_post);
         // ensure that changes are stored inside relevant object
         $dbinner->setFieldArray($inner_data);
-
-        if (!empty($task_button)) {
-            // look for a navigation or popup button which jumps to another script
-            $child_errors = childForm($_POST, array('dbouter' => $dbouter, 'dbinner' => $dbinner), $task_button);
-            if (is_array($child_errors)) {
-                $errors[$dbobject->getClassName()] = $child_errors;
-            } // if
-        } // if
-
-    } elseif ($custom_button_array = check_custom_button($_POST)) {
-        list($custom_button, $button_row, $button_zone) = $custom_button_array;
-        // a custom button was pressed - send it to all relevant entities
-        $dbinner->startTransaction();
-        if ($button_zone == $dbouter->zone) {
-            $outer_data = $dbouter->customButton($outer_data, $custom_button, $_POST);
-            if ($dbouter->errors) {
-                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-            } // if
-        } elseif ($button_zone == $dbinner->zone) {
-            $inner_data = $dbinner->getFieldArray();
-            $inner_data = $dbinner->customButton($inner_data, $custom_button, $_POST, $button_row);
-            if ($dbinner->errors) {
-                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
-            } // if
-        } // if
-        if (empty($errors)) {
-            $dbinner->commit();
-            $do_retrieve = true;
-        } else {
-            $dbinner->rollback();
-        } // if
 
     } else {
         // deal with a javascript 'submit()'.
@@ -205,7 +175,37 @@ if (!empty($_POST)) {
         } // if
     } // if
 
-    if (empty($errors) AND !empty($submit_button)) {
+    if (empty($errors) AND !empty($task_button)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbouter' => $dbouter, 'dbinner' => $dbinner), $task_button);
+        if (is_array($child_errors)) {
+            $errors[$dbobject->getClassName()] = $child_errors;
+        } // if
+
+    } elseif (empty($errors) AND !empty($custom_button)) {
+        // a custom button was pressed - send it to all relevant entities
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
+        $dbinner->startTransaction();
+        if ($btn_zone == $dbouter->zone) {
+            $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
+            if ($dbouter->errors) {
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+        } elseif ($btn_zone == $dbinner->zone) {
+            $inner_data = $dbinner->getFieldArray();
+            $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+            } // if
+        } // if
+        if (empty($errors)) {
+            $dbinner->commit();
+            //$do_retrieve = true;
+        } else {
+            $dbinner->rollback();
+        } // if
+
+    } elseif (empty($errors) AND !empty($submit_button)) {
         $dbinner->startTransaction();
         // update database with changes in POST array
         $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
@@ -294,13 +294,13 @@ if (!empty($return_from) AND isset($selection)) {
         $outer_data = $dbouter->getData($where);
         $outer_data = $dbouter->getExtraData($outer_data);
         if ($dbouter->errors) {
-            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            $errors[$dbouter->getClassName()] = $dbouter->errors;
         } // if
         if ($dbouter->errors) {
             // some sort of error
             if ($dbouter->getLastPage() <= 1) {
                 // only 1 entry requested, so return to previous script to show the error
-                scriptPrevious($dbouter->getErrors(), $messages, 'fail');
+                scriptPrevious($dbouter->errors, $messages, 'fail');
             } else {
                 // multiple entries requested, so disable SUBMIT button
                 unset($act_buttons['submitBtn']);
@@ -344,7 +344,7 @@ if (!empty($return_from) AND isset($selection)) {
     } // if
 
     // convert to foreign key names which relate this child to this parent
-    $fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dbinner);
+    $fkeyvalues = getForeignKeyValues($dbouter, $dbinner);
     if (!empty($fkeyvalues)) {
         $inner_where = array2where($fkeyvalues);
     } else {
@@ -421,7 +421,7 @@ $script_vars = updateScriptVars ($script_vars);
 $dbouter->fieldarray = $outer_data;  // replace data lost during serialization
 $dbinner->fieldarray = $inner_data;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors)) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND $do_retrieve) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if

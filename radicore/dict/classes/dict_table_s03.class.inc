@@ -15,6 +15,7 @@ class dict_table_s03 extends dict_table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        // this is used to capture the value which is passed on to the child script
         $this->fieldspec['pattern_id']      = array('type' => 'string',
                                                     'size' => 16,
                                                     'required' => 'y',
@@ -107,8 +108,8 @@ class dict_table_s03 extends dict_table
         } // if
 
         // reduce multiple selections to a single selection
-        $array = where2array($where, false, false);
-        $where = array2where($array);
+        $rows = splitWhereByRow($where);
+        $where = $rows[0];
 
         unset($GLOBALS['act_buttons']['submitBtn']);
 
@@ -130,6 +131,24 @@ class dict_table_s03 extends dict_table
 
     } // _cm_post_getData
 
+    // ****************************************************************************
+    function _cm_post_updateRecord ($fieldarray, $old_data)
+    // perform custom processing after database record is updated.
+    {
+        $database_id = $fieldarray['database_id'];
+        $table_id    = $fieldarray['table_id'];
+        $pattern_id  = $fieldarray['pattern_id'];
+
+        // jump to next task when this one finishes
+        $next['task_id']   = 'dict_table(generate)b';
+        $next['where']     = "database_id='$database_id' AND table_id='$table_id' AND pattern_id='$pattern_id'";
+        $next['immediate'] = true;
+        append2ScriptSequence($next);
+
+        return $fieldarray;
+
+    } // _cm_post_updateRecord
+
     // ***************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
@@ -150,25 +169,6 @@ class dict_table_s03 extends dict_table
         return $where;
 
     } // _cm_pre_getData
-
-    // ****************************************************************************
-    function _cm_validateUpdate ($fieldarray, $originaldata)
-    // perform custom validation before update.
-    {
-        $database_id = $fieldarray['database_id'];
-        $table_id    = $fieldarray['table_id'];
-        $pattern_id  = $fieldarray['pattern_id'];
-
-        // jump to next task when this one finishes
-        $next['task_id'] = 'dict_table(generate)b';
-        $next['where']   = "database_id='$database_id' AND table_id='$table_id' AND pattern_id='$pattern_id'";
-        append2ScriptSequence($next);
-
-        $fieldarray = array();  // do not update anything
-
-        return $fieldarray;
-
-    } // _cm_validateUpdate
 
 // ****************************************************************************
 } // end class

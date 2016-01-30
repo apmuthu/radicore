@@ -217,7 +217,7 @@ CREATE TABLE mnu_menu (
   menu_id nvarchar(80) NOT NULL,
   task_id_jnr nvarchar(80) NOT NULL,
   sort_seq tinyint NOT NULL DEFAULT '000',
-  button_text nvarchar(40) DEFAULT NULL,
+  button_text nvarchar(40) NOT NULL,
   created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2 DEFAULT NULL,

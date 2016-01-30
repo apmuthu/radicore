@@ -293,7 +293,7 @@ class radicore_view
                                         $alt = $regs[0];  // extract alt text
                                         $child->set_attribute('alt', $alt);
                                         // remove '[alt=...]' from the value
-                                        $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                        $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                     } // if
                                 } // if
                                 if (isset($spec['notext'])) {
@@ -369,7 +369,7 @@ class radicore_view
                                     if (preg_match('/(?<=\[url=).*(?=\])/', $hyperlink, $regs)) {
                                         $url = $regs[0];  // extract url
                                         // remove '[url=...]' from the value
-                                        $label = preg_replace('/\[url=.*\]/', '', $hyperlink);
+                                        $label = preg_replace('/\[url=.*\]/u', '', $hyperlink);
                                         // store label and url as separate parts
                                         $array_out[$ix]['label'] = $label;
                                         $array_out[$ix]['url']   = $url;
@@ -415,7 +415,7 @@ class radicore_view
                                         $alt = $regs[0];  // extract alt text
                                         $child->set_attribute('alt', $alt);
                                         // remove '[alt=...]' from the value
-                                        $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                        $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                     } // if
                                 } // if
                             } // if
@@ -434,7 +434,7 @@ class radicore_view
                                     $alt = $regs[0];  // extract alt text
                                     $child->set_attribute('alt', $alt);
                                     // remove '[alt=...]' from the value
-                                    $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                    $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                 } // if
                             } // if
 

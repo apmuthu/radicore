@@ -49,7 +49,7 @@ class edi_writer {
         if (!empty($array['time']))                     $this->header['time']                = $array['time'];
         if (!empty($array['datetime'])) {
             // this should be in the format 'CCYY-MM-DD HH:MM:SS'
-            $datetime = preg_replace('/[^0-9]/', '', $array['datetime']);       // strip non-numeric characters
+            $datetime = preg_replace('/[^0-9]/u', '', $array['datetime']);       // strip non-numeric characters
             $this->header['date']                     = substr($datetime, 2, 6);   // reduced to YYMMDD
             $this->header['time']                     = substr($datetime, 8, 4);   // reduced to HHMM
         } // if
@@ -87,7 +87,7 @@ class edi_writer {
 
         if (!empty($array['po_number']))       $response['po_number']       = $array['po_number'];
         if (!empty($array['vendor_order_no'])) $response['document_id']     = $array['vendor_order_no'];
-        if (!empty($array['order_date']))      $response['document_date']   = preg_replace('/[^0-9]/', '', $array['order_date']);
+        if (!empty($array['order_date']))      $response['document_date']   = preg_replace('/[^0-9]/u', '', $array['order_date']);
         if (!empty($array['currency_code']))   $response['currency_code']   = $array['currency_code'];
 
         //if (!empty($array['xxx']))   $response['xxx']   = $array['xxx'];
@@ -125,11 +125,11 @@ class edi_writer {
         $advice['transport_mode']           = 'road';
 
         if (!empty($array['despatch_id']))        $advice['document_id']        = $array['despatch_id'];
-        if (!empty($array['despatch_date']))      $advice['document_date']      = preg_replace('/[^0-9]/', '', $array['despatch_date']);
-        if (!empty($array['arrival_date']))       $advice['arrival_date']       = preg_replace('/[^0-9]/', '', $array['arrival_date']);
+        if (!empty($array['despatch_date']))      $advice['document_date']      = preg_replace('/[^0-9]/u', '', $array['despatch_date']);
+        if (!empty($array['arrival_date']))       $advice['arrival_date']       = preg_replace('/[^0-9]/u', '', $array['arrival_date']);
         if (!empty($array['bill_of_lading_ref'])) $advice['bill_of_lading_ref'] = $array['bill_of_lading_ref'];
         if (!empty($array['carrier_ref']))        $advice['carrier_ref']        = $array['carrier_ref'];
-        if (!empty($array['ref_date']))           $advice['ref_date']           = preg_replace('/[^0-9]/', '', $array['ref_date']);
+        if (!empty($array['ref_date']))           $advice['ref_date']           = preg_replace('/[^0-9]/u', '', $array['ref_date']);
         if (!empty($array['carrier_id']))         $advice['carrier_id']         = $array['carrier_id'];
         if (!empty($array['transport_mode']))     $advice['transport_mode']     = $array['transport_mode'];
 
@@ -190,9 +190,9 @@ class edi_writer {
 
         if (!empty($array['po_number']))       $invoice['po_number']       = $array['po_number'];
         if (!empty($array['invoice_no']))      $invoice['document_id']     = $array['invoice_no'];
-        if (!empty($array['invoice_date']))    $invoice['document_date']   = preg_replace('/[^0-9]/', '', $array['invoice_date']);
-        if (!empty($array['delivery_date']))   $invoice['delivery_date']   = preg_replace('/[^0-9]/', '', $array['delivery_date']);
-        if (!empty($array['tax_date']))        $invoice['tax_date']        = preg_replace('/[^0-9]/', '', $array['tax_date']);
+        if (!empty($array['invoice_date']))    $invoice['document_date']   = preg_replace('/[^0-9]/u', '', $array['invoice_date']);
+        if (!empty($array['delivery_date']))   $invoice['delivery_date']   = preg_replace('/[^0-9]/u', '', $array['delivery_date']);
+        if (!empty($array['tax_date']))        $invoice['tax_date']        = preg_replace('/[^0-9]/u', '', $array['tax_date']);
         if (!empty($array['currency_code']))   $invoice['currency_code']   = $array['currency_code'];
 
         // payment terms
@@ -237,8 +237,8 @@ class edi_writer {
             if (!empty($array['qty_cancelled']))     $item['qty_cancelled']     = (int)$array['qty_cancelled'];
             if (!empty($array['qty_rejected']))      $item['qty_rejected']      = (int)$array['qty_rejected'];
             if (!empty($array['qty_free']))          $item['qty_free']          = (int)$array['qty_free'];
-            if (!empty($array['est_despatch_date'])) $item['est_despatch_date'] = preg_replace('/[^0-9]/', '', $array['est_despatch_date']);
-            if (!empty($array['est_delivery_date'])) $item['est_delivery_date'] = preg_replace('/[^0-9]/', '', $array['est_delivery_date']);
+            if (!empty($array['est_despatch_date'])) $item['est_despatch_date'] = preg_replace('/[^0-9]/u', '', $array['est_despatch_date']);
+            if (!empty($array['est_delivery_date'])) $item['est_delivery_date'] = preg_replace('/[^0-9]/u', '', $array['est_delivery_date']);
             if (!empty($array['unit_price']))        $item['unit_price']        = number_format($array['unit_price'], 2, '.', '');
             if (!empty($array['tax_rate']))          $item['tax_rate']          = (float)$array['tax_rate'];
             if (!empty($array['seq_no']))            $item['seq_no']            = (int)$array['seq_no'];

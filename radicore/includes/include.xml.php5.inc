@@ -105,7 +105,7 @@ class radicore_view
 
         // process the data one row at a time
         foreach ($objectdata as $rownum => $rowdata) {
-            // get field specifications for current object (inluding item access details)
+            // get field specifications for current object (including item access details)
             $fieldspec = $dbobject->getFieldSpec();
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
@@ -126,7 +126,20 @@ class radicore_view
                 // insert as text element for the current node
                 $value = $doc->createTextNode($rowdata);
                 $value = $node->appendChild($value);
+
+//            } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+//                // row has been "soft" deleted, so do not display it, but still consume the row number
+//                // so that the row numbers in the form still match the row numbers in the object
+//                $node->setAttribute('rdc_to_be_deleted', 'y');
+//                $child = $doc->createElement('rdc_to_be_deleted');
+//                $child = $node->appendChild($child);
+//                $value = $doc->createTextNode('y');
+//                $value = $child->appendChild($value);
+
             } else {
+                if (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                    $node->setAttribute('rdc_to_be_deleted', 'y');
+                } // if
                 // look for optional attributes just for this row
                 if (array_key_exists('rdc_rowspecs', $rowdata)) {
             	    foreach ($rowdata['rdc_rowspecs'] as $key => $value) {
@@ -183,7 +196,7 @@ class radicore_view
                             // include css class name(s)
                 	        $child->setAttribute('css_class', $css_array[$fieldname]);
                         } // if
-                        if (isset($fieldspec[$fieldname])) {
+                        if (!array_key_exists('rdc_to_be_deleted', $rowdata) AND isset($fieldspec[$fieldname])) {
                             // field exists in $fieldspec, so get field specifications
                             $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
                             // add field size as an attribute
@@ -212,6 +225,9 @@ class radicore_view
                             if (isset($spec['nodisplay'])) {
                                 $child->setAttribute('nodisplay', 'y');
                                 $fieldvalue = '**hidden**';
+                            } elseif (isset($spec['force_display'])) {
+                                // force this controlto be displayed even if non-editable
+                                $child->setAttribute('force_display', 'y');
                             } else {
                                 // if an error message exists for this row/field put it into the field's error attribute
                                 if (!empty($object_errors)) {
@@ -298,6 +314,9 @@ class radicore_view
                                     if (isset($spec['align_lr'])) {
                                         $child->setAttribute('align_lr', strtolower($spec['align_lr']));
                                     } // if
+                                    if (isset($spec['separate_columns'])) {
+                                        $child->setAttribute('separate_columns', 'y');
+                                    } // if
                                 } // if
 
                                 if (isset($spec['optionlist']) AND $spec['optionlist'] == 'boolean') {
@@ -326,7 +345,7 @@ class radicore_view
                                             $alt = $regs[0];  // extract alt text
                                             $child->setAttribute('alt', $alt);
                                             // remove '[alt=...]' from the value
-                                            $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                            $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                         } // if
                                     } // if
                                     if (isset($spec['notext'])) {
@@ -382,6 +401,9 @@ class radicore_view
                                     if (isset($spec['align_lr'])) {
                             	        $child->setAttribute('align_lr', strtolower($spec['align_lr']));
                                     } // if
+                                    if (isset($spec['separate_columns'])) {
+                                        $child->setAttribute('separate_columns', 'y');
+                                    } // if
                                 } // if
 
                                 // option for hyperlink (single or multiple)
@@ -399,7 +421,7 @@ class radicore_view
                                         if (preg_match('/(?<=\[url=).*(?=\])/', $hyperlink, $regs)) {
                                             $url = $regs[0];  // extract url
                                             // remove '[url=...]' from the value
-                                            $label = preg_replace('/\[url=.*\]/', '', $hyperlink);
+                                            $label = preg_replace('/\[url=.*\]/u', '', $hyperlink);
                                             // store label and url as separate parts
                                             $array_out[$ix]['label'] = $label;
                                             $array_out[$ix]['url']   = $url;
@@ -445,7 +467,7 @@ class radicore_view
                                             $alt = $regs[0];  // extract alt text
                                             $child->setAttribute('alt', $alt);
                                             // remove '[alt=...]' from the value
-                                            $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                            $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                         } // if
                                     } // if
                                 } // if
@@ -464,7 +486,7 @@ class radicore_view
                                         $alt = $regs[0];  // extract alt text
                                         $child->setAttribute('alt', $alt);
                                         // remove '[alt=...]' from the value
-                                        $fieldvalue = preg_replace('/\[alt=.*\]/', '', $fieldvalue);
+                                        $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
                                     } // if
                                 } // if
 

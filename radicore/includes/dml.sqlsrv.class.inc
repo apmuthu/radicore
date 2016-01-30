@@ -117,11 +117,79 @@ END_OF_PATTERN;
             $string_out = str_replace("'", "''", $string_in);
         } // if
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSDATETIME()', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSDATETIME()', $string_out);
 
         return $string_out;
 
     } // adjustData
+
+    // ****************************************************************************
+    function adjustCONCAT ($input)
+    // replace 'CONCAT(A, B, C)' with 'A + B + C'.
+    {
+        $output = $input;
+
+        $pattern1 = <<< END_OF_REGEX
+/
+(?<=concat\()                # 'concat('
+(                            # start choice
+ \w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
+ |
+ '(([^\\\']*(\\\.)?)*)'      # quoted string
+ |
+ \w+(\.\w+)?                 # 'word' or 'word.word'
+ |
+ ,                           # comma
+ |
+ [ ]*                        # 0 or more spaces
+)                            # end choice
+*                            # 0 or more times
+[ ]*                         # 0 or more spaces
+/xims
+END_OF_REGEX;
+
+        $pattern2 = <<< END_OF_REGEX
+/
+\w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
+|
+'(([^\\\']*(\\\.)?)*)'      # quoted string
+|
+\w+\.\w+                    # word dot word
+|
+\w+                         # word
+/xims
+END_OF_REGEX;
+
+        if ($count = preg_match_all($pattern1, $input, $regs)) {
+            foreach ($regs[0] as $string1) {
+                $array = array();
+                $count = preg_match_all($pattern2, $string1, $regs2);
+                foreach ($regs2[0] as $value) {
+                    // trim leading and trailing spaces from each entry
+                    if (substr($value, 0, 1) == "'") {
+                        // value is quoted so use as-is
+                        $array[] = trim($value);
+                    } else {
+                        // this is a field, so cast it to string to avoid conversion errors
+                        $array[] = "CAST(".trim($value)." AS VARCHAR)";
+                    } // if
+                } // foreach
+                $string2 = implode('+', $array);     // rejoin with '+' as separator
+                // escape any '(' and ')' for use in a pattern
+                $string1 = str_replace('(', "\(", $string1);
+                $string1 = str_replace(')', "\)", $string1);
+                $string1 = str_replace('[', "\[", $string1);
+                $string1 = str_replace(']', "\]", $string1);
+                $string1 = str_replace('.', "\.", $string1);
+                $string1 = str_replace('?', "\?", $string1);
+                $pattern = '#concat\(' .$string1 .'\)#iu';
+                $output  = preg_replace($pattern, $string2, $output);
+            } // foreach;
+        } // if
+
+        return $output;
+
+    } // adjustCONCAT
 
     // ****************************************************************************
     function adjustFrom ($from_str, $where_str)
@@ -136,6 +204,12 @@ END_OF_PATTERN;
             $on_str = str_ireplace('ON ', ' AND ', $on_str);
             $where_str .= $on_str;
         } // if
+
+        if (preg_match('/[ ]+AS[ ]+unsigned[ ]+int/i', $from_str)) {
+            $from_str = preg_replace('/[ ]+AS[ ]+unsigned[ ]+int/iu', ' AS int', $from_str);
+        } // if
+
+        $from_str = $this->adjustCONCAT($from_str);
 
         return $from_str;
 
@@ -198,12 +272,12 @@ END_OF_PATTERN;
     // This is because the HAVING clause cannot reference an expression by its alias name.
     {
         // Replace TRUE/FALSE to 1/0.
-        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
-        $replace = array( '=1',           '=0');
+        $search  = array('/=[ ]*TRUE/iu', '/=[ ]*FALSE/iu');
+        $replace = array( '=1',            '=0');
         $having_str = preg_replace($search, $replace, $having_str);
 
         if (!empty($sort_str)) {
-            $sort_str = preg_replace('/^ORDER BY /i', '', $sort_str);
+            $sort_str = preg_replace('/^ORDER BY /iu', '', $sort_str);
             $orderby_array = explode(',', $sort_str);
             $orderby_array = array_map("trim", $orderby_array);
         } // if
@@ -249,7 +323,7 @@ END_OF_PATTERN;
         $having_str = '';
         $group_str  = '';
 
-        return array($select_str, $from_str, $where_str, $sort_str);
+        return array($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str);
 
     } // adjustHaving
 
@@ -322,7 +396,7 @@ END_OF_REGEX;
         $alias_names1 = array();
         // search $alias_names array and replace any '=alias' with '=expression'
         foreach ($alias_names as $alias => $expression) {
-            $pattern = "/=[ ]*".$alias."[^\w]/ims";
+            $pattern = "/=[ ]*".$alias."[^\w]/imsu";
             if (isset($alias_names1[$alias])) {
                 $expression = $alias_names1[$alias];  // replace with expression altered previously
                 $alias_names[$alias] = $expression;
@@ -344,7 +418,7 @@ END_OF_REGEX;
 
         // search $output and replace any '=alias' with '=expression'
         foreach ($alias_names as $alias => $expression) {
-            $pattern = "/=[ ]*".$alias."[^\w]/ims";
+            $pattern = "/=[ ]*".$alias."[^\w]/imsu";
             if (preg_match($pattern, $output, $regs)) {
                 if (substr_count($regs[0], ')') > 0) {
                     $expression .= ' )';  // append missing ')'
@@ -396,69 +470,13 @@ END_OF_REGEX;
                 $string1 = str_replace('.', "\.", $string1);
                 $string1 = str_replace('?', "\?", $string1);
                 $string2 = "$alias=STUFF((SELECT $separator+$part1 FROM $from WHERE $where ORDER BY $orderby FOR XML PATH('')) , 1, 1, '' )";
-                $output  = preg_replace('/\(select[ ]group_concat\(' .$string1 .'/i', $string2, $output, 1);
+                $output  = preg_replace('/\(select[ ]group_concat\(' .$string1 .'/iu', $string2, $output, 1);
             } // foreach
         } // if
 
         // ********************************************************************
 
-        // replace 'CONCAT(A, B, C)' with 'A + B + C'.
-        $pattern1 = <<< END_OF_REGEX
-/
-(?<=concat\()                # 'concat('
-(                            # start choice
- \w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
- |
- '(([^\\\']*(\\\.)?)*)'      # quoted string
- |
- \w+(\.\w+)?                 # 'word' or 'word.word'
- |
- ,                           # comma
- |
- [ ]*                        # 0 or more spaces
-)                            # end choice
-*                            # 0 or more times
-[ ]*                         # 0 or more spaces
-/xims
-END_OF_REGEX;
-
-        $pattern2 = <<< END_OF_REGEX
-/
-\w+[ ]*\([^\(\)]*\)         # 'FUNC(...)'
-|
-'(([^\\\']*(\\\.)?)*)'      # quoted string
-|
-\w+\.\w+                    # word dot word
-|
-\w+                         # word
-/xims
-END_OF_REGEX;
-
-        if ($count = preg_match_all($pattern1, $output, $regs)) {
-        	foreach ($regs[0] as $string1) {
-        		$array = array();
-        		$count = preg_match_all($pattern2, $string1, $regs2);
-        		foreach ($regs2[0] as $value) {
-        		    // trim leading and trailing spaces from each entry
-                    if (substr($value, 0, 1) == "'") {
-                        // value is quoted so use as-is
-                        $array[] = trim($value);
-                    } else {
-                        // this is a field, so cast it to string to avoid conversion errors
-        			    $array[] = "CAST(".trim($value)." AS VARCHAR)";
-                    } // if
-        		} // foreach
-        		$string2 = implode('+', $array);     // rejoin with '+' as separator
-        		// escape any '(' and ')' for use in a pattern
-        		$string1 = str_replace('(', "\(", $string1);
-        		$string1 = str_replace(')', "\)", $string1);
-                $string1 = str_replace('[', "\[", $string1);
-                $string1 = str_replace(']', "\]", $string1);
-                $string1 = str_replace('.', "\.", $string1);
-                $string1 = str_replace('?', "\?", $string1);
-        		$output  = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $output);
-        	} // foreach;
-        } // if
+        $output = $this->adjustCONCAT($output);
 
         // ********************************************************************
 
@@ -581,12 +599,12 @@ EOD;
         // ********************************************************************
 
         // Replace TRUE/FALSE in CASE statements to 1/0.
-        $search  = array('/THEN TRUE/i', '/ELSE TRUE/i', '/THEN FALSE/i', '/ELSE FALSE/i');
-        $replace = array( 'THEN 1',       'ELSE 1',       'THEN 0',        'ELSE 0');
+        $search  = array('/THEN TRUE/iu', '/ELSE TRUE/iu', '/THEN FALSE/iu', '/ELSE FALSE/iu');
+        $replace = array( 'THEN 1',        'ELSE 1',        'THEN 0',         'ELSE 0');
         $output  = preg_replace($search, $replace, $output);
 
         // Replace 'SUBSTR(...)' with 'SUBSTRING(...)'.
-        $output  = preg_replace('/SUBSTR(?!ING)/i', 'SUBSTRING', $output);
+        $output  = preg_replace('/SUBSTR(?!ING)/iu', 'SUBSTRING', $output);
 
         $output = $this->fixReservedWords($output);
 
@@ -636,7 +654,7 @@ EOD;
     {
         $string_out = $string_in;
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSDATETIME()', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSDATETIME()', $string_out);
 
         $modified = false;
 
@@ -765,8 +783,8 @@ END_OF_REGEX;
         } // while
 
         // Replace TRUE/FALSE with 1/0.
-        $search  = array('/=[ ]*TRUE/i', '/=[ ]*FALSE/i');
-        $replace = array( '=1',           '=0');
+        $search  = array('/=[ ]*TRUE/iu', '/=[ ]*FALSE/iu');
+        $replace = array( '=1',            '=0');
         $string_out = preg_replace($search, $replace, $string_out);
 
         $string_out = $this->fixReservedWords($string_out);
@@ -1134,7 +1152,7 @@ END_OF_REGEX;
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            list($select_str, $from_str, $where_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str, $this->sql_union);
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving ($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str, $this->sql_union);
             $group_str       = null;
             $having_str      = null;
             $this->sql_union = null;
@@ -1217,7 +1235,7 @@ END_OF_REGEX;
                              . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
                              . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
             } else {
-                $sort_str = preg_replace('/^ORDER BY /i', '', $sort_str);  // remove leading 'ORDER BY'
+                $sort_str = preg_replace('/^ORDER BY /iu', '', $sort_str);  // remove leading 'ORDER BY'
                 $sort_str = "ORDER BY ".unqualifyOrderBy($sort_str);
                 $this->query = "SELECT * FROM ("
                              . "\nSELECT *, ROW_NUMBER() OVER ($sort_str) AS rownum FROM ("
@@ -1320,13 +1338,14 @@ END_OF_REGEX;
         if (!empty($this->sql_orderby)) {
             $this->sql_orderby = $this->adjustOrderBy($this->sql_orderby, $select_str);
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $this->sql_orderby = null;
         } else {
             $sort_str = '';
         } // if
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str);
+            list($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str) = $this->adjustHaving($select_str, $from_str, $where_str, $group_str, $this->sql_having, $sort_str, $this->sql_union);
             //$having_str = "HAVING $this->sql_having";
         } else {
             $having_str = NULL;

@@ -16,7 +16,7 @@ $array['sys0009'] = "COMMIT failed!";
 $array['sys0010'] = "Unknown relation type: '%1\$s'";
 $array['sys0011'] = "Definition of INNER_TABLE is missing";
 $array['sys0012'] = "setAction: 2nd parameter is unknown action";
-$array['sys0013'] = "Role does not exist.";
+$array['sys0013'] = "Role does not exist for user '%1\$s'";
 $array['sys0014'] = "This task has been assigned to role %1\$s";
 $array['sys0015'] = "This task has been assigned to user %1\$s";
 $array['sys0016'] = "Unknown integer type: %1\$s";
@@ -252,7 +252,7 @@ $array['sys0224'] = "OFFSET must be a number which is greater than or equal to 0
 $array['sys0225'] = "";
 $array['sys0226'] = "";
 $array['sys0227'] = "1st argument must be an object";
-$array['sys0228'] = "3rd argument must be an object";
+$array['sys0228'] = "2rd argument must be an object";
 $array['sys0229'] = "No relationship found between the PARENT object and the CHILD object";
 
 $array['sys0230'] = "This user does not have a primary role";
@@ -275,7 +275,7 @@ $array['sys0245'] = "Cannot go up higher than base directory [%1\$s]";
 $array['sys0246'] = "Into directory: %1\$s";
 $array['sys0247'] = "";
 $array['sys0248'] = "";
-$array['sys0249'] = "";
+$array['sys0249'] = "Unable to locate '.dict.inc' file for table '%1\$s'";
 
 $array['sys0250'] = "Cannot save this selection without a description";
 $array['sys0251'] = "Screen Structure file has not been supplied";

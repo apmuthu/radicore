@@ -1,0 +1,338 @@
+body {
+}
+
+/* miscellaneous */
+caption {
+}
+
+h1 {
+}
+
+table {
+}
+th {
+}
+tr {
+}
+tr.even td {
+}
+tr.odd td {
+}
+td {
+}
+
+/* actionbar */
+div.actionbar {
+}
+div.actionbar .left {
+}
+div.actionbar .right {
+}
+div.actionbar p {
+}
+
+/* body */
+div.body {
+}
+
+/* footer */
+div.footer {
+}
+
+/* header */
+div.header {
+}
+
+/* help */
+div.help {
+}
+div.help p {
+}
+
+/* inner */
+div.inner {
+}
+div.inner table {
+}
+div.inner tr {
+}
+div.inner td {
+}
+div.inner td.label {
+}
+
+/* link */
+div.link {
+}
+div.link table {
+}
+div.link tr {
+}
+div.link td {
+}
+div.link td.label {
+}
+
+/* logon */
+div.logon {
+}
+
+div.loggedinas {
+}
+
+/* main */
+div.main {
+}
+div.main table {
+}
+div.main tr {
+}
+div.main td {
+}
+div.main td.label {
+}
+
+/* many */
+div.many {
+}
+div.many table {
+}
+div.many tr {
+}
+div.many td {
+}
+div.many td.label {
+}
+
+/* fileupload */
+div.uploadbg {
+}
+div.upload {
+}
+
+/* menubar */
+#menubar {
+}
+#menubar ul {
+}
+#menubar li {
+}
+#menubar a {
+}
+#menubar a:hover {
+}
+#menubar .inactive {
+}
+#menubar .active {
+}
+#menubar .active a {
+}
+#menubar p.filler {
+}
+
+/* menustack (aka 'breadcrumbs) */
+#menustack-outer {
+}
+#menustack {
+}
+#menustack ul {
+}
+#menustack li {
+}
+#menustack li a {
+}
+#menustack p {
+}
+
+/* middle */
+div.middle {
+}
+div.middle table {
+}
+div.middle tr {
+}
+div.middle td {
+}
+div.middle td.label {
+}
+
+/* errmsg */
+div.errmsg {
+}
+div.errmsg p {
+}
+/* infomsg */
+div.infomsg {
+}
+div.infomsg p {
+}
+
+/* navbar */
+div.navbar {
+}
+div.navbar p.selection {
+}
+div.navbar p.show {
+}
+div.navbar p.show a {
+}
+div.navbar p.withselection {
+}
+div.navbar p.withoutselection {
+}
+
+/* outer */
+div.outer {
+}
+div.outer table {
+}
+div.outer tr {
+}
+div.outer td.label {
+}
+div.outer td {
+}
+
+/* pagination */
+div.pagination {
+}
+div.pagination p {
+}
+
+/* picker */
+div.picker-text {
+}
+div.picker-image {
+}
+div.picker-button {
+}
+
+/* popup */
+div.popupbutton {
+}
+div.popuptext {
+}
+
+/* recover password */
+div.recover {
+}
+
+/* scrolling */
+div.scrolling {
+}
+div.scrolling p {
+}
+
+/* scripttime */
+p.scripttime {
+}
+
+/* timetable */
+table.timetable {
+}
+tr.timetable {
+}
+tr.timetable td.timetable {
+}
+tr.timetable td.blank {
+}
+
+/* ToDo list */
+div.todo_user {
+}
+div.todo_user h2 {
+}
+div.todo_user p {
+}
+
+/* universe */
+div.universe {
+}
+
+/* workitem */
+div.workitem_role {
+}
+div.workitem_role h2 {
+}
+div.workitem_role p {
+}
+div.workitem_user {
+}
+div.workitem_user h2 {
+}
+div.workitem_user p {
+}
+
+/* IMG */
+img {
+  margin: 0;
+  padding:0;
+}
+img.bottom {
+}
+img.middle {
+}
+img.top {
+}
+
+/* HTML controls */
+.dropdown {
+}
+input.submit {
+}
+input.radio {
+}
+input.checkbox {
+}
+input.text {
+}
+input.password {
+}
+select {
+}
+select option {
+}
+textarea {
+}
+
+pre.textarea {
+}
+pre.height_10 {
+}
+pre.height_15 {
+}
+pre.height_20 {
+}
+pre.height_30 {
+}
+
+/* generic classes */
+.border0 {
+}
+.center {
+}
+.error {
+}
+.fullwidth {
+}
+.justify {
+}
+.left {
+}
+.nowrap {
+}
+.required {
+}
+.right {
+}
+
+/* for items which are due or overdue */
+.overdue {
+}
+.due {
+}
+
+/* custom classes */
+.divider {
+  height: 6px;
+}

@@ -53,6 +53,9 @@ if (isset($_SESSION['pages'][$PHP_SELF])) {
 if (isset($_SESSION['messages'])) {
     $messages_bf = (array)$_SESSION['messages'];
 } // if
+if (isset($_SESSION['SSO'])) {
+    $SSO = $_SESSION['SSO'];  // Single Sign On requested from this script
+} // if
 if (isset($_SESSION['errors'])) {
     $errors_bf = (array)$_SESSION['errors'];
 } // if
@@ -116,6 +119,9 @@ if (strlen($GLOBALS['https_server']) > 0 AND empty($_SERVER['HTTPS'])) {
 
 if (isset($messages_bf)) {
     $_SESSION['messages'] = $messages_bf;   // put these messages back
+} // if
+if (isset($SSO)) {
+    $_SESSION['SSO'] = $SSO;                // put SSO details back
 } // if
 
 if (!empty($_SERVER['QUERY_STRING'])) {

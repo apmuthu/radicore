@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.list3.inc
@@ -33,8 +33,6 @@ if (isset($act_buttons['choose'])) {
     } // if
 } // if
 
-$original_where     = $where;
-$original_selection = $selection;
 if (!empty($selection) AND !isset($return_from)) {
     // $selection takes precedence over $where
     //$where     = $selection;
@@ -71,7 +69,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbouter->restart($return_from, $return_action, $return_string);
+        $dbouter->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
@@ -97,7 +95,10 @@ if (isset($script_vars['dbouter'])) {
     // check that primary key is complete
     $dbouter->checkPrimaryKey = true;
     // perform any initialisation
-    $where = $dbouter->initialise($original_where, $original_selection);
+    $where = $dbouter->initialise($where, $selection);
+    if ($dbouter->errors) {
+        scriptPrevious($dbouter->getErrors(), $messages, 'fail');
+    } // if
     // set sort order (if defined)
     if (!empty($orderby)) {
         $string = validateSortItem('outer', $orderby, $dbouter, $screen_structure);
@@ -115,7 +116,7 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle = unserialize($script_vars['dbmiddle']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbmiddle->restart($return_from, $return_action, $return_string);
+        $dbmiddle->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $middle_data = $dbmiddle->getFieldArray();
@@ -127,6 +128,7 @@ if (isset($script_vars['dbmiddle'])) {
     // indicate that this object was started from a page controller
     $dbmiddle->initiated_from_controller   = true;
     $dbmiddle->zone                        = 'middle';
+    $dbmiddle->setRowsPerPage(1);  // scroll through one item at a time
     $dbmiddle->sql_select  = &$middle_sql_select;
     $dbmiddle->sql_from    = &$middle_sql_from;
     $dbmiddle->sql_where   = &$middle_sql_where;
@@ -140,9 +142,10 @@ if (isset($script_vars['dbmiddle'])) {
     } elseif (!empty($task_orderby)) {
         $dbmiddle->setDefaultOrderby($task_orderby);
     } // if
-    // scroll through one item at a time
-    $dbmiddle->setRowsPerPage(1);
-    $null = $dbmiddle->initialise($original_where, $original_selection);
+    $middle_where = $dbmiddle->initialise($where, $selection);
+    if ($dbmiddle->errors) {
+        scriptPrevious($dbmiddle->getErrors(), $messages, 'fail');
+    } // if
 } // if
 
 // create a class instance for the INNER database table
@@ -152,7 +155,7 @@ if (isset($script_vars['dbinner'])) {
     $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbinner->restart($return_from, $return_action, $return_string);
+        $dbinner->restart($return_from, $return_action, $return_string, $return_files);
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
@@ -178,7 +181,11 @@ if (isset($script_vars['dbinner'])) {
     } elseif (!empty($task_orderby)) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
-    $null = $dbinner->initialise($original_where, $original_selection);
+    $inner_where = mergeWhere($where, $middle_where);
+    $null = $dbinner->initialise($inner_where, $selection);
+    if ($dbinner->errors) {
+        scriptPrevious($dbinner->getErrors(), $messages, 'fail');
+    } // if
 } // if
 
 // make each object available to its parent or child
@@ -269,7 +276,7 @@ $scrolling[$dbouter->getClassName()]['where']    = $where;
 $outer_data = $dbouter->getExtraData($outer_data);
 
 // convert to foreign key names which relate this child to this parent
-$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dbmiddle);
+$fkeyvalues = getForeignKeyValues($dbouter, $dbmiddle);
 if (!empty($fkeyvalues)) {
     $middle_where = array2where($fkeyvalues);
 } else {
@@ -277,6 +284,9 @@ if (!empty($fkeyvalues)) {
     $pkeynames = $dbouter->getPkeyNamesAdjusted();
     $middle_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
 } // if
+
+// merge OUTER and MIDDLE where to get selection criteria for MIDDLE
+$middle_where = mergeWhere($where, $middle_where);
 
 if (empty($outer_data)) {
     $dbmiddle->setFieldArray(null);
@@ -301,14 +311,10 @@ if (empty($outer_data)) {
     } // if
     // get any additional data for current record
     $middle_data = $dbmiddle->getExtraData($middle_data);
-
-    // get primary key of current row retrieved from MIDDLE entity
-    $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
-    $middle_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
 } // if
 
 // convert to foreign key names which relate this child to this parent
-$fkeyvalues = getForeignKeyValues($dbmiddle, $middle_data, $dbinner);
+$fkeyvalues = getForeignKeyValues($dbmiddle, $dbinner);
 if (!empty($fkeyvalues)) {
     $inner_where = array2where($fkeyvalues);
 } else {
@@ -316,6 +322,9 @@ if (!empty($fkeyvalues)) {
     $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
     $inner_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
 } // if
+
+// merge MIDDLE and INNER where to get selection criteria for INNER
+$inner_where  = mergeWhere($middle_where, $inner_where);
 
 // set variables to be included in XML output
 $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
@@ -355,9 +364,6 @@ if (isset($instruction)) {
 if (isset($_GET['page'])) {
     $dbinner->setPageNo($_GET['page']);
 } // if
-
-// merge OUTER and MIDDLE where to get selection criteria for INNER
-//$inner_where = mergeWhere($where, $middle_where);
 
 if ($dbmiddle->numrows == 0 AND !$dbmiddle->allow_zero_rows) {
     $dbinner->setFieldArray(null);

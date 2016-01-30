@@ -276,6 +276,11 @@ function childForm ($post, $object_array, $task_id, $where=null)
 		$script_vars[$objectname] = serialize($dbobject);
 	} // if
 
+    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+        // current task is running in batch mode, so should the next task
+        $task_array['pattern_id'] = 'batch';
+    } // if
+
 	if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
         // this is to be run in the background as a batch process
         if (!empty($where)) {
@@ -795,6 +800,8 @@ function initSession($save_session_data=array())
     global $transaction_has_started;    // Yes/No switch
     global $title;              // script title
     global $where;              // selection criteria, used in SQL query
+    global $wf_case_id;         // identifies a workflow workitem
+    global $wf_workitem_id;     // identifies a workflow workitem
     global $XSLT_client_side;   // on/off switch for client-side XSL transformations
 
     $errors   = array();
@@ -817,9 +824,10 @@ function initSession($save_session_data=array())
 
     // write start details to query log file, if option is turned on
     logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
-    logstuff("PHP_SELF: $PHP_SELF", __FUNCTION__, __LINE__);
 
-    if (!defined('NO_SESSION_HANDLER')) {
+    if (defined('NO_SESSION_HANDLER')) {
+        $save_session_batch = $_SESSION;
+    } else {
     	// continue with existing session, or start a new one
 	    $session_obj =& RDCsingleton::getInstance('php_session');
 	    if (isset($GLOBALS['batch'])) {
@@ -831,8 +839,6 @@ function initSession($save_session_data=array())
 	            unset($GLOBALS['batch']);
 	        } // if
 	    } // if
-	} else {
-		$save_session_batch = $_SESSION;
 	} // if
     if (empty($_SESSION) OR isset($GLOBALS['batch'])) {
         if (!empty($argv)) {
@@ -853,13 +859,21 @@ function initSession($save_session_data=array())
             $res = @session_start();                    // open/reopen session
             if (isset($save_session_batch)) {
                 // do not overwrite certain values from the starting session
+                if (!empty($_SESSION['logon_user_id'])) {
+                    unset($save_session_batch['logon_user_id']);
+                } // if
                 if (!empty($_SESSION['role_id'])) {
             	    unset($save_session_batch['role_id']);
                 } // if
-                if (!empty($_SESSION['logon_user_id'])) {
-    	            unset($save_session_batch['logon_user_id']);
+                if (!empty($_SESSION['role_list'])) {
+                    unset($save_session_batch['role_list']);
                 } // if
-        	    $_SESSION = array_merge($_SESSION, $save_session_batch);
+                if (!empty($_SESSION['rdcaccount_id'])) {
+                    unset($save_session_batch['rdcaccount_id']);
+                } // if
+                if (!empty($save_session_batch)) {
+                    $_SESSION = array_merge($_SESSION, $save_session_batch);
+                } // if
             } // if
             if (!empty($save_session_data)) {
         	    $_SESSION = array_merge($_SESSION, $save_session_data);
@@ -1047,7 +1061,7 @@ function initSession($save_session_data=array())
                                   .$logon_screen
                                   .'?session_name=' .session_name();
             if (isset($GLOBALS['SSO']) AND is_True($GLOBALS['SSO'])) {
-                $_SESSION['SSO'] = getSelf();  // Single Sign On requested from this script
+                $_SESSION['SSO'] = $_SERVER['PHP_SELF'];  // Single Sign On requested from this script
                 $location .= '&session_id='.session_id();  //continue using this session
             } // if
             if (isset($_SERVER['QUERY_STRING']) AND strlen($_SERVER['QUERY_STRING']) > 0) {
@@ -1746,6 +1760,11 @@ function initSession($save_session_data=array())
     	$messages = array_merge($messages, $shutdown_messages);
     } // if
 
+    if (isset($script_vars['wf_case_id']) AND isset($script_vars['wf_workitem_id'])) {
+        $wf_case_id     = $script_vars['wf_case_id'];
+        $wf_workitem_id = $script_vars['wf_workitem_id'];
+    } // if
+
     return;
 
 } // initSession
@@ -1876,11 +1895,13 @@ function restore_cookie_data ()
 function runInBackground ($task_array, $save_script_vars)
 // run this task in a separate process in the background.
 {
-    if (!extension_loaded('curl')) {
-        // CURL functions are not available
-    	$errors[] = getLanguageText('sys0070', 'CURL');
-        return $errors;
-    } // if
+    $errors = array();
+
+//    if (!extension_loaded('curl')) {
+//        // CURL functions are not available
+//    	$errors[] = getLanguageText('sys0070', 'CURL');
+//        return $errors;
+//    } // if
 
     $dir = dirname($_SERVER['PHP_SELF']);
 
@@ -1937,6 +1958,10 @@ function runInBackground ($task_array, $save_script_vars)
     if (isset($task_array['sql_orderby_seq'])) {
     	$script_vars['orderby_seq'] = $task_array['sql_orderby_seq'];
     } // if
+    if (isset($task_array['settings'])) {
+        $script_vars['settings'] = $task_array['settings'];
+        parse_str($task_array['settings'], $settings_array);
+    } // if
 
     // load parameters into session data for the background script
     $task_id = $task_array['task_id'];
@@ -1947,89 +1972,34 @@ function runInBackground ($task_array, $save_script_vars)
 
     session_write_close();  // close session data before batch script launches
 
+    $session_id = session_id();
+    $script_name = $script_dir.'/'.$task_array['script_id'];
+
+    // run this program in the background via the command line
     if (preg_match('/^(linux|unix)/i', PHP_OS)) {
-        // run this program in the background via the command line
-        $session_id = session_id();
-        $script_name = $script_dir.'/'.$task_array['script_id'];
+        // this code is for linux and unix system
         $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null &";
         $result = exec($command_line);
 
     } else {
-        // build fully qualified URL
-        if (strlen($GLOBALS['https_server']) > 0 AND (is_True($task_array['use_https']) OR is_True($GLOBALS['use_https']))) {
-            $url = 'HTTPS://' .$GLOBALS['https_server'];
+        // this code is for Windoze
+        if (defined('PATH_TO_PHP_EXECUTABLE')) {
+            $php_exe = PATH_TO_PHP_EXECUTABLE;
+        }else {
+            $php_exe = 'php.exe';
+        } // if
+        //$settings_array['rdc_wait'] = true;
+        if (isset($settings_array['rdc_wait']) AND is_True($settings_array['rdc_wait'])) {
+            // start script and wait for it to finish
+            $command_line = "$php_exe $script_name PHPSESSID $session_id";
+            exec($command_line, $output, $return_var);
         } else {
-            $url = 'HTTP://' .$_SERVER['HTTP_HOST'];
-        } // if
-        if (!empty($dir)) {
-            $url .= $dir .'/';
-        } // if
-        $url .= $task_array['script_id'];
-        $url .= '?session_name=batch&session_id=' .session_id();
-        // launch this script in another server process, but let it run in parallel
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 2);
-        if (defined('CURL_HTTP_AUTH')) {
-            curl_setopt($ch, CURLOPT_USERPWD, CURL_HTTP_AUTH);
-        } // if
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-
-        $content = curl_exec($ch);
-        if ($content === FALSE) {
-            $curl_errno = curl_errno($ch);
-            if ($curl_errno == 28) {
-                // timeout - ignore
-            } else {
-        	    $curl_error = curl_error($ch);
-        	    $errors[] = "CURL error $curl_errno: $curl_error";
-        	    return $errors;
+            // start script, but do not wait for it to finish
+            $command_line = "start $php_exe $script_name PHPSESSID $session_id";
+            if ($resource = popen($command_line, "r")) {
+                //$message = fread($resource, 1024);
             } // if
-        } // if
-        curl_close($ch);
-
-        //$content = <<< EOD
-//<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-//<html><head>
-//<title>401 Authorization Required</title>
-//</head><body>
-//<h1>Authorization Required</h1>
-//<p>This server could not verify that you
-//are authorized to access the document
-//requested.  Either you supplied the wrong
-
-//credentials (e.g., bad password), or your
-//browser doesn't understand how to supply
-//the credentials required.</p>
-//<hr>
-//<address>Apache Server at santiago.cleverfactory.net Port 80</address>
-//</body></html>
-//EOD;
-
-        if (empty($content)) {
-            // no response so far, so assume no errors and continue
-        } else {
-            if (preg_match('/<p>\*\* started at/ims', $content)) {
-                // this is a valid response
-            } else {
-                // this is an unexpected response
-                if (preg_match('#(?=<title>).+(?<=</title>)#', $content, $regs)) {
-                    // use the contents of the '<title' tag
-                    $message = $regs[0];
-                    $search   = array('#<title>#i','#</title>#i');
-                    $replace  = array();
-                    $message = preg_replace($search, $replace, $message);
-
-                    $errors[] = "CURL error: $message";
-                    return $errors;
-                } else {
-                    $search = array('#\<html\>#ims', '#\</html\>#ims');
-                    $content = preg_replace($search, NULL, $content);
-                    $content = "START runInBackground() ERROR =>><br />".$content."<br /><<= END runInBackground() ERROR";
-                    trigger_error($content, E_USER_ERROR);
-                } // if
-            } // if
+            pclose($resource);
         } // if
     } // if
 
@@ -2049,14 +2019,20 @@ function runInBackground ($task_array, $save_script_vars)
         $settings = array();
     } // if
 
-    if (array_key_exists('no_filepicker', $settings)) {
-        // skip the next bit
-    } else {
-        // jump to the 'Show batch log file' task
-        $errors = scriptNext('batch_log(filepicker)');
-    } //if
+    if (empty($errors)) {
+        if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+            // ignore this next bit
+        } else {
+            if (array_key_exists('no_filepicker', $settings)) {
+                // skip the next bit
+            } else {
+                // jump to the 'Show batch log file' task
+                $errors = scriptNext('batch_log(filepicker)');
+            } //if
+        } // if
+    } // if
 
-    return array();
+    return $errors;
 
 } // runInBackground
 
@@ -2064,10 +2040,10 @@ function runInBackground ($task_array, $save_script_vars)
 function scriptNext ($task_id, $where=null, $selection=null, $task_array=array(), $search=null)
 // proceed to a new script identified in $task_id.
 {
-    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
-        $errors[] = getLanguageText('sys0038'); // 'Not allowed in batch mode'
-    	return $errors;
-    } // if
+//    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+//        $errors[] = getLanguageText('sys0038'); // 'Not allowed in batch mode'
+//    	return $errors;
+//    } // if
 
     if (empty($task_id)) {
         // something is wrong, so go back to logon screen
@@ -2133,6 +2109,12 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     	$query_string = $task_array['query_string'];
     } else {
         $query_string = null;
+    } // if
+
+    if (isset($task_array['wf_case_id']) AND isset($task_array['wf_workitem_id'])) {
+        // this task was selected from a workflow workitem on the MENU page, so show the workitem details
+        $wf_case_id     = $task_array['wf_case_id'];
+        $wf_workitem_id = $task_array['wf_workitem_id'];
     } // if
 
     if (isset($task_array['settings'])) {
@@ -2445,10 +2427,19 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         } else {
             unset($script_vars['max_execution_time']);
         } // if
+        if (isset($wf_case_id) AND isset($wf_workitem_id)) {
+            $script_vars['wf_case_id']     = $wf_case_id;
+            $script_vars['wf_workitem_id'] = $wf_workitem_id;
+        } // if
     } // if
 
     if (!empty($messages)) {
         $script_vars['messages'] = $messages;
+    } // if
+
+    if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+        // current task is running in batch mode, so should the next task
+        $task_array['pattern_id'] = 'batch';
     } // if
 
     if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
@@ -2462,10 +2453,8 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         if (!empty($selection)) {
         	$task_array['selection'] = $selection;
         } // if
-        if (is_array($next) AND !empty($next['settings'])) {
-            $task_array['settings'] = mergeSettings($task_array['settings'], $next['settings']);
-        } elseif (!empty($settings_bf)) {
-            $task_array['settings'] = mergeSettings($task_array['settings'], $settings_bf);
+        if (!empty($settings)) {
+            $task_array['settings'] = $settings;
         } // if
         $errors = runInBackground($task_array, $save_script_vars);
         return $errors;
@@ -2504,6 +2493,11 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
 // go back to the previous script in the current hierarchy.
 {
     if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch']) OR isset($GLOBALS['web_server'])) {
+        if (empty($errors)) {
+            if (function_exists('batchScriptSequence')) {
+                $errors = batchScriptSequence();
+            } // if
+        } // if
     	return $errors;
     } // if
 

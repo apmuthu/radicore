@@ -100,7 +100,7 @@ class oracle
         			$array[] = trim($value);
         		} // foreach
         		$string2 = implode('||', $array);     // rejoin with '||' as separator
-        		$input   = preg_replace('/concat\(' .$string1 .'\)/i', $string2, $input);
+        		$input   = preg_replace('/concat\(' .$string1 .'\)/iu', $string2, $input);
         	} // foreach;
         } // if
 
@@ -115,7 +115,7 @@ class oracle
     {
         $string_out = str_replace("'", "''", $string_in);
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSTIMESTAMP', $string_out);
 
         return $string_out;
 
@@ -214,7 +214,7 @@ class oracle
         $string_out = $string_in;
 
         // remove the ' AS ' in 'table AS alias'
-        $string_out = preg_replace('/ as /i', ' ', $string_out);
+        $string_out = preg_replace('/ as /iu', ' ', $string_out);
 
         // look for any words enclosed in double quotes
         $count = preg_match_all('/"\w+"/', $string_in, $regs);
@@ -266,7 +266,7 @@ class oracle
             $offset ++;
         } // while
 
-        $string_out = preg_replace('/now\(\)/i', 'SYSTIMESTAMP', $string_out);
+        $string_out = preg_replace('/now\(\)/iu', 'SYSTIMESTAMP', $string_out);
 
         return $string_out;
 

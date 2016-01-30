@@ -256,8 +256,8 @@ class dict_table_s04 extends dict_table
         } // if
 
         // reduce multiple selections to a single selection
-        $array = where2array($where, false, false);
-        $where = array2where($array);
+        $rows = splitWhereByRow($where);
+        $where = $rows[0];
 
         // remove message created by table_generate_a.php
         $GLOBALS['messages'] = array();
@@ -565,7 +565,7 @@ class dict_table_s04 extends dict_table
         $menuDB = findDBName('menu', $this->dbname);
 
         if (empty($this->sql_from)) {
-        	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
+        	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_table.table_desc, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
         	                  . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
@@ -577,39 +577,29 @@ class dict_table_s04 extends dict_table
     } // _cm_pre_getData
 
     // ****************************************************************************
-    function _cm_pre_updateRecord ($rowdata)
+    function _cm_pre_updateRecord ($fieldarray)
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        if ($rowdata['pattern_id'] == 'list2') {
-            if ($rowdata['child_forms'] == 1) {
+        if ($fieldarray['pattern_id'] == 'list2') {
+            if ($fieldarray['child_forms'] == 1) {
                 unset($this->fieldspec['popup_task_id']['required']);
-                $rowdata['popup_task_id'] = '';
+                $fieldarray['popup_task_id'] = '';
             } else {
             	$this->fieldspec['popup_task_id']['required'] = 'y';
             } // if
         } // if
 
-        if ($rowdata['pattern_id'] == 'multi2') {
-            if ($rowdata['child_forms'] == 1) {
+        if ($fieldarray['pattern_id'] == 'multi2') {
+            if ($fieldarray['child_forms'] == 1) {
                 unset($this->fieldspec['popup_task_id']['required']);
-                $rowdata['popup_task_id'] = '';
+                $fieldarray['popup_task_id'] = '';
             } else {
             	$this->fieldspec['popup_task_id']['required'] = 'y';
             } // if
         } // if
 
-        return $rowdata;
-
-    } // _cm_pre_updateRecord
-
-    // ****************************************************************************
-    function _cm_validateUpdate ($fieldarray, $originaldata)
-    // perform custom validation before update.
-    {
-        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            return $fieldarray;  // do not process until method = POST
-        } // if
+        // generate all the scripts and database records for this task
 
         $task_id    = $fieldarray['task_id'];
         $script_id  = $fieldarray['script_id'];
@@ -621,12 +611,12 @@ class dict_table_s04 extends dict_table
         $count = $task_obj->getCount("task_id='$task_id'");
         if ($count > 0) {
             // 'This id is already in use'
-        	$this->errors['task_id'] = getLanguageText('e0040');
+            $this->errors['task_id'] = getLanguageText('e0040');
         } // if
         $count = $task_obj->getCount("script_id='$script_id' AND subsys_id='$subsys_id'");
         if ($count > 0) {
             // 'This id is already in use'
-        	$this->errors['script_id'] = getLanguageText('e0040');
+            $this->errors['script_id'] = getLanguageText('e0040');
         } // if
 
         // get default language for screen/report file
@@ -635,20 +625,20 @@ class dict_table_s04 extends dict_table
         unset($control_obj);
 
         if (isset($fieldarray['screen_file'])) {
-        	// check to see if screen structure file exists yet
+            // check to see if screen structure file exists yet
             $screen_dir  = "../$subsys_dir/screens/$default_lang/";
             $screen_file = $screen_dir .$fieldarray['screen_file'];
             if (file_exists($screen_file)) {
                 // 'A file with this name already exists'
-            	$this->errors['screen_file'] = getLanguageText('e0041');
+                $this->errors['screen_file'] = getLanguageText('e0041');
             } // if
         } elseif (isset($fieldarray['report_file'])) {
-        	// check to see if report structure file exists yet
+            // check to see if report structure file exists yet
             $report_dir  = "../$subsys_dir/reports/$default_lang/";
             $report_file = $report_dir .$fieldarray['report_file'];
             if (file_exists($report_file)) {
                 // 'A file with this name already exists'
-            	$this->errors['report_file'] = getLanguageText('e0041');
+                $this->errors['report_file'] = getLanguageText('e0041');
             } // if
         } // if
 
@@ -705,35 +695,35 @@ class dict_table_s04 extends dict_table
         } else {
             // if more than one database table is involved, check that they are related
             if (isset($fieldarray['outer_table'])) {
-        	    if (isset($fieldarray['middle_table'])) {
+                if (isset($fieldarray['middle_table'])) {
                     $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['middle_table'], $fieldarray['database_id_middle']);
-        	        if ($error) {
-        	    	    $this->errors['outer_table'] = $error;
-        	        } // if
-    	            $error = $this->_checkRelationship($fieldarray['middle_table'], $fieldarray['database_id_middle'], $fieldarray['inner_table'], $fieldarray['database_id']);
-        	        if ($error) {
-        	    	    $this->errors['middle_table'] = $error;
-        	        } // if
-        	    } elseif (isset($fieldarray['link_table'])) {
+                    if ($error) {
+                        $this->errors['outer_table'] = $error;
+                    } // if
+                    $error = $this->_checkRelationship($fieldarray['middle_table'], $fieldarray['database_id_middle'], $fieldarray['inner_table'], $fieldarray['database_id']);
+                    if ($error) {
+                        $this->errors['middle_table'] = $error;
+                    } // if
+                } elseif (isset($fieldarray['link_table'])) {
                     $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['link_table'], $fieldarray['database_id']);
-        	        if ($error) {
-        	    	    $this->errors['outer_table'] = $error;
-        	        } // if
-    	            $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id_inner'], $fieldarray['link_table'], $fieldarray['database_id']);
-        	        if ($error) {
-        	    	    $this->errors['inner_table'] = $error;
-        	        } // if
-        	    } else {
-        	        $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['inner_table'], $fieldarray['database_id']);
-        	        if ($error) {
-        	    	    $this->errors['outer_table'] = $error;
-        	        } // if
-        	    } // if
+                    if ($error) {
+                        $this->errors['outer_table'] = $error;
+                    } // if
+                    $error = $this->_checkRelationship($fieldarray['inner_table'], $fieldarray['database_id_inner'], $fieldarray['link_table'], $fieldarray['database_id']);
+                    if ($error) {
+                        $this->errors['inner_table'] = $error;
+                    } // if
+                } else {
+                    $error = $this->_checkRelationship($fieldarray['outer_table'], $fieldarray['database_id_outer'], $fieldarray['inner_table'], $fieldarray['database_id']);
+                    if ($error) {
+                        $this->errors['outer_table'] = $error;
+                    } // if
+                } // if
             } // if
         } // if
 
         if (!empty($this->errors)) {
-        	return $fieldarray;
+            return $fieldarray;
         } // if
 
         // all OK so far!!!
@@ -742,18 +732,18 @@ class dict_table_s04 extends dict_table
 
         // check for 'table AS alias' in any names
         if (isset($fieldarray['outer_table'])) {
-        	list($original, $alias) = getTableAlias3($fieldarray['outer_table']);
+            list($original, $alias) = getTableAlias3($fieldarray['outer_table']);
             if (strlen($alias) > 0) {
                 $fieldarray['outer_table']       = $original;
-            	$fieldarray['outer_table_alias'] = $alias;
+                $fieldarray['outer_table_alias'] = $alias;
             } // if
         } // if
 
         if (isset($fieldarray['middle_table'])) {
-        	list($original, $alias) = getTableAlias3($fieldarray['middle_table']);
+            list($original, $alias) = getTableAlias3($fieldarray['middle_table']);
             if (strlen($alias) > 0) {
                 $fieldarray['middle_table']       = $original;
-            	$fieldarray['middle_table_alias'] = $alias;
+                $fieldarray['middle_table_alias'] = $alias;
             } // if
         } // if
 
@@ -762,33 +752,33 @@ class dict_table_s04 extends dict_table
 
         if (isset($fieldarray['screen_file'])) {
             if ($this->pattern_id == 'timetable1') {
-            	// build screen structure script
-        	    $string = $this->_buildTimetableStructure ($this->pattern_id, $fieldarray, $screen_file);
+                // build screen structure script
+                $string = $this->_buildTimetableStructure ($this->pattern_id, $fieldarray, $screen_file);
             } else {
                 // build screen structure script
-            	$string = $this->_buildScreenStructure ($this->pattern_id, $fieldarray, $screen_file);
+                $string = $this->_buildScreenStructure ($this->pattern_id, $fieldarray, $screen_file);
             } // if
         } elseif (isset($fieldarray['report_file'])) {
             // build report structure script
-        	$string = $this->_buildReportStructure ($this->pattern_id, $fieldarray, $report_file);
+            $string = $this->_buildReportStructure ($this->pattern_id, $fieldarray, $report_file);
         } // if
 
         $nav_data = array();
         // see if this task requires children to be built automatically
         if ($this->pattern_id == 'list1') {
             // build child tasks to run under this parent
-        	$string = $this->_buildComponentScript ('add1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-        	// build single screen structure file for all these children
-        	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-        	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
-        	// add navigation button for AUDIT task
-        	$nav_data['task_id_snr'] = $fieldarray['task_id'];
-			$nav_data['task_id_jnr'] = 'audit_dtl(list)3';
-			$nav_data['context_preselect'] = 'Y';
+            $string = $this->_buildComponentScript ('add1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+            // build single screen structure file for all these children
+            $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+            $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+            // add navigation button for AUDIT task
+            $nav_data['task_id_snr'] = $fieldarray['task_id'];
+            $nav_data['task_id_jnr'] = 'audit_dtl(list)3';
+            $nav_data['context_preselect'] = 'Y';
             $this->nav_array[]       = $nav_data;
 
         } elseif ($this->pattern_id == 'list2') {
@@ -796,18 +786,18 @@ class dict_table_s04 extends dict_table
                 unset($fieldarray['inner_table']);
                 unset($fieldarray['inner_table_alias']);
                 // build child tasks to run under this parent
-            	$string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-            	// build single screen structure file for all these children
-            	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-            	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
-            	// add navigation button for AUDIT task
-            	$nav_data['task_id_snr'] = $fieldarray['task_id'];
-    			$nav_data['task_id_jnr'] = 'audit_dtl(list)3';
-    			$nav_data['context_preselect'] = 'Y';
+                $string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+                // build single screen structure file for all these children
+                $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+                $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+                // add navigation button for AUDIT task
+                $nav_data['task_id_snr'] = $fieldarray['task_id'];
+                $nav_data['task_id_jnr'] = 'audit_dtl(list)3';
+                $nav_data['context_preselect'] = 'Y';
                 $this->nav_array[]       = $nav_data;
 
             } elseif ($fieldarray['child_forms'] == '2') {
@@ -815,22 +805,22 @@ class dict_table_s04 extends dict_table
                 unset($fieldarray['inner_table_alias']);
                 // build child tasks to run under this parent
                 $string = $this->_buildComponentScript ('add3', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('del2', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('del2', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
                 // build a screen structure file for the search screen
                 $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-            	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+                $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
 
             } elseif ($fieldarray['child_forms'] == '3') {
                 unset($fieldarray['inner_table']);
                 unset($fieldarray['inner_table_alias']);
                 // build child tasks to run under this parent
-            	$string = $this->_buildComponentScript ('upd2', $fieldarray, $fieldarray['task_id'], 'popup1');
-            	$string = $this->_buildComponentScript ('del3', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('upd2', $fieldarray, $fieldarray['task_id'], 'popup1');
+                $string = $this->_buildComponentScript ('del3', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
                 // build a screen structure file for the search screen
                 $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-            	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+                $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
 
             } // if
 
@@ -838,63 +828,63 @@ class dict_table_s04 extends dict_table
             unset($fieldarray['inner_table']);
             unset($fieldarray['inner_table_alias']);
             // build child tasks to run under this parent
-        	$string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-        	// build single screen structure file for all these children
-        	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-        	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+            $string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+            // build single screen structure file for all these children
+            $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+            $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
 
         } elseif ($this->pattern_id == 'link1') {
             $fieldarray['table_id'] = $fieldarray['inner_table'];
             if ($fieldarray['database_id_inner'] == $fieldarray['database_id']) {
                 $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-        	    // build single screen structure file for all these children
-        	    $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-        	    $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+                // build single screen structure file for all these children
+                $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+                $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
             } // if
 
         } elseif ($this->pattern_id == 'multi2') {
             if ($fieldarray['child_forms'] == '1') {
                 unset($fieldarray['inner_table']);
                 unset($fieldarray['inner_table_alias']);
-            	$string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
-            	// build single screen structure file for all these children
-            	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-            	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+                $string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
+                // build single screen structure file for all these children
+                $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+                $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
 
             } elseif ($fieldarray['child_forms'] == '2') {
                 $string = $this->_buildComponentScript ('add3', $fieldarray, $fieldarray['task_id']);
-            	$string = $this->_buildComponentScript ('del2', $fieldarray, $fieldarray['task_id']);
+                $string = $this->_buildComponentScript ('del2', $fieldarray, $fieldarray['task_id']);
             } // if
 
         } elseif ($this->pattern_id == 'multi3') {
             unset($fieldarray['inner_table']);
             unset($fieldarray['inner_table_alias']);
             // build child tasks to run under this parent
-        	$string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
-        	$string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
-        	// build single screen structure file for all these children
-        	$screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
-        	$string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
+            $string = $this->_buildComponentScript ('add2', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('enq1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('upd1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('del1', $fieldarray, $fieldarray['task_id']);
+            $string = $this->_buildComponentScript ('search', $fieldarray, $fieldarray['task_id']);
+            // build single screen structure file for all these children
+            $screen_file = $screen_dir .$fieldarray['table_id'] .'.detail.screen.inc';
+            $string = $this->_buildScreenStructure ('detail1', $fieldarray, $screen_file);
 
         } // if
 
         if (!empty($this->errors)) {
-        	return $fieldarray;
+            return $fieldarray;
         } // if
 
         if (!empty($this->task_array)) {
             // insert entries into MNU_TASK table
             $fieldarray = $task_obj->insertMultiple($this->task_array);
             if ($task_obj->errors) {
-            	$this->errors = array_merge($this->errors, $task_obj->getErrors());
+                $this->errors = array_merge($this->errors, $task_obj->getErrors());
             } // if
             $this->messages = array_merge($this->messages, $task_obj->getMessages());
         } // if
@@ -904,7 +894,7 @@ class dict_table_s04 extends dict_table
             $nav_obj =& RDCsingleton::getInstance('mnu_nav_button');
             $fieldarray = $nav_obj->insertMultiple($this->nav_array);
             if ($nav_obj->errors) {
-            	$this->errors = array_merge($this->errors, $nav_obj->getErrors());
+                $this->errors = array_merge($this->errors, $nav_obj->getErrors());
             } // if
             $this->messages = array_merge($this->messages, $nav_obj->getMessages());
         } // if
@@ -914,7 +904,7 @@ class dict_table_s04 extends dict_table
             $menu_obj =& RDCsingleton::getInstance('mnu_menu');
             $fieldarray = $menu_obj->insertMultiple($this->menu_array);
             if ($menu_obj->errors) {
-            	$this->errors = array_merge($this->errors, $menu_obj->getErrors());
+                $this->errors = array_merge($this->errors, $menu_obj->getErrors());
             } // if
             $this->messages = array_merge($this->messages, $menu_obj->getMessages());
         } // if
@@ -925,7 +915,7 @@ class dict_table_s04 extends dict_table
 
         return $fieldarray;
 
-    } // _cm_validateUpdate
+    } // _cm_pre_updateRecord
 
     // ****************************************************************************
     function _buildComponentScript ($pattern_id, $fieldarray, $parent_id=null, $popup_type='popup1')
@@ -1083,6 +1073,7 @@ class dict_table_s04 extends dict_table
 					// add ths task to the subsystem's main menu
 			        $menu_data['menu_id']     = $this->subsys_id;
 			        $menu_data['task_id_jnr'] = $fieldarray['task_id'];
+                    $menu_data['button_desc'] = $fieldarray['table_desc'];
     			    break;
 
 				case 'list2':

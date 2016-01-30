@@ -1,5 +1,18 @@
 ﻿RADICORE for PHP - news
 
+2016-01-30, version 1.93.00
+Database changes:
+- none
+
+Other changes:
+- Added 'u' modifier to all preg_replace calls to fix the problem reported in http://radicore.org/fud/index.php?t=msg&th=1896&goto=5293&#msg_5293
+- Changed 'mnu_subsystem_s01.class.inc' so that when exporting a subsystem it includes MNU_TASK entries with TASK_TYPE = 'MENU' as well as 'PROC'.
+- Changed 'mnu_subsystem_s01.class.inc' so that when exporting a subsystem it includes MNU_ROLE entries for each role that has one of the subsystem's tasks on the MNU_ROLE_TASK table.
+- Changed 'std.list2.inc' and 'std.list3.inc' to use function 'getForeignKeyValues()' to help build the WHERE string to access the child table.
+- Modified the Workflow process so that if a transition is a batch task, the next transition can have an 'AUTO' trigger provided that it is also a batch task. It is possible for an online task to be followed by a batch task with an 'AUTO' trigger which is then run immediately in the same session, but it is not possible for a batch task to be followed by an online task with an 'AUTO' trigger. A transition which is a batch task can be followed by an online task with a 'USER' trigger as this does not actually run the online task - it only updates the database to enable the workitem for that online task which then prompts the user for action during an online session.
+- Modified the Dictionary Export process so that any column with the column_desc field set to 'DEPRECATED' will be excluded from the $fieldspec array. This will allow a deprecated column to remain in the physical database, but the table class will act as if it is not there.
+- Modified the way that batch (command line) tasks are activated on Windows so that if the PHP.EXE program is not correctly defined on the PATH environment variable it can be overridden by the PATH_TO_PHP_EXECUTABLE constant in the config.inc file.
+
 2015-12-12, version 1.92.0
 Database changes:
 - run script 'audit\sql\mysql\alter_table(2015-10-15).sql' to alter the structure of the AUDIT database.

@@ -226,7 +226,7 @@ if ($dbouter->getNumRows() < 1) {
             scriptNext($return_from, $where);
         } // if
     } // if
-    if (isset($return_from) AND !empty($return_action) AND !empty($where)) {
+    if (!empty($return_from) AND !empty($return_action) AND !empty($where)) {
     	// send selection back to the previous script
         $prev_script = getPreviousScript();
         $prev_task   = getPreviousTask($prev_script);
@@ -292,7 +292,7 @@ if (isset($instruction)) {
 } // if
 
 // convert to foreign key names which relate this child to this parent
-$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dbinner);
+$fkeyvalues = getForeignKeyValues($dbouter, $dbinner);
 if (!empty($fkeyvalues)) {
     $inner_where = array2where($fkeyvalues);
 } else {

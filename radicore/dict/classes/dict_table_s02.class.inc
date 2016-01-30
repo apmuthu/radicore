@@ -51,7 +51,7 @@ class dict_table_s02 extends dict_table
 
                 // process column details
             	$columnobj->sql_orderby = 'column_seq';
-                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id'");
+                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id' AND column_desc != 'DEPRECATED'");
     			if (empty($data)) {
     			    $data[0]['database_id'] = $database_id;
     				$data[0]['table_id']    = $table_id;

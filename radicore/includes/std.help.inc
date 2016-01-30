@@ -73,9 +73,8 @@ if (!empty($data)) {
     $help_text = getLanguageText('sys0090', 'help_text'); // Nothing retrieved from database table 'x'
 } // if
 
-//$search_array  = array("/(?<!>)\r\n/",   "/(?<!>)\n/"    , "/%root%/", "/%lang%/");
-$search_array  = array("/\r\n(?!<)/",   "/\n(?!<)/"    , "/%root%/", "/%lang%/");
-$replace_array = array("<br />", "<br />", $root   , $lang);
+$search_array  = array("/\r\n(?!<)/u",  "/\n(?!<)/u",   "/%root%/u",    "/%lang%/u");
+$replace_array = array("<br />",        "<br />",       $root,          $lang);
 
 // perform replacement in $help_text
 $help_text = preg_replace($search_array, $replace_array, $help_text);

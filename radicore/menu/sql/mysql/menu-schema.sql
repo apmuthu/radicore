@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
   `menu_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `task_id_jnr` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `sort_seq` tinyint(3) unsigned zerofill NOT NULL DEFAULT '000',
-  `button_text` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `button_text` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,

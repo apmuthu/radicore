@@ -55,6 +55,9 @@ class workflow_engine extends wf_workflow
     function finishWorkItem ($case_id, $workitem_id, $context, $fieldarray)
     // a workitem (transition) has been completed, so update this workflow case.
     {
+        // switch to correct directory for retrieving message text
+        $GLOBALS['classdir'] = dirname($this->dirname);
+
         // retrieve the current workitem
         require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');

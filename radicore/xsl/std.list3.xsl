@@ -149,34 +149,50 @@
   
             <!-- this is the INNER table -->
             <table>
-  
-              <!-- set up column widths -->
-              <xsl:call-template name="column_group">
-                <xsl:with-param name="zone" select="'inner'"/>
-              </xsl:call-template>
-  
-              <thead>
-                <!-- set up column headings -->
-                <xsl:call-template name="column_headings">
-                  <xsl:with-param name="zone"   select="'inner'"/>
-                  <xsl:with-param name="nosort" select="string(/root/params/nosort)"/>
-                </xsl:call-template>
-              </thead>
-  
-              <tbody>
-                <!-- process each non-empty row in the INNER table of the XML file -->
-                <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][$middle_count]/*[name()=$inner][count(*)&gt;0]">
-  
-                  <!-- display all the fields in the current row -->
-                  <xsl:call-template name="display_horizontal">
-                    <xsl:with-param name="zone"     select="'inner'"/>
-                    <xsl:with-param name="currocc"  select="." />
-                    <xsl:with-param name="multiple" select="'y'"/>
-                    <xsl:with-param name="noedit"   select="string(/root/params/inner_noedit)"/>
+              <xsl:choose>
+                <xsl:when test="/root/params/inner_vertical = 'y'">
+                  <!-- display a single row only -->
+                  
+                  <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]/*[name()=$inner][1]">
+                    <!-- display all the fields in the current row -->
+                    <xsl:call-template name="display_vertical">
+                      <xsl:with-param name="zone"   select="'inner'"/>
+                      <xsl:with-param name="noedit" select="string(/root/params/inner_noedit)"/>
+                    </xsl:call-template>
+                  </xsl:for-each>
+                </xsl:when>
+                
+                <xsl:otherwise> <!-- default is horzontal display -->
+                  <!-- set up column widths -->
+                  <xsl:call-template name="column_group">
+                    <xsl:with-param name="zone" select="'inner'"/>
                   </xsl:call-template>
-  
-                </xsl:for-each>
-              </tbody>
+      
+                  <thead>
+                    <!-- set up column headings -->
+                    <xsl:call-template name="column_headings">
+                      <xsl:with-param name="zone"   select="'inner'"/>
+                      <xsl:with-param name="nosort" select="string(/root/params/nosort)"/>
+                    </xsl:call-template>
+                  </thead>
+      
+                  <tbody>
+                    <!-- process each non-empty row in the INNER table of the XML file -->
+                    <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][$middle_count]/*[name()=$inner][count(*)&gt;0]">
+      
+                      <!-- display all the fields in the current row -->
+                      <xsl:call-template name="display_horizontal">
+                        <xsl:with-param name="zone"     select="'inner'"/>
+                        <xsl:with-param name="currocc"  select="." />
+                        <xsl:with-param name="multiple" select="'y'"/>
+                        <xsl:with-param name="noedit"   select="string(/root/params/inner_noedit)"/>
+                      </xsl:call-template>
+      
+                    </xsl:for-each>
+                  </tbody>
+                </xsl:otherwise>
+              </xsl:choose>
+              
             </table>
           </div>
   

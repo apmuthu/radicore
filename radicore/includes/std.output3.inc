@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output3.inc
@@ -13,13 +13,13 @@
 
 // Note that there is no dialog with the user (apart from the download box)
 
-require_once 'include.general.inc';
-
-// identify output mode
-$mode = 'pdf-detail';
-
-// load session variables
-initSession();
+if (preg_match('/cli/i', php_sapi_name())) {
+    // being run from the command line, so initialisation has already been done
+} else {
+    require_once 'include.general.inc';
+    initSession();          // load session variables
+    $mode = 'pdf-detail';   // identify output mode
+} // if
 
 //if (!empty($selection) AND !isset($return_from)) {
 //    if (empty($where)) {
@@ -34,11 +34,11 @@ require_once "classes/$table_id.class.inc";
 $dbobject = new $table_id;
 // indicate that this object was started from a page controller
 $dbobject->initiated_from_controller = true;
-$dbobject->sql_select  = &$sql_select;
-$dbobject->sql_from    = &$sql_from;
-$dbobject->sql_where   = &$sql_where;
-$dbobject->sql_groupby = &$sql_groupby;
-$dbobject->sql_having  = &$sql_having;
+$dbobject->sql_select  = (empty($sql_select))  ? null : $sql_select;
+$dbobject->sql_from    = (empty($sql_from))    ? null : $sql_from;
+$dbobject->sql_where   = (empty($sql_where))   ? null : $sql_where;
+$dbobject->sql_groupby = (empty($sql_groupby)) ? null : $sql_groupby;
+$dbobject->sql_having  = (empty($sql_having))  ? null : $sql_having;
 if (!empty($sql_orderby)) {
     $dbobject->setDefaultOrderby($sql_orderby);
 } elseif (isset($task_orderby)) {
@@ -99,8 +99,10 @@ $errors      = $dbobject->getErrors();
 
 $prev_script = getPreviousScript($task_id);
 $prev_task   = getPreviousTask($prev_script);
-// tell previous script that we are returning
-$_SESSION['pages'][$prev_script][$prev_task]['return_from'] = 'pdf';
+if (!empty($prev_script) AND !empty($task_id)) {
+    // tell previous script that we are returning
+    $_SESSION['pages'][$prev_script][$prev_task]['return_from'] = 'pdf';
+} // if
 
 if (!preg_match('/(D|I)/i', $destination) OR !empty($errors) OR isset($GLOBALS['batch'])) {
 	$batch_errors = scriptPrevious($errors, $messages, 'OK');

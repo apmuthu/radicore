@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -204,8 +204,7 @@ if (!function_exists('append2ScriptSequence')) {
     function append2ScriptSequence ($next, $prepend=false)
     // append/prepend details of next task to $_SESSION['script_sequence']
     {
-        if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])
-        OR (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch']))) {
+        if (preg_match('/INTERNET/i', $_SESSION['logon_user_id'])) {
             return;
         } // if
 
@@ -306,7 +305,8 @@ if (!function_exists('array_update_associative')) {
                     } // if
                 } // if
                 //if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
-				if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
+				//if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
+                if ($spec['type'] == 'array' AND is_array($array2[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both arrays, so update
                 } elseif (!is_array($array2[$fieldname]) AND !is_array($array1[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both scalars, so update
@@ -763,11 +763,11 @@ if (!function_exists('array2where2')) {
         } // if
 
         // remove any parenthesised expressions which are now empty
-        $patterns[] = "/[ ]+AND[ ]*\([ ]*\)/";  // 'AND ()'
-        $patterns[] = "/[ ]+OR[ ]*\([ ]*\)/";   // 'OR ()'
-        $patterns[] = "/[ ]+\([ ]*\)/";         // '()'
-        $patterns[] = "/^[ ]*AND[ ]+/";         // begins with 'AND'
-        $patterns[] = "/^[ ]*OR[ ]+/";          // begins with 'OR'
+        $patterns[] = "/[ ]+AND[ ]*\([ ]*\)/iu";  // 'AND ()'
+        $patterns[] = "/[ ]+OR[ ]*\([ ]*\)/iu";   // 'OR ()'
+        $patterns[] = "/[ ]+\([ ]*\)/iu";         // '()'
+        $patterns[] = "/^[ ]*AND[ ]+/iu";         // begins with 'AND'
+        $patterns[] = "/^[ ]*OR[ ]+/iu";          // begins with 'OR'
         $where = preg_replace($patterns, '', $where);
 
         return $where;
@@ -3473,7 +3473,7 @@ if (!function_exists('getFileStructure')) {
 
 // ****************************************************************************
 if (!function_exists('getForeignKeyValues')) {
-    function getForeignKeyValues ($parentOBJ, $parent_data, $childOBJ)
+    function getForeignKeyValues ($parentOBJ, $childOBJ)
     // identify any mapping between the column names for the foreign key on the
     // CHILD object and the corresponding primary/unique key on the PARENT object.
     {
@@ -3483,16 +3483,16 @@ if (!function_exists('getForeignKeyValues')) {
         } // if
 
         if (!is_object($childOBJ)) {
-            // "3rd argument must be an object"
+            // "2rd argument must be an object"
             trigger_error(getLanguageText('sys0228'), E_USER_ERROR);
         } // if
 
-        if (!is_array($parent_data)) {
-            $parent_data = array();
-        } // if
-
-        $parent_table = $parentOBJ->getClassName(); // may be a sub-class
+        $parent_table = $parentOBJ->getClassName(); // may be a sub-class providing an alias name
         $child_table  = $childOBJ->tablename;       // use actual name
+        $parent_data  = $parentOBJ->getFieldArray();
+        if (is_long(key($parent_data))) {
+            $parent_data = array_shift($parent_data);
+        } // if
 
         $found = false;
         // first look for alias names
@@ -3514,41 +3514,28 @@ if (!function_exists('getForeignKeyValues')) {
             } // foreach
         } // if
 
-//        if (!$found) {
-//            // "No relationship found between the PARENT object and the CHILD object"
-//            trigger_error(getLanguageText('sys0229'), E_USER_ERROR);
-//        } // if
+        $fkeyvalues  = array();
 
-        $child_data = array();
+        if ($found) {
+            foreach ($reldata['fields'] as $child_field => $parent_field) {
+                // swap the field names between the PARENT and CHILD tables
+                if (isset($parent_data[$parent_field])) {
+                    $fkeyvalues[$child_field] = $parent_data[$parent_field];
+                } // if
+            } // foreach
+        } else {
+            // no relationship found, so default to primary key of parent
+            $pkeynames = $parentOBJ->getPkeyNamesAdjusted();
+            foreach ($pkeynames as $fieldname) {
+                if (isset($parent_data[$fieldname])) {
+                    $fkeyvalues[$fieldname] = $parent_data[$fieldname];
+                } // if
+            } // foreach
+        } // if
 
-        foreach ($reldata['fields'] as $child_field => $parent_field) {
-            // swap the field names between the PARENT and CHILD tables
-            if (isset($parent_data[$parent_field])) {
-                $child_data[$child_field] = $parent_data[$parent_field];
-            } // if
-        } // foreach
-
-        return $child_data;
+        return $fkeyvalues;
 
     } // getForeignKeyValues
-} // if
-
-// ****************************************************************************
-if (!function_exists('getHelpText')) {
-    function getHelpText ($filename, $directory)
-    // load the contents of $filename from a disk file.
-    {
-        // locate file in subdirectory which matches user's language code
-        $fname = getLanguageFile($filename, $directory, true);
-
-        if (file_exists($fname)) {
-    	    $contents = file_get_contents($fname);
-    	    return $contents;
-    	} // if
-
-        return FALSE;
-
-    } // getHelpText
 } // if
 
 // ****************************************************************************
@@ -3808,50 +3795,50 @@ if (!function_exists('html2text')) {
         $output = str_replace(array("\r\n", "\r", "\n"), '', $output);
 
         // convert all '<BR>' tags to line breaks
-        $output = preg_replace('#([ ]*<BR[ ]*[/]?>[ ]*)#ims', "\n", $output);
+        $output = preg_replace('#([ ]*<BR[ ]*[/]?>[ ]*)#imsu', "\n", $output);
 
         // remove any spaces between tags
-        $output = preg_replace('#>[ \n\r\t]+<#ims', '><', $output);
+        $output = preg_replace('#>[ \n\r\t]+<#imsu', '><', $output);
 
         // convert all '<p>' tags to double line breaks
-        $output = preg_replace('#(<p[ ]*)#ims', "\n\n<p ", $output);
+        $output = preg_replace('#(<p[ ]*)#imsu', "\n\n<p ", $output);
 
         // convert all '</p>' tags to double line breaks
-        $output = preg_replace('#(</p>)#ims', "</p>\n\n", $output);
+        $output = preg_replace('#(</p>)#imsu', "</p>\n\n", $output);
 
         // insert line break after each '</DIV>'
-        $output = preg_replace('#</DIV>#ims', "</DIV>\n", $output);
+        $output = preg_replace('#</DIV>#imsu', "</DIV>\n", $output);
 
         // insert line break after each '</LI>'
-        $output = preg_replace('#</LI>#ims', "</LI>\n", $output);
+        $output = preg_replace('#</LI>#imsu', "</LI>\n", $output);
 
         // insert line break after each '</TR>'
-        $output = preg_replace('#</TR>#ims', "</TR>\n", $output);
+        $output = preg_replace('#</TR>#imsu', "</TR>\n", $output);
 
         // insert comma after each '</TD>'
-        $output = preg_replace('#</TD>#ims', "</TD>,", $output);
+        $output = preg_replace('#</TD>#imsu', "</TD>,", $output);
 
         // remove or replace all other HTML tags and special characters
-        $output = preg_replace('#<title>.*</title>#ims', '', $output);
-        $output = preg_replace('#<style[ ]*.*</style>#ims', '', $output);
-        $output = preg_replace('#<meta[ ]*.*/>#ims', '', $output);
-        $output = preg_replace('#<table[ ].*?>#ims', '', $output);
+        $output = preg_replace('#<title>.*</title>#imsu', '', $output);
+        $output = preg_replace('#<style[ ]*.*</style>#imsu', '', $output);
+        $output = preg_replace('#<meta[ ]*.*/>#imsu', '', $output);
+        $output = preg_replace('#<table[ ].*?>#imsu', '', $output);
         $output = strip_tags($output);
 
-        $output = preg_replace('#\n'.$nbsp.'#ims', '', $output);  // remove <newline>+nbsp
-        $output = preg_replace('#\n,#ims', '', $output);  // remove <newline>+comma
-        $output = preg_replace('#\n'.$nbsp.',#ims', '', $output);  // remove <newline>+nbsp+comma
+        $output = preg_replace('#\n'.$nbsp.'#imsu', '', $output);  // remove <newline>+nbsp
+        $output = preg_replace('#\n,#imsu', '', $output);  // remove <newline>+comma
+        $output = preg_replace('#\n'.$nbsp.',#imsu', '', $output);  // remove <newline>+nbsp+comma
 
         // replace 'comma+nbsp+comma' with 'comma'
-        $output = preg_replace('#,'.$nbsp.'[ ]?,#ims', ',', $output);
-        $output = preg_replace('#,'.$nbsp.'[ ]?,#ims', ',', $output);
-        $output = preg_replace('#,'.$nbsp.'[ ]?,#ims', ',', $output);
+        $output = preg_replace('#,'.$nbsp.'[ ]?,#imsu', ',', $output);
+        $output = preg_replace('#,'.$nbsp.'[ ]?,#imsu', ',', $output);
+        $output = preg_replace('#,'.$nbsp.'[ ]?,#imsu', ',', $output);
 
         // replace 'comma+comma' with 'comma'
-        $output = preg_replace('#,[,]+#ims', ',', $output);
+        $output = preg_replace('#,[,]+#imsu', ',', $output);
 
         // convert all quadruple line breaks to double line breaks
-        $output = preg_replace('#\n\n[\n]+#ims', "\n\n", $output);
+        $output = preg_replace('#\n\n[\n]+#imsu', "\n\n", $output);
 
         //$output = htmlspecialchars_decode($output, ENT_QUOTES);
         $output = html_entity_decode($output, ENT_QUOTES, 'UTF-8');
@@ -4607,7 +4594,7 @@ if (!function_exists('number_unformat')) {
         $number = str_replace($decimal_point, '.', $number);
 
         // strip any non-numeric characters from the end of the number
-        $number = preg_replace('/[^0-9]*$/', '', $number);
+        $number = preg_replace('/[^0-9]*$/u', '', $number);
 
         return $number;
 
@@ -4841,7 +4828,12 @@ if (!function_exists('qualifyField')) {
             	    // fieldname is not qualified, but does it need to be?
                     if (is_array($select_alias) AND array_key_exists($fieldname, $select_alias)) {
             	    	// fieldname is an alias of something, so move it to the HAVING clause
-            	    	$having_array[$fieldname] = $fieldvalue;
+                        if (array_key_exists($fieldname, $having_array)) {
+                            // name already exists, so add it as an index entry
+                            $having_array[] = 'OR '.$fieldname.$fieldvalue;
+                        } else {
+            	    	    $having_array[$fieldname] = $fieldvalue;
+                        } // if
             	    } elseif (empty($table_array)) {
             	        // if $fieldspec is supplied does it contain fieldname?
             	    	if (empty($fieldspec) or (array_key_exists($fieldname, $fieldspec)) AND !isset($fieldspec[$fieldname]['nondb'])) {
@@ -5208,7 +5200,11 @@ END_OF_REGEX;
             $array3 = removeStrayAndOrs($array3);
             // convert array back into a string for a single row
             $where1 = implode('', $array3);
-            $array2[$rownum] = $where1;
+            if (!empty($where1)) {
+                $array2[$rownum] = $where1;
+            } else {
+                unset($array2[$rownum]);
+            } // if
         } // foreach
 
         // convert strings for multiple rows into '(row1) OR (row2) OR (row3) ....'
@@ -5236,7 +5232,7 @@ if (!function_exists('rangeFromTo')) {
 /imsx
 EOP;
 
-        $search  = "/[^\d\.: -]/";  // strip anything except digits, hyphens, colons, periods and spaces
+        $search  = "/[^\d\.: -]/u";  // strip anything except digits, hyphens, colons, periods and spaces
         $replace = null;
 
         if (strlen($from) > 0) {
@@ -7488,7 +7484,7 @@ END_OF_REGEX;
 END_OF_REGEX;
 
         $input = $where;
-        $where = trim(preg_replace("/\s+/", " ", $where));  // replace tabs and newlines with ' '
+        $where = trim(preg_replace("/\s+/u", " ", $where));  // replace tabs and newlines with ' '
         $output = array();
         while (!empty($where)) {
             $where = trim($where);

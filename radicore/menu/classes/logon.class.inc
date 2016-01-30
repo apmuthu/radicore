@@ -113,11 +113,15 @@ class logon extends mnu_user
             $_SESSION['user_language'] = $_SESSION['default_language'];
         } // if
 
-        $fieldarray['user_password'] = '';
-        if (is_True($fieldarray['is_disabled'])) {
-            $this->errors[] = getLanguageText('sys0143'); // 'This user has been disabled';
-            $this->fieldarray = $logonarray;
-            return $this->errors;
+        if ($logon_user_id == 'ANONYMOUS') {
+            // the next bit does not apply
+        } else {
+            $fieldarray['user_password'] = '';
+            if (is_True($fieldarray['is_disabled'])) {
+                $this->errors[] = getLanguageText('sys0143'); // 'This user has been disabled';
+                $this->fieldarray = $logonarray;
+                return $this->errors;
+            } // if
         } // if
 
         $today = getTimeStamp('date');
@@ -215,19 +219,23 @@ class logon extends mnu_user
 
         if (empty($this->errors)) {
         	if ($auth_array['authentication'] == 'INTERNAL') {
-                // find out if user needs to change his password
-                if ($mnu_control->getControlData('pswd_change', $updatearray)) {
-                    $next['task_id']  = 'mnu_user(upd1)b';
-                    $next['where']    = "user_id='$logon_user_id'";
-                    $next['action']   = 'OK';
-                    // 'You must change your password';
-                    $next['messages'] = getLanguageText('sys0146');
-                    // this is processed by scriptnext() and scriptprevious()
-                    append2ScriptSequence($next);
+                if ($logon_user_id == 'ANONYMOUS') {
+                    // the next bit does not apply
                 } else {
-                    // find out is the user's password is due to expire in the near future
-                    if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {
-                    	$this->messages[] = $expiry_msg;
+                    // find out if user needs to change his password
+                    if ($mnu_control->getControlData('pswd_change', $updatearray)) {
+                        $next['task_id']  = 'mnu_user(upd1)b';
+                        $next['where']    = "user_id='$logon_user_id'";
+                        $next['action']   = 'OK';
+                        // 'You must change your password';
+                        $next['messages'] = getLanguageText('sys0146');
+                        // this is processed by scriptnext() and scriptprevious()
+                        append2ScriptSequence($next);
+                    } else {
+                        // find out is the user's password is due to expire in the near future
+                        if ($expiry_msg = $mnu_control->getControlData('pswd_expires', $updatearray)) {
+                    	    $this->messages[] = $expiry_msg;
+                        } // if
                     } // if
                 } // if
             } // if
@@ -390,7 +398,9 @@ class logon extends mnu_user
         } elseif (!empty($_SESSION['SSO'])) {
             // Single Sign On option requested from script '<subsys>/<script>'
             $_SESSION['SSO'] = ltrim($_SESSION['SSO'], '/');
-            list($subsys_id, $script_id) = explode('/', $_SESSION['SSO']);
+            //list($subsys_id, $script_id) = explode('/', $_SESSION['SSO']);
+            $script_id = basename($_SESSION['SSO']);
+            $subsys_id = basename(dirname($_SESSION['SSO']));
             // find the task_id which goes with this script_id
             $dbobject =& RDCsingleton::getInstance('mnu_task');
             $data = $dbobject->getData("subsys_id='$subsys_id' AND script_id='$script_id'");

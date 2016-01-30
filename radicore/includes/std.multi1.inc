@@ -149,32 +149,13 @@ if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
     $submit_button = check_submit_button($act_buttons, $_POST);
     $task_button   = check_task_button($_POST);
-    if (!empty($submit_button) OR !empty($task_button)) {
+    $custom_button = check_custom_button($_POST);
+    if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
-
-        if (!empty($task_button)) {
-            // look for a navigation or popup button which jumps to another script
-            $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
-            if (is_array($child_errors)) {
-                $errors[$dbobject->getClassName()] = $child_errors;
-            } // if
-        } // if
-
-    } elseif ($custom_button_array = check_custom_button($_POST)) {
-        list($custom_button, $button_row, $button_zone) = $custom_button_array;
-        // a custom button was pressed
-        $dbobject->startTransaction();
-        $fieldarray = $dbobject->customButton($fieldarray, $custom_button, $_POST);
-        if ($dbobject->errors) {
-            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-            $dbobject->rollback();
-        } else {
-            $dbobject->commit();
-        } // if
 
     } else {
         // deal with a javascript 'submit()'.
@@ -184,7 +165,26 @@ if (!empty($_POST)) {
         } // if
     } // if
 
-    if (empty($errors) AND !empty($submit_button)) {
+    if (empty($errors) AND !empty($task_button)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+        if (is_array($child_errors)) {
+            $errors[$dbobject->getClassName()] = $child_errors;
+        } // if
+
+    } elseif (empty($errors) AND !empty($custom_button)) {
+        // a custom button was pressed
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
+        $dbobject->startTransaction();
+        $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+            $dbobject->rollback();
+        } else {
+            $dbobject->commit();
+        } // if
+
+    } elseif (empty($errors) AND !empty($submit_button)) {
         $dbobject->startTransaction();
         $dbobject->no_submit_on_error = true;
         // set $where to primary key of current record

@@ -182,7 +182,7 @@ class pgsql
                 $separator = trim($regs2[0]);
 
                 $string2 = 'STRING_AGG('.$part1.','.$separator.' ORDER BY '.$orderby.')';
-                $output  = preg_replace('/group_concat\(' .$string1 .'\)/i', $string2, $output);
+                $output  = preg_replace('/group_concat\(' .$string1 .'\)/iu', $string2, $output);
             } // foreach
         } // if
 

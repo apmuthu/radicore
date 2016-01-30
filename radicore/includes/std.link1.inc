@@ -137,32 +137,40 @@ if (!empty($_POST)) {
     // identify if one of the 'submit' buttons has been pressed
     $submit_button = check_submit_button($act_buttons, $_POST);
     $task_button   = check_task_button($_POST);
-    if (!empty($submit_button) OR !empty($task_button)) {
+    $custom_button = check_custom_button($_POST);
+    if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with user's input (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
         $link_data = array_update_indexed($link_data, $_POST);
         // ensure that changes are stored inside relevant object
         $dblink->setFieldArray($link_data);
 
-        if (!empty($task_button)) {
-            // look for a navigation or popup button which jumps to another script
-            $child_errors = childForm($_POST, array('dblink' => $dblink), $task_button);
-            if (is_array($child_errors)) {
-                $errors[$dblink->getClassName()] = $child_errors;
-            } // if
+    } else {
+        // deal with a javascript 'submit()'.
+        $link_data = $dblink->updateFieldArray($link_data, $_POST);
+        if ($dblink->errors) {
+            $errors[$dblink->getClassName()] = $dblink->getErrors();
+        } // if
+    } // if
+
+    if (empty($errors) AND !empty($task_button)) {
+        // look for a navigation or popup button which jumps to another script
+        $child_errors = childForm($_POST, array('dblink' => $dblink), $task_button);
+        if (is_array($child_errors)) {
+            $errors[$dblink->getClassName()] = $child_errors;
         } // if
 
-    } elseif ($custom_button_array = check_custom_button($_POST)) {
-        list($custom_button, $button_row, $button_zone) = $custom_button_array;
+    } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dblink->startTransaction();
-        if ($button_zone == $dbouter->zone) {
-            $outer_data = $dbouter->customButton($outer_data, $custom_button, $_POST);
+        if ($btn_zone == $dbouter->zone) {
+            $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($button_zone == $dblink->zone) {
-            $link_data = $dblink->customButton($link_data, $custom_button, $_POST, $button_row);
+        } elseif ($btn_zone == $dblink->zone) {
+            $link_data = $dblink->customButton($link_data, $custom_btn, $_POST, $btn_row);
             if ($dblink->errors) {
                 $errors[$dblink->getClassName()] = $dblink->getErrors();
             } // if
@@ -173,15 +181,7 @@ if (!empty($_POST)) {
             $dblink->commit();
         } // if
 
-    } else {
-        // deal with a javascript 'submit()'.
-        $link_data = $dblink->updateFieldArray($link_data, $_POST);
-        if ($dblink->errors) {
-            $errors[$dblink->getClassName()] = $dblink->getErrors();
-        } // if
-    } // if
-
-    if (empty($errors) AND !empty($submit_button) AND empty($search)) {
+    } elseif (empty($errors) AND !empty($submit_button)) {
     	// update this data in the database
         $dblink->startTransaction();
         $save_pageno = $dblink->pageno;
@@ -328,7 +328,7 @@ if (isset($search)) {
 } // if
 
 // convert to foreign key names which relate this child to this parent
-$fkeyvalues = getForeignKeyValues($dbouter, $outer_data, $dblink);
+$fkeyvalues = getForeignKeyValues($dbouter, $dblink);
 if (!empty($fkeyvalues)) {
     $link_where = array2where($fkeyvalues);
 } else {

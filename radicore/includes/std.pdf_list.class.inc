@@ -1,9 +1,11 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
-require 'std.pdf.class.inc';
+if (!class_exists('PDF')) {
+    require_once 'std.pdf.class.inc';
+} // if
 class PDF_list extends PDF
 {
     // ****************************************************************************
@@ -19,9 +21,9 @@ class PDF_list extends PDF
         } // if
 
         if (isset($this->structure['title'])) {
-            // format current row
-            $style_array = array();
-            $this->fieldarray = $this->dbobject->formatData($this->fieldarray, $style_array);
+            // format current row - NOT REQUIRED AS IT HAS ALREADY BEEN DONE
+            //$style_array = array();
+            //$this->fieldarray = $this->dbobject->formatData($this->fieldarray, $style_array);
             // allow contents to be customised
             $this->fieldarray = $this->dbobject->_cm_ListView_header($this->fieldarray);
             // this code is in the parent class

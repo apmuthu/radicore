@@ -13,13 +13,13 @@
 
 // NOTE: There is no dialog with the user.
 
-require_once 'include.general.inc';
-
-// identify mode for xsl file
-$mode = 'update';
-
-// load session variables
-initSession();
+if (preg_match('/cli/i', php_sapi_name())) {
+    // being run from the command line, so initialisation has already been done
+} else {
+    require_once 'include.general.inc';
+    initSession();      // load session variables
+    $mode = 'update';   // identify mode for xsl file
+} // if
 
 //if (!empty($selection) AND !isset($return_from)) {
 //    // $selection takes precedence over $where
@@ -61,15 +61,22 @@ if (empty($fieldarray)) {
 // insert or update this data in the database
 $dbobject->startTransaction();
 $fieldarray = $dbobject->insertOrUpdate($fieldarray);
-if ($dbobject->errors) {
-    $dbobject->rollback();
-    $errors = $dbobject->getErrors();
-} else {
-    $errors = $dbobject->commit();
-} // if
 
-if (!empty($dbobject->messages)) {
-    $messages = array_merge($messages, $dbobject->getMessages());
+if (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit'])) {
+    if ($dbobject->errors) {
+        $dbobject->rollback();
+        $errors = $dbobject->getErrors();
+    } else {
+        $errors = $dbobject->commit();
+        $messages = array_merge($messages, $dbobject->getMessages());
+    } // if
+
+    global $stdout, $stdouth;
+    if (!empty($stdout)) {
+        foreach ($messages as $message) {
+            $result = fwrite($stdouth, "<p>$message</p>\n");
+        } // foreach
+    } // if
 } // if
 
 if (empty($errors)) {

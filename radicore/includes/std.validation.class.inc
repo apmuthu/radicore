@@ -173,7 +173,7 @@ END_OF_REGEX;
             // convert $fieldvalue array into a string with comma separator
             if (is_array($fieldvalue)) {
                 foreach ($fieldvalue as $key => $value) {
-                	if (empty($value)) {
+                	if (strlen(trim($value)) == 0) {
                 		unset($fieldvalue[$key]);
                 	} // if
                 } // foreach

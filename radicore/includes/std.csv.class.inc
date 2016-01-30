@@ -131,14 +131,14 @@ class csv_class
             if (!empty($fieldlist) AND is_array($fieldlist)) {
                 // $fieldlist contains a list of field names which should be included in the output.
                 // $save_selection identifies the order in which they should be output.
-                if (!is_array($dbobject->save_selection) OR empty($dbobject->save_selection)) {
-                    $dbobject->save_selection = $fieldlist;
+                if (!is_array($dbobject->saved_selection) OR empty($dbobject->saved_selection)) {
+                    $dbobject->saved_selection = $fieldlist;
                 } // if
                 $sorted = array();
                 // now resequence and edit the data
-                foreach ($dbobject->save_selection as $name => $flag) {
+                foreach ($dbobject->saved_selection as $name => $flag) {
                     if (array_key_exists($name, $fieldarray)) {
-                        if ($fieldlist[$name] == 'Y') {
+                        if ($dbobject->saved_selection[$name] == 'Y') {
                             $sorted[$name] = $fieldarray[$name];
                         } // if
                     } // if
@@ -371,7 +371,7 @@ class csv_class
                 $data[$fieldname] = $input[$key];
                 if (preg_match('/NULL/i', $data[$fieldname])) $data[$fieldname] = null;
                 // replace non-breaking space with ordinary space
-                //$data[$fieldname] = preg_replace('/[\xA0]/', ' ', $data[$fieldname]);
+                //$data[$fieldname] = preg_replace('/[\xA0]/u', ' ', $data[$fieldname]);
                 $data[$fieldname] = str_replace($nbsp, ' ', $data[$fieldname]);
             } // foreach
 
