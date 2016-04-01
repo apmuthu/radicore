@@ -357,7 +357,9 @@ if (!empty($return_from) AND isset($selection)) {
     } // if
 
     // merge OUTER and MIDDLE where to get selection criteria for MIDDLE
-    $middle_where = mergeWhere($where, $middle_where);
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();  // reduce to current record
+    $outer_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+    $middle_where = mergeWhere($outer_where, $middle_where);
 
     if (isset($search)) {
         $dbmiddle->setSqlSearch($search);
@@ -467,7 +469,7 @@ $pagination['inner']['curpage']  = $dbinner->getPageNo();
 $pagination['inner']['lastpage'] = $dbinner->getLastPage();
 
 if (!empty($dbinner->restart_url)) {
-    $restart_url = $dbinner->restart_url; // save
+    $restart_url = $dbinner->restart_url;  // save
     unset($dbinner->restart_url);          // clear
 } // if
 

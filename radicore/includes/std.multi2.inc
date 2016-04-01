@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.multi2.inc
@@ -23,8 +23,6 @@ $mode = 'update';
 // load session variables
 initSession();
 
-$original_where     = $where;
-$original_selection = $selection;
 if (!empty($selection) AND !isset($return_from)) {
 	// $selection takes precedence over $where
     //$where     = $selection;
@@ -81,7 +79,7 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->setRowsPerPage(1);  // scroll through one item at a time
     $dbouter->checkPrimaryKey = true;  // check that primary key is complete
     // perform any initialisation
-    $where = $dbouter->initialise($original_where, $original_selection);
+    $where = $dbouter->initialise($where, $selection);
     if ($dbouter->errors) {
         scriptPrevious($dbouter->getErrors(), $messages, 'fail');
     } // if
@@ -128,7 +126,7 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $null = $dbinner->initialise($original_where, $original_selection);
+    $inner_where = $dbinner->initialise($where, $_selection);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->getErrors(), $messages, 'fail');
     } // if
@@ -352,6 +350,11 @@ if (!empty($return_from) AND isset($selection)) {
         $pkeynames = $dbouter->getPkeyNamesAdjusted();
         $inner_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
     } // if
+
+    // merge OUTER and INNER where to get selection criteria for INNER
+    $pkeynames = $dbouter->getPkeyNamesAdjusted();  // reduce to current record
+    $outer_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
+    $inner_where = mergeWhere($outer_where, $inner_where);
 
     // obtain the required page number (optional)
     if (isset($_GET['page'])) {

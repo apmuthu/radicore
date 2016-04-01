@@ -241,7 +241,7 @@ class PDF extends TCPDF
             	 } // if
             } // foreach
         } // if
-        if (isset($this->structure['foot1']) OR isset($this->structure['foot2'])) {
+        if (isset($this->structure['foot1'])) {
             $this->print_footer = true;
         } // if
 
@@ -438,13 +438,6 @@ class PDF extends TCPDF
             } // if
 
             // examine any optional additional entries named 'multi1' to 'multi99'
-//            for ($i = 1; $i <= 100; $i++) {
-//                $zone = 'multi' .$i;
-//                if (!array_key_exists($zone, $this->structure)) {
-//                	break;  // not found, so stop processing
-//                } // if
-//                $this->detailView_multi($dbobject, $zone, $fieldarray);
-//            } // for
             // (perform them in the order in which they were defined in the structure file)
             foreach ($this->structure as $zone => $zone_spec) {
                 if (preg_match('/(?<=multi)[0-9]{1,2}/i', $zone, $regs)) {
@@ -611,6 +604,18 @@ class PDF extends TCPDF
             $this->Ln();  // start new line
         	$this->printFooter('foot2');
         } // if
+        if (isset($this->structure['foot3'])) {
+            $this->Ln();  // start new line
+            $this->printFooter('foot3');
+        } // if
+        if (isset($this->structure['foot4'])) {
+            $this->Ln();  // start new line
+            $this->printFooter('foot4');
+        } // if
+        if (isset($this->structure['foot5'])) {
+            $this->Ln();  // start new line
+            $this->printFooter('foot5');
+        } // if
 
         return;
 
@@ -713,6 +718,9 @@ class PDF extends TCPDF
         } // if
 
         $text = str_replace("\r",'', $celldata['text']);  // remove carriage returns
+        if (!is_string($text)) {
+            trigger_error("Field '{$celldata['field']}' does not contain text", E_USER_ERROR);
+        } // if
 
         $line = '';
         $last_split = 0;
@@ -1719,7 +1727,7 @@ class PDF extends TCPDF
             $string = $dbobject->_cm_post_output($string, $dbobject->pdf_filename);
         } // if
 
-        // reset language it case it was changed
+        // reset language in case it was changed
         $GLOBALS['party_language'] = $_SESSION['user_language'];
 
         if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
@@ -2520,7 +2528,10 @@ class PDF extends TCPDF
                 	switch (strtolower($attributes['type'])) {
             	    	case 'pageno':
             	    		// Print 'Page n of n'
-                            $text = getLanguageText('Page') .' ' .$this->getAliasNumPage() .' ' .getLanguageText('of') .' ' .$this->getAliasNbPages();
+                            // NOTE: getAliasNumPage() returns '{:pnp:}}'
+                            // NOTE: getAliasNbPages() returns '{:ptp:}'
+                            //$text = getLanguageText('Page') .' ' .$this->getAliasNumPage() .' ' .getLanguageText('of') .' ' .$this->getAliasNbPages();
+                            $text = getLanguageText('Page') .' ' .$this->getNumPages() .' ' .getLanguageText('of') .' ' .$this->getAliasNbPages();
             	    		break;
             	    	case 'date':
             	    	    // get date in user-defined format
@@ -2542,6 +2553,10 @@ class PDF extends TCPDF
             	    		break;
             	    } // switch
             	} // if
+
+                if (!is_string($text)) {
+                    trigger_error("Zone '{$zone} is not a string", E_USER_ERROR);
+                } // if
 
                 if (isset($attributes['width'])) {
             		$cell_width = $attributes['width'];
@@ -3097,6 +3112,14 @@ class PDF extends TCPDF
     function validateStructure ($structure)
     // check that the report structure is valid.
     {
+        if (empty($structure)) {
+            global $report;
+            if (isset($report)) {
+                // load the structure details for this report.
+                $structure = getFileStructure($report, './reports');
+            } // if
+        } // if
+
         // read report structure from external file
         if (empty($structure)) {
             // 'Report structure has not been defined'

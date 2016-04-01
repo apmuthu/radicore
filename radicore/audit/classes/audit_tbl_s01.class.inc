@@ -53,16 +53,15 @@ class audit_tbl_s01 extends audit_tbl
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
+    // $parent_data may contain contents of current record in the parent object.
     {
         if (empty($where)) {
             // obtain $where string from $fieldarray which has just been loaded
-            unset($fieldarray['audit_dtl_key']);  // ignore this entry
-            $where = array2where($fieldarray);
+            unset($parent_data['audit_dtl_key']);  // ignore this entry
+            $where = array2where($parent_data);
         } // if
 
         $where = trim($where, ' ()');

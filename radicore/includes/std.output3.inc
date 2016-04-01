@@ -18,8 +18,9 @@ if (preg_match('/cli/i', php_sapi_name())) {
 } else {
     require_once 'include.general.inc';
     initSession();          // load session variables
-    $mode = 'pdf-detail';   // identify output mode
 } // if
+
+$mode = 'pdf-detail';   // identify output mode
 
 //if (!empty($selection) AND !isset($return_from)) {
 //    if (empty($where)) {

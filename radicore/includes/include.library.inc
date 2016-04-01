@@ -1359,7 +1359,7 @@ if (!function_exists('errors2string')) {
     	if (is_array($errors)) {
     		foreach ($errors as $key => $value) {
     			if (is_array($value)) {
-    				$string .= errors2string($value, "[$key] ", '', true);
+    				$string .= errors2string($value, "{$before}[$key] ", $after, true);
 				} elseif (is_int($key)) {
 					$string .= $before.$value.$after."\n";
 				} else {
@@ -1644,9 +1644,13 @@ if (!function_exists('extractTableNames')) {
     {
         // extract first table name (may be '[database.]table AS alias')
         $pattern = '/'                         // start delimiter
+                 . '"\w+"\.dbo\.\w+[ ]+AS[ ]+\w+'   // "db".dbo.table AS alias
+                 . '|'                         // or
                  . '"\w+"\.\w+[ ]+AS[ ]+\w+'   // "db".table AS alias
                  . '|'                         // or
                  . '\w+\.\w+[ ]+AS[ ]+\w+'     // db.table AS alias
+                 . '|'                         // or
+                 . '"\w+"\.dbo\.\w+'           // "db".dbo.table
                  . '|'                         // or
                  . '"\w+"\.\w+'                // "db".table
                  . '|'                         // or
@@ -1658,9 +1662,12 @@ if (!function_exists('extractTableNames')) {
                  . '/is';                      // end delimiter, case insensitive, include newlines
         $count = preg_match($pattern, $sql_from, $regs);
         $tablename = $regs[0];
-        if (strpos($tablename, '.') > 0) {
-        	// remove 'dbname' from 'dbname.tablename'
+        if (substr_count($tablename, '.') == 1) {
+            // remove 'dbname' from 'dbname.tablename'
         	list($dbname, $tablename) = explode('.', $tablename);
+        } elseif (substr_count($tablename, '.') == 2) {
+            // remove 'dbname.dbo' from 'dbname.dbo.tablename'
+            list($dbname, $dbo, $tablename) = explode('.', $tablename);
         } // if
         list($original, $alias) = getTableAlias3($tablename);
         if (!empty($original)) {
@@ -1671,9 +1678,13 @@ if (!function_exists('extractTableNames')) {
 
         // additional table names follow the word 'JOIN'
         $pattern = '/'                                        // start delimiter
+                 . '(?<= join )[ ]*"\w+"\.dbo\.\w+[ ]+AS[ ]+\w+'   // JOIN "db".dbo.table AS alias
+                 . '|'                                        // or
                  . '(?<= join )[ ]*"\w+"\.\w+[ ]+AS[ ]+\w+'   // JOIN "db".table AS alias
                  . '|'                                        // or
                  . '(?<= join )[ ]*\w+\.\w+[ ]+AS[ ]+\w+'     // JOIN db.table AS alias
+                 . '|'                                        // or
+                 . '(?<= join )[ ]*"\w+"\.dbo\.\w+'                // JOIN "db".dbo.table
                  . '|'                                        // or
                  . '(?<= join )[ ]*"\w+"\.\w+'                // JOIN "db".table
                  . '|'                                        // or
@@ -1687,9 +1698,12 @@ if (!function_exists('extractTableNames')) {
         if ($count = preg_match_all($pattern, $sql_from, $regs)) {
         	// examine extra table names which follow a JOIN
             foreach ($regs[0] as $tablename) {
-                if (strpos($tablename, '.') > 0) {
-                	// remove 'dbname' from 'dbname.tablename'
-                	list($dbname, $tablename) = explode('.', $tablename);
+                if (substr_count($tablename, '.') == 1) {
+                    // remove 'dbname' from 'dbname.tablename'
+                    list($dbname, $tablename) = explode('.', $tablename);
+                } elseif (substr_count($tablename, '.') == 2) {
+                    // remove 'dbname.dbo' from 'dbname.dbo.tablename'
+                    list($dbname, $dbo, $tablename) = explode('.', $tablename);
                 } // if
                 list($original, $alias) = getTableAlias3($tablename);
                 if (!empty($original)) {
@@ -4594,7 +4608,7 @@ if (!function_exists('number_unformat')) {
         $number = str_replace($decimal_point, '.', $number);
 
         // strip any non-numeric characters from the end of the number
-        $number = preg_replace('/[^0-9]*$/u', '', $number);
+        //$number = preg_replace('/[^0-9]*$/u', '', $number);
 
         return $number;
 

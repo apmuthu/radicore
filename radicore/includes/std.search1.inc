@@ -385,6 +385,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } // if
 } // if
 
+$fieldarray = $dbobject->setFieldArray($fieldarray);
+
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$dbobject;
 

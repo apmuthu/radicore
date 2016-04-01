@@ -40,6 +40,9 @@ if (!isset($popup_task)) {
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if (!empty($return_from)) {
+        $dbobject->restart($return_from, $return_action, $return_string);
+    } // if
     if (basename($return_from) <> $popup_task) {
         // have not been to popup screen yet, so go there now
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'

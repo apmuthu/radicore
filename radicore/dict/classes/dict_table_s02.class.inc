@@ -1,13 +1,14 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-201 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s02 extends dict_table
 {
     // member variables
     var $text_out;          // to be written to a text file
+    var $deprecated;        // array of deprecated columns
 
     // ****************************************************************************
     // this class is used to export table details to a PHP script
@@ -51,7 +52,7 @@ class dict_table_s02 extends dict_table
 
                 // process column details
             	$columnobj->sql_orderby = 'column_seq';
-                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id' AND column_desc != 'DEPRECATED'");
+                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id'");
     			if (empty($data)) {
     			    $data[0]['database_id'] = $database_id;
     				$data[0]['table_id']    = $table_id;
@@ -269,186 +270,191 @@ class dict_table_s02 extends dict_table
 
 		if (array_key_exists('column_id', $column_array[0])) {
 		    foreach ($column_array as $column) {
-	            // start entry for new column
-	        	$entry = $indent .'$fieldspec' ."['" .$column['column_id'] ."']";
-	            $entry = str_pad($entry, 44);
-	            $type = $column['col_type'];
-	            if (empty($colspecs[$type]['type'])) {
-	                // "Value is missing for fieldspec['type]"
-	            	$this->errors[$column['column_id']] = getLanguageText('e0027');
-	            } // if
-	            $entry .= '= array(' ."'type' => '" .$colspecs[$type]['type'] ."'";
-
-                if ($column['col_type_native'] != $column['col_type']) {
-                    if (strpos($column['col_type_native'], ',')) {
-                        $type_array = explode(',', $column['col_type_native']);
-                        $first      = $type_array[0];
-                        $entry .= ",\n$indent2'type_native' => '$first'";
-                    } // if
-                } // if
-
-	            if (strlen($column['col_array_type']) > 0) {
-	                $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
-	            } // if
-
-	            if (preg_match('/boolean/i', $type)) {
-	                // size is irrelevant for boolean fields
-	            } else {
-	                if (strlen($column['user_size']) > 0) {
-	                    if ($column['user_size'] > 0) {
-	                        $entry .= ",\n$indent2'size' => " .$column['user_size'];
-	                    } // if
-	                } // if
-	            } // if
-
-	            if (strlen($column['col_values']) > 0) {
-	                $array1 = explode(',', trim($column['col_values'], '()'));
-	                $entry .= ",\n$indent2'values' => " .'array(1 => ';
-                    foreach ($array1 as $array_entry) {
-                        $entry .= $array_entry .',';
-                    } // foreach
-	                $entry = substr($entry, 0, strlen($entry) -1); // remove trailing ','
-	                $entry .= ')';                                 // close array
-	            } // if
-
-	            // these are for numeric fields
-	            if (strlen($column['col_precision']) > 0) {
-	                $entry .= ",\n$indent2'precision' => " .$column['col_precision'];
-	            } // if
-	            if (strlen($column['col_scale']) > 0) {
-	                $entry .= ",\n$indent2'scale' => " .$column['col_scale'];
-	            } // if
-	            if (!empty($column['col_zerofill_bwz'])) {
-	            	switch ($column['col_zerofill_bwz']) {
-	            		case 'ZF':
-	            			$entry .= ",\n$indent2'zerofill' => 'y'";
-	            			break;
-	            		case 'BWZ':
-	            			$entry .= ",\n$indent2'blank_when_zero' => 'y'";
-	            			break;
-	            		case 'STZ':
-	            			$entry .= ",\n$indent2'strip_trailing_zero' => 'y'";
-	            			break;
-	            		default:
-	            			break;
-	            	} // switch
-	            } // if
-	            if (is_True($column['col_auto_increment'])) {
-	                $entry .= ",\n$indent2'auto_increment' => 'y'";
-	            } // if
-                if (preg_match('/(boolean)/i', $type)) {
-                    // min/max values not appropriate for boolean fields
+                if ($column['column_desc'] == 'DEPRECATED') {
+                    // ignore this column
+                    $this->deprecated[] = $column['column_id'];
                 } else {
-	                if (strlen($column['user_minvalue']) > 0) {
-	                    $entry .= ",\n$indent2'minvalue' => " .$column['user_minvalue'];
+	                // start entry for new column
+	        	    $entry = $indent .'$fieldspec' ."['" .$column['column_id'] ."']";
+	                $entry = str_pad($entry, 44);
+	                $type = $column['col_type'];
+	                if (empty($colspecs[$type]['type'])) {
+	                    // "Value is missing for fieldspec['type]"
+	            	    $this->errors[$column['column_id']] = getLanguageText('e0027');
+	                } // if
+	                $entry .= '= array(' ."'type' => '" .$colspecs[$type]['type'] ."'";
+
+                    if ($column['col_type_native'] != $column['col_type']) {
+                        if (strpos($column['col_type_native'], ',')) {
+                            $type_array = explode(',', $column['col_type_native']);
+                            $first      = $type_array[0];
+                            $entry .= ",\n$indent2'type_native' => '$first'";
+                        } // if
+                    } // if
+
+	                if (strlen($column['col_array_type']) > 0) {
+	                    $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
+	                } // if
+
+	                if (preg_match('/boolean/i', $type)) {
+	                    // size is irrelevant for boolean fields
 	                } else {
-	                    if (is_True($column['col_unsigned'])) {
-	                        $entry .= ",\n$indent2'unsigned' => 'y'";
+	                    if (strlen($column['user_size']) > 0) {
+	                        if ($column['user_size'] > 0) {
+	                            $entry .= ",\n$indent2'size' => " .$column['user_size'];
+	                        } // if
 	                    } // if
 	                } // if
-                    if (strlen($column['user_maxvalue']) > 0) {
-                        $entry .= ",\n$indent2'maxvalue' => " .$column['user_maxvalue'];
+
+	                if (strlen($column['col_values']) > 0) {
+	                    $array1 = explode(',', trim($column['col_values'], '()'));
+	                    $entry .= ",\n$indent2'values' => " .'array(1 => ';
+                        foreach ($array1 as $array_entry) {
+                            $entry .= $array_entry .',';
+                        } // foreach
+	                    $entry = substr($entry, 0, strlen($entry) -1); // remove trailing ','
+	                    $entry .= ')';                                 // close array
+	                } // if
+
+	                // these are for numeric fields
+	                if (strlen($column['col_precision']) > 0) {
+	                    $entry .= ",\n$indent2'precision' => " .$column['col_precision'];
+	                } // if
+	                if (strlen($column['col_scale']) > 0) {
+	                    $entry .= ",\n$indent2'scale' => " .$column['col_scale'];
+	                } // if
+	                if (!empty($column['col_zerofill_bwz'])) {
+	            	    switch ($column['col_zerofill_bwz']) {
+	            		    case 'ZF':
+	            			    $entry .= ",\n$indent2'zerofill' => 'y'";
+	            			    break;
+	            		    case 'BWZ':
+	            			    $entry .= ",\n$indent2'blank_when_zero' => 'y'";
+	            			    break;
+	            		    case 'STZ':
+	            			    $entry .= ",\n$indent2'strip_trailing_zero' => 'y'";
+	            			    break;
+	            		    default:
+	            			    break;
+	            	    } // switch
+	                } // if
+	                if (is_True($column['col_auto_increment'])) {
+	                    $entry .= ",\n$indent2'auto_increment' => 'y'";
+	                } // if
+                    if (preg_match('/(boolean)/i', $type)) {
+                        // min/max values not appropriate for boolean fields
+                    } else {
+	                    if (strlen($column['user_minvalue']) > 0) {
+	                        $entry .= ",\n$indent2'minvalue' => " .$column['user_minvalue'];
+	                    } else {
+	                        if (is_True($column['col_unsigned'])) {
+	                            $entry .= ",\n$indent2'unsigned' => 'y'";
+	                        } // if
+	                    } // if
+                        if (strlen($column['user_maxvalue']) > 0) {
+                            $entry .= ",\n$indent2'maxvalue' => " .$column['user_maxvalue'];
+                        } // if
                     } // if
+
+	                if ($column['col_key'] == 'PRI') {
+	                    $entry .= ",\n$indent2'pkey' => 'y'";
+	                } // if
+	                if (is_True($column['is_required'])) {
+	                    $entry .= ",\n$indent2'required' => 'y'";
+	                } // if
+	                if (strlen($column['col_default']) > 0) {
+	                    $entry .= ",\n$indent2'default' => '" .addslashes($column['col_default']) ."'";
+	                } // if
+	                if (is_True($column['is_password'])) {
+	                    $entry .= ",\n$indent2'password' => 'y'";
+	                } // if
+	                if ($column['upper_lowercase'] == 'UPPER') {
+	                    $entry .= ",\n$indent2'uppercase' => 'y'";
+	                } // if
+	                if ($column['upper_lowercase'] == 'LOWER') {
+	                    $entry .= ",\n$indent2'lowercase' => 'y'";
+	                } // if
+	                if (is_True($column['auto_insert'])) {
+	                    $entry .= ",\n$indent2'autoinsert' => 'y'";
+	                } // if
+	                if (is_True($column['auto_update'])) {
+	                    $entry .= ",\n$indent2'autoupdate' => 'y'";
+	                } // if
+	                if (is_True($column['infinityisnull'])) {
+	                    $entry .= ",\n$indent2'infinityisnull' => 'y'";
+	                } // if
+
+	                if (preg_match('/boolean/i', $type)) {
+	                    // these are for boolean fields
+	                    if (strlen($column['boolean_true']) > 0) {
+	                        $entry .= ",\n$indent2'true' => '" .$column['boolean_true'] ."'";
+	                    } // if
+	                    if (strlen($column['boolean_false']) > 0) {
+	                        $entry .= ",\n$indent2'false' => '" .$column['boolean_false'] ."'";
+	                    } // if
+	                } // if
+
+	                if (strlen($column['custom_validation']) > 0) {
+	                    $entry .= ",\n$indent2'custom_validation' => '" .$column['custom_validation'] ."'";
+	                } // if
+	                if (strlen($column['col_subtype']) > 0) {
+	                    $entry .= ",\n$indent2'subtype' => '" .$column['col_subtype'] ."'";
+	                } // if
+	                if (strlen($column['image_width']) > 0) {
+	                    $entry .= ",\n$indent2'imagewidth' => " .$column['image_width'];
+	                } // if
+	                if (strlen($column['image_height']) > 0) {
+	                    $entry .= ",\n$indent2'imageheight' => " .$column['image_height'];
+	                } // if
+	                if (strlen($column['control']) > 0) {
+	                    $entry .= ",\n$indent2'control' => '" .$column['control'] ."'";
+	                } // if
+	                if (strlen($column['optionlist']) > 0) {
+	                    $entry .= ",\n$indent2'optionlist' => '" .$column['optionlist'] ."'";
+	                } // if
+	                if (strlen($column['checkbox_label']) > 0) {
+	                    if (preg_match('/^getLanguageText/', $column['checkbox_label'])) {
+	                        // this is a function, not text, so do not enclose in single quotes
+	                	    $entry .= ",\n$indent2'label' => " .$column['checkbox_label'];
+	                    } else {
+	                        $entry .= ",\n$indent2'label' => '" .$column['checkbox_label'] ."'";
+	                    } // if
+	                } // if
+	                if (strlen($column['task_id']) > 0) {
+	                    $entry .= ",\n$indent2'task_id' => '" .$column['task_id'] ."'";
+	                } // if
+	                if (strlen($column['foreign_field']) > 0) {
+	                    $entry .= ",\n$indent2'foreign_field' => '" .addslashes($column['foreign_field']) ."'";
+	                } // if
+	                if (strlen($column['align_hv']) > 0) {
+	                    $entry .= ",\n$indent2'align_hv' => '" .$column['align_hv'] ."'";
+	                } // if
+	                if (strlen($column['align_lr']) > 0) {
+	                    $entry .= ",\n$indent2'align_lr' => '" .$column['align_lr'] ."'";
+	                } // if
+	                if (strlen($column['multi_cols']) > 0) {
+	                    $entry .= ",\n$indent2'cols' => " .$column['multi_cols'];
+	                } // if
+	                if (strlen($column['multi_rows']) > 0) {
+	                    $entry .= ",\n$indent2'rows' => " .$column['multi_rows'];
+	                } // if
+
+	                if ($column['noedit_nodisplay'] == 'NED') {
+	                    $entry .= ",\n$indent2'noedit' => 'y'";
+	                } // if
+	                if ($column['noedit_nodisplay'] == 'NDI') {
+	                    $entry .= ",\n$indent2'nodisplay' => 'y'";
+	                } // if
+	                if ($column['no_search'] == 'NSR') {
+	                    $entry .= ",\n$indent2'nosearch' => 'y'";
+	                } // if
+                    if ($column['no_audit'] == 'NAL') {
+	                    $entry .= ",\n$indent2'noaudit' => 'y'";
+	                } // if
+	                // close array structure and append to output string
+	                $entry .= ");\n$indent\n";
+	                $this->text_out .= $entry;
                 } // if
-
-	            if ($column['col_key'] == 'PRI') {
-	                $entry .= ",\n$indent2'pkey' => 'y'";
-	            } // if
-	            if (is_True($column['is_required'])) {
-	                $entry .= ",\n$indent2'required' => 'y'";
-	            } // if
-	            if (strlen($column['col_default']) > 0) {
-	                $entry .= ",\n$indent2'default' => '" .addslashes($column['col_default']) ."'";
-	            } // if
-	            if (is_True($column['is_password'])) {
-	                $entry .= ",\n$indent2'password' => 'y'";
-	            } // if
-	            if ($column['upper_lowercase'] == 'UPPER') {
-	                $entry .= ",\n$indent2'uppercase' => 'y'";
-	            } // if
-	            if ($column['upper_lowercase'] == 'LOWER') {
-	                $entry .= ",\n$indent2'lowercase' => 'y'";
-	            } // if
-	            if (is_True($column['auto_insert'])) {
-	                $entry .= ",\n$indent2'autoinsert' => 'y'";
-	            } // if
-	            if (is_True($column['auto_update'])) {
-	                $entry .= ",\n$indent2'autoupdate' => 'y'";
-	            } // if
-	            if (is_True($column['infinityisnull'])) {
-	                $entry .= ",\n$indent2'infinityisnull' => 'y'";
-	            } // if
-
-	            if (preg_match('/boolean/i', $type)) {
-	                // these are for boolean fields
-	                if (strlen($column['boolean_true']) > 0) {
-	                    $entry .= ",\n$indent2'true' => '" .$column['boolean_true'] ."'";
-	                } // if
-	                if (strlen($column['boolean_false']) > 0) {
-	                    $entry .= ",\n$indent2'false' => '" .$column['boolean_false'] ."'";
-	                } // if
-	            } // if
-
-	            if (strlen($column['custom_validation']) > 0) {
-	                $entry .= ",\n$indent2'custom_validation' => '" .$column['custom_validation'] ."'";
-	            } // if
-	            if (strlen($column['col_subtype']) > 0) {
-	                $entry .= ",\n$indent2'subtype' => '" .$column['col_subtype'] ."'";
-	            } // if
-	            if (strlen($column['image_width']) > 0) {
-	                $entry .= ",\n$indent2'imagewidth' => " .$column['image_width'];
-	            } // if
-	            if (strlen($column['image_height']) > 0) {
-	                $entry .= ",\n$indent2'imageheight' => " .$column['image_height'];
-	            } // if
-	            if (strlen($column['control']) > 0) {
-	                $entry .= ",\n$indent2'control' => '" .$column['control'] ."'";
-	            } // if
-	            if (strlen($column['optionlist']) > 0) {
-	                $entry .= ",\n$indent2'optionlist' => '" .$column['optionlist'] ."'";
-	            } // if
-	            if (strlen($column['checkbox_label']) > 0) {
-	                if (preg_match('/^getLanguageText/', $column['checkbox_label'])) {
-	                    // this is a function, not text, so do not enclose in single quotes
-	                	$entry .= ",\n$indent2'label' => " .$column['checkbox_label'];
-	                } else {
-	                    $entry .= ",\n$indent2'label' => '" .$column['checkbox_label'] ."'";
-	                } // if
-	            } // if
-	            if (strlen($column['task_id']) > 0) {
-	                $entry .= ",\n$indent2'task_id' => '" .$column['task_id'] ."'";
-	            } // if
-	            if (strlen($column['foreign_field']) > 0) {
-	                $entry .= ",\n$indent2'foreign_field' => '" .addslashes($column['foreign_field']) ."'";
-	            } // if
-	            if (strlen($column['align_hv']) > 0) {
-	                $entry .= ",\n$indent2'align_hv' => '" .$column['align_hv'] ."'";
-	            } // if
-	            if (strlen($column['align_lr']) > 0) {
-	                $entry .= ",\n$indent2'align_lr' => '" .$column['align_lr'] ."'";
-	            } // if
-	            if (strlen($column['multi_cols']) > 0) {
-	                $entry .= ",\n$indent2'cols' => " .$column['multi_cols'];
-	            } // if
-	            if (strlen($column['multi_rows']) > 0) {
-	                $entry .= ",\n$indent2'rows' => " .$column['multi_rows'];
-	            } // if
-
-	            if ($column['noedit_nodisplay'] == 'NED') {
-	                $entry .= ",\n$indent2'noedit' => 'y'";
-	            } // if
-	            if ($column['noedit_nodisplay'] == 'NDI') {
-	                $entry .= ",\n$indent2'nodisplay' => 'y'";
-	            } // if
-	            if ($column['no_search'] == 'NSR') {
-	                $entry .= ",\n$indent2'nosearch' => 'y'";
-	            } // if
-                if ($column['no_audit'] == 'NAL') {
-	                $entry .= ",\n$indent2'noaudit' => 'y'";
-	            } // if
-	            // close array structure and append to output string
-	            $entry .= ");\n$indent\n";
-	            $this->text_out .= $entry;
 
 	        } // foreach
 		} else {
@@ -529,16 +535,24 @@ class dict_table_s02 extends dict_table
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
                 foreach ($data as $row => $coldata) {
-                	if ($row > 0) {
-                        // entries after the first are on a separate line
-                        $entry .= ",\n$indent2$indent3";
+                    if (in_array($coldata['column_id_jnr'], $this->deprecated)) {
+                        // this column has been deprecated, so ignore this relationship
+                        $entry = null;
+                        break;  // break out of this FOREACH loop
+                    } else {
+                	    if ($row > 0) {
+                            // entries after the first are on a separate line
+                            $entry .= ",\n$indent2$indent3";
+                        } // if
+                        $entry .= "'{$coldata['column_id_jnr']}' => '{$coldata['column_id_snr']}'";
                     } // if
-                    $entry .= "'{$coldata['column_id_jnr']}' => '{$coldata['column_id_snr']}'";
                 } // foreach
 
-                // close array structure and append to output string
-                $entry .= "));\n$indent\n";
-            	$this->text_out .= $entry;
+                if (!empty($entry)) {
+                    // close array structure and append to output string
+                    $entry .= "));\n$indent\n";
+            	    $this->text_out .= $entry;
+                } // if
 
             } // foreach
         } // if

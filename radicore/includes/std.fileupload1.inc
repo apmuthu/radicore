@@ -45,10 +45,12 @@ if (isset($script_vars['fileobject'])) {
         // see if any action is required when being restarted
         $fileobject->restart($return_from, $return_action);
     } // if
+    $fieldarray = $fileobject->getFieldArray();
 } else {
     $fileobject = new $table_id;
     // indicate that this object was started from a page controller
     $fileobject->initiated_from_controller = true;
+    $fileobject->setRowsPerPage(1);
     // perform any initialisation
     $where = $fileobject->initialise($where, $selection);
     $where = $fileobject->initialiseFileUpload($where);
@@ -130,7 +132,10 @@ if (!empty($_FILES) and empty($errors)) {
         if (preg_match('/(\.[0-9a-z]+)$/i', $_FILES['userfile']['name'], $regs)) {
             $extension = substr($regs[0], 1);
             if (!in_array($extension, $filetypes)) {
-                $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+                // try again with 'image/' prefix
+                if (!in_array('image/'.$extension, $filetypes)) {
+                    $errors[] = getLanguageText('sys0125'); // 'File is not of correct type';
+                } // if
             } // if
         } // if
     } elseif ($filetypes == 'image') {
@@ -215,6 +220,7 @@ if (!empty($_FILES) and empty($errors)) {
 } // if
 
 // copy data into a dummy object
+$fieldarray = $fileobject->getFieldArray();
 $fieldarray['filename']    = $filename;
 $fieldarray['maxfilesize'] = $maxfilesize;
 $fieldarray['msg1']        = getLanguageText('sys0120');
@@ -233,7 +239,8 @@ if ($filetypes != '*') {
         $fieldarray['msg4']    = getLanguageText('sys0122', $filetypes);                 // single value
     } // if
 } // if
-$fileobject->setFieldArray($fieldarray);
+//fileobject->setFieldArray($fieldarray);
+$fieldarray = $fileobject->getExtraData($fieldarray);
 
 if (!is_True($fileobject->allow_multiple)) {
     unset($act_buttons['submitstay']);  // remove this button
@@ -244,7 +251,8 @@ $script_vars['where']      = $where;
 $script_vars['fileobject'] = serialize($fileobject);
 $script_vars = updateScriptVars ($script_vars);
 
-$fileobject->fieldarray = $fieldarray;  // replace data lost during serialization
+//$fileobject->fieldarray = $fieldarray;  // replace data lost during serialization
+$fileobject->setFieldArray($fieldarray);  // replace data lost during serialization
 
 // build list of objects for output to XML data
 $xml_objects[]['root'] = &$fileobject;

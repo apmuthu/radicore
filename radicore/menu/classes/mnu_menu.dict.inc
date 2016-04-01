@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:39 pm
+    // file created on January 28, 2016, 5:45 pm
     
     // field specifications for table menu.mnu_menu
     $fieldspec['menu_id']                   = array('type' => 'string',
@@ -15,7 +15,8 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['sort_seq']                  = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'zerofill' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
@@ -68,11 +69,15 @@
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_snr',
                                                     'parent_field' => 'task_desc AS task_desc_snr',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('menu_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_jnr',
                                                     'parent_field' => 'task_desc AS task_desc_jnr',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id_jnr' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 
@@ -84,6 +89,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

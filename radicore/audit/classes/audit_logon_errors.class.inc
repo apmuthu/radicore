@@ -63,11 +63,10 @@ class audit_logon_errors extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
+    // $parent_data may contain contents of current record in the parent object.
     {
         if (empty($this->sql_search)) return $where;
 

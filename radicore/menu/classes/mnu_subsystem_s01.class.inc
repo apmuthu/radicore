@@ -99,16 +99,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $this->_writeTextFile ($this->text_out, $subsys_id, "$subsys_dir/text", 'txt');
         $this->text_out = '';
 
-        // (2) create file '/help/<task_id>.help.txt'
-
-        // process help text
-//    	$taskobj->sql_select = 'mnu_task.task_id, help_text';
-//    	$taskobj->sql_from   = 'mnu_task RIGHT JOIN help_text ON (mnu_task.task_id=help_text.task_id)';
-//    	$taskobj->sql_orderby = 'mnu_task.task_id';
-//      $data = $taskobj->getData("subsys_id='$subsys_id'");
-//		$this->_createHelpText($data, $subsys_dir);
-
-		// (3) create file 'sql/<subsys>.menu_export.sql'
+		// (2) create file 'sql/<subsys>.menu_export.sql'
 
 		// export details from menu database to an SQL file
 		$this->_exportSQL($subsys_id, $subsys_dir);
@@ -138,7 +129,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 	    foreach ($array as $key => $value) {
             $entry = $indent .'$array' ."['" .$key ."']";
             $entry = str_pad($entry, 50);
-            $entry .= "= '" .addslashes($value) ."';\r\n";
+            $entry .= "= '" .addcslashes($value, "'") ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -146,29 +137,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
 		$this->text_out .= $indent ."\r\n";
 
     } // _createFieldDesc
-
-    // ****************************************************************************
-    function _createHelpText ($help_array, $subsys_dir)
-    // put each task's help text into a separate file.
-    {
-        $language_dir = $_SESSION['default_language'];
-
-        foreach ($help_array as $help) {
-
-            $sname = $subsys_dir .'/help/' .$language_dir .'/' .$help['task_id'] .'.help.txt';
-            $fname = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$sname;
-            if (!$fp = fopen($fname, 'w')) {
-                $this->errors[] = getLanguageText('sys0076', $fname); // 'Cannot open file $fname'
-            } else {
-                if (fwrite($fp, $help['help_text']) === false) {
-                    $this->errors[] = getLanguageText('sys0055', $fname); // 'Cannot write to file $fname'
-                } // if
-                fclose($fp);
-            } // if
-        } // foreach
-
-
-    } // _createHelpText
 
     // ****************************************************************************
     function _createMenuDesc ($menu_array, $subsys_id)
@@ -182,7 +150,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 	    foreach ($menu_array as $menu) {
             $entry = $indent .'$array' ."['" .$menu['button_text'] ."']";
             $entry = str_pad($entry, 50);
-            $entry .= "= '" .addslashes($menu['button_text']) ."';\r\n";
+            $entry .= "= '" .addcslashes($menu['button_text'], "'") ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -208,7 +176,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 	    foreach ($array as $key => $value) {
             $entry = $indent .'$array' ."['" .$key ."']";
             $entry = str_pad($entry, 50);
-            $entry .= "= '" .addslashes($value) ."';\r\n";
+            $entry .= "= '" .addcslashes($value, "'") ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -229,7 +197,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 	    foreach ($task_array as $task) {
             $entry = $indent .'$array' ."['" .$task['task_id'] ."']";
             $entry = str_pad($entry, 50);
-            $entry .= "= '" .addslashes($task['task_desc']) ."';\r\n";
+            $entry .= "= '" .addcslashes($task['task_desc'], "'") ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -464,7 +432,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
                 $output = $this->_exportSqlData('mnu_user_role', $data2, $output);
 
                 // export the contents of MNU_INITIAL_VALUE_USER for this user
-                $initial_value_user_obj = RDCsingleton::getInstance('mnu_user_role');
+                $initial_value_user_obj = RDCsingleton::getInstance('mnu_initial_value_user');
             	$initial_value_user_obj->sql_orderby = 'field_id,user_id';
                 $data2 = $initial_value_user_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_initial_value_user', $data2, $output);
@@ -540,7 +508,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
                 if (strlen($fieldvalue) == 0) {
                 	$value_string .= "NULL, ";
                 } else {
-                    $value_string .= "'" .addslashes($fieldvalue) ."', ";
+                    $value_string .= "'" .addcslashes($fieldvalue, "'") ."', ";
                 } // if
             } // foreach
             $value_string = substr_replace($value_string, null, -2); // drop trailing comma separator

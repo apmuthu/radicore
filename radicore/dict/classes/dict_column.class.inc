@@ -312,6 +312,13 @@ class dict_column extends Default_Table
     {
         $colspecs = $this->_ddl_getColumnSpecs();
 
+        if ($GLOBALS['mode'] == 'batch') {
+            // skip this next bit
+        } else {
+            // initialise any fields which are not valid for this column type
+            $fieldarray = $this->_cm_checkColumnType($fieldarray);
+        } // if
+
         if (!is_True($fieldarray['col_null'])) {
             if (!is_True($fieldarray['is_required'])) {
                 // "If field is NOT NULL then 'is required' must be set"
@@ -425,26 +432,20 @@ class dict_column extends Default_Table
                 if (!preg_match('/(radio|m_checkbox)/i', $fieldarray['control'])) {
                     // "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'"
                     $this->errors['align_hv'] = getLanguageText('e0007');
+                    $fieldarray['align_hv'] = null;
                 } // if
             } // if
         } // if
         if (isset($fieldarray['align_lr'])) {
             if (isset($this->fieldspec['align_lr']['nodisplay'])) {
+                // this field is not valid
                 $fieldarray['align_lr'] = null;
             } else {
-                if (preg_match('/(radio|checkbox|m_checkbox)/i', $fieldarray['control'])) {
-                    // this is valid
-                } else {
-                    // "Invalid unless CONTROL = 'radio group', 'checkbox' or 'multi-checkbox'"
-                    //$this->errors['align_lr'] = getLanguageText('e0030');
-                    $fieldarray['align_lr'] = null;
-                } // if
-                if (preg_match('/(radio|checkbox)/i', $fieldarray['control'])) {
+               if (preg_match('/(radio|checkbox)/i', $fieldarray['control'])) {
                     // skip the next bit
                 } else {
                     if (empty($fieldarray['checkbox_label'])) {
-                	    // "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
-                        //$this->errors['align_lr'] = getLanguageText('e0033');
+                        // "TEXT-ALIGN is invalid for CHECKBOX unless CHECKBOX_LABEL is set"
                         $fieldarray['align_lr'] = null;
                     } // if
                 } // if
@@ -578,13 +579,6 @@ class dict_column extends Default_Table
             	    // "Unknown value for 'control'"
             		$this->errors['control'] = getLanguageText('e0016', $fieldarray['control']);
             } // switch
-        } // if
-
-        if ($GLOBALS['mode'] == 'batch') {
-            // skip this next bit
-        } else {
-            // initialise any fields which are not valid for this column type
-            $fieldarray = $this->_cm_checkColumnType($fieldarray);
         } // if
 
         return $fieldarray;

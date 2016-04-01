@@ -12,11 +12,10 @@ class audit_tbl_s02 extends audit_tbl
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
+    // $parent_data may contain contents of current record in the parent object.
     {
         $this->sql_select  = 'audit_tbl.*';
         $this->sql_from    = 'audit_tbl';
@@ -84,9 +83,9 @@ class audit_tbl_s02 extends audit_tbl
         	    $name_string  = null;
         	    $value_string = null;
         	    foreach ($new_array as $field => $value) {
-        			$name_string  .= "`$field` ,";
+        			$name_string  .= "`$field`, ";
         			if (empty($value)) {
-        				$value_string .= "NULL ,";
+        				$value_string .= "NULL, ";
         			} else {
         			    $value_string .= "'" .addslashes($value) ."' ,";
         			    $value_string = str_replace(chr(10), '\n', $value_string);
@@ -111,7 +110,7 @@ class audit_tbl_s02 extends audit_tbl
         			    $replace_string = str_replace(chr(10), '\n', $replace_string);
         	            $replace_string = str_replace(chr(13), '\r', $replace_string);
         			} // if
-        			$replace_string .= " ,";
+        			$replace_string .= ", ";
         		} // foreach
         		$replace_string = rtrim($replace_string, ', ');
                 $output .= "UPDATE `{$rowdata['table_name']}` $replace_string WHERE {$rowdata['pkey']};\n";

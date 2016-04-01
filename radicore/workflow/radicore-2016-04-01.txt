@@ -5,7 +5,7 @@ Database changes:
 - none
 
 Other changes:
-- modified 'dict_column.class.inc' so that when importing column definitions it does not nullify existing values for 'align_hv' or 'align_lr'.
+- modified 'dict_column.class.inc' so that when inporting column definitions it does not nullify existing values for 'align_hv' or 'align_lr'.
 - fixed bug in 'mnu_subsystem_s01.class.inc' (Export Subsystem) which escaped the " (double quote) character which caused such strings as '<a href="...">' to be corrupted when reloaded.
 - fixed bug in 'mnu_subsystem_s01.class.inc' (Export Subsystem) which caused data for mnu_user_role to be labelled for the mnu_initial_value_user table.
 - updated the 'fileupload1' pattern to include a call to getExtraData() so that the messages can be customised.

@@ -371,12 +371,18 @@ class mnu_user extends Default_Table
                                                         'control' => 'input',
                                                         'nondb' => 'y',
                                                         'task_id' => 'mnu_user_role(list2)');
-            if (isset($fieldarray['role_list'])) {
-                $fieldarray['user_roles'] = null;
+            if (empty($where)) {
+                if (empty($fieldarray['user_roles'])) {
+                    $fieldarray['user_roles'] = null;
+                } // if
             } // if
         } // if
 
-        if (!empty($_SESSION['rdcaccount_id'])) {
+        if ($_SESSION['rdcaccount_id'] <= 1) {
+            // this user is able to set this field to anything
+            unset($this->fieldspec['rdcaccount_id']['noedit']);
+            unset($this->fieldspec['rdcaccount_id']['nodisplay']);
+        } else {
             // account is fixed, so cannot be changed
         	$this->fieldspec['rdcaccount_id']['noedit'] = 'y';
         } // if
@@ -386,9 +392,9 @@ class mnu_user extends Default_Table
             $this->fieldspec['user_timezone']['nodisplay'] = 'y';
         } // if
 
-        if (empty($where) AND !empty($fieldarray)) {
-            if (!isset($fieldarray['abc'])) $fieldarray['abc'] = 'anything';
-        } // if
+//        if (empty($where) AND !empty($fieldarray)) {
+//            if (!isset($fieldarray['abc'])) $fieldarray['abc'] = 'anything';
+//        } // if
 
         return $fieldarray;
 
@@ -767,6 +773,8 @@ class mnu_user extends Default_Table
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
             // retrieve one or more roles from MNU_USER_ROLE
             $this->sql_select .= ", (SELECT GROUP_CONCAT(role_desc ORDER BY is_primary DESC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id) AS role_list)";
+            // retrieve primary role from MNU_USER_ROLE
+            $this->sql_select .= ", (SELECT role_desc FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND is_primary='Y' LIMIT 1) AS role_id";
         } // if
 
         if (!empty($this->sql_search)) {

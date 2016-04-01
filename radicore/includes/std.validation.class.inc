@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -83,6 +83,21 @@ class validation_class
     function validateEmail ($fieldname, $fieldvalue)
     // standard function for validating email addresses.
     {
+        // there may be multiple addresses separated by ',' (comma)
+        $addresses = explode(',', $fieldvalue);
+
+        if (version_compare(phpversion(), '5.2.0', '>=')) {
+            // use the new function
+            foreach ($addresses as $entry) {
+                if (filter_var($entry, FILTER_VALIDATE_EMAIL) === false) {
+                    // 'Invalid format for e-mail address.'
+                    $this->errors[$fieldname] = getLanguageText('sys0039');
+                    return;
+                } // if
+            } // foreach
+            return;
+        } // if
+
         // look for 'user@hostname.domain'
         $pattern1 = <<< END_OF_REGEX
 /
@@ -107,9 +122,6 @@ END_OF_REGEX;
 \.([a-z]{2,})$                     # ends with dot valid chars
 ;xi
 END_OF_REGEX;
-
-        // there may be multiple addresses separated by ',' (comma)
-        $addresses = explode(',', $fieldvalue);
 
         foreach ($addresses as $entry) {
         	// look for 'name <user@hostname.domain>'
@@ -549,12 +561,21 @@ END_OF_REGEX;
         $pattern = '/(int1|tinyint|int2|smallint|int3|mediumint|int4|integer|int8|bigint|int)/i';
         if (preg_match($pattern, $spec['type'], $match)) {
             // test that input contains a valid value for an integer field
-            $number = (double)$value;
-            $number = floor($number); // remove any decimal places
-            if ((string)$value <> (string)$number) {
-                // 'Value is not a whole number'
-                $this->errors[$field] = $callingOBJ->getLanguageText('sys0029');
-                return $value;
+            if (version_compare(phpversion(), '5.2.0', '>=')) {
+                $number = $value;
+                if (filter_var($number, FILTER_VALIDATE_INT) === false) {
+                    // 'Value is not a whole number'
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0029');
+                    return $value;
+                } // if
+            } else {
+                $number = (double)$value;
+                $number = floor($number); // remove any decimal places
+                if ((string)$value <> (string)$number) {
+                    // 'Value is not a whole number'
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0029');
+                    return $value;
+                } // if
             } // if
 
             if (isset($spec['minvalue'])) {
@@ -600,10 +621,18 @@ END_OF_REGEX;
         $pattern = '/(decimal|numeric)/i';
         if (preg_match($pattern, $spec['type'], $match)) {
             // input must at least be numeric to begin with
-            if (!is_numeric(trim($value))) {
-                // 'value is not numeric'
-                $this->errors[$field] = $callingOBJ->getLanguageText('sys0023', $value);
-                return $value;
+            if (version_compare(phpversion(), '5.2.0', '>=')) {
+                if (filter_var($value, FILTER_VALIDATE_FLOAT) === false) {
+                    // 'value is not numeric'
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0023', $value);
+                    return $value;
+                } // if
+            } else {
+                if (!is_numeric(trim($value))) {
+                    // 'value is not numeric'
+                    $this->errors[$field] = $callingOBJ->getLanguageText('sys0023', $value);
+                    return $value;
+                } // if
             } // if
 
             // value for 'precision' must be present

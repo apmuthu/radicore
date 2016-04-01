@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 abstract class Default_Table
@@ -90,7 +90,7 @@ abstract class Default_Table
     var $primary_key = array();         // column(s) which form the primary key
     var $report_structure;              // report structure
     var $resize_array;                  // used in file uploads
-    var $restart_url;                   // restart tas with thus URL
+    var $restart_url;                   // restart task with this URL
     var $retry_on_duplicate_key;        // field name to be incremented when insert fails
     var $reuse_previous_select = false; // reuse previous SELECT in _dml_ReadBeforeUpdate()
     var $rows_per_page = 0;             // page size for multi-row forms
@@ -278,6 +278,48 @@ abstract class Default_Table
         return $fieldarray;
 
     } // changeConfig
+
+    // ****************************************************************************
+    function checkAccountId ($where, $user_account_id)
+    // a child record is being either added, modified or deleted, so check that the
+    // user's account_id is valid for the account_id on the parent record.
+    // $where is a string which should identify the primary key of the parent record.
+    {
+        if (!isset($this->fieldspec['rdcaccount_id'])) {
+            return false;  // field does not exist in this table, so quit now
+        } // if
+
+        $where_array = where2array($where);
+        $keys = array_keys($where_array);
+        if (!in_array('rdcaccount_id', $keys)) {
+            $keys[] = 'rdcaccount_id';
+        } // if
+
+        $this->sql_select = implode(",", $keys);  // select key fields only
+        $this->sql_from   = $this->tablename;
+
+        $checkPrimaryKey  = $this->checkPrimaryKey;  // save current value
+        $this->checkPrimaryKey = true;
+        $data = $this->getData($where);
+        $this->checkPrimaryKey = $checkPrimaryKey;   // restore original value
+        if (empty($data)) {
+            // "No record was found with this identity"
+            $this->errors[] = getLanguageText('sys0199');
+            return false;
+        } else {
+            $data = $data[0];
+            if ($data['rdcaccount_id'] == 1) {
+                // the shared account is valid
+            } elseif ($data['rdcaccount_id'] != $user_account_id) {
+                // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
+                $this->errors[] = getLanguageText('sys0235');
+                return false;
+            } // if
+        } // if
+
+        return true;
+
+    } // checkAccountId
 
     // ****************************************************************************
     function checkWorkflow ($where)
@@ -1483,7 +1525,16 @@ abstract class Default_Table
         $object->func_scale    = $fieldarray['func_scale'];
         $object->tran_scale    = $fieldarray['tran_scale'];
 
+        $pattern_id = getPatternId();
+
         $fieldarray = $object->flip_currency($fieldarray, $columns, $fn_suffix, $tx_suffix);
+        if (preg_match('/(list)/i', $pattern_id)) {
+            // value is appended by currency code, so skip the next bit
+        } else {
+            foreach ($columns as $fieldname => $scale) {
+                $fieldarray[$fieldname] = formatNumber($fieldarray[$fieldname], $scale);
+            } // foreach
+        } // if
 
         return $fieldarray;
 
@@ -1727,22 +1778,26 @@ abstract class Default_Table
                         break;
                     case 'decimal':
                     case 'numeric':
-                       if (isset($fieldspec['scale'])) {
-                           $decimal_places = $fieldspec['scale'];
-                       } else {
-                           $decimal_places = 0;
-                       } // if
-                       if ($fieldvalue == 0 AND isset($fieldspec['blank_when_zero'])) {
-                           if ($operator == '=') {
-                               $fieldvalue = ''; // value is zero, so display blank
+                        if (!empty($this->errors[$fieldname])) {
+                            // this field has errors, so don't format it
+                        } else {
+                           if (isset($fieldspec['scale'])) {
+                               $decimal_places = $fieldspec['scale'];
+                           } else {
+                               $decimal_places = 0;
                            } // if
-                       } else {
-                           // remove any thousands separators
-                           // this screws up -> $fieldvalue = number_unformat($fieldvalue);
-                           // format number according to current locale settings
-                           $strip_trailing_zero =& $fieldspec['strip_trailing_zero'];
-                           $fieldvalue = formatNumber($fieldvalue, $decimal_places, $strip_trailing_zero);
-                       } // if
+                           if ($fieldvalue == 0 AND isset($fieldspec['blank_when_zero'])) {
+                               if ($operator == '=') {
+                                   $fieldvalue = ''; // value is zero, so display blank
+                               } // if
+                           } else {
+                               // remove any thousands separators
+                               // this screws up -> $fieldvalue = number_unformat($fieldvalue);
+                               // format number according to current locale settings
+                               $strip_trailing_zero =& $fieldspec['strip_trailing_zero'];
+                               $fieldvalue = formatNumber($fieldvalue, $decimal_places, $strip_trailing_zero);
+                           } // if
+                        } // if
                        break;
                     default:
                         ;
@@ -2000,6 +2055,8 @@ abstract class Default_Table
         $this->errors = array();    // initialise
         $data_raw     = array();
 
+        $pattern_id   = getPatternId();
+
 //        if (!empty($this->sql_where)) {
 //            // remove anything in $this->sql_where which is duplicated in $where
 //            $this->sql_where = filterWhere1Where2($where, $this->sql_where, $this->tablename);
@@ -2019,13 +2076,13 @@ abstract class Default_Table
             $where = array2where($where_array);
         } // if
 
-        if ($this->initiated_from_controller) {
+        if (is_True($this->initiated_from_controller)) {
             // replace with original unmodified version
             $this->sql_search = $this->sql_search_orig;
         } // if
 
         // make this data available if passed down by parent object
-        $parent_data = $this->getParentData();
+        $parent_data =& $this->getParentData();
 
         // perform any custom pre-retrieve processing
         if (is_object($this->custom_processing_object)) {
@@ -2102,7 +2159,7 @@ abstract class Default_Table
             $data_raw = $this->setSelectedRows($this->select_string, $data_raw);
         } // if
 
-        if ($this->initiated_from_controller) {
+        if (is_True($this->initiated_from_controller)) {
             if (isset($GLOBALS['script_vars']['task_id_run_at_end'])) {
                 if ($this->rows_per_page > 1
                 OR ($this->rows_per_page = 1 AND $this->numrows > 1)) {
@@ -2117,7 +2174,7 @@ abstract class Default_Table
         } // if
 
         if ($GLOBALS['mode'] != 'insert') {
-            // clear 'nodisplay' option which may have been by previous iteration
+            // clear 'nodisplay' option which may have been set in previous iteration
             foreach ($this->fieldspec as $field => $spec) {
                 if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
                     unset($this->fieldspec[$field]['nodisplay']);
@@ -2125,25 +2182,40 @@ abstract class Default_Table
             } // foreach
         } // if
 
-//        $entry = getEntryPoint($this);
-//        if (strtolower($entry) == 'getdata') {
-            if (isset($this->instruction)) {
-                $data_raw = $this->_processInstruction($data_raw);
-            } // if
+        if (isset($this->instruction)) {
+            $data_raw = $this->_processInstruction($data_raw);
+        } // if
 
-            // perform any custom post-retrieve processing
-            if (is_object($this->custom_processing_object)) {
-                if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
-                    $data_raw = $this->custom_processing_object->_cm_post_getData($data_raw, $where);
+        // perform any custom post-retrieve processing
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
+                $data_raw = $this->custom_processing_object->_cm_post_getData($data_raw, $where);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $data_raw = $this->_cm_post_getData($data_raw, $where);
+        } // if
+        $this->where = $where;
+
+        if (is_True($this->initiated_from_controller) AND count($data_raw) == 1) {
+            if (preg_match('/(mnu_user)$/i', $this->tablename)) {
+                // ignore account restrictions on this tables
+                $condition = true;
+            } elseif (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
+                $data = $data_raw[0];
+                if (preg_match('/^(ADD|DEL|UPD|MULTI)/i', $pattern_id) AND array_key_exists('rdcaccount_id', $data)) {
+                    if ($data['rdcaccount_id'] == 1 AND $_SESSION['rdcaccount_id'] != 1) {
+                        // "Record belongs to the shared account, so can only be modified by an administrator"
+                        $this->errors[] = getLanguageText('sys0236');
+                    } elseif ($data['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                        // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
+                        $this->errors[] = getLanguageText('sys0235');
+                    } // if
                 } // if
             } // if
-            if ($this->custom_replaces_standard) {
-                $this->custom_replaces_standard = false;
-            } else {
-                $data_raw = $this->_cm_post_getData($data_raw, $where);
-            } // if
-            $this->where = $where;
-//        } // if
+        } // if
 
         $this->fieldarray = $data_raw;
 
@@ -2162,13 +2234,14 @@ abstract class Default_Table
         $where_array = where2array($where);
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
-            // this table is split by account, so account_id must be supplied in WHERE string
-            if (!isset($where_array['rdcaccount_id'])) {
-                $account_id =& $_SESSION['rdcaccount_id'];
-                if (empty($account_id) AND preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
+            if (!empty($where_array['rdcaccount_id'])) {
+                // value has already been supplied, so continue
+            } else {
+                $account_id = $_SESSION['rdcaccount_id'];
+                if (empty($account_id)) {
                     // no account id supplied, so read everything on these tables only
                 } else {
-                    if (empty($account_id) OR $account_id == 1) {
+                    if ($account_id == 1) {
                         $account_id_string = "$this->tablename.rdcaccount_id='1'";
                     } else {
                         $account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
@@ -2242,7 +2315,7 @@ abstract class Default_Table
         } // if
 
         // make this data available if passed down by parent object
-        $parent_data = $this->getParentData();
+        $parent_data =& $this->getParentData();
 
         // perform any custom pre-retrieve processing
         if (is_object($this->custom_processing_object)) {
@@ -2556,11 +2629,28 @@ abstract class Default_Table
         $tablename = $this->getTableName();
         if ($tablename != 'default') {
             // include table specifications generated by Data Dictionary
-            if (!empty($this->dirname_dict)) {
-                require ($this->dirname_dict .DIRECTORY_SEPARATOR .$tablename .'.dict.inc');
-            } else {
-                require ($this->dirname      .DIRECTORY_SEPARATOR .$tablename .'.dict.inc');
+            $attempt = array();  // an array of possible file names
+            if (!empty($GLOBALS['project_code'])) {
+                $dirname = dirname($this->dirname) ."/classes/custom-processing/{$GLOBALS['project_code']}/";
+                $fn      = "{$dirname}cp_{$tablename}.dict.inc";
+                $attempt[] = $fn;
             } // if
+            if (!empty($this->dirname_dict)) {
+                $attempt[] = "{$this->dirname_dict}/{$tablename}.dict.inc";
+            } // if
+            $attempt[] = "{$this->dirname}/{$tablename}.dict.inc";
+            foreach ($attempt as $fn) {
+                if (file_exists($fn)) {
+                    require($fn);
+                    unset($attempt, $fn);
+                    break;
+                } // if
+            } // foreach
+            if (isset($attempt)) {
+                // "Unable to locate '.dict.inc' file for table '%1\$s'"
+                trigger_error(getLanguageText('sys0249', $tablename), E_USER_ERROR);
+            } // if
+
             if (is_bool($save_audit_logging) OR !empty($save_audit_logging)) {
                 $this->audit_logging = $save_audit_logging;
             } // if
@@ -2767,6 +2857,21 @@ abstract class Default_Table
             $save_lastpage = $this->lastpage;
         } // if
 
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            $account_id = $_SESSION['rdcaccount_id'];
+            if (empty($account_id)) {
+                $account_id = 1;  // change from NULL to the shared account
+            } // if
+            if (array_key_exists('rdcaccount_id', $fieldarray) AND $fieldarray['rdcaccount_id'] != $account_id) {
+                // "User's account (X) is not compatible with record's account (Y)";
+                $this->errors['rdcaccount_id'] = getLanguageText('sys0232', $account_id, $fieldarray['rdcaccount_id']);
+                return $fieldarray;
+            } else {
+                // always use this user's account_id
+                $fieldarray['rdcaccount_id'] = $account_id;
+            } // if
+        } // if
+
         // perform any custom processing (optional)
         $this->sqlSelectInit();
         if (is_object($this->custom_processing_object)) {
@@ -2788,26 +2893,6 @@ abstract class Default_Table
         } // if
 
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
-
-        if (isset($this->fieldspec['rdcaccount_id'])) {
-            if (empty($_SESSION['rdcaccount_id'])) {
-                if (preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
-                    // do nothing on this table
-                } else {
-                    // use the 'sharing' id
-                    $fieldarray['rdcaccount_id'] = 1;
-                } // if
-            } else {
-                if (isset($fieldarray['rdcaccount_id']) AND $fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
-                    // "User's account (X) is not compatible with record's account (Y)";
-                    $this->errors['rdcaccount_id'] = getLanguageText('sys0232', $_SESSION['rdcaccount_id'], $fieldarray['rdcaccount_id']);
-                    return $fieldarray;
-                } else {
-                    // always use this user's account_id
-                    $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
-                } // if
-            } // if
-        } // if
 
         // do not display autoinsert/autoupdate fields on input screens
         foreach ($this->fieldspec as $field => $spec) {
@@ -3583,6 +3668,11 @@ abstract class Default_Table
 
         $where2 = $where;  // save for comparison
 
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            // by default this field should be non-editable
+            $this->fieldspec['rdcaccount_id']['noedit'] = 'y';
+        } // if
+
         // perform any custom initialisation (optional)
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_initialise')) {
@@ -3616,28 +3706,17 @@ abstract class Default_Table
         $fieldarray  = where2array($where, false, false);
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
-            // is this field editable or non-editable?
-            if (isset($_SESSION['rdcaccount_id']) AND $_SESSION['rdcaccount_id'] > 1) {
-                $this->fieldspec['rdcaccount_id']['noedit'] = 'y';
-            } else{
-                if ($this->tablename == 'mnu_user') {
-                    unset($this->fieldspec['rdcaccount_id']['noedit']);
-                    unset($this->fieldspec['rdcaccount_id']['nodisplay']);
-                } else {
-                    $this->fieldspec['rdcaccount_id']['noedit'] = 'y';
-                } // if
-            } // if
             if (count($fieldarray) == 1) {
-                $fieldarray = unqualifyFieldArray($fieldarray);
-                if (isset($fieldarray['rdcaccount_id'])) {
-                    // 'rdcaccount_id' is the only value, so can we remove it?
-                    if ($this->tablename == 'mnu_account') {
-                        // this is allowed on this table
-                    } else {
-                        $where = null;
-                        $fieldarray = array();
-                    } // if
-                } // if
+//                $fieldarray = unqualifyFieldArray($fieldarray);
+//                if (isset($fieldarray['rdcaccount_id'])) {
+//                    // 'rdcaccount_id' is the only value, so can we remove it?
+//                    if (preg_match('/^(mnu_account)/i', $this->tablename)) {
+//                        // this is allowed on this table
+//                    } else {
+//                        $where = null;
+//                        $fieldarray = array();
+//                    } // if
+//                } // if
             } // if
         } // if
 
@@ -4291,6 +4370,15 @@ abstract class Default_Table
 
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
 
+        if (isset($this->fieldspec['rdcaccount_id'])) {
+            $account_id = $_SESSION['rdcaccount_id'];
+            if (empty($account_id) OR $account_id == 1) {
+                $fieldarray['rdcaccount_id'] = 1;
+            } else {
+                $fieldarray['rdcaccount_id'] = $account_id;
+            } // if
+        } // if
+
         $insertarray = $fieldarray;  // copy to temporary area
 
         if (empty($this->errors) AND is_array($insertarray) AND !empty($insertarray)) {
@@ -4823,7 +4911,7 @@ abstract class Default_Table
             } // if
         } // if
 
-        scriptPevious($errors, $messages, $action, $instruction);
+        scriptPrevious($errors, $messages, $action, $instruction);
 
     } // scriptPrevious
 
@@ -5044,7 +5132,7 @@ abstract class Default_Table
     // get contents of ROLE_TASKFIELD for this role/task.
     // this identifies if access to certain fields should be turned off.
     {
-        $this->errors = array();
+        //$this->errors = array();
         $array = array();
 
         // MNU_ROLE_TASKFIELD contains a list of fields for the current task
@@ -5053,8 +5141,8 @@ abstract class Default_Table
         // first we must obtain the user's current role setting
         $dbrole =& RDCsingleton::getInstance('mnu_role');
         $dbrole_data = $dbrole->getRole($_SESSION['logon_user_id']);
-        if ($dbrole->errors) {
-            $this->errors = $dbrole->errors;
+        if (!empty($dbrole->errors)) {
+            $this->errors = array_merge($this->errors, $dbrole->errors);
             return FALSE;
         } // if
         unset($dbrole);
@@ -5077,7 +5165,9 @@ abstract class Default_Table
         $where = "task_id='" .$_SESSION['pages'][$PHP_SELF]['task_id'] ."'";
 
         $accessarray = $dbobject->getData_raw($where);
-        $this->errors = $dbobject->getErrors();
+        if (!empty($dbobject->errors)) {
+            $this->errors = array_merge($this->errors, $dbobject->errors);
+        } // if
         unset($dbobject);
 
         // $accessarray contains a separate row for each field which must now be
@@ -6133,29 +6223,6 @@ abstract class Default_Table
             //$fieldarray = $this->convertTimeZone($fieldarray);  // (NOTE: this is now done after the _cm_pre_updateRecord() method)
         //} // if
 
-        if (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
-            if (empty($_SESSION['rdcaccount_id'])) {
-                if (preg_match('/(mnu_user|mnu_account)/i', $this->tablename)) {
-                    // do nothing on this table
-                } else {
-                    // use the 'sharing' id
-                    $fieldarray['rdcaccount_id'] = 1;
-                } // if
-            } else {
-                if (!isset($fieldarray['rdcaccount_id'])) {
-                    // Column 'rdcaccount_id' is missing from SELECT list
-                    $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0233');
-                } else {
-                    if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
-                        // not allowed to update a shared record
-                        $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0189');
-                    } // if
-                    // not allowed to change the record's account
-                    $fieldarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
-                } // if
-            } // if
-        } // if
-
         //$updatearray = $fieldarray;  // copy to temporary area
 
         if (empty($this->errors)) {
@@ -6215,6 +6282,34 @@ abstract class Default_Table
             } else {
                 // use only 1st row in $originaldata
                 $originaldata = $originaldata[key($originaldata)];
+                if (isset($this->fieldspec['rdcaccount_id'])) {
+                    if (preg_match('/(mnu_user)$/i', $this->tablename)) {
+                        // ignore this check on this table
+                        $condition = true;
+                    } elseif (!array_key_exists('rdcaccount_id', $originaldata)) {
+                        // Column 'rdcaccount_id' is missing from SELECT list
+                        $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0233');
+                    } else {
+                        $account_id = $_SESSION['rdcaccount_id'];
+                        if (empty($account_id) OR $account_id == 1) {
+                            if ($originaldata['rdcaccount_id'] == 1) {
+                                // this user can update a record in the shared account
+                                $condition = true;
+                            } elseif ($originaldata['rdcaccount_id'] > 1) {
+                                // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
+                                $this->errors[] = getLanguageText('sys0235');
+                            } // if
+                        } elseif ($account_id > 1) {
+                            if ($originaldata['rdcaccount_id'] == 1) {
+                                // "Cannot update a record in the shared account"
+                                $this->errors[] = getLanguageText('sys0189');
+                            } elseif ($originaldata['rdcaccount_id'] != $account_id) {
+                                // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
+                                $this->errors[] = getLanguageText('sys0235');
+                            } // if
+                        } // if
+                    } // if
+                } // if
                 // insert any missing values into updatearray before further validation
                 $updatearray = array_merge($originaldata, $updatearray);
             } // if
@@ -6467,10 +6562,6 @@ abstract class Default_Table
                     // delete is not allowed if relationship is 'restricted'
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
-                        //if (strlen($fldchild) < 1) {
-                        //    $this->errors[] = $this->getLanguageText('sys0110', strtoupper($tblchild)); // 'Name of child field missing in relationship with $tblchild';
-                        //    break;
-                        //} // if
                         if (!empty($fldchild)) {
                             if ($fldchild == 'alt_language_table' AND empty($fieldarray['alt_language_table'])) {
                                 if ($fieldarray[$fldparent] == $fieldarray['table_id']) {
@@ -6523,11 +6614,6 @@ abstract class Default_Table
                     // check children of this child
                     $where = NULL;
                     foreach ($reldata['fields'] as $fldparent => $fldchild) {
-                        //if (strlen($fldchild) < 1) {
-                        //    // 'Name of child field missing in relationship with $tblchild';
-                        //    $this->errors[] = $this->getLanguageText('sys0110', strtoupper($tblchild));
-                        //    break;
-                        //} // if
                         if (!empty($fldchild)) {
                             if (empty($where)) {
                                 $where = "$fldchild='" .addslashes($fieldarray[$fldparent]) ."'";
@@ -6565,7 +6651,7 @@ abstract class Default_Table
                         $childarray  = $childobject->getdata($where);
                         foreach ($childarray as $child) {
                             $pkey   = $childobject->getPkeyArray($child);
-                            $result = $childobject->validateDelete($child, $parent_table);
+                            $result = $childobject->validateDelete($pkey, $parent_table);
                             $errors = $childobject->getErrors();
                             if (!empty($errors)) {
                                 $this->errors[$childobject->getClassName()] = $errors;
@@ -7129,6 +7215,8 @@ abstract class Default_Table
         //$this->upload_maxfilesize = 1000000;
         //$this->upload_blacklist   = array("\.php.*", "\..*htm.*");
         //$this->allow_multiple     = false;
+
+        $this->fieldarray = $fieldarray;
 
         return $fieldarray;
 
@@ -8153,7 +8241,7 @@ abstract class Default_Table
             if (empty($this->sql_select)) {
                 // has not been constructed yet, so do it now
                 $where_array = where2array($where);
-                $parent_data = $this->getParentData();
+                $parent_data =& $this->getParentData();
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
                         $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
@@ -8962,26 +9050,22 @@ abstract class Default_Table
             $where = $this->_sqlAssembleWhereLink($where, $where_array);
         } else {
             if (isset($this->fieldspec['rdcaccount_id'])) {
-                // this table is split by account, so account_id must be supplied in WHERE string
-                if (empty($where_array['rdcaccount_id'])) {
-                    if (!empty($_SESSION['rdcaccount_id'])) {
-                        $account_id = $_SESSION['rdcaccount_id'];
+                if (!empty($where_array['rdcaccount_id'])) {
+                    // value has already been supplied, so continue
+                } elseif (preg_match('/^(mnu_user|mnu_account)$/i', $this->tablename)) {
+                    // do not use account restriction when reading these tables
+                } else {
+                    $account_id = $_SESSION['rdcaccount_id'];
+                    if (empty($account_id)) {
+                        $account_id_string = null;  // read all accounts
+                    } elseif ($account_id == 1) {
+                        // read only the shared account
+                        $account_id_string = "$this->tablename.rdcaccount_id='1'";
                     } else {
-                        $account_id = null;
+                        // read the user's account and the shared account
+                        $account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
                     } // if
-                    if (preg_match('/(mnu_user|mnu_account)/', $this->tablename)) {
-                        if (empty($account_id)) {
-                            // no account id supplied, so read everything on these tables only
-                            //$account_id_string = "$this->tablename.rdcaccount_id IS NULL";
-                        } else {
-                            $account_id_string = "($this->tablename.rdcaccount_id IS NULL OR $this->tablename.rdcaccount_id='$account_id')";
-                        } // if
-                    } else {
-                        if (empty($account_id) OR $account_id == 1) {
-                            $account_id_string = "$this->tablename.rdcaccount_id='1'";
-                        } else {
-                            $account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
-                        } // if
+                    if (!empty($account_id_string)) {
                         if (empty($this->sql_search)) {
                             $this->sql_search = $account_id_string;
                         } else {
@@ -9047,7 +9131,12 @@ abstract class Default_Table
         // extract entries from $sql_select which are in format 'expression AS alias'
         $alias_array = extractAliasNames($this->sql_select);
         // anything in WHERE which has an alias name will be moved to HAVING
-        $having_array = where2array($this->sql_having, false, false);
+        if (preg_match('/^\(.+\)$/', $this->sql_having)) {
+            // begins with '(' and ends with ')' so do not break it up into individual columns
+            $having_array[] = $this->sql_having;
+        } else {
+            $having_array = where2array($this->sql_having, false, false);
+        } // if
 
         if (empty($this->sql_from)) {
             $this->sql_from = $this->tablename;
@@ -9165,21 +9254,20 @@ abstract class Default_Table
     // the middle (link) table.
     {
         if (isset($this->fieldspec['rdcaccount_id'])) {
-            // this table is split by account, so account_id must be supplied in WHERE string
             if (empty($where_array['rdcaccount_id'])) {
-                if (!empty($_SESSION['rdcaccount_id'])) {
-                    $account_id = $_SESSION['rdcaccount_id'];
+                // value has already been supplied, so continue
+            } else {
+                $account_id = $_SESSION['rdcaccount_id'];
+                if (empty($account_id)) {
+                    $account_id_string = null;  // read all accounts
+                } elseif ($account_id == 1) {
+                    // read only the shared account
+                    $account_id_string = "$this->tablename.rdcaccount_id='1'";
                 } else {
-                    $account_id = null;
+                    // read the user's account and the shared account
+                    $account_id_string = "$this->tablename.rdcaccount_id IN ('1', '$account_id')";
                 } // if
-                if (empty($account_id) AND preg_match('/(mnu_user|mnu_account)/', $this->tablename)) {
-                    // no account id supplied, so read everything on these tables only
-                } else {
-                    if (empty($account_id) OR $account_id == 1) {
-                        $account_id_string = "$this->inner_table.rdcaccount_id='1'";
-                    } else {
-                        $account_id_string = "$this->inner_table.rdcaccount_id IN ('1', '$account_id')";
-                    } // if
+                if (!empty($account_id_string)) {
                     if (empty($this->sql_search)) {
                         $this->sql_search = $account_id_string;
                     } else {
@@ -9331,8 +9419,8 @@ abstract class Default_Table
 
             $sql_select .= ", {$account_id_string}.rdcaccount_id";  // retrieve value from inner table
 
-            $account_id =& $_SESSION['rdcaccount_id'];
-            if (empty($account_id)) {
+            $account_id = $_SESSION['rdcaccount_id'];
+            if (empty($account_id) OR $account_id == 1) {
                 $account_id_string .= ".rdcaccount_id='1'";
             } else {
                 $account_id_string .= ".rdcaccount_id IN ('1', '$account_id')";
@@ -9813,7 +9901,7 @@ abstract class Default_Table
         unset($keys['custom_processing_object']);  // this will be rebuilt in the __wakeup() method
 
         $pattern_id = getPatternId();
-        if (preg_match('/^(UPD|ADD|MULTI|MULTI2|SRCH|LINK|POPUP|OUTPUT4)/i', $pattern_id)) {
+        if (preg_match('/^(UPD|ADD|MULTI|MULTI2|SRCH|LINK|POPUP|OUTPUT4|FILEUPLOAD)/i', $pattern_id)) {
             // do NOT shrink $this->fieldarray
         } else {
             // get list of primary key fields

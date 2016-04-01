@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -70,6 +70,7 @@ class radicore_view
         if (array_key_exists($objectname, $errors)) {
             // extract errors for this object only
             $object_errors = $errors[$objectname];
+            $dbobject->errors = $object_errors;  // put errors bac into object
 		    unset($errors[$objectname]);
 		    foreach ($object_errors as $key => $value) {
 		        if (is_string($key) AND is_string($value)) {

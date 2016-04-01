@@ -319,6 +319,7 @@ END_OF_REGEX;
 
         $select_str = '*';
         $from_str   = "(\n$subquery\n) AS x";
+        $having_str = unqualifyWhere($having_str, '*');
         $where_str  = "\nWHERE $having_str";
         $having_str = '';
         $group_str  = '';

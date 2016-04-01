@@ -47,6 +47,8 @@ class currency_class
                 if (empty($fieldarray[$name_fn]) AND !empty($fieldarray[$name_tx])) {
                     // convert to functional currency from transaction currency
                     $fieldarray[$name_fn] = $this->_convert($fieldarray[$name_tx], 1/$this->exchange_rate, $scale, $this->func_scale);
+                } else {
+                    $fieldarray[$name_fn] = (double)number_unformat($fieldarray[$name_fn]);
                 } // if
                 $fieldarray[$name_fn] = number_format($fieldarray[$name_fn], $scale, '.', '');
                 if (preg_match('/(list)/i', $pattern_id)) {
@@ -69,9 +71,10 @@ class currency_class
                 if (preg_match('/(add)/i', $pattern_id)) {
                     // do not change any input values
                 } else {
-                    $value_tx = (double)$fieldarray[$name_tx];
-                    $value    = (double)$fieldarray[$name];
-                    if (!empty($value_tx) OR $value_tx <> 0) {
+                    // strip out any thousands separator
+                    $value_tx = (double)number_unformat($fieldarray[$name_tx]);
+                    $value    = (double)number_unformat($fieldarray[$name]);
+                    if (!empty($value_tx) AND $value_tx <> 0) {
                         // use value as input
                         $value_tx = number_format($value_tx, $scale, '.', '');
                         $fieldarray[$name] = $value_tx;

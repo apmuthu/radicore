@@ -18,8 +18,9 @@ if (preg_match('/cli/i', php_sapi_name())) {
 } else {
     require_once 'include.general.inc';
     initSession();      // load session variables
-    $mode = 'update';   // identify mode for xsl file
 } // if
+
+$mode = 'update';   // identify mode for xsl file
 
 //if (!empty($selection) AND !isset($return_from)) {
 //    // $selection takes precedence over $where

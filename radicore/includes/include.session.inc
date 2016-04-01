@@ -1978,8 +1978,15 @@ function runInBackground ($task_array, $save_script_vars)
     // run this program in the background via the command line
     if (preg_match('/^(linux|unix)/i', PHP_OS)) {
         // this code is for linux and unix system
-        $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null &";
-        $result = exec($command_line);
+        if (isset($settings_array['rdc_wait']) AND is_True($settings_array['rdc_wait'])) {
+            // start script and wait for it to finish
+            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null";
+            $result = exec($command_line);
+        } else {
+            // start script, but do not wait for it to finish
+            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null &";
+            $result = exec($command_line);
+        } // if
 
     } else {
         // this code is for Windoze
