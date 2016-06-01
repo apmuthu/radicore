@@ -33,15 +33,15 @@ class mnu_pattern extends Default_Table
     {
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('pattern_id' => 'Pattern Id',
-                               'pattern_desc' => 'Pattern Desc');
-                $this->lookup_data['quicksearch_field'] = $array;
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('pattern_id' => 'Pattern Id',
+//                               'pattern_desc' => 'Pattern Desc');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//            } // if
+//        } // if
 
         return $fieldarray;
 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // Display help text for the specified task.
@@ -35,25 +35,10 @@ if (isset($_SESSION['user_language'])) {
 } // if
 $GLOBALS['party_language'] = strtoupper($lang);
 
-$title = getLanguageText('sys0099', $task_id); // "Help text for '$help_id'"
-
-$errors = array();
-
-require_once "classes/mnu_task.class.inc";
-$taskOBJ = new mnu_task;
-
-$data = $taskOBJ->getData("task_id='$task_id'");
-if (!empty($data)) {
-    $data = $data[0];
-    $help_desc = $data['task_desc'];
-} else {
-    $help_desc = getLanguageText($task_id);
-} // if
-
 require_once "classes/help_text.class.inc";
 $helpOBJ = new help_text;
 
-$data = $helpOBJ->getData("task_id='$task_id'");
+$data = $helpOBJ->getData("task_id='{$task_id}'");
 if (!empty($data)) {
     $data = $data[0];
     $help_text = $data['help_text'];
@@ -62,7 +47,7 @@ if (!empty($data)) {
         if (preg_match('/(?<=\[copy:).+(?=])/i', $help_text, $regs)) {
             // extract '<task_id>' and retrieve its text instead
             $task_id = trim($regs[0]);
-            $data = $helpOBJ->getData("task_id='$task_id'");
+            $data = $helpOBJ->getData("task_id='{$task_id}'");
             if (!empty($data)) {
                 $data = $data[0];
                 $help_text = $data['help_text'];
@@ -70,7 +55,33 @@ if (!empty($data)) {
         } // if
     } // if
 } else {
+    // look for a file in the 'help' directory
+    $directory = "../help";
+    $filename = $task_id.'.html';
+    // look for this file in one of the language sub-directories
+    $fname = getLanguageFile($filename, $directory, true);
+    if (!empty($fname)) {
+        // file found, so display it and stop
+        header('Location: '.$fname);
+        exit;
+    } // if
+} // if
+
+if (empty($help_text)) {
     $help_text = getLanguageText('sys0090', 'help_text'); // Nothing retrieved from database table 'x'
+} // if
+
+$title = getLanguageText('sys0099', $task_id); // "Help text for '$help_id'"
+
+require_once "classes/mnu_task.class.inc";
+$taskOBJ = new mnu_task;
+
+$data = $taskOBJ->getData("task_id='{$task_id}'");
+if (!empty($data)) {
+    $data = $data[0];
+    $help_desc = $data['task_desc'];
+} else {
+    $help_desc = getLanguageText($task_id);
 } // if
 
 $search_array  = array("/\r\n(?!<)/u",  "/\n(?!<)/u",   "/%root%/u",    "/%lang%/u");

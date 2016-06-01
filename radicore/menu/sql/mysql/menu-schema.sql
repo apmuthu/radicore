@@ -1,16 +1,17 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.6.27-log - MySQL Community Server (GPL)
+-- Server version:               5.7.12-log - MySQL Community Server (GPL)
 -- Server OS:                    Win64
--- HeidiSQL Version:             9.3.0.5009
+-- HeidiSQL Version:             9.3.0.5078
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
--- Dumping structure for table santiago_menu.help_text
+-- Dumping structure for table gmx_menu.help_text
 CREATE TABLE IF NOT EXISTS `help_text` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `help_text` text COLLATE utf8_unicode_ci,
@@ -22,9 +23,7 @@ CREATE TABLE IF NOT EXISTS `help_text` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.help_text_alt
+-- Dumping structure for table gmx_menu.help_text_alt
 CREATE TABLE IF NOT EXISTS `help_text_alt` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL,
@@ -37,9 +36,7 @@ CREATE TABLE IF NOT EXISTS `help_text_alt` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_account
+-- Dumping structure for table gmx_menu.mnu_account
 CREATE TABLE IF NOT EXISTS `mnu_account` (
   `rdcaccount_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `account_name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -52,9 +49,7 @@ CREATE TABLE IF NOT EXISTS `mnu_account` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_control
+-- Dumping structure for table gmx_menu.mnu_control
 CREATE TABLE IF NOT EXISTS `mnu_control` (
   `record_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `field_id` varchar(32) COLLATE utf8_unicode_ci NOT NULL,
@@ -67,9 +62,7 @@ CREATE TABLE IF NOT EXISTS `mnu_control` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_favourite
+-- Dumping structure for table gmx_menu.mnu_favourite
 CREATE TABLE IF NOT EXISTS `mnu_favourite` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -86,9 +79,7 @@ CREATE TABLE IF NOT EXISTS `mnu_favourite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_initial_value_role
+-- Dumping structure for table gmx_menu.mnu_initial_value_role
 CREATE TABLE IF NOT EXISTS `mnu_initial_value_role` (
   `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -104,9 +95,7 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_initial_value_user
+-- Dumping structure for table gmx_menu.mnu_initial_value_user
 CREATE TABLE IF NOT EXISTS `mnu_initial_value_user` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -122,9 +111,7 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_language
+-- Dumping structure for table gmx_menu.mnu_language
 CREATE TABLE IF NOT EXISTS `mnu_language` (
   `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL,
   `language_name` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -138,9 +125,7 @@ CREATE TABLE IF NOT EXISTS `mnu_language` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_menu
+-- Dumping structure for table gmx_menu.mnu_menu
 CREATE TABLE IF NOT EXISTS `mnu_menu` (
   `menu_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `task_id_jnr` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -154,9 +139,7 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_motd
+-- Dumping structure for table gmx_menu.mnu_motd
 CREATE TABLE IF NOT EXISTS `mnu_motd` (
   `motd_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `motd_subject` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -172,9 +155,7 @@ CREATE TABLE IF NOT EXISTS `mnu_motd` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_nav_button
+-- Dumping structure for table gmx_menu.mnu_nav_button
 CREATE TABLE IF NOT EXISTS `mnu_nav_button` (
   `task_id_snr` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `task_id_jnr` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -189,9 +170,7 @@ CREATE TABLE IF NOT EXISTS `mnu_nav_button` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_pattern
+-- Dumping structure for table gmx_menu.mnu_pattern
 CREATE TABLE IF NOT EXISTS `mnu_pattern` (
   `pattern_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `pattern_desc` varchar(60) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -207,9 +186,7 @@ CREATE TABLE IF NOT EXISTS `mnu_pattern` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_role
+-- Dumping structure for table gmx_menu.mnu_role
 CREATE TABLE IF NOT EXISTS `mnu_role` (
   `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `role_desc` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -224,9 +201,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_role_task
+-- Dumping structure for table gmx_menu.mnu_role_task
 CREATE TABLE IF NOT EXISTS `mnu_role_task` (
   `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -238,9 +213,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_role_taskfield
+-- Dumping structure for table gmx_menu.mnu_role_taskfield
 CREATE TABLE IF NOT EXISTS `mnu_role_taskfield` (
   `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -255,9 +228,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role_taskfield` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_saved_selection
+-- Dumping structure for table gmx_menu.mnu_saved_selection
 CREATE TABLE IF NOT EXISTS `mnu_saved_selection` (
   `selection_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `selection_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -271,9 +242,7 @@ CREATE TABLE IF NOT EXISTS `mnu_saved_selection` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_saved_selection_data
+-- Dumping structure for table gmx_menu.mnu_saved_selection_data
 CREATE TABLE IF NOT EXISTS `mnu_saved_selection_data` (
   `selection_id` int(10) unsigned NOT NULL,
   `fieldname` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -286,9 +255,7 @@ CREATE TABLE IF NOT EXISTS `mnu_saved_selection_data` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_subsystem
+-- Dumping structure for table gmx_menu.mnu_subsystem
 CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
   `subsys_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `subsys_desc` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -302,9 +269,7 @@ CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_task
+-- Dumping structure for table gmx_menu.mnu_task
 CREATE TABLE IF NOT EXISTS `mnu_task` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `task_desc` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
@@ -336,9 +301,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_task_alt
+-- Dumping structure for table gmx_menu.mnu_task_alt
 CREATE TABLE IF NOT EXISTS `mnu_task_alt` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL,
@@ -352,13 +315,12 @@ CREATE TABLE IF NOT EXISTS `mnu_task_alt` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_task_field
+-- Dumping structure for table gmx_menu.mnu_task_field
 CREATE TABLE IF NOT EXISTS `mnu_task_field` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `field_id` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
   `field_desc` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `is_documentation_only` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,
@@ -367,9 +329,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_field` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_task_ip_address
+-- Dumping structure for table gmx_menu.mnu_task_ip_address
 CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
   `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
   `ip_address` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
@@ -381,9 +341,35 @@ CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
 
 -- Data exporting was unselected.
+-- Dumping structure for table gmx_menu.mnu_task_quicksearch
+CREATE TABLE IF NOT EXISTS `mnu_task_quicksearch` (
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
+  `field_id` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `sort_seq` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `field_name` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`task_id`,`field_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+-- Data exporting was unselected.
+-- Dumping structure for table gmx_menu.mnu_task_quicksearch_alt
+CREATE TABLE IF NOT EXISTS `mnu_task_quicksearch_alt` (
+  `task_id` varchar(80) COLLATE utf8_unicode_ci NOT NULL,
+  `field_id` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL,
+  `field_name` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
+  `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
+  `revised_date` datetime DEFAULT NULL,
+  `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`task_id`,`field_id`,`language_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping structure for table santiago_menu.mnu_time_limit_role
+-- Data exporting was unselected.
+-- Dumping structure for table gmx_menu.mnu_time_limit_role
 CREATE TABLE IF NOT EXISTS `mnu_time_limit_role` (
   `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -404,9 +390,7 @@ CREATE TABLE IF NOT EXISTS `mnu_time_limit_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_time_limit_user
+-- Dumping structure for table gmx_menu.mnu_time_limit_user
 CREATE TABLE IF NOT EXISTS `mnu_time_limit_user` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -427,16 +411,14 @@ CREATE TABLE IF NOT EXISTS `mnu_time_limit_user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_todo
+-- Dumping structure for table gmx_menu.mnu_todo
 CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `seq_no` smallint(5) unsigned NOT NULL DEFAULT '0',
   `item_desc` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
   `item_notes` text COLLATE utf8_unicode_ci,
   `due_date` date NOT NULL DEFAULT '0000-00-00',
-  `visibility` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `visibility` tinyint(3) unsigned NOT NULL,
   `is_complete` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
   `repeat_interval` decimal(3,0) unsigned DEFAULT NULL,
   `repeat_unit` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -450,9 +432,7 @@ CREATE TABLE IF NOT EXISTS `mnu_todo` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of "To Do" items';
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_user
+-- Dumping structure for table gmx_menu.mnu_user
 CREATE TABLE IF NOT EXISTS `mnu_user` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `user_name` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
@@ -479,18 +459,15 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`),
-  UNIQUE KEY `email_addr` (`email_addr`),
-  KEY `rdcaccount_id` (`rdcaccount_id`)
+  UNIQUE KEY `email_addr` (`email_addr`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_user_alt
+-- Dumping structure for table gmx_menu.mnu_user_alt
 CREATE TABLE IF NOT EXISTS `mnu_user_alt` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `language_id` varchar(5) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `user_name` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
+  `user_name` varchar(30) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,
@@ -499,9 +476,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user_alt` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_user_ip_address
+-- Dumping structure for table gmx_menu.mnu_user_ip_address
 CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
   `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `ip_address` varchar(40) COLLATE utf8_unicode_ci NOT NULL,
@@ -513,12 +488,10 @@ CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
 
 -- Data exporting was unselected.
-
-
--- Dumping structure for table santiago_menu.mnu_user_role
+-- Dumping structure for table gmx_menu.mnu_user_role
 CREATE TABLE IF NOT EXISTS `mnu_user_role` (
-  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `user_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
+  `role_id` varchar(16) COLLATE utf8_unicode_ci NOT NULL,
   `is_primary` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',

@@ -164,21 +164,22 @@ if (!empty($_POST)) {
         // a custom button was pressed
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dblink->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($btn_zone == $dblink->zone) {
+        } // if
+        if ($btn_zone == $dblink->zone OR is_True($dblink->allow_buttons_all_zones)) {
             $link_data = $dblink->customButton($link_data, $custom_btn, $_POST, $btn_row);
             if ($dblink->errors) {
                 $errors[$dblink->getClassName()] = $dblink->getErrors();
             } // if
         } // if
         if (empty($errors)) {
-            $dblink->rollback();
+            $dbinner->commit(false);
         } else {
-            $dblink->commit();
+            $dbinner->rollback();
         } // if
 
     } elseif (empty($errors) AND !empty($submit_button)) {

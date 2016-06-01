@@ -59,7 +59,7 @@ class wf_token extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign entities.
     {
         global $mode;
@@ -68,8 +68,10 @@ class wf_token extends Default_Table
             $dbobject =& RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
-            // add to current data
-            $fieldarray = array_merge($fieldarray, $array[0]);
+            if (!empty($array)) {
+                $array = $array[0];
+                $fieldarray = array_merge($fieldarray, $array);  // add to current data
+            } // if
             // make this field 'read only'
             $this->fieldspec['workflow_id']['noedit'] = 'y';
         } // if
@@ -172,7 +174,7 @@ class wf_token extends Default_Table
         // find all transitions which are joined to this place via INWARD arcs
         require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& RDCsingleton::getInstance('wf_arc');
-        $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit';
+        $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit, template_id';
         $dbarc->sql_from = 'wf_arc '
                          . "LEFT JOIN wf_transition ON (wf_transition.workflow_id=wf_arc.workflow_id AND wf_transition.transition_id=wf_arc.transition_id) ";
         $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND direction='IN'";

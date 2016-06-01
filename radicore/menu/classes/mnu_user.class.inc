@@ -335,7 +335,7 @@ class mnu_user extends Default_Table
             // add field to allow searching on the MNU_USER_ROLE table
             $this->fieldspec['role_id']     = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
+                                                    //'required' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'role_id');
 
@@ -589,15 +589,15 @@ class mnu_user extends Default_Table
 
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('user_id' => 'User Id',
-                               'user_name' => 'User Name');
-                $this->lookup_data['quicksearch_field'] = $array;
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('user_id' => 'User Id',
+//                               'user_name' => 'User Name');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//            } // if
+//        } // if
 
         return $fieldarray;
 

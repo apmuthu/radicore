@@ -160,7 +160,7 @@ if (!empty($_POST)) {
     if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec(), true);
         $inner_data = array_update_indexed($inner_data, $inner_post);
         // ensure that changes are stored inside relevant object
         $dbinner->setFieldArray($inner_data);
@@ -184,12 +184,15 @@ if (!empty($_POST)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dbinner->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } elseif (preg_match('/retrieve/i', $custom_btn)) {
+                $do_retrieve = true;
             } // if
-        } elseif ($btn_zone == $dbinner->zone) {
+        } // if
+        if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {
             $inner_data = $dbinner->getFieldArray();
             $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
             if ($dbinner->errors) {
@@ -197,7 +200,7 @@ if (!empty($_POST)) {
             } // if
         } // if
         if (empty($errors)) {
-            $dbinner->commit();
+            $dbinner->commit(false);
             //$do_retrieve = true;
         } else {
             $dbinner->rollback();
@@ -292,9 +295,6 @@ if (!empty($return_from) AND isset($selection)) {
         $outer_data = $dbouter->getData($where);
         $outer_data = $dbouter->getExtraData($outer_data);
         if ($dbouter->errors) {
-            $errors[$dbouter->getClassName()] = $dbouter->errors;
-        } // if
-        if ($dbouter->errors) {
             // some sort of error
             if ($dbouter->getLastPage() <= 1) {
                 // only 1 entry requested, so return to previous script to show the error
@@ -303,9 +303,7 @@ if (!empty($return_from) AND isset($selection)) {
                 // multiple entries requested, so disable SUBMIT button
                 unset($act_buttons['submitBtn']);
                 unset($act_buttons['submitnext']);
-                if ($dbouter->errors) {
-            	    $errors[$dbouter->getClassName()] = $dbouter->getErrors();
-                } // if
+            	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
         } // if
         if ($dbouter->getNumRows() < 1) {

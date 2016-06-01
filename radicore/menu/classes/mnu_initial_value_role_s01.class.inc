@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_initial_value_role.class.inc';
 class mnu_initial_value_role_s01 extends mnu_initial_value_role
@@ -34,6 +34,7 @@ class mnu_initial_value_role_s01 extends mnu_initial_value_role
                            .'CROSS JOIN mnu_role '
                            .'LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task_field.task_id AND mnu_initial_value_role.field_id=mnu_task_field.field_id AND mnu_initial_value_role.role_id=mnu_role.role_id)';
 
+        unset($where_array['start_task_id']);
         $where_array['mnu_task_field.task_id'] = $where_array['task_id'];
         unset($where_array['task_id']);
         $where_array['mnu_role.role_id']       = $where_array['role_id'];

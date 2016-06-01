@@ -212,13 +212,8 @@ function batchEnd ($errors=null)
 // end batch processing
 {
     if (!empty($errors)) {
-    	if (is_array($errors)) {
-    		foreach ($errors as $key => $value) {
-    			echo "<p>[" .$key ."] " .$value ."</p>\n";
-    		} // foreach
-    	} elseif (is_string($errors)) {
-    	    echo "<p>$errors</p>\n";
-    	} // if
+        $string = errors2string($errors, '<p>', "</p>");
+        echo $string;
     } // if
 
     $errors = batchScriptSequence();  // process anything put in $_SESSION['script_sequence']
@@ -249,6 +244,10 @@ function batchEnd ($errors=null)
 function batchScriptSequence ()
 // process $_SESSION['script_sequence'] when running in batch mode.
 {
+    if (!isset($_SESSION) OR !isset($_SESSION['script_sequence'])) {
+        return;
+    } // if
+
     $script_sequence = $_SESSION['script_sequence'];
     unset($_SESSION['script_sequence']);
     //session_write_close();

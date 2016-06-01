@@ -211,15 +211,16 @@ if (!empty($_POST)) {
         $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
         $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
         // repeat for the middle entity
-        $middle_post = getPostArray($_POST, $dbmiddle->getFieldSpec());
         if ($dbmiddle->rows_per_page == 1) {
+            $middle_post = getPostArray($_POST, $dbmiddle->getFieldSpec());
             $middle_data = array_update_associative($middle_data, $middle_post, $dbmiddle->fieldspec);
         } else {
+            $middle_post = getPostArray($_POST, $dbmiddle->getFieldSpec(), true);
             $middle_data = array_update_indexed($middle_data, $middle_post);
         } // if
         $dbmiddle->setFieldArray($middle_data);  // ensure that changes are stored inside relevant object
         // repeat for the inner entity
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec(), true);
         $inner_data = array_update_indexed($inner_data, $inner_post);
         $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
 
@@ -258,12 +259,13 @@ if (!empty($_POST)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dbinner->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($btn_zone == $dbmiddle->zone) {
+        } // if
+        if ($btn_zone == $dbmiddle->zone OR is_True($dbmiddle->allow_buttons_all_zones)) {
             $middle_data = $dbmiddle->getFieldArray();
             if ($dbmiddle->rows_per_page == 1) {
                 $middle_data = $dbmiddle->customButton($middle_data, $custom_btn, $POST);
@@ -273,7 +275,8 @@ if (!empty($_POST)) {
             if ($dbmiddle->errors) {
                 $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
             } // if
-        } elseif ($btn_zone == $dbinner->zone) {
+        } // if
+        if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {
             $inner_data = $dbinner->getFieldArray();
             $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
             if ($dbinner->errors) {
@@ -281,8 +284,10 @@ if (!empty($_POST)) {
             } // if
         } // if
         if (empty($errors)) {
-            $dbinner->commit();
-            //$do_retrieve = true;
+            $dbinner->commit(false);
+            if (preg_match('/retrieve/i', $custom_btn)) {
+                $do_retrieve = true;
+            } // if
         } else {
             $dbinner->rollback();
         } // if
@@ -395,10 +400,19 @@ if (!empty($return_from) AND !empty($popup_object)) {
     } // if
 
     if (!empty($outer_data)) {
-        if ($dbmiddle->rows_per_page == 1) {
+        //if ($dbmiddle->rows_per_page == 1) {
             $middle_count = count($middle_data);
+        //} else {
+        //    $middle_count = count($middle_data[0]);
+        //} // if
+        // convert to foreign key names which relate this child to this parent
+        $fkeyvalues = getForeignKeyValues($dbouter, $dbmiddle);
+        if (!empty($fkeyvalues)) {
+            $middle_where = array2where($fkeyvalues);
         } else {
-            $middle_count = count($middle_data[0]);
+            // get primary key of current row retrieved from outer entity
+            $pkeynames = $dbouter->getPkeyNamesAdjusted();
+            $middle_where = array2where($outer_data, $pkeynames, $dbouter, false, true);
         } // if
         if ($middle_count == 0) {
             if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbmiddle->getClassName()) {
@@ -406,7 +420,7 @@ if (!empty($return_from) AND !empty($popup_object)) {
                 $dbmiddle->setPageNo($_GET['item']);
             } // if
             // get data from the database
-            $middle_data = $dbmiddle->getData($where);
+            $middle_data = $dbmiddle->getData($middle_where);
             $middle_data = $dbmiddle->getExtraData($middle_data);
         } // if
         if (empty($middle_data)) {
@@ -422,7 +436,7 @@ if (!empty($return_from) AND !empty($popup_object)) {
         } else {
             $scrolling[$dbmiddle->getClassName()]['curitem']  = $dbmiddle->getPageNo();
             $scrolling[$dbmiddle->getClassName()]['lastitem'] = $dbmiddle->getLastPage();
-            $scrolling[$dbmiddle->getClassName()]['where']    = $where;
+            $scrolling[$dbmiddle->getClassName()]['where']    = $middle_where;
         } // if
         // save these variables for later in the same session in case INNER performs a scriptNext()
         $script_vars['where']     = unqualifyWhere($where);
@@ -433,15 +447,24 @@ if (!empty($return_from) AND !empty($popup_object)) {
         $dbmiddle->fieldarray = $middle_data;  // replace data lost during serialization
     } // if
 
-    if ($dbmiddle->rows_per_page == 1) {
+    //if ($dbmiddle->rows_per_page == 1) {
         $middle_count = count($middle_data);
-    } else {
-        $middle_count = count($middle_data[0]);
-    } // if
+    //} else {
+    //    $middle_count = count($middle_data[0]);
+    //} // if
     if ($middle_count > 0) {
+        // convert to foreign key names which relate this child to this parent
+        $fkeyvalues = getForeignKeyValues($dbmiddle, $dbinner);
+        if (!empty($fkeyvalues)) {
+            $inner_where = array2where($fkeyvalues);
+        } else {
+            // get primary key of current row retrieved from middle entity
+            $pkeynames = $dbmiddle->getPkeyNamesAdjusted();
+            $inner_where = array2where($middle_data, $pkeynames, $dbmiddle, false, true);
+        } // if
         if (empty($inner_data)) {
             // get data from the database
-            $inner_data = $dbinner->getData($where);
+            $inner_data = $dbinner->getData($inner_where);
             $inner_data = $dbinner->getExtraData($inner_data);
         } else {
             if (!empty($dbinner->select_string)) {
@@ -467,7 +490,7 @@ if (isset($dbinner->xsl_params['inner_noedit'])) {
     unset($act_buttons['submitnext']);
 } // if
 
-$messages = $dbouter->getMessages();
+$messages = array_merge($messages, $dbouter->getMessages());
 $messages = array_merge($messages, $dbmiddle->getMessages());
 $messages = array_merge($messages, $dbinner->getMessages());
 

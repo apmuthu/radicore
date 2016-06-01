@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s04 extends dict_table
@@ -1003,6 +1003,11 @@ class dict_table_s04 extends dict_table
 	        } // if
 		} // if
 
+        $menu_obj =& RDCsingleton::getInstance('mnu_menu');
+        //$menu_button_size = $menu_obj->fieldspec['button_text']['size'];
+        // build default description for use as button_text
+        $table_desc  = ucwords(str_replace('_', ' ', $fieldarray['table_id']));
+
 		$task_obj =& RDCsingleton::getInstance('mnu_task');
         $count = $task_obj->getCount("task_id='{$fieldarray['task_id']}'");
         if ($count == 0) {
@@ -1023,12 +1028,12 @@ class dict_table_s04 extends dict_table
 				case 'add3':
 				case 'add4':
 				case 'add5':
-				    $task_data['task_desc']   = getLanguageText('Add') .' ' .$fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('Add') .' ' .$table_desc;
 					$task_data['button_text'] = getLanguageText('New');
         			break;
 
 				case 'batch':
-				    $task_data['task_desc']   = getLanguageText('Update') .' ' .$fieldarray['table_desc'] .' (' .getLanguageText('batch') .')';
+				    $task_data['task_desc']   = getLanguageText('Update') .' ' .$table_desc .' (' .getLanguageText('batch') .')';
 					$task_data['button_text'] = getLanguageText('Update') .' (' .getLanguageText('batch') .')';
         			break;
 
@@ -1036,12 +1041,12 @@ class dict_table_s04 extends dict_table
 				case 'del2':
 				case 'del3':
 				case 'del4':
-				    $task_data['task_desc']   = getLanguageText('Delete') .' ' .$fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('Delete') .' ' .$table_desc;
 					$task_data['button_text'] = getLanguageText('Delete');
         			break;
 
 				case 'enq1':
-				    $task_data['task_desc']   = getLanguageText('Enquire') .' ' .$fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('Enquire') .' ' .$table_desc;
 					$task_data['button_text'] = getLanguageText('Read');
         			break;
 
@@ -1068,19 +1073,19 @@ class dict_table_s04 extends dict_table
         			break;
 
 				case 'list1':
-				    $task_data['task_desc']   = getLanguageText('List') .' ' .$fieldarray['table_desc'];
-					$task_data['button_text'] = $fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('List') .' ' .$table_desc;
+					$task_data['button_text'] = $table_desc;
 					// add ths task to the subsystem's main menu
 			        $menu_data['menu_id']     = $this->subsys_id;
 			        $menu_data['task_id_jnr'] = $fieldarray['task_id'];
-                    $menu_data['button_desc'] = $fieldarray['table_desc'];
+                    $menu_data['button_text'] = $table_desc;
     			    break;
 
 				case 'list2':
                     $fieldarray['inner_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['inner_table']));
                     $fieldarray['outer_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['outer_table']));
 				    $task_data['task_desc']   = getLanguageText('t0007', $fieldarray['inner_table'], $fieldarray['outer_table']);  // 'List X by Y'
-					$task_data['button_text'] = $fieldarray['table_desc'];
+					$task_data['button_text'] = $table_desc;
         			break;
 
 				case 'list3':
@@ -1088,46 +1093,46 @@ class dict_table_s04 extends dict_table
                     $fieldarray['middle_table'] = ucwords(str_ireplace('_', ' ', $fieldarray['middle_table']));
                     $fieldarray['outer_table']  = ucwords(str_ireplace('_', ' ', $fieldarray['outer_table']));
 				    $task_data['task_desc']   = getLanguageText('t0008', $fieldarray['inner_table'], $fieldarray['middle_table'], $fieldarray['outer_table']);  // 'List X by Y by Z'
-					$task_data['button_text'] = $fieldarray['table_desc'];
+					$task_data['button_text'] = $table_desc;
         			break;
 
 				case 'multi1':
 				case 'multi2':
 				case 'multi3':
 				case 'multi4':
-					$task_data['task_desc']   = getLanguageText('Maintain') .' ' .$fieldarray['table_desc'];
-    		        $task_data['button_text'] = getLanguageText('Maintain') .' ' .$fieldarray['table_desc'];
+					$task_data['task_desc']   = getLanguageText('Maintain') .' ' .$table_desc;
+                    $task_data['button_text'] = getLanguageText('Maintain') .' ' .$table_desc;
 					break;
 
 				case 'multi5':
                 case 'multi6':
-                    $task_data['task_desc']   = getLanguageText('Select/Display') .' ' .$fieldarray['table_desc'];
-                    $task_data['button_text'] = getLanguageText('Select/Display') .' ' .$fieldarray['table_desc'];
+                    $task_data['task_desc']   = getLanguageText('Select/Display') .' ' .$table_desc;
+                    $task_data['button_text'] = getLanguageText('Select/Display') .' ' .$table_desc;
                     break;
 
                 case 'output1':
                 case 'output6':
-					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
+					$task_data['task_desc']   = getLanguageText('t0020', $table_desc);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
 
 				case 'output2':
-					$task_data['task_desc']   = getLanguageText('t0022', $fieldarray['table_desc']);  // 'Output X to PDF (list view)';
+					$task_data['task_desc']   = getLanguageText('t0022', $table_desc);  // 'Output X to PDF (list view)';
     		        $task_data['button_text'] = getLanguageText('t0023');  // Output to PDF(L)';
 					break;
 
 				case 'output3':
-					$task_data['task_desc']   = getLanguageText('t0024', $fieldarray['table_desc']);  // 'Output X to PDF (detail view)';
+					$task_data['task_desc']   = getLanguageText('t0024', $table_desc);  // 'Output X to PDF (detail view)';
     		        $task_data['button_text'] = getLanguageText('t0025');  // 'Output to PDF(D)';
 					break;
 
 				case 'output4':
-					$task_data['task_desc']   = getLanguageText('t0020', $fieldarray['table_desc']);  // 'Output X to CSV';
+					$task_data['task_desc']   = getLanguageText('t0020', $table_desc);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
 
 				case 'output5':
-					$task_data['task_desc']   = getLanguageText('t0028', $fieldarray['table_desc']);  // 'Output X to PDF (address labels)';
+					$task_data['task_desc']   = getLanguageText('t0028', $table_desc);  // 'Output X to PDF (address labels)';
     		        $task_data['button_text'] = getLanguageText('t0029');  // 'Address labels';
 					break;
 
@@ -1135,23 +1140,23 @@ class dict_table_s04 extends dict_table
 				case 'popup2':
 				case 'popup3':
 				case 'popup4':
-					$task_data['task_desc']   = getLanguageText('Choose') .' ' .$fieldarray['table_desc'];
+					$task_data['task_desc']   = getLanguageText('Choose') .' ' .$table_desc;
     		        $task_data['button_text'] = getLanguageText('Choose');
 					break;
 
 				case 'search':
-					$task_data['task_desc']   = getLanguageText('Search') .' ' .$fieldarray['table_desc'];
+					$task_data['task_desc']   = getLanguageText('Search') .' ' .$table_desc;
     		        $task_data['button_text'] = getLanguageText('Search');
 					break;
 
 				case 'timetable1':
-					$task_data['task_desc']   = getLanguageText('t0026', $fieldarray['table_desc']);  // 'Timetable for X';
+					$task_data['task_desc']   = getLanguageText('t0026', $table_desc);  // 'Timetable for X';
     		        $task_data['button_text'] = getLanguageText('Timetable');
 					break;
 
 				case 'tree1':
 				case 'tree2':
-					$task_data['task_desc']   = getLanguageText('t0027', $fieldarray['table_desc']);  // 'Tree Structure for X';
+					$task_data['task_desc']   = getLanguageText('t0027', $table_desc);  // 'Tree Structure for X';
     		        $task_data['button_text'] = getLanguageText('Tree Structure');
 					break;
 
@@ -1159,12 +1164,12 @@ class dict_table_s04 extends dict_table
 				case 'upd2':
 				case 'upd3':
 				case 'upd4':
-				    $task_data['task_desc']   = getLanguageText('Update') .' ' .$fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('Update') .' ' .$table_desc;
 					$task_data['button_text'] = getLanguageText('Update');
         			break;
 
 				case 'upd5':
-				    $task_data['task_desc']   = getLanguageText('Insert or Update') .' ' .$fieldarray['table_desc'];
+				    $task_data['task_desc']   = getLanguageText('Insert or Update') .' ' .$table_desc;
 					$task_data['button_text'] = getLanguageText('Insert/Update');
         			break;
 

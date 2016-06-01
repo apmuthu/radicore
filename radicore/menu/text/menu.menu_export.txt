@@ -1,4 +1,4 @@
-// file created on June 26, 2014, 11:30 am
+// file created on May 30, 2016, 1:50 pm
     
 // menu details for subsystem MENU
 $array['Admin']                                   = 'Admin';
@@ -15,6 +15,7 @@ $array['Pattern']                                 = 'Pattern';
 $array['Product']                                 = 'Product';
 $array['PROTO']                                   = 'PROTO';
 $array['Role']                                    = 'Role';
+$array['Saved Selection']                         = 'Saved Selection';
 $array['Subsystem']                               = 'Subsystem';
 $array['Survey']                                  = 'Survey';
 $array['Task (All)']                              = 'Task (All)';
@@ -60,6 +61,7 @@ $array['Navigation Button(3)']                    = 'Navigation Button(3)';
 $array['New']                                     = 'New';
 $array['Output to PDF(D)']                        = 'Output to PDF(D)';
 $array['Output to PDF(L)']                        = 'Output to PDF(L)';
+$array['Quicksearch']                             = 'Quicksearch';
 $array['Read']                                    = 'Read';
 $array['Rename']                                  = 'Rename';
 $array['Resequence']                              = 'Resequence';
@@ -90,7 +92,10 @@ $array['end_date']                                = 'end_date';
 $array['external_id']                             = 'external_id';
 $array['field_desc']                              = 'field_desc';
 $array['field_id']                                = 'field_id';
+$array['field_name']                              = 'field_name';
 $array['field_value']                             = 'field_value';
+$array['fieldname']                               = 'fieldname';
+$array['fieldvalue']                              = 'fieldvalue';
 $array['global_access']                           = 'global_access';
 $array['help_text']                               = 'help_text';
 $array['in_use']                                  = 'in_use';
@@ -106,7 +111,6 @@ $array['is_primary']                              = 'is_primary';
 $array['item_desc']                               = 'item_desc';
 $array['item_notes']                              = 'item_notes';
 $array['keep_data']                               = 'keep_data';
-$array['language_code']                           = 'language_code';
 $array['language_id']                             = 'language_id';
 $array['language_name']                           = 'language_name';
 $array['log_sql_query']                           = 'log_sql_query';
@@ -146,7 +150,9 @@ $array['scheduled_tuesday']                       = 'scheduled_tuesday';
 $array['scheduled_wednesday']                     = 'scheduled_wednesday';
 $array['screen_refresh']                          = 'screen_refresh';
 $array['script_id']                               = 'script_id';
+$array['selection_desc']                          = 'selection_desc';
 $array['selection_fixed']                         = 'selection_fixed';
+$array['selection_id']                            = 'selection_id';
 $array['selection_temp']                          = 'selection_temp';
 $array['seq_no']                                  = 'seq_no';
 $array['settings']                                = 'settings';

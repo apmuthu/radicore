@@ -149,6 +149,8 @@ END_OF_REGEX;
     {
         $classdir = $GLOBALS['classdir'];   // save
 
+        $errors = array();
+
         // find user-friendly version of $fieldname
         $callingOBJ =& $this->caller;
         $GLOBALS['classdir'] = dirname($callingOBJ->dirname);
@@ -273,7 +275,7 @@ END_OF_REGEX;
                     // value will be filled in later, so continue
                 } else {
                     // '$fieldname cannot be blank'
-                    $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0020', $translated_fieldname);
+                    $errors[$fieldname] = $callingOBJ->getLanguageText('sys0020', $translated_fieldname);
                 } // if
             } // if
             if (preg_match('/(date)/i', $fieldspec['type'])) {
@@ -294,6 +296,7 @@ END_OF_REGEX;
                 } // if
             } // if
             // nothing left to validate, so return now
+            $this->errors = array_merge($this->errors, $errors);
             return $fieldvalue;
         } // if
 
@@ -331,18 +334,19 @@ END_OF_REGEX;
                             $encoding = mb_detect_encoding($fieldvalue);
                             if (mb_strlen($fieldvalue, $encoding) > $size) {
                         	    // '$fieldname cannot be > $size characters
-                                $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
+                                $errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                             } // if
                         } else {
                             // '$fieldname cannot be > $size characters
-                            $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
+                            $errors[$fieldname] = $callingOBJ->getLanguageText('sys0021', $translated_fieldname, $size);
                         } // if
                     } // if
                 } // if
             } // if
         } // if
 
-        if (!empty($this->errors)) {
+        if (!empty($errors)) {
+            $this->errors = array_merge($this->errors, $errors);
         	return $fieldvalue;
         } // if
 
@@ -523,6 +527,9 @@ END_OF_REGEX;
 
         // step through each fieldspec entry and compare with input data
         foreach ($fieldspec as $field => $spec) {
+            if (isset($spec['mustvalidate'])) {
+                unset($spec['nondb']);  // allow a non-database field to be validated
+            } // if
             if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
                 // ignore this field
             } else {
@@ -560,8 +567,11 @@ END_OF_REGEX;
         // check if field type = integer (whole numbers only)
         $pattern = '/(int1|tinyint|int2|smallint|int3|mediumint|int4|integer|int8|bigint|int)/i';
         if (preg_match($pattern, $spec['type'], $match)) {
-            // test that input contains a valid value for an integer field
-            if (version_compare(phpversion(), '5.2.0', '>=')) {
+            while (strlen($value) > 1 AND substr($value, 0, 1) === '0'){
+                $value = substr($value, 1);  // strip leading zero (except the only zero)
+            } // while
+            // test that input contains a valid value for an integer field (note that BIGINT is not supported yet)
+            if (version_compare(phpversion(), '5.2.0', '>=') AND $value <= 2147483648) {
                 $number = $value;
                 if (filter_var($number, FILTER_VALIDATE_INT) === false) {
                     // 'Value is not a whole number'
@@ -768,13 +778,16 @@ END_OF_REGEX;
 
         // step through input data and validate each field in turn
         foreach ($fieldarray as $field => $value) {
-            // (this will not carry forward any fields which do not exist in this table)
             if (array_key_exists($field, $fieldspec)) {
-                if (isset($fieldspec[$field]['novalidate']) OR isset($fieldspec[$field]['autoupdate'])) {
+                $spec = $fieldspec[$field];
+                if (isset($spec['mustvalidate'])) {
+                    unset($spec['nondb']);  // allow a non-database field to be validated
+                } // if
+                if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
                     // ignore this field
                 } else {
                     // validate field using field specifications
-                    $value = $this->validateField($field, $value, $fieldspec[$field]);
+                    $value = $this->validateField($field, $value, $spec);
                     // transfer to array which will be passed to the database
                     // (allow null values as field may have been cleared)
                     if (strlen($value) > 0 OR in_array($field, $caller->primary_key)) {

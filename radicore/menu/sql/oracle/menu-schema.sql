@@ -1,38 +1,24 @@
 --------------------------------------------------------
---  File created - Thursday-April-24-2014   
+--  File created - Thursday-May-19-2016   
 --------------------------------------------------------
-
-CREATE USER "MENU" IDENTIFIED BY "MENU";
-GRANT CONNECT, RESOURCE TO "MENU";
-GRANT CREATE DATABASE LINK TO "MENU";
-GRANT CREATE MATERIALIZED VIEW TO "MENU";
-GRANT CREATE PROCEDURE TO "MENU";
-GRANT CREATE PUBLIC SYNONYM TO "MENU";
-GRANT CREATE ROLE TO "MENU";
-GRANT CREATE SEQUENCE TO "MENU";
-GRANT CREATE SYNONYM TO "MENU";
-GRANT CREATE TABLE TO "MENU";
-GRANT CREATE TRIGGER TO "MENU";
-GRANT CREATE TYPE TO "MENU";
-GRANT CREATE VIEW TO "MENU";
-
-ALTER SESSION SET CURRENT_SCHEMA = "MENU";
-
 --------------------------------------------------------
 --  DDL for Sequence MNU_ACCOUNT_SEQ
 --------------------------------------------------------
 
    CREATE SEQUENCE  "MENU"."MNU_ACCOUNT_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE ;
+  GRANT ALTER, SELECT ON "MENU"."MNU_ACCOUNT_SEQ" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Sequence MNU_MOTD_SEQ
 --------------------------------------------------------
 
    CREATE SEQUENCE  "MENU"."MNU_MOTD_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE ;
+  GRANT ALTER, SELECT ON "MENU"."MNU_MOTD_SEQ" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Sequence MNU_SAVED_SELECTION_SEQ
 --------------------------------------------------------
 
-   CREATE SEQUENCE  "MENU"."MNU_SAVED_SELECTION_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE ;
+   CREATE SEQUENCE  "MENU"."MNU_SAVED_SELECTION_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 21 CACHE 20 NOORDER  NOCYCLE ;
+  GRANT ALTER, SELECT ON "MENU"."MNU_SAVED_SELECTION_SEQ" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table HELP_TEXT
 --------------------------------------------------------
@@ -45,6 +31,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."HELP_TEXT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table HELP_TEXT_ALT
 --------------------------------------------------------
@@ -58,6 +45,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."HELP_TEXT_ALT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_ACCOUNT
 --------------------------------------------------------
@@ -71,6 +59,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_ACCOUNT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_CONTROL
 --------------------------------------------------------
@@ -84,6 +73,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_CONTROL" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_FAVOURITE
 --------------------------------------------------------
@@ -100,6 +90,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_FAVOURITE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_INITIAL_VALUE_ROLE
 --------------------------------------------------------
@@ -115,6 +106,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_INITIAL_VALUE_ROLE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_INITIAL_VALUE_USER
 --------------------------------------------------------
@@ -130,6 +122,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_INITIAL_VALUE_USER" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_LANGUAGE
 --------------------------------------------------------
@@ -144,6 +137,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"INPUT_DATE_FORMAT" VARCHAR2(12 BYTE), 
 	"OUTPUT_DATE_FORMAT" VARCHAR2(12 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_LANGUAGE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_MENU
 --------------------------------------------------------
@@ -158,6 +152,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_MENU" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_MOTD
 --------------------------------------------------------
@@ -174,6 +169,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_MOTD" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_NAV_BUTTON
 --------------------------------------------------------
@@ -189,6 +185,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_NAV_BUTTON" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_PATTERN
 --------------------------------------------------------
@@ -205,6 +202,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_PATTERN" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_ROLE
 --------------------------------------------------------
@@ -220,6 +218,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_ROLE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_ROLE_TASK
 --------------------------------------------------------
@@ -232,6 +231,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_ROLE_TASK" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_ROLE_TASKFIELD
 --------------------------------------------------------
@@ -246,6 +246,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_ROLE_TASKFIELD" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_SAVED_SELECTION
 --------------------------------------------------------
@@ -260,6 +261,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6) DEFAULT NULL, 
 	"REVISED_USER" VARCHAR2(16 BYTE) DEFAULT NULL
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_SAVED_SELECTION" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_SAVED_SELECTION_DATA
 --------------------------------------------------------
@@ -273,6 +275,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6) DEFAULT NULL, 
 	"REVISED_USER" VARCHAR2(16 BYTE) DEFAULT NULL
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_SAVED_SELECTION_DATA" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_SUBSYSTEM
 --------------------------------------------------------
@@ -287,6 +290,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_SUBSYSTEM" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TASK
 --------------------------------------------------------
@@ -317,6 +321,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TASK_ALT
 --------------------------------------------------------
@@ -331,6 +336,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_ALT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TASK_FIELD
 --------------------------------------------------------
@@ -342,8 +348,10 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"CREATED_DATE" TIMESTAMP (6), 
 	"CREATED_USER" VARCHAR2(16 BYTE) DEFAULT 'UNKNOWN', 
 	"REVISED_DATE" TIMESTAMP (6), 
-	"REVISED_USER" VARCHAR2(16 BYTE)
+	"REVISED_USER" VARCHAR2(16 BYTE), 
+	"IS_DOCUMENTATION_ONLY" CHAR(1 BYTE) DEFAULT 'N'
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_FIELD" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TASK_IP_ADDRESS
 --------------------------------------------------------
@@ -356,6 +364,37 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_IP_ADDRESS" TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_TASK_QUICKSEARCH
+--------------------------------------------------------
+
+  CREATE TABLE "MENU"."MNU_TASK_QUICKSEARCH" 
+   (	"TASK_ID" VARCHAR2(80 BYTE), 
+	"FIELD_ID" VARCHAR2(40 BYTE), 
+	"SORT_SEQ" NUMBER(3,0) DEFAULT '000', 
+	"FIELD_NAME" VARCHAR2(40 BYTE), 
+	"CREATED_DATE" TIMESTAMP (6) DEFAULT '2000-01-01 00:00:00', 
+	"CREATED_USER" VARCHAR2(16 BYTE) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6) DEFAULT NULL, 
+	"REVISED_USER" VARCHAR2(16 BYTE) DEFAULT NULL
+   ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_QUICKSEARCH" TO PUBLIC;
+--------------------------------------------------------
+--  DDL for Table MNU_TASK_QUICKSEARCH_ALT
+--------------------------------------------------------
+
+  CREATE TABLE "MENU"."MNU_TASK_QUICKSEARCH_ALT" 
+   (	"TASK_ID" VARCHAR2(80 BYTE), 
+	"FIELD_ID" VARCHAR2(40 BYTE), 
+	"LANGUAGE_ID" VARCHAR2(5 BYTE), 
+	"FIELD_NAME" VARCHAR2(40 BYTE), 
+	"CREATED_DATE" TIMESTAMP (6) DEFAULT '2000-01-01 00:00:00', 
+	"CREATED_USER" VARCHAR2(16 BYTE) DEFAULT 'UNKNOWN', 
+	"REVISED_DATE" TIMESTAMP (6) DEFAULT NULL, 
+	"REVISED_USER" VARCHAR2(16 BYTE) DEFAULT NULL
+   ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_QUICKSEARCH_ALT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TIME_LIMIT_ROLE
 --------------------------------------------------------
@@ -377,6 +416,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TIME_LIMIT_ROLE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TIME_LIMIT_USER
 --------------------------------------------------------
@@ -398,6 +438,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TIME_LIMIT_USER" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_TODO
 --------------------------------------------------------
@@ -419,6 +460,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TODO" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_USER
 --------------------------------------------------------
@@ -449,6 +491,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_USER" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_USER_ALT
 --------------------------------------------------------
@@ -462,6 +505,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_USER_ALT" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_USER_IP_ADDRESS
 --------------------------------------------------------
@@ -474,6 +518,7 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_USER_IP_ADDRESS" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Table MNU_USER_ROLE
 --------------------------------------------------------
@@ -487,11 +532,12 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 	"REVISED_DATE" TIMESTAMP (6), 
 	"REVISED_USER" VARCHAR2(16 BYTE)
    ) ;
+  GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_USER_ROLE" TO PUBLIC;
 --------------------------------------------------------
 --  DDL for Index INDEX1
 --------------------------------------------------------
 
-  CREATE UNIQUE INDEX "MENU"."INDEX1" ON "MENU"."MNU_FAVOURITE" ("USER_ID", "TASK_ID") 
+  CREATE UNIQUE INDEX "MENU"."MNU_FAVOURITE_IDX1" ON "MENU"."MNU_FAVOURITE" ("USER_ID", "TASK_ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index MNU_INITIAL_VALUE_ROLE_IDX1
@@ -546,6 +592,18 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 --------------------------------------------------------
 
   CREATE UNIQUE INDEX "MENU"."SYS_C0010415" ON "MENU"."MNU_SAVED_SELECTION_DATA" ("SELECTION_ID", "FIELDNAME") 
+  ;
+--------------------------------------------------------
+--  DDL for Index SYS_C0010644
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "MENU"."SYS_C0010644" ON "MENU"."MNU_TASK_QUICKSEARCH" ("TASK_ID", "FIELD_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index SYS_C0010647
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "MENU"."SYS_C0010647" ON "MENU"."MNU_TASK_QUICKSEARCH_ALT" ("TASK_ID", "FIELD_ID", "LANGUAGE_ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index SYS_C007151
@@ -819,12 +877,26 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 --  Constraints for Table MNU_TASK_FIELD
 --------------------------------------------------------
 
+  ALTER TABLE "MENU"."MNU_TASK_FIELD" MODIFY ("IS_DOCUMENTATION_ONLY" NOT NULL ENABLE);
   ALTER TABLE "MENU"."MNU_TASK_FIELD" ADD PRIMARY KEY ("TASK_ID", "FIELD_ID") ENABLE;
 --------------------------------------------------------
 --  Constraints for Table MNU_TASK_IP_ADDRESS
 --------------------------------------------------------
 
   ALTER TABLE "MENU"."MNU_TASK_IP_ADDRESS" ADD PRIMARY KEY ("TASK_ID", "IP_ADDRESS") ENABLE;
+--------------------------------------------------------
+--  Constraints for Table MNU_TASK_QUICKSEARCH
+--------------------------------------------------------
+
+  ALTER TABLE "MENU"."MNU_TASK_QUICKSEARCH" ADD PRIMARY KEY ("TASK_ID", "FIELD_ID") ENABLE;
+  ALTER TABLE "MENU"."MNU_TASK_QUICKSEARCH" MODIFY ("FIELD_NAME" NOT NULL ENABLE);
+--------------------------------------------------------
+--  Constraints for Table MNU_TASK_QUICKSEARCH_ALT
+--------------------------------------------------------
+
+  ALTER TABLE "MENU"."MNU_TASK_QUICKSEARCH_ALT" ADD PRIMARY KEY ("TASK_ID", "FIELD_ID", "LANGUAGE_ID") ENABLE;
+  ALTER TABLE "MENU"."MNU_TASK_QUICKSEARCH_ALT" MODIFY ("FIELD_NAME" NOT NULL ENABLE);
+  ALTER TABLE "MENU"."MNU_TASK_QUICKSEARCH_ALT" MODIFY ("LANGUAGE_ID" NOT NULL ENABLE);
 --------------------------------------------------------
 --  Constraints for Table MNU_TIME_LIMIT_ROLE
 --------------------------------------------------------
@@ -863,7 +935,6 @@ ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 --------------------------------------------------------
 
   ALTER TABLE "MENU"."MNU_USER_ROLE" ADD PRIMARY KEY ("USER_ID", "ROLE_ID") ENABLE;
-
 --------------------------------------------------------
 --  Grants for all tables
 --------------------------------------------------------
@@ -889,6 +960,8 @@ GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_ALT" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_FIELD" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_IP_ADDRESS" TO PUBLIC;
+GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_QUICKSEARCH" TO PUBLIC;
+GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TASK_QUICKSEARCH_ALT" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TIME_LIMIT_ROLE" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TIME_LIMIT_USER" TO PUBLIC;
 GRANT DELETE, INSERT, SELECT, UPDATE ON "MENU"."MNU_TODO" TO PUBLIC;

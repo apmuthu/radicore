@@ -140,7 +140,7 @@ class price_component extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign (parent) tables.
     {
         // this is here to avoid a conflict with the uom_id which is available on the

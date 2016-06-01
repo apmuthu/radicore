@@ -68,7 +68,8 @@ $array['rel_type']              = array('RES' => 'RESTRICTED',
 
 $array['col_subtype']           = array('filename' => 'FILE NAME',
                                         'email'    => 'E-MAIL',
-                                        'image'    => 'IMAGE');
+                                        'image'    => 'IMAGE',
+                                        'video'    => 'VIDEO');
 
 $array['upper_lowercase']       = array('UPPER' => 'UPPERCASE',
                                         'LOWER' => 'LOWERCASE');

@@ -88,7 +88,7 @@ $array['e0075'] = "";
 $array['e0076'] = "";
 $array['e0077'] = "";
 $array['e0078'] = "";
-$array['e0079'] = "";
+$array['e0079'] = "QuickSearch options are not valid unless pattern is 'LIST' or 'POPUP'";
 
 $array['e0080'] = "";
 $array['e0081'] = "";

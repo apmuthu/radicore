@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -78,6 +78,7 @@
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_vertical">
                   <xsl:with-param name="zone"   select="'outer'"/>
+                  <xsl:with-param name="data"   select="."/>
                   <xsl:with-param name="noedit" select="string(/root/params/outer_noedit)"/>
                 </xsl:call-template>
               </xsl:for-each>
@@ -99,36 +100,76 @@
           <div class="inner">
   
             <!-- this is the INNER/CHILD table -->
-            <table>
-  
-              <!-- set up column widths -->
-              <xsl:call-template name="column_group">
-                <xsl:with-param name="zone" select="'inner'"/>
-              </xsl:call-template>
-  
-              <thead>
-                <!-- set up column headings -->
-                <xsl:call-template name="column_headings">
-                  <xsl:with-param name="zone"   select="'inner'"/>
-                  <xsl:with-param name="nosort" select="/root/params/nosort"/>
-                </xsl:call-template>
-              </thead>
-  
-              <tbody>
-                <!-- process each non-empty row in the INNER/CHILD table of the XML file -->
+            
+            <xsl:choose>
+              
+              <xsl:when test="/root/structure/inner/table">
+                <!-- display multiple rows in vertical format, each row having its own HTML table -->
+                <!-- process each non-empty row in the INNER table of the XML file -->
                 <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$inner][count(*)&gt;0]">
-  
+                  
                   <!-- display all the fields in the current row -->
-                  <xsl:call-template name="display_horizontal">
-                    <xsl:with-param name="zone"     select="'inner'"/>
-                    <xsl:with-param name="currocc"  select="." />
-                    <xsl:with-param name="multiple" select="'y'"/>
-                    <xsl:with-param name="noedit" select="string(/root/params/inner_noedit)"/>
+                  <xsl:call-template name="display_vertical_multirow">
+                    <xsl:with-param name="zone"       select="'inner'"/>
+                    <xsl:with-param name="data"       select="."/>
+                    <xsl:with-param name="multiple"   select="'y'" />
+                    <xsl:with-param name="noedit"     select="string(/root/params/inner_noedit)"/>
+                    <xsl:with-param name="noedit_row" select="string(/root/*[name()=$outer][1]/*[name()=$inner]/@noedit)"/>
                   </xsl:call-template>
-  
+                  
                 </xsl:for-each>
-              </tbody>
-            </table>
+                
+              </xsl:when>
+              
+              <xsl:when test="/root/params/inner_vertical = 'y'">
+                <!-- display a single row only, with vertical display -->
+                <table>
+                  <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$inner][1]">
+                    <!-- display all the fields in the current row -->
+                    <xsl:call-template name="display_vertical">
+                      <xsl:with-param name="zone"   select="'inner'"/>
+                      <xsl:with-param name="data"   select="."/>
+                      <xsl:with-param name="noedit" select="string(/root/params/inner_noedit)"/>
+                    </xsl:call-template>
+                  </xsl:for-each>
+                </table>
+              </xsl:when>
+              
+              <xsl:otherwise> <!-- default is horzontal display, one table row for each database row -->
+                
+                <table>
+      
+                  <!-- set up column widths -->
+                  <xsl:call-template name="column_group">
+                    <xsl:with-param name="zone" select="'inner'"/>
+                  </xsl:call-template>
+      
+                  <thead>
+                    <!-- set up column headings -->
+                    <xsl:call-template name="column_headings">
+                      <xsl:with-param name="zone"   select="'inner'"/>
+                      <xsl:with-param name="nosort" select="/root/params/nosort"/>
+                    </xsl:call-template>
+                  </thead>
+      
+                  <tbody>
+                    <!-- process each non-empty row in the INNER/CHILD table of the XML file -->
+                    <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$inner][count(*)&gt;0]">
+      
+                      <!-- display all the fields in the current row -->
+                      <xsl:call-template name="display_horizontal">
+                        <xsl:with-param name="zone"     select="'inner'"/>
+                        <xsl:with-param name="data"     select="."/>
+                        <xsl:with-param name="multiple" select="'y'"/>
+                        <xsl:with-param name="noedit"   select="string(/root/params/inner_noedit)"/>
+                      </xsl:call-template>
+      
+                    </xsl:for-each>
+                  </tbody>
+                </table>
+              </xsl:otherwise>
+            </xsl:choose>
+            
           </div> <!-- inner -->
   
           <!-- look for optional messages -->

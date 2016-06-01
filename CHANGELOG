@@ -1,5 +1,23 @@
 ﻿RADICORE for PHP - news
 
+2016-06-01, version 1.95.0
+Database changes:
+- run script menu\sql\mysql\alter_table(2016-05-18).sql to alter the structure of the MENU database.
+- run script menu\sql\mysql\menu.menu_export(2016-05-18).sql to alter the contents of the MENU database.
+
+Other changes:
+- modified handling of custom buttons in page controllers ADD5, LINK1, MULTI2/3/4/5/6. By default the customButton() method will only be called on the object in which the button was actually defined, but this can be overridden by setting $this->allow_all_zones=TRUE in other objects.
+- fixed bug in 'mnu_initial_value_role_s01.class.inc' by excluding 'start_task_id' from the WHERE clause which was introduced in version 1.94.0.
+- fixed bug which caused role_id on "Search User" screen to be mandatory instead of optional.
+- fixed bugs with "Search Workitem" and "Search Token" screens in WORKFLOW subsystem.
+- fixed bug in 'Generate PHP Script (b)' when it tried to create an entry on MNU_MENU with a value for button_text which was too long. It now uses the table identity instead of the table description.
+- added $rownum as a second argument to the _cm_getForeignData() method to identify the row number for the $fieldarray argument.
+- added column 'is_documentation_only' to the 'mnu_task_field' table. This defaults to 'N', but can be set to 'Y' when the entry should not be used as a prompt when adusting the contents of the MNU_INITIAL_VALUE_USER or MNU_INITIAL_VALUE_ROLE tables.
+- added tables MNU_TASK_QUICKSEARCH and MNU_TASK_QUICKSEARCH_ALT so that populating the QuickSearch area on the screen can be done by adding entries to the MENU database instead of adding code to the table class.
+- amended the data dictionary to add the 'mustvalidate' option to the $fieldspec array.
+- amended the data dictionary to add 'video' to the list of subtypes.
+- amended 'std.table.class.inc' so that the member variable called $this->reuse_previous_select has a default value of TRUE instead of FALSE as TRUE is the most common value that is required.
+
 2016-04-01, version 1.94.0
 Database changes:
 - none

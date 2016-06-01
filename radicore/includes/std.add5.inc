@@ -119,7 +119,7 @@ if (!empty($_POST)) {
         $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
         $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
         // repeat for the inner entity
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec(), true);
         $inner_data = array_update_indexed($inner_data, $inner_post);
         $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
 
@@ -150,12 +150,13 @@ if (!empty($_POST)) {
         // a custom button was pressed - send it to both entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dbinner->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($btn_zone == $dbinner->zone) {
+        } // if
+        if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {
             $inner_data = $dbinner->getFieldArray();
             $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
             if ($dbinner->errors) {
@@ -163,7 +164,7 @@ if (!empty($_POST)) {
             } // if
         } // if
         if (empty($errors)) {
-            $dbinner->commit();
+            $dbinner->commit(false);
         } else {
             $dbinner->rollback();
         } // if

@@ -208,10 +208,11 @@ if (!empty($_POST)) {
     if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
         if ($dbinner->rows_per_page == 1) {
+            $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
             $inner_data = array_update_associative($inner_data, $inner_post, $dbinner->fieldspec);
         } else {
+            $inner_post = getPostArray($_POST, $dbinner->getFieldSpec(), true);
             $inner_data = array_update_indexed($inner_data, $inner_post);
         } // if
         // ensure that changes are stored inside relevant object
@@ -220,7 +221,7 @@ if (!empty($_POST)) {
     } else {
         // deal with a javascript 'submit()'.
         $inner_data = $dbinner->updateFieldArray($inner_data, $_POST);
-        $inner_data = $dbinner->getExtraData($inner_data, $where);
+        $inner_data = $dbinner->getExtraData($inner_data);
         if ($dbinner->errors) {
             $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
@@ -237,18 +238,20 @@ if (!empty($_POST)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dbinner->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($btn_zone == $dbmiddle->zone) {
+        } // if
+        if ($btn_zone == $dbmiddle->zone OR is_True($dbmiddle->allow_buttons_all_zones)) {
             $middle_data = $dbmiddle->getFieldArray();
             $middle_data = $dbmiddle->customButton($middle_data, $custom_btn, $_POST, $btn_row);
             if ($dbmiddle->errors) {
                 $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
             } // if
-        } elseif ($btn_zone == $dbinner->zone) {
+        } // if
+        if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {
             $inner_data = $dbinner->getFieldArray();
             $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
             if ($dbinner->errors) {
@@ -256,8 +259,10 @@ if (!empty($_POST)) {
             } // if
         } // if
         if (empty($errors)) {
-            $dbinner->commit();
-            //$do_retrieve = true;
+            $dbinner->commit(false);
+            if (preg_match('/retrieve/i', $custom_btn)) {
+                $do_retrieve = true;
+            } // if
         } else {
             $dbinner->rollback();
         } // if
@@ -266,7 +271,7 @@ if (!empty($_POST)) {
         $dbinner->startTransaction();
         // update database with changes in POST array
         $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
-        $inner_data = $dbinner->getExtraData($inner_data, $where);
+        $inner_data = $dbinner->getExtraData($inner_data);
         if ($dbinner->errors) {
             // errors are keyed by object name
             $errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -337,9 +342,18 @@ if (!empty($return_from) AND isset($selection)) {
     if (empty($errors)) {
         // get data from the outer table
         $outer_data = $dbouter->getData($where);
-        $outer_data = $dbouter->getExtraData($outer_data, $where);
+        $outer_data = $dbouter->getExtraData($outer_data);
         if ($dbouter->errors) {
-            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            // some sort of error
+            if ($dbouter->getLastPage() <= 1) {
+                // only 1 entry requested, so return to previous script to show the error
+                scriptPrevious($dbouter->errors, $messages, 'fail');
+            } else {
+                // multiple entries requested, so disable SUBMIT button
+                unset($act_buttons['submitBtn']);
+                unset($act_buttons['submitnext']);
+                $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
         } // if
         if ($dbouter->getNumRows() < 1) {
             scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
@@ -372,7 +386,7 @@ if (!empty($return_from) AND isset($selection)) {
 
     // get data from the middle table
     $middle_data = $dbmiddle->getData($middle_where);
-    $middle_data = $dbmiddle->getExtraData($middle_data, $middle_where);
+    $middle_data = $dbmiddle->getExtraData($middle_data);
     if ($dbmiddle->errors) {
         // errors are keyed by object name
         $errors[$dbmiddle->getClassName()] = $dbmiddle->getErrors();
@@ -430,7 +444,7 @@ if (!empty($return_from) AND isset($selection)) {
     if (count($middle_data) > 0) {
         // get data from the database
         $inner_data = $dbinner->getData($inner_where);
-        $inner_data = $dbinner->getExtraData($inner_data, $inner_where);
+        $inner_data = $dbinner->getExtraData($inner_data);
         if ($dbinner->errors) {
             $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
@@ -449,7 +463,7 @@ if (isset($_GET['action'])) {
     $inner_data = $dbinner->setAction($_GET['action']);
 } // if
 
-$messages = $dbouter->getMessages();
+$messages = array_merge($messages, $dbouter->getMessages());
 $messages = array_merge($messages, $dbmiddle->getMessages());
 $messages = array_merge($messages, $dbinner->getMessages());
 

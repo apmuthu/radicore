@@ -48,6 +48,10 @@ class dict_column extends Default_Table
 		    unset($this->fieldspec['database_id']['control']);
         } // if
 
+        if (array_key_exists('foreign_field', $this->fieldspec['table_id'])) {
+            $this->fieldspec['table_id']['foreign_field'] = 'table_id';
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -391,6 +395,12 @@ class dict_column extends Default_Table
                         $this->errors['col_subtype'] = getLanguageText('e0004');
                     } // if
             		break;
+                case 'video':
+                    if (!preg_match('/^(filepicker)$/i', $fieldarray['control'])) {
+                        // "Invalid unless CONTROL = 'filepicker'"
+                        $this->errors['col_subtype'] = getLanguageText('e0072');
+                    } // if
+                    break;
             	case 'email':
             		;
             		break;
@@ -409,18 +419,18 @@ class dict_column extends Default_Table
         } // if
 
         if (isset($fieldarray['image_width'])) {
-            if ($fieldarray['control'] == 'image' OR $fieldarray['col_subtype'] == 'image') {
+            if ($fieldarray['control'] == 'image' OR preg_match('/^(image|video)$/i', $fieldarray['col_subtype'])) {
             	// this is valid
             } else {
-                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image'"
+                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image' or 'video'"
                 $this->errors['image_width'] = getLanguageText('e0006');
             } // if
         } // if
         if (isset($fieldarray['image_height'])) {
-            if ($fieldarray['control'] == 'image' OR $fieldarray['col_subtype'] == 'image') {
+            if ($fieldarray['control'] == 'image' OR preg_match('/^(image|video)$/i', $fieldarray['col_subtype'])) {
                 // this is valid
             } else {
-                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image'"
+                // "Invalid unless CONTROL = 'image' or SUBTYPE = 'image' or 'video'"
                 $this->errors['image_height'] = getLanguageText('e0006');
             } // if
         } // if
@@ -821,16 +831,16 @@ class dict_column extends Default_Table
 
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('database_id' => 'Database Id',
-                               'table_id' => 'Table Id',
-                               'column_id' => 'Column Id');
-                $this->lookup_data['quicksearch_field'] = $array;
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('database_id' => 'Database Id',
+//                               'table_id' => 'Table Id',
+//                               'column_id' => 'Column Id');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//            } // if
+//        } // if
 
 		return $fieldarray;
 

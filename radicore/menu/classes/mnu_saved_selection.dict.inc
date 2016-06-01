@@ -1,5 +1,5 @@
 <?php
-    // file created on November 20, 2015, 9:48 am
+    // file created on May 19, 2016, 12:46 pm
     
     // field specifications for table menu.mnu_saved_selection
     $fieldspec['selection_id']              = array('type' => 'integer',
@@ -73,7 +73,7 @@
                                                     'parent_field' => 'task_desc',
                                                     'alt_language_table' => 'mnu_task_alt',
                                                     'alt_language_cols' => 'task_desc, button_text',
-                                                    'fields' => array('task_id' => 'task_id'));
+                                                    'fields' => array('user_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',

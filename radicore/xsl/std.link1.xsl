@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -67,6 +67,7 @@
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_vertical">
                   <xsl:with-param name="zone"   select="'outer'"/>
+                  <xsl:with-param name="data"   select="."/>
                   <xsl:with-param name="noedit" select="'y'"/>
                 </xsl:call-template>
               </xsl:for-each>
@@ -109,7 +110,7 @@
                   <!-- display all the fields in the current row -->
                   <xsl:call-template name="display_horizontal">
                     <xsl:with-param name="zone"     select="'link'"/>
-                    <xsl:with-param name="currocc"  select="." />
+                    <xsl:with-param name="data"     select="." />
                     <xsl:with-param name="multiple" select="'y'"/>
                   </xsl:call-template>
   

@@ -8,6 +8,15 @@ body, input, select, textarea, div.tree td .text {
   font-size: small;
   font-weight: normal;
 }
+pre {
+}
+pre.normal {
+  font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+  font-size: 100%;
+  font-weight: normal;
+  margin-bottom: 0;
+  margin-top: 0;
+}
 
 /* HTML controls */
 input.submit, input.button {

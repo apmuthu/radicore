@@ -1,4 +1,4 @@
-USE dict;
+USE [dict];
 
 -- file created on Apr 24, 2014 at 10:30 AM
 

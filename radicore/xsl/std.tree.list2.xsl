@@ -68,6 +68,7 @@
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_vertical">
                   <xsl:with-param name="zone"   select="'outer'"/>
+                  <xsl:with-param name="data"   select="."/>
                   <xsl:with-param name="noedit" select="'y'"/>
                 </xsl:call-template>
               </xsl:for-each>

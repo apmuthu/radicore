@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -20,8 +20,8 @@
 
 <!-- create <colgroup> entries -->
 <xsl:template name="column_group">
-  <xsl:param name="zone"/>
-  <xsl:param name="count"/>
+  <xsl:param name="zone"/>   <!-- name of this zone (outer/middle/inner) -->
+  <xsl:param name="count"/>  <!-- repeat count for filepickser -->
 
   <colgroup> <!-- these are all within a singe <colgroup> tag -->
     <xsl:call-template name="col_group">
@@ -33,8 +33,8 @@
 </xsl:template> <!-- COLUMN_GROUP -->
 
 <xsl:template name="col_group">
-  <xsl:param name="zone"/>
-  <xsl:param name="count"/>
+  <xsl:param name="zone"/>    <!-- name of this zone (outer/middle/inner) -->
+  <xsl:param name="count"/>   <!-- repeat count -->
 
   <xsl:for-each select="/root/structure/*[name()=$zone]/columns/column">
     <!-- copy all column attributes and values to output document -->
@@ -72,6 +72,49 @@
   </xsl:if>
 
 </xsl:template> <!-- COL_GROUP -->
+  
+  
+  
+<!-- create <colgroup> entries for a selected row among multiple rows -->
+<xsl:template name="column_group_multirow">
+  <xsl:param name="zone"/>
+  <xsl:param name="position"/>
+    
+  <xsl:for-each select="/root/structure/*[name()=$zone]/table[position()=$position]/columns/column">
+    <!-- copy all column attributes and values to output document -->
+    <col>
+      <!-- <xsl:copy-of select="@*" /> -->
+      
+      <xsl:if test="@width">
+        <xsl:attribute name="width" ><xsl:value-of select="@width" /></xsl:attribute>
+      </xsl:if>
+      <!-- the 'class' attribute will now be added to all the cells within this column
+    <xsl:if test="@class">
+      <xsl:attribute name="class" ><xsl:value-of select="@class" /></xsl:attribute>
+    </xsl:if>
+    -->
+      <xsl:if test="@align">
+        <xsl:attribute name="align" ><xsl:value-of select="@align" /></xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@valign">
+        <xsl:attribute name="valign" ><xsl:value-of select="@valign" /></xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@char">
+        <xsl:attribute name="char" ><xsl:value-of select="@char" /></xsl:attribute>
+      </xsl:if>
+      <xsl:if test="@style">
+        <xsl:attribute name="style" ><xsl:value-of select="@style" /></xsl:attribute>
+      </xsl:if>
+    </col>
+  </xsl:for-each>
+    
+</xsl:template> <!-- COLUMN_GROUP_MULTIROW -->
+  
+  
+  
+  
+  
+  
 
 
 <!-- set up the column headings using fieldlist in XML file -->

@@ -1,1 +1,1 @@
-﻿Dictionary v1.94.0
+﻿Radicore v1.95.0

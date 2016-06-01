@@ -455,6 +455,7 @@ CREATE TABLE mnu_task_field (
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
   field_desc nvarchar(255) DEFAULT NULL,
+  is_documentation_only CHAR(1) NOT NULL DEFAULT 'N',
   created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2 DEFAULT NULL,
@@ -476,6 +477,42 @@ CREATE TABLE mnu_task_ip_address (
   revised_date datetime2 DEFAULT NULL,
   revised_user nvarchar(16) DEFAULT NULL,
   PRIMARY KEY (task_id,ip_address)
+);
+go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_task_quicksearch
+--
+
+CREATE TABLE mnu_task_quicksearch (
+  task_id nvarchar(80) NOT NULL,
+  field_id nvarchar(40) NOT NULL,
+  sort_seq smallint NOT NULL DEFAULT '0',
+  field_name nvarchar(40) NOT NULL,
+  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  revised_date datetime2 DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (task_id,field_id)
+);
+go
+-- --------------------------------------------------------
+
+--
+-- Table structure for table mnu_task_quicksearch_alt
+--
+
+CREATE TABLE mnu_task_quicksearch_alt (
+  task_id nvarchar(80) NOT NULL,
+  field_id nvarchar(40) NOT NULL,
+  language_id nvarchar(5) NOT NULL,
+  field_name nvarchar(40) NOT NULL,
+  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
+  revised_date datetime2 DEFAULT NULL,
+  revised_user nvarchar(16) DEFAULT NULL,
+  PRIMARY KEY (task_id,field_id,language_id)
 );
 go
 -- --------------------------------------------------------

@@ -98,18 +98,19 @@ class wf_workitem extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign entities.
     {
-        //DebugBreak();
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
             require_once 'classes/wf_case.class.inc';
             $dbobject =& RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
-            // add to current data
-            $fieldarray = array_merge($fieldarray, $array[0]);
+            if (!empty($array)) {
+                $array = $array[0];
+                $fieldarray = array_merge($fieldarray, $array);  // add to current data
+            } // if
             // make this field 'read only'
             $this->fieldspec['workflow_id']['noedit'] = 'y';
         } // if
@@ -123,7 +124,6 @@ class wf_workitem extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        //DebugBreak();
         // set workflow_id to next available number
         $query = "SELECT max(workitem_id) FROM $this->tablename WHERE case_id='{$fieldarray['case_id']}'";
         $count = $this->getCount($query);
@@ -166,15 +166,6 @@ class wf_workitem extends Default_Table
         return $array;
 
     } // _cm_getValRep
-
-    // ****************************************************************************
-    function _cm_post_insertRecord ($fieldarray)
-    // perform custom processing after database record is inserted.
-    {
-        //DebugBreak();
-        return $fieldarray;
-
-    } // _cm_post_insertRecord
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)

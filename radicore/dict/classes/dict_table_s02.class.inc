@@ -36,7 +36,7 @@ class dict_table_s02 extends dict_table
             $subsys_dir  = $tabledata['subsys_dir'];
             $subsys_id   = $tabledata['subsys_id'];
 
-            $count = $columnobj->getCount("database_id='$database_id' AND table_id='$table_id'");
+            $count = $columnobj->getCount("database_id='{$database_id}' AND table_id='{$table_id}'");
             if ($count == 0) {
                 // "Nothing exported for $table_id as it has no columns"
                 $this->messages[] = getLanguageText('e0026', strtoupper($table_id));
@@ -52,7 +52,7 @@ class dict_table_s02 extends dict_table
 
                 // process column details
             	$columnobj->sql_orderby = 'column_seq';
-                $data = $columnobj->getData("database_id='$database_id' AND table_id='$table_id'");
+                $data = $columnobj->getData("database_id='{$database_id}' AND table_id='{$table_id}'");
     			if (empty($data)) {
     			    $data[0]['database_id'] = $database_id;
     				$data[0]['table_id']    = $table_id;
@@ -61,30 +61,30 @@ class dict_table_s02 extends dict_table
 
                 // process primary key details
                 $keyobj->sql_orderby = 'key_name, seq_in_index';
-                $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
+                $data = $keyobj->getData("database_id='{$database_id}' AND table_id='{$table_id}' AND key_name='PRIMARY'");
                 $this->_createPKeySpecs($data);
 
                 // process candidate key details
                 $keyobj->sql_orderby = 'key_name, seq_in_index';
-                $data = $keyobj->getData("database_id='$database_id' AND table_id='$table_id' AND key_name<>'PRIMARY' AND is_unique='Y'");
+                $data = $keyobj->getData("database_id='{$database_id}' AND table_id='{$table_id}' AND key_name<>'PRIMARY' AND is_unique='Y'");
                 $this->_createUKeySpecs($data);
 
                 // process child relationships
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_jnr) '
-                                     . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . "LEFT JOIN {$menuDB}mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ";
                 $relobj->sql_orderby = 'database_id_jnr, table_id_jnr';
-                $data = $relobj->getData("database_id_snr='$database_id' AND table_id_snr='$table_id'");
+                $data = $relobj->getData("database_id_snr='{$database_id}' AND table_id_snr='{$table_id}'");
                 $this->_createChildRelations($data, $subsys_id);
 
                 // process parent relationships
                 $relobj->sql_select  = 'dict_relationship.*, dict_database.subsys_id, subsys_dir';
                 $relobj->sql_from    = 'dict_relationship '
                                      . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_relationship.database_id_snr) '
-                                     . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                                     . "LEFT JOIN {$menuDB}mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ";
                 $relobj->sql_orderby = 'database_id_snr, table_id_snr';
-                $data = $relobj->getData("database_id_jnr='$database_id' AND table_id_jnr='$table_id'");
+                $data = $relobj->getData("database_id_jnr='{$database_id}' AND table_id_jnr='{$table_id}'");
                 $this->_createParentRelations($data, $subsys_id);
 
                 // audit logging
@@ -165,7 +165,7 @@ class dict_table_s02 extends dict_table
             $this->sql_select = 'dict_table.*, dict_database.subsys_id, mnu_subsystem.subsys_dir';
             $this->sql_from   = 'dict_table '
                               . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
-                              . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ';
+                              . "LEFT JOIN {$menuDB}mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ";
         } // if
 
         return $where;
@@ -198,7 +198,7 @@ class dict_table_s02 extends dict_table
         if (empty($rel_array)) {
             $entry = $indent .'$this->child_relations';
             $entry = str_pad($entry, 44);
-            $entry .= "= array();\n$indent\n";
+            $entry .= "= array();\n{$indent}\n";
             $this->text_out .= $entry;
         } else {
             foreach ($rel_array as $row => $rowdata) {
@@ -218,32 +218,32 @@ class dict_table_s02 extends dict_table
                             // "SUBSYS_DIR is missing for database '?'"
                         	$this->errors[] = getLanguageText('e0049', $rowdata['database_id_jnr']);
                         } // if
-                        $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_jnr']}',";
-                        $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                        $entry .= "\n{$indent2}'dbname' => '{$rowdata['database_id_jnr']}',";
+                        $entry .= "\n{$indent2}'subsys_dir' => '{$rowdata['subsys_dir']}',";
                     } // if
                 } // if
                 if (strlen($rowdata['table_alias_jnr']) > 0) {
-                    $entry .= "\n$indent2'alias' => '{$rowdata['table_alias_jnr']}',";
+                    $entry .= "\n{$indent2}'alias' => '{$rowdata['table_alias_jnr']}',";
                 } // if
-                $entry .= "\n$indent2'type' => '{$rowdata['rel_type']}',";
+                $entry .= "\n{$indent2}'type' => '{$rowdata['rel_type']}',";
                 if (!empty($rowdata['orderby'])) {
-                    $entry .= "\n$indent2'orderby' => '{$rowdata['orderby']}',";
+                    $entry .= "\n{$indent2}'orderby' => '{$rowdata['orderby']}',";
                 } // if
 
                 // insert column details for this relationship
-                $entry .= "\n$indent2'fields' => array(";
+                $entry .= "\n{$indent2}'fields' => array(";
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
                 foreach ($data as $row => $coldata) {
                 	if ($row > 0) {
                         // entries after the first are on a separate line
-                        $entry .= ",\n$indent2$indent3";
+                        $entry .= ",\n{$indent2}$indent3";
                     } // if
                     $entry .= "'{$coldata['column_id_snr']}' => '{$coldata['column_id_jnr']}'";
                 } // foreach
 
                 // close array structure and append to output string
-                $entry .= "));\n$indent\n";
+                $entry .= "));\n{$indent}\n";
             	$this->text_out .= $entry;
 
             } // foreach
@@ -288,12 +288,12 @@ class dict_table_s02 extends dict_table
                         if (strpos($column['col_type_native'], ',')) {
                             $type_array = explode(',', $column['col_type_native']);
                             $first      = $type_array[0];
-                            $entry .= ",\n$indent2'type_native' => '$first'";
+                            $entry .= ",\n{$indent2}'type_native' => '$first'";
                         } // if
                     } // if
 
 	                if (strlen($column['col_array_type']) > 0) {
-	                    $entry .= ",\n$indent2'array_type' => " .$column['col_array_type'];
+	                    $entry .= ",\n{$indent2}'array_type' => " .$column['col_array_type'];
 	                } // if
 
 	                if (preg_match('/boolean/i', $type)) {
@@ -301,14 +301,14 @@ class dict_table_s02 extends dict_table
 	                } else {
 	                    if (strlen($column['user_size']) > 0) {
 	                        if ($column['user_size'] > 0) {
-	                            $entry .= ",\n$indent2'size' => " .$column['user_size'];
+	                            $entry .= ",\n{$indent2}'size' => " .$column['user_size'];
 	                        } // if
 	                    } // if
 	                } // if
 
 	                if (strlen($column['col_values']) > 0) {
 	                    $array1 = explode(',', trim($column['col_values'], '()'));
-	                    $entry .= ",\n$indent2'values' => " .'array(1 => ';
+	                    $entry .= ",\n{$indent2}'values' => " .'array(1 => ';
                         foreach ($array1 as $array_entry) {
                             $entry .= $array_entry .',';
                         } // foreach
@@ -318,141 +318,141 @@ class dict_table_s02 extends dict_table
 
 	                // these are for numeric fields
 	                if (strlen($column['col_precision']) > 0) {
-	                    $entry .= ",\n$indent2'precision' => " .$column['col_precision'];
+	                    $entry .= ",\n{$indent2}'precision' => " .$column['col_precision'];
 	                } // if
 	                if (strlen($column['col_scale']) > 0) {
-	                    $entry .= ",\n$indent2'scale' => " .$column['col_scale'];
+	                    $entry .= ",\n{$indent2}'scale' => " .$column['col_scale'];
 	                } // if
 	                if (!empty($column['col_zerofill_bwz'])) {
 	            	    switch ($column['col_zerofill_bwz']) {
 	            		    case 'ZF':
-	            			    $entry .= ",\n$indent2'zerofill' => 'y'";
+	            			    $entry .= ",\n{$indent2}'zerofill' => 'y'";
 	            			    break;
 	            		    case 'BWZ':
-	            			    $entry .= ",\n$indent2'blank_when_zero' => 'y'";
+	            			    $entry .= ",\n{$indent2}'blank_when_zero' => 'y'";
 	            			    break;
 	            		    case 'STZ':
-	            			    $entry .= ",\n$indent2'strip_trailing_zero' => 'y'";
+	            			    $entry .= ",\n{$indent2}'strip_trailing_zero' => 'y'";
 	            			    break;
 	            		    default:
 	            			    break;
 	            	    } // switch
 	                } // if
 	                if (is_True($column['col_auto_increment'])) {
-	                    $entry .= ",\n$indent2'auto_increment' => 'y'";
+	                    $entry .= ",\n{$indent2}'auto_increment' => 'y'";
 	                } // if
                     if (preg_match('/(boolean)/i', $type)) {
                         // min/max values not appropriate for boolean fields
                     } else {
 	                    if (strlen($column['user_minvalue']) > 0) {
-	                        $entry .= ",\n$indent2'minvalue' => " .$column['user_minvalue'];
+	                        $entry .= ",\n{$indent2}'minvalue' => " .$column['user_minvalue'];
 	                    } else {
 	                        if (is_True($column['col_unsigned'])) {
-	                            $entry .= ",\n$indent2'unsigned' => 'y'";
+	                            $entry .= ",\n{$indent2}'unsigned' => 'y'";
 	                        } // if
 	                    } // if
                         if (strlen($column['user_maxvalue']) > 0) {
-                            $entry .= ",\n$indent2'maxvalue' => " .$column['user_maxvalue'];
+                            $entry .= ",\n{$indent2}'maxvalue' => " .$column['user_maxvalue'];
                         } // if
                     } // if
 
 	                if ($column['col_key'] == 'PRI') {
-	                    $entry .= ",\n$indent2'pkey' => 'y'";
+	                    $entry .= ",\n{$indent2}'pkey' => 'y'";
 	                } // if
 	                if (is_True($column['is_required'])) {
-	                    $entry .= ",\n$indent2'required' => 'y'";
+	                    $entry .= ",\n{$indent2}'required' => 'y'";
 	                } // if
 	                if (strlen($column['col_default']) > 0) {
-	                    $entry .= ",\n$indent2'default' => '" .addslashes($column['col_default']) ."'";
+	                    $entry .= ",\n{$indent2}'default' => '" .addslashes($column['col_default']) ."'";
 	                } // if
 	                if (is_True($column['is_password'])) {
-	                    $entry .= ",\n$indent2'password' => 'y'";
+	                    $entry .= ",\n{$indent2}'password' => 'y'";
 	                } // if
 	                if ($column['upper_lowercase'] == 'UPPER') {
-	                    $entry .= ",\n$indent2'uppercase' => 'y'";
+	                    $entry .= ",\n{$indent2}'uppercase' => 'y'";
 	                } // if
 	                if ($column['upper_lowercase'] == 'LOWER') {
-	                    $entry .= ",\n$indent2'lowercase' => 'y'";
+	                    $entry .= ",\n{$indent2}'lowercase' => 'y'";
 	                } // if
 	                if (is_True($column['auto_insert'])) {
-	                    $entry .= ",\n$indent2'autoinsert' => 'y'";
+	                    $entry .= ",\n{$indent2}'autoinsert' => 'y'";
 	                } // if
 	                if (is_True($column['auto_update'])) {
-	                    $entry .= ",\n$indent2'autoupdate' => 'y'";
+	                    $entry .= ",\n{$indent2}'autoupdate' => 'y'";
 	                } // if
 	                if (is_True($column['infinityisnull'])) {
-	                    $entry .= ",\n$indent2'infinityisnull' => 'y'";
+	                    $entry .= ",\n{$indent2}'infinityisnull' => 'y'";
 	                } // if
 
 	                if (preg_match('/boolean/i', $type)) {
 	                    // these are for boolean fields
 	                    if (strlen($column['boolean_true']) > 0) {
-	                        $entry .= ",\n$indent2'true' => '" .$column['boolean_true'] ."'";
+	                        $entry .= ",\n{$indent2}'true' => '" .$column['boolean_true'] ."'";
 	                    } // if
 	                    if (strlen($column['boolean_false']) > 0) {
-	                        $entry .= ",\n$indent2'false' => '" .$column['boolean_false'] ."'";
+	                        $entry .= ",\n{$indent2}'false' => '" .$column['boolean_false'] ."'";
 	                    } // if
 	                } // if
 
 	                if (strlen($column['custom_validation']) > 0) {
-	                    $entry .= ",\n$indent2'custom_validation' => '" .$column['custom_validation'] ."'";
+	                    $entry .= ",\n{$indent2}'custom_validation' => '" .$column['custom_validation'] ."'";
 	                } // if
 	                if (strlen($column['col_subtype']) > 0) {
-	                    $entry .= ",\n$indent2'subtype' => '" .$column['col_subtype'] ."'";
+	                    $entry .= ",\n{$indent2}'subtype' => '" .$column['col_subtype'] ."'";
 	                } // if
 	                if (strlen($column['image_width']) > 0) {
-	                    $entry .= ",\n$indent2'imagewidth' => " .$column['image_width'];
+	                    $entry .= ",\n{$indent2}'imagewidth' => " .$column['image_width'];
 	                } // if
 	                if (strlen($column['image_height']) > 0) {
-	                    $entry .= ",\n$indent2'imageheight' => " .$column['image_height'];
+	                    $entry .= ",\n{$indent2}'imageheight' => " .$column['image_height'];
 	                } // if
 	                if (strlen($column['control']) > 0) {
-	                    $entry .= ",\n$indent2'control' => '" .$column['control'] ."'";
+	                    $entry .= ",\n{$indent2}'control' => '" .$column['control'] ."'";
 	                } // if
 	                if (strlen($column['optionlist']) > 0) {
-	                    $entry .= ",\n$indent2'optionlist' => '" .$column['optionlist'] ."'";
+	                    $entry .= ",\n{$indent2}'optionlist' => '" .$column['optionlist'] ."'";
 	                } // if
 	                if (strlen($column['checkbox_label']) > 0) {
 	                    if (preg_match('/^getLanguageText/', $column['checkbox_label'])) {
 	                        // this is a function, not text, so do not enclose in single quotes
-	                	    $entry .= ",\n$indent2'label' => " .$column['checkbox_label'];
+	                	    $entry .= ",\n{$indent2}'label' => " .$column['checkbox_label'];
 	                    } else {
-	                        $entry .= ",\n$indent2'label' => '" .$column['checkbox_label'] ."'";
+	                        $entry .= ",\n{$indent2}'label' => '" .$column['checkbox_label'] ."'";
 	                    } // if
 	                } // if
 	                if (strlen($column['task_id']) > 0) {
-	                    $entry .= ",\n$indent2'task_id' => '" .$column['task_id'] ."'";
+	                    $entry .= ",\n{$indent2}'task_id' => '" .$column['task_id'] ."'";
 	                } // if
 	                if (strlen($column['foreign_field']) > 0) {
-	                    $entry .= ",\n$indent2'foreign_field' => '" .addslashes($column['foreign_field']) ."'";
+	                    $entry .= ",\n{$indent2}'foreign_field' => '" .addslashes($column['foreign_field']) ."'";
 	                } // if
 	                if (strlen($column['align_hv']) > 0) {
-	                    $entry .= ",\n$indent2'align_hv' => '" .$column['align_hv'] ."'";
+	                    $entry .= ",\n{$indent2}'align_hv' => '" .$column['align_hv'] ."'";
 	                } // if
 	                if (strlen($column['align_lr']) > 0) {
-	                    $entry .= ",\n$indent2'align_lr' => '" .$column['align_lr'] ."'";
+	                    $entry .= ",\n{$indent2}'align_lr' => '" .$column['align_lr'] ."'";
 	                } // if
 	                if (strlen($column['multi_cols']) > 0) {
-	                    $entry .= ",\n$indent2'cols' => " .$column['multi_cols'];
+	                    $entry .= ",\n{$indent2}'cols' => " .$column['multi_cols'];
 	                } // if
 	                if (strlen($column['multi_rows']) > 0) {
-	                    $entry .= ",\n$indent2'rows' => " .$column['multi_rows'];
+	                    $entry .= ",\n{$indent2}'rows' => " .$column['multi_rows'];
 	                } // if
 
 	                if ($column['noedit_nodisplay'] == 'NED') {
-	                    $entry .= ",\n$indent2'noedit' => 'y'";
+	                    $entry .= ",\n{$indent2}'noedit' => 'y'";
 	                } // if
 	                if ($column['noedit_nodisplay'] == 'NDI') {
-	                    $entry .= ",\n$indent2'nodisplay' => 'y'";
+	                    $entry .= ",\n{$indent2}'nodisplay' => 'y'";
 	                } // if
 	                if ($column['no_search'] == 'NSR') {
-	                    $entry .= ",\n$indent2'nosearch' => 'y'";
+	                    $entry .= ",\n{$indent2}'nosearch' => 'y'";
 	                } // if
                     if ($column['no_audit'] == 'NAL') {
-	                    $entry .= ",\n$indent2'noaudit' => 'y'";
+	                    $entry .= ",\n{$indent2}'noaudit' => 'y'";
 	                } // if
 	                // close array structure and append to output string
-	                $entry .= ");\n$indent\n";
+	                $entry .= ");\n{$indent}\n";
 	                $this->text_out .= $entry;
                 } // if
 
@@ -485,7 +485,7 @@ class dict_table_s02 extends dict_table
         if (empty($rel_array)) {
             $entry = $indent .'$this->parent_relations';
             $entry = str_pad($entry, 44);
-            $entry .= "= array();\n$indent\n";
+            $entry .= "= array();\n{$indent}\n";
             $this->text_out .= $entry;
         } else {
             foreach ($rel_array as $row => $rowdata) {
@@ -505,18 +505,18 @@ class dict_table_s02 extends dict_table
                             // "SUBSYS_DIR is missing for database '?'"
                         	$this->errors[] = getLanguageText('e0049', $rowdata['database_id_snr']);
                         } // if
-                        $entry .= "\n$indent2'dbname' => '{$rowdata['database_id_snr']}',";
-                        $entry .= "\n$indent2'subsys_dir' => '{$rowdata['subsys_dir']}',";
+                        $entry .= "\n{$indent2}'dbname' => '{$rowdata['database_id_snr']}',";
+                        $entry .= "\n{$indent2}'subsys_dir' => '{$rowdata['subsys_dir']}',";
                     } // if
                 } // if
                 if (strlen($rowdata['table_alias_snr']) > 0) {
-                    $entry .= "\n$indent2'alias' => '{$rowdata['table_alias_snr']}',";
+                    $entry .= "\n{$indent2}'alias' => '{$rowdata['table_alias_snr']}',";
                 } // if
                 if ($rowdata['parent_field'] == '#calc#') {
-                    $entry .= "\n$indent2'parent_field' => '" .addslashes($rowdata['calc_field']) ."',";
+                    $entry .= "\n{$indent2}'parent_field' => '" .addslashes($rowdata['calc_field']) ."',";
                 } else {
                     if (strlen($rowdata['parent_field']) > 0) {
-                        $entry .= "\n$indent2'parent_field' => '{$rowdata['parent_field']}',";
+                        $entry .= "\n{$indent2}'parent_field' => '{$rowdata['parent_field']}',";
                     } // if
                 } // if
 
@@ -525,13 +525,13 @@ class dict_table_s02 extends dict_table
                 if (!empty($data)) {
                 	$data = $data[0];
                 	if (!empty($data['alt_language_table'])) {
-                		$entry .= "\n$indent2'alt_language_table' => '" .$data['alt_language_table'] ."',";
-                		$entry .= "\n$indent2'alt_language_cols' => '" .$data['alt_language_cols'] ."',";
+                		$entry .= "\n{$indent2}'alt_language_table' => '" .$data['alt_language_table'] ."',";
+                		$entry .= "\n{$indent2}'alt_language_cols' => '" .$data['alt_language_cols'] ."',";
                 	} // if
                 } // if
 
                 // insert column details for this relationship
-                $entry .= "\n$indent2'fields' => array(";
+                $entry .= "\n{$indent2}'fields' => array(";
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
                 foreach ($data as $row => $coldata) {
@@ -542,7 +542,7 @@ class dict_table_s02 extends dict_table
                     } else {
                 	    if ($row > 0) {
                             // entries after the first are on a separate line
-                            $entry .= ",\n$indent2$indent3";
+                            $entry .= ",\n{$indent2}$indent3";
                         } // if
                         $entry .= "'{$coldata['column_id_jnr']}' => '{$coldata['column_id_snr']}'";
                     } // if
@@ -550,7 +550,7 @@ class dict_table_s02 extends dict_table
 
                 if (!empty($entry)) {
                     // close array structure and append to output string
-                    $entry .= "));\n$indent\n";
+                    $entry .= "));\n{$indent}\n";
             	    $this->text_out .= $entry;
                 } // if
 
@@ -579,12 +579,12 @@ class dict_table_s02 extends dict_table
                 $entry .= "'{$key['column_id']}'";
             } else {
                 // subsequent entries continue on next line
-                $entry .= ",\n$indent2'{$key['column_id']}'";
+                $entry .= ",\n{$indent2}'{$key['column_id']}'";
             } // if
         } // foreach
 
         // close array structure and append to output string
-        $entry .= ");\n$indent\n";
+        $entry .= ");\n{$indent}\n";
     	$this->text_out .= $entry;
 
         return;
@@ -618,11 +618,11 @@ class dict_table_s02 extends dict_table
                             $entry .= "'{$key['column_id']}'";
                         } else {
                             // subsequent entries continue on next line
-                            $entry .= ",\n$indent2'{$key['column_id']}'";
+                            $entry .= ",\n{$indent2}'{$key['column_id']}'";
                         } // if
                         unset($key_array[$row]);
                     } else {
-                        $entry .= ");\n$indent\n";
+                        $entry .= ");\n{$indent}\n";
        	                $this->text_out .= $entry;
                         break;
                     } // if
@@ -631,7 +631,7 @@ class dict_table_s02 extends dict_table
         } // if
 
         // close array structure and append to output string
-        $entry .= ");\n$indent\n";
+        $entry .= ");\n{$indent}\n";
        	$this->text_out .= $entry;
 
         return;

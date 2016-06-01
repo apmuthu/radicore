@@ -74,6 +74,9 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->sql_groupby = &$inner_sql_groupby;
     $dbinner->sql_having  = &$inner_sql_having;
     $null = $dbinner->initialise($where, $selection);
+    if ($dbinner->errors) {
+        scriptPrevious($dbinner->errors); // return to previous task to display errors
+    } // if
 } // if
 
 // the 'choose' button should only be available in popup screens

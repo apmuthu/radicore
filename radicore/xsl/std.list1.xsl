@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -100,7 +100,7 @@
                   <!-- display all the fields in the current row -->
                   <xsl:call-template name="display_horizontal">
                     <xsl:with-param name="zone"    select="'main'"/>
-                    <xsl:with-param name="currocc" select="." />
+                    <xsl:with-param name="data"    select="." />
                   </xsl:call-template>
   
                 </xsl:for-each>

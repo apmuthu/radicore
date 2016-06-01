@@ -209,17 +209,17 @@ class dict_relationship extends Default_Table
 
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('database_id_snr' => 'Database Id Snr',
-                               'table_id_snr' => 'Table Id Snr',
-                               'database_id_jnr' => 'Database Id Jnr',
-                               'table_id_jnr' => 'Table Id Jnr');
-                $this->lookup_data['quicksearch_field'] = $array;
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('database_id_snr' => 'Database Id Snr',
+//                               'table_id_snr' => 'Table Id Snr',
+//                               'database_id_jnr' => 'Database Id Jnr',
+//                               'table_id_jnr' => 'Table Id Jnr');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//            } // if
+//        } // if
 
         return $fieldarray;
 

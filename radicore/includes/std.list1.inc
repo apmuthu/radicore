@@ -87,6 +87,9 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // perform any initialisation
     $where = $dbobject->initialise($where, $selection);
+    if ($dbobject->errors) {
+        scriptPrevious($dbobject->errors);
+    } // if
 } // if
 
 // the 'choose' button should only be used in popup screens

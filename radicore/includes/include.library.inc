@@ -834,6 +834,37 @@ if (!function_exists('build_select_list')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('calculate_age')) {
+    function calculate_age ($dob, $as_at_date=null)
+    // calculate age using Date Of Birth and a specified date.
+    {
+        $birthday = strtotime($dob);
+        if ($birthday === false) {
+            return '';
+        } // if
+
+        $date = date('Y-m-d', $birthday);
+        list($dob_yy, $dob_mm, $dob_dd) = explode('-',$date);
+
+        if (!empty($as_at_date)) {
+            $date = strtotime($as_at_date);
+        } // if
+        if (empty($date)) {
+            $date = time();
+        } // if
+
+        $year_diff = '';
+        $year_diff = date('Y', $date) - $dob_yy;
+        $month_diff = date('m', $date) - $dob_mm;
+        $day_diff = date('d', $date) - $dob_dd;
+        if ($day_diff < 0 OR $month_diff < 0) $year_diff--;
+
+        return $year_diff;
+
+    } // calculate_age
+} // if
+
+// ****************************************************************************
 if (!function_exists('check_custom_button')) {
     function check_custom_button ($post)
     // check to see if a CUSTOM button was pressed.
@@ -3436,10 +3467,11 @@ if (!function_exists('getPdfColumnHeadings')) {
 
 // ****************************************************************************
 if (!function_exists('getPostArray')) {
-    function getPostArray ($post, $fieldlist)
+    function getPostArray ($post, $fieldlist, $multiple=false)
     // extract all the entries in $post array which are named in $fieldlist.
     // $post contains the entire $_POST array.
     // $fieldlist identifies the fields that belong to a particular database table.
+    // $multiple identifies that POST array should be examined for entries which are indexed by row number.
     {
         $array_out = array();
 
@@ -3448,9 +3480,15 @@ if (!function_exists('getPostArray')) {
             	// strip prefix from field name
             	$key = str_replace($regs[0], '', $key);
             } // if
-        	if (array_key_exists($key, $fieldlist)) {
-        		$array_out[$key] = $value;
-        	} // if
+            if (is_True($multiple)) {
+                if (is_array($value)) {
+                    $array_out[$key] = $value; // only accept values which are indexed by row
+                } // if
+            } else {
+        	    if (array_key_exists($key, $fieldlist)) {
+        		    $array_out[$key] = $value;
+        	    } // if
+            } // if
         } // foreach
 
         return $array_out;

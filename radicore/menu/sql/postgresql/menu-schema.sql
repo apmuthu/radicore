@@ -2,9 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 9.4.5
--- Dumped by pg_dump version 9.4.5
--- Started on 2015-11-23 17:07:50
+-- Dumped from database version 9.5.3
+-- Dumped by pg_dump version 9.5.3
+
+-- Started on 2016-05-19 11:03:24
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -12,9 +13,10 @@ SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
+SET row_security = off;
 
 --
--- TOC entry 8 (class 2615 OID 16399)
+-- TOC entry 9 (class 2615 OID 16422)
 -- Name: menu; Type: SCHEMA; Schema: -; Owner: postgres
 --
 
@@ -30,8 +32,8 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 191 (class 1259 OID 16583)
--- Name: help_text; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 200 (class 1259 OID 16583)
+-- Name: help_text; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE help_text (
@@ -47,8 +49,8 @@ CREATE TABLE help_text (
 ALTER TABLE help_text OWNER TO postgres;
 
 --
--- TOC entry 192 (class 1259 OID 16592)
--- Name: help_text_alt; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 201 (class 1259 OID 16592)
+-- Name: help_text_alt; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE help_text_alt (
@@ -65,7 +67,7 @@ CREATE TABLE help_text_alt (
 ALTER TABLE help_text_alt OWNER TO postgres;
 
 --
--- TOC entry 193 (class 1259 OID 16602)
+-- TOC entry 202 (class 1259 OID 16602)
 -- Name: mnu_account_rdcaccount_id_seq; Type: SEQUENCE; Schema: menu; Owner: postgres
 --
 
@@ -80,8 +82,8 @@ CREATE SEQUENCE mnu_account_rdcaccount_id_seq
 ALTER TABLE mnu_account_rdcaccount_id_seq OWNER TO postgres;
 
 --
--- TOC entry 194 (class 1259 OID 16604)
--- Name: mnu_account; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 203 (class 1259 OID 16604)
+-- Name: mnu_account; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_account (
@@ -98,8 +100,8 @@ CREATE TABLE mnu_account (
 ALTER TABLE mnu_account OWNER TO postgres;
 
 --
--- TOC entry 195 (class 1259 OID 16610)
--- Name: mnu_control; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 204 (class 1259 OID 16610)
+-- Name: mnu_control; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_control (
@@ -116,8 +118,8 @@ CREATE TABLE mnu_control (
 ALTER TABLE mnu_control OWNER TO postgres;
 
 --
--- TOC entry 196 (class 1259 OID 16617)
--- Name: mnu_favourite; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 205 (class 1259 OID 16617)
+-- Name: mnu_favourite; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_favourite (
@@ -137,8 +139,8 @@ CREATE TABLE mnu_favourite (
 ALTER TABLE mnu_favourite OWNER TO postgres;
 
 --
--- TOC entry 197 (class 1259 OID 16630)
--- Name: mnu_initial_value_role; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 206 (class 1259 OID 16630)
+-- Name: mnu_initial_value_role; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_initial_value_role (
@@ -157,8 +159,8 @@ CREATE TABLE mnu_initial_value_role (
 ALTER TABLE mnu_initial_value_role OWNER TO postgres;
 
 --
--- TOC entry 198 (class 1259 OID 16639)
--- Name: mnu_initial_value_user; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 207 (class 1259 OID 16639)
+-- Name: mnu_initial_value_user; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_initial_value_user (
@@ -177,8 +179,8 @@ CREATE TABLE mnu_initial_value_user (
 ALTER TABLE mnu_initial_value_user OWNER TO postgres;
 
 --
--- TOC entry 199 (class 1259 OID 16648)
--- Name: mnu_language; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 208 (class 1259 OID 16648)
+-- Name: mnu_language; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_language (
@@ -196,8 +198,8 @@ CREATE TABLE mnu_language (
 ALTER TABLE mnu_language OWNER TO postgres;
 
 --
--- TOC entry 200 (class 1259 OID 16655)
--- Name: mnu_menu; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 209 (class 1259 OID 16655)
+-- Name: mnu_menu; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_menu (
@@ -215,8 +217,8 @@ CREATE TABLE mnu_menu (
 ALTER TABLE mnu_menu OWNER TO postgres;
 
 --
--- TOC entry 201 (class 1259 OID 16663)
--- Name: mnu_motd; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 210 (class 1259 OID 16663)
+-- Name: mnu_motd; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_motd (
@@ -236,7 +238,7 @@ CREATE TABLE mnu_motd (
 ALTER TABLE mnu_motd OWNER TO postgres;
 
 --
--- TOC entry 202 (class 1259 OID 16672)
+-- TOC entry 211 (class 1259 OID 16672)
 -- Name: mnu_motd_motd_id_seq; Type: SEQUENCE; Schema: menu; Owner: postgres
 --
 
@@ -251,8 +253,8 @@ CREATE SEQUENCE mnu_motd_motd_id_seq
 ALTER TABLE mnu_motd_motd_id_seq OWNER TO postgres;
 
 --
--- TOC entry 2521 (class 0 OID 0)
--- Dependencies: 202
+-- TOC entry 2645 (class 0 OID 0)
+-- Dependencies: 211
 -- Name: mnu_motd_motd_id_seq; Type: SEQUENCE OWNED BY; Schema: menu; Owner: postgres
 --
 
@@ -260,8 +262,8 @@ ALTER SEQUENCE mnu_motd_motd_id_seq OWNED BY mnu_motd.motd_id;
 
 
 --
--- TOC entry 203 (class 1259 OID 16674)
--- Name: mnu_nav_button; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 212 (class 1259 OID 16674)
+-- Name: mnu_nav_button; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_nav_button (
@@ -280,8 +282,8 @@ CREATE TABLE mnu_nav_button (
 ALTER TABLE mnu_nav_button OWNER TO postgres;
 
 --
--- TOC entry 204 (class 1259 OID 16682)
--- Name: mnu_pattern; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 213 (class 1259 OID 16682)
+-- Name: mnu_pattern; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_pattern (
@@ -301,8 +303,8 @@ CREATE TABLE mnu_pattern (
 ALTER TABLE mnu_pattern OWNER TO postgres;
 
 --
--- TOC entry 205 (class 1259 OID 16692)
--- Name: mnu_role; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 214 (class 1259 OID 16692)
+-- Name: mnu_role; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_role (
@@ -321,8 +323,8 @@ CREATE TABLE mnu_role (
 ALTER TABLE mnu_role OWNER TO postgres;
 
 --
--- TOC entry 206 (class 1259 OID 16701)
--- Name: mnu_role_task; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 215 (class 1259 OID 16701)
+-- Name: mnu_role_task; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_role_task (
@@ -338,8 +340,8 @@ CREATE TABLE mnu_role_task (
 ALTER TABLE mnu_role_task OWNER TO postgres;
 
 --
--- TOC entry 207 (class 1259 OID 16708)
--- Name: mnu_role_taskfield; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 216 (class 1259 OID 16708)
+-- Name: mnu_role_taskfield; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_role_taskfield (
@@ -357,8 +359,8 @@ CREATE TABLE mnu_role_taskfield (
 ALTER TABLE mnu_role_taskfield OWNER TO postgres;
 
 --
--- TOC entry 243 (class 1259 OID 17458)
--- Name: mnu_saved_selection; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 252 (class 1259 OID 17458)
+-- Name: mnu_saved_selection; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_saved_selection (
@@ -376,8 +378,8 @@ CREATE TABLE mnu_saved_selection (
 ALTER TABLE mnu_saved_selection OWNER TO postgres;
 
 --
--- TOC entry 244 (class 1259 OID 17465)
--- Name: mnu_saved_selection_data; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 253 (class 1259 OID 17465)
+-- Name: mnu_saved_selection_data; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_saved_selection_data (
@@ -394,7 +396,7 @@ CREATE TABLE mnu_saved_selection_data (
 ALTER TABLE mnu_saved_selection_data OWNER TO postgres;
 
 --
--- TOC entry 242 (class 1259 OID 17456)
+-- TOC entry 251 (class 1259 OID 17456)
 -- Name: mnu_saved_selection_selection_id_seq; Type: SEQUENCE; Schema: menu; Owner: postgres
 --
 
@@ -409,8 +411,8 @@ CREATE SEQUENCE mnu_saved_selection_selection_id_seq
 ALTER TABLE mnu_saved_selection_selection_id_seq OWNER TO postgres;
 
 --
--- TOC entry 2530 (class 0 OID 0)
--- Dependencies: 242
+-- TOC entry 2654 (class 0 OID 0)
+-- Dependencies: 251
 -- Name: mnu_saved_selection_selection_id_seq; Type: SEQUENCE OWNED BY; Schema: menu; Owner: postgres
 --
 
@@ -418,8 +420,8 @@ ALTER SEQUENCE mnu_saved_selection_selection_id_seq OWNED BY mnu_saved_selection
 
 
 --
--- TOC entry 208 (class 1259 OID 16716)
--- Name: mnu_subsystem; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 217 (class 1259 OID 16716)
+-- Name: mnu_subsystem; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_subsystem (
@@ -437,8 +439,8 @@ CREATE TABLE mnu_subsystem (
 ALTER TABLE mnu_subsystem OWNER TO postgres;
 
 --
--- TOC entry 209 (class 1259 OID 16726)
--- Name: mnu_task; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 218 (class 1259 OID 16726)
+-- Name: mnu_task; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_task (
@@ -472,8 +474,8 @@ CREATE TABLE mnu_task (
 ALTER TABLE mnu_task OWNER TO postgres;
 
 --
--- TOC entry 210 (class 1259 OID 16736)
--- Name: mnu_task_alt; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 219 (class 1259 OID 16736)
+-- Name: mnu_task_alt; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_task_alt (
@@ -491,8 +493,8 @@ CREATE TABLE mnu_task_alt (
 ALTER TABLE mnu_task_alt OWNER TO postgres;
 
 --
--- TOC entry 211 (class 1259 OID 16745)
--- Name: mnu_task_field; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 220 (class 1259 OID 16745)
+-- Name: mnu_task_field; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_task_field (
@@ -502,15 +504,16 @@ CREATE TABLE mnu_task_field (
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,
-    revised_user character varying(16)
+    revised_user character varying(16),
+    is_documentation_only character(1) DEFAULT 'N'::bpchar NOT NULL
 );
 
 
 ALTER TABLE mnu_task_field OWNER TO postgres;
 
 --
--- TOC entry 212 (class 1259 OID 16752)
--- Name: mnu_task_ip_address; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 221 (class 1259 OID 16752)
+-- Name: mnu_task_ip_address; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_task_ip_address (
@@ -526,8 +529,46 @@ CREATE TABLE mnu_task_ip_address (
 ALTER TABLE mnu_task_ip_address OWNER TO postgres;
 
 --
--- TOC entry 213 (class 1259 OID 16756)
--- Name: mnu_time_limit_role; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 254 (class 1259 OID 17581)
+-- Name: mnu_task_quicksearch; Type: TABLE; Schema: menu; Owner: postgres
+--
+
+CREATE TABLE mnu_task_quicksearch (
+    task_id character varying(80) NOT NULL,
+    field_id character varying(40) NOT NULL,
+    sort_seq smallint DEFAULT (0)::smallint NOT NULL,
+    field_name character varying(40) NOT NULL,
+    created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
+    created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
+    revised_date timestamp without time zone,
+    revised_user character varying(16)
+);
+
+
+ALTER TABLE mnu_task_quicksearch OWNER TO postgres;
+
+--
+-- TOC entry 255 (class 1259 OID 17589)
+-- Name: mnu_task_quicksearch_alt; Type: TABLE; Schema: menu; Owner: postgres
+--
+
+CREATE TABLE mnu_task_quicksearch_alt (
+    task_id character varying(80) NOT NULL,
+    field_id character varying(40) NOT NULL,
+    language_id character varying(5) DEFAULT ''::character varying NOT NULL,
+    field_name character varying(40) NOT NULL,
+    created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
+    created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
+    revised_date timestamp without time zone,
+    revised_user character varying(16)
+);
+
+
+ALTER TABLE mnu_task_quicksearch_alt OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 16756)
+-- Name: mnu_time_limit_role; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_time_limit_role (
@@ -552,8 +593,8 @@ CREATE TABLE mnu_time_limit_role (
 ALTER TABLE mnu_time_limit_role OWNER TO postgres;
 
 --
--- TOC entry 214 (class 1259 OID 16768)
--- Name: mnu_time_limit_user; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 223 (class 1259 OID 16768)
+-- Name: mnu_time_limit_user; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_time_limit_user (
@@ -578,8 +619,8 @@ CREATE TABLE mnu_time_limit_user (
 ALTER TABLE mnu_time_limit_user OWNER TO postgres;
 
 --
--- TOC entry 215 (class 1259 OID 16780)
--- Name: mnu_todo; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 224 (class 1259 OID 16780)
+-- Name: mnu_todo; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_todo (
@@ -604,8 +645,8 @@ CREATE TABLE mnu_todo (
 ALTER TABLE mnu_todo OWNER TO postgres;
 
 --
--- TOC entry 216 (class 1259 OID 16793)
--- Name: mnu_user; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 225 (class 1259 OID 16793)
+-- Name: mnu_user; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_user (
@@ -639,8 +680,8 @@ CREATE TABLE mnu_user (
 ALTER TABLE mnu_user OWNER TO postgres;
 
 --
--- TOC entry 217 (class 1259 OID 16809)
--- Name: mnu_user_alt; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 226 (class 1259 OID 16809)
+-- Name: mnu_user_alt; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_user_alt (
@@ -657,8 +698,8 @@ CREATE TABLE mnu_user_alt (
 ALTER TABLE mnu_user_alt OWNER TO postgres;
 
 --
--- TOC entry 218 (class 1259 OID 16818)
--- Name: mnu_user_ip_address; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 227 (class 1259 OID 16818)
+-- Name: mnu_user_ip_address; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_user_ip_address (
@@ -674,8 +715,8 @@ CREATE TABLE mnu_user_ip_address (
 ALTER TABLE mnu_user_ip_address OWNER TO postgres;
 
 --
--- TOC entry 219 (class 1259 OID 16822)
--- Name: mnu_user_role; Type: TABLE; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 228 (class 1259 OID 16822)
+-- Name: mnu_user_role; Type: TABLE; Schema: menu; Owner: postgres
 --
 
 CREATE TABLE mnu_user_role (
@@ -692,7 +733,7 @@ CREATE TABLE mnu_user_role (
 ALTER TABLE mnu_user_role OWNER TO postgres;
 
 --
--- TOC entry 2230 (class 2604 OID 17010)
+-- TOC entry 2338 (class 2604 OID 16790)
 -- Name: motd_id; Type: DEFAULT; Schema: menu; Owner: postgres
 --
 
@@ -700,7 +741,7 @@ ALTER TABLE ONLY mnu_motd ALTER COLUMN motd_id SET DEFAULT nextval('mnu_motd_mot
 
 
 --
--- TOC entry 2325 (class 2604 OID 17461)
+-- TOC entry 2434 (class 2604 OID 16791)
 -- Name: selection_id; Type: DEFAULT; Schema: menu; Owner: postgres
 --
 
@@ -708,8 +749,8 @@ ALTER TABLE ONLY mnu_saved_selection ALTER COLUMN selection_id SET DEFAULT nextv
 
 
 --
--- TOC entry 2332 (class 2606 OID 17038)
--- Name: help_text_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2447 (class 2606 OID 16805)
+-- Name: help_text_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY help_text_alt
@@ -717,8 +758,8 @@ ALTER TABLE ONLY help_text_alt
 
 
 --
--- TOC entry 2330 (class 2606 OID 17040)
--- Name: help_text_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2445 (class 2606 OID 16806)
+-- Name: help_text_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY help_text
@@ -726,8 +767,8 @@ ALTER TABLE ONLY help_text
 
 
 --
--- TOC entry 2334 (class 2606 OID 17042)
--- Name: mnu_account_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2449 (class 2606 OID 16807)
+-- Name: mnu_account_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_account
@@ -735,8 +776,8 @@ ALTER TABLE ONLY mnu_account
 
 
 --
--- TOC entry 2336 (class 2606 OID 17044)
--- Name: mnu_control_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2451 (class 2606 OID 16808)
+-- Name: mnu_control_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_control
@@ -744,8 +785,8 @@ ALTER TABLE ONLY mnu_control
 
 
 --
--- TOC entry 2338 (class 2606 OID 17046)
--- Name: mnu_favourite_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2453 (class 2606 OID 16809)
+-- Name: mnu_favourite_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_favourite
@@ -753,8 +794,8 @@ ALTER TABLE ONLY mnu_favourite
 
 
 --
--- TOC entry 2342 (class 2606 OID 17048)
--- Name: mnu_initial_value_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2457 (class 2606 OID 16810)
+-- Name: mnu_initial_value_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_initial_value_role
@@ -762,8 +803,8 @@ ALTER TABLE ONLY mnu_initial_value_role
 
 
 --
--- TOC entry 2345 (class 2606 OID 17050)
--- Name: mnu_initial_value_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2460 (class 2606 OID 16811)
+-- Name: mnu_initial_value_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_initial_value_user
@@ -771,8 +812,8 @@ ALTER TABLE ONLY mnu_initial_value_user
 
 
 --
--- TOC entry 2347 (class 2606 OID 17052)
--- Name: mnu_language_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2462 (class 2606 OID 16812)
+-- Name: mnu_language_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_language
@@ -780,8 +821,8 @@ ALTER TABLE ONLY mnu_language
 
 
 --
--- TOC entry 2349 (class 2606 OID 17054)
--- Name: mnu_menu_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2464 (class 2606 OID 16813)
+-- Name: mnu_menu_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_menu
@@ -789,8 +830,8 @@ ALTER TABLE ONLY mnu_menu
 
 
 --
--- TOC entry 2353 (class 2606 OID 17056)
--- Name: mnu_nav_button_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2468 (class 2606 OID 16814)
+-- Name: mnu_nav_button_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_nav_button
@@ -798,8 +839,8 @@ ALTER TABLE ONLY mnu_nav_button
 
 
 --
--- TOC entry 2355 (class 2606 OID 17058)
--- Name: mnu_pattern_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2470 (class 2606 OID 16815)
+-- Name: mnu_pattern_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_pattern
@@ -807,8 +848,8 @@ ALTER TABLE ONLY mnu_pattern
 
 
 --
--- TOC entry 2357 (class 2606 OID 17060)
--- Name: mnu_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2472 (class 2606 OID 16816)
+-- Name: mnu_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_role
@@ -816,8 +857,8 @@ ALTER TABLE ONLY mnu_role
 
 
 --
--- TOC entry 2359 (class 2606 OID 17062)
--- Name: mnu_role_task_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2474 (class 2606 OID 16817)
+-- Name: mnu_role_task_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_role_task
@@ -825,8 +866,8 @@ ALTER TABLE ONLY mnu_role_task
 
 
 --
--- TOC entry 2362 (class 2606 OID 17064)
--- Name: mnu_role_taskfield_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2477 (class 2606 OID 16818)
+-- Name: mnu_role_taskfield_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_role_taskfield
@@ -834,8 +875,8 @@ ALTER TABLE ONLY mnu_role_taskfield
 
 
 --
--- TOC entry 2395 (class 2606 OID 17471)
--- Name: mnu_saved_selection_data_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2510 (class 2606 OID 16819)
+-- Name: mnu_saved_selection_data_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_saved_selection_data
@@ -843,8 +884,8 @@ ALTER TABLE ONLY mnu_saved_selection_data
 
 
 --
--- TOC entry 2393 (class 2606 OID 17464)
--- Name: mnu_saved_selection_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2508 (class 2606 OID 16820)
+-- Name: mnu_saved_selection_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_saved_selection
@@ -852,8 +893,8 @@ ALTER TABLE ONLY mnu_saved_selection
 
 
 --
--- TOC entry 2364 (class 2606 OID 17066)
--- Name: mnu_subsystem_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2479 (class 2606 OID 16821)
+-- Name: mnu_subsystem_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_subsystem
@@ -861,8 +902,8 @@ ALTER TABLE ONLY mnu_subsystem
 
 
 --
--- TOC entry 2370 (class 2606 OID 17068)
--- Name: mnu_task_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2485 (class 2606 OID 16822)
+-- Name: mnu_task_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_task_alt
@@ -870,8 +911,8 @@ ALTER TABLE ONLY mnu_task_alt
 
 
 --
--- TOC entry 2372 (class 2606 OID 17070)
--- Name: mnu_task_field_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2487 (class 2606 OID 16823)
+-- Name: mnu_task_field_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_task_field
@@ -879,8 +920,8 @@ ALTER TABLE ONLY mnu_task_field
 
 
 --
--- TOC entry 2374 (class 2606 OID 17072)
--- Name: mnu_task_ip_address_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2489 (class 2606 OID 16824)
+-- Name: mnu_task_ip_address_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_task_ip_address
@@ -888,8 +929,8 @@ ALTER TABLE ONLY mnu_task_ip_address
 
 
 --
--- TOC entry 2368 (class 2606 OID 17074)
--- Name: mnu_task_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2483 (class 2606 OID 16825)
+-- Name: mnu_task_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_task
@@ -897,8 +938,26 @@ ALTER TABLE ONLY mnu_task
 
 
 --
--- TOC entry 2376 (class 2606 OID 17076)
--- Name: mnu_time_limit_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2514 (class 2606 OID 17596)
+-- Name: mnu_task_quicksearch_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
+--
+
+ALTER TABLE ONLY mnu_task_quicksearch_alt
+    ADD CONSTRAINT mnu_task_quicksearch_alt_pkey PRIMARY KEY (task_id, field_id, language_id);
+
+
+--
+-- TOC entry 2512 (class 2606 OID 17588)
+-- Name: mnu_task_quicksearch_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
+--
+
+ALTER TABLE ONLY mnu_task_quicksearch
+    ADD CONSTRAINT mnu_task_quicksearch_pkey PRIMARY KEY (task_id, field_id);
+
+
+--
+-- TOC entry 2491 (class 2606 OID 16826)
+-- Name: mnu_time_limit_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_time_limit_role
@@ -906,8 +965,8 @@ ALTER TABLE ONLY mnu_time_limit_role
 
 
 --
--- TOC entry 2378 (class 2606 OID 17078)
--- Name: mnu_time_limit_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2493 (class 2606 OID 16827)
+-- Name: mnu_time_limit_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_time_limit_user
@@ -915,8 +974,8 @@ ALTER TABLE ONLY mnu_time_limit_user
 
 
 --
--- TOC entry 2380 (class 2606 OID 17080)
--- Name: mnu_todo_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2495 (class 2606 OID 16828)
+-- Name: mnu_todo_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_todo
@@ -924,8 +983,8 @@ ALTER TABLE ONLY mnu_todo
 
 
 --
--- TOC entry 2387 (class 2606 OID 17082)
--- Name: mnu_user_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2502 (class 2606 OID 16829)
+-- Name: mnu_user_alt_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_user_alt
@@ -933,8 +992,8 @@ ALTER TABLE ONLY mnu_user_alt
 
 
 --
--- TOC entry 2382 (class 2606 OID 17084)
--- Name: mnu_user_email_addr_key; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2497 (class 2606 OID 16830)
+-- Name: mnu_user_email_addr_key; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_user
@@ -942,8 +1001,8 @@ ALTER TABLE ONLY mnu_user
 
 
 --
--- TOC entry 2389 (class 2606 OID 17086)
--- Name: mnu_user_ip_address_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2504 (class 2606 OID 16831)
+-- Name: mnu_user_ip_address_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_user_ip_address
@@ -951,8 +1010,8 @@ ALTER TABLE ONLY mnu_user_ip_address
 
 
 --
--- TOC entry 2385 (class 2606 OID 17088)
--- Name: mnu_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2500 (class 2606 OID 16832)
+-- Name: mnu_user_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_user
@@ -960,8 +1019,8 @@ ALTER TABLE ONLY mnu_user
 
 
 --
--- TOC entry 2391 (class 2606 OID 17090)
--- Name: mnu_user_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2506 (class 2606 OID 16833)
+-- Name: mnu_user_role_pkey; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_user_role
@@ -969,8 +1028,8 @@ ALTER TABLE ONLY mnu_user_role
 
 
 --
--- TOC entry 2351 (class 2606 OID 17092)
--- Name: motd_id; Type: CONSTRAINT; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2466 (class 2606 OID 16834)
+-- Name: motd_id; Type: CONSTRAINT; Schema: menu; Owner: postgres
 --
 
 ALTER TABLE ONLY mnu_motd
@@ -978,64 +1037,64 @@ ALTER TABLE ONLY mnu_motd
 
 
 --
--- TOC entry 2340 (class 1259 OID 17140)
--- Name: mnu_initial_value_role_index1; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2455 (class 1259 OID 17140)
+-- Name: mnu_initial_value_role_index1; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_initial_value_role_index1 ON mnu_initial_value_role USING btree (task_id);
 
 
 --
--- TOC entry 2343 (class 1259 OID 17141)
--- Name: mnu_initial_value_user_index1; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2458 (class 1259 OID 17141)
+-- Name: mnu_initial_value_user_index1; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_initial_value_user_index1 ON mnu_initial_value_user USING btree (task_id);
 
 
 --
--- TOC entry 2360 (class 1259 OID 17142)
--- Name: mnu_role_taskfield_index1; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2475 (class 1259 OID 17142)
+-- Name: mnu_role_taskfield_index1; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_role_taskfield_index1 ON mnu_role_taskfield USING btree (task_id);
 
 
 --
--- TOC entry 2365 (class 1259 OID 17143)
--- Name: mnu_task_index1; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2480 (class 1259 OID 17143)
+-- Name: mnu_task_index1; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_task_index1 ON mnu_task USING btree (pattern_id);
 
 
 --
--- TOC entry 2366 (class 1259 OID 17144)
--- Name: mnu_task_index2; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2481 (class 1259 OID 17144)
+-- Name: mnu_task_index2; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_task_index2 ON mnu_task USING btree (subsys_id);
 
 
 --
--- TOC entry 2383 (class 1259 OID 17145)
--- Name: mnu_user_index2; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2498 (class 1259 OID 17145)
+-- Name: mnu_user_index2; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE INDEX mnu_user_index2 ON mnu_user USING btree (rdcaccount_id);
 
 
 --
--- TOC entry 2339 (class 1259 OID 17146)
--- Name: user_id_task_id; Type: INDEX; Schema: menu; Owner: postgres; Tablespace: 
+-- TOC entry 2454 (class 1259 OID 17146)
+-- Name: user_id_task_id; Type: INDEX; Schema: menu; Owner: postgres
 --
 
 CREATE UNIQUE INDEX user_id_task_id ON mnu_favourite USING btree (user_id, task_id);
 
 
 --
--- TOC entry 2509 (class 0 OID 0)
--- Dependencies: 8
+-- TOC entry 2633 (class 0 OID 0)
+-- Dependencies: 9
 -- Name: menu; Type: ACL; Schema: -; Owner: postgres
 --
 
@@ -1046,8 +1105,8 @@ GRANT USAGE ON SCHEMA menu TO PUBLIC;
 
 
 --
--- TOC entry 2510 (class 0 OID 0)
--- Dependencies: 191
+-- TOC entry 2634 (class 0 OID 0)
+-- Dependencies: 200
 -- Name: help_text; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1058,8 +1117,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE help_text TO PUBLIC;
 
 
 --
--- TOC entry 2511 (class 0 OID 0)
--- Dependencies: 192
+-- TOC entry 2635 (class 0 OID 0)
+-- Dependencies: 201
 -- Name: help_text_alt; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1070,8 +1129,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE help_text_alt TO PUBLIC;
 
 
 --
--- TOC entry 2512 (class 0 OID 0)
--- Dependencies: 193
+-- TOC entry 2636 (class 0 OID 0)
+-- Dependencies: 202
 -- Name: mnu_account_rdcaccount_id_seq; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1082,8 +1141,8 @@ GRANT ALL ON SEQUENCE mnu_account_rdcaccount_id_seq TO PUBLIC;
 
 
 --
--- TOC entry 2513 (class 0 OID 0)
--- Dependencies: 194
+-- TOC entry 2637 (class 0 OID 0)
+-- Dependencies: 203
 -- Name: mnu_account; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1094,8 +1153,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_account TO PUBLIC;
 
 
 --
--- TOC entry 2514 (class 0 OID 0)
--- Dependencies: 195
+-- TOC entry 2638 (class 0 OID 0)
+-- Dependencies: 204
 -- Name: mnu_control; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1106,8 +1165,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_control TO PUBLIC;
 
 
 --
--- TOC entry 2515 (class 0 OID 0)
--- Dependencies: 196
+-- TOC entry 2639 (class 0 OID 0)
+-- Dependencies: 205
 -- Name: mnu_favourite; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1118,8 +1177,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_favourite TO PUBLIC;
 
 
 --
--- TOC entry 2516 (class 0 OID 0)
--- Dependencies: 197
+-- TOC entry 2640 (class 0 OID 0)
+-- Dependencies: 206
 -- Name: mnu_initial_value_role; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1130,8 +1189,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_initial_value_role TO PUBLIC;
 
 
 --
--- TOC entry 2517 (class 0 OID 0)
--- Dependencies: 198
+-- TOC entry 2641 (class 0 OID 0)
+-- Dependencies: 207
 -- Name: mnu_initial_value_user; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1142,8 +1201,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_initial_value_user TO PUBLIC;
 
 
 --
--- TOC entry 2518 (class 0 OID 0)
--- Dependencies: 199
+-- TOC entry 2642 (class 0 OID 0)
+-- Dependencies: 208
 -- Name: mnu_language; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1154,8 +1213,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_language TO PUBLIC;
 
 
 --
--- TOC entry 2519 (class 0 OID 0)
--- Dependencies: 200
+-- TOC entry 2643 (class 0 OID 0)
+-- Dependencies: 209
 -- Name: mnu_menu; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1166,8 +1225,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_menu TO PUBLIC;
 
 
 --
--- TOC entry 2520 (class 0 OID 0)
--- Dependencies: 201
+-- TOC entry 2644 (class 0 OID 0)
+-- Dependencies: 210
 -- Name: mnu_motd; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1178,8 +1237,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_motd TO PUBLIC;
 
 
 --
--- TOC entry 2522 (class 0 OID 0)
--- Dependencies: 202
+-- TOC entry 2646 (class 0 OID 0)
+-- Dependencies: 211
 -- Name: mnu_motd_motd_id_seq; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1190,8 +1249,8 @@ GRANT ALL ON SEQUENCE mnu_motd_motd_id_seq TO PUBLIC;
 
 
 --
--- TOC entry 2523 (class 0 OID 0)
--- Dependencies: 203
+-- TOC entry 2647 (class 0 OID 0)
+-- Dependencies: 212
 -- Name: mnu_nav_button; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1202,8 +1261,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_nav_button TO PUBLIC;
 
 
 --
--- TOC entry 2524 (class 0 OID 0)
--- Dependencies: 204
+-- TOC entry 2648 (class 0 OID 0)
+-- Dependencies: 213
 -- Name: mnu_pattern; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1214,8 +1273,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_pattern TO PUBLIC;
 
 
 --
--- TOC entry 2525 (class 0 OID 0)
--- Dependencies: 205
+-- TOC entry 2649 (class 0 OID 0)
+-- Dependencies: 214
 -- Name: mnu_role; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1226,8 +1285,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_role TO PUBLIC;
 
 
 --
--- TOC entry 2526 (class 0 OID 0)
--- Dependencies: 206
+-- TOC entry 2650 (class 0 OID 0)
+-- Dependencies: 215
 -- Name: mnu_role_task; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1238,8 +1297,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_role_task TO PUBLIC;
 
 
 --
--- TOC entry 2527 (class 0 OID 0)
--- Dependencies: 207
+-- TOC entry 2651 (class 0 OID 0)
+-- Dependencies: 216
 -- Name: mnu_role_taskfield; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1250,8 +1309,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_role_taskfield TO PUBLIC;
 
 
 --
--- TOC entry 2528 (class 0 OID 0)
--- Dependencies: 243
+-- TOC entry 2652 (class 0 OID 0)
+-- Dependencies: 252
 -- Name: mnu_saved_selection; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1262,8 +1321,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_saved_selection TO PUBLIC;
 
 
 --
--- TOC entry 2529 (class 0 OID 0)
--- Dependencies: 244
+-- TOC entry 2653 (class 0 OID 0)
+-- Dependencies: 253
 -- Name: mnu_saved_selection_data; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1274,8 +1333,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_saved_selection_data TO PUBLIC;
 
 
 --
--- TOC entry 2531 (class 0 OID 0)
--- Dependencies: 242
+-- TOC entry 2655 (class 0 OID 0)
+-- Dependencies: 251
 -- Name: mnu_saved_selection_selection_id_seq; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1286,8 +1345,8 @@ GRANT ALL ON SEQUENCE mnu_saved_selection_selection_id_seq TO PUBLIC;
 
 
 --
--- TOC entry 2532 (class 0 OID 0)
--- Dependencies: 208
+-- TOC entry 2656 (class 0 OID 0)
+-- Dependencies: 217
 -- Name: mnu_subsystem; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1298,8 +1357,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_subsystem TO PUBLIC;
 
 
 --
--- TOC entry 2533 (class 0 OID 0)
--- Dependencies: 209
+-- TOC entry 2657 (class 0 OID 0)
+-- Dependencies: 218
 -- Name: mnu_task; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1310,8 +1369,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_task TO PUBLIC;
 
 
 --
--- TOC entry 2534 (class 0 OID 0)
--- Dependencies: 210
+-- TOC entry 2658 (class 0 OID 0)
+-- Dependencies: 219
 -- Name: mnu_task_alt; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1322,8 +1381,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_task_alt TO PUBLIC;
 
 
 --
--- TOC entry 2535 (class 0 OID 0)
--- Dependencies: 211
+-- TOC entry 2659 (class 0 OID 0)
+-- Dependencies: 220
 -- Name: mnu_task_field; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1334,8 +1393,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_task_field TO PUBLIC;
 
 
 --
--- TOC entry 2536 (class 0 OID 0)
--- Dependencies: 212
+-- TOC entry 2660 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: mnu_task_ip_address; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1346,8 +1405,31 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_task_ip_address TO PUBLIC;
 
 
 --
--- TOC entry 2537 (class 0 OID 0)
--- Dependencies: 213
+-- TOC entry 2661 (class 0 OID 0)
+-- Dependencies: 254
+-- Name: mnu_task_quicksearch; Type: ACL; Schema: menu; Owner: postgres
+--
+
+REVOKE ALL ON TABLE mnu_task_quicksearch FROM PUBLIC;
+REVOKE ALL ON TABLE mnu_task_quicksearch FROM postgres;
+GRANT ALL ON TABLE mnu_task_quicksearch TO postgres;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_task_quicksearch TO PUBLIC;
+
+
+--
+-- TOC entry 2662 (class 0 OID 0)
+-- Dependencies: 255
+-- Name: mnu_task_quicksearch_alt; Type: ACL; Schema: menu; Owner: postgres
+--
+
+REVOKE ALL ON TABLE mnu_task_quicksearch_alt FROM PUBLIC;
+REVOKE ALL ON TABLE mnu_task_quicksearch_alt FROM postgres;
+GRANT ALL ON TABLE mnu_task_quicksearch_alt TO postgres;
+
+
+--
+-- TOC entry 2663 (class 0 OID 0)
+-- Dependencies: 222
 -- Name: mnu_time_limit_role; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1358,8 +1440,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_time_limit_role TO PUBLIC;
 
 
 --
--- TOC entry 2538 (class 0 OID 0)
--- Dependencies: 214
+-- TOC entry 2664 (class 0 OID 0)
+-- Dependencies: 223
 -- Name: mnu_time_limit_user; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1370,8 +1452,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_time_limit_user TO PUBLIC;
 
 
 --
--- TOC entry 2539 (class 0 OID 0)
--- Dependencies: 215
+-- TOC entry 2665 (class 0 OID 0)
+-- Dependencies: 224
 -- Name: mnu_todo; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1382,8 +1464,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_todo TO PUBLIC;
 
 
 --
--- TOC entry 2540 (class 0 OID 0)
--- Dependencies: 216
+-- TOC entry 2666 (class 0 OID 0)
+-- Dependencies: 225
 -- Name: mnu_user; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1394,8 +1476,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_user TO PUBLIC;
 
 
 --
--- TOC entry 2541 (class 0 OID 0)
--- Dependencies: 217
+-- TOC entry 2667 (class 0 OID 0)
+-- Dependencies: 226
 -- Name: mnu_user_alt; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1406,8 +1488,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_user_alt TO PUBLIC;
 
 
 --
--- TOC entry 2542 (class 0 OID 0)
--- Dependencies: 218
+-- TOC entry 2668 (class 0 OID 0)
+-- Dependencies: 227
 -- Name: mnu_user_ip_address; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1418,8 +1500,8 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_user_ip_address TO PUBLIC;
 
 
 --
--- TOC entry 2543 (class 0 OID 0)
--- Dependencies: 219
+-- TOC entry 2669 (class 0 OID 0)
+-- Dependencies: 228
 -- Name: mnu_user_role; Type: ACL; Schema: menu; Owner: postgres
 --
 
@@ -1429,7 +1511,7 @@ GRANT ALL ON TABLE mnu_user_role TO postgres;
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE mnu_user_role TO PUBLIC;
 
 
--- Completed on 2015-11-23 17:07:51
+-- Completed on 2016-05-19 11:03:25
 
 --
 -- PostgreSQL database dump complete

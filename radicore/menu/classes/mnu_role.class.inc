@@ -35,6 +35,9 @@ class mnu_role extends Default_Table
         if (empty($user_id)) {
             $user_id = $_SESSION['logon_user_id'];
         } // if
+        if (empty($user_id)) {
+            $user_id = 'UNKNOWN';
+        } // if
 
         if (isset($_SESSION['role_id'])) {
             $result['role_id']           = $_SESSION['role_id'];
@@ -53,9 +56,10 @@ class mnu_role extends Default_Table
             $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}') AS role_list";
             $this->sql_from   = "mnu_role
 LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='Y')";
+            $this->setRowsPerPage(1);  // ensure that only one entry is retrieved
             $role_data = $this->getData_raw("mnu_role.role_id=mur.role_id");
             if ($this->numrows <> 1) {
-                // 'Role does not exist for user ''';
+                // 'Role does not exist for user 'x';
                 $this->errors[] = getLanguageText('sys0013', $user_id);
                 return FALSE;
             } // if
@@ -137,15 +141,15 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
     {
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('role_id' => 'Role Id',
-                               'role_desc' => 'Role Desc');
-                $this->lookup_data['quicksearch_field'] = $array;
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('role_id' => 'Role Id',
+//                               'role_desc' => 'Role Desc');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//            } // if
+//        } // if
 
         return $fieldarray;
 

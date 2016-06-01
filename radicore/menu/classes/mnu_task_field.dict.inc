@@ -1,5 +1,5 @@
 <?php
-    // file created on February 27, 2008, 6:31 pm
+    // file created on May 18, 2016, 1:48 pm
     
     // field specifications for table menu.mnu_task_field
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -19,6 +19,15 @@
                                                     'control' => 'multiline',
                                                     'cols' => 75,
                                                     'rows' => 3);
+    
+    $fieldspec['is_documentation_only']     = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -74,6 +83,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'parent_field' => 'task_desc',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 
@@ -85,6 +96,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

@@ -65,11 +65,12 @@ if (isset($script_vars['dbobject'])) {
 } // if
 
 if (!empty($_POST)) {
-    if (isset($_POST['copy'])) {
-        // save current data so that it be be PASTed later
-        $messages = copyForm($_POST, $dbobject);
+    //if (isset($_POST['copy'])) {
+    //    // save current data so that it be be PASTed later
+    //    $messages = copyForm($_POST, $dbobject);
 
-    } elseif (isset($_POST['paste'])) {
+    //} elseif (isset($_POST['paste'])) {
+    if (isset($_POST['paste'])) {
         // merge initial data with previously saved data
         $fieldarray = pasteData($dbobject, $fieldarray, $_SESSION['data'][$dbobject->tablename]);
         // redo any initialisation
@@ -80,7 +81,7 @@ if (!empty($_POST)) {
         $submit_button = check_submit_button($act_buttons, $_POST);
         $task_button   = check_task_button($_POST);
         $custom_button = check_custom_button($_POST);
-        if ($submit_button OR $task_button OR $custom_button) {
+        if ($submit_button OR $task_button OR $custom_button OR isset($_POST['copy'])) {
             // merge original data with POSTed data (so that fields which were displayed
             // but not POSTed are sent back if any errors are displayed).
             $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
@@ -95,7 +96,11 @@ if (!empty($_POST)) {
             } // if
         } // if
 
-        if (empty($errors) AND !empty($task_button)) {
+        if (isset($_POST['copy'])) {
+            // save current data so that it be be PASTed later
+            $messages = copyForm($_POST, $dbobject);
+
+        } elseif (empty($errors) AND !empty($task_button)) {
             // look for a navigation or popup button which jumps to another script
             $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
             if (is_array($child_errors)) {
@@ -111,7 +116,7 @@ if (!empty($_POST)) {
                 $errors[$dbobject->getClassName()] = $dbobject->getErrors();
                 $dbobject->rollback();
             } else {
-                $dbobject->commit();
+                $dbobject->commit(false);
             } // if
 
         } elseif (empty($errors) AND !empty($submit_button)) {
@@ -183,7 +188,7 @@ $script_vars = updateScriptVars ($script_vars);
 
 $dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) AND !$button) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) AND $submit_button) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if

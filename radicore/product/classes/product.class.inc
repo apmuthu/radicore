@@ -86,7 +86,7 @@ class product extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign entities.
     {
         //DebugBreak();

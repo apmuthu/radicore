@@ -1,4 +1,8 @@
--- ALTER SESSION SET CURRENT_SCHEMA = "MENU";
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+SET SCAN OFF;
+
+ALTER SESSION SET CURRENT_SCHEMA = "MENU";
 
 INSERT INTO mnu_task (button_text, created_date, created_user, is_disabled, keep_data, log_sql_query, pattern_id, script_id, subsys_id, task_desc, task_id, task_type, use_https) VALUES
 ('Saved Selection' ,'2015-11-20 09:23:26' ,'AJM' ,'N' ,'N' ,'N' ,'LIST1' ,'mnu_saved_selection(list1).php' ,'MENU' ,'List Saved Selection' ,'mnu_saved_selection(list1)' ,'PROC' ,'N');

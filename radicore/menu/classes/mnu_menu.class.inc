@@ -150,9 +150,17 @@ class mnu_menu extends Default_Table
             $task_id_jnr = $fieldarray['task_id_jnr'];
             // get default button text from mnu_task table
             $dbobject =& RDCsingleton::getInstance('mnu_task');
-            $dbobject->sql_select = 'button_text';
+            //$dbobject->sql_select = 'button_text';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
-            $fieldarray = array_merge($fieldarray, $data[0]);
+            if (!empty($data)) {
+                $data = $data[0];
+                $size = $this->fieldspec['button_text']['size'];
+                if (strlen($data['button_text']) <= $size) {
+                    $fieldarray['button_text'] = $data['button_text'];
+                } else {
+                    $fieldarray['button_text'] = substr($data['button_text'], 0, $size);
+                } // if
+            } // if
         } // if
 
         return $fieldarray;

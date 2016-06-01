@@ -1,5 +1,5 @@
 <?php
-    // file created on June 21, 2014, 5:32 pm
+    // file created on May 21, 2016, 10:28 am
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -17,7 +17,7 @@
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'dict_table(popup2)',
-                                                    'foreign_field' => 'table_desc');
+                                                    'foreign_field' => 'table_id');
     
     $fieldspec['column_id']                 = array('type' => 'string',
                                                     'size' => 64,

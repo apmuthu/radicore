@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class sqlsrv
@@ -9,7 +9,7 @@ class sqlsrv
 {
     // connection settings
     var $dbname;                        // database name
-    var $dbname_prev;                   // previous database name
+    var $dbname_prev='???';             // previous database name
     var $dbschema;                      // schema name
     var $dbprefix;
     var $serverName;
@@ -103,6 +103,7 @@ END_OF_PATTERN;
 
         if (preg_match($pattern, $string_in, $regs, PREG_OFFSET_CAPTURE)) {
             // found "function(......)" so see if it contains a 'quoted_string'
+            $regs['quoted_string'][0] = trim($regs['quoted_string'][0]);
             if (!empty($regs['quoted_string'][0])) {
                 // a quoted string has been found, so escape any quotes within it
                 $quoted_string = $regs['quoted_string'][0];
@@ -375,6 +376,7 @@ END_OF_REGEX;
 
         $offset = 0;
         while ($count = preg_match($pattern1, $output, $regs, PREG_OFFSET_CAPTURE, $offset)) {
+            // look for 'LIMIT 1' and replace with 'TOP 1'
             $string1 = $regs[0][0];
             $start   = $regs[0][1];
             $select  = $regs['select'][0];
@@ -394,37 +396,25 @@ END_OF_REGEX;
 
         // look for any '(expression) AS alias' clauses
         $alias_names = extractAliasNames($output);
-        $alias_names1 = array();
-        // search $alias_names array and replace any '=alias' with '=expression'
         foreach ($alias_names as $alias => $expression) {
-            $pattern = "/=[ ]*".$alias."[^\w]/imsu";
-            if (isset($alias_names1[$alias])) {
-                $expression = $alias_names1[$alias];  // replace with expression altered previously
-                $alias_names[$alias] = $expression;
-            } // if
+            // if an expression refers to an alias then replace that alias name with its corresponding expression
             foreach ($alias_names as $alias1 => $expression1) {
                 if ($alias1 != $alias) {
-                    // replace any '=alias' with '=expression'
-                    if (preg_match($pattern, $expression1, $regs)) {
-                        $expression1 = preg_replace($pattern, '='.$expression, $expression1);
-                        if (substr_count($regs[0], ')') > 0) {
-                            $expression1 .= ' )';  // append missing ')'
-                        } // if
-                        $alias_names1[$alias1] = $expression1;
-                    } // endwhile
-                    $expression1 = $alias_names[$alias1];
+                    $pattern = "/=[ ]*{$alias1}\b/imsu";
+                    if (preg_match($pattern, $expression, $regs)) {
+                        // found, so replace any '=alias1' with '=expression1'
+                        $expression = preg_replace($pattern, '='.$expression1.' ', $expression);
+                    } // if
                 } // if
             } // foreach
+            $alias_names[$alias] = $expression;
         } // foreach
 
         // search $output and replace any '=alias' with '=expression'
         foreach ($alias_names as $alias => $expression) {
-            $pattern = "/=[ ]*".$alias."[^\w]/imsu";
+            $pattern = "/=[ ]*{$alias}\b/imsu";
             if (preg_match($pattern, $output, $regs)) {
-                if (substr_count($regs[0], ')') > 0) {
-                    $expression .= ' )';  // append missing ')'
-                } // if
-                $output = preg_replace($pattern, '='.$expression, $output);
+                $output = preg_replace($pattern, '='.$expression.' ', $output, -1, $count);
             } // endwhile
         } // foreach
 
@@ -770,9 +760,7 @@ END_OF_REGEX;
             $prefix  = $regs['select'][0];
             if (!empty($regs['subselect'])) {
                 $offset = $start + 10;  // select contains subselect, so skip over first select
-
-            // ignore if no LIMIT or 'SELECT 1'
-            } elseif (!empty($regs['limit']) AND !preg_match('/\d+$/', $prefix)) {
+            } elseif (!empty($regs['limit'])) {
                 $digits  = trim(substr($regs['limit'][0], 5));
                 $string2 = str_replace($regs['limit'][0], '', $string1);  // remove LIMIT
                 $string3 = substr_replace($string2, "(SELECT TOP $digits ", 0, strlen($prefix));
@@ -916,7 +904,8 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
-        if (!empty($dbname) AND $dbname != $this->dbname_prev) {
+        //if (!empty($dbname) AND $dbname != $this->dbname_prev) {
+        if (!empty($dbname)) {
             $this->query = "USE [$dbname]";
             $result = sqlsrv_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
             // write query to log file, if option is turned on
@@ -1338,6 +1327,7 @@ END_OF_REGEX;
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
             $this->sql_orderby = $this->adjustOrderBy($this->sql_orderby, $select_str);
+            //$this->sql_orderby = qualifyOrderby($this->sql_orderby, $tablename, $this->fieldspec, $select_str, $from_str);
             $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
             $this->sql_orderby = null;
         } else {
@@ -1366,7 +1356,11 @@ END_OF_REGEX;
         if (isset($min_rows) AND isset($max_rows)) {
             // default sort sequence is via primary key
             if (empty($sort_str)) {
-                $sort_str = "ORDER BY ".implode(',', $this->primary_key);
+                $keys = array();
+                foreach ($this->primary_key as $value) {
+                    $keys[] = "{$tablename}.{$value}";  // qualify each field name
+                } // foreach
+                $sort_str = "ORDER BY ".implode(',', $keys);
             } // if
             if (empty($this->sql_union)) {
                 $this->query = "SELECT * FROM ("
@@ -1676,6 +1670,8 @@ END_OF_REGEX;
             // remove trailing commas
             $cols = rtrim($cols, ', ');
             $vals = rtrim($vals, ', ');
+
+            $cols = $this->fixReservedWords($cols);
 
             $this->query = 'INSERT INTO ' .$tablename .' (' .$cols .') VALUES (' .$vals .')';
             //$result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);

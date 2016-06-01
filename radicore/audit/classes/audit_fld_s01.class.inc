@@ -1,7 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 1999-2015 by Geoprise Technologies Licensing, All Rights Reserved.
 // *****************************************************************************
 require_once 'audit_fld.class.inc';
 class audit_fld_s01 extends audit_fld
@@ -24,7 +23,7 @@ class audit_fld_s01 extends audit_fld
     } // _cm_changeConfig
 
     //*********************************************************************
-    function _cm_getForeignData ($rowdata)
+    function _cm_getForeignData ($rowdata, $rownum=null)
     {
         // custom code goes here
 

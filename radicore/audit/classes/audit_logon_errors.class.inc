@@ -47,16 +47,16 @@ class audit_logon_errors extends Default_Table
     {
         $pattern_id = getPatternId();
 
-        if (preg_match('/^(list1)$/i', $pattern_id)
-        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
-        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
-                // set list of field names for QuickSearch option
-                $array = array('user_id' => 'User Id',
-                               'email_addr' => 'Email Address');
-                $this->lookup_data['quicksearch_field'] = $array;
-                $this->xsl_params['quicksearch_default'] = 'user_id';
-            } // if
-        } // if
+//        if (preg_match('/^(list1)$/i', $pattern_id)
+//        OR (preg_match('/^(list2)$/i', $pattern_id) AND $this->zone == 'inner')) {
+//        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
+//                // set list of field names for QuickSearch option
+//                $array = array('user_id' => 'User Id',
+//                               'email_addr' => 'Email Address');
+//                $this->lookup_data['quicksearch_field'] = $array;
+//                $this->xsl_params['quicksearch_default'] = 'user_id';
+//            } // if
+//        } // if
 
         return $fieldarray;
 

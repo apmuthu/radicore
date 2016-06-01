@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $errors[$dbobject->getClassName()] = $dbobject->getErrors();
             $dbobject->rollback();
         } else {
-            $dbobject->commit();
+            $dbobject->commit(false);
         } // if
 
     } elseif (empty($errors) AND !empty($submit_button)) {

@@ -8,8 +8,9 @@ abstract class Default_Table
 {
     // member variables
     var $access_count;                  // count of accesses since instantiation
-    var $allow_empty_where = false;     // switch to allow an empty $where string in STD.LIST2.INC
+    var $allow_buttons_all_zones = false;   // call customButton() method for all zones
     var $allow_db_function = array();   // allow a field's value in a database insert/update to contain a function name
+    var $allow_empty_where = false;     // switch to allow an empty $where string in STD.LIST2.INC
     var $allow_multiple = false;        // allow multiple records or files
     var $allow_scrolling = false;       // used inside ADD2 pattern to allow scrolling between selected rows
     var $allow_zero_rows = false;       // used inside LIST3 pattern to continue if no records were read
@@ -92,7 +93,7 @@ abstract class Default_Table
     var $resize_array;                  // used in file uploads
     var $restart_url;                   // restart task with this URL
     var $retry_on_duplicate_key;        // field name to be incremented when insert fails
-    var $reuse_previous_select = false; // reuse previous SELECT in _dml_ReadBeforeUpdate()
+    var $reuse_previous_select = true;  // reuse previous SELECT in _dml_ReadBeforeUpdate()
     var $rows_per_page = 0;             // page size for multi-row forms
     var $row_locks;                     // FALSE, SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
@@ -290,6 +291,9 @@ abstract class Default_Table
         } // if
 
         $where_array = where2array($where);
+        // remove any field names which do not belong in this table
+        $where_array = array_reduce_to_named_list($where_array, $this->fieldspec);
+        // convert array of names and values to just names
         $keys = array_keys($where_array);
         if (!in_array('rdcaccount_id', $keys)) {
             $keys[] = 'rdcaccount_id';
@@ -320,6 +324,20 @@ abstract class Default_Table
         return true;
 
     } // checkAccountId
+
+    // ****************************************************************************
+    function checkMessageDirectory ()
+    // check if current directory is correct when retrieving messages for the currect class.
+    {
+        if (getcwd() == dirname($this->dirname)) {
+            // current directory is correct
+            unset($GLOBALS['classdir']);
+        } else {
+            // switch to correct directory for retrieving message text
+            $GLOBALS['classdir'] = dirname($this->dirname);
+        } // if
+
+    } // checkMessageDirectory
 
     // ****************************************************************************
     function checkWorkflow ($where)
@@ -382,18 +400,22 @@ abstract class Default_Table
     } // clearScrollArray
 
     // ****************************************************************************
-    function commit ()
+    function commit ($update_workflow=true)
     // commit this transaction
     {
         $errors = array();
 
         $this->sql_union = null;
 
-        if (preg_match('/^(workflow|audit)$/i', $this->dbname) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
+        if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
             // do nothing
         } else {
-            // if this task+context is a pending workitem then update it
-            $errors = $this->_examineWorkflow($this->fieldarray);
+            if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
+                // do nothing
+            } else {
+                // if this task+context is a pending workitem then update it
+                $errors = $this->_examineWorkflow($this->fieldarray);
+            } // if
         } // if
 
         $DML =& $this->_getDBMSengine($this->dbname);
@@ -1501,7 +1523,7 @@ abstract class Default_Table
             $output_name = $this->_cm_fileUpload($input_name, $temp_file, $fieldarray);
         } // if
 
-        return $this->upload_subdir .DIRECTORY_SEPARATOR .$output_name;
+        return $this->upload_subdir .'/' .$output_name;
 
     } // fileUpload
 
@@ -1758,6 +1780,11 @@ abstract class Default_Table
                             if ($operator == '=') {
                                 $fieldvalue = ''; // value is zero, so display blank
                             } // if
+                        } // if
+                        if (isset($fieldspec['zerofill']) AND isset($fieldspec['size'])) {
+                            while (strlen($fieldvalue) < $fieldspec['size']){
+                                $fieldvalue = '0'.$fieldvalue;
+                            } // while
                         } // if
                         break;
                     case 'double':
@@ -2176,7 +2203,7 @@ abstract class Default_Table
         if ($GLOBALS['mode'] != 'insert') {
             // clear 'nodisplay' option which may have been set in previous iteration
             foreach ($this->fieldspec as $field => $spec) {
-                if (array_key_exists('autoinsert', $spec) or array_key_exists('autoupdate', $spec)) {
+                if (array_key_exists('autoinsert', $spec) OR array_key_exists('autoupdate', $spec)) {
                     unset($this->fieldspec[$field]['nodisplay']);
                 } // if
             } // foreach
@@ -2206,12 +2233,16 @@ abstract class Default_Table
             } elseif (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
                 $data = $data_raw[0];
                 if (preg_match('/^(ADD|DEL|UPD|MULTI)/i', $pattern_id) AND array_key_exists('rdcaccount_id', $data)) {
-                    if ($data['rdcaccount_id'] == 1 AND $_SESSION['rdcaccount_id'] != 1) {
-                        // "Record belongs to the shared account, so can only be modified by an administrator"
-                        $this->errors[] = getLanguageText('sys0236');
-                    } elseif ($data['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
-                        // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
-                        $this->errors[] = getLanguageText('sys0235');
+                    if (is_null($_SESSION['rdcaccount_id'])) {
+                        // this user can work in any account
+                    } else {
+                        if ($data['rdcaccount_id'] == 1 AND $_SESSION['rdcaccount_id'] != 1) {
+                            // "Record belongs to the shared account, so can only be modified by an administrator"
+                            $this->errors[] = getLanguageText('sys0236');
+                        } elseif ($data['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
+                            // "Record belongs to a non-shared account, so can only be modified by a user in the same account"
+                            $this->errors[] = getLanguageText('sys0235');
+                        } // if
                     } // if
                 } // if
             } // if
@@ -2477,7 +2508,7 @@ abstract class Default_Table
         } else {
             // retrieve data from foreign (parent) tables for each row
             foreach ($fieldarray as $rownum => $rowdata) {
-                $fieldarray[$rownum] = $this->getForeignData($rowdata);
+                $fieldarray[$rownum] = $this->getForeignData($rowdata, $rownum);
             } // foreach
         } // if
 
@@ -2681,7 +2712,7 @@ abstract class Default_Table
     } // getFieldSpec_original
 
     // ****************************************************************************
-    function getForeignData ($fieldarray)
+    function getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign (parent) database tables.
     // (parent tables are identified in $this->parent_relations)
     {
@@ -2692,13 +2723,13 @@ abstract class Default_Table
         // perform custom processing before standard processing
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getForeignData')) {
-                $fieldarray = $this->custom_processing_object->_cm_getForeignData($fieldarray);
+                $fieldarray = $this->custom_processing_object->_cm_getForeignData($fieldarray, $rownum);
             } // if
         } // if
         if ($this->custom_replaces_standard) {
             $this->custom_replaces_standard = false;
         } else {
-            $fieldarray = $this->_cm_getForeignData($fieldarray);
+            $fieldarray = $this->_cm_getForeignData($fieldarray, $rownum);
         } // if
 
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
@@ -3002,11 +3033,12 @@ abstract class Default_Table
     {
         $classdir = $GLOBALS['classdir'];  // save
         $cwd      = getcwd();
-        if (!empty($this->dirname) AND $cwd != dirname($this->dirname)) {
-            // switch to correct directory for retrieving message text
-            $GLOBALS['classdir'] = dirname($this->dirname);
-            chdir($GLOBALS['classdir']);
-        } // if
+//        if (!empty($this->dirname) AND $cwd != dirname($this->dirname)) {
+//            // switch to correct directory for retrieving message text
+//            $GLOBALS['classdir'] = dirname($this->dirname);
+//            chdir($GLOBALS['classdir']);
+//        } // if
+        $this->checkMessageDirectory();
 
         // call the function in the standard library
         $string = getLanguageArray ($id);
@@ -3086,11 +3118,12 @@ abstract class Default_Table
     {
         $classdir = $GLOBALS['classdir'];  // save
         $cwd      = getcwd();
-        if (!empty($this->dirname) AND $cwd != dirname($this->dirname)) {
-            // switch to correct directory for retrieving message text
-            $GLOBALS['classdir'] = dirname($this->dirname);
-            //chdir($GLOBALS['classdir']);
-        } // if
+//        if (!empty($this->dirname) AND $cwd != dirname($this->dirname)) {
+//            // switch to correct directory for retrieving message text
+//            $GLOBALS['classdir'] = dirname($this->dirname);
+//            //chdir($GLOBALS['classdir']);
+//        } // if
+        $this->checkMessageDirectory();
 
         // call the function in the standard library
         $string = getLanguageText ($id, $arg1, $arg2, $arg3, $arg4, $arg5);
@@ -3342,6 +3375,15 @@ abstract class Default_Table
     {
         // get name(s) of field(s) which form the primary key
         $pkeynames = $this->getPkeyNames();
+
+        if (!empty($next_task) AND is_string($next_task)) {
+            // convert string to an array of details
+            $taskobj =& RDCsingleton::getInstance('mnu_task');
+            $next_task = $taskobj->checkSelection($next_task);
+            if ($taskobj->errors) {
+                return $taskobj->errors;
+            } // if
+        } // if
 
         if (!empty($next_task) AND !preg_match('/^(audit)/i', $next_task['task_id'])) {
             // obtain any custom adjustments to this array
@@ -4370,16 +4412,18 @@ abstract class Default_Table
 
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
 
-        if (isset($this->fieldspec['rdcaccount_id'])) {
-            $account_id = $_SESSION['rdcaccount_id'];
-            if (empty($account_id) OR $account_id == 1) {
-                $fieldarray['rdcaccount_id'] = 1;
-            } else {
-                $fieldarray['rdcaccount_id'] = $account_id;
+        $insertarray = $fieldarray;  // copy to temporary area
+
+        if (!empty($insertarray)) {
+            if (isset($this->fieldspec['rdcaccount_id'])) {
+                $account_id = $_SESSION['rdcaccount_id'];
+                if (empty($account_id) OR $account_id == 1) {
+                    $insertarray['rdcaccount_id'] = 1;
+                } else {
+                    $insertarray['rdcaccount_id'] = $account_id;
+                } // if
             } // if
         } // if
-
-        $insertarray = $fieldarray;  // copy to temporary area
 
         if (empty($this->errors) AND is_array($insertarray) AND !empty($insertarray)) {
             // perform standard declarative checks on input array
@@ -4630,9 +4674,11 @@ abstract class Default_Table
             if (isset($spec['task_id'])) {
                 if ($spec['task_id'] == $return_from) {
                     $found = true;
-                    if (isset($spec['foreign_field'])) {
+                    if (isset($spec['foreign_field']) AND array_key_exists($spec['foreign_field'], $single_row)) {
                         // remove the description field obtained from the foreign table
-                        unset($single_row[$spec['foreign_field']]);
+                        $single_row[$spec['foreign_field']] = null;
+                    } elseif (array_key_exists($field, $single_row)) {
+                        $single_row[$field] = null;
                     } // if
                     // deal with any processing after a value has been returned
                     if (is_object($this->custom_processing_object)) {
@@ -4664,8 +4710,19 @@ abstract class Default_Table
                             break;
                         } // if
                     } // foreach
+
+                    if (is_array($select_array) AND !empty($select_array)) {
+                        // copy FOREIGN_FIELD to this field
+                        if (!empty($spec['foreign_field']) AND is_string($spec['foreign_field'])) {
+                            if (array_key_exists($spec['foreign_field'], $select_array)) {
+                                $single_row[$field] = $select_array[$spec['foreign_field']];
+                                unset($select_array[$spec['foreign_field']]);
+                            } // if
+                        } // if
+                    } // if
+
                     // merge $selection with $fieldarray
-                    if (is_array($select_array)) {
+                    if (is_array($select_array) AND !empty($select_array)) {
                         $single_row = array_merge($single_row, $select_array);
                     } // if
                     break;
@@ -4694,7 +4751,7 @@ abstract class Default_Table
             // retrieve data from foreign (parent) tables
             $single_row = $this->getForeignData($single_row);
 
-            if ($GLOBALS['mode'] != 'search') {
+            //if ($GLOBALS['mode'] != 'search') {
                 // perform any post-popup processing
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_post_popupReturn')) {
@@ -4706,13 +4763,16 @@ abstract class Default_Table
                 } else {
                     $single_row = $this->_cm_post_popupReturn($single_row, $return_from, $select_array, $return_files);
                 } // if
-            } // if
+            //} // if
         } // if
 
         $single_row = array_change_key_case($single_row, CASE_LOWER);
 
         //if (!empty($fieldarray) and !is_string(key($fieldarray))) {
         if (!empty($popup_offset)) {
+            if (!is_long(key($fieldarray))) {
+                $fieldarray = array();  // remove existing associative array
+            } // if
             // insert single row into array
             $fieldarray[$popup_offset-1] = $single_row;
         } else {
@@ -4815,7 +4875,7 @@ abstract class Default_Table
     function reset ($where=null, $keep_orderby=false)
     // reset all screen settings before starting afresh.
     {
-        $patten_id = getPatternId();
+        $pattern_id = getPatternId();
 
         $this->setSqlSearch(null);
 
@@ -4827,7 +4887,7 @@ abstract class Default_Table
         $this->fieldarray = array();
         $null = $this->initialise($where);
 
-        if (preg_match('/filepicker/i', $patten_id)) {
+        if (preg_match('/filepicker/i', $pattern_id)) {
             $this->initialiseFilePicker($where);
         } // if
 
@@ -5868,14 +5928,17 @@ abstract class Default_Table
 
         $pattern_id = getPatternId();
 
-        // filter out any data which does not belong in this table
-        $postarray = getPostArray($postarray, $this->fieldspec);
-
         if (is_long(key($fieldarray))) {
+            // array is indexed by row number
             $fieldarray_key = key($fieldarray);  // does index start at 0 or 1?
+            $is_indexed     = true;
         } else {
             $fieldarray_key = 0;
+            $is_indexed     = false;
         } // if
+
+        // filter out any data which does not belong in this table
+        $postarray = getPostArray($postarray, $this->fieldspec, $is_indexed);
 
         // each item in post array may have different values for different rows,
         // so construct an array which is indexed by row number, not field name
@@ -5919,6 +5982,7 @@ abstract class Default_Table
                     $fieldarray_out[$rownum] = $this->_cm_updateFieldArray($fieldarray[$rownum], $postdata, $rownum);
                 } // if
                 if (!empty($this->errors)) {
+                    $this->fieldarray[$rownum] = $fieldarray_out[$rownum];
                     return $this->getFieldArray();
                 } // if
                 // check to see if anything has been changed
@@ -6120,6 +6184,7 @@ abstract class Default_Table
         } // if
 
         if ($this->rows_per_page == 1 AND !is_long(key($fieldarray))) {
+            // only one row, so convert indexed array to associative
             $array[0] = $fieldarray;
             $fieldarray = $array;
         } // if
@@ -6275,7 +6340,7 @@ abstract class Default_Table
             } else {
                 $this->numrows = 0;
             } // if
-            $this->reuse_previous_select = false;
+            $this->reuse_previous_select = true;
             if ($this->numrows <> 1) {
                 // 'Could not locate original $tablename record for updating ($where)'
                 $this->errors[] = $this->getLanguageText('sys0007', strtoupper($this->tablename), $where);
@@ -6418,7 +6483,7 @@ abstract class Default_Table
     {
         $this->errors = array();
 
-        if (is_long(key($selection))) {
+        if (is_array($selection) AND is_long(key($selection))) {
             $selection = $selection[key($selection)];
         } // if
 
@@ -6744,7 +6809,7 @@ abstract class Default_Table
     // verify that the specified record can be updated.
     {
         if (empty($fieldarray)) {
-            return true;
+            return $fieldarray;
         } // if
 
         if (is_string($fieldarray)) {
@@ -6766,17 +6831,16 @@ abstract class Default_Table
                     if ($fieldarray[$setting_field] != $_SESSION['logon_user_id']) {
                         // "This record can only be updated by its owner/creator"
                         $this->errors[] = $this->getLanguageText('sys0116');
-                        return false;
+                        return $fieldarray;
                     } // if
                 } // if
             } // if
         } // foreach
 
         // perform any custom pre-update validation
-        $updatearray = $this->custom_validateUpdate($fieldarray, $fieldarray);
-        if (!empty($this->errors)) return false;
+        $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
 
-        return true;
+        return $fieldarray;
 
     } // validateUpdate
 
@@ -6960,8 +7024,9 @@ abstract class Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign (parent) tables.
+    // $rownum identifies current row number.
     {
         // customisable code goes here
 
@@ -7710,8 +7775,8 @@ abstract class Default_Table
         //$this->row_locks = 'EX';    // exclusive
         //$this->row_locks_supp = '?' // DBMS-specific
 
-        // reuse existing SELECT statement in _dml_ReadBeforeUpdate() method
-        //$this->reuse_previous_select = true;
+        // do not reuse existing customised SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = false;
 
         return $fieldarray;
 
@@ -8228,7 +8293,7 @@ abstract class Default_Table
     } // _dml_multiQuery
 
     // ****************************************************************************
-    function _dml_ReadBeforeUpdate ($where, $reuse_previous_select=false)
+    function _dml_ReadBeforeUpdate ($where, $reuse_previous_select=true)
     // Read a single record just before it is updated.
     // The primary key should be supplied in $where.
     {
@@ -8636,6 +8701,7 @@ abstract class Default_Table
                 $cpo->fieldspec          =& $this->fieldspec;
                 $cpo->fieldarray         =& $this->fieldarray;
 
+                $cpo->allow_buttons_all_zones   =& $this->allow_buttons_all_zones;
                 $cpo->allow_multiple            =& $this->allow_multiple;
                 $cpo->alt_language_table        =& $this->alt_language_table;
                 $cpo->alt_language_cols         =& $this->alt_language_cols;

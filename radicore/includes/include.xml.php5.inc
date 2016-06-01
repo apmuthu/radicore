@@ -13,6 +13,7 @@ class radicore_view
     var $orderby;                       // sort field
     var $orderby_seq;                   // sort sequence (ASC or DESC)
     var $javascript;                    // optional javascript
+    var $quicksearch_field;             // optional - see setQuickSearch()
 
     // *****************************************************************************
     function __construct ($screen_structure)
@@ -108,6 +109,11 @@ class radicore_view
         foreach ($objectdata as $rownum => $rowdata) {
             // get field specifications for current object (including item access details)
             $fieldspec = $dbobject->getFieldSpec();
+            if (!empty($dbobject->fieldspec_row)) {
+                $fieldspec_row = $dbobject->fieldspec_row;
+            } else {
+                $fieldspec_row = array();
+            } // if
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
@@ -116,7 +122,7 @@ class radicore_view
             if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
                 $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
                 if (is_array($javascript) AND !empty($javascript)) {
-                    $this->javascript = array_merge($this->javascript, $javascript);
+                    $this->javascript = array_merge_recursive($this->javascript, $javascript);
                 } // if
             } // if
             if (!is_array($rowdata)) {
@@ -197,9 +203,15 @@ class radicore_view
                             // include css class name(s)
                 	        $child->setAttribute('css_class', $css_array[$fieldname]);
                         } // if
-                        if (!array_key_exists('rdc_to_be_deleted', $rowdata) AND isset($fieldspec[$fieldname])) {
+                        if (!array_key_exists('rdc_to_be_deleted', $rowdata) AND (isset($fieldspec[$fieldname]) OR isset($fieldspec_row[$rownum][$fieldname]))) {
                             // field exists in $fieldspec, so get field specifications
-                            $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
+                            if (!empty($fieldspec_row) AND !empty($fieldspec_row[$rownum]) AND !empty($fieldspec_row[$rownum][$fieldname])) {
+                                // separate entry for each row
+                                $spec = array_change_key_case($fieldspec_row[$rownum][$fieldname], CASE_LOWER);
+                            } else {
+                                // single entry for all rows
+                                $spec = array_change_key_case($fieldspec[$fieldname], CASE_LOWER);
+                            } // if
                             // add field size as an attribute
                             if (isset($spec['size'])) {
                                 $child->setAttribute('size', $spec['size']);
@@ -214,7 +226,11 @@ class radicore_view
                                     $child->setAttribute('pkey', 'y');
                                 } // if
                                 if (isset($spec['required'])) {
-                                    $child->setAttribute('required', 'y');
+                                    if (isset($spec['control']) AND preg_match('/checkbox/i', $spec['control'])) {
+                                        // checkboxes always return a value, so this is redundant
+                                    } else {
+                                        $child->setAttribute('required', 'y');
+                                    } // if
                                 } // if
                                 // option for password fields
                                 if (isset($spec['password'])) {
@@ -333,25 +349,32 @@ class radicore_view
                                     if (isset($spec['task_id'])) {
                                         $child->setAttribute('task_id', "task#{$spec['task_id']}");
                                     } // if
-                                    if (isset($spec['subtype']) and $spec['subtype'] == 'image') {
-                                        $child->setAttribute('image', 'y');
+                                    if (isset($spec['subtype'])) {
                                         if (isset($spec['imagewidth'])) {
                                             $child->setAttribute('imagewidth', $spec['imagewidth']);
                                         } // if
                                         if (isset($spec['imageheight'])) {
                                             $child->setAttribute('imageheight', $spec['imageheight']);
                                         } // if
-                                        // look for '[alt=...]' at the end of the string
-                                        if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
-                                            $alt = $regs[0];  // extract alt text
-                                            $child->setAttribute('alt', $alt);
-                                            // remove '[alt=...]' from the value
-                                            $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
+                                        if ($spec['subtype'] == 'image') {
+                                            $child->setAttribute('image', 'y');
+                                            // look for '[alt=...]' at the end of the string
+                                            if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                                $alt = $regs[0];  // extract alt text
+                                                $child->setAttribute('alt', $alt);
+                                                // remove '[alt=...]' from the value
+                                                $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
+                                            } // if
+                                        } elseif ($spec['subtype'] == 'video') {
+                                            $child->setAttribute('video', 'y');
+                                            if (isset($spec['preload'])) {
+                                                $child->setAttribute('preload', $spec['preload']);
+                                            } // if
                                         } // if
                                     } // if
                                     if (isset($spec['notext'])) {
                                         // display the image without any filename text
-                                        $child->setAttribute('notext', "{$spec['notext']}");
+                                        $child->setAttribute('notext', $spec['notext']);
                                     } // if
                                 } // if
 
@@ -551,7 +574,7 @@ class radicore_view
                                     } // foreach
                                 } // if
                                 if (!empty($jsOBJ->form_level_js)) {
-                                    $this->javascript = array_merge($this->javascript, $jsOBJ->form_level_js);
+                                    $this->javascript = array_merge_recursive($this->javascript, $jsOBJ->form_level_js);
                                 } // if
                             } // if
 
@@ -587,6 +610,14 @@ class radicore_view
                             } // foreach
                         } else {
                             $fieldvalue = convertEncoding($fieldvalue, 'UTF-8');
+                            if (empty($spec['control'])) {
+                                // this is an ordinary text field
+                                if (strpos($fieldvalue, "\n") !== false) {
+                                    // cause newline characters to be obeyed
+                                    $spec['xml'] = 'CDATA';
+                                    $child->setAttribute('class', 'normal');
+                                } // if
+                            } // if
 
                             if (isset($spec['xml']) AND $spec['xml'] == 'CDATA') {
                                 $child->setAttribute('CDATA', 'y');
@@ -594,6 +625,9 @@ class radicore_view
                                 $value = $doc->createCDATASection($fieldvalue);
                                 $value = $child->appendChild($value);
                             } else {
+                                //if (strpos($fieldvalue, "\n") !== false) {
+                                //    $fieldvalue = str_replace("\n", '&#xA;', $fieldvalue);
+                                //} // if
                                 // insert as text element for the current node
                                 $value = $doc->createTextNode($fieldvalue);
                                 $value = $child->appendChild($value);
@@ -715,7 +749,20 @@ class radicore_view
 
             if (!empty($lookup)) {
                 // insert LOOKUP arrays into XML document
-                $this->addLookup2XMLdoc($lookup, $lookup_css, $doc, $root);
+                if (isset($dbobject->jumpto_data)) {
+                    $jumpto_data = $dbobject->jumpto_data;
+                } else {
+                    $jumpto_data = array();
+                } // if
+                if (is_array($this->quicksearch_field) AND !empty($this->quicksearch_field)) {
+                    $lookup['quicksearch_field'] = $this->quicksearch_field;
+                    $this->quicksearch_field = true;  // indicate that this field has been loaded
+                } elseif ($this->quicksearch_field === true) {
+                    unset($lookup['quicksearch_field']);  // has already been loaded, so don't repeat
+                } elseif ($this->quicksearch_field === false) {
+                    unset($lookup['quicksearch_field']);  // 'print' option has been selected, so exclude
+                } // if
+                $this->addLookup2XMLdoc($lookup, $lookup_css, $doc, $root, $jumpto_data);
             } // if
         } // if
 
@@ -733,9 +780,10 @@ class radicore_view
     } // addData2XMLdoc
 
     // ****************************************************************************
-    function addLookup2XMLdoc ($lookup, $lookup_css, $doc, $root)
-    // add contents of lookup array to current XML document
-    // there may be several lookup names each with its own option list
+    function addLookup2XMLdoc ($lookup, $lookup_css, $doc, $root, $jumpto_data=array())
+    // add contents of lookup array to current XML document.
+    // there may be several lookup names each with its own option list.
+    // $jumpto_data is used by the Survey/Questionnaire system
     {
         $node = $doc->createElement('lookup');
         $node = $root->appendChild($node);
@@ -749,10 +797,19 @@ class radicore_view
             $occ = $doc->createElement($lookupname);
             $occ = $node->appendChild($occ);
             // add each option as a child node
+            if (array_key_exists($lookupname, $jumpto_data)) {
+                $jumpto = $jumpto_data[$lookupname];
+            } else {
+                $jumpto = array();
+            } // if
             foreach ($optionlist as $id => $optvalue) {
                 $child = $doc->createElement('option');
                 $child = $occ->appendChild($child);
                 $child->setAttribute('key', $id);
+
+                if (array_key_exists($id, $jumpto)) {
+                    $child->setAttribute('rel', $jumpto[$id]);
+                } // if
 
                 if (array_key_exists($lookupname, $lookup_css)) {
             	    if (array_key_exists($id, $lookup_css[$lookupname])) {
@@ -1048,6 +1105,13 @@ class radicore_view
         // add root node
         $node_array['root'] = $xml_doc->createElement('root');
         $root = $xml_doc->appendChild($node_array['root']);
+
+        if (isset($_GET['action']) and $_GET['action'] == 'print') {
+            $this->quicksearch_field = false;
+        } else {
+            // find out if QuickSearch area has been defined
+            $this->quicksearch_field = $this->setQuickSearch($task_id);
+        } // if
 
         $object_messages = array();
         foreach ($xml_objects as $seq => $object_data) {
@@ -1763,6 +1827,25 @@ class radicore_view
     } // setPaginationBar
 
     // ****************************************************************************
+    function setQuickSearch ($task_id)
+    // insert (optional) information to populate the QuickSearch bar
+    {
+        $output = array();
+
+        $dbobject =& RDCsingleton::getInstance('mnu_task_quicksearch');
+        $dbobject->sql_orderby = 'sort_seq ASC';
+        $data = $dbobject->getData("task_id='{$task_id}'");
+        if (!empty($data)) {
+            foreach ($data as $rownum => $rowdata) {
+                $output[$rowdata['field_id']] = $rowdata['field_name'];
+            } // foreach
+        } // if
+
+        return $output;
+
+    } // setQuickSearch
+
+    // ****************************************************************************
     function setScreenStructure ($xml_doc, $root, $structure)
     // extract screen structure from named file and insert details into XML document.
     {
@@ -1778,128 +1861,26 @@ class radicore_view
             $table = $xml_doc->createElement($zone);
             $table = $occ->appendChild($table);
             $table->setAttribute('id', $id);
-            // set column values for this table, if present
-            if (isset($structure[$zone]['columns'])) {
-                $columns = $xml_doc->createElement('columns');
-                $columns = $table->appendChild($columns);
-                foreach ($structure[$zone]['columns'] as $row => $array) {
-                    $array = array_change_key_case($array, CASE_LOWER);
-                    if (array_key_exists('nodisplay', $array)) {
-                        // 'nodisplay' attribute is set, so do not output this column
-                    } else {
-                        $column = $xml_doc->createElement('column');
-                        $column = $columns->appendChild($column);
-                        $class_value = '';
-                        foreach ($array as $attrname => $attrvalue) {
-                    	    $attrname  = trim($attrname);
-                            $attrvalue = trim($attrvalue);
-                    	    if (preg_match('/^(align|valign|class)$/i', $attrname)) {
-                    	        // these values must be merged into a single string separated with a space
-                    		    if (empty($class_value)) {
-                    			    $class_value = $attrvalue;
-                    		    } else {
-                    		        $class_value .= ' '.$attrvalue;
-                    		    } // if
-                    	    } else {
-                    	        $column->setAttribute($attrname, $attrvalue);
-                    	    } // if
-                        } // foreach
-                        if (!empty($class_value)) {
-                    	    $column->setAttribute('class', $class_value);
-                        } // if
+            if (array_key_exists('tables', $structure[$zone])) {
+                // there is a separate structure for each row
+                foreach ($structure[$zone]['tables'] as $input) {
+                    $table_row = $xml_doc->createElement('table');
+                    $table_row = $table->appendChild($table_row);
+                    if (!empty($input['id'])) {
+                        $table_row->setAttribute('id', $input['id']);
                     } // if
+                    if (!empty($input['rel'])) {
+                        $table_row->setAttribute('rel', $input['rel']);
+                    } // if
+                    $xml_doc = $this->_setScreen_columns($xml_doc, $table_row, $input);
+                    $xml_doc = $this->_setScreen_fields($xml_doc, $table_row, $input);
                 } // foreach
+            } else {
+                // there is only one structure for this zone
+                $input = $structure[$zone];
+                $xml_doc = $this->_setScreen_columns($xml_doc, $table, $input);
+                $xml_doc = $this->_setScreen_fields($xml_doc, $table, $input);
             } // if
-
-            // test for 'old' format file
-            if (is_string(key($structure[$zone]['fields']))) {
-                // "FIELDS array for zone '$zone' in screen structure file is not indexed by rownum"
-                trigger_error(getLanguageText('sys0053', $zone), E_USER_ERROR);
-            } // if
-
-            // extract field details one row at a time
-            foreach ($structure[$zone]['fields'] as $row => $rowdata) {
-        	    $rowocc = $xml_doc->createElement('row');
-                $rowocc = $table->appendChild($rowocc);
-                if (is_string(key($rowdata))) {
-            	    // not indexed by cell number, so assume 'fieldname' => 'label'
-
-            	    $rowdata = array_change_key_case($rowdata, CASE_LOWER);
-
-            	    // if 'nodisplay' attribute is set then do not output this column
-            	    if (!array_key_exists('nodisplay', $rowdata)) {
-                	    foreach ($rowdata as $fieldname => $fieldlabel) {
-                	        $fieldname = trim($fieldname);
-                	        if (empty($fieldname)) {
-                	    	    $fieldname = 'null';
-                	        } // if
-                            if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
-                                // ignore 'nosort' entry
-                            } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
-                                // 'size=<numeric>' is an attribute of the previous field, whereas
-                                // 'size=<string>' is a new 'field=label' pair
-                                $cell->setAttribute($fieldname, $fieldlabel);
-                            } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
-                                foreach ($fieldlabel as $sttr => $attrvalue) {
-                        		    // add this entry as an attribute to the current row
-                        	        $rowocc->setAttribute($sttr, $attrvalue);
-                        	    } // foreach
-                            } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty)$/i', $fieldname, $regs)) {
-                                // write these out as attributes on the current cell
-                                $cell->setAttribute($regs[0], $fieldlabel);
-                            } else {
-                                $cell = $xml_doc->createElement('cell');
-                                $cell = $rowocc->appendChild($cell);
-
-                                // convert text into output language
-                                $fieldlabel = getLanguageText($fieldlabel);
-
-                                $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
-                                $cell->setAttribute('label', $fieldlabel);
-
-                                if (array_key_exists('nosort', $rowdata)) {
-                            	    $cell->setAttribute('nosort', 'y');
-                                } // if
-
-                                $cell = $xml_doc->createElement('cell');
-                                $cell = $rowocc->appendChild($cell);
-
-                                $cell->setAttribute('field', $fieldname);
-
-                            } // if
-                        } // foreach
-            	    } // if
-                } else {
-                    // there is a separate entry for each cell in the current row
-                    foreach ($rowdata as $cellno => $cellspec) {
-                        $cellspec = array_change_key_case($cellspec, CASE_LOWER);
-                        if (key($cellspec) == 'javascript' and is_array($cellspec[key($cellspec)])) {
-                    	    $javascript = $cellspec['javascript'];
-                    	    foreach ($javascript as $attr => $attrvalue) {
-                    		    // add this entry as an attribute to the current row
-                    	        $rowocc->setAttribute($attr, $attrvalue);
-                    	    } // foreach
-                        } else {
-                            // create XML element for a new cell
-                            $cell = $xml_doc->createElement('cell');
-                            $cell = $rowocc->appendChild($cell);
-
-                    	    foreach ($cellspec as $celltype => $cellvalue) {
-                    	        $celltype = trim($celltype);
-                    	        if (empty($celltype)) {
-                    	    	    $celltype = 'null';
-                    	        } // if
-                    	        if ($celltype == 'label') {
-                    	    	    // convert text into output language
-                                    $cellvalue = getLanguageText($cellvalue);
-                    	        } // if
-                    		    // add this entry as an attribute to the current cell
-                    	        $cell->setAttribute($celltype, $cellvalue);
-                    	    } // foreach
-                        } // if
-                    } // foreach
-                } // if
-            } // foreach
 
             // insert tree node data names, if supplied
             if (isset($structure[$zone]['node_data_names'])) {
@@ -1916,6 +1897,145 @@ class radicore_view
         return;
 
     } // setScreenStructure
+
+    // ****************************************************************************
+    function _setScreen_columns ($xml_doc, $element, $input)
+    // insert 'column' details into the current XML document
+    {
+        // set column values for this table, if present
+        if (isset($input['columns'])) {
+            $columns = $xml_doc->createElement('columns');
+            $columns = $element->appendChild($columns);
+            foreach ($input['columns'] as $row => $array) {
+                $array = array_change_key_case($array, CASE_LOWER);
+                if (array_key_exists('nodisplay', $array)) {
+                    // 'nodisplay' attribute is set, so do not output this column
+                } else {
+                    $column = $xml_doc->createElement('column');
+                    $column = $columns->appendChild($column);
+                    $class_value = '';
+                    foreach ($array as $attrname => $attrvalue) {
+                        $attrname  = trim($attrname);
+                        $attrvalue = trim($attrvalue);
+                        if (preg_match('/^(align|valign|class)$/i', $attrname)) {
+                            // these values must be merged into a single string separated with a space
+                            if (empty($class_value)) {
+                                $class_value = $attrvalue;
+                            } else {
+                                $class_value .= ' '.$attrvalue;
+                            } // if
+                        } else {
+                            $column->setAttribute($attrname, $attrvalue);
+                        } // if
+                    } // foreach
+                    if (!empty($class_value)) {
+                        $column->setAttribute('class', $class_value);
+                    } // if
+                } // if
+            } // foreach
+        } // if
+
+        return $xml_doc;
+
+    } // _setScreen_columns
+
+    // ****************************************************************************
+    function _setScreen_fields ($xml_doc, $element, $input)
+    // insert 'field' details into the current XML document
+    {
+        // test for 'old' format file
+        if (is_string(key($input['fields']))) {
+            // "FIELDS array for zone '$zone' in screen structure file is not indexed by rownum"
+            trigger_error(getLanguageText('sys0053', $zone), E_USER_ERROR);
+        } // if
+
+        // extract field details one row at a time
+        foreach ($input['fields'] as $row => $rowdata) {
+            $rowocc = $xml_doc->createElement('row');
+            $rowocc = $element->appendChild($rowocc);
+            if (is_string(key($rowdata))) {
+                // not indexed by cell number, so assume 'fieldname' => 'label'
+
+                $rowdata = array_change_key_case($rowdata, CASE_LOWER);
+
+                // if 'nodisplay' attribute is set then do not output this column
+                if (!array_key_exists('nodisplay', $rowdata)) {
+                    foreach ($rowdata as $fieldname => $fieldlabel) {
+                        $fieldname = trim($fieldname);
+                        if (empty($fieldname)) {
+                            $fieldname = 'null';
+                        } // if
+                        if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
+                            // ignore 'nosort' entry
+                        } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
+                            // 'size=<numeric>' is an attribute of the previous field, whereas
+                            // 'size=<string>' is a new 'field=label' pair
+                            $cell->setAttribute($fieldname, $fieldlabel);
+                        } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
+                            foreach ($fieldlabel as $sttr => $attrvalue) {
+                                // add this entry as an attribute to the current row
+                                $rowocc->setAttribute($sttr, $attrvalue);
+                            } // foreach
+                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty)$/i', $fieldname, $regs)) {
+                            // write these out as attributes on the current cell
+                            $cell->setAttribute($regs[0], $fieldlabel);
+                        } else {
+                            $cell = $xml_doc->createElement('cell');
+                            $cell = $rowocc->appendChild($cell);
+
+                            // convert text into output language
+                            $fieldlabel = getLanguageText($fieldlabel);
+
+                            $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
+                            $cell->setAttribute('label', $fieldlabel);
+
+                            if (array_key_exists('nosort', $rowdata)) {
+                                $cell->setAttribute('nosort', 'y');
+                            } // if
+
+                            $cell = $xml_doc->createElement('cell');
+                            $cell = $rowocc->appendChild($cell);
+
+                            $cell->setAttribute('field', $fieldname);
+
+                        } // if
+                    } // foreach
+                } // if
+            } else {
+                // there is a separate entry for each cell in the current row
+                foreach ($rowdata as $cellno => $cellspec) {
+                    $cellspec = array_change_key_case($cellspec, CASE_LOWER);
+                    if (key($cellspec) == 'javascript' and is_array($cellspec[key($cellspec)])) {
+                        $javascript = $cellspec['javascript'];
+                        foreach ($javascript as $attr => $attrvalue) {
+                            // add this entry as an attribute to the current row
+                            $rowocc->setAttribute($attr, $attrvalue);
+                        } // foreach
+                    } else {
+                        // create XML element for a new cell
+                        $cell = $xml_doc->createElement('cell');
+                        $cell = $rowocc->appendChild($cell);
+
+                        foreach ($cellspec as $celltype => $cellvalue) {
+                            $celltype = trim($celltype);
+                            if (empty($celltype)) {
+                                $celltype = 'null';
+                            } // if
+                            if ($celltype == 'label') {
+                                // convert text into output language
+                                $cellvalue = getLanguageText($cellvalue);
+                            } // if
+                            // add this entry as an attribute to the current cell
+                            $cell->setAttribute($celltype, $cellvalue);
+                        } // foreach
+                    } // if
+                } // foreach
+            } // if
+        } // foreach
+
+        return $xml_doc;
+
+    } // _setScreen_fields
 
     // ****************************************************************************
     function setScrollbar ($xml_doc, $root, $scrolling)

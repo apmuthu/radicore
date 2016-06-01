@@ -7,7 +7,7 @@ $array['e0002'] = "Invalid unless CONTROL = 'multi-line'";
 $array['e0003'] = "If TYPE = 'boolean' CONTROL can only be 'dropdown' or 'radiogroup' or 'checkbox'";
 $array['e0004'] = "Invalid unless CONTROL = 'filepicker' or 'image hyperlink";
 $array['e0005'] = "Unknown value for 'subtype' (%1\$s)";
-$array['e0006'] = "Invalid unless CONTROL = 'image' or SUBTYPE = 'image'";
+$array['e0006'] = "Invalid unless CONTROL = 'image' or SUBTYPE = 'image' or 'video'";
 $array['e0007'] = "Invalid unless CONTROL = 'radio group' or 'multi-checkbox'";
 $array['e0008'] = "Invalid unless CONTROL = 'popup'";
 $array['e0009'] = "Invalid unless CONTROL = 'popup' or 'filepicker'";
@@ -80,7 +80,7 @@ $array['e0069'] = "";
 
 $array['e0070'] = "CONTROL cannot be 'image hyperlink' unless TYPE is 'string'";
 $array['e0071'] = "CONTROL cannot be 'image' unless TYPE is 'string'";
-$array['e0072'] = "";
+$array['e0072'] = "Invalid unless CONTROL = 'filepicker'";
 $array['e0073'] = "";
 $array['e0074'] = "";
 $array['e0075'] = "";

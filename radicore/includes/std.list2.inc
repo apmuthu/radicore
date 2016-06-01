@@ -324,10 +324,13 @@ if (empty($outer_data)) {
 	    // ensure that default entries exist for all supported languages
     	//$inner_data = $dbinner->getLanguageEntries($inner_data, $outer_data, $dbouter->alt_language_cols);
     } // if
+    if ($dbinner->errors) {
+        $errors = array_merge($errors, $dbinner->getErrors());
+    } // if
 
 } // if
 
-if ($dbinner->getNumRows() == 0) {
+if (empty($errors) AND $dbinner->getNumRows() == 0) {
     // 'no entries found on $inner_table'
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table));
     if (strtolower($return_action) == 'search') {
@@ -337,6 +340,8 @@ if ($dbinner->getNumRows() == 0) {
             scriptNext($return_from, $where);
         } // if
     } // if
+} // if
+if (!empty($errors)) {
     if (array_key_exists('choose', $act_buttons)) {
         // this is unusable, so remove it
         unset($act_buttons['choose']);

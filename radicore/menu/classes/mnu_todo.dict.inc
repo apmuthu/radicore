@@ -1,5 +1,5 @@
 <?php
-    // file created on July 17, 2010, 2:59 pm
+    // file created on May 29, 2016, 9:49 am
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -43,6 +43,7 @@
                                                     'default' => '0');
     
     $fieldspec['is_complete']               = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -56,6 +57,7 @@
                                                     'maxvalue' => 999);
     
     $fieldspec['repeat_unit']               = array('type' => 'string',
+                                                    'type_native' => 'char',
                                                     'size' => 1,
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'repeat_unit');
@@ -112,17 +114,21 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'parent_field' => 'task_desc',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',
+                                                    'alt_language_table' => 'mnu_user_alt',
+                                                    'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'user_id, due_date, seq_no';
+    $this->default_orderby                  = 'due_date desc, seq_no desc';
     
     // alternative language options 
     $this->alt_language_table               = '';

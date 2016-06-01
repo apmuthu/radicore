@@ -164,7 +164,7 @@ if (!empty($_POST)) {
         $outer_data = array_update_associative($outer_data, $outer_post, $dbouter->fieldspec);
         $dbouter->setFieldArray($outer_data);  // ensure that changes are stored inside relevant object
         // repeat for the inner entity
-        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec());
+        $inner_post = getPostArray($_POST, $dbinner->getFieldSpec(), true);
         $inner_data = array_update_indexed($inner_data, $inner_post);
         $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
 
@@ -195,12 +195,13 @@ if (!empty($_POST)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         $dbinner->startTransaction();
-        if ($btn_zone == $dbouter->zone) {
+        if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-        } elseif ($btn_zone == $dbinner->zone) {
+        } // if
+        if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {
             $inner_data = $dbinner->getFieldArray();
             $inner_data = $dbinner->customButton($inner_data, $custom_btn, $_POST, $btn_row);
             if ($dbinner->errors) {
@@ -208,8 +209,10 @@ if (!empty($_POST)) {
             } // if
         } // if
         if (empty($errors)) {
-            $dbinner->commit();
-            //$do_retrieve = true;
+            $dbinner->commit(false);
+            if (preg_match('/retrieve/i', $custom_btn)) {
+                $do_retrieve = true;
+            } // if
         } else {
             $dbinner->rollback();
         } // if
@@ -219,7 +222,7 @@ if (!empty($_POST)) {
         $dbouter->startTransaction();
         // update the outer table
         $outer_data = $dbouter->updateRecord($outer_data);
-        $outer_data = $dbouter->getExtraData($outer_data, $where);
+        $outer_data = $dbouter->getExtraData($outer_data);
         $messages = array_merge($messages, $dbouter->getMessages());
         if ($dbouter->errors) {
             // errors are keyed by object name
@@ -235,7 +238,7 @@ if (!empty($_POST)) {
         if (empty($errors)) {
             // update database with changes in POST array
             $inner_data = $dbinner->updateMultiple($inner_data, $_POST);
-            $inner_data = $dbinner->getExtraData($inner_data, $where);
+            $inner_data = $dbinner->getExtraData($inner_data);
             if ($dbinner->errors) {
                 // errors are keyed by object name
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
@@ -322,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
         if (empty($errors)) {
             // get data from the outer table
             $outer_data = $dbouter->getData($where);
-            $outer_data = $dbouter->getExtraData($outer_data, $where);
+            $outer_data = $dbouter->getExtraData($outer_data);
             if ($dbouter->errors) {
                 // some sort of error
                 if ($dbouter->getLastPage() <= 1) {
@@ -387,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' OR $do_retrieve) {
             if (empty($inner_data)) {
                 // get data from the database
                 $inner_data = $dbinner->getData($where);
-                $inner_data = $dbinner->getExtraData($inner_data, $where);
+                $inner_data = $dbinner->getExtraData($inner_data);
             } else {
                 if (!empty($dbinner->select_string)) {
                     $inner_data = $dbinner->setSelectedRows($dbinner->select_string, $inner_data);

@@ -18,7 +18,7 @@ class logon extends mnu_user
 
         $updatearray['user_id']       = $logon_user_id;
         $updatearray['in_use']        = $this->fieldspec['in_use']['false'];
-        $updatearray['rdcaccount_id'] =& $_SESSION['rdcaccount_id'];
+        //$updatearray['rdcaccount_id'] =& $_SESSION['rdcaccount_id'];
         $this->skip_validation        = true;
 
         $updatearray = $this->updateRecord($updatearray);
@@ -207,7 +207,7 @@ class logon extends mnu_user
 
         // update user record to show that he/she has logged in
         $updatearray['user_id']       = $logon_user_id;
-        $updatearray['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
+        //$updatearray['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
         $updatearray['pswd_count']    = $fieldarray['pswd_count'] + 1;
         $updatearray['logon_date']    = getTimeStamp('date');
         $updatearray['logon_time']    = getTimeStamp('time');

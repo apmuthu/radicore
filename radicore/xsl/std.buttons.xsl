@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -351,7 +351,7 @@
       <xsl:choose>
         <xsl:when test="/root/params/icon/help">
           <!-- display image link -->
-          <a href="{$help_root}/help.php?{$session}&amp;taskid={$taskid}" class="no-underline">
+          <a href="{$help_root}/help.php?{$session}&amp;taskid={$taskid}" class="no-underline" onclick="window.open(this.href);return false;">
             <img border="0" class="bottom" height="{/root/params/icon/size}">
               <xsl:attribute name="src">
                 <xsl:value-of select="concat($doc_root,/root/params/icon/help)"/>
@@ -367,7 +367,9 @@
         </xsl:when>
         <xsl:when test="/root/params/text/help">
           <!-- display text link -->
-          <a href="{$help_root}/help.php?{$session}&amp;taskid={$taskid}"><xsl:value-of select="/root/params/text/help"/></a>
+          <a href="{$help_root}/help.php?{$session}&amp;taskid={$taskid}" onclick="window.open(this.href);return false;">
+            <xsl:value-of select="/root/params/text/help"/>
+          </a>
         </xsl:when>
       </xsl:choose>
       <xsl:text> </xsl:text>

@@ -262,7 +262,7 @@ $array['sys0233'] = "Column 'rdcaccount_id' is missing from the SELECT list";
 $array['sys0234'] = "This user cannot insert, update or delete a record in a non-shared account";
 $array['sys0235'] = "Record belongs to a non-shared account, so can only be modified by a user in the same account";
 $array['sys0236'] = "Record belongs to the shared account, so can only be modified by an administrator.";
-$array['sys0237'] = "";
+$array['sys0237'] = "This user does not have a PARTY_ID - cannot continue";
 $array['sys0238'] = "DateTimes shown in User's timezone";
 $array['sys0239'] = "DateTimes shown in Party's timezone";
 
@@ -280,7 +280,7 @@ $array['sys0249'] = "Unable to locate '.dict.inc' file for table '%1\$s'";
 $array['sys0250'] = "Cannot save this selection without a description";
 $array['sys0251'] = "Screen Structure file has not been supplied";
 $array['sys0252'] = "User 'anonymous' has not been defined";
-$array['sys0253'] = "";
+$array['sys0253'] = "Value for '%1\$s' is missing from INITIAL_VALUES";
 $array['sys0254'] = "";
 $array['sys0255'] = "";
 $array['sys0256'] = "";

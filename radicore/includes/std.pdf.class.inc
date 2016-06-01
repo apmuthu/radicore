@@ -58,6 +58,11 @@ class PDF extends TCPDF
         $dbobject->pdf_destination  =& $this->pdf_destination;
         $dbobject->pdf_filename     =& $this->pdf_filename;
 
+        if (is_object($dbobject->custom_processing_object)) {
+            $dbobject->custom_processing_object->pdf              =& $this;
+            $dbobject->custom_processing_object->report_structure =& $structure;
+        } // if
+
         return;
 
     } // PDF

@@ -1,5 +1,5 @@
 <?php
-    // file created on May 4, 2015, 6:10 pm
+    // file created on May 24, 2016, 2:35 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -17,18 +17,17 @@
     
     $fieldspec['task_type']                 = array('type' => 'string',
                                                     'size' => 4,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'task_type');
     
     $fieldspec['script_id']                 = array('type' => 'string',
                                                     'size' => 80,
-                                                    'required' => 'y',
                                                     'lowercase' => 'y');
     
     $fieldspec['is_disabled']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -36,14 +35,12 @@
     
     $fieldspec['pattern_id']                = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'pattern_id');
     
     $fieldspec['subsys_id']                 = array('type' => 'string',
                                                     'size' => 16,
-                                                    'required' => 'y',
                                                     'uppercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'subsys_id');
@@ -70,6 +67,7 @@
     
     $fieldspec['keep_data']                 = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -77,27 +75,27 @@
     
     $fieldspec['log_sql_query']             = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['screen_refresh']            = array('type' => 'integer',
-                                                    'type_native' => 'smallint',
-                                                    'size' => 6,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
-                                                    'maxvalue' => 65535);
+                                                    'maxvalue' => 3600);
     
     $fieldspec['use_https']                 = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['max_execution_time']        = array('type' => 'integer',
-                                                    'type_native' => 'smallint',
-                                                    'size' => 6,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535);
     
@@ -198,6 +196,10 @@
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     
+    $this->child_relations[]                = array('child' => 'mnu_saved_selection',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'user_id'));
+    
     $this->child_relations[]                = array('child' => 'mnu_task',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'initial_passthru'));
@@ -219,6 +221,14 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'mnu_task_ip_address',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_task_quicksearch',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'mnu_task_quicksearch_alt',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     

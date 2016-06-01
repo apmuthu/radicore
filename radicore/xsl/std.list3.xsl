@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -69,6 +69,7 @@
                 <!-- display all the fields in the current row -->
                 <xsl:call-template name="display_vertical">
                   <xsl:with-param name="zone"   select="'outer'"/>
+                  <xsl:with-param name="data"   select="."/>
                   <xsl:with-param name="noedit" select="string(/root/params/outer_noedit)"/>
                 </xsl:call-template>
               </xsl:for-each>
@@ -79,7 +80,7 @@
               <xsl:with-param name="object" select="$outer"/>
             </xsl:call-template>
   
-          </div>
+          </div> <!-- outer -->
   
           <div class="middle">
   
@@ -110,7 +111,7 @@
                       <!-- display all the fields in the current row -->
                       <xsl:call-template name="display_horizontal">
                         <xsl:with-param name="zone"     select="'middle'"/>
-                        <xsl:with-param name="currocc"  select="." />
+                        <xsl:with-param name="data"     select="."/>
                         <xsl:with-param name="multiple" select="'y'"/>
                         <xsl:with-param name="noedit"   select="string(/root/params/middle_noedit)"/>
                       </xsl:call-template>
@@ -126,6 +127,7 @@
                     <!-- display all the fields in the current row -->
                     <xsl:call-template name="display_vertical">
                       <xsl:with-param name="zone"   select="'middle'"/>
+                      <xsl:with-param name="data"   select="."/>
                       <xsl:with-param name="noedit" select="string(/root/params/middle_noedit)"/>
                     </xsl:call-template>
                   </xsl:for-each>
@@ -137,7 +139,8 @@
             <xsl:call-template name="scrolling" >
               <xsl:with-param name="object" select="$middle"/>
             </xsl:call-template>
-          </div>
+            
+          </div> <!-- middle -->
   
           <!-- create navigation buttons -->
           <xsl:call-template name="navbar">
@@ -148,21 +151,43 @@
           <div class="inner">
   
             <!-- this is the INNER table -->
-            <table>
-              <xsl:choose>
-                <xsl:when test="/root/params/inner_vertical = 'y'">
-                  <!-- display a single row only -->
+            
+            <xsl:choose>
+              
+              <xsl:when test="/root/structure/inner/table">
+                <!-- display multiple rows in vertical format, each row having its own HTML table -->
+                <!-- process each non-empty row in the INNER table of the XML file -->
+                <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]/*[name()=$inner][count(*)&gt;0]">
                   
+                  <!-- display all the fields in the current row -->
+                  <xsl:call-template name="display_vertical_multirow">
+                    <xsl:with-param name="zone"       select="'inner'"/>
+                    <xsl:with-param name="data"       select="."/>
+                    <xsl:with-param name="multiple"   select="'y'" />
+                    <xsl:with-param name="noedit"     select="string(/root/params/inner_noedit)"/>
+                    <xsl:with-param name="noedit_row" select="string(/root/*[name()=$outer][1]/*[name()=$middle][1]/*[name()=$inner]/@noedit)"/>
+                  </xsl:call-template>
+                  
+                </xsl:for-each>
+                
+              </xsl:when>
+              
+              <xsl:when test="/root/params/inner_vertical = 'y'">
+                <!-- display a single row only, with vertical display -->
+                <table>
                   <xsl:for-each select="/root/*[name()=$outer][1]/*[name()=$middle][1]/*[name()=$inner][1]">
                     <!-- display all the fields in the current row -->
                     <xsl:call-template name="display_vertical">
                       <xsl:with-param name="zone"   select="'inner'"/>
+                      <xsl:with-param name="data"   select="."/>
                       <xsl:with-param name="noedit" select="string(/root/params/inner_noedit)"/>
                     </xsl:call-template>
                   </xsl:for-each>
-                </xsl:when>
-                
-                <xsl:otherwise> <!-- default is horzontal display -->
+                </table>
+              </xsl:when>
+              
+              <xsl:otherwise> <!-- default is horzontal display, one table row for each database row -->
+                <table>
                   <!-- set up column widths -->
                   <xsl:call-template name="column_group">
                     <xsl:with-param name="zone" select="'inner'"/>
@@ -183,18 +208,18 @@
                       <!-- display all the fields in the current row -->
                       <xsl:call-template name="display_horizontal">
                         <xsl:with-param name="zone"     select="'inner'"/>
-                        <xsl:with-param name="currocc"  select="." />
+                        <xsl:with-param name="data"     select="."/>
                         <xsl:with-param name="multiple" select="'y'"/>
                         <xsl:with-param name="noedit"   select="string(/root/params/inner_noedit)"/>
                       </xsl:call-template>
       
                     </xsl:for-each>
                   </tbody>
-                </xsl:otherwise>
-              </xsl:choose>
+                </table>
+              </xsl:otherwise>
+            </xsl:choose>
               
-            </table>
-          </div>
+          </div> <!-- inner -->
   
           <!-- look for optional messages -->
           <xsl:call-template name="message"/>

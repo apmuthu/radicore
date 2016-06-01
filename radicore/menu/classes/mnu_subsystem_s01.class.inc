@@ -350,6 +350,20 @@ WHERE mnu_task.subsys_id='$subsys_id'
             $data2 = $taskobj->getData_raw("task_id='$task_id'");
             $output = $this->_exportSqlData('mnu_task_ip_address', $data2, $output);
 
+            // export the contents of MNU_TASK_QUICKSEARCH for this task
+            $taskobj->sql_select = 'mnu_task_quicksearch.*';
+            $taskobj->sql_from   = 'mnu_task_quicksearch';
+            $taskobj->sql_orderby = 'task_id,sort_seq';
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('mnu_task_quicksearch', $data2, $output);
+
+            // export the contents of MNU_TASK_QUICKSEARCH_ALT for this task
+            $taskobj->sql_select = 'mnu_task_quicksearch_alt.*';
+            $taskobj->sql_from   = 'mnu_task_quicksearch_alt';
+            $taskobj->sql_orderby = 'task_id,sort_seq';
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('mnu_task_quicksearch_alt', $data2, $output);
+
             // export the contents of HELP_TEXT for this task
             $taskobj->sql_select = 'help_text.*';
             $taskobj->sql_from   = 'help_text';
