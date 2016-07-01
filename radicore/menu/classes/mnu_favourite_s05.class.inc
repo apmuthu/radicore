@@ -52,13 +52,17 @@ class mnu_favourite_s05 extends mnu_favourite
     // $fieldarray contains data from the initial $where clause,
     // or current data from the outer object (if one exists).
     {
+        if (is_long(key($fieldarray))) {
+            $fieldarray = $fieldarray[0];
+        } // if
+
         // save USER_ID
         if (empty($fieldarray)) {
         	$user_id = $_SESSION['logon_user_id'];
-        } elseif (empty($fieldarray[0]) OR empty($fieldarray[0]['user_id'])) {
+        } elseif (empty($fieldarray) OR empty($fieldarray['user_id'])) {
             $user_id = $_SESSION['logon_user_id'];
         } else {
-            $user_id = $fieldarray[0]['user_id'];
+            $user_id = $fieldarray['user_id'];
         } // if
 
         // create entries for default favourites

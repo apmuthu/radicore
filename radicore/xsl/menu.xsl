@@ -126,7 +126,13 @@
 
     <xsl:for-each select="/root/mnu_favourite" >
       <!-- insert a submit button for each entry -->
-      <input class="button" type="submit" name="favourite#{task_id}" value="{task_desc}" />
+      <input class="button" type="submit" name="favourite#{task_id}" value="{task_desc}">
+        <xsl:if test="tooltip">
+          <xsl:attribute name="title">
+            <xsl:value-of select="tooltip"/>
+          </xsl:attribute>
+        </xsl:if>
+      </input>
       <xsl:text> </xsl:text>  <!-- insert a single space as a separator -->
     </xsl:for-each>
 

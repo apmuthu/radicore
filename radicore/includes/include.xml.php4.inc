@@ -1184,14 +1184,14 @@ class radicore_view
 
         if (is_true($_SESSION['XSLT_client_side'])) {
             // send XML file to the client for transformation there
-            $this->XSLclient($xml_string);
+            $output = $this->XSLclient($xml_string);
         } else {
             // transform XML document using XSL file
-            $this->XSLTransform($xml_string, $xsl_file);
+            $output = $this->XSLTransform($xml_string, $xsl_file);
         } // if
         unset($xml_doc);
 
-        return;
+        return $output;
 
     } // buildXML
 
@@ -1806,9 +1806,9 @@ class radicore_view
             header('Pragma: no-cache'); // HTTP 1.0
         } //if
 
-        echo $xml_string;
+        //echo $xml_string;
 
-        return;
+        return $xml_string;
 
     } // XSLclient
 
@@ -1872,9 +1872,9 @@ class radicore_view
         // fix possible bug in libxslt processor
         $html = str_replace('<br></br>', '<br />', $html);
 
-        echo $html;
+        //echo $html;
 
-        return;
+        return $html;
 
     } // XSLTransform
 

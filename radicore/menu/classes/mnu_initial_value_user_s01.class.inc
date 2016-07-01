@@ -34,10 +34,14 @@ class mnu_initial_value_user_s01 extends mnu_initial_value_user
                            .'CROSS JOIN mnu_user '
                            .'LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task_field.task_id AND mnu_initial_value_user.field_id=mnu_task_field.field_id AND mnu_initial_value_user.user_id=mnu_user.user_id)';
 
-        $where_array['mnu_task_field.task_id'] = $where_array['task_id'];
-        unset($where_array['task_id']);
-        $where_array['mnu_user.user_id']       = $where_array['user_id'];
-        unset($where_array['user_id']);
+        if (!empty($where_array['task_id'])) {
+            $where_array['mnu_task_field.task_id'] = $where_array['task_id'];
+            unset($where_array['task_id']);
+        } // if
+        if (!empty($where_array['task_id'])) {
+            $where_array['mnu_user.user_id']       = $where_array['user_id'];
+            unset($where_array['user_id']);
+        } // if
         $where = array2where($where_array);
 
         return $where;

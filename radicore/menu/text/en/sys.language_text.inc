@@ -288,7 +288,7 @@ $array['sys0257'] = "";
 $array['sys0258'] = "";
 $array['sys0259'] = "";
 
-// the following entries are for ACTION buttons
+// the following entries are label text for ACTION buttons
 $array['cancel']     = 'CANCEL';
 $array['choose']     = 'CHOOSE';
 $array['choosenull'] = 'CHOOSE NULL';
@@ -307,6 +307,25 @@ $array['retrieve']   = 'RETRIEVE';
 $array['submit']     = 'SUBMIT';
 $array['submitnext'] = 'SUBMIT+next';
 $array['submitstay'] = 'SUBMIT+stay';
+
+// the following entries are tooltips for ACTION buttons
+$array['cancel-tooltip']      = 'Discards your entries and returns to previous screen';
+$array['choose-tooltip']      = 'Returns anything you selected on this screen to previous screen';
+$array['choosenull-tooltip']  = 'Returns to previous screen with no selection';
+$array['clear-tooltip']       = 'Removes all your search filters';
+$array['close-tooltip']       = 'Returns to previous screen';
+$array['collapse-tooltip']    = 'Hides all the branches and leaves of the tree';
+$array['copy-tooltip']        = 'Copies the data on this screen for use with PASTE';
+$array['expand-tooltip']      = 'Shows all the branches and leaves of the tree';
+$array['paste-tooltip']       = 'Pastes the data from COPY into this screen';
+//$array['print-tooltip']       = 'tooltip for Print';
+$array['quit-tooltip']        = 'Returns to previous screen';
+$array['reset-tooltip']       = 'Removes all your search filters, sorting and page settings and displays a fresh copy of this screen';
+//$array['retrieve-tooltip']    = 'tooltip for RETRIEVE';
+$array['submitBtn-tooltip']   = 'Verifies your entries and displays any errors, or saves your entries and returns to previous screen';
+$array['submitnext-tooltip']  = 'Verifies your entries and displays any errors; or saves your entries and either displays next available record, if any, or returns to previous screen';
+$array['submitstay-tooltip']  = 'Verifies your entries and displays any errors, or saves your entries and displays a fresh copy of this screen';
+$array['submitLogin-tooltip'] = 'Enter the system using these credentials';
 
 // the following entries are for NAVIGATION buttons
 $array['Add']    = 'Add';

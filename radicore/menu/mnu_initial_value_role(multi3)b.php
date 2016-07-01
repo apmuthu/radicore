@@ -15,7 +15,7 @@ $inner_table  = 'mnu_initial_value_role_s01';                 // name of inner t
 $screen       = 'mnu_initial_value_role.multi3b.screen.inc';  // file identifying screen structure
 
 // customise the SQL SELECT statement
-$outer_sql_select  = 'mnu_role.role_id, role_desc';
+$outer_sql_select  = 'mnu_role.role_id, role_desc, global_access';
 $outer_sql_from    = 'mnu_role';
 $outer_sql_where   = null;
 $outer_sql_groupby = null;
@@ -23,17 +23,16 @@ $outer_sql_having  = null;
 $outer_sql_orderby = null;
 $outer_sql_orderby_table = null;
 
-$middle_sql_select  = 'mnu_task.task_id, task_desc';
-$middle_sql_from    = 'mnu_task LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id) ';
-$middle_sql_where   = "mnu_task_field.task_id=mnu_task.task_id AND is_documentation_only='N'";
-//$middle_sql_groupby = 'mnu_task.task_id, task_desc';
-$middle_sql_groupby = 'mnu_task.task_id';
+$middle_sql_select = 'mnu_task.task_id, task_desc';
+$middle_sql_from   = 'mnu_task';
+$middle_sql_where  = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
+$middle_sql_groupby = null;
 $middle_sql_having  = null;
 $middle_sql_orderby = null;
 
 $inner_sql_select   = null;
 $inner_sql_from     = null;
-$inner_sql_where    = null;
+$inner_sql_where    = "mnu_task_field.is_documentation_only='N'";
 $inner_sql_groupby  = null;
 $inner_sql_having   = null;
 $inner_sql_orderby  = 'mnu_task_field.field_id';

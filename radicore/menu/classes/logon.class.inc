@@ -218,7 +218,7 @@ class logon extends mnu_user
         $updatearray = $this->updateRecord($updatearray);
 
         if (empty($this->errors)) {
-        	if ($auth_array['authentication'] == 'INTERNAL') {
+        	if ($fieldarray['authentication'] == 'INTERNAL') {
                 if ($logon_user_id == 'ANONYMOUS') {
                     // the next bit does not apply
                 } else {

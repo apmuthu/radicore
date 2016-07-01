@@ -79,18 +79,18 @@
                 <!-- display row as non-editable -->
                 <xsl:attribute name="class">rdc_to_be_deleted</xsl:attribute>
                 <div class="rdc_to_be_deleted">
-                <!-- process the named field from the current row -->
-                <xsl:call-template name="datafield">
-                  <xsl:with-param name="item"     select="$field"/>
-                  <xsl:with-param name="itemname" select="$fieldname"/>
-                  <xsl:with-param name="path"     select="$table"/>
-                  <xsl:with-param name="multiple" select="$multiple"/>
-                  <xsl:with-param name="position" select="$position"/>
-                  <xsl:with-param name="noedit"   select="'y'"/>
-                  <xsl:with-param name="noselect" select="'y'"/>
-                  <xsl:with-param name="cellattr" select="$cellattr"/>
-                </xsl:call-template>
-                <xsl:text>&#160;</xsl:text> <!-- insert non-breaking space -->
+                  <!-- process the named field from the current row -->
+                  <xsl:call-template name="datafield">
+                   <xsl:with-param name="item"     select="$field"/>
+                   <xsl:with-param name="itemname" select="$fieldname"/>
+                   <xsl:with-param name="path"     select="$table"/>
+                   <xsl:with-param name="multiple" select="$multiple"/>
+                   <xsl:with-param name="position" select="$position"/>
+                   <xsl:with-param name="noedit"   select="'y'"/>
+                   <xsl:with-param name="noselect" select="'y'"/>  <!-- remove select box for this row -->
+                   <xsl:with-param name="cellattr" select="$cellattr"/>
+                  </xsl:call-template>
+                  <xsl:text>&#160;</xsl:text> <!-- insert non-breaking space -->
                 </div>
               </xsl:when>
               
@@ -193,6 +193,9 @@
     <!-- build a node-set of fields which have the DISPLAY-EMPTY attribute set -->
     <xsl:variable name="display-empty" select="cell[@display-empty]"/>
 
+    <!-- build a node-set of labels which have the LABEL-ONLY attribute set -->
+    <xsl:variable name="label-only" select="cell[@label-only]"/>
+    
     <!-- build a node-set of field names which actually exist as data elements -->
     <xsl:variable name="fieldsfound" select="//*[name()=$table][position()=$table_row]/*[name()=$fieldnames]"/>
 
@@ -202,7 +205,8 @@
     <xsl:choose>
       <xsl:when test="count($fieldsfound) &lt;= (count($nodisplay) + count($nodisplay2))
                   and not(count($blankfields) &gt; 0)
-                  and not($display-empty)">
+                  and not($display-empty)
+                  and not($label-only)">
         <!-- all the fields in this row have the NODISPLAY attribute set, so do not output anything -->
       </xsl:when>
 
@@ -298,7 +302,7 @@
             <xsl:if test="@rowspan">
               <xsl:attribute name="rowspan"><xsl:value-of select="@rowspan" /></xsl:attribute>
             </xsl:if>
-            <xsl:if test="@align">
+            <xsl:if test="@align and not(@label-only)">
               <xsl:attribute name="align"><xsl:value-of select="@align" /></xsl:attribute>
             </xsl:if>
             <xsl:if test="@valign">
@@ -341,6 +345,22 @@
     
                     <xsl:value-of select="@label"/> <!-- output the value for the label -->
     
+                  </xsl:when>
+                  
+                  <xsl:when test="@label-only">
+                    <xsl:choose>
+                      <xsl:when test="@align">
+                        <!-- combine 'align' attribute with 'label' class -->
+                        <xsl:attribute name="class"><xsl:value-of select="concat('label ',@align)"/></xsl:attribute>
+                      </xsl:when>
+                      <xsl:otherwise>
+                        <!-- use 'label' class on its own -->
+                        <xsl:attribute name="class">label</xsl:attribute>
+                      </xsl:otherwise>
+                    </xsl:choose>
+                    
+                    <xsl:value-of select="@label"/> <!-- output the value for the label -->
+                    
                   </xsl:when>
     
                   <xsl:otherwise>
@@ -1703,6 +1723,11 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:attribute>
+          <xsl:if test="$item/@tooltip">
+            <xsl:attribute name="title">
+              <xsl:value-of select="$item/@tooltip"/>
+            </xsl:attribute>
+          </xsl:if>
         </input>
       </div>
 
@@ -2363,6 +2388,11 @@
               </xsl:otherwise>
             </xsl:choose>
           </xsl:attribute>
+          <xsl:if test="$item/@tooltip">
+            <xsl:attribute name="title">
+              <xsl:value-of select="$item/@tooltip"/>
+            </xsl:attribute>
+          </xsl:if>
         </input>
       </div>
 
@@ -2899,6 +2929,7 @@
             </xsl:otherwise>
           </xsl:choose>
         </xsl:when>
+        
         <xsl:when test="$item/@CDATA">
           <!-- output as pre-formatted text without escaping '<' and '>' characters -->
           <pre>
@@ -2914,6 +2945,19 @@
             </xsl:call-template>
           </pre>
         </xsl:when>
+        
+        <xsl:when test="contains($item, 'var barChartData')">
+          <!--   field contains 'var barChartData' (to draw a chart object), so surround it with canvas and script tags -->
+          <!--   Added by Nelson Nones, Geoprise Technologies, January 31, 2016 -->
+          <canvas id="canvas"></canvas>
+          <script>
+            <!--<xsl:value-of select="$item"/>-->
+            <xsl:call-template name="disable-output-escaping">
+              <xsl:with-param name="string" select="$item" /> <!-- converts escaped entities into their non-escaped values -->
+            </xsl:call-template>
+          </script>
+        </xsl:when>
+        
         <xsl:otherwise>
           <!-- item is read only, so output value as plain text -->
           <xsl:value-of select="$item"/>

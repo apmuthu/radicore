@@ -59,6 +59,10 @@ class radicore_view
 
         // get a list of fields which exist in the current screen
         $screen_fields = $this->getFieldsInScreen ($screen_structure, $objectname);
+        if (empty($screen_fields)) {
+            // not found, so try with full name
+            $screen_fields = $this->getFieldsInScreen ($screen_structure, get_class($dbobject));
+        } // if
 
         if (empty($errors)) {
             // array is empty
@@ -71,13 +75,26 @@ class radicore_view
         if (array_key_exists($objectname, $errors)) {
             // extract errors for this object only
             $object_errors = $errors[$objectname];
-            $dbobject->errors = $object_errors;  // put errors bac into object
+            $dbobject->errors = $object_errors;  // put errors back into object
 		    unset($errors[$objectname]);
 		    foreach ($object_errors as $key => $value) {
 		        if (is_string($key) AND is_string($value)) {
 		    	    // simple associative array not indexed by rownum, so save for row zero
 		    	    $row_zero[$key] = $value;
 		    	    unset($object_errors[$key]);
+                } elseif (is_array($value)) {
+                    // $key represents a row number
+                    foreach ($value as $key1 => $value1) {
+                        if (is_string($key1) AND is_array($value1)) {
+                            // this is an array of errors from a child class
+                            foreach ($value1 as $key2 => $value2) {
+                                if (in_array($key2, $screen_fields)) {
+                                    // field exists in current screen so attach error to it
+                                    $object_errors[$key][$key2] = $value2;
+                                } // if
+                            } // foreach
+                        } // if
+                    } // foreach
 		        } // if
 		    } // foreach
 		    if (isset($row_zero)) {
@@ -134,17 +151,9 @@ class radicore_view
                 $value = $doc->createTextNode($rowdata);
                 $value = $node->appendChild($value);
 
-//            } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
-//                // row has been "soft" deleted, so do not display it, but still consume the row number
-//                // so that the row numbers in the form still match the row numbers in the object
-//                $node->setAttribute('rdc_to_be_deleted', 'y');
-//                $child = $doc->createElement('rdc_to_be_deleted');
-//                $child = $node->appendChild($child);
-//                $value = $doc->createTextNode('y');
-//                $value = $child->appendChild($value);
-
             } else {
                 if (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                    // causes row to be shown as non-editable and non-selectable
                     $node->setAttribute('rdc_to_be_deleted', 'y');
                 } // if
                 // look for optional attributes just for this row
@@ -203,7 +212,11 @@ class radicore_view
                             // include css class name(s)
                 	        $child->setAttribute('css_class', $css_array[$fieldname]);
                         } // if
-                        if (!array_key_exists('rdc_to_be_deleted', $rowdata) AND (isset($fieldspec[$fieldname]) OR isset($fieldspec_row[$rownum][$fieldname]))) {
+                        if (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                            // display all fields as non-editable text
+                            $spec['noedit'] = 'y';
+                        } // if
+                        if (isset($fieldspec[$fieldname]) OR isset($fieldspec_row[$rownum][$fieldname])) {
                             // field exists in $fieldspec, so get field specifications
                             if (!empty($fieldspec_row) AND !empty($fieldspec_row[$rownum]) AND !empty($fieldspec_row[$rownum][$fieldname])) {
                                 // separate entry for each row
@@ -347,7 +360,19 @@ class radicore_view
                                 if ($spec['control'] == 'filepicker') {
                                     $child->setAttribute('control', 'filepicker');
                                     if (isset($spec['task_id'])) {
-                                        $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                        if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
+                                            // include zone name in task_id
+                                            $zone = 'db'.$dbobject->zone;
+                                            $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
+                                        } else {
+                                            $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                        } // if
+                                        $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                        $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
+                                        if(!empty($task_data)) {
+                                            $task_data = $task_data[0];
+                                            $child->setAttribute('tooltip', $task_data['task_desc']);
+                                        } //if
                                     } // if
                                     if (isset($spec['subtype'])) {
                                         if (isset($spec['imagewidth'])) {
@@ -392,7 +417,19 @@ class radicore_view
                                         $child->setAttribute('foreign_field', $spec['foreign_field']);
                                     } // if
                                     if (isset($spec['task_id'])) {
-                                        $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                        if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
+                                            // include zone name in task_id
+                                            $zone = 'db'.$dbobject->zone;
+                                            $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
+                                        } else {
+                                            $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                        } // if
+                                        $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                        $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
+                                        if(!empty($task_data)) {
+                                            $task_data = $task_data[0];
+                                            $child->setAttribute('tooltip', $task_data['task_desc']);
+                                        } //if
                                     } // if
                                     if (isset($spec['allow_input'])) {
                                         $child->setAttribute('allow_input', $spec['allow_input']);
@@ -1340,14 +1377,14 @@ class radicore_view
 
         if (is_true($_SESSION['XSLT_client_side'])) {
             // send XML file to the client for transformation there
-            $this->XSLclient($xml_string);
+            $output = $this->XSLclient($xml_string);
         } else {
             // transform XML document using XSL file
-            $this->XSLTransform($xml_doc, $xsl_file);
+            $output = $this->XSLTransform($xml_doc, $xsl_file);
         } // if
         unset($xml_doc);
 
-        return;
+        return $output;
 
     } // buildXML
 
@@ -1418,7 +1455,7 @@ class radicore_view
                         } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
                             // ignore
 
-                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty)$/i', $fieldname, $regs)) {
+                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $fieldname, $regs)) {
                             // ignore
 
                         } else {
@@ -1498,6 +1535,12 @@ class radicore_view
             $child = $doc->createElement('button');
             $child = $occ->appendChild($child);
             $child->setAttribute('id', $button);
+
+            // look for a tooltip in a language_text.inc file
+            $tooltip = getLanguageText($button.'-tooltip');
+            if (!empty($tooltip)) {
+                $child->setAttribute('tooltip', $tooltip);
+            } // if
 
             // convert text into output language
             $label = getLanguageText($label);
@@ -1792,10 +1835,10 @@ class radicore_view
             $value = $doc->createTextNode(trim($button['button_text']));
             $value = $child->appendChild($value);
 
-            // convert task description into output language
+            // use task description as a tooltip
             $button['task_desc'] = $button['task_desc'];
             $button['task_desc'] = convertEncoding($button['task_desc'], 'UTF-8');
-            $child->setAttribute('title', $button['task_desc']);
+            $child->setAttribute('tooltip', $button['task_desc']);
         } // foreach
 
         return;
@@ -1976,7 +2019,7 @@ class radicore_view
                                 // add this entry as an attribute to the current row
                                 $rowocc->setAttribute($sttr, $attrvalue);
                             } // foreach
-                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty)$/i', $fieldname, $regs)) {
+                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $fieldname, $regs)) {
                             // write these out as attributes on the current cell
                             $cell->setAttribute($regs[0], $fieldlabel);
                         } else {
@@ -2082,9 +2125,9 @@ class radicore_view
             header('Pragma: no-cache'); // HTTP 1.0
         } //if
 
-        echo $xml_string;
+        //echo $xml_string;
 
-        return;
+        return $xml_string;
 
     } // XSLclient
 
@@ -2150,9 +2193,9 @@ class radicore_view
         // fix possible bug in libxslt processor
         $html = str_replace('<br></br>', '<br />', $html);
 
-        echo $html;
+        //echo $html;
 
-        return;
+        return $html;
 
     } // XSLTransform
 

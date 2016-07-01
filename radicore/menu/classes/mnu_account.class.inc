@@ -36,6 +36,18 @@ class mnu_account extends Default_Table
     } // _cm_changeConfig
 
     // ****************************************************************************
+    function _cm_getInitialData ($fieldarray)
+    // Perform custom processing prior to insertRecord().
+    // $fieldarray contains data from the initial $where clause.
+    {
+        // this field is auto-increment, so cannot be set manually
+        unset($fieldarray['rdcaccount_id']);
+
+        return $fieldarray;
+
+    } // _cm_getInitialData
+
+    // ****************************************************************************
     function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {

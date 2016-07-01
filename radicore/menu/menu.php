@@ -120,8 +120,8 @@ if (isset($_GET['case_id']) and isset($_GET['workitem_id'])) {
    // a workitem has been selected from the current screen, so jump to it now
    $case_id     = addslashes($_GET['case_id']);
    $workitem_id = addslashes($_GET['workitem_id']);
-   $where = "case_id='$case_id' AND workitem_id='$workitem_id'";
-   $workitem_data = $db_workitem_role->getData($where);
+   $where1 = "case_id='{$case_id}' AND workitem_id='{$workitem_id}'";
+   $workitem_data = $db_workitem_role->getData($where1);
    if ($db_workitem_role->errors) {
        $errors = array_merge($errors, $db_workitem_role->getErrors());
    } elseif (empty($workitem_data)) {
@@ -129,8 +129,10 @@ if (isset($_GET['case_id']) and isset($_GET['workitem_id'])) {
        $errors[] = getLanguageText('sys0119');
    } else {
        $task_id = $workitem_data[0]['task_id'];
-       $where   = $workitem_data[0]['context'];
-       scriptNext($task_id, $where);
+       $where2  = $workitem_data[0]['context'];
+       $task_array['wf_case_id']     = $case_id;
+       $task_array['wf_workitem_id'] = $workitem_id;
+       scriptNext($task_id, $where2, null, $task_array);
    } // if
 } // if
 
@@ -199,7 +201,8 @@ $xml_objects[]['root'] = &$db_workitem_user;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

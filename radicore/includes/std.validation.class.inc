@@ -404,15 +404,20 @@ END_OF_REGEX;
                             break;
                         case 'filename':
                         case 'image':
-                            // check that value is a valid file name
-                            $try = $fieldvalue;
-                            if (!file_exists($try)) {
-                                // 'Filename does not exist'
-                                if (!empty($callingOBJ->picker_subdir)) {
-                                	$try = $callingOBJ->picker_subdir .'/' .$fieldvalue;
-                                } // if
+                        case 'video':
+                            if ($fieldspec['subtype'] == 'video' AND preg_match('/^http/i', $fieldvalue)) {
+                                // this is a URL, so do not validate it
+                            } else {
+                                // check that value is a valid file name
+                                $try = $fieldvalue;
                                 if (!file_exists($try)) {
-                                    $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0057', $fieldvalue);
+                                    // 'Filename does not exist'
+                                    if (!empty($callingOBJ->picker_subdir)) {
+                                	    $try = $callingOBJ->picker_subdir .'/' .$fieldvalue;
+                                    } // if
+                                    if (!file_exists($try)) {
+                                        $this->errors[$fieldname] = $callingOBJ->getLanguageText('sys0057', $fieldvalue);
+                                    } // if
                                 } // if
                             } // if
                             break;

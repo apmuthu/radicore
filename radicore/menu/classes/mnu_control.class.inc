@@ -33,11 +33,13 @@ class mnu_control extends Default_Table
     function getControlData ($field_id, $user_data=null)
     // return one or more specified values from the control table.
     {
-        $classdir = $GLOBALS['classdir'];  // save
-        if (getcwd() != dirname($this->dirname)) {
-            // switch to correct directory for retrieving message text
-            $GLOBALS['classdir'] = dirname($this->dirname);
-        } // if
+//        $classdir = $GLOBALS['classdir'];  // save
+//        if (getcwd() != dirname($this->dirname)) {
+//            // switch to correct directory for retrieving message text
+//            $GLOBALS['classdir'] = dirname($this->dirname);
+//        } // if
+
+//        $this->checkMessageDirectory();
 
         $result = null;
 
@@ -150,7 +152,7 @@ class mnu_control extends Default_Table
                         if ($diff_days > 0) {
                             if ($diff_days <= $limit) {
                                 // "Your password will expire in N days"
-                                $result = getLanguageText('e0040', $diff_days);
+                                $result = $this->getLanguageText('e0040', $diff_days);
                             } // if
                         } // if
                         break;
@@ -171,7 +173,7 @@ class mnu_control extends Default_Table
                         if ($diff_count > 0) {
                             if ($diff_count <= $limit) {
                                 // "Your password will expire in N logons"
-                                $result = getLanguageText('e0041', $diff_count);
+                                $result = $this->getLanguageText('e0041', $diff_count);
                             } // if
                         } // if
                         break;
@@ -246,11 +248,11 @@ class mnu_control extends Default_Table
                 break;
 
             default:
-        	    $result = getLanguageText('e0004', $field_id); // 'Invalid value for field_id';
+        	    $result = $this->getLanguageText('e0004', $field_id); // 'Invalid value for field_id';
         	    break;
         } // switch
 
-        $GLOBALS['classdir'] = $classdir;  // restore
+        //$GLOBALS['classdir'] = $classdir;  // restore
 
         return $result;
 
@@ -710,6 +712,7 @@ class mnu_control extends Default_Table
             if ($fieldarray['field_value'] <> $old_data['field_value']) {
                 // open up a dialog with the user class
                 $dbobject =& RDCsingleton::getInstance('mnu_user');
+                $dbobject->audit_logging = false;
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->setPasswords($fieldarray['field_value']);
                 if ($dbobject->errors) {

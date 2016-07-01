@@ -1420,7 +1420,8 @@ class mysql
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if (strlen($where2) > 0 AND $where1 <> $where2) {
+                //if (strlen($where2) > 0 AND $where1 <> $where2) {
+                if (strlen($where2) > 0 AND strcasecmp($where1, $where2) <> 0) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($dbname, $tablename, $query);

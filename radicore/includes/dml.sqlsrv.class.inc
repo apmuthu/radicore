@@ -19,6 +19,7 @@ class sqlsrv
     var $client_info = '';              // output from sqlsrv_client_info()
     var $server_info = '';              // output from sqlsrv_server_info()
 
+    var $alias_names = array();         // array of 'alias=expression' clauses
     var $audit_logging;                 // yes/no switch
     var $errors;                        // array of errors
     var $error_string;                  //
@@ -410,6 +411,8 @@ END_OF_REGEX;
             $alias_names[$alias] = $expression;
         } // foreach
 
+        $this->alias_names = $alias_names;  // save for adjustWhere() method
+
         // search $output and replace any '=alias' with '=expression'
         foreach ($alias_names as $alias => $expression) {
             $pattern = "/=[ ]*{$alias}\b/imsu";
@@ -770,6 +773,15 @@ END_OF_REGEX;
                 $offset = $start +  strlen($string1);  // SELECT does not end with LIMIT
             } // if
         } // while
+
+        // search $output and replace any '=alias' with '=expression'
+        foreach ($this->alias_names as $alias => $expression) {
+            $pattern = "/=[ ]*{$alias}\b/imsu";
+            if (preg_match($pattern, $string_out, $regs)) {
+                $string_out = preg_replace($pattern, '='.$expression.' ', $string_out, -1, $count);
+            } // endwhile
+        } // foreach
+
 
         // Replace TRUE/FALSE with 1/0.
         $search  = array('/=[ ]*TRUE/iu', '/=[ ]*FALSE/iu');
@@ -1766,6 +1778,8 @@ END_OF_REGEX;
                 // only a single query, so return result in full
                 if (is_bool($result)) {
                     return $result;
+                } elseif (preg_match('/^(INSERT|UPDATE|DELETE)/i', $this->query)) {
+                    return sqlsrv_rows_affected ($result);
                 } else {
                     $array = array();
                     while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
@@ -1975,7 +1989,8 @@ END_OF_REGEX;
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if (strlen($where2) > 0 AND $where1 <> $where2) {
+                //if (strlen($where2) > 0 AND $where1 <> $where2) {
+                if (strlen($where2) > 0 AND strcasecmp($where1, $where2) <> 0) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($dbname, $tablename, $query);

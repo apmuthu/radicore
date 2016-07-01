@@ -306,7 +306,7 @@ if (!function_exists('array_update_associative')) {
                 } // if
                 //if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
 				//if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
-                if ($spec['type'] == 'array' AND is_array($array2[$fieldname])) {
+                if (($spec['type'] == 'array' OR preg_match('/^(multidrop|m_checkbox|checkbox_multi)$/i', $spec['control'])) AND is_array($array2[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both arrays, so update
                 } elseif (!is_array($array2[$fieldname]) AND !is_array($array1[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both scalars, so update
@@ -323,12 +323,13 @@ if (!function_exists('array_update_associative')) {
 
 // ****************************************************************************
 if (!function_exists('array_update_empty')) {
-    function array_update_empty ($array1, $array2, $extra=null, $fieldspec=null)
+    function array_update_empty ($array1, $array2, $extra=null, $fieldspec=null, $allow_null=false)
     // update contents of $array1 from contents of $array2.
     // Note: this is different from a merge which will overwrite $array1 with
     // contents of $array2, which is not what I want. This version will only update
     // $array1 if the key does not exist, or the value is empty.
     // $extra, if provided, will be appended to each entry copied from $array2 to $array1.
+    // $allow_null will copy an empty field from array2 to array1 if it does not already exist in array1
     {
         reset($array1);  // fix for version 4.4.1
         if (!is_string(key($array1))) {
@@ -343,7 +344,7 @@ if (!function_exists('array_update_empty')) {
         } // if
 
         foreach ($array2 as $fieldname => $fieldvalue) {
-            if (empty($array1[$fieldname]) AND !empty($array2[$fieldname])) {
+            if (empty($array1[$fieldname]) AND (is_True($allow_null) OR !empty($array2[$fieldname]))) {
                 if (isset($fieldspec[$fieldname]['autoinsert']) OR isset($fieldspec[$fieldname]['autoupdate'])) {
                     // ignore this field
                 } else {
@@ -874,8 +875,10 @@ if (!function_exists('check_custom_button')) {
         // look for 'button#<zone>#name' where '<zone>#' is optional
         $pattern = '/^((?P<prefix>\w+\#)){1}(?P<zone>\w+\#)?/i';
         foreach ($_POST as $postname => $postvalue) {
-            //if (preg_match('/^button#/i', $postname, $regs)) {
-            if (preg_match($pattern, $postname, $regs)) {
+            if (preg_match('/^(task#|favourite#)/i', $postname, $regs)) {
+                // this is a navigation button, so ignore it
+                $condition = true;
+            } elseif (preg_match($pattern, $postname, $regs)) {
                 // strip off the prefix to leave the original field name
                 $zone   =& $regs['zone'];
                 $button = str_replace($regs['prefix'].$zone, '', $postname);
@@ -3163,15 +3166,13 @@ if (!function_exists('getLanguageFile')) {
             $directory = 'text';  // default value
         } // if
 
-        $language_array = array();
+        $language_array = array();  // a list of possible language options
 
         if (!empty($GLOBALS['party_language'])) {
-        	// change hyphen to underscore before file system lookup
-            $language_array[] = $GLOBALS['party_language'];
+        	$language_array[] = $GLOBALS['party_language'];
         } // if
 
         if (!empty($_SESSION['user_language'])) {
-            // change hyphen to underscore before file system lookup
             $language_array[] = $_SESSION['user_language'];
         } // if
 
@@ -3191,7 +3192,8 @@ if (!function_exists('getLanguageFile')) {
 
         // search directories in priority order and stop when the file is found
         foreach ($language_array as $language) {
-            $language = str_replace('-', '_', $language);
+            // change hyphen to underscore before file system lookup
+            $language = str_replace('-', '_', strtolower($language));
         	$fname = "$directory/$language/$filename";
         	if (file_exists($fname)) {
         	    break;
@@ -3221,8 +3223,8 @@ if (!function_exists('getLanguageText')) {
     function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $arg5=null)
     // get text from the language file and include up to 5 arguments.
     {
-        static $array1;         // for sys.language_text.inc
-        static $array2;         // for language_text.inc
+        static $array1;         // for sys.language_text.inc (global messages)
+        static $array2;         // for language_text.inc (subsystem messages)
         static $language;       // current language
         static $curr_dir;       // current directory used for $array2 contents
 
@@ -3302,6 +3304,19 @@ if (!function_exists('getLanguageText')) {
             } else {
                 $array1 = array();
             } // if
+            if (!empty($GLOBALS['project_code'])) {
+                // now look for a file of custom messages
+                $dir = realpath($dir.'/custom-processing/'.$GLOBALS['project_code']);
+                if (!empty($dir)) {
+                    $fname = getLanguageFile('sys.language_text.inc', $dir, true);
+                    if ($fname) {
+                        $array3 = require $fname;  // import contents of disk file
+                        // custom values replace standard values
+                        $array1 = array_merge($array1, $array3);
+                        unset($array3);
+                    } // if
+                } // if
+            } // if
         } // if
 
         if (!is_array($array2)) {
@@ -3324,19 +3339,17 @@ if (!function_exists('getLanguageText')) {
     	    } else {
     	        $array2 = array();
     	    } // if
-        } // if
-
-        if (!empty($GLOBALS['project_code'])) {
-            // now look for a file of custom messages
-            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
-            if (!empty($dir)) {
-                $fname = getLanguageFile('language_text.inc', $dir, true);
-                if ($fname) {
-                    $array3 = require $fname;  // import contents of disk file
-                    // custom values replace standard values
-                    $array1 = array_merge($array1, $array3);
-                    $array2 = array_merge($array2, $array3);
-                    unset($array3);
+            if (!empty($GLOBALS['project_code'])) {
+                // now look for a file of custom messages
+                $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+                if (!empty($dir)) {
+                    $fname = getLanguageFile('language_text.inc', $dir, true);
+                    if ($fname) {
+                        $array4 = require $fname;  // import contents of disk file
+                        // custom values replace standard values
+                        $array2 = array_merge($array2, $array4);
+                        unset($array4);
+                    } // if
                 } // if
             } // if
         } // if
@@ -4748,8 +4761,10 @@ if (!function_exists('pasteData')) {
                 $reason = 5; // field marked as 'autoinsert', so do not copy
             } elseif (isset($fieldspec[$fieldname]['autoupdate'])) {
                 $reason = 6; // field marked as 'autoupdate', so do not copy
+            } elseif (isset($fieldspec[$fieldname]['password'])) {
+                $reason = 7; // field marked as 'password', so do not copy
             } elseif ($fieldspec[$fieldname]['type'] == 'date' AND $array1[$fieldname] > $array2[$fieldname]) {
-                $reason = 7; // do not overwrite with an earlier date
+                $reason = 8; // do not overwrite with an earlier date
             } else {
                 $array1[$fieldname] = $array2[$fieldname];
                 // now look for parent relationships where this field is the foreign key

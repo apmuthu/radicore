@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // *****************************************************************************
@@ -144,7 +144,8 @@ initSession($save_session_data);
 $_SESSION['pages'][$PHP_SELF]['pattern_id'] = 'logon';
 
 // define action buttons
-$act_buttons['submitBtn'] = 'login';
+//$act_buttons['submitBtn'] = 'login';
+$act_buttons['submitLogin'] = 'login';
 
 if (isset($_POST['quit']) or (isset($_POST['quit_x']))) {
     // cancel this screen, return to previous screen
@@ -210,7 +211,8 @@ $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

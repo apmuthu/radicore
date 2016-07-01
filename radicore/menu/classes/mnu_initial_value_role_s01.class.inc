@@ -34,11 +34,17 @@ class mnu_initial_value_role_s01 extends mnu_initial_value_role
                            .'CROSS JOIN mnu_role '
                            .'LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task_field.task_id AND mnu_initial_value_role.field_id=mnu_task_field.field_id AND mnu_initial_value_role.role_id=mnu_role.role_id)';
 
-        unset($where_array['start_task_id']);
-        $where_array['mnu_task_field.task_id'] = $where_array['task_id'];
-        unset($where_array['task_id']);
-        $where_array['mnu_role.role_id']       = $where_array['role_id'];
-        unset($where_array['role_id']);
+        if (!empty($where_array['task_id'])) {
+            $where_array['mnu_task_field.task_id'] = $where_array['task_id'];
+            unset($where_array['task_id']);
+        } // if
+        if (!empty($where_array['role_id'])) {
+            $where_array['mnu_role.role_id']       = $where_array['role_id'];
+            unset($where_array['role_id']);
+        } // if
+        if (!empty($where_array['start_task_id'])) {
+            unset($where_array['start_task_id']);
+        } // if
         $where = array2where($where_array);
 
         return $where;

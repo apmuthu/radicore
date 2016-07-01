@@ -129,9 +129,18 @@ function childForm ($post, $object_array, $task_id, $where=null)
 
     $pattern_id = getPatternId();  // pattern for the current task
 
-    preg_match('/^(task#|favourite#)/i', $task_id, $regs);
+    // look for 'task|favourite)#<zone>#name' where '<zone>#' is optional
+    $pattern = '/^((?P<prefix>\w+\#)){1}(?P<zone>\w+\#)?/i';
+    //preg_match('/^(task#|favourite#)/i', $task_id, $regs);
+    preg_match($pattern, $task_id, $regs);
     // strip pattern prefix
-    $next_task = str_replace($regs[0], '', $task_id);
+    $next_task = str_replace($regs['prefix'], '', $task_id);
+    // strip zone if it exists
+    if (!empty($regs['zone'])) {
+        $next_task = str_replace($regs['zone'], '', $next_task);
+        $zone = $regs['zone'];
+        $zone = rtrim($zone, '#');
+    } // if
     // obtain row number in which this button was pressed
     $value = $post[$task_id];
     if (is_array($value)) {
@@ -162,13 +171,11 @@ function childForm ($post, $object_array, $task_id, $where=null)
 
     // check to see if a popup/filepicker/fileupload form has been called
     if (preg_match('/(popup|filepicker|fileupload)/i', $task_array['pattern_id'], $regs)) {
+        if (!empty($zone)) {
+            $dbobject   = $object_array[$zone];
+            $objectname = $zone;
+        } // if
         if (is_object($dbobject)) {
-            if (!$multiple AND count($object_array) > 1) {
-        		// set to previous object in array
-            	$null       = prev($object_array);
-            	$objectname = key($object_array);
-                $dbobject   = $object_array[$objectname];
-        	} // if
             // save these details for processing after returning from the popup
             $script_vars['popup_object'] = $objectname;
     	    $script_vars['popup_offset'] = $offset;
@@ -921,6 +928,19 @@ function initSession($save_session_data=array())
         if (empty($logon_screen)) {
         	$logon_screen = '/menu/logon.php';
         } // if
+    } // if
+
+    if (isset($_GET['DBGSESSID'])) {
+        if ($_GET['DBGSESSID'] == -1) {
+            // unset the cookie which starts a debug session
+            setcookie('DBGSESSID', '', time()-42000, '/');
+            $_SESSION['DEBUG-STOP'] = true;
+        } // if
+    } elseif (isset($_SESSION['DEBUG-STOP'])) {
+        // unset the cookie which starts a debug session
+        setcookie('DBGSESSID', '', time()-42000, '/');
+    } else {
+        unset($_SESSION['DEBUG-STOP']);
     } // if
 
     // look for session variables associated with the current script

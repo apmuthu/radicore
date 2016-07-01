@@ -97,6 +97,7 @@ abstract class Default_Table
     var $rows_per_page = 0;             // page size for multi-row forms
     var $row_locks;                     // FALSE, SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
+    var $row_offset;                    // identifies current row in a multi-row display
 
     var $saved_fieldspec;               // used in OUTPUT4 pattern
     var $saved_selection;               // used in OUTPUT4 pattern
@@ -408,10 +409,10 @@ abstract class Default_Table
         $this->sql_union = null;
 
         if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
-            // do nothing
+            $condition = true;  // do nothing
         } else {
             if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
-                // do nothing
+                $condition = true;  // do nothing
             } else {
                 // if this task+context is a pending workitem then update it
                 $errors = $this->_examineWorkflow($this->fieldarray);
@@ -803,7 +804,7 @@ abstract class Default_Table
             if (empty($this->errors)) {
                 // obtain copy of original record from database
                 $where = array2where($fieldarray, $this->getPkeyNames(), $this);
-                $originaldata = $this->_dml_ReadBeforeUpdate($where);
+                $originaldata = $this->_dml_ReadBeforeUpdate($where, false);
                 if ($this->numrows == 0) {
                     return $fieldarray;  // there is nothing to delete
                 } elseif ($this->numrows == 1) {
@@ -4416,11 +4417,19 @@ abstract class Default_Table
 
         if (!empty($insertarray)) {
             if (isset($this->fieldspec['rdcaccount_id'])) {
-                $account_id = $_SESSION['rdcaccount_id'];
-                if (empty($account_id) OR $account_id == 1) {
-                    $insertarray['rdcaccount_id'] = 1;
+                if (isset($this->fieldspec['rdcaccount_id']['auto_increment'])) {
+                    // new value for rdcaccount_id is being created, so don't supply a value
+                    unset($insertarray['rdcaccount_id']);
+                } elseif (!empty($insertarray['rdcaccount_id'])) {
+                    // value has already been supplied (from a COPY?) so don't change it
+                    $condition = true;
                 } else {
-                    $insertarray['rdcaccount_id'] = $account_id;
+                    $account_id = $_SESSION['rdcaccount_id'];
+                    if (empty($account_id) OR $account_id == 1) {
+                        $insertarray['rdcaccount_id'] = 1;
+                    } else {
+                        $insertarray['rdcaccount_id'] = $account_id;
+                    } // if
                 } // if
             } // if
         } // if
@@ -4603,10 +4612,13 @@ abstract class Default_Table
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
     // $selection contains a string identifying what was selected in that popup screen.
+    // $popup_offset identifies the row number (which starts from 1 in HTML forms)
     {
         $this->errors = array();
 
         $return_from = strtolower($return_from);
+
+        $this->row_offset = null;
 
         reset($fieldarray);   // fix for version 4.4.1
         if (!empty($fieldarray) and !is_string(key($fieldarray))) {
@@ -4616,7 +4628,8 @@ abstract class Default_Table
                 $popup_offset = key($fieldarray)+1;
             } else {
                 // extract specified row
-                $single_row = $fieldarray[$popup_offset-1];
+                $this->row_offset = $popup_offset-1;
+                $single_row = $fieldarray[$this->row_offset];
             } // if
         } else {
             // not indexed by row, so use entire array
@@ -4662,6 +4675,7 @@ abstract class Default_Table
                 $fieldarray = $single_row;
             } // if
             $this->fieldarray = $fieldarray;
+            $this->row_offset = null;
             return $fieldarray;
         } // if
 
@@ -4782,6 +4796,8 @@ abstract class Default_Table
 
         // see if any additional data is required or needs to be changed
         $fieldarray = $this->getExtraData($fieldarray);
+
+        $this->row_offset = null;
 
         // store updated $fieldarray within this object
         $this->fieldarray = $fieldarray;
@@ -5212,15 +5228,15 @@ abstract class Default_Table
         $global_access = $dbrole_data['global_access'];
 
         // If the security class has GLOBAL_ACCESS = 'y' there are no restrictions.
-        if (is_True($global_access)) return $array;
+        //if (is_True($global_access)) return $array;
 
         $dbobject =& RDCsingleton::getInstance('mnu_role_taskfield');
 
-        $dbobject->sql_select = 'role_id,task_id,field_id,access_type';
+        $dbobject->sql_select = 'role_id, task_id, field_id, access_type';
         $dbobject->sql_from   = 'mnu_role_taskfield ';
         $dbobject->sql_where  = "mnu_role_taskfield.role_id IN($role_list)";
 
-        $dbobject->sql_orderby = '';
+        $dbobject->sql_orderby = 'field_id ASC, access_type DESC';  // force NED before NDI
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
         $where = "task_id='" .$_SESSION['pages'][$PHP_SELF]['task_id'] ."'";
 
@@ -6111,7 +6127,7 @@ abstract class Default_Table
                 // row is marked for deletion
                 if ($count > 0) {
                     $where = array2where($rowdata, $pkeynames);
-                    $olddata = $this->_dml_ReadBeforeUpdate($where);
+                    $olddata = $this->_dml_ReadBeforeUpdate($where, false);
                     if (!empty($olddata)) {
                         $rowdata = array_merge($olddata[0], $rowdata);
                     } // if
@@ -7403,7 +7419,7 @@ abstract class Default_Table
                 break;
         } // switch
 
-        if ($outarray) {
+        if (!empty($outarray)) {
             return $outarray;
         } else {
             return false;
@@ -8702,6 +8718,7 @@ abstract class Default_Table
                 $cpo->fieldarray         =& $this->fieldarray;
 
                 $cpo->allow_buttons_all_zones   =& $this->allow_buttons_all_zones;
+                $cpo->allow_empty_where         =& $this->allow_empty_where;
                 $cpo->allow_multiple            =& $this->allow_multiple;
                 $cpo->alt_language_table        =& $this->alt_language_table;
                 $cpo->alt_language_cols         =& $this->alt_language_cols;
@@ -8725,6 +8742,7 @@ abstract class Default_Table
                 $cpo->query                     =& $this->query;
                 $cpo->reuse_previous_select     =& $this->reuse_previous_select;
                 $cpo->rows_per_page             =& $this->rows_per_page;
+                $cpo->row_offset                =& $this->row_offset;
                 $cpo->saved_selection           =& $this->saved_selection;
                 $cpo->saved_screen_structure    =& $this->saved_screen_structure;
                 $cpo->skip_getdata              =& $this->skip_getdata;
@@ -9512,6 +9530,9 @@ abstract class Default_Table
         $sql_from .= ') ';
 
         if (!empty($reldata['alt_language_table'])) {
+            if (!isset($GLOBALS['party_language'])) {
+                $GLOBALS['party_language'] = $_SESSION['default_language'];
+            } // if
             $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
             if ($party_language != $_SESSION['default_language']) {
                 // link to table which provides text in an alternative language
@@ -9573,6 +9594,9 @@ abstract class Default_Table
 
         $alt_language_relations = array();
         if (!empty($this->alt_language_table)) {
+            if (!isset($GLOBALS['party_language'])) {
+                $GLOBALS['party_language'] = $_SESSION['default_language'];
+            } // if
             $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
             if ($party_language != $_SESSION['default_language']) {
                 // add in a new relation for the alternative language table
@@ -9740,6 +9764,9 @@ abstract class Default_Table
         $from .= ')';
 
         if (!empty($reldata['alt_language_table'])) {
+            if (!isset($GLOBALS['party_language'])) {
+                $GLOBALS['party_language'] = $_SESSION['default_language'];
+            } // if
             $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
             if ($party_language != $_SESSION['default_language']) {
                 // add in a new relation for the alternative language table
@@ -9773,6 +9800,10 @@ abstract class Default_Table
     // if $subquery=true it means $fldchild was obtained from a subquery and need
     // not be qualified with a table name.
     {
+        if (!isset($GLOBALS['party_language'])) {
+            $GLOBALS['party_language'] = $_SESSION['default_language'];
+        } // if
+
         // convert underscore to hyphen for database lookup
         $party_language = str_replace('_', '-', strtolower($GLOBALS['party_language']));
 

@@ -42,7 +42,8 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, mnu_role.global_access'
+        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel'
+                          .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role WHERE global_access='Y' AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS global_access"
                           .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
         // - check that IP address is valid
         $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_task_ip_address WHERE task_id='$task_id') = 0 THEN 'Y'"
@@ -50,8 +51,7 @@ class mnu_task extends Default_Table
                                   ." ELSE 'N'"
                              ." END AS ip_address_valid";
         $this->sql_from   = 'mnu_task'
-                         . ' LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id)'
-                         . " LEFT JOIN mnu_role ON (mnu_role.role_id='$role_id')";
+                         . ' LEFT JOIN mnu_subsystem ON (mnu_subsystem.subsys_id=mnu_task.subsys_id)';
         $this->sql_where  = '';
 
         $this->errors = array();
@@ -501,10 +501,14 @@ class mnu_task extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        $entry = getEntryPoint($this);
-        if (strtolower($entry) != 'getdata') {
-            // not initiated via the 'getdata' method, so this section is not required
-            return $rowdata;
+        //$entry = getEntryPoint($this);
+        //if (strtolower($entry) != 'getdata') {
+        //    // not initiated via the 'getdata' method, so this section is not required
+        //    return $rowdata;
+        //} // if
+
+        if ($this->initiated_from_controller === false) {
+            return $rowdata;  // not initiated from a controller, so this section is not required
         } // if
 
         if (empty($rowdata)) return $rowdata;   // do nothing
@@ -544,6 +548,27 @@ class mnu_task extends Default_Table
         return $rowdata;
 
     } // _cm_post_getData
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $parent_data may contain contents of current record in the parent object.
+    {
+        // customisable code goes here
+
+//        if (empty($this->sql_from)) {
+//            // construct default SELECT and FROM clauses using parent relations
+//            $this->sql_from    = null;
+//            $this->sql_groupby = null;
+//            $this->sql_having  = null;
+//            $this->sql_union   = null;
+//            $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+//        } // if
+
+        return $where;
+
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)

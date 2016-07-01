@@ -296,7 +296,8 @@ $xml_objects[]['root'] = &$fileobject;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

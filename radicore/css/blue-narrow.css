@@ -855,6 +855,11 @@ span.error {
   font-style: italic;
   font-weight: normal;
 }
+.rdc_to_be_deleted {
+    color: yellow;
+    background-color: brown;
+    text-decoration: line-through;
+}
 
 /* options for printing */
 @media print {

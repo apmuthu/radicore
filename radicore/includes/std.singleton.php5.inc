@@ -19,6 +19,7 @@ class RDCsingleton
         if ($class == '__destruct') {
             // session is being destroyed, instances are being lost, so lose all references to them
             foreach ($instances as $key => $value) {
+                $value = null;
             	unset($instances[$key]);
             } // foreach
         	$instances = array();

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.delete1.inc
@@ -154,13 +154,13 @@ $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
 $scrolling[$dbobject->getClassName()]['where']    = $where;
 
 // if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-if (empty($errors)) {
+//if (empty($errors)) {
 	// get any extra data and merge with $fieldarray
     $fieldarray = $dbobject->getExtraData($fieldarray);
     if ($dbobject->errors) {
     	$errors = $dbobject->getErrors();
     } // if
-} // if
+//} // if
 
 if (empty($errors)) {
     // check that this record can be deleted
@@ -206,7 +206,8 @@ $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

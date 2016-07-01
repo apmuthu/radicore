@@ -11,4 +11,102 @@
 -->
 </STYLE>
 </HEAD>
-<BODY>
+<BODY><h1>This application has encountered an unrecoverable error</h1>
+<p>The following has been reported to the administrator:</p>
+<div class='error'>
+<h2>2016-06-30 09:15:09</h2>
+<p>Fatal Error: PostgreSQL: ERROR:  23505: duplicate key value violates unique constraint "mnu_account_pkey"
+DETAIL:  Key (rdcaccount_id)=(1) already exists.
+SCHEMA NAME:  menu
+TABLE NAME:  mnu_account
+CONSTRAINT NAME:  mnu_account_pkey
+LOCATION:  _bt_check_unique, nbtinsert.c:424 (# 23505)</p>
+<p>SQL query: INSERT INTO mnu_account (account_name, created_date, created_user) VALUES ('Account #2', '2016-06-30 09:15:09', 'AJM')</p>
+<p>Error in line 1136 of file 'E:\www.radicore.org\includes\dml.pgsql.class.inc'.</p>
+<p>Host Info: localhost, Server Version: 9.5.3<br>Client Encoding: UTF8, Server Encoding: UTF8<br>Database: MENU, Schema: "MENU", PUBLIC</p>
+<p>PHP_SELF: /demo/menu/mnu_account(add1).php</p>
+<p>CURRENT DIRECTORY: E:\www.radicore.org\www\demo\menu</p>
+<p>SERVER_ADDR: 127.0.0.1</p>
+<p>SERVER_NAME: local.radicore.org</p>
+<p>HTTP_HOST: local.radicore.org</p>
+<p>User Id: AJM</p>
+<p>Role Id: GLOBAL</p>
+<p>REMOTE_ADDR: 127.0.0.1</p>
+<p>REQUEST_URI: /demo/menu/mnu_account(add1).php</p>
+</div>
+
+<p>Page Stack:</p>
+<pre>
+  [0] main_menu
+  [1] menu01
+  [2] mnu_account(list1)
+  [3] mnu_account(add1)
+</pre>
+
+<p>Backtrace:</p>
+<pre>
+0: array =
+  function: string = errorHandler
+  args: array =
+    0: integer = 2
+    1: string = pg_query(): Query failed: ERROR:  23505: duplicate key value violates unique constraint &amp;quot;mnu_account_pkey&amp;quot;
+DETAIL:  Key (rdcaccount_id)=(1) already exists.
+SCHEMA NAME:  menu
+TABLE NAME:  mnu_account
+CONSTRAINT NAME:  mnu_account_pkey
+LOCATION:  _bt_check_unique, nbtinsert.c:424
+    2: string = E:\www.radicore.org\includes\dml.pgsql.class.inc
+    3: integer = 1136
+    4: object = pgsql
+1: array =
+  file: string = E:\www.radicore.org\includes\dml.pgsql.class.inc
+  line: integer = 1136
+  function: string = pg_query
+  args: array =
+    0: resource = Resource id #20
+    1: string = INSERT INTO mnu_account (account_name, created_date, created_user) VALUES ('Account #2', '2016-06-30 09:15:09', 'AJM')
+2: array =
+  file: string = E:\www.radicore.org\includes\std.table.class.inc
+  line: integer = 8265
+  function: string = insertRecord
+  class: string = pgsql
+  type: string = -&gt;
+  args: array =
+    0: string = menu
+    1: string = mnu_account
+    2: array =
+      account_name: string = Account #2
+      rdcaccount_id: string = null
+3: array =
+  file: string = E:\www.radicore.org\includes\std.table.class.inc
+  line: integer = 4480
+  function: string = _dml_insertRecord
+  class: string = Default_Table
+  type: string = -&gt;
+  args: array =
+    0: array =
+      account_name: string = Account #2
+      rdcaccount_id: string = null
+4: array =
+  file: string = E:\www.radicore.org\includes\std.add1.inc
+  line: integer = 125
+  function: string = insertRecord
+  class: string = Default_Table
+  type: string = -&gt;
+  args: array =
+    0: array =
+      rdcaccount_id: string = null
+      account_name: string = Account #2
+      rdcversion: string = null
+      created_date: string = null
+      created_user: string = null
+      revised_date: string = null
+      revised_user: string = null
+5: array =
+  file: string = E:\www.radicore.org\www\demo\menu\mnu_account(add1).php
+  line: integer = 9
+  args: array =
+    0: string = E:\www.radicore.org\includes\std.add1.inc
+  function: string = require
+
+</pre>

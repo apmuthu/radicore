@@ -104,7 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         // save current settings
         $script_vars['where'] = $where;
     } // if
-    $errors     = $dbobject->errors;
+    if (!empty($dbobject->errors)) {
+        $errors = array_merge($errors, $dbobject->errors);
+    } // if
     // save these variables for later in the same session
     $script_vars['dbobject'] = serialize($dbobject);
     $script_vars = updateScriptVars ($script_vars);
@@ -392,7 +394,8 @@ $xml_objects[]['root'] = &$dbobject;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

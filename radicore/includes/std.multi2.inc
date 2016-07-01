@@ -126,7 +126,7 @@ if (isset($script_vars['dbinner'])) {
         $dbinner->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
-    $inner_where = $dbinner->initialise($where, $_selection);
+    $inner_where = $dbinner->initialise($where, $selection);
     if ($dbinner->errors) {
         scriptPrevious($dbinner->getErrors(), $messages, 'fail');
     } // if
@@ -433,7 +433,8 @@ $xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);
-$view->buildXML($xml_objects, $errors, $messages);
+$html = $view->buildXML($xml_objects, $errors, $messages);
+echo $html;
 exit;
 
 ?>

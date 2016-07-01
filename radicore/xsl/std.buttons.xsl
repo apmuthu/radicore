@@ -52,7 +52,13 @@
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
         <xsl:for-each select="/root/actbar/button[starts-with(@id,'submit') or starts-with(@id,'choose')]">
           <!-- create a button for each element within actionbar -->
-          <input class="submit" type="submit" name="{@id}" value="{node()}" />
+          <input class="submit" type="submit" name="{@id}" value="{node()}">
+            <xsl:if test="@tooltip">
+              <xsl:attribute name="title">
+                <xsl:value-of select="@tooltip"/>
+              </xsl:attribute>
+            </xsl:if>
+          </input>
           <xsl:text> </xsl:text>
         </xsl:for-each>
       </div>
@@ -61,7 +67,13 @@
         <xsl:text> </xsl:text>  <!-- insert a space to prevent an empty element -->
         <xsl:for-each select="/root/actbar/button[not(starts-with(@id,'submit')) and not(starts-with(@id,'choose'))]">
           <!-- create a button for each element within actionbar -->
-          <input class="submit" type="submit" name="{@id}" value="{node()}" />
+          <input class="submit" type="submit" name="{@id}" value="{node()}">
+            <xsl:if test="@tooltip">
+              <xsl:attribute name="title">
+                <xsl:value-of select="@tooltip"/>
+              </xsl:attribute>
+            </xsl:if>
+          </input>
           <xsl:text> </xsl:text>
         </xsl:for-each>
       </div>
@@ -478,7 +490,7 @@
       <p class="withoutselection">
         <xsl:for-each select="/root/navbar/*[@context_preselect='N']">
             <!-- create a button for each element within navbar -->
-            <input class="submit" type="submit" name="{@id}" title="{@title}" value="{node()}" />
+            <input class="submit" type="submit" name="{@id}" title="{@tooltip}" value="{node()}" />
             <xsl:text> </xsl:text>
         </xsl:for-each>
       </p>
@@ -581,7 +593,7 @@
       <p class="withselection">
         <xsl:for-each select="/root/navbar/*[@context_preselect='Y']">
             <!-- create a button for each element within navbar -->
-          <input class="submit" type="submit" name="{@id}" title="{@title}" value="{node()}" />
+          <input class="submit" type="submit" name="{@id}" title="{@tooltip}" value="{node()}" />
             <xsl:text> </xsl:text>
         </xsl:for-each>
       </p>
@@ -602,7 +614,7 @@
       <p class="withoutselection">
         <xsl:for-each select="/root/navbar/*">
             <!-- create a button for each element within navbar -->
-            <input class="submit" type="submit" name="{@id}" value="{node()}" />
+          <input class="submit" type="submit" name="{@id}"  title="{@tooltip}" value="{node()}" />
             <xsl:text> </xsl:text>
         </xsl:for-each>
       </p>

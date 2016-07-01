@@ -15,7 +15,7 @@ $inner_table  = 'mnu_initial_value_user_s01';                 // name of inner t
 $screen       = 'mnu_initial_value_user.multi3a.screen.inc';  // file identifying screen structure
 
 // customise the SQL SELECT statement
-$outer_sql_select  = 'task_id,task_desc,task_type';
+$outer_sql_select  = 'task_id,task_desc, task_type';
 $outer_sql_from    = null;
 $outer_sql_where   = null;
 $outer_sql_groupby = null;
@@ -32,7 +32,7 @@ $middle_sql_orderby = null;
 
 $inner_sql_select   = null;
 $inner_sql_from     = null;
-$inner_sql_where    = null;
+$inner_sql_where    = "mnu_task_field.is_documentation_only='N'";
 $inner_sql_groupby  = null;
 $inner_sql_having   = null;
 $inner_sql_orderby  = 'mnu_task_field.field_id';

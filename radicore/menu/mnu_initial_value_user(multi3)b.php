@@ -23,17 +23,16 @@ $outer_sql_having  = null;
 $outer_sql_orderby = null;
 $outer_sql_orderby_table = null;
 
-$middle_sql_select  = 'mnu_task.task_id,task_desc';
-$middle_sql_from    = 'mnu_task LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id) ';
-$middle_sql_where   = "mnu_task_field.task_id=mnu_task.task_id AND is_documentation_only='N'";
-//$middle_sql_groupby = 'mnu_task.task_id, task_desc';
-$middle_sql_groupby = 'mnu_task.task_id';
-$middle_sql_having  = null;
-$middle_sql_orderby = null;
+$middle_sql_select  = 'mnu_task.task_id, task_desc';
+$middle_sql_from    = 'mnu_task';
+$middle_sql_where   = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
+$middle_sql_groupby = '';
+$middle_sql_having  = '';
+$middle_sql_orderby = '';
 
 $inner_sql_select   = null;
 $inner_sql_from     = null;
-$inner_sql_where    = null;
+$inner_sql_where    = "mnu_task_field.is_documentation_only='N'";
 $inner_sql_groupby  = null;
 $inner_sql_having   = null;
 $inner_sql_orderby  = 'mnu_task_field.field_id';

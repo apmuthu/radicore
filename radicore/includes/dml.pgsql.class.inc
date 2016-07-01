@@ -699,6 +699,8 @@ END_OF_REGEX;
                 } // if
                 // deal with row locking (optional)
                 switch ($this->row_locks){
+                    // NOTE: the following code has been commented out in order to avoid the error:
+                    // "FOR UPDATE cannot be applied to the nullable side of an outer join"
                     case 'SH':
                         $lock_str = 'FOR UPDATE';
                         break;
@@ -717,9 +719,34 @@ END_OF_REGEX;
             } // if
         } // if
 
-        // build the query string and run it
-        $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
-        $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $repeat       = false;
+        $repeat_count = 0;
+        do {
+            // build the query string and run it
+            $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
+            //$result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $result = pg_query($this->dbconnect, $this->query);
+            if ($result === false) {
+                $errno = $this->getErrorNo();
+                if ($errno == '0A000' AND !empty($lock_str)) {
+                    // "FOR UPDATE cannot be applied to the nullable side of an outer join"
+                    logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+                    // rollback current transaction
+                    $result = pg_query($this->dbconnect, 'ROLLBACK') or trigger_error($this, E_USER_ERROR);
+                    logSqlQuery ($schema, null, 'ROLLBACK');
+                    // start a new transaction
+                    $result = pg_query($this->dbconnect, 'BEGIN TRANSACTION') or trigger_error($this, E_USER_ERROR);
+                    logSqlQuery ($schema, null, 'BEGIN TRANSACTION');
+                    // amend query and try again
+                    $lock_str .= ' OF '.$tablename;  // restrict lock to main table only
+                    $repeat = true;
+                } else {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } else {
+                $repeat = false;
+            } // if
+        } while ($repeat === true);
 
         // convert result set into a simple associative array for each row
         while ($row = pg_fetch_assoc($result)) {
@@ -840,8 +867,12 @@ END_OF_REGEX;
         if ($this->dbconnect) {
             $string = pg_last_error($this->dbconnect);
             // look for 'ERROR: nnnnn:' in string
-            if (preg_match('/(?<=error:)[ ]*\d+(?=:)/i', $string, $regs)) {
-            	$errno = (int)ltrim($regs[0]);
+            //if (preg_match('/(?<=error:)[ ]*\d+(?=:)/i', $string, $regs)) {
+            //	$errno = (int)ltrim($regs[0]);
+
+            // NOTE: errno may be '0A000' instead of 'nnnnn'
+            if (preg_match('/(?<=error:)[ ]*.+?(?=:)/i', $string, $regs)) {
+                $errno = trim($regs[0]);
             } // if
         } // if
 
@@ -1132,7 +1163,7 @@ END_OF_REGEX;
                 $repeat = false;
                 $this->numrows = 1;  // record has been inserted
             } // if
-        } while ($repeat == true);
+        } while ($repeat === true);
 
         // write query to log file, if option is turned on
         logSqlQuery ($schema, $tablename, $this->query);
@@ -1373,7 +1404,8 @@ END_OF_REGEX;
             foreach ($this->unique_keys as $key) {
                 $where1 = $this->buildKeyString ($oldarray, $key);
                 $where2 = $this->buildKeyString ($fieldarray, $key);
-                if (strlen($where2) > 0 AND $where1 <> $where2) {
+                //if (strlen($where2) > 0 AND $where1 <> $where2) {
+                if (strlen($where2) > 0 AND strcasecmp($where1, $where2) <> 0) {
                     // key has changed, so check for uniqueness
                     $query = "SELECT count(*) FROM $tablename WHERE $where2";
                     $count = $this->getCount($schema, $tablename, $query);

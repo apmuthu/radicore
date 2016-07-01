@@ -53,7 +53,7 @@ if ($dbobject->errors) {
 } // if
 
 // retrieve profile must have been set by previous screen
-if (empty($where)) {
+if (empty($where) AND !is_True($dbobject->allow_empty_where)) {
     $batch_errors = scriptPrevious(getLanguageText('sys0081')); // 'Nothing has been selected yet.'
     return $batch_errors;
 } // if

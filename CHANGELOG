@@ -1,5 +1,23 @@
 ﻿RADICORE for PHP - news
 
+2016-07-01, version 1.96.0/
+Database changes:
+- none
+
+Other changes:
+- fixed bug in 'logon.class.inc' and 'mnu_user.class.inc' which failed to deal with passwords which had not been encrypted before being stored in the database.
+- fixed bug in 'mnu_user.class.inc' which only deal with users with the same value for rdcaccount_id as the logon user when toggling between encrypted and unencrypted passwords.
+- fixed bug in 'std.validation.class.inc' which rejected a field's subtype of 'video'.
+- fixed bug in 'dml.pgsql.class.inc' regarding the error "FOR UPDATE cannot be applied to the nullable side of an outer join".
+- fixed bug in 'dml.sqlsrv.class.inc' where referencing an alias name which is the product of a previous expression has to be replaced by the original expression.
+- modified 'include.xml.php5.inc' and 'include.session.inc' to deal with popup buttons which can appear in different entities in the same multi-entity transaction pattern. The button's value will now be in the format 'task#<zone>#<task_id>' where '<zone>' can be either 'dbouter', 'dbmiddle' or 'dbinner'. When returning from the popup this makes it easier to pass the popup result to the correct table object.
+- fixed bugs in 'mnu_initial_value_role(multi3)a/b.php', 'mnu_initial_value_user(multi3)a/b.php' and 'mnu_role_taskfield(multi3)a/b.php' where the query produced the wrong result in certain circumstances.
+- modified all 'dml.???.class.inc' files so that when looking for a change in a unique key during an update it will use strcasecomp() to perform a case-insensitive comparison.
+- modified 'std.pdf.class.inc' so that the 'ignore_if_empty' option will now work in 'Body contents (detail view - additional data)'.
+- modified 'include.xml.php.inc', 'std.buttons.xsl' and 'std.data_field.xsl' so that tooltips are now displayed for action buttons and popup buttons.
+- fixed bug which prevented creation of new records on MNU_ACCOUNT table.
+- fixed bug when a user with a NULL rdcaccount_id uses Copy+Paste on a user record which has rdcaccount_id > 1. The new record must use the same rdcaccount_id as the copied record whereas the bug caused it to be set to 1 (the shared account). 
+
 2016-06-01, version 1.95.0
 Database changes:
 - run script menu\sql\mysql\alter_table(2016-05-18).sql to alter the structure of the MENU database.

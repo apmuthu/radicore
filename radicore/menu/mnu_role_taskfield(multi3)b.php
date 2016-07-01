@@ -15,21 +15,19 @@ $screen = 'mnu_role_taskfield.multi3(b).screen.inc';    // file identifying scre
 
 // identify extra parameters for a JOIN
 $outer_sql_select = 'mnu_role.role_id, role_desc, global_access';
-$outer_sql_from   = 'mnu_role LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role.start_task_id)';
-$outer_sql_where  = NULL;
-//$outer_sql_groupby = 'mnu_role.role_id, role_desc, global_access';
-$outer_sql_groupby = 'mnu_role.role_id';
-$outer_sql_having = "global_access='N'";
+$outer_sql_from   = 'mnu_role';
+$outer_sql_where  = '';
+$outer_sql_groupby = '';
+$outer_sql_having = '';
 
 $middle_sql_select = 'mnu_task.task_id, task_desc';
-$middle_sql_from   = 'mnu_task LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id) ';
-$middle_sql_where  = 'mnu_task_field.task_id=mnu_task.task_id';
-//$middle_sql_groupby = 'mnu_task.task_id, task_desc';
-$middle_sql_groupby = 'mnu_task.task_id';
+$middle_sql_from   = 'mnu_task';
+$middle_sql_where  = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
+$middle_sql_groupby = '';
 
 $inner_sql_select = '';
 $inner_sql_from   = '';
-$inner_sql_where  = '';
+$inner_sql_where  = "mnu_task_field.is_documentation_only='N'";
 $inner_sql_orderby = 'mnu_task_field.field_id';
 
 require 'std.multi3.inc';                               // activate page controller

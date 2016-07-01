@@ -291,6 +291,8 @@ div.main td.label {
   font-weight: bold;
   color: black;
   background: #66cc66;
+  padding:3px;
+  padding-right:5px;
 }
 
 /* fileupload */
@@ -857,6 +859,11 @@ span.error {
   background-color: white;
   height: 30em;
 	overflow: auto;
+}
+.rdc_to_be_deleted {
+    color: yellow;
+    background-color: brown;
+    text-decoration: line-through;
 }
 
 /* options for printing */

@@ -141,10 +141,9 @@ class PDF extends TCPDF
                         // width is '*', to be set to remainder after all other columns have been done
                         $col_remainder[] = $colnum;
                     } else {
-                        if (preg_match('/(%)$/', $coldata['width'])) {
-                            // contains a percentage, so turn it into a number
-                            $percent = substr($coldata['width'], 0, -1);  // strip off trailing '%' character
-                            $coldata['width'] = $this->printable_width * ($percent / 100);
+                        if (preg_match('/\d*(\.\d+)?(?=%)/', $coldata['width'], $regs)) {
+                            // $regs[0] contains a percentage, so turn it into a number
+                            $coldata['width'] = round($this->printable_width * ($regs[0] / 100), 2);
                             // update input array - this is required for PHP 4
                             $columns[$colnum]['width'] = $coldata['width'];
                         } // if
@@ -555,11 +554,18 @@ class PDF extends TCPDF
                 		    // default is page width divided by number of columns
                 	        $cellspec['width'] = $this->printable_width / count($columndata);
                 	    } // if
-                        $print_array[] = $cellspec;
+                        if (empty($cellspec['text']) AND isset($cellspec['ignore_if_empty'])) {
+                            // this cell is empty and should not be included in the output
+                        } else {
+                            $print_array[] = $cellspec;
+                        } // if
                     } // foreach
 
-                    // now print this row of cells
-                    $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
+                    if (!empty($print_array)) {
+                        $print_array = $this->adjustColumnWidths($print_array);
+                        // now print this row of cells
+                        $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
+                    } // if
 
                 } // foreach
             } // foreach

@@ -158,7 +158,7 @@ class mnu_user extends Default_Table
         if ($auth_array['authentication'] != 'INTERNAL') {
             // no need to encrypt the password
             $logon_password = $password;
-        } elseif ($encrypt_flag == true) {
+        } elseif ($encrypt_flag === true) {
             // encrypt the password to include in database lookup
             $crypt_obj =& RDCsingleton::getInstance('encryption_class');
             $spec = $this->fieldspec['user_password'];
@@ -168,6 +168,8 @@ class mnu_user extends Default_Table
                 return false;
             } // if
             unset($crypt_obj);
+        } else {
+            $logon_password = $password;
         } // if
 
         // join to MNU_ROLE to obtain start_task_id
@@ -229,6 +231,8 @@ class mnu_user extends Default_Table
             } // if
         } // if
 
+        $fieldarray['authentication'] = $auth_array['authentication'];
+
         return $fieldarray;
 
     } // validatePassword
@@ -239,12 +243,17 @@ class mnu_user extends Default_Table
     {
         $crypt_obj =& RDCsingleton::getInstance('encryption_class');
 
+        $rdcaccount_id = $_SESSION['rdcaccount_id'];    // save
+        $_SESSION['rdcaccount_id'] = null;              // operate on ALL accounts, not just user's account
+
         // read records for all current users
         $this->sql_select = 'user_id,user_password';
         $rowdata = $this->getData_raw(null);
         if ($this->errors) {
             return $this->errors;
         } // if
+
+        $_SESSION['rdcaccount_id'] = $rdcaccount_id;    // restore
 
         // get size of password field
         $size = $this->fieldspec['user_password']['size'];
@@ -439,16 +448,16 @@ class mnu_user extends Default_Table
 
         // if both 'user_id' and 'user_password' exist then encrypt the password
         if (!empty($fieldarray['user_id']) AND !empty($password_value)) {
-            // always encrypt string to ensure it has valid characters
-            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
-            $key    = $fieldarray['user_id'];
-            $spec   = $this->fieldspec['user_password'];
-            $encrypted_string = $crypt_obj->encrypt($key, $password_value, $spec['size']);
-            if ($crypt_obj->errors) {
-                $this->errors[$password_name] = $crypt_obj->errors[0];
-                return $fieldarray;
-            } else {
-                if (is_True($this->pswd_encrypt)) {
+            if (is_True($this->pswd_encrypt)) {
+                // always encrypt string to ensure it has valid characters
+                $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+                $key    = $fieldarray['user_id'];
+                $spec   = $this->fieldspec['user_password'];
+                $encrypted_string = $crypt_obj->encrypt($key, $password_value, $spec['size']);
+                if ($crypt_obj->errors) {
+                    $this->errors[$password_name] = $crypt_obj->errors[0];
+                    return $fieldarray;
+                } else {
                     // replace plain text string with encrypted version
                     $fieldarray['user_password'] = $encrypted_string;
                     // insert dummy field to say that password has been encrypted

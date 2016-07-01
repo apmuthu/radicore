@@ -38,7 +38,7 @@ class mnu_favourite_s04 extends mnu_favourite
             if (is_True($global_access)) {
                 // global_access is ON so all buttons can be accessed without restriction
                 // (unless a task has been disabled)
-                $this->sql_select = 'mnu_task.task_id, mnu_favourite.task_desc, mnu_task.is_disabled';
+                $this->sql_select = 'mnu_task.task_id, mnu_favourite.task_desc, mnu_task.is_disabled, mnu_task.task_desc AS tooltip';
                 $this->sql_from   = "mnu_favourite"
                                   ." LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_favourite.task_id)";
                 $where_array['mnu_task.is_disabled'] = 'N';
