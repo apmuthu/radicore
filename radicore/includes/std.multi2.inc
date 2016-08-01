@@ -33,6 +33,16 @@ if (!empty($selection) AND !isset($return_from)) {
 } // if
 
 if (isset($_POST['quit'])) {
+    if (isset($script_vars['dbouter'])) {
+        require_once "classes/$outer_table.class.inc";
+        $dbouter = unserialize($script_vars['dbouter']);
+        $dbouter->quitButton();  // perform any QUIT processing
+    } // if
+    if (isset($script_vars['dbinner'])) {
+        require_once "classes/$inner_table.class.inc";
+        $dbinner = unserialize($script_vars['dbinner']);
+        $dbinner->quitButton();  // perform any QUIT processing
+    } // if
     // clear this script from session details and return to previous page
     scriptPrevious(null, null, 'quit');
 } // if

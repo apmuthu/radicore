@@ -18,7 +18,7 @@ $mode = 'insert';
 // load session variables
 initSession();
 
-if (isset($_POST['quit'])) {
+if (isset($_POST['quit']) OR isset($_GET['quit'])) {
     if (isset($script_vars['dbobject'])) {
         require_once "classes/$table_id.class.inc";
         $dbobject = unserialize($script_vars['dbobject']);
@@ -128,9 +128,11 @@ if (!empty($_POST)) {
                 $errors = $dbobject->getErrors();
             } // if
             if (empty($errors)) {
+                // "N records were inserted in XXXX"
+                $messages[] = getLanguageText('sys0005', $dbobject->numrows, strtoupper($dbobject->tablename));
                 $errors = $dbobject->commit();
                 if (empty($errors)) {
-                    $messages[] = getLanguageText('sys0080'); // 'Record inserted OK'
+                    //$messages[] = getLanguageText('sys0080'); // 'Record inserted OK'
                     if (isset($_POST['submitstay'])) {
                         // re-initialise data for a new record
                         $fieldarray = $dbobject->getInitialData($where);

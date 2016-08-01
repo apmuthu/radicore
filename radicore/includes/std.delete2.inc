@@ -54,13 +54,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $fieldarray = $dbobject->deleteMultiple($fieldarray);
     $errors = $dbobject->getErrors();
     if (!$errors) {
+        $messages = array_merge($messages, $dbobject->getMessages());
         $errors = $dbobject->commit();
     } // if
     if ($errors) {
         $dbobject->rollback();
     } // if
 
-    $messages = array_merge($messages, $dbobject->getMessages());
+    //$messages = array_merge($messages, $dbobject->getMessages());
 
     if (empty($errors)) {
     	$action = 'delete';

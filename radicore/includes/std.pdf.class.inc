@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // are we using PHP 5, or something earlier?
@@ -322,14 +322,15 @@ class PDF extends TCPDF
                             unset($cellspec['align']);
                         } // if
 
-                        $print_array[0] = $cellspec;
+                        $print_array[0] = $cellspec;  // add label to print array
 
                         // follow with field data
-                        $cellspec = $this->structure['columns'][1];
-                        $cellspec = array_merge($cellspec, $columndata);
+                        $cellspec = $columndata;
+                        unset($cellspec[$fieldname]);
+                        $cellspec = array_merge($cellspec, $this->structure['columns'][1]);
                         $cellspec['default_style'] = $this->structure['data']['style'];
                         if (array_key_exists('ignore_if_empty', $this->style[$cellspec['default_style']])) {
-                    	    $cellspec['ignore_if_empty'] = $this->style[$cellspec['default_style']]['ignore_if_empty'];
+                    	    $cellspec['ignore_if_empty'] = 'y';
                         } // if
                         if (array_key_exists($fieldname, $style_array)) {
                     	    $cellspec['style'] = $style_array[$fieldname];
@@ -361,8 +362,8 @@ class PDF extends TCPDF
                             unset($cellspec['align']);
                         } // if
 
-                        if (empty($cellspec['text']) AND array_key_exists('ignore_if_empty', $cellspec)) {
-                            // do not print an empty line
+                        if (isset($cellspec['ignore_if_empty']) AND (array_key_exists('text', $cellspec) AND empty($cellspec['text']))) {
+                            $continue = true;  // do not print an empty line
                         } else {
                     	    $print_array[1] = $cellspec;
                     	    $result = $this->printRow($print_array, __FUNCTION__, $border, $fill);
@@ -431,7 +432,15 @@ class PDF extends TCPDF
 
                             } // if
 
-                            $print_array[] = $cellspec;
+                            if (isset($cellspec['ignore_if_empty']) AND (array_key_exists('text', $cellspec) AND empty($cellspec['text']))) {
+                                $condition = true;  // this cell is empty and should not be included in the output
+                            } elseif (isset($cellspec['ignore_if_empty']) AND(array_key_exists('barcode', $cellspec) AND empty($cellspec['barcode']))) {
+                                $condition = true;  // this cell is empty and should not be included in the output
+                            } elseif (isset($cellspec['ignore_if_empty']) AND(array_key_exists('image', $cellspec) AND empty($cellspec['image']))) {
+                                $condition = true;  // this cell is empty and should not be included in the output
+                            } else {
+                                $print_array[] = $cellspec;
+                            } // if
 
                         } // foreach
 
@@ -492,6 +501,7 @@ class PDF extends TCPDF
                     $print_array = array();
                     // construct $cellspec for each cell, then add it to $print_array
                     foreach ($columndata as $cellno => $cellspec) {
+                        $ignore_if_empty = FALSE;
                         if (empty($cellspec['field'])) {
                             $fieldname = null;
                         } else {
@@ -515,7 +525,9 @@ class PDF extends TCPDF
                             if (array_key_exists($cellspec['barcode'], $fieldarray)) {
                                 $cellspec['barcode'] = $fieldarray[$cellspec['barcode']];
                             } else {
+                                // not supplied in data, so cannot be output
                                 $cellspec['barcode'] = '';
+                                $ignore_if_empty = TRUE;
                             } // if
 
                         } elseif (array_key_exists('image', $cellspec)) {
@@ -523,10 +535,13 @@ class PDF extends TCPDF
                             if (substr($cellspec['image'], 0, 2) == '%%') {
                                 // replace field name with field data
                                 $imagename = substr($cellspec['image'], 2);
-                                if (isset($fieldarray[$imagename])) {
-                                    $imagename = $fieldarray[$imagename];
+                                if (array_key_exists($imagename, $fieldarray)) {
+                                    $cellspec['image'] = $fieldarray[$imagename];
+                                } else {
+                                    // not supplied in data, so cannot be output
+                                    $cellspec['image'] = '';
+                                    $ignore_if_empty = TRUE;
                                 } // if
-                                $cellspec['image'] = $imagename;
                             } // if
 
                         } elseif (array_key_exists('field', $cellspec)) {
@@ -536,7 +551,9 @@ class PDF extends TCPDF
                         	    // replace HTML non-breaking space with a blank character
                         	    $cellspec['text'] = str_replace('&nbsp;', $nbsp, $cellspec['text']);
                             } else {
+                                // not supplied in data, so cannot be output
                                 $cellspec['text'] = '';
+                                $ignore_if_empty = TRUE;
                             } // if
                             if (array_key_exists($cellspec['field'], $fieldspec)) {
                                 // include field specifications
@@ -550,14 +567,22 @@ class PDF extends TCPDF
                         } else {
                             $cellspec['text'] = '';
                         } // if
-                        if (!isset($cellspec['width'])) {
-                		    // default is page width divided by number of columns
-                	        $cellspec['width'] = $this->printable_width / count($columndata);
+                        if (isset($cellspec['imagewidth'])) {
+                            $continue = true;  // skip the next bit
+                        } elseif (!isset($cellspec['width'])) {
+                            // default is page width divided by number of columns
+                            $x =& $cellspec['x'];
+                            $cellspec['width'] = $this->printable_width - $x / count($columndata);
                 	    } // if
-                        if (empty($cellspec['text']) AND isset($cellspec['ignore_if_empty'])) {
-                            // this cell is empty and should not be included in the output
+
+                        if (array_key_exists('barcode', $cellspec) AND empty($cellspec['barcode']) AND (isset($cellspec['ignore_if_empty']) OR is_True($ignore_if_empty))) {
+                            $condition = true;  // this cell is empty and should not be included in the output
+                        } elseif (array_key_exists('image', $cellspec) AND empty($cellspec['image']) AND (isset($cellspec['ignore_if_empty']) OR is_True($ignore_if_empty))) {
+                            $condition = true;  // this cell is empty and should not be included in the output
+                        } elseif (array_key_exists('text', $cellspec) AND empty($cellspec['text']) AND (isset($cellspec['ignore_if_empty']) OR is_True($ignore_if_empty))) {
+                            $condition = true;  // this cell is empty and should not be included in the output
                         } else {
-                            $print_array[] = $cellspec;
+                            $print_array[] = $cellspec;  // print this cell
                         } // if
                     } // foreach
 
@@ -648,7 +673,11 @@ class PDF extends TCPDF
     		$result = $this->setBarcodeStyle($celldata['barcode_style']);
         	$celldata = array_merge($result, $celldata);
         } else {
-            $result = $this->setPrintStyle($celldata['default_style']);
+            if (isset($celldata['default_style'])) {
+                $result = $this->setPrintStyle($celldata['default_style']);
+            } else{
+                $result = $this->setPrintStyle('default');
+            } // if
             $count = extract($result, EXTR_IF_EXISTS);
             if (isset($celldata['style'])) {
             	$result = $this->setPrintStyle($celldata['style'], $result);
@@ -686,6 +715,37 @@ class PDF extends TCPDF
             $celldata['margin_bottom'] = $result['margin_bottom'];
         } // if
 
+        if (isset($celldata['imagewidth'])) {
+            $image_width = $this->pixelsToUnits($celldata['imagewidth']);
+            if (!isset($celldata['width']) OR $celldata['width'] < $image_width) {
+                $celldata['width'] = $image_width;
+            } // if
+        } // if
+        if (isset($celldata['imageheight'])) {
+            $image_height = $this->pixelsToUnits($celldata['imageheight']);
+            if (!isset($celldata['height']) OR $celldata['height'] < $image_height) {
+                $celldata['height'] = $image_height;
+            } // if
+        } // if
+
+        if (isset($celldata['fieldspec']) AND isset($celldata['fieldspec']['subtype'])) {
+            if ($celldata['fieldspec']['subtype'] == 'image') {
+                $image_width  = $this->pixelsToUnits($celldata['fieldspec']['imagewidth']);
+                $image_height = $this->pixelsToUnits($celldata['fieldspec']['imageheight']);
+                if (!isset($celldata['image_offset'])) {
+                    $celldata['image_offset'] = 0;
+                } else {
+                    $image_width  = $image_width + ($celldata['image_offset'] * 2);   // include gap on left and right
+                    $image_height = $image_height + ($celldata['image_offset'] * 2);  // include gap on top and bottom
+                } // if
+                // calculate the space left to contain any text
+                $celldata['width']       = $celldata['width'] - $image_width;
+                $celldata['imagewidth']  = $image_width;
+                $celldata['imageheight'] = $image_height;
+                $celldata['line_count']  = $image_height / $height;  // height of image in lines
+            } // if
+        } // if
+
         if (isset($celldata['height']) AND !isset($celldata['barcode_style'])) {
         	$this->last_height = $celldata['height'];
         } else {
@@ -696,7 +756,7 @@ class PDF extends TCPDF
         } // if
 
         if (empty($celldata['height'])) {
-        	$celldata['height'] = $height;
+        	$celldata['height'] = $height;  // use font height from default style
         } // if
 
         $paddings          = $this->getCellPaddings();
@@ -710,22 +770,9 @@ class PDF extends TCPDF
         // printable width excludes left and right padding
         $cell_width = $celldata['width'] - $paddings['L'] - $paddings['R'];
 
-        if (isset($celldata['fieldspec']) AND isset($celldata['fieldspec']['subtype'])) {
-    		if ($celldata['fieldspec']['subtype'] == 'image') {
-    		    $image_width  = $this->pixelsToUnits($celldata['fieldspec']['imagewidth']);
-    		    $image_height = $this->pixelsToUnits($celldata['fieldspec']['imageheight']);
-    		    if (!isset($celldata['image_offset'])) {
-    		        $celldata['image_offset'] = 0;
-    		    } else {
-    		        $image_width  = $image_width + ($celldata['image_offset'] * 2);   // include gap on left and right
-    		    	$image_height = $image_height + ($celldata['image_offset'] * 2);  // include gap on top and bottom
-    		    } // if
-    		    // calculate the space left to contain any text
-    			$celldata['width'] = $celldata['width'] - $image_width;
-    			// insert height of image in current units
-    			$celldata['imageheight_conv'] = $image_height;                          // converted from pixels to units
-                $celldata['imageheight']      = $celldata['fieldspec']['imageheight'];  // unconverted
-    		} // if
+        if (!array_key_exists('text', $celldata)) {
+            //return $celldata;  // there is no text, so stop here
+            $celldata['text'] = '';
         } // if
 
         $text = str_replace("\r",'', $celldata['text']);  // remove carriage returns
@@ -980,13 +1027,19 @@ class PDF extends TCPDF
         	            $fill = false;
         	        } // if
         	    } // if
-        	    if (isset($attributes['nofill'])) {
+        	    if (isset($attributes['nofill']) OR isset($attributes['nofillcolour'])) {
         	        $fill = false;  // turn fill off
         	    } // if
 
             	if (isset($attributes['image'])) {
             	    $imagewidth  = $this->pixelsToUnits($attributes['imagewidth']);
             	    $imageheight = $this->pixelsToUnits($attributes['imageheight']);
+                    if (!isset($attributes['width']) OR $attributes['width'] < $imagewidth) {
+                        $attributes['width'] = $imagewidth;
+                    } // if
+                    if (!isset($attributes['height']) OR $attributes['height'] < $imageheight) {
+                        $attributes['height'] = $imageheight;
+                    } // if
             	    $imagename   = $attributes['image'];
             	    if (substr($imagename, 0, 2) == '%%') {
                         // replace field name with field data
@@ -1000,9 +1053,31 @@ class PDF extends TCPDF
                     } else {
                         $image_border = false;
                     } // if
-            	    $this->Image($imagename, $this->getX(), $this->getY(), $imagewidth, $imageheight, '', '', '', false, 0, '', false, false, $image_border);
-            		// write an empty cell around this image
-            	    $this->Cell($imagewidth, $imageheight, '', $border, 0, '', 0);
+                    if (isset($attributes['padding_top'])) {
+                        $padding_top = $attributes['padding_top'];
+                    } else {
+                        $padding_top = false;
+                    } // if
+                    if (isset($attributes['padding_left'])) {
+                        $padding_left = $attributes['padding_left'];
+                    } else {
+                        $padding_left = false;
+                    } // if
+                    if (isset($attributes['padding_bottom'])) {
+                        $padding_bottom = $attributes['padding_bottom'];
+                    } else {
+                        $padding_bottom = false;
+                    } // if
+                    if (isset($attributes['padding_right'])) {
+                        $padding_right = $attributes['padding_right'];
+                    } else {
+                        $padding_right = false;
+                    } // if
+            	    $this->Image($imagename, $this->getX()+$padding_left, $this->getY()+$padding_top, $imagewidth, $imageheight, '', '', '', false, 0, '', false, false, $image_border);
+                    if (!empty($border)) {
+            		    // write an empty cell to put a border around this image
+            	        $this->Cell($attributes['width']+$padding_left+$padding_right, $attributes['height']+$padding_top+$padding_bottom, '', $border, 0, '', 0);
+                    } // if
             	    if (($imageheight + $this->getY()) > $imagebottom) {
             	    	$imagebottom = $imageheight + $this->getY();
             	    } // if
@@ -2160,7 +2235,11 @@ class PDF extends TCPDF
             	$draw = $celldata['draw'];
             } // if
     	} else {
-            $result = $this->setPrintStyle($celldata['default_style']);
+            if (isset($celldata['default_style'])) {
+                $result = $this->setPrintStyle($celldata['default_style']);
+            } else{
+                $result = $this->setPrintStyle('default');
+            } // if
             $count = extract($result, EXTR_IF_EXISTS);
             if (isset($celldata['style'])) {
                 // use style override for this cell
@@ -2235,7 +2314,7 @@ class PDF extends TCPDF
 	            $fill = false;
 	        } // if
 	    } // if
-	    if (isset($celldata['nofill'])) {
+	    if (isset($celldata['nofill']) OR isset($celldata['nofillcolour'])) {
 	        $fill = false;  // turn fill off
 	    } // if
 
@@ -2295,7 +2374,7 @@ class PDF extends TCPDF
             	$this->Line($X + $cell_width, $Y, $X + $cell_width , $Y + $celldata['height']);
     	    } // if
 
-    	    $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
+    	    $lines_left = ($this->PageBreakTrigger - $this->getY()) / $height;
             if ($line_no >= $last_line OR $lines_left < 2) {
                 if ($border == 1 OR preg_match('/B/i', $border)) {
                 	// draw line along bottom border of last cell
@@ -2311,11 +2390,42 @@ class PDF extends TCPDF
             $imagewidth  = $this->pixelsToUnits($celldata['imagewidth']);
             $imageheight = $this->pixelsToUnits($celldata['imageheight']);
             $image_offset =& $celldata['image_offset'];
-            if ($line_no == 0) {
+            if (!isset($celldata['image_printed'])) {
                 // output image on first line only
                 $imagename   = $celldata['image'];
-                $image_border = null;
-                $this->Image($imagename, $this->getX()+$image_offset, $this->getY()+$image_offset, $imagewidth, $imageheight, '', '', '', false, 0, '', false, false, $image_border);
+                if (isset($celldata['image_border'])) {
+                    $image_border = 'LRTB';
+                } else {
+                    $image_border = false;
+                } // if
+                if (isset($celldata['padding_left'])) {
+                    $padding_left = $celldata['padding_left'];
+                } else {
+                    $padding_left = false;
+                } // if
+                $this->Image($imagename, $this->getX()+$image_offset+$padding_left, $this->getY()+$image_offset, $imagewidth, $imageheight, '', '', '', false, 0, '', false, false, $image_border);
+                $celldata['image_printed'] = true;  // output image only once
+                if (!empty($border)) {
+                    // write an empty cell around this image
+                    if (isset($celldata['width'])) {
+                        $width = $celldata['width'];
+                    } else {
+                        $width = $imagewidth;
+                    } // if
+                    if (isset($celldata['height'])) {
+                        $height = $celldata['height'];
+                    } else {
+                        $height = $imageheight;
+                    } // if
+                    $mod_border = 'LR';
+                    if (!isset($celldata['padding_top'])) {
+                        $mod_border .= 'T';
+                    } // if
+                    if (!isset($celldata['padding_bottom'])) {
+                        $mod_border .= 'B';
+                    } // if
+                    $this->Cell($width, $height, '', $mod_border, 0, '', 0);
+                } // if
             } // if
             // advance X coordinate to cover image width
             if (isset($celldata['width'])) {
@@ -2355,7 +2465,7 @@ class PDF extends TCPDF
             // move text to right of image
         	$this->setX($this->getX() + $imagewidth + ($image_offset * 2));
         	$X2 = $this->getX();
-        	$mod_border = 'R';  // do not print border between image and text
+        	$mod_border = 'R';  // do not print border on left between image and text
             if (array_key_exists('fieldspec', $celldata) AND array_key_exists('notext', $celldata['fieldspec'])) {
             	// write a line without any text
             	$this->Cell($cell_width, $height, '',    $mod_border, 0, $halign, $fill);
@@ -2365,8 +2475,8 @@ class PDF extends TCPDF
                 } else {
                     $text = '';
                 } // if
-                // output a line of text in the current cell
-                $this->Cell($cell_width, $height, $text, $mod_border, 0, $halign, $fill, $link, $stretch, $ignore_min_height, $calign, $valign);
+                // write text to align at top of the cell
+                $this->Cell($cell_width, $height, $text, $mod_border, 0, $halign, $fill, $link, $stretch, $ignore_min_height, $calign, 'Top');
             } // if
 
         	if ($line_no == 0) {
@@ -2441,7 +2551,7 @@ class PDF extends TCPDF
                     } // if
                 } // if
 
-                $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
+                $lines_left = ($this->PageBreakTrigger - $this->getY()) / $height;
                 if ($line_no >= $last_line OR $lines_left < 2) {
                     if ($border == 1 OR preg_match('/B/i', $border)) {
                     	// draw line along bottom border of last cell
@@ -2496,7 +2606,7 @@ class PDF extends TCPDF
             	    $border = false;
             	} // if
 
-            	if (!empty($attributes['nofill']) or is_True($nofillcolour)) {
+            	if (isset($attributes['nofill']) or is_True($nofillcolour)) {
             	    $fill = false;
             	} else {
             	    $fill = true;
@@ -2686,23 +2796,16 @@ class PDF extends TCPDF
         	$celldata = $this->getLineCount($celldata);
         	$print_array[$cellno] = $celldata;  // update array element (required for PHP4)
         	if (isset($celldata['imageheight'])) {
-                if (isset($celldata['imageheight_conv'])) {
-                    $imageheight_conv = $celldata['imageheight_conv'];
-                } else {
-                    $imageheight_conv = $this->pixelsToUnits($celldata['imageheight']);
-                } // if
-        	    if (preg_match('/(multi)$/i', $function)) {
+                if (preg_match('/(multi)$/i', $function)) {
         	        // keep image size independent of $line_count
         	        $line_count   = 0;
-    	    	    $image_height = $imageheight_conv;
-    	    	    //$height       = $celldata['imageheight'];
+                    $image_height = $celldata['height'];
                     $height       = $celldata['height'];
         	    } else {
             		// include image size in $line_count
-            	    $line_count   = $imageheight_conv / $this->last_height;
-            	    $image_height = 0;
-            	    $height       = $imageheight_conv;
-                    //$height = $celldata['imageheight'];
+                    $line_count   = $celldata['line_count'];
+                    $image_height = $celldata['imageheight'];
+                    $height       = $celldata['height'];
         	    } // if
         	} elseif (isset($celldata['barcode'])) {
         	    if (isset($celldata['height'])) {
@@ -2713,7 +2816,8 @@ class PDF extends TCPDF
                 	    $height       = $celldata['height'];
         	        } else {
                         // include barcode size in $line_count
-            	    	$line_count   = $celldata['height'] / $this->last_height;
+            	    	//$line_count   = $celldata['height'] / $this->last_height;
+                        $line_count   = $celldata['height'] / $height;
             	    	$image_height = 0;
             	    	$height       = $celldata['height'];
         	        } // if
@@ -2778,15 +2882,19 @@ class PDF extends TCPDF
         if ($paddings['T'] > 0) {
             $max_lines++;  // add an extra blank line for padding_top
             foreach ($print_array as $cellno => $celldata) {
-                array_unshift($celldata['line_array'], '');
-                $print_array[$cellno] = $celldata;
+                if (isset($celldata['line_array'])) {
+                    array_unshift($celldata['line_array'], '');
+                    $print_array[$cellno] = $celldata;
+                } // if
             } // foreach
         } // if
         if ($paddings['B'] > 0) {
             $max_lines++;  // add an extra blank line for padding_bottom
             foreach ($print_array as $cellno => $celldata) {
-                $celldata['line_array'][] = '';
-                $print_array[$cellno] = $celldata;
+                if (isset($celldata['line_array'])) {
+                    $celldata['line_array'][] = '';
+                    $print_array[$cellno] = $celldata;
+                } // if
             } // foreach
         } // if
 
@@ -2816,7 +2924,7 @@ class PDF extends TCPDF
                 } // if
             } // if
 
-            for ($i = 0; $i < $max_lines; $i++) {
+            for ($i = 0; $i < $max_lines; $i++) {  // repeat for each line or part line
                 $lines_left = ($this->PageBreakTrigger - $this->getY()) / $this->last_height;
                 if ($lines_left < 1) {
                     $this->AddPage();
@@ -2838,8 +2946,12 @@ class PDF extends TCPDF
                 if ($i+1 == $max_lines AND $max_lines > 1) {
                     $last_height = $this->last_height;
                 } elseif ($i+1 > $max_lines) {
-                	// this is the last line, but what is its depth?
-                	$last_height = $max_height - ($i * $this->last_height);
+                	// this is the last line, but what is its height?
+                	if ($image_height > 0) {
+                        $last_height = $image_height - ($i * $this->last_height);
+                    } else {
+                        $last_height = $max_height - ($i * $this->last_height);
+                    } // if
                 } else {
                     $last_height = 0;
                 } // if
@@ -2861,16 +2973,24 @@ class PDF extends TCPDF
                         $cell_padding['line_array']        = $celldata['line_array'];
                         $cell_padding['width']             = $celldata['width'];
                         $cell_padding['height']            = $paddings['T'];
+                        if (isset($celldata['x'])) {
+                            $cell_padding['x']             = $celldata['x'];
+                        } // if
                         $cell_padding['ignore_min_height'] = true;
                         $this->printCell($cell_padding, $i, $max_lines-1, $border, $cell_fill, $cell_padding['height'], $function);
+
                     } elseif ($paddings['B'] > 0 AND $i == $max_lines-1) {
                         // add an empty line for the bottom padding
                         $cell_padding = array('default_style' => $celldata['default_style']);
                         $cell_padding['line_array']        = $celldata['line_array'];
                         $cell_padding['width']             = $celldata['width'];
                         $cell_padding['height']            = $paddings['B'];
+                        if (isset($celldata['x'])) {
+                            $cell_padding['x']             = $celldata['x'];
+                        } // if
                         $cell_padding['ignore_min_height'] = true;
                         $this->printCell($cell_padding, $i, $max_lines-1, $border, $cell_fill, $cell_padding['height'], $function);
+
                     } else {
                         // add normal lines between the top and bottom padding
                         $celldata['cellno']   = $cellno;
@@ -2889,6 +3009,8 @@ class PDF extends TCPDF
                     } else {
                         $this->Ln($this->last_height);
                     } // if
+                //} elseif ($image_height > $this->last_height) {
+                //    $this->Ln($image_height - $this->last_height);
                 } else {
                     $this->Ln($this->last_height);
                 } // if
@@ -3055,6 +3177,7 @@ class PDF extends TCPDF
         if (isset($this->style[$style]['fillcolour'])) {
             if (!empty($this->style[$style]['fillcolour'])) {
             	$this->SetFillColor($this->style[$style]['fillcolour'][0], $this->style[$style]['fillcolour'][1], $this->style[$style]['fillcolour'][2]);
+                unset($result['nofillcolour']);
             } else {
                 $this->FillColor = null;
                 $result['nofillcolour'] = 'y';

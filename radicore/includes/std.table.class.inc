@@ -260,10 +260,21 @@ abstract class Default_Table
     } // cascadeNullify
 
     // ****************************************************************************
-    function changeConfig ($fieldarray)
+    function changeConfig ($where, $fieldarray)
     // check to see if any configuration settings need to be changed.
     {
-        $where = null;
+        //$where = null;
+
+        if (!empty($_SESSION['script_sequence'])) {
+            $first_entry =& $_SESSION['script_sequence'][0];
+            if ($first_entry['task_id'] == $GLOBALS['task_id']) {
+                // the first task is the current task, so ...
+                if (isset($first_entry['action']) AND $first_entry['action'] == 'OK') {
+                    // cannot use the CANCEL button, so remove it
+                    unset($GLOBALS['act_buttons']['quit']);
+                } // if
+            } // if
+        } // if
 
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
@@ -794,6 +805,20 @@ abstract class Default_Table
         // shift all field names to lower case
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
 
+        if (empty($this->errors)) {
+            // perform any custom pre-delete processing
+            if (is_object($this->custom_processing_object)) {
+                if (method_exists($this->custom_processing_object, '_cm_pre_deleteRecord')) {
+                    $fieldarray = $this->custom_processing_object->_cm_pre_deleteRecord($fieldarray);
+                } // if
+            } // if
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $fieldarray = $this->_cm_pre_deleteRecord($fieldarray);
+            } // if
+        } // if
+
         if (!$this->skip_getdata) {
             // check that full primary key (or candidate key) has been supplied
             list($where, $errors) = isPkeyComplete($fieldarray, $this->getPkeyNames(), $this->unique_keys);
@@ -804,7 +829,8 @@ abstract class Default_Table
             if (empty($this->errors)) {
                 // obtain copy of original record from database
                 $where = array2where($fieldarray, $this->getPkeyNames(), $this);
-                $originaldata = $this->_dml_ReadBeforeUpdate($where, false);
+                $originaldata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                $this->reuse_previous_select = true;
                 if ($this->numrows == 0) {
                     return $fieldarray;  // there is nothing to delete
                 } elseif ($this->numrows == 1) {
@@ -827,20 +853,6 @@ abstract class Default_Table
         $numrows = $this->numrows;
         if (empty($this->errors)) {
             $fieldarray = $this->validateDelete($fieldarray, $parent_table);
-        } // if
-
-        if (empty($this->errors)) {
-            // perform any custom pre-delete processing
-            if (is_object($this->custom_processing_object)) {
-                if (method_exists($this->custom_processing_object, '_cm_pre_deleteRecord')) {
-                    $fieldarray = $this->custom_processing_object->_cm_pre_deleteRecord($fieldarray);
-                } // if
-            } // if
-            if ($this->custom_replaces_standard) {
-                $this->custom_replaces_standard = false;
-            } else {
-                $fieldarray = $this->_cm_pre_deleteRecord($fieldarray);
-            } // if
         } // if
 
         if (empty($this->errors)) {
@@ -1354,7 +1366,11 @@ abstract class Default_Table
             return $row;
         } // if
 
+        // for SQLSRV it is not possible to perform a serial read on a table and perform a
+        // "begin transaction" on the same connection, so a separate connection is required
+        $this->serial_table = $this->dbname.'_'.$this->tablename;
         $DML =& $this->_getDBMSengine($this->dbname);
+        $this->serial_table = null;
 
         $row = $DML->fetchRow($this->dbname_server, $resource);
 
@@ -1524,7 +1540,7 @@ abstract class Default_Table
             $output_name = $this->_cm_fileUpload($input_name, $temp_file, $fieldarray);
         } // if
 
-        return $this->upload_subdir .'/' .$output_name;
+        return rtrim($this->upload_subdir, "/\\") .'/' .$output_name;
 
     } // fileUpload
 
@@ -2514,17 +2530,7 @@ abstract class Default_Table
         } // if
 
         // change current table configuration (optional)
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
-                $fieldarray[$key] = $this->custom_processing_object->_cm_changeConfig($where, $fieldarray[$key]);
-            } // if
-        } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else{
-            // change current table configuration (optional)
-            $fieldarray[$key] = $this->_cm_changeConfig($where, $fieldarray[$key]);
-        } // if
+        $fieldarray[$key] = $this->changeConfig($where, $fieldarray[$key]);
 
         // perform custom processing (such as obtaining lookup lists) on FIRST record only
         if (is_object($this->custom_processing_object)) {
@@ -3789,16 +3795,7 @@ abstract class Default_Table
         $fieldarray2 = $fieldarray;  // save for later comparison
 
         // change current table configuration (optional)
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_changeConfig')) {
-                $fieldarray2 = $this->custom_processing_object->_cm_changeConfig($where, $fieldarray2);
-            } // if
-        } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $fieldarray2 = $this->_cm_changeConfig($where, $fieldarray2);
-        } // if
+        $fieldarray2 = $this->changeConfig($where, $fieldarray2);
 
         if ($fieldarray2 != $fieldarray) {
             $where = array2where($fieldarray2, $this->fieldspec);
@@ -4100,7 +4097,9 @@ abstract class Default_Table
             $fieldarray = where2array($where);
         } // if
 
-        $this->upload_subdir      = 'uploadedfiles';
+        if (empty($this->upload_subdir)) {
+            $this->upload_subdir  = 'uploadedfiles';
+        } // if
         $this->upload_filetypes   = array('image/gif');
         $this->upload_maxfilesize = 1000000;
         $this->upload_blacklist   = array("\.php.*", "\..*htm.*");
@@ -4680,7 +4679,13 @@ abstract class Default_Table
         } // if
 
         // convert selection string into an associative array
-        $select_array = where2array($selection);
+        //$select_array = where2array($selection);
+        $rows = splitWhereByRow($selection);
+        if (count($rows) == 1) {
+            $select_array = where2array($rows[0]);
+        } else {
+            $select_array = $rows;
+        } // if
 
         // find entry in $fieldspec which uses this popup form
         $found = false;
@@ -4708,16 +4713,23 @@ abstract class Default_Table
                         $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                     } // if
 
+                    if (is_long(key($select_array))) {
+                        // array is indexed with multiple rows, so convert to associative for a single row
+                        $select_array_assoc = where2array($select_array[0]);
+                    } else {
+                        $select_array_assoc = $select_array;
+                    } // if
+
                     // look for any differences between the fieldname(s) returned by the popup
                     // and the fieldname(s) used in this table
                     foreach ($this->parent_relations as $parent) {
                         if (array_key_exists($field, $parent['fields'])) {
                             foreach ($parent['fields'] as $fld_child => $fld_parent) {
                                 if ($fld_child != $fld_parent) {
-                                    if (isset($select_array[$fld_parent])) {
+                                    if (isset($select_array_assoc[$fld_parent])) {
                                         // convert the parent field name to the child field name
-                                        $select_array[$fld_child] = $select_array[$fld_parent];
-                                        unset($select_array[$fld_parent]);
+                                        $select_array_assoc[$fld_child] = $select_array_assoc[$fld_parent];
+                                        unset($select_array_assoc[$fld_parent]);
                                     } // if
                                 } // if
                             } // foreach
@@ -4725,19 +4737,19 @@ abstract class Default_Table
                         } // if
                     } // foreach
 
-                    if (is_array($select_array) AND !empty($select_array)) {
+                    if (is_array($select_array_assoc) AND !empty($select_array_assoc)) {
                         // copy FOREIGN_FIELD to this field
                         if (!empty($spec['foreign_field']) AND is_string($spec['foreign_field'])) {
-                            if (array_key_exists($spec['foreign_field'], $select_array)) {
-                                $single_row[$field] = $select_array[$spec['foreign_field']];
-                                unset($select_array[$spec['foreign_field']]);
+                            if (array_key_exists($spec['foreign_field'], $select_array_assoc)) {
+                                $single_row[$field] = $select_array_assoc[$spec['foreign_field']];
+                                unset($select_array_assoc[$spec['foreign_field']]);
                             } // if
                         } // if
                     } // if
 
                     // merge $selection with $fieldarray
-                    if (is_array($select_array) AND !empty($select_array)) {
-                        $single_row = array_merge($single_row, $select_array);
+                    if (is_array($select_array_assoc) AND !empty($select_array_assoc)) {
+                        $single_row = array_merge($single_row, $select_array_assoc);
                     } // if
                     break;
                 } // if
@@ -4868,6 +4880,7 @@ abstract class Default_Table
         } else {
             $this->_cm_quitButton();
         } // if
+
         return;
 
     } // quitButton
@@ -6127,7 +6140,8 @@ abstract class Default_Table
                 // row is marked for deletion
                 if ($count > 0) {
                     $where = array2where($rowdata, $pkeynames);
-                    $olddata = $this->_dml_ReadBeforeUpdate($where, false);
+                    $olddata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                    $this->reuse_previous_select = true;
                     if (!empty($olddata)) {
                         $rowdata = array_merge($olddata[0], $rowdata);
                     } // if
@@ -6218,21 +6232,29 @@ abstract class Default_Table
         } // if
 
         if (empty($this->errors)) {
-            // create a separate array indexed by row number
             $errors = array();
+            $insert_count   = 0;
+            $update_count   = 0;
+            $delete_count   = 0;
+            $unchange_count = 0;
             // now update each row in the database
             foreach ($fieldarray as $row => $data) {
                 if (array_key_exists('rdc_to_be_inserted', $data)) {
-                    $pageno = $this->pageno;
+                    $pageno = $this->pageno;  // save
                     $fieldarray[$row] = $this->insertRecord($data);
-                    $this->pageno = $pageno;
+                    $insert_count = $insert_count+$this->numrows;
+                    $this->pageno = $pageno;  // restore
+
                 } elseif (array_key_exists('rdc_to_be_deleted', $data)) {
                     $fieldarray[$row] = $this->deleteRecord($data);
+                    $delete_count = $delete_count+$this->numrows;
+
                 } else {
                     $fieldarray[$row] = $this->updateRecord($data);
+                    $update_count = $update_count+$this->numrows;
                 } // if
                 if (!empty($this->errors)) {
-                    if ($this->rows_per_page > 1) {
+                    if (count($fieldarray) > 1) {
                         // keep $errors separate for each row
                         $errors[$row] = $this->errors;
                     } else {
@@ -6251,7 +6273,15 @@ abstract class Default_Table
             // do not display record count
         } else {
             // '$count records were updated in $tablename'
-            $this->messages[] = $this->getLanguageText('sys0006', $count, strtoupper($this->tablename));
+            if ($delete_count > 0) {
+                $this->messages[] = $this->getLanguageText('sys0004', $delete_count, strtoupper($this->tablename));
+            } // if
+            if ($insert_count > 0) {
+                $this->messages[] = $this->getLanguageText('sys0005', $insert_count, strtoupper($this->tablename));
+            } // if
+            if ($update_count > 0) {
+                $this->messages[] = $this->getLanguageText('sys0006', $update_count, strtoupper($this->tablename));
+            } // if
         } // if
 
         //if (empty($this->errors)) {
@@ -7290,7 +7320,9 @@ abstract class Default_Table
     function _cm_initialiseFileUpload ($fieldarray)
     // perform any initialisation before displaying the File Upload screen.
     {
-        $this->upload_subdir      = 'uploadedfiles';
+        if (empty($this->upload_subdir)) {
+            $this->upload_subdir  = 'uploadedfiles';
+        } // if
         //$this->upload_filetypes   = array('image/x-png', 'image/gif');
         $this->upload_filetypes   = 'image';  // for any type of image
         //$this->upload_maxfilesize = 1000000;
@@ -7678,6 +7710,9 @@ abstract class Default_Table
     {
         // customisable code goes here
 
+        // do not reuse existing customised SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = false;
+
         return $fieldarray;
 
     } // _cm_pre_deleteRecord
@@ -7767,6 +7802,9 @@ abstract class Default_Table
     // if anything is placed in $this->errors the update will be terminated.
     {
         // customisable code goes here
+
+        // do not reuse existing customised SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = false;
 
         return $rows;
 
@@ -7929,25 +7967,25 @@ abstract class Default_Table
     } // _cm_validateChooseButton
 
     // ****************************************************************************
-    function _cm_validateDelete ($rowdata, $parent_table)
+    function _cm_validateDelete ($fieldarray, $parent_table)
     // verify that the selected record can be deleted.
     // ($parent_table is only used in a cascade delete)
     // if anything is placed in $this->errors the delete will be terminated.
     {
         // customisable code goes here
 
-        return;
+        return $fieldarray;
 
     } // _cm_validateDelete
 
     // ****************************************************************************
-    function _cm_validateInsert ($rowdata)
+    function _cm_validateInsert ($fieldarray)
     // perform custom validation before an insert.
     // if anything is placed in $this->errors the insert will be terminated.
     {
         // customisable code goes here
 
-        return $rowdata;
+        return $fieldarray;
 
     } // _cm_validateInsert
 
@@ -8127,6 +8165,7 @@ abstract class Default_Table
                 $errors = array_merge($this->getErrors(), $errors);
             } // while
             $this->errors = $errors;
+            $res = $this->_dml_free_result($resource);
         } // if
 
         $this->numrows = $count;
@@ -8139,9 +8178,11 @@ abstract class Default_Table
     function _dml_free_result ($resource)
     // Get count of recors which match criteria in $where.
     {
+        $this->serial_table = $this->dbname.'_'.$this->tablename;
         $DML =& $this->_getDBMSengine($this->dbname);
+        $this->serial_table = null;
 
-        $result = $DML->free_result($this->dbname_server, $resource);
+        $result = $DML->free_result($DML->dbname, $resource);
 
         return $result;
 
@@ -8210,7 +8251,11 @@ abstract class Default_Table
     {
         $this->errors = array();
 
+        // for SQLSRV it is not possible to perform a serial read on a table and perform a
+        // "begin transaction" on the same connection, so a separate connection is required
+        $this->serial_table = $this->dbname.'_'.$this->tablename;
         $DML =& $this->_getDBMSengine($this->dbname, $unbuffered_query);
+        $this->serial_table = null;
 
         $DML->fieldspec        = $this->fieldspec;
         $DML->primary_key      = $this->getPkeyNames();
@@ -8229,6 +8274,8 @@ abstract class Default_Table
         $this->numrows  = $DML->getNumRows();
 
         $this->sql_union = null;
+
+        $this->instance_name = $DML->instance_name;
 
         return $result;
 
@@ -8464,6 +8511,7 @@ abstract class Default_Table
                 } // if
                 $count += $this->numrows;
             } // while
+            $res = $this->_dml_free_result($resource);
         } // if
 
         $this->numrows = $count;
@@ -8961,6 +9009,13 @@ abstract class Default_Table
                 } // if
             } else {
                 require_once "dml.$engine.class.inc";
+            } // if
+        } // if
+
+        if (!empty($this->serial_table)) {
+            // may need to create a separate connection for this table for serial reads
+            if ($engine == 'sqlsrv') {
+                $servernum = $this->serial_table;
             } // if
         } // if
 

@@ -191,6 +191,12 @@ function batchInit ($batchfile)
     echo '<p>role_id  : ' .$_SESSION['role_id'] ."</p>\n";
     echo '<p>role_list: ' .$_SESSION['role_list'] ."</p>\n";
 
+    global $where, $selection, $search;
+
+    echo "<p>WHERE     : {$where}\n";
+    echo "<br>SELECTION: {$selection}\n";
+    echo "<br>SEARCH   : {$search}</p>\n";
+
     if (isset($stdouth)) {
         $output = ob_get_contents();
         $result = fwrite($stdouth, $output);
@@ -316,8 +322,8 @@ function check_errors ($object)
             } // if
         } // if
 
-	    // put last error into $string
-        $string = array_pop($errors);
+	    // put first error into $string
+        $string = array_shift($errors);
 
 	    trigger_error($string, E_USER_ERROR);
 	} // if

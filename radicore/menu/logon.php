@@ -213,6 +213,7 @@ $xml_objects[]['root'] = &$dbobject;
 $view = new radicore_view($screen_structure);
 $html = $view->buildXML($xml_objects, $errors, $messages);
 echo $html;
+//echo "Peak Memory used=".memory_get_peak_usage(true);
 exit;
 
 ?>

@@ -173,7 +173,7 @@ END_OF_REGEX;
                         $array[] = trim($value);
                     } else {
                         // this is a field, so cast it to string to avoid conversion errors
-                        $array[] = "CAST(".trim($value)." AS VARCHAR)";
+                        $array[] = "CAST(".trim($value)." AS NVARCHAR(MAX))";
                     } // if
                 } // foreach
                 $string2 = implode('+', $array);     // rejoin with '+' as separator
@@ -1364,6 +1364,18 @@ END_OF_REGEX;
             $max_rows = ($min_rows + $rows_per_page) -1;
         } // if
 
+        $lock_str = null;
+        //$lock_str = 'NOLOCK';
+        if ($GLOBALS['transaction_has_started'] === TRUE) {
+            // for SQL SERVER all serial reads are done with a separate connection, and the following
+            // statement MUST be issued if a transaction has already started with another connection
+            $this->query = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED";
+            $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            // write query to log file, if option is turned on
+            logSqlQuery ($dbname, null, $this->query);
+            $this->query = '';
+        } // if
+
         // build the query string and run it
         if (isset($min_rows) AND isset($max_rows)) {
             // default sort sequence is via primary key
@@ -1377,7 +1389,7 @@ END_OF_REGEX;
             if (empty($this->sql_union)) {
                 $this->query = "SELECT * FROM ("
                              . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
-                             . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
+                             . "\nFROM $from_str $lock_str $where_str $group_str $having_str"
                              . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
             } else {
                 $sort_str = substr($sort_str, 9);  // remove leading 'ORDER BY'
@@ -1385,7 +1397,7 @@ END_OF_REGEX;
                 $this->query = "SELECT * FROM ("
                              . "\nSELECT *, ROW_NUMBER() OVER ($sort_str) AS rownum FROM ("
                              . "\nSELECT $select_str"
-                             . "\nFROM $from_str \n$where_str $group_str $having_str"
+                             . "\nFROM $from_str $lock_str\n$where_str $group_str $having_str"
                              . "\nUNION ALL"
                              . "\n{$this->sql_union}"
                              . "\n) AS x) AS y"
@@ -1398,9 +1410,9 @@ END_OF_REGEX;
             	$sort_str = "\n$sort_str";
             } // if
             if (empty($this->sql_union)) {
-                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
+                $this->query = "SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str $sort_str";
             } else {
-                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str";
+                $this->query = "SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str";
                 $this->query .= "\nUNION ALL\n{$this->sql_union}";
                 $this->query .= " $sort_str";
             } // if
@@ -1558,12 +1570,17 @@ END_OF_REGEX;
         } // foreach
 
         // find out if any field in the primary key has 'identity' (auto_increment) set
-		$auto_increment = '';
+		$auto_increment  = '';
+        $identity_insert = FALSE;
 		foreach ($this->primary_key as $pkey){
 			if (isset($fieldspec[$pkey]['auto_increment'])) {
 			    $this->retry_on_duplicate_key = null;  // this feature cannot be used with auto_increment
 			    if (!empty($fieldarray[$pkey]) AND $fieldarray[$pkey] > 0) {
-			    	// value has been supplied manually, so do not auto-generate
+			    	// value has been supplied manually, so set this to stop an error
+                    $this->query = "SET IDENTITY_INSERT [{$tablename}] ON";
+                    $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+                    logSqlQuery ($dbname, null, $this->query);
+                    $identity_insert = TRUE;
 			    } else {
     			    $auto_increment = $pkey;                // save name of related sequence
     				unset($fieldarray[$auto_increment]);    // remove from data array
@@ -1736,6 +1753,12 @@ END_OF_REGEX;
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
             // write query to log file, if option is turned on
             logSqlQuery ($dbname, $tablename, $this->query, $fieldarray[$auto_increment]);
+
+        } elseif ($identity_insert == TRUE) {
+            $this->query = "SET IDENTITY_INSERT [{$tablename}] OFF";
+            $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            logSqlQuery ($dbname, null, $this->query);
+            $identity_insert = FALSE;
 		} // if
 
         if ($this->audit_logging) {
@@ -1952,6 +1975,10 @@ END_OF_REGEX;
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $result = sqlsrv_begin_transaction($this->dbconnect);
+        if (!$result) {
+            $errors = sqlsrv_errors();
+            trigger_error($errors[0]['code'], E_USER_ERROR);
+        } // if
 
         // write query to log file, if option is turned on
         logSqlQuery ($dbname, null, 'BEGIN TRANSACTION');

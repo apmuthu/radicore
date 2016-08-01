@@ -100,10 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // retrieve errors from database object
             $errors = $dbobject->getErrors();
             if (empty($errors)) {
+                $messages[] = getLanguageText('sys0004', 1, strtoupper($dbobject->tablename));
                 $errors = $dbobject->commit();
             } // if
             if (empty($errors)) {
-                $messages[] = getLanguageText('sys0004', 1, strtoupper($dbobject->tablename));
+                //$messages[] = getLanguageText('sys0004', 1, strtoupper($dbobject->tablename));
                 if ($scrolling[$dbobject->getClassName()]['lastitem'] == 1) {
                     // last item has been deleted, so return to previous screen
                     scriptPrevious(null, $messages, 'delete', $dbobject->getInstruction());

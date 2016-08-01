@@ -11,6 +11,7 @@ class validation_class
     var $dateobj;                   // date object
     var $errors;                    // array of error messages
     var $fields_not_for_trimming;   // array of field names which are not to be trimmed
+    var $unique_keys;               // array of candidate (unique) keys
 
     // ****************************************************************************
     // class constructor
@@ -397,6 +398,22 @@ END_OF_REGEX;
                     } // if
                 } // if
 
+                if (strpos($fieldvalue, '%') === false) {
+                    // field does not contain the '%' (wildcard) character
+                } else {
+                    if (!empty($fieldspec['pkey'])) {
+                        // 'Must not use wildcard character (%) in a primary or unique key'
+                        $this->errors[$fieldname] = getLanguageText('sys0017');
+                    } elseif (is_array($this->unique_keys) AND !empty($this->unique_keys)) {
+                        foreach ($this->unique_keys as $keynum => $fields) {
+                            if (in_array($fieldname, $fields)) {
+                                // 'Must not use wildcard character (%) in a primary or unique key'
+                                $this->errors[$fieldname] = getLanguageText('sys0017');
+                            } // if
+                        } // foreach
+                    } // if
+                } // if
+
                 if (isset($fieldspec['subtype'])) {
                     // perform any subtype processing
                     switch ($fieldspec['subtype']) {
@@ -526,6 +543,8 @@ END_OF_REGEX;
         $this->caller = &$caller;
 
         $this->fields_not_for_trimming = $caller->fields_not_for_trimming;
+
+        $this->unique_keys = $caller->unique_keys;
 
         // create array to hold data which has been formatted for the database
         $insertarray = array();
@@ -777,6 +796,8 @@ END_OF_REGEX;
         $this->caller = &$caller;
 
         $this->fields_not_for_trimming = $caller->fields_not_for_trimming;
+
+        $this->unique_keys = $caller->unique_keys;
 
         // create array to hold data which has been formatted for the database
         $updatearray = array();

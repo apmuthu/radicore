@@ -1,6 +1,18 @@
 ﻿RADICORE for PHP - news
 
-2016-07-01, version 1.96.0/
+2016-08-01, version 1.97.0
+Database changes:
+- none
+
+Other changes:
+- updated std.add1/2/5.inc to include call to $object->quitButton() when CANCEL button is pressed.
+- added the generateGUID() function to include.library.inc
+- updated SQL Server processing to avoid the error 'New transaction is not allowed because there are other threads running in the session'. Calls to $dbobject->getDataSerial(), $dbobject->fetchRow() and dbobject->free_result() are now done using a separate instance of the database driver. This means that if any database updates are performed after a call to ->fetchRow() the call to ->startTransaction() will no longer fail.
+- updated 'std.validation.class.inc' to disallow a '%' character from being used in a primary or unique key as this is used as the 'wildcard' character in database searches.
+- updated 'std.filepicker.list1.xsl' to allow video files as well as still images.
+- updated 'std.table.class.inc' so that when a task is initiated via append2ScriptSequence() with 'action' = 'OK' (meaning that the QUIT/CANCEL button is invalid and the task should only be terminated with a SUBMIT button) then the QUIT/CANCEL button is removed so that it cannot be pressed.
+
+2016-07-01, version 1.96.0
 Database changes:
 - none
 

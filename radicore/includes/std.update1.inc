@@ -211,16 +211,20 @@ if (!empty($_POST)) {
                 $errors = $dbobject->getErrors();
             } // if
             if (empty($errors)) {
+                // "N records were updated in XXXX"
+                $messages[] = getLanguageText('sys0006', $dbobject->numrows, strtoupper($dbobject->tablename));
+                // ensure that object contains all messages in case workflow jumps to another task
+                $dbobject->messages = $messages;
                 $errors = $dbobject->commit();
             } // if
             if (!empty($errors)) {
                 $dbobject->rollback();
             } else {
-                if ($dbobject->numrows > 0) {
-                    $messages[] = getLanguageText('sys0092'); // 'Record updated OK'
-                } else {
-                    $messages[] = getLanguageText('sys0209'); // 'Nothing has changed'
-                } // if
+                //if ($dbobject->numrows > 0) {
+                //    $messages[] = getLanguageText('sys0092'); // 'Record updated OK'
+                //} else {
+                //    $messages[] = getLanguageText('sys0209'); // 'Nothing has changed'
+                //} // if
                 if (isset($_POST['submitnext'])) {
                     $curitem  = $scrolling[$dbobject->getClassName()]['curitem'];
                     $lastitem = $scrolling[$dbobject->getClassName()]['lastitem'];

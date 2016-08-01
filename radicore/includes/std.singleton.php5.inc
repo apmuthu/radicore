@@ -31,7 +31,7 @@ class RDCsingleton
         $pattern = '/^('        // begins with
                  . 'server'     // 'server'
                  . '[_]{2}'     // 2 underscores
-                 . '[0-9]+'     // at least 1 digit
+                 . '[0-9\w]+'   // at least 1 digit, or a word
                  . '[_]{2}'     // 2 underscores
                  . ')/';        // ends with
         if (preg_match($pattern, $class, $regs)) {
@@ -74,9 +74,11 @@ class RDCsingleton
             $filename  = "classes/$classname.class.inc";
 	    } // if
 
-        if (!empty($instances[$server.$classname])) {
+        $instance_name = $server.$classname;
+
+        if (!empty($instances[$instance_name])) {
             // instance exists in array, so use it
-            $instance =& $instances[$server.$classname];
+            $instance =& $instances[$instance_name];
         } else {
             $cur_dir = dirname($_SERVER['SCRIPT_FILENAME']);
             if (getcwd() != $cur_dir) {
@@ -116,8 +118,8 @@ class RDCsingleton
             } // if
 
             // instance does not exist, so create it
-            $instances[$server.$classname] = new $classname($arg1);
-            $instance =& $instances[$server.$classname];
+            $instances[$instance_name] = new $classname($arg1);
+            $instance =& $instances[$instance_name];
 
             if (is_array($arg1)) {
                 if (isset($arg1['initiated_from_controller'])) {
@@ -136,6 +138,8 @@ class RDCsingleton
                 } // if
             } // if
         } // if
+
+        $instance->instance_name = $instance_name;
 
         if (method_exists($instance, 'sqlSelectInit')) {
             // initialise all sql variables

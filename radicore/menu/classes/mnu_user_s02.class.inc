@@ -18,19 +18,21 @@ class mnu_user_s02 extends mnu_user
     {
         // create 'new_password' field
         if (!isset($fieldarray['new_password1'])) $fieldarray['new_password1'] = '';
-        $this->fieldspec['new_password1']['type'] = 'string';
-        $this->fieldspec['new_password1']['size'] = $this->fieldspec['user_password']['size'];
-        $this->fieldspec['new_password1']['password'] = 'y';
-        $this->fieldspec['new_password1']['required'] = 'y';
-        $this->fieldspec['new_password1']['nondb']    = 'y';
+        $this->fieldspec['new_password1']['type']         = 'string';
+        $this->fieldspec['new_password1']['size']         = $this->fieldspec['user_password']['size'];
+        $this->fieldspec['new_password1']['password']     = 'y';
+        $this->fieldspec['new_password1']['required']     = 'y';
+        $this->fieldspec['new_password1']['nondb']        = 'y';
+        $this->fieldspec['new_password1']['mustvalidate'] = 'y';
 
         // get user to repeat input to avoid mistakes
         if (!isset($fieldarray['new_password2'])) $fieldarray['new_password2'] = '';
-        $this->fieldspec['new_password2']['type'] = 'string';
-        $this->fieldspec['new_password2']['size'] = $this->fieldspec['user_password']['size'];
-        $this->fieldspec['new_password2']['password'] = 'y';
-        $this->fieldspec['new_password2']['required'] = 'y';
-        $this->fieldspec['new_password2']['nondb']    = 'y';
+        $this->fieldspec['new_password2']['type']         = 'string';
+        $this->fieldspec['new_password2']['size']         = $this->fieldspec['user_password']['size'];
+        $this->fieldspec['new_password2']['password']     = 'y';
+        $this->fieldspec['new_password2']['required']     = 'y';
+        $this->fieldspec['new_password2']['nondb']        = 'y';
+        $this->fieldspec['new_password2']['mustvalidate'] = 'y';
 
         // do not display current password
         $this->fieldspec['user_password']['nodisplay'] = 'y';

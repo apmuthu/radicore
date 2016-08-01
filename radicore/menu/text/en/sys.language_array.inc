@@ -58,6 +58,14 @@ $array['day_names_long']  = array('monday' => 'Monday',
                                   'saturday' => 'Saturday',
                                   'sunday' => 'Sunday');
 
+$array['day_numbers']  = array('1' => 'Monday',
+                               '2' => 'Tuesday',
+                               '3' => 'Wednesday',
+                               '4' => 'Thursday',
+                               '5' => 'Friday',
+                               '6' => 'Saturday',
+                               '7' => 'Sunday');
+
 $array['month_names_short']  = array(1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
 
 $array['month_names_long']  = array(1 => 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');

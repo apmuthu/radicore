@@ -83,8 +83,8 @@ if (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit'])) {
         $errors = $dbobject->getErrors();
     } else {
         $errors = $dbobject->commit();
-        $messages = array_merge($messages, $dbobject->getMessages());
     } // if
+    $messages = array_merge($messages, $dbobject->getMessages());
 
     global $stdout, $stdouth;
     if (!empty($stdout)) {

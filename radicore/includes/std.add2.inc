@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add2.inc
@@ -139,9 +139,11 @@ if (!empty($_POST)) {
                 $errors = $dbobject->getErrors();
             } // if
             if (empty($errors)) {
+                // "N records were inserted in XXXX"
+                $messages[] = getLanguageText('sys0005', $dbobject->numrows, strtoupper($dbobject->tablename));
                 $errors = $dbobject->commit();
                 if (empty($errors)) {
-                    $messages[] = getLanguageText('sys0080'); // 'Record inserted OK';
+                    //$messages[] = getLanguageText('sys0080'); // 'Record inserted OK';
                     if (is_True($dbobject->allow_scrolling) AND isset($scrolling)) {
                         $where = $scrolling[$dbobject->getClassName()]['where'];
                         $rows = splitWhereByRow($where);
@@ -166,11 +168,11 @@ if (!empty($_POST)) {
                         $fieldarray = $dbobject->getExtraData($fieldarray);
                         $script_vars['dbobject'] = serialize($dbobject);
                         if (!empty($_SESSION['script_sequence'])) {
-                            $next =  array_shift($_SESSION['script_sequence']);
+                            $next = $_SESSION['script_sequence'][0];  // get first element
                             if (isset($next['immediate']) AND is_True($next['immediate'])) {
+                                // perform this task immediately, if not sooner
                                 $next_task_id =  $next['task_id'];
                                 $next_where   =& $next['where'];
-                                // do other task before continuing with this one
                                 scriptNext($next_task_id, $next_where);
                             } // if
                         } // if

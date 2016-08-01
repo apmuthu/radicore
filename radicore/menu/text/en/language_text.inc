@@ -87,7 +87,7 @@ $array['e0074'] = "";
 $array['e0075'] = "";
 $array['e0076'] = "";
 $array['e0077'] = "";
-$array['e0078'] = "";
+$array['e0078'] = "Data contains invalid HTML tag: '%1\$s'";
 $array['e0079'] = "QuickSearch options are not valid unless pattern is 'LIST' or 'POPUP'";
 
 $array['e0080'] = "";

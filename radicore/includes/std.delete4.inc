@@ -104,12 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // retrieve errors from database object
             $errors = $dbouter->getErrors();
             if (empty($errors)) {
+                $messages[] = getLanguageText('sys0004', 1, strtoupper($dbouter->tablename));
                 $errors = $dbouter->commit();
             } // if
             if (empty($errors)) {
                 if ($scrolling[$dbouter->getClassName()]['lastitem'] == 1) {
                     // last item has been deleted, so return to previous screen
-                    scriptPrevious(null, null, 'delete', $dbouter->getInstruction());
+                    scriptPrevious(null, $messages, 'delete', $dbouter->getInstruction());
                 } // if
             } else {
                 $dbouter->rollback();

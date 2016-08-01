@@ -32,7 +32,17 @@ $original_selection = $selection;
 //    } // if
 //} // if
 
-if (isset($_POST['quit'])) {
+if (isset($_POST['quit']) OR isset($_GET['quit'])) {
+    if (isset($script_vars['dbouter'])) {
+        require_once "classes/$outer_table.class.inc";
+        $dbouter = unserialize($script_vars['dbouter']);
+        $dbouter->quitButton();  // perform any QUIT processing
+    } // if
+    if (isset($script_vars['dbinner'])) {
+        require_once "classes/$inner_table.class.inc";
+        $dbinner = unserialize($script_vars['dbinner']);
+        $dbinner->quitButton();  // perform any QUIT processing
+    } // if
     // clear this script from session details and return to previous page
     scriptPrevious(null, null, 'quit');
 } // if
@@ -193,11 +203,12 @@ if (!empty($_POST)) {
             $dbinner->wf_case_id     = $dbouter->wf_case_id;
             $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
             $dbinner->wf_context     = $dbouter->wf_context;
+            $messages = $dbinner->getMessages();
             $errors = $dbinner->commit();
             if ($errors) {
                 $dbinner->rollback();
             } else {
-                $messages = $dbinner->getMessages();
+                //$messages = $dbinner->getMessages();
                 if (isset($_POST['submitstay'])) {
                     // re-initialise data for a new record
                     $inner_data = $dbinner->getInitialDataMultiple($outer_data);
@@ -219,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection) AND $popup_object == 'dbouter') {
             // merge previous saved variables with selection from popup form
-            $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, $popup_offset, $return_files);
+            $outer_data = $dbouter->popupReturn($outer_data, basename($return_from), $selection, null, $return_files);
             if ($dbouter->errors) {
             	$errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if

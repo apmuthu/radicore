@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -127,7 +127,7 @@
                   <!-- display all the fields in the current row -->
                   <xsl:call-template name="display_row">
                     <xsl:with-param name="zone" select="'main'"/>
-                    <xsl:with-param name="currocc" select="." />
+                    <xsl:with-param name="data" select="." />
                     <xsl:with-param name="position" select="position()" />
                   </xsl:call-template>
   
@@ -165,7 +165,7 @@
 
 <xsl:template name="display_row">
   <xsl:param name="zone"/>
-  <xsl:param name="currocc"/>   <!-- current occurrence -->
+  <xsl:param name="data"/>   <!-- data from current occurrence -->
   <xsl:param name="position"/>
   
   <xsl:if test="$position mod 2=1">  <!-- only process odd numbered rows -->
@@ -184,23 +184,31 @@
         
         <!-- get fieldname from the FIELD attribute -->
         <xsl:variable name="fieldname" select="string(@field)" />
+        
         <!-- get value for this fieldname -->
         <xsl:variable name="fieldvalue">
           <xsl:choose>
             <xsl:when test="$fieldname='image'">
               <!-- replace 'image' value with 'file' value -->
-              <xsl:value-of select="$currocc/*[name()='file']" />
+              <xsl:value-of select="$data/*[name()='file']" />
+            </xsl:when>
+            <xsl:when test="$fieldname='video'">
+              <!-- replace 'image' value with 'file' value -->
+              <xsl:value-of select="$data/*[name()='file']" />
             </xsl:when>
             <xsl:otherwise>
-              <xsl:value-of select="$currocc/*[name()=$fieldname]" />
+              <xsl:value-of select="$data/*[name()=$fieldname]" />
             </xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
         
+        <xsl:variable name="cellattr" select="/root/filepicker[position()=$position]/file[@*]" />
+        
         <xsl:call-template name="display_file">
           <xsl:with-param name="fieldname"  select="$fieldname" />
           <xsl:with-param name="fieldvalue" select="$fieldvalue" />
-          <xsl:with-param name="position"   select="$position" /> 
+          <xsl:with-param name="position"   select="$position" />
+          <xsl:with-param name="cellattr"   select="$cellattr" />
         </xsl:call-template>
         
       </xsl:for-each>
@@ -225,16 +233,23 @@
                   <!-- replace 'image' value with 'file' value -->
                   <xsl:value-of select="$next/*[name()='file']" />
                 </xsl:when>
+                <xsl:when test="$fieldname='video'">
+                  <!-- replace 'image' value with 'file' value -->
+                  <xsl:value-of select="$next/*[name()='file']" />
+                </xsl:when>
                 <xsl:otherwise>
                   <xsl:value-of select="$next/*[name()=$fieldname]" />
                 </xsl:otherwise>
               </xsl:choose>
             </xsl:variable>
             
+            <xsl:variable name="cellattr" select="/root/filepicker[position()=$position+1]/file[@*]" />
+            
             <xsl:call-template name="display_file">
               <xsl:with-param name="fieldname"  select="$fieldname" />
               <xsl:with-param name="fieldvalue" select="$fieldvalue" />
               <xsl:with-param name="position"   select="$position+1" /> 
+              <xsl:with-param name="cellattr"   select="$cellattr" />
             </xsl:call-template>
             
           </xsl:for-each>
@@ -258,6 +273,7 @@
   <xsl:param name="fieldname"/>
   <xsl:param name="fieldvalue"/>
   <xsl:param name="position"/>
+  <xsl:param name="cellattr"/>
   
   <td>
     <xsl:choose>
@@ -299,6 +315,19 @@
           <xsl:with-param name="width" select="$image_width" />
           <xsl:with-param name="directory" select="$file_directory" />
         </xsl:call-template>
+      </xsl:when>
+      
+      <xsl:when test="$fieldname='video'">
+        <div class="picker-video">
+          <video controls="controls">
+            <xsl:attribute name="src"><xsl:value-of select="concat($file_directory, '/', $fieldvalue)"/></xsl:attribute>
+            <xsl:attribute name="height"><xsl:value-of select="$image_height"/></xsl:attribute>
+            <xsl:attribute name="width"><xsl:value-of select="$image_width"/></xsl:attribute>
+            <xsl:if test="$cellattr/@preload">
+              <xsl:attribute name="preload"><xsl:value-of select="$cellattr/@preload"/></xsl:attribute>
+            </xsl:if>
+          </video>
+        </div>
       </xsl:when>
       
       <xsl:otherwise>

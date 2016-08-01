@@ -216,7 +216,7 @@ class mnu_todo extends Default_Table
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
             if ($GLOBALS['mode'] == 'list') {
             	// for LIST screens reduce length of notes to 100 characters
-            	$this->sql_select .= ", CONCAT(SUBSTR(item_notes, 1, 100),'...') AS item_notes";
+            	$this->sql_select .= ", CONCAT(SUBSTR(item_notes, 1, 100),' ...') AS item_notes";
             	// fix for oracle: will not allow menu_todo.* (which contains item_notes) plus item_notes (again)
             	$replace = 'mnu_todo.user_id, mnu_todo.seq_no, mnu_todo.item_desc, mnu_todo.due_date, mnu_todo.is_complete';
             	$this->sql_select = str_replace('mnu_todo.*', $replace, $this->sql_select);

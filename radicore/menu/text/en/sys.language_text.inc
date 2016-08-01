@@ -20,7 +20,7 @@ $array['sys0013'] = "Role does not exist for user '%1\$s'";
 $array['sys0014'] = "This task has been assigned to role %1\$s";
 $array['sys0015'] = "This task has been assigned to user %1\$s";
 $array['sys0016'] = "Unknown integer type: %1\$s";
-$array['sys0017'] = "Must not use wildcard character (%%) in primary key";
+$array['sys0017'] = "Must not use wildcard character (%) in a primary or unique key";
 $array['sys0018'] = "Primary key (%1\$s) is not complete - check selection";
 $array['sys0019'] = "Missing 'AND' after 'BETWEEN' in WHERE clause";
 
@@ -349,6 +349,7 @@ $array['False']                 = 'False';
 $array['File Download']         = 'File Download';
 $array['Id']                    = 'Id';
 $array['ID']                    = 'ID';
+$array['language_id']           = 'Language';
 $array['Name']                  = 'Name';
 $array['rdc_limit']             = 'LIMIT';
 $array['rdc_offset']            = 'OFFSET';

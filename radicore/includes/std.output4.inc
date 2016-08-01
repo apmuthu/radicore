@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $dbobject->saved_selection = $fieldarray;
         // reset original field specifications
         $dbobject->fieldspec = $dbobject->getFieldspec_original();
-        $fieldarray = $dbobject->changeConfig($fieldarray);
+        $fieldarray = $dbobject->changeConfig($where, $fieldarray);
 
         // look for LIMIT and OFFSET values
         $rdc_limit  =& $_POST['rdc_limit'];

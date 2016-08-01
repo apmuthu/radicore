@@ -65,10 +65,9 @@ $errors   = $dbobject->getErrors();
 if ($errors) {
     $dbobject->rollback();
 } else {
+    $messages = array_merge($messages, $dbobject->getMessages());
     $errors = $dbobject->commit();
 } // if
-
-$messages = array_merge($messages, $dbobject->getMessages());
 
 if (empty($errors)) {
 	$action = 'insert';

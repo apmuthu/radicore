@@ -991,7 +991,7 @@ if (!function_exists('checkFileExists')) {
 // ****************************************************************************
 if (!function_exists('convert_child_id_to_parent_id')) {
     function convert_child_id_to_parent_id($fieldarray, $tablename, $child_relations)
-    // attaempt to convert the column name of 'something' to 'id'
+    // attempt to convert the column name of 'something' to 'id'
     {
         $child_table = $fieldarray['rdc_table_name'];
 
@@ -2601,11 +2601,17 @@ if (!function_exists('format_array')) {
 
         if (is_string($input)) {
         	$output .= $input;
+            if (!empty($prefix)) {
+                $output = $prefix.' '.$output;
+            } // if
         } elseif (is_bool($input)) {
             if ($input) {
             	$output .=  'True';
             } else {
                 $output .=  'False';
+            } // if
+            if (!empty($prefix)) {
+                $output = $prefix.' '.$output;
             } // if
         } elseif (is_array($input) OR is_object($input)) {
             foreach ($input as $key => $value) {
@@ -2628,6 +2634,9 @@ if (!function_exists('format_array')) {
             } // foreach
         } else {
             $output .= $input;
+            if (!empty($prefix)) {
+                $output = $prefix.' '.$output;
+            } // if
         } // if
 
         return $output;
@@ -2798,6 +2807,34 @@ if (!function_exists('format_xml_document')) {
         return $string_out;
 
     } // format_xml_document
+} // if
+
+// ****************************************************************************
+if (!function_exists('generateGUID')) {
+    function generateGUID ($include_braces=false)
+    // generate a GUID (Global Unique IDentifier).
+    {
+        if (function_exists('com_create_guid')){
+            $guid = com_create_guid();
+        } else {
+            mt_srand((double)microtime()*10000);  //optional for php 4.2.0 and up.
+            $charid = strtoupper(md5(uniqid(rand(), true)));
+            $hyphen = chr(45); // "-"
+            $guid = '{'.substr($charid, 0, 8).$hyphen
+                       .substr($charid, 8, 4).$hyphen
+                       .substr($charid,12, 4).$hyphen
+                       .substr($charid,16, 4).$hyphen
+                       .substr($charid,20,12)
+                   .'}';
+        } // if
+
+        if (!is_True($include_braces)) {
+            $guid = trim($guid, '{}');
+        } // if
+
+        return $guid;
+
+    } // generateGUID
 } // if
 
 // ****************************************************************************
@@ -7406,6 +7443,8 @@ if (!function_exists('where2indexedArray')) {
   (ANY|ALL|SOME)             # 'ANY' or 'ALL' or 'SOME'
   [ ]*                       # 0 or more spaces
   \(                         # starts with '(' - see pattern 2
+  |                          # or
+  CASE[ ]+WHEN[ ]+.+?END     # CASE WHEN ... END
   |                          # or
   (\w+(\.\w+)?)?             # optional word[.word] followed by
   [ ]*                       # 0 or more spaces

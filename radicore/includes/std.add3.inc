@@ -99,11 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         } // if
     } // foreach
 
-    $errors2 = $dbobject->commit();
-    $errors  = array_merge($errors, $errors2);
-
     // return a count of affected rows
     $messages[] = getLanguageText('sys0005', $count, strtoupper($dbobject->getTableName())); // 'N records were inserted'
+
+    $errors2 = $dbobject->commit();
+    $errors  = array_merge($errors, $errors2);
 
     if (empty($errors)) {
     	$action = 'insert';
