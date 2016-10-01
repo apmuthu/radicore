@@ -555,10 +555,10 @@ class dict_table_s04 extends dict_table
     } // _cm_post_updateRecord
 
     // ***************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         // find out if tables in the 'menu' database need to be qualified
@@ -568,8 +568,8 @@ class dict_table_s04 extends dict_table
         	$this->sql_select = 'dict_table.database_id, dict_table.table_id, dict_table.table_desc, dict_database.subsys_id, mnu_subsystem.subsys_dir, mnu_subsystem.task_prefix, mnu_pattern.pattern_desc';
         	$this->sql_from   = 'dict_table '
         	                  . 'LEFT JOIN dict_database ON (dict_database.database_id=dict_table.database_id) '
-        	                  . 'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) '
-        	                  . 'LEFT JOIN ' .$menuDB ."mnu_pattern ON (mnu_pattern.pattern_id='".$this->pattern_id."')";
+        	                  . "LEFT JOIN {$menuDB}mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) "
+        	                  . "LEFT JOIN {$menuDB}mnu_pattern ON (mnu_pattern.pattern_id='{$this->pattern_id}') ";
         } // if
 
         return $where;

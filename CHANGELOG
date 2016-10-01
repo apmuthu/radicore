@@ -1,13 +1,30 @@
 ﻿RADICORE for PHP - news
 
+2016-10-01, version 2.00.0
+Database changes:
+- run script menu\sql\mysql\alter_table(2016-08-30).sql to alter the structure of the MENU database.
+
+Other changes:
+- dropped support for PHP4 and opened support for PHP7. This is because the PHP4 class constructors, which worked in both PHP4 and PHP5, will no longer work in PHP7. I have updated all classes to use the PHP5 constructors which will work in PHP5 and PHP7, but not in PHP4.
+- changed MNU_TODO table by adding a column called 'object_id'. This is an optional field which is not used by the framework but by an application which was built using the framework.
+- fixed bug in getCount() method where the SQL statement starts with whitespace.
+- modified the logging of sql queries so that they are now written to the '<subsystem>/sql/logs' directory instead of the '<subsystem>/sql' directory, and to include timings down to the millisecond. See <a href="http://www.radicore.org/viewarticle.php?article_id=23#faq51">FAQ51</a> for details.
+- added function dateDiff_YYMM() to get the difference between two dates in years and months.
+- updated 'include.session.inc' and 'std.update4.inc' so that when a task of the UPDATE4 pattern is activated through a navigation button without any individial rows being selected then any search criteria currently being used in the parent task will be passed down to the child task.
+- updated all page controllers to remove the calls to START_TRANSACTION and COMMIT/ROLLBACK around the processing of custom buttons as they serve no purpose.
+- updated 'include.session.inc' so that if scriptNext() is used when processing a custom button then it is treated just like a popup in that when the form containing the custom button is reactivated it will not re-read the database and therefore lose any data in the form which has not yet been saved.
+- updated 'dml.sqlsrv.class.inc' to use 'SELECT SCOPE_IDENTITY()' instead of 'SELECT @@identity' to fix the bug reported in <a href="http://radicore.org/fud/index.php?t=msg&th=2288">http://radicore.org/fud/index.php?t=msg&th=2288</a>.
+- updated setJavaScript() in include.xml.php5.inc so that the contents of $javascript['foot'][]['code'] is processed correctly.
+
 2016-08-01, version 1.97.0
 Database changes:
 - none
 
 Other changes:
+- added function generateGUID() to incude.library.inc
 - updated std.add1/2/5.inc to include call to $object->quitButton() when CANCEL button is pressed.
 - added the generateGUID() function to include.library.inc
-- updated SQL Server processing to avoid the error 'New transaction is not allowed because there are other threads running in the session'. Calls to $dbobject->getDataSerial(), $dbobject->fetchRow() and dbobject->free_result() are now done using a separate instance of the database driver. This means that if any database updates are performed after a call to ->fetchRow() the call to ->startTransaction() will no longer fail.
+- updated SQL Server processing to avoid the error 'New transaction is not allowed because there are other threads running in the session'. Calls to $dbobject->getDataSerial() and $dbobject->fetchRow() are now done using a separate instance of the database driver. This means that if any database updates are performed after a call to ->fetchRow() the call to ->startTransaction() will no longer fail.
 - updated 'std.validation.class.inc' to disallow a '%' character from being used in a primary or unique key as this is used as the 'wildcard' character in database searches.
 - updated 'std.filepicker.list1.xsl' to allow video files as well as still images.
 - updated 'std.table.class.inc' so that when a task is initiated via append2ScriptSequence() with 'action' = 'OK' (meaning that the QUIT/CANCEL button is invalid and the task should only be terminated with a SUBMIT button) then the QUIT/CANCEL button is removed so that it cannot be pressed.
@@ -26,9 +43,9 @@ Other changes:
 - fixed bugs in 'mnu_initial_value_role(multi3)a/b.php', 'mnu_initial_value_user(multi3)a/b.php' and 'mnu_role_taskfield(multi3)a/b.php' where the query produced the wrong result in certain circumstances.
 - modified all 'dml.???.class.inc' files so that when looking for a change in a unique key during an update it will use strcasecomp() to perform a case-insensitive comparison.
 - modified 'std.pdf.class.inc' so that the 'ignore_if_empty' option will now work in 'Body contents (detail view - additional data)'.
-- modified 'include.xml.php.inc', 'std.buttons.xsl' and 'std.data_field.xsl' so that tooltips are now displayed for action buttons and popup buttons.
+- modified 'include.xml.php.inc', 'std.buttons.xsl' and 'std.data_field.xsl' so that tooltips are now displayed for action buttons amd popup buttons.
 - fixed bug which prevented creation of new records on MNU_ACCOUNT table.
-- fixed bug when a user with a NULL rdcaccount_id uses Copy+Paste on a user record which has rdcaccount_id > 1. The new record must use the same rdcaccount_id as the copied record whereas the bug caused it to be set to 1 (the shared account). 
+- fixed bug when a user with a NULL rdcaccount_id used Copy+Paste on a user record which had rdcaccount_id > 1. The new record must use the same rdcaccount_id as the copied record whereas the bug caused it t be set to 1 (the shared account). 
 
 2016-06-01, version 1.95.0
 Database changes:
@@ -53,7 +70,7 @@ Database changes:
 - none
 
 Other changes:
-- modified 'dict_column.class.inc' so that when importing column definitions it does not nullify existing values for 'align_hv' or 'align_lr'.
+- modified 'dict_column.class.inc' so that when inporting column definitions it does not nullify existing values for 'align_hv' or 'align_lr'.
 - fixed bug in 'mnu_subsystem_s01.class.inc' (Export Subsystem) which escaped the " (double quote) character which caused such strings as '<a href="...">' to be corrupted when reloaded.
 - fixed bug in 'mnu_subsystem_s01.class.inc' (Export Subsystem) which caused data for mnu_user_role to be labelled for the mnu_initial_value_user table.
 - updated the 'fileupload1' pattern to include a call to getExtraData() so that the messages can be customised.

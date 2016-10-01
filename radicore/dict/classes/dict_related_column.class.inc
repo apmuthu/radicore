@@ -11,19 +11,17 @@ class dict_related_column extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function dict_related_column ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_related_column';
         $this->dbname      = 'dict';
 
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // dict_related_column
+    } // __construct
 
     // ****************************************************************************
     function _cm_getDatabaseLock ()

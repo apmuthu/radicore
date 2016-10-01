@@ -1,18 +1,17 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class facility extends Default_Table
 {
     // ****************************************************************************
-    function facility ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'product';
         $this->tablename   = 'facility';
 
@@ -20,7 +19,7 @@ class facility extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // facility
+    } // __construct
 
     // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
@@ -40,7 +39,7 @@ class facility extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

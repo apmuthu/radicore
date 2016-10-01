@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -49,6 +49,7 @@ class pgsql
     var $sql_having;
     var $sql_orderby;
     var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $sql_where_append;              // string which is too complex for where2array() function
     var $query;                         // completed DML statement
 
     var $dbconnect;                     // database connection resource
@@ -56,7 +57,7 @@ class pgsql
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function pgsql ($args=null)
+    function __construct ($args=null)
     {
         if (is_string($args)) {
             $schema             = $args;
@@ -88,7 +89,7 @@ class pgsql
 
         return $result;
 
-    } // pgsql
+    } // __construct
 
     // ****************************************************************************
     function adjustGroupBy ($select_str, $group_str, $sort_str)
@@ -351,10 +352,12 @@ END_OF_REGEX;
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'COMMIT';
+        $start_time = getMicroTime();
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, null, 'COMMIT');
+        logSqlQuery ($schema, null, 'COMMIT', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -459,14 +462,14 @@ END_OF_REGEX;
         if (empty($where)) return;    // nothing to delete, so exit
 
         // build the query string and run it
+        $start_time = getMicroTime();
         $this->query = "DELETE FROM $tablename WHERE $where";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -494,17 +497,18 @@ END_OF_REGEX;
 
         $selection = $this->adjustWhere($selection);
 
+        $start_time = getMicroTime();
         if (!empty($from) AND !empty($using)) {
             $this->query = "DELETE FROM $from USING $using WHERE $selection";
         } else {
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } // if
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        $count = pg_affected_rows($result);
+        $this->numrows = pg_affected_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -573,8 +577,10 @@ END_OF_REGEX;
             } // if
         } // if
 
+        $start_time = getMicroTime();
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         $query_data = pg_fetch_row($result);
+        $end_time = getMicroTime();
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
@@ -585,7 +591,7 @@ END_OF_REGEX;
         } // if
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $count, $start_time, $end_time);
         $this->query = '';
 
         return $count;
@@ -623,9 +629,10 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -634,6 +641,14 @@ END_OF_REGEX;
             $where_str = '';
         } else {
             $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -723,6 +738,7 @@ END_OF_REGEX;
         $repeat_count = 0;
         do {
             // build the query string and run it
+            $start_time = getMicroTime();
             $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
             //$result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $result = pg_query($this->dbconnect, $this->query);
@@ -730,7 +746,8 @@ END_OF_REGEX;
                 $errno = $this->getErrorNo();
                 if ($errno == '0A000' AND !empty($lock_str)) {
                     // "FOR UPDATE cannot be applied to the nullable side of an outer join"
-                    logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+                    $end_time = getMicroTime();
+                    logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
                     // rollback current transaction
                     $result = pg_query($this->dbconnect, 'ROLLBACK') or trigger_error($this, E_USER_ERROR);
                     logSqlQuery ($schema, null, 'ROLLBACK');
@@ -756,9 +773,10 @@ END_OF_REGEX;
         if ($rows_per_page == 0) {
             $this->numrows = pg_num_rows($result);
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         pg_free_result($result);
 
@@ -797,6 +815,10 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -804,12 +826,20 @@ END_OF_REGEX;
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "GROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            $group_str = "\nGROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
             //$group_str = "GROUP BY $this->sql_groupby";
         } else {
             $group_str = NULL;
@@ -817,7 +847,7 @@ END_OF_REGEX;
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\nORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
@@ -831,21 +861,22 @@ END_OF_REGEX;
         } // if
 
         if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
-        	$limit_str = 'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
+        	$limit_str = "\nLIMIT {$rdc_limit} OFFSET {$rdc_offset}";
         } elseif ($rows_per_page > 0) {
-            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+            $limit_str = "\nLIMIT {$rows_per_page} OFFSET " .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
         } // if
 
         // build the query string and run it
+        $start_time = getMicroTime();
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $limit_str";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
         $this->numrows = pg_num_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         return $result;
 
@@ -1087,6 +1118,7 @@ END_OF_REGEX;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
         $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
+        $start_time = getMicroTime();
         do {
             // insert this record into the database
             $cols = '';
@@ -1164,12 +1196,14 @@ END_OF_REGEX;
                 $this->numrows = 1;  // record has been inserted
             } // if
         } while ($repeat === true);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
+            $start_time = getMicroTime();
             if (!empty($sequence)) {
                 $this->query = "SELECT currval('$sequence')";
             } else {
@@ -1177,9 +1211,10 @@ END_OF_REGEX;
             } // if
             $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $fieldarray[$auto_increment] = pg_fetch_result($result, 0, 0);
+            $end_time = getMicroTime();
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
             // write query to log file, if option is turned on
-            logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
+            logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment], $start_time, $end_time);
 		} // if
 
         if ($this->audit_logging) {
@@ -1249,11 +1284,13 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
+        $start_time = getMicroTime();
         $this->query = 'ROLLBACK';
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, null, 'ROLLBACK');
+        logSqlQuery ($schema, null, 'ROLLBACK', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1362,11 +1399,13 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $this->query = 'BEGIN TRANSACTION';
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, null, $this->query);
+        logSqlQuery ($schema, null, $this->query, null, $start_time, $end_time);
         $this->query = '';
 
         if (!empty($this->table_locks)) {
@@ -1512,15 +1551,15 @@ END_OF_REGEX;
         // strip trailing comma
         $update = rtrim($update, ', ');
 
-        // append WHERE clause to SQL query
+        // build and eecute SQL query
+        $start_time = getMicroTime();
         $this->query = "UPDATE $tablename SET $update WHERE $where";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        // get count of affected rows as there may be more than one
         $this->numrows = pg_affected_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1546,13 +1585,14 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
         $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
         $count = pg_affected_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($count > 0) {
             if ($this->audit_logging) {
@@ -2113,10 +2153,12 @@ END_OF_REGEX;
         } // switch
 
         if (!empty($string)) {
+            $start_time = getMicroTime();
             $this->query = "LOCK TABLE $string IN $mode MODE";
             $result = pg_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
             // write query to log file, if option is turned on
-            logSqlQuery (null, null, $this->query);
+            logSqlQuery (null, null, $this->query, null, $start_time, $end_time);
             $this->query = '';
             return true;
         } // if

@@ -258,7 +258,10 @@ if (!empty($_POST)) {
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-        $dbinner->startTransaction();
+        // save current data in case a custom button jumps to another script
+        $script_vars['dbouter']  = serialize($dbouter);
+        $script_vars['dbmiddle'] = serialize($dbmiddle);
+        $script_vars['dbinner']  = serialize($dbinner);
         if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
@@ -283,14 +286,7 @@ if (!empty($_POST)) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
-        if (empty($errors)) {
-            $dbinner->commit(false);
-            if (preg_match('/retrieve/i', $custom_btn)) {
-                $do_retrieve = true;
-            } // if
-        } else {
-            $dbinner->rollback();
-        } // if
+        unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
         $dbinner->startTransaction();

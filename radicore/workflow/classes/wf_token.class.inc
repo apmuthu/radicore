@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class wf_token extends Default_Table
@@ -9,7 +9,7 @@ class wf_token extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function wf_token ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -21,7 +21,7 @@ class wf_token extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // wf_token
+    } // __construct
 
     // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
@@ -174,7 +174,7 @@ class wf_token extends Default_Table
         // find all transitions which are joined to this place via INWARD arcs
         require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& RDCsingleton::getInstance('wf_arc');
-        $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit, template_id';
+        $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit';
         $dbarc->sql_from = 'wf_arc '
                          . "LEFT JOIN wf_transition ON (wf_transition.workflow_id=wf_arc.workflow_id AND wf_transition.transition_id=wf_arc.transition_id) ";
         $where = "workflow_id='$workflow_id' AND place_id='$place_id' AND direction='IN'";

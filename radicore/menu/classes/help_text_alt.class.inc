@@ -7,7 +7,7 @@ require_once 'std.table.class.inc';
 class help_text_alt extends Default_Table
 {
     // ****************************************************************************
-    function help_text_alt ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -19,7 +19,7 @@ class help_text_alt extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // help_text_alt
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)

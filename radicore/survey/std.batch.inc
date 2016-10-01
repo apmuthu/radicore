@@ -191,6 +191,12 @@ function batchInit ($batchfile)
     echo '<p>role_id  : ' .$_SESSION['role_id'] ."</p>\n";
     echo '<p>role_list: ' .$_SESSION['role_list'] ."</p>\n";
 
+    global $where, $selection, $search;
+
+    echo "<p>WHERE     : {$where}\n";
+    echo "<br>SELECTION: {$selection}\n";
+    echo "<br>SEARCH   : {$search}</p>\n";
+
     if (isset($stdouth)) {
         $output = ob_get_contents();
         $result = fwrite($stdouth, $output);
@@ -212,13 +218,8 @@ function batchEnd ($errors=null)
 // end batch processing
 {
     if (!empty($errors)) {
-    	if (is_array($errors)) {
-    		foreach ($errors as $key => $value) {
-    			echo "<p>[" .$key ."] " .$value ."</p>\n";
-    		} // foreach
-    	} elseif (is_string($errors)) {
-    	    echo "<p>$errors</p>\n";
-    	} // if
+        $string = errors2string($errors, '<p>', "</p>");
+        echo $string;
     } // if
 
     $errors = batchScriptSequence();  // process anything put in $_SESSION['script_sequence']
@@ -249,6 +250,10 @@ function batchEnd ($errors=null)
 function batchScriptSequence ()
 // process $_SESSION['script_sequence'] when running in batch mode.
 {
+    if (!isset($_SESSION) OR !isset($_SESSION['script_sequence'])) {
+        return;
+    } // if
+
     $script_sequence = $_SESSION['script_sequence'];
     unset($_SESSION['script_sequence']);
     //session_write_close();
@@ -317,8 +322,8 @@ function check_errors ($object)
             } // if
         } // if
 
-	    // put last error into $string
-        $string = array_pop($errors);
+	    // put first error into $string
+        $string = array_shift($errors);
 
 	    trigger_error($string, E_USER_ERROR);
 	} // if

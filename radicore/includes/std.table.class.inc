@@ -56,6 +56,7 @@ abstract class Default_Table
     var $is_link_table = false;         // used in method _sqlAssembleWhere (many-link-many relationship)
 
     var $javascript = array();          // optional JavaScript code
+    var $keep_changed_keys = false;     // allow changes to primary/unique keys to be passed to DML object
     var $lastpage;                      // last available page number in current query
     var $link_item;                     // used in _sqlAssembleWhere() in many-to-many relationships
     var $lookup_data = array();         // array of lookup data (for dropdowns, radio groups)
@@ -134,6 +135,7 @@ abstract class Default_Table
     var $default_orderby_task = null;   // default for task, may be overridden by $sql_orderby
     var $sql_from;
     var $sql_groupby;
+    var $sql_groupby_orig;              // original GROUP BY setting
     var $sql_having;
     var $sql_no_foreign_db = false;     // if TRUE _sqlProcessJoin() method will skip tables in other databases
     var $sql_orderby;                   // sort field
@@ -147,6 +149,7 @@ abstract class Default_Table
     var $sql_selection;                 // selection passed down from previous task
     var $sql_union;                     // optional UNION clause
     var $sql_where;                     // additional selection criteria
+    var $sql_where_append;              // string which is too complex for wher2array() function,so will be appended manually
     var $where;                         // passed from parent form
 
     // ****************************************************************************
@@ -333,6 +336,8 @@ abstract class Default_Table
             } // if
         } // if
 
+        $this->sqlSelectInit();  // clear out this last query
+
         return true;
 
     } // checkAccountId
@@ -412,29 +417,19 @@ abstract class Default_Table
     } // clearScrollArray
 
     // ****************************************************************************
-    function commit ($update_workflow=true)
+    function commit ($update_workflow=true, $update_script_vars=true)
     // commit this transaction
     {
         $errors = array();
 
         $this->sql_union = null;
 
-        if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
-            $condition = true;  // do nothing
-        } else {
-            if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
-                $condition = true;  // do nothing
-            } else {
-                // if this task+context is a pending workitem then update it
-                $errors = $this->_examineWorkflow($this->fieldarray);
-            } // if
-        } // if
-
         $DML =& $this->_getDBMSengine($this->dbname);
         if ($errors) {
             $result = $DML->rollback($this->dbname_server);
         } else {
-            if ($result = $DML->commit($this->dbname_server)) {
+            $result = $DML->commit($this->dbname_server);
+            if ($result AND is_True($update_script_vars)) {
                 // update has been committed, so remove any 'run_at_cancel' reference
                 if ($this->initiated_from_controller) {
                     if (isset($GLOBALS['script_vars']['task_id_run_at_cancel'])) {
@@ -449,6 +444,21 @@ abstract class Default_Table
         } // if
 
         $GLOBALS['transaction_has_started'] = FALSE;
+
+        if (empty($errors)) {
+            if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
+                $condition = true;  // workflow not enabled, so do nothing
+            } else {
+                if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
+                    $condition = true;  // no workflows allowed on this database
+                } elseif (array_key_exists('rdc_has_errors', $this->fieldarray)) {
+                    $condition = true;  // update failed, so do nothing
+                } else {
+                    // if this task+context is a pending workitem then update it
+                    $errors = $this->_examineWorkflow($this->fieldarray);
+                } // if
+            } // if
+        } // if
 
         return $errors;
 
@@ -2082,7 +2092,8 @@ abstract class Default_Table
     function getCount ($where=null)
     // get count of records that satisfy selection criteria in $where.
     {
-        if (strlen(trim($where)) > 0) {
+        $where = trim($where);  // remove leading/trailing whitespace characters
+        if (strlen($where) > 0) {
             $count = $this->_dml_getCount($where);
             return $count;
         } else {
@@ -2122,7 +2133,7 @@ abstract class Default_Table
 
         if (is_True($this->initiated_from_controller)) {
             // replace with original unmodified version
-            $this->sql_search = $this->sql_search_orig;
+            $this->sql_search  = $this->sql_search_orig;
         } // if
 
         // make this data available if passed down by parent object
@@ -2360,6 +2371,11 @@ abstract class Default_Table
         if ($this->initiated_from_controller AND !empty($this->sql_search_orig)) {
             // replace with original unmodified version
             $this->sql_search = $this->sql_search_orig;
+        } // if
+
+        if ($this->initiated_from_controller AND !empty($this->sql_groupby_orig)) {
+            // replace with original unmodified version
+            $this->sql_groupby = $this->sql_groupby_orig;
         } // if
 
         // make this data available if passed down by parent object
@@ -2746,7 +2762,7 @@ abstract class Default_Table
                 // may be more than one parent_field, so turn it into an array of separate field names
                 list($parent_fields, $alias_array) = extractFieldNamesIndexed($reldata['parent_field']);
                 $ix = 0;  // set to first entry
-                if (!empty($fieldarray[$parent_fields[$ix]])) {
+                if (isset($fieldarray[$parent_fields[$ix]]) AND strlen($fieldarray[$parent_fields[$ix]]) > 0) {
                     // parent field is already there, so do nothing
                 } else {
                     // construct WHERE clause to read from parent table
@@ -2769,6 +2785,11 @@ abstract class Default_Table
                             } // if
                             $where_array = array();
                             break;
+                        } else {
+                            if (is_long($fieldarray[$fldchild]) AND $fieldarray[$fldchild] == 0) {
+                                $where_array = array();
+                                break;
+                            } // if
                         } // if
                         $where_array[$fldparent] = $fieldarray[$fldchild];
                     } // foreach
@@ -3383,6 +3404,14 @@ abstract class Default_Table
         // get name(s) of field(s) which form the primary key
         $pkeynames = $this->getPkeyNames();
 
+        //if (!empty($this->unique_keys)) {
+        //    // include any candidate keys
+        //    foreach ($this->unique_keys as $key) {
+        //        $pkeynames = array_merge($pkeynames, $key);
+        //    } // foreach
+        //    $pkeynames = array_unique($pkeynames);
+        //} // if
+
         if (!empty($next_task) AND is_string($next_task)) {
             // convert string to an array of details
             $taskobj =& RDCsingleton::getInstance('mnu_task');
@@ -3473,6 +3502,14 @@ abstract class Default_Table
     {
         // get array of original names
         $pkey_names  = $this->getPkeyNames();
+
+        //if (!empty($this->unique_keys)) {
+        //    // include any candidate keys
+        //    foreach ($this->unique_keys as $key) {
+        //        $pkey_names = array_merge($pkey_names, $key);
+        //    } // foreach
+        //    $pkey_names = array_unique($pkey_names);
+        //} // if
 
         // allow this array to be adjusted
         $task_id    = $_SESSION['pages'][getSelf()]['task_id'];
@@ -3622,15 +3659,6 @@ abstract class Default_Table
 
         if (!empty($where)) {
             $pkeynames = $this->getPkeyNames();
-//            if (!empty($this->fieldarray)) {
-//                if (is_long(key($this->fieldarray))) {
-//                    $fieldarray = $this->fieldarray[0];
-//                } else {
-//                    $fieldarray = $this->fieldarray;
-//                } // if
-//                // ensure this contains full primary key of current record
-//                $where = array2where($fieldarray, $pkeynames);
-//            } // if
             if (count($pkeynames) == 1) {
                 if ($pkeynames[0] == 'id') {
                     $where .= " AND rdc_table_name='".get_class($this)."'";
@@ -3665,6 +3693,8 @@ abstract class Default_Table
     {
         $this->pageno = null;
         $this->where  = null;
+
+        $this->sql_groupby_orig = $this->sql_groupby;  // do NOT lose this value!
 
         $pattern_id = getPatternId();
 
@@ -4252,6 +4282,7 @@ abstract class Default_Table
 
         $insert_count   = 0;
         $update_count   = 0;
+        $delete_count   = 0;
         $unchange_count = 0;
 
         foreach ($fieldarray as $rownum => $rowdata) {
@@ -4273,6 +4304,13 @@ abstract class Default_Table
                 $rowdata = $this->insertRecord($rowdata);
                 if ($this->numrows > 0) {
                     $insert_count++;
+                } // if
+            } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                $rowdata = $this->deleteRecord($rowdata);
+                if ($this->numrows > 0) {
+                    $update_count++;
+                } else {
+                    $unchange_count++;
                 } // if
             } else {
                 // record already exists, so update it
@@ -4549,6 +4587,7 @@ abstract class Default_Table
     // processing before a popup form is called.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered.
     // NOTE: $script_vars is passed BY REFERENCE as it may be altered.
+    // NOTE: $offset identifies the row number (if there is more than one).
     {
         // clear any previous selection
         $script_vars['selection'] = NULL;
@@ -4611,7 +4650,7 @@ abstract class Default_Table
     // $fieldarray contains the record data when the popup button was pressed.
     // $return_from identifies which popup screen was called.
     // $selection contains a string identifying what was selected in that popup screen.
-    // $popup_offset identifies the row number (which starts from 1 in HTML forms)
+    // $popup_offset identifies the row number (if there is more than one).
     {
         $this->errors = array();
 
@@ -4621,15 +4660,14 @@ abstract class Default_Table
 
         reset($fieldarray);   // fix for version 4.4.1
         if (!empty($fieldarray) and !is_string(key($fieldarray))) {
-            if (is_null($popup_offset)) {
-                // extract first row
-                $single_row = $fieldarray[key($fieldarray)];
-                $popup_offset = key($fieldarray)+1;
+            if (isset($popup_offset) AND is_numeric($popup_offset)) {
+                // already contains row number
             } else {
-                // extract specified row
-                $this->row_offset = $popup_offset-1;
-                $single_row = $fieldarray[$this->row_offset];
+                // extract first row
+                $popup_offset = key($fieldarray);
             } // if
+            $single_row = $fieldarray[$popup_offset];
+            $this->row_offset = $popup_offset;
         } else {
             // not indexed by row, so use entire array
             $single_row = $fieldarray;
@@ -4666,9 +4704,9 @@ abstract class Default_Table
                     $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                 } // if
             } // if
-            if (!empty($popup_offset)) {
+            if (isset($popup_offset) AND is_numeric($popup_offset)) {
                 // insert single row into array
-                $fieldarray[$popup_offset-1] = $single_row;
+                $fieldarray[$popup_offset] = $single_row;
             } else {
                 // not indexed by row, so replace entire array
                 $fieldarray = $single_row;
@@ -4794,13 +4832,12 @@ abstract class Default_Table
 
         $single_row = array_change_key_case($single_row, CASE_LOWER);
 
-        //if (!empty($fieldarray) and !is_string(key($fieldarray))) {
-        if (!empty($popup_offset)) {
+        if (isset($popup_offset) AND is_numeric($popup_offset)) {
             if (!is_long(key($fieldarray))) {
                 $fieldarray = array();  // remove existing associative array
             } // if
             // insert single row into array
-            $fieldarray[$popup_offset-1] = $single_row;
+            $fieldarray[$popup_offset] = $single_row;
         } else {
             // not indexed by row, so replace entire array
             $fieldarray = $single_row;
@@ -4991,6 +5028,7 @@ abstract class Default_Table
     // ****************************************************************************
     function scriptPrevious ($errors=null, $messages=NULL, $action=NULL, $instruction=NULL)
     // go back to the previous script in the current hierarchy.
+    // This version will commit any outstanding database updates.
     {
         if ($GLOBALS['transaction_has_started'] == TRUE) {
             $errors = $this->commit();
@@ -5103,8 +5141,8 @@ abstract class Default_Table
         } // if
         $params['context']   = $where;
 
-        if (array_key_exists('rdc_no_scheduling', $input_data)) {
-            $params['rdc_no_scheduling'] = true;
+        if (array_key_exists('rdc_no_followup', $input_data)) {
+            $params['rdc_no_followup'] = true;
         } // if
 
         // use template object to send this message
@@ -5547,8 +5585,8 @@ abstract class Default_Table
     function setSqlSearch ($sql_search=null, $save=false)
     // set additional criteria to be used in sql select
     {
-        $this->sql_search      = $sql_search;
-        $this->sql_search_orig = $sql_search;
+        $this->sql_search       = $sql_search;
+        $this->sql_search_orig  = $sql_search;
 
         // this causes following variables to be reset
         $this->pageno     = 1;
@@ -5696,6 +5734,7 @@ abstract class Default_Table
         $this->sql_where        = null;
         $this->sql_union        = null;
         $this->sql_groupby      = null;
+        $this->sql_groupby_orig = null;
         $this->sql_orderby      = null;
         $this->sql_orderby_seq  = null;
         $this->sql_having       = null;
@@ -6099,11 +6138,12 @@ abstract class Default_Table
 
         $errors = array();
 
-        $default_orderby = $this->default_orderby; // save
-        $save_sql_select = $this->sql_select;
-        $save_sql_from   = $this->sql_from;
-        $save_sql_search = $this->sql_search;
-        $save_sql_where  = $this->sql_where;
+        $default_orderby  = $this->default_orderby; // save
+        $save_sql_select  = $this->sql_select;
+        $save_sql_from    = $this->sql_from;
+        $save_sql_search  = $this->sql_search;
+        $save_sql_groupby = $this->sql_groupby;
+        $save_sql_where   = $this->sql_where;
 
         // get array of fieldnames in the primary key
         $pkeynames = $this->getPkeyNames();
@@ -6156,11 +6196,12 @@ abstract class Default_Table
 
         } // foreach
 
-        $this->default_orderby = $default_orderby; // restore
-        $this->sql_select      = $save_sql_select;
-        $this->sql_from        = $save_sql_from;
-        $this->sql_search_orig = $save_sql_search;
-        $this->sql_where       = $save_sql_where;
+        $this->default_orderby  = $default_orderby; // restore
+        $this->sql_select       = $save_sql_select;
+        $this->sql_from         = $save_sql_from;
+        $this->sql_search_orig  = $save_sql_search;
+        $this->sql_groupby_orig = $save_sql_groupby;
+        $this->sql_where        = $save_sql_where;
 
         $this->insert_count = $insert_count;
         $this->update_count = $update_count;
@@ -6359,7 +6400,9 @@ abstract class Default_Table
             } // if
         } // if
 
-        $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
+        if (is_array($fieldarray) AND !empty($fieldarray)) {
+            $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
+        } // if
 
         $updatearray = $fieldarray;  // copy to temporary area
 
@@ -6391,6 +6434,7 @@ abstract class Default_Table
                 // 'Could not locate original $tablename record for updating ($where)'
                 $this->errors[] = $this->getLanguageText('sys0007', strtoupper($this->tablename), $where);
             } else {
+                $this->numrows = 0;
                 // use only 1st row in $originaldata
                 $originaldata = $originaldata[key($originaldata)];
                 if (isset($this->fieldspec['rdcaccount_id'])) {
@@ -6884,7 +6928,7 @@ abstract class Default_Table
         } // foreach
 
         // perform any custom pre-update validation
-        $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
+        $fieldarray = $this->custom_validateUpdate($fieldarray, null);
 
         return $fieldarray;
 
@@ -6900,7 +6944,7 @@ abstract class Default_Table
 
         return $rows;
 
-    } // _cm__cm_appendToCSV
+    } // _cm_ppendToCSV
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -6926,7 +6970,7 @@ abstract class Default_Table
 
     // ****************************************************************************
     function _cm_customButton ($fieldarray, $button)
-    // user pressed a custom buttom.
+    // user pressed a custom button.
     {
         // custom code goes here
 
@@ -7465,6 +7509,7 @@ abstract class Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         // clear out the contents of $where
         //$where = '';
@@ -8229,6 +8274,8 @@ abstract class Default_Table
         } // if
         $this->prev_sql_orderby = $DML->sql_orderby;
 
+        $DML->sql_where_append = $this->sql_where_append;
+
         $DML->setRowLocks($this->row_locks);
 
         $array = $DML->getData($this->dbname_server, $this->tablename, $where);
@@ -8238,7 +8285,10 @@ abstract class Default_Table
         $this->pageno   = $DML->getPageNo();
         $this->lastpage = $DML->getLastPage();
 
-        $this->sql_union = null;
+        $this->sql_groupby      = $this->sql_groupby_orig;
+        $this->sql_having       = null;
+        $this->sql_union        = null;
+        $this->sql_where_append = null;
 
         return $array;
 
@@ -8273,7 +8323,9 @@ abstract class Default_Table
 
         $this->numrows  = $DML->getNumRows();
 
-        $this->sql_union = null;
+        $this->sql_groupby = $this->sql_groupby_orig;
+        $this->sql_having  = null;
+        $this->sql_union   = null;
 
         $this->instance_name = $DML->instance_name;
 
@@ -8370,6 +8422,8 @@ abstract class Default_Table
                 // has not been constructed yet, so do it now
                 $where_array = where2array($where);
                 $parent_data =& $this->getParentData();
+                $checkPrimaryKey = $this->checkPrimaryKey;  // save
+                $this->checkPrimaryKey = true;  //change
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
                         $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
@@ -8382,6 +8436,7 @@ abstract class Default_Table
                     $where = $this->_cm_pre_getData($where, $where_array, $parent_data);
                     if ($this->errors) return;
                 } // if
+                $this->checkPrimaryKey = $checkPrimaryKey;  // restore
             } // if
             $having_array = array();
             $where = qualifyWhere($where, $this->tablename, $this->fieldspec, $this->sql_from, null, null, $having_array);
@@ -8390,9 +8445,14 @@ abstract class Default_Table
             if (!empty($DML->sql_select)) {
                 // ensure this selects ALL fields from the primary table
                 if (!preg_match('/' .$this->tablename .'\.\*/', $DML->sql_select)) {
-                    $DML->sql_select = $this->tablename .'.*, ' .$DML->sql_select;
-                    // replace '*' (all columns) with a list of columns names
-                    $DML->sql_select = selectAllColumns($DML->sql_select, $this->getFieldSpec_original(), $this->tablename);
+                    // see if the table name has an alias
+                    $aliasnames = extractTableNames($this->sql_from);
+                    // switch array from 'alias=name' to 'name=alias'
+                    $aliasnames = array_flip($aliasnames);
+                    // use '*' to indicate ALL columns
+                    $DML->sql_select = $aliasnames[$this->tablename] .'.*, ' .$DML->sql_select;
+                    // replace '*' (all columns) with a list of columns names, qualified by table/alias name
+                    $DML->sql_select = selectAllColumns($DML->sql_select, $this->getFieldSpec_original(), $aliasnames[$this->tablename]);
                     // remove any duplicated field names from the select string
                     $DML->sql_select = removeDuplicateFromSelect($DML->sql_select);
                 } // if
@@ -8402,6 +8462,13 @@ abstract class Default_Table
             $DML->sql_having       = $this->sql_having;
             $DML->sql_orderby      = $this->getOrderBy();
             $DML->sql_orderby_seq  = $this->sql_orderby_seq;
+            if (!empty($this->sql_search)) {
+                if (empty($where)) {
+                    $where = $this->sql_search;
+                } else {
+                    $where = "($where) AND $this->sql_search";
+                } // if
+            } // if
         } else {
             // construct default SELECT statement
             $DML->sql_select       = NULL;
@@ -8796,6 +8863,7 @@ abstract class Default_Table
                 $cpo->skip_getdata              =& $this->skip_getdata;
                 $cpo->sql_from                  =& $this->sql_from;
                 $cpo->sql_groupby               =& $this->sql_groupby;
+                $cpo->sql_groupby_orig          =& $this->sql_groupby_orig;
                 $cpo->sql_having                =& $this->sql_having;
                 $cpo->sql_no_foreign_db         =& $this->sql_no_foreign_db;
                 $cpo->sql_orderby               =& $this->sql_orderby;
@@ -10053,10 +10121,9 @@ abstract class Default_Table
         unset($keys['custom_processing_object']);  // this will be rebuilt in the __wakeup() method
 
         $pattern_id = getPatternId();
-        if (preg_match('/^(UPD|ADD|MULTI|MULTI2|SRCH|LINK|POPUP|OUTPUT4|FILEUPLOAD)/i', $pattern_id)) {
-            // do NOT shrink $this->fieldarray
-        } else {
-            // get list of primary key fields
+        if (preg_match('/^(LIST1)$/i', $pattern_id)
+        OR (preg_match('/^(LIST2|LIST3)$/i', $pattern_id) AND preg_match('/inner/i', $this->zone))) {
+            // this zone contains multiple rows, so shrink $fieldarray to primary key fields only
             $pkey_array = $this->getPkeyNamesAdjusted();
 
             if (is_string(key($this->fieldarray))) {

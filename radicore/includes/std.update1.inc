@@ -111,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         } else {
             $fieldarray = $dbobject->getData($where);
             $fieldarray = $dbobject->getExtraData($fieldarray);
-            $fieldarray = $dbobject->validateUpdate($fieldarray);
         } // if
+        $fieldarray = $dbobject->validateUpdate($fieldarray);
         if ($dbobject->errors) {
             if ($dbobject->numrows > 1) {
                 // multiple rows, so display error message with this screen
@@ -193,14 +193,13 @@ if (!empty($_POST)) {
         } elseif (empty($errors) AND !empty($custom_button)) {
             // a custom button was pressed
             list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-            $dbobject->startTransaction();
+            // save current data in case a custom button jumps to another script
+            $script_vars['dbobject'] = serialize($dbobect);
             $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
             if ($dbobject->errors) {
-                $errors = $dbobject->getErrors();
-                $dbobject->rollback();
-            } else {
-                $dbobject->commit(false);
+                $errors[$dbobject->getClassName()] = $dbobject->getErrors();
             } // if
+            unset($custom_button);
 
         } elseif (empty($errors) AND !empty($submit_button)) {
             $dbobject->startTransaction();

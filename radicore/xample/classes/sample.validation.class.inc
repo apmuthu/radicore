@@ -1,18 +1,18 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 class sample_validation_class
 {
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function sample_validation_class()
+    function __construct ()
     {
         // custom code goes here
 
-    } // sample_validation_class
+    } // __construct
 
     // ****************************************************************************
     function postcode ($input)

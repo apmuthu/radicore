@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class x_pers_type extends Default_Table
@@ -9,12 +9,11 @@ class x_pers_type extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function x_pers_type ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'xample';
         $this->tablename   = 'x_pers_type';
 
@@ -22,10 +21,10 @@ class x_pers_type extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // x_pers_type
+    } // __construct
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

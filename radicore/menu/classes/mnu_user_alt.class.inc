@@ -7,9 +7,11 @@ require_once 'std.table.class.inc';
 class mnu_user_alt extends Default_Table
 {
     // ****************************************************************************
-    function mnu_user_alt ()
+    function __construct ()
     {
-        $this->dirname     = dirname(__file__);  // save directory name of current script
+        // save directory name of current script
+        $this->dirname     = dirname(__file__);
+
         $this->dbname      = 'menu';
         $this->tablename   = 'mnu_user_alt';
 
@@ -17,7 +19,7 @@ class mnu_user_alt extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // mnu_user_alt
+    } // __construct
 
     // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)

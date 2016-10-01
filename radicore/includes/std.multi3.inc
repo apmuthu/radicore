@@ -190,11 +190,11 @@ $dbmiddle->setChildObject($dbinner);
 $dbinner->setParentObject($dbmiddle);
 
 if (isset($_POST['reset'])) {
-    $where = $dbouter->reset($where);
+    $null = $dbouter->reset($where);
     $outer_data = $dbouter->getFieldArray();
-    $where = $dbmiddle->reset($where);
+    $null = $dbmiddle->reset($where);
     $middle_data = $dbmiddle->getFieldArray();
-    $where = $dbinner->reset($where);
+    $null = $dbinner->reset($where);
     $inner_data = $dbinner->getFieldArray();
     $_POST = array();  // no further POST action required
     $do_retrieve = true;  // read the database for current data
@@ -237,7 +237,10 @@ if (!empty($_POST)) {
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed - send it to all relevant entities
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-        $dbinner->startTransaction();
+        // save current data in case a custom button jumps to another script
+        $script_vars['dbouter']  = serialize($dbouter);
+        $script_vars['dbmiddle'] = serialize($dbmiddle);
+        $script_vars['dbinner']  = serialize($dbinner);
         if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
@@ -258,14 +261,7 @@ if (!empty($_POST)) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
-        if (empty($errors)) {
-            $dbinner->commit(false);
-            if (preg_match('/retrieve/i', $custom_btn)) {
-                $do_retrieve = true;
-            } // if
-        } else {
-            $dbinner->rollback();
-        } // if
+        unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
         $dbinner->startTransaction();
@@ -320,11 +316,13 @@ if (!empty($_POST)) {
 } // if
 
 // check if we are returning from a child form
-if (!empty($return_from) AND isset($selection)) {
-    // merge previous saved variables with selection from popup form
-    $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
-    if ($dbinner->errors) {
-        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+if (!empty($return_from) AND !empty($popup_object)) {
+    if (isset($selection) AND $popup_object == 'dbinner') {
+        // merge previous saved variables with selection from popup form
+        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
+        if ($dbinner->errors) {
+            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
+        } // if
     } // if
 
 } elseif ($_SERVER['REQUEST_METHOD'] == 'GET' OR !empty($search) OR $do_retrieve) {

@@ -1,6 +1,7 @@
 <?php
 //*****************************************************************************
-// This is a special script that will send out a user's password via e-mail.
+// This is a special script that will send out a user's password via e-mail,
+// which is used when the user forgets his password.
 //*****************************************************************************
 
 $table_id = 'mnu_user_s05';                         // table id

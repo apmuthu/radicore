@@ -163,7 +163,9 @@ if (!empty($_POST)) {
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-        $dblink->startTransaction();
+        // save current data in case a custom button jumps to another script
+        $script_vars['dbouter'] = serialize($dbouter);
+        $script_vars['dblink']  = serialize($dblink);
         if ($btn_zone == $dbouter->zone OR is_True($dbouter->allow_buttons_all_zones)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
@@ -176,11 +178,7 @@ if (!empty($_POST)) {
                 $errors[$dblink->getClassName()] = $dblink->getErrors();
             } // if
         } // if
-        if (empty($errors)) {
-            $dbinner->commit(false);
-        } else {
-            $dbinner->rollback();
-        } // if
+        unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
     	// update this data in the database
@@ -340,7 +338,7 @@ if (!empty($fkeyvalues)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $link_where = $dblink->reset($link_where);
+    $null = $dblink->reset($link_where);
 } // if
 
 // ensure that column names are qualified in the 'where' clause

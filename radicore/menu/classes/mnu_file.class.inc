@@ -18,7 +18,7 @@ class mnu_file extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function mnu_file ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -30,7 +30,7 @@ class mnu_file extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // mnu_file
+    } // __construct
 
     // ****************************************************************************
     function _cm_filePickerSelect ($selection)

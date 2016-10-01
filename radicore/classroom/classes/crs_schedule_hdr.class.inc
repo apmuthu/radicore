@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class crs_schedule_hdr extends Default_Table
@@ -9,18 +9,17 @@ class crs_schedule_hdr extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function crs_schedule_hdr ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->tablename   = 'crs_schedule_hdr';
         $this->dbname      = 'classroom';
 
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // crs_schedule_hdr
+    } // __construct
 
     // ****************************************************************************
     function _cm_getInitialData ($fieldarray)

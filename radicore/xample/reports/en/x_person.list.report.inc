@@ -27,7 +27,7 @@ $structure['columns'][] = array('width' => '8%');
 $structure['columns'][] = array('width' => '8%');
 $structure['columns'][] = array('width' => '*');
 $structure['columns'][] = array('width' => '9%');
-$structure['columns'][] = array('width' => '9%');
+$structure['columns'][] = array('width' => '9.5%');
 $structure['columns'][] = array('width' => '7%', 'align' => 'right');
 $structure['columns'][] = array('width' => '7%', 'align' => 'right');
 

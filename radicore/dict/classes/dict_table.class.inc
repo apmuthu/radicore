@@ -11,19 +11,17 @@ class dict_table extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function dict_table ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_table';
         $this->dbname      = 'dict';
 
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // dict_table
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -271,10 +269,10 @@ class dict_table extends Default_Table
     } // _cm_post_fetchRow
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
 

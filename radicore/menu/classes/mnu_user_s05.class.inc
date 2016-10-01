@@ -79,10 +79,10 @@ class mnu_user_s05 extends mnu_user
     } // _cm_post_getData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         $this->skip_getdata    = true;
@@ -134,9 +134,10 @@ class mnu_user_s05 extends mnu_user
             } else {
                 $sender  = 'webmaster@radicore.org';
             } // if
-        	$headers = "From: $sender\r\n";
 
-        	$result = mail($email_addr, $subject, $body, $headers);
+        	//$headers = "From: $sender\r\n";
+        	//$result = mail($email_addr, $subject, $body, $headers);
+            $result = send_email($sender, $email_addr, $subject, $body);
 
         	// "Your password has been e-mailed"
             scriptPrevious(null, getLanguageText('sys0152'));

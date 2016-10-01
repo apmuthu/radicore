@@ -13,7 +13,7 @@ class php_session extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function php_Session ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -26,7 +26,7 @@ class php_session extends Default_Table
         // there is absolutely NO logging of the audit database
         $this->audit_logging = false;
 
-    } // php_Session
+    } // __construct
 
     // ****************************************************************************
     function open ($save_path, $session_name)

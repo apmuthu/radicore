@@ -18,11 +18,11 @@ class sample_validation_class
     //
     // ****************************************************************************
 
-    function sample_validation_class()
+    function __construct()
     {
         // custom code goes here
 
-    } // sample_validation_class
+    } // __construct
 
     // ****************************************************************************
     function postcode (&$input, $fieldspec)

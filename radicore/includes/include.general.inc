@@ -62,8 +62,10 @@ if (ini_get('precision') < 15) {
 } // if
 unset($precision);
 
-if (extension_loaded('mbstring')) {
-	ini_set('mbstring.internal_encoding', 'UTF-8');
+if (version_compare(phpversion(), '5.6.0', '<')) {
+    if (extension_loaded('mbstring')) {
+	    ini_set('mbstring.internal_encoding', 'UTF-8');
+    } // if
 } // if
 
 if (isset($_SERVER['SERVER_PROTOCOL'])) {

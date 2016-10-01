@@ -455,6 +455,7 @@
 	"REPEAT_UNIT" CHAR(1 BYTE), 
 	"TASK_ID" VARCHAR2(80 BYTE), 
 	"TASK_CONTEXT" VARCHAR2(255 BYTE) DEFAULT NULL, 
+	"OBJECT_ID" VARCHAR2(255 BYTE) DEFAULT NULL, 
 	"CREATED_DATE" TIMESTAMP (6), 
 	"CREATED_USER" VARCHAR2(16 BYTE) DEFAULT 'UNKNOWN', 
 	"REVISED_DATE" TIMESTAMP (6), 
@@ -580,6 +581,12 @@
 --------------------------------------------------------
 
   CREATE INDEX "MENU"."MNU_USER_IDX3" ON "MENU"."MNU_USER" ("RDCACCOUNT_ID") 
+  ;
+--------------------------------------------------------
+--  DDL for Index MNU_USER_IDX4
+--------------------------------------------------------
+
+  CREATE INDEX "MENU"."MNU_USER_IDX4" ON "MENU"."MNU_USER" ("PARTY_ID") 
   ;
 --------------------------------------------------------
 --  DDL for Index SYS_C0010412

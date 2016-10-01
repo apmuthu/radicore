@@ -37,7 +37,7 @@ class PDF extends TCPDF
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function PDF ($structure, &$dbobject, $pdfout=null)
+    function __construct ($structure, &$dbobject, $pdfout=null)
     // validate contents of $report structure file
     {
     	$this->style = $this->loadStyleFile();
@@ -65,7 +65,7 @@ class PDF extends TCPDF
 
         return;
 
-    } // PDF
+    } // __construct
 
     // ****************************************************************************
     function AddPage ($orientation=null, $format=null, $keepmargins=false, $tocpage=false)

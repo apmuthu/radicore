@@ -635,6 +635,7 @@ CREATE TABLE mnu_todo (
     repeat_unit character(1),
     task_id character varying(80),
     task_context character varying(255),
+    object_id character varying(255),
     created_date timestamp without time zone DEFAULT '2003-01-01 12:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,
@@ -1082,6 +1083,7 @@ CREATE INDEX mnu_task_index2 ON mnu_task USING btree (subsys_id);
 --
 
 CREATE INDEX mnu_user_index2 ON mnu_user USING btree (rdcaccount_id);
+CREATE INDEX mnu_user_index3 ON mnu_user USING btree (party_id);
 
 
 --

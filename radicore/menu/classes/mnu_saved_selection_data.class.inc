@@ -7,7 +7,7 @@ require_once 'std.table.class.inc';
 class mnu_saved_selection_data extends Default_Table
 {
     // ****************************************************************************
-    function mnu_saved_selection_data ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -19,7 +19,7 @@ class mnu_saved_selection_data extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // mnu_saved_selection_data
+    } // __construct
 
 // ****************************************************************************
 } // end class

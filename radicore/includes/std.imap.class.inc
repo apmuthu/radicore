@@ -20,12 +20,12 @@ class imap_class
     var $recent;                // returned by imap_check()
 
     // ****************************************************************************
-    function imap_class ()
+    function __construct ()
     // class constructor
     {
         return true;
 
-    } // imap_class
+    } // __construct
 
     // ****************************************************************************
     function open ($mailbox, $user, $password)

@@ -65,6 +65,7 @@ $style['label']['font'] = array('family' => 'Times',    // Courier, Helvetica, T
                                 'size' => 12,           // size in points
                                 'height' => 6,          // line height in units
                                 'draw' => .3,           // width of drawn lines
+                                //'valign' => 'top',      // text alignment (top, middle, bottom)
                                 'halign' => 'right');   // text alignment (left, right, center)
 
 $style['label']['fillcolour'] = array(176,176,176);     // colour for background
@@ -245,5 +246,17 @@ $style['order_lines']['font'] = array('family' => 'Helvetica',  // Courier, Helv
 $style['order_lines']['fillcolour'] = false;                // colour for background
 $style['order_lines']['textcolour'] = array(0,0,0);         // colour for foreground
 $style['order_lines']['drawcolour'] = array(0,0,0);         // colour for line drawing
+
+// this style is for a horizontal rule accross the page
+$style['rule']['font'] = array('family' => 'Times',     // Courier, Helvetica, Times
+                               'style' => '',           // blank=Regular, B=Bold, I=Italic, U=Underline
+                               'size' => 1.75,          // size in points
+                               'height' => 0.75,        // line height in units
+                               'draw' => 0);            // width of drawn lines
+
+$style['rule']['fillcolour'] = array(113,113,113);   // colour for background
+$style['rule']['textcolour'] = array(0,0,0);         // colour for foreground
+$style['rule']['drawcolour'] = array(0,0,0);         // colour for line drawing
+
 
 ?>

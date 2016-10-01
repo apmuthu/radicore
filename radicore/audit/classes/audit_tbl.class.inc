@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class audit_tbl extends Default_Table
@@ -10,7 +10,7 @@ class audit_tbl extends Default_Table
     var $trn_array;         // audit transaction data
 
     // ****************************************************************************
-    function audit_tbl ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -26,7 +26,7 @@ class audit_tbl extends Default_Table
         // (otherwise there would be an endless loop)
         $this->audit_logging = false;
 
-    } // audit_tbl
+    } // __construct
 
     // ****************************************************************************
     function auditDelete ($dbname, $tablename, $fieldspec, $where, $oldarray)
@@ -336,7 +336,7 @@ class audit_tbl extends Default_Table
     } // _cm_initialise
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $parent_data)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $parent_data may contain contents of current record in the parent object.

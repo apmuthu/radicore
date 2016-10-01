@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -46,6 +46,7 @@ class oracle
     var $sql_having;
     var $sql_orderby;
     var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $sql_where_append;              // string which is too complex for where2array() function
     var $query;                         // completed DML statement
 
     var $dbconnect;                     // database connection resource
@@ -53,7 +54,7 @@ class oracle
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function oracle ($args=null)
+    function __construct ($args=null)
     {
         if (is_string($args)) {
             $schema           = $args;
@@ -82,7 +83,7 @@ class oracle
 
         return $result;
 
-    } // oracle
+    } // __construct
 
     // ****************************************************************************
     function adjustData ($string_in)
@@ -525,10 +526,12 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $result = oci_commit($this->dbconnect) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, null, 'COMMIT');
+        logSqlQuery ($schema, null, 'COMMIT', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -624,11 +627,8 @@ END_OF_REGEX;
 
         if (empty($where)) return;    // nothing to delete, so exit
 
-        // get count of affected rows as there may be more than one
-        $query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $query);
-
         // build the query string and run it
+        $start_time = getMicroTime();
         $this->query = "DELETE FROM $tablename WHERE $where";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
@@ -636,9 +636,12 @@ END_OF_REGEX;
         } else {
             $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
+        $end_time = getMicroTime();
+
+        $this->numrows = oci_num_rows($this->stmt);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -669,24 +672,23 @@ END_OF_REGEX;
         if (!empty($from) AND !empty($using)) {
             //$this->query = "DELETE FROM $from USING $using WHERE $selection";
             // multi-table delete does not work in this DBMS, so use standard delete with foreign keys
-            $query = "SELECT count(*) FROM $tablename WHERE $selection";
-            $count = $this->getCount($schema, $tablename, $query);
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } else {
-            // get count of affected rows as there may be more than one
-            $query = "SELECT count(*) FROM $tablename WHERE $selection";
-            $count = $this->getCount($schema, $tablename, $query);
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } // if
+        $start_time = getMicroTime();
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
         	$result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
+        $end_time = getMicroTime();
+
+        $count = oci_num_rows($this->stmt);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -762,8 +764,10 @@ END_OF_REGEX;
             } // if
         } // if
 
+        $start_time = getMicroTime();
         $this->stmt = oci_parse($this->dbconnect, $this->query);
         $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // if 'GROUP BY' was used then return the number of rows
         // (ignore GROUP BY if it is in a subselect)
@@ -780,7 +784,7 @@ END_OF_REGEX;
         } // if
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $count, $start_time, $end_time);
         $this->query = '';
 
         return $count;
@@ -818,9 +822,10 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
             $from_str = $this->adjustSQLFrom($from_str, $where);
         } // if
 
@@ -829,7 +834,15 @@ END_OF_REGEX;
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -927,6 +940,7 @@ END_OF_REGEX;
                          . ") a where rownum <= $max_rows ) where rnum >= $min_rows";
         } // if
 
+        $start_time = getMicroTime();
         $this->stmt = oci_parse($this->dbconnect, $this->query);
         //$result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
         $result = oci_execute($this->stmt);
@@ -980,9 +994,10 @@ END_OF_REGEX;
         	$this->numrows = count($array);
         } // if
         oci_free_statement($this->stmt);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         return $array;
 
@@ -1018,7 +1033,12 @@ END_OF_REGEX;
             // the default is current table
             $from_str = $tablename;
         } else {
-            $from_str = $this->adjustSqlFrom($this->sql_from);
+            $from_str = $this->sql_from;
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
+            $from_str = $this->adjustSqlFrom($from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -1026,7 +1046,15 @@ END_OF_REGEX;
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = 'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -1067,11 +1095,13 @@ END_OF_REGEX;
                          . ") a where rownum <= $max_rows ) where rnum >= $min_rows";
         } // if
 
+        $start_time = getMicroTime();
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         return $this->stmt;
 
@@ -1344,6 +1374,7 @@ END_OF_REGEX;
         $vals = rtrim($vals, ', ');
 
         $this->query = 'INSERT INTO ' .$tablename .' (' .$cols .') VALUES (' .$vals .')';
+        $start_time = getMicroTime();
         if (empty($lob_names)) {
             $this->stmt = oci_parse($this->dbconnect, $this->query);
         } else {
@@ -1400,23 +1431,26 @@ END_OF_REGEX;
             	$lob_array[$lob_name]->save($lob_value);
             } // foreach
         } // if
+        $end_time = getMicroTime();
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if (!is_True($GLOBALS['transaction_has_started'])) {
             $this->commit($schema);
         } // if
 
-        // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query);
-
         if (!empty($auto_increment)) {
             $this->query = "SELECT $tablename" .'_seq.currval FROM DUAL';
+            $start_time = getMicroTime();
             $this->stmt  = oci_parse($this->dbconnect, $this->query);
             $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
             $row = oci_fetch_array ($this->stmt, OCI_NUM);
+            $end_time = getMicroTime();
             $fieldarray[$auto_increment] = $row[0];
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
             // write query to log file, if option is turned on
-            logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment]);
+            logSqlQuery ($schema, $tablename, $this->query, $fieldarray[$auto_increment], $start_time, $end_time);
         } // if
 
         if ($this->numrows > 0) {
@@ -1495,10 +1529,12 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
+        $start_time = getMicroTime();
         $result = oci_rollback($this->dbconnect) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, null, 'ROLLBACK');
+        logSqlQuery ($schema, null, 'ROLLBACK', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1611,11 +1647,13 @@ END_OF_REGEX;
 
         if (!empty($this->transaction_level)) {
         	$this->query = $this->transaction_level;
+            $start_time = getMicroTime();
             $this->stmt  = oci_parse($this->dbconnect, $this->query);
             $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
 
             // write query to log file, if option is turned on
-            logSqlQuery ($schema, null, $this->query);
+            logSqlQuery ($schema, null, $this->query, null, $start_time, $end_time);
             $this->query = '';
         } // if
 
@@ -1770,6 +1808,7 @@ END_OF_REGEX;
 
         // append WHERE clause to SQL query
         $this->query = "UPDATE $tablename SET $update WHERE $where";
+        $start_time = getMicroTime();
         if (empty($lob_names)) {
             $this->stmt = oci_parse($this->dbconnect, $this->query);
         } else {
@@ -1787,6 +1826,7 @@ END_OF_REGEX;
         } // if
 
         $result = oci_execute($this->stmt, OCI_DEFAULT) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         if (!empty($lob_names)) {
             foreach ($lob_names as $lob_name => $lob_value) {
@@ -1794,16 +1834,14 @@ END_OF_REGEX;
             } // foreach
         } // if
 
+        $this->numrows = oci_num_rows($this->stmt);
+
+        // write query to log file, if option is turned on
+        logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
+
         if (!is_True($GLOBALS['transaction_has_started'])) {
             $this->commit($schema);
         } // if
-
-        // get count of affected rows as there may be more than one
-        $query = "SELECT count(*) FROM $tablename WHERE $where";
-        $this->numrows = $this->getCount($schema, $tablename, $query);
-
-        // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $this->numrows);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1829,10 +1867,7 @@ END_OF_REGEX;
         // connect to database
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
-        // get count of affected rows as there may be more than one
-        $query = "SELECT count(*) FROM $tablename WHERE $selection";
-        $count = $this->getCount($schema, $tablename, $query);
-
+        $end_time = getMicroTime();
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
         $this->stmt  = oci_parse($this->dbconnect, $this->query);
         if (is_True($GLOBALS['transaction_has_started'])) {
@@ -1840,9 +1875,12 @@ END_OF_REGEX;
         } else {
             $result = oci_execute($this->stmt, OCI_COMMIT_ON_SUCCESS) or trigger_error($this, E_USER_ERROR);
         } // if
+        $end_time = getMicroTime();
+
+        $count = oci_num_rows($this->stmt);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($schema, $tablename, $this->query, $count);
+        logSqlQuery ($schema, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($count > 0) {
             if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {
@@ -2425,12 +2463,14 @@ END_OF_REGEX;
         } // switch
 
         if (!empty($string)) {
+            $start_time = getMicroTime();
             $this->query = "LOCK TABLE $string IN $mode MODE";
             $statement  = oci_parse($this->dbconnect, $this->query);
             $this->stmt = $statement;
             $result = oci_execute($statement) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
             // write query to log file, if option is turned on
-            logSqlQuery (null, null, $this->query);
+            logSqlQuery (null, null, $this->query, null, $start_time, $end_time);
             $this->query = '';
             oci_free_statement($statement);
             return true;

@@ -650,7 +650,7 @@ if (!function_exists('array2where')) {
                         if (empty($operator)) {
                             // operator is not present, so assume it is '='
                             //if (is_null($fieldvalue) AND !array_key_exists($fieldname, $primary_key)) {
-                            if (is_null($fieldvalue)) {
+                            if (strlen($fieldvalue) == 0) {
                             	$string = $fieldname .' IS NULL';
                             //} elseif (substr($fieldvalue, 0, 1) == '(') {
                             } elseif (preg_match('/^\(.*\)$/i', $fieldvalue)) {
@@ -1337,7 +1337,7 @@ if (!function_exists('currentOrHistoric')) {
 // ****************************************************************************
 if (!function_exists('dateDifference')) {
     function dateDifference ($date1, $date2)
-    // calculate the difference between two dates
+    // calculate the difference between two dates in days
     {
         $dateobj =& RDCsingleton::getInstance('date_class');
         $date1 = $dateobj->getInternalDate($date1);
@@ -1361,6 +1361,25 @@ if (!function_exists('dateDifference')) {
         return (int)$diff;
 
     } // dateDifference
+} // if
+
+// ****************************************************************************
+if (!function_exists('dateDiff_YYMM')) {
+    function dateDiff_YYMM ($date1, $date2)
+    // calculate the difference between two dates in years and months
+    {
+        $dateobj =& RDCsingleton::getInstance('date_class');
+        $date1 = $dateobj->getInternalDate($date1);
+        $date2 = $dateobj->getInternalDate($date2);
+
+        $datetime1 = new DateTime($date1);
+        $datetime2 = new DateTime($date2);
+        $interval = $datetime1->diff($datetime2);
+        $diff = $interval->format('%yy/%mm');
+
+        return $diff;
+
+    } // dateDiff_YYMM
 } // if
 
 // ****************************************************************************
@@ -4540,7 +4559,7 @@ if (!function_exists('logElapsedTime')) {
 
 // ****************************************************************************
 if (!function_exists('logSqlQuery')) {
-    function logSqlQuery ($dbname, $tablename, $query, $result=null)
+    function logSqlQuery ($dbname, $tablename, $query, $result=null, $start_time=null, $end_time=null)
     // write last SQL query out to a log file as a debugging aid
     {
         if ($dbname == 'audit') {
@@ -4557,13 +4576,31 @@ if (!function_exists('logSqlQuery')) {
         } // if
 
         if (isset($GLOBALS['log_sql_query']) and is_true($GLOBALS['log_sql_query'])) {
-            $query = str_replace("\n", " ", $query);
-            if (is_null($result)) {
-            	$string = $query;
+            if (!empty($start_time) AND !empty($end_time)) {
+                $elapsed = number_format($end_time - $start_time, 5, '.', '');
+                list($number, $decimal) = explode('.', $start_time);
+                $start   = date('H:i:s', (float)$number).".$decimal";
+                list($number, $decimal) = explode('.', $end_time);
+                $end     = date('H:i:s', (float)$number).".$decimal";
+                $timings = "[S=$start, F=$end, E=$elapsed]";
             } else {
-                $string = $query .'=>Count=' .$result;
+                $timings = null;
             } // if
-            $fn = './sql/' . basename($_SERVER['PHP_SELF']) . '.sql';
+            $query = str_replace("\n", " ", $query);
+            if (empty($result)) {
+                if (empty($timings)) {
+                    $string = $query;
+                } else {
+            	    $string = "{$query} =>{$timings}";
+                } //if
+            } else {
+                $string = "{$query} =>Count={$result} {$timings}";
+            } // if
+            $script_name = basename($_SERVER['PHP_SELF']);
+            if (!is_dir('./sql/logs')) {
+                mkdir('./sql/logs');
+            } // if
+            $fn = "./sql/logs/{$script_name}.{$_SESSION['logon_user_id']}.sql";
         	error_log("$string\r\n", 3, $fn);
         } // if
 
@@ -6033,7 +6070,9 @@ if (!function_exists('return_bytes')) {
 // ****************************************************************************
 if (!function_exists('selectAllColumns')) {
     function selectAllColumns ($sql_select, $fieldspec, $tablename)
-    // replace '*' (all columns) with a list of columns names
+    // replace '*' (all columns) with a list of columns names for the specifiedl table.
+    // $fieldspec identifies the column names.
+    // $tablename identifies the table name (which may be an alias)
     {
         $pattern = <<< END_OF_REGEX
 /
@@ -6166,6 +6205,13 @@ if (!function_exists('send_email')) {
             } // if
         } // if
 
+        if (defined('MAIL_FROM_OVERRIDE')) {
+            $from = MAIL_FROM_OVERRIDE;
+        } // if
+        if (defined('MAIL_TO_REDIRECT')) {
+            $to = MAIL_TO_REDIRECT;
+        } // if
+
         if (defined('USE_SWIFTMAILER')) {
             require_once('include.swiftmailer.inc');
             require('SwiftMailer/swift_required.php');
@@ -6175,6 +6221,9 @@ if (!function_exists('send_email')) {
             $message->setFrom($from);
             $to = SWIFT_email_address2array($to);
             $message->setTo($to);
+            if (defined('MAIL_RETURN_PATH')) {
+                $message->setReturnPath(MAIL_RETURN_PATH);
+            } // if
 
             if (preg_match('/^<\?xml/i', trim($msg))) {
                 // this is an XML file, so send as plain text
@@ -6221,9 +6270,35 @@ if (!function_exists('send_email')) {
             } // if
             $stuff = $headers->toString();
 
-            $transport = Swift_MailTransport::newInstance();
+            if (defined('SWIFTMAILER_CONFIG')) {
+                require(SWIFTMAILER_CONFIG);
+                if (strtolower($transport) == 'smtp') {
+                    $transport = Swift_SmtpTransport::newInstance($server_id, $port);
+                    if (!empty($username)) {
+                        // with authentication option
+                        $transport->setUsername($username);
+                        if (!empty($username)) {
+                            $transport->setPassword($password);
+                        } // if
+                    } // if
+                    if (!empty($encryption)) {
+                        // with authentication option
+                        $transport->setEncryption($encryption);
+                    } // if
+                } // if
+            } else {
+                // default
+                $transport = Swift_MailTransport::newInstance();
+            } // if
+
             $mailer = Swift_Mailer::newInstance($transport);
-            $result = $mailer->send($message);
+            $failures = array();
+            $result = $mailer->send($message, $failures);
+
+            if (!empty($failures)) {
+                $string = implode(',', $failures);
+                trigger_error("COULD NOT DELIVER EMAIL TO THE FOLLOWING RECIPIENTS: $string", E_USER_ERROR);
+            } // if
 
             if ($result) {
                 return $message_id;

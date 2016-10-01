@@ -1,5 +1,5 @@
 <?php
-    // file created on May 19, 2016, 12:47 pm
+    // file created on September 29, 2016, 9:37 am
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -9,17 +9,19 @@
                                                     'uppercase' => 'y');
     
     $fieldspec['user_name']                 = array('type' => 'string',
-                                                    'size' => 30);
+                                                    'size' => 30,
+                                                    'required' => 'y');
     
     $fieldspec['user_password']             = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'password' => 'y',
                                                     'nosearch' => 'y',
                                                     'noaudit' => 'y');
     
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
                                                     'type_native' => 'int',
-                                                    'size' => 11,
+                                                    'size' => 10,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'control' => 'dropdown',

@@ -22,7 +22,7 @@ class encryption_class {
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function encryption_class ()
+    function __construct ()
     {
     	$this->errors = array();
 
@@ -40,7 +40,7 @@ class encryption_class {
     	$this->adj = 1.75;  // this value is added to the rolling fudgefactors
     	$this->mod = 3;     // if divisible by this the adjustment is made negative
 
-    } // constructor
+    } // __construct
 
     // ****************************************************************************
     function decrypt ($key, $source)

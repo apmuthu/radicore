@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class x_person extends Default_Table
@@ -9,12 +9,11 @@ class x_person extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function x_person()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'xample';
         $this->tablename   = 'x_person';
 
@@ -22,7 +21,7 @@ class x_person extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // x_person
+    } // __construct
 
     // ****************************************************************************
     function getFieldSpec_original ()
@@ -59,6 +58,20 @@ class x_person extends Default_Table
             // include fields from PERSON_ADDR table
             $this->fieldspec['county']      = array('type' => 'string', 'size' => 30);
             $this->fieldspec['postcode']    = array('type' => 'string', 'size' => 10);
+        } else {
+            if (empty($this->fieldspec['video_id'])) {
+                $this->fieldspec['video_id']        = array('type' => 'string',
+                                                            'size' => 255,
+                                                            'subtype' => 'video',
+                                                            'preload' => 'y',
+                                                            'imageheight' => 360,
+                                                            'imagewidth' => 640,
+                                                            'control' => 'filepicker',
+                                                            'task_id' => 'x_person(filepicker)video');
+            } // if
+            if (empty($where) AND !empty($fieldarray)) {
+                $fieldarray['video_id'] = 'videos\mov_bbb.mp4';
+            } // if
         } // if
 
         return $fieldarray;
@@ -229,7 +242,7 @@ class x_person extends Default_Table
     } // _cm_initialise
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent
@@ -508,7 +521,7 @@ class x_person extends Default_Table
     } // _cm_output_multi
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.

@@ -58,6 +58,11 @@ if (empty($where) AND !is_True($dbobject->allow_empty_where)) {
     return $batch_errors;
 } // if
 
+if (isset($search)) {
+    // load in any search criteria
+    $dbobject->setSqlSearch($search);
+} // if
+
 // get data from the database
 $fieldarray = $dbobject->getData($where);
 if ($dbobject->errors) {

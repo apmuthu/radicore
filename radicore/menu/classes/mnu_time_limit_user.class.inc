@@ -7,7 +7,7 @@ require_once 'std.table.class.inc';
 class mnu_time_limit_user extends Default_Table
 {
     // ****************************************************************************
-    function mnu_time_limit_user ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -19,7 +19,7 @@ class mnu_time_limit_user extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // mnu_time_limit_user
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)

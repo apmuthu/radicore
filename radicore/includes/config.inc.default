@@ -130,6 +130,9 @@ $GLOBALS['use_https'] = false;
 // defines directory into which error logs will be written
 //define('ERROR_LOG_DIR', $_SERVER['DOCUMENT_ROOT'].'/error_logs');
 
+// defines FROM address to be used in all outgoing emails
+//define('MAIL_FROM_OVERRIDE', 'tony@tonymarston.co.uk');
+
 // defines Return-Path to be used on all outgoing emails
 //define('MAIL_RETURN_PATH', 'postmaster@domain.com');
 
@@ -142,7 +145,13 @@ $GLOBALS['use_https'] = false;
 // causes the database session handler to be ignored
 //define('NO_SESSION_HANDLER', true);
 
+// causes the send_email() function to use the SwiftMailer library
+//define('USE_SWIFTMAILER', true);
+
+// identifies the file which contains the SwiftMailer configuration options
+//define('SWIFTMAILER_CONFIG', 'swiftmailer.config.inc');
+
 // defines the path to the PHP executable on Windows
-//define('PATH_TO_PHP_EXECUTABLE', 'f:/PHP5/php.exe');
+//define('PATH_TO_PHP_EXECUTABLE', 'f:/PHP5/php-win.exe');
 
 ?>

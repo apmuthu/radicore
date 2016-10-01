@@ -7,7 +7,7 @@ require_once 'std.table.class.inc';
 class mnu_initial_value_user extends Default_Table
 {
     // ****************************************************************************
-    function mnu_initial_value_user ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -19,7 +19,7 @@ class mnu_initial_value_user extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // mnu_initial_value_user
+    } // __construct
 
 // ****************************************************************************
 } // end class

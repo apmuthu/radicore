@@ -60,7 +60,7 @@ class XMLRPC_client
     var $lastpage;
 
     // ****************************************************************************
-    function XMLRPC_client ($location=null)
+    function __construct ($location=null)
     // constructor for the XMLRPC Client object
     {
         if (!empty($location)) {
@@ -71,7 +71,7 @@ class XMLRPC_client
 
         return true;
 
-    } // XMLRPC_client
+    } // __construct
 
     // ****************************************************************************
     function getClassName ()

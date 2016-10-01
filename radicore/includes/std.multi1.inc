@@ -57,7 +57,7 @@ if (isset($script_vars['dbobject'])) {
     // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -90,7 +90,7 @@ if (isset($script_vars['dbobject'])) {
 } // if
 
 if (isset($_POST['reset'])) {
-    $where = $dbobject->reset($where);
+    $null = $dbobject->reset($where);
     $fieldarray = $dbobject->getFieldArray();
     $scrolling[$dbobject->getClassName()]['curitem'] = 1;
     $dbobject->setScrollIndex(1);
@@ -156,6 +156,7 @@ if (!empty($_POST)) {
         $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
         // ensure that changes are stored inside relevant object
         $dbobject->setFieldArray($fieldarray);
+        $fieldarray = $dbobject->getExtraData($fieldarray);
 
     } else {
         // deal with a javascript 'submit()'.
@@ -175,14 +176,13 @@ if (!empty($_POST)) {
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-        $dbobject->startTransaction();
+        // save current data in case a custom button jumps to another script
+        $script_vars['dbobject'] = serialize($dbobect);
         $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
         if ($dbobject->errors) {
             $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-            $dbobject->rollback();
-        } else {
-            $dbobject->commit(false);
         } // if
+        unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
         $dbobject->startTransaction();
@@ -258,11 +258,13 @@ if (!empty($_POST)) {
 //if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if (empty($errors)) {
     // check if we are returning from a child form
-    if (!empty($return_from) AND isset($selection)) {
-        // merge previous saved variables with selection from popup form
-        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
-        if ($dbobject->errors) {
-            $errors = $dbobject->getErrors();
+    if (!empty($return_from) AND !empty($popup_object)) {
+        if (isset($selection)) {
+            // merge previous saved variables with selection from popup form
+            $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
+            if ($dbobject->errors) {
+                $errors = $dbobject->getErrors();
+            } // if
         } // if
 
     } else {

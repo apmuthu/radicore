@@ -63,6 +63,9 @@ class radicore_view
             // not found, so try with full name
             $screen_fields = $this->getFieldsInScreen ($screen_structure, get_class($dbobject));
         } // if
+        if (!empty($screen_fields)) {
+            $screen_fields = array_flip($screen_fields);  // turn names into keys
+        } // if
 
         if (empty($errors)) {
             // array is empty
@@ -88,7 +91,7 @@ class radicore_view
                         if (is_string($key1) AND is_array($value1)) {
                             // this is an array of errors from a child class
                             foreach ($value1 as $key2 => $value2) {
-                                if (in_array($key2, $screen_fields)) {
+                                if (array_key_exists($key2, $screen_fields)) {
                                     // field exists in current screen so attach error to it
                                     $object_errors[$key][$key2] = $value2;
                                 } // if
@@ -256,7 +259,7 @@ class radicore_view
                                 $child->setAttribute('nodisplay', 'y');
                                 $fieldvalue = '**hidden**';
                             } elseif (isset($spec['force_display'])) {
-                                // force this controlto be displayed even if non-editable
+                                // force this control to be displayed even if non-editable
                                 $child->setAttribute('force_display', 'y');
                             } else {
                                 // if an error message exists for this row/field put it into the field's error attribute
@@ -264,7 +267,7 @@ class radicore_view
                                     if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
                                         if (array_key_exists($fieldname, $object_errors[$rownum])) {
                                             $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
-                                            if (array_search($fieldname, $screen_fields) !== FALSE) {
+                                            if (array_key_exists($fieldname, $screen_fields)) {
                                                 // field is in the screen, so delete this message
                                                 unset($object_errors[$rownum][$fieldname]);
                                                 if (empty($object_errors[$rownum])) {
@@ -358,48 +361,52 @@ class radicore_view
 
                                 // option for filename fields
                                 if ($spec['control'] == 'filepicker') {
-                                    $child->setAttribute('control', 'filepicker');
-                                    if (isset($spec['task_id'])) {
-                                        if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
-                                            // include zone name in task_id
-                                            $zone = 'db'.$dbobject->zone;
-                                            $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
-                                        } else {
-                                            $child->setAttribute('task_id', "task#{$spec['task_id']}");
-                                        } // if
-                                        $taskOBJ =& RDCsingleton::getInstance('mnu_task');
-                                        $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
-                                        if(!empty($task_data)) {
-                                            $task_data = $task_data[0];
-                                            $child->setAttribute('tooltip', $task_data['task_desc']);
-                                        } //if
-                                    } // if
-                                    if (isset($spec['subtype'])) {
-                                        if (isset($spec['imagewidth'])) {
-                                            $child->setAttribute('imagewidth', $spec['imagewidth']);
-                                        } // if
-                                        if (isset($spec['imageheight'])) {
-                                            $child->setAttribute('imageheight', $spec['imageheight']);
-                                        } // if
-                                        if ($spec['subtype'] == 'image') {
-                                            $child->setAttribute('image', 'y');
-                                            // look for '[alt=...]' at the end of the string
-                                            if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
-                                                $alt = $regs[0];  // extract alt text
-                                                $child->setAttribute('alt', $alt);
-                                                // remove '[alt=...]' from the value
-                                                $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
+                                    if (!array_key_exists($fieldname, $screen_fields)) {
+                                        // field does not exist in this screen, so skip next bit
+                                    } else {
+                                        $child->setAttribute('control', 'filepicker');
+                                        if (isset($spec['task_id'])) {
+                                            if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
+                                                // include zone name in task_id
+                                                $zone = 'db'.$dbobject->zone;
+                                                $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
+                                            } else {
+                                                $child->setAttribute('task_id', "task#{$spec['task_id']}");
                                             } // if
-                                        } elseif ($spec['subtype'] == 'video') {
-                                            $child->setAttribute('video', 'y');
-                                            if (isset($spec['preload'])) {
-                                                $child->setAttribute('preload', $spec['preload']);
+                                            $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                            $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
+                                            if(!empty($task_data)) {
+                                                $task_data = $task_data[0];
+                                                $child->setAttribute('tooltip', $task_data['task_desc']);
+                                            } //if
+                                        } // if
+                                        if (isset($spec['subtype'])) {
+                                            if (isset($spec['imagewidth'])) {
+                                                $child->setAttribute('imagewidth', $spec['imagewidth']);
+                                            } // if
+                                            if (isset($spec['imageheight'])) {
+                                                $child->setAttribute('imageheight', $spec['imageheight']);
+                                            } // if
+                                            if ($spec['subtype'] == 'image') {
+                                                $child->setAttribute('image', 'y');
+                                                // look for '[alt=...]' at the end of the string
+                                                if (preg_match('/(?<=\[alt=).*(?=\])/', $fieldvalue, $regs)) {
+                                                    $alt = $regs[0];  // extract alt text
+                                                    $child->setAttribute('alt', $alt);
+                                                    // remove '[alt=...]' from the value
+                                                    $fieldvalue = preg_replace('/\[alt=.*\]/u', '', $fieldvalue);
+                                                } // if
+                                            } elseif ($spec['subtype'] == 'video') {
+                                                $child->setAttribute('video', 'y');
+                                                if (isset($spec['preload'])) {
+                                                    $child->setAttribute('preload', $spec['preload']);
+                                                } // if
                                             } // if
                                         } // if
-                                    } // if
-                                    if (isset($spec['notext'])) {
-                                        // display the image without any filename text
-                                        $child->setAttribute('notext', $spec['notext']);
+                                        if (isset($spec['notext'])) {
+                                            // display the image without any filename text
+                                            $child->setAttribute('notext', $spec['notext']);
+                                        } // if
                                     } // if
                                 } // if
 
@@ -412,27 +419,31 @@ class radicore_view
 
                                 // option for popup fields
                                 if ($spec['control'] == 'popup') {
-                                    $child->setAttribute('control', 'popup');
-                                    if (isset($spec['foreign_field'])) {
-                                        $child->setAttribute('foreign_field', $spec['foreign_field']);
-                                    } // if
-                                    if (isset($spec['task_id'])) {
-                                        if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
-                                            // include zone name in task_id
-                                            $zone = 'db'.$dbobject->zone;
-                                            $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
-                                        } else {
-                                            $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                    if (!array_key_exists($fieldname, $screen_fields)) {
+                                        // field does not exist in this screen, so skip next bit
+                                    } else {
+                                        $child->setAttribute('control', 'popup');
+                                        if (isset($spec['foreign_field'])) {
+                                            $child->setAttribute('foreign_field', $spec['foreign_field']);
                                         } // if
-                                        $taskOBJ =& RDCsingleton::getInstance('mnu_task');
-                                        $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
-                                        if(!empty($task_data)) {
-                                            $task_data = $task_data[0];
-                                            $child->setAttribute('tooltip', $task_data['task_desc']);
-                                        } //if
-                                    } // if
-                                    if (isset($spec['allow_input'])) {
-                                        $child->setAttribute('allow_input', $spec['allow_input']);
+                                        if (isset($spec['task_id'])) {
+                                            if (!empty($dbobject->zone) AND $dbobject->zone != 'main') {
+                                                // include zone name in task_id
+                                                $zone = 'db'.$dbobject->zone;
+                                                $child->setAttribute('task_id', "task#{$zone}#{$spec['task_id']}");
+                                            } else {
+                                                $child->setAttribute('task_id', "task#{$spec['task_id']}");
+                                            } // if
+                                            $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                            $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
+                                            if(!empty($task_data)) {
+                                                $task_data = $task_data[0];
+                                                $child->setAttribute('tooltip', $task_data['task_desc']);
+                                            } //if
+                                        } // if
+                                        if (isset($spec['allow_input'])) {
+                                            $child->setAttribute('allow_input', $spec['allow_input']);
+                                        } // if
                                     } // if
                                 } // if
 
@@ -469,9 +480,9 @@ class radicore_view
 
                                 // option for hyperlink (single or multiple)
                                 if ($spec['control'] == 'hyperlink') {
+                                    $child->setAttribute('control', 'hyperlink');
                                     $array_in  = array();
                                     $array_out = array();
-                                    $child->setAttribute('control', 'hyperlink');
                                     if (is_array($fieldvalue)) {
                             	        $array_in   = $fieldvalue;  // multiple
                                     } else {
@@ -551,40 +562,57 @@ class radicore_view
                                     } // if
                                 } // if
 
-                                // option for 'button' controls
+                                // option for 'button' controls (may be single button or an array of buttons)
                                 if ($spec['control'] == 'button' OR $spec['control'] == 'input') {
+                                    $child->setAttribute('control', $spec['control']);
                                     if (!empty($dbobject->zone)) {
                                         $zone = $dbobject->zone.'#';
                                     } else {
                                         $zone = null;
                                     } // if
-                                    $child->setAttribute('control', $spec['control']);
-                                    if (isset($spec['subtype'])) {
-                                        $child->setAttribute('subtype', $spec['subtype']);
-                                    } // if
-                                    if (isset($spec['task_id'])) {
-                                        if (substr($spec['task_id'], 0, 2) == '%%') {
-                                            // extract name of field which contains task_id
-                                            $button_task_id = substr($spec['task_id'], 2);
-                                            if (isset($rowdata[$button_task_id])) {
-                                                $child->setAttribute('name', 'task#'.$rowdata[$button_task_id]);
+                                    if (is_array($fieldvalue)) {
+                                        // this is an array of buttons
+                                        foreach ($fieldvalue as $fieldname => $button) {
+                                            $array_value = $doc->createElement('array');
+                                            $array_value = $child->appendChild($array_value);
+                                            $array_value->setAttribute('name', 'button#'.$zone.$fieldname);
+                                            if (empty($button)) {
+                                                $button = getLanguageText($button);
+                                            } // if
+                                            $value = $doc->createTextNode($button);
+                                            $value = $array_value->appendChild($value);
+                                        } // foreach
+                                        $fieldvalue = null;
+
+                                    } else {
+                                        // this is a single button
+                                        if (isset($spec['subtype'])) {
+                                            $child->setAttribute('subtype', $spec['subtype']);
+                                        } // if
+                                        if (isset($spec['task_id'])) {
+                                            if (substr($spec['task_id'], 0, 2) == '%%') {
+                                                // extract name of field which contains task_id
+                                                $button_task_id = substr($spec['task_id'], 2);
+                                                if (isset($rowdata[$button_task_id])) {
+                                                    $child->setAttribute('name', 'task#'.$rowdata[$button_task_id]);
+                                                } else {
+                                                    $child->setAttribute('name', 'task#'.$spec['task_id']);
+                                                } // if
                                             } else {
                                                 $child->setAttribute('name', 'task#'.$spec['task_id']);
                                             } // if
                                         } else {
-                                            $child->setAttribute('name', 'task#'.$spec['task_id']);
+                                            // no custom value specified, so use default
+                                            $child->setAttribute('name', 'button#'.$zone.$fieldname);
                                         } // if
-                                    } else {
-                                        // no custom value specified so use default
-                                        $child->setAttribute('name', 'button#'.$zone.$fieldname);
-                                    } // if
-                                    if ($spec['control'] == 'button') {
-                                        if (isset($spec['value'])) {
-                                            $child->setAttribute('value', $spec['value']);
+                                        if ($spec['control'] == 'button') {
+                                            if (isset($spec['value'])) {
+                                                $child->setAttribute('value', $spec['value']);
+                                            } // if
                                         } // if
-                                    } // if
-                                    if (empty($fieldvalue)) {
-                                        $fieldvalue = getLanguageText($fieldname);
+                                        if (empty($fieldvalue)) {
+                                            $fieldvalue = getLanguageText($fieldname);
+                                        } // if
                                     } // if
                                 } // if
                             } // if
@@ -1066,8 +1094,7 @@ class radicore_view
         } else {
             if (isset($_SESSION['script_start'])) {
         	    // calculate the function's elapsed time
-                list($usec, $sec) = explode(' ', microtime());
-                $script_end = (float) $sec + (float) $usec;
+                $script_end = getMicroTime();
                 $elapsed = number_format($script_end - $_SESSION['script_start'], 5, '.', '');
                 $xsl_params['script_time'] = $elapsed;
             } else {
@@ -1206,6 +1233,8 @@ class radicore_view
 	                $xsl_params['noshow']        = 'true';
 	                $xsl_params['noselect']      = 'true';
 	                $xsl_params['print-preview'] = 'true';
+                } elseif (preg_match('/^(mnu_user\(upd1\)c)$/i', $GLOBALS['task_id'])) {
+                    // this task does not have any navigation buttons
                 } else {
                     // get navigation buttons from last $object
                     $dbnav =& RDCsingleton::getInstance('mnu_nav_button');
@@ -1741,6 +1770,14 @@ class radicore_view
                         $value = $doc->createTextNode($url);
                         $value = $foot->appendChild($value);
                     } // if
+
+                } elseif (key($entry) == 'code') {
+                    // add a block of javascript code
+                    $foot = $doc->createElement('foot');
+                    $foot->setAttribute('type', 'code');
+                    $foot  = $js->appendChild($foot);
+                    $value = $doc->createTextNode($entry[key($entry)]);
+                    $value = $foot->appendChild($value);
                 } // if
             } // foreach
         } // if
@@ -2158,8 +2195,7 @@ class radicore_view
         header('Pragma: no-cache');                                     // HTTP 1.0
 
         // set start time of XSL transformation
-        list($usec, $sec) = explode(' ', microtime());
-        $xsl_start = (float) $sec + (float) $usec;
+        $xsl_start = getMicroTime();
 
         // transform the XML into HTML using the XSL file
         if (!$html = $xp->transformToXML($xml_doc)) {
@@ -2183,8 +2219,7 @@ class radicore_view
         set_error_handler($prev_error_handler);
 
         // calculate the function's elapsed time
-        list($usec, $sec) = explode(' ', microtime());
-        $xsl_end = (float) $sec + (float) $usec;
+        $xsl_end = getMicroTime();
         $xsl_elapsed = number_format($xsl_end - $xsl_start, 5, '.', '');
 
         // insert this value into the HTML output

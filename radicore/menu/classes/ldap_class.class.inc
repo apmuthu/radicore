@@ -9,7 +9,8 @@ class ldap_class
     // member variables
     var $resource;              // resource
 
-    function ldap_class ()
+    // ****************************************************************************
+    function __construct ()
     {
         if (!extension_loaded('ldap')) {
     		trigger_error("LDAP extension is not loaded", E_USER_ERROR);
@@ -22,9 +23,11 @@ class ldap_class
             trigger_error(getLanguageText('sys0175'), E_USER_ERROR);
         } // if
 
+        return;
 
-    } // ldap_class
+    } // __construct
 
+    // ****************************************************************************
     function authenticate ($username, $password)
     // check if this username and password are valid.
     {

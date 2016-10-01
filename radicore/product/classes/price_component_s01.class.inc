@@ -107,14 +107,14 @@ class price_component_s01 extends price_component
     } // _checkPrevRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         // perform common processing defined in parent class
-        $where = parent::_cm_pre_getData($where, $where_array, $fieldarray);
+        $where = parent::_cm_pre_getData($where, $where_array, $parent_data);
 
         if ($GLOBALS['mode'] == 'update') {
             // make certain fields non-editable

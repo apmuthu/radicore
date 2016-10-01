@@ -33,7 +33,7 @@ class csv_class
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function csv_class ($dbobject=null)
+    function __construct ($dbobject=null)
     //
     {
         if (is_object($dbobject)) {
@@ -48,7 +48,7 @@ class csv_class
 
         return;
 
-    } // csv_class
+    } // __construct
 
     // ****************************************************************************
     function getErrors ()

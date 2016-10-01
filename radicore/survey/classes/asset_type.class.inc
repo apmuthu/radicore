@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class asset_type extends Default_Table
@@ -9,12 +9,11 @@ class asset_type extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function asset_type ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'survey';
         $this->tablename   = 'asset_type';
 
@@ -22,7 +21,7 @@ class asset_type extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // asset_type
+    } // __construct
 
     // ****************************************************************************
     function _cm_getInitialData ($fieldarray)

@@ -1,5 +1,5 @@
 <?php
-    // file created on May 29, 2016, 9:49 am
+    // file created on August 30, 2016, 11:19 am
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -11,7 +11,8 @@
                                                     'optionlist' => 'user_id');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -21,8 +22,7 @@
                                                     'nosearch' => 'y');
     
     $fieldspec['item_desc']                 = array('type' => 'string',
-                                                    'size' => 80,
-                                                    'required' => 'y');
+                                                    'size' => 80);
     
     $fieldspec['item_notes']                = array('type' => 'string',
                                                     'size' => 65535,
@@ -36,23 +36,23 @@
                                                     'default' => '0000-00-00');
     
     $fieldspec['visibility']                = array('type' => 'integer',
-                                                    'size' => 3,
-                                                    'minvalue' => 1,
-                                                    'maxvalue' => 99,
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 255,
+                                                    'required' => 'y');
     
     $fieldspec['is_complete']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
-    $fieldspec['repeat_interval']           = array('type' => 'integer',
+    $fieldspec['repeat_interval']           = array('type' => 'numeric',
                                                     'size' => 4,
+                                                    'precision' => 3,
+                                                    'scale' => 0,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 999);
     
@@ -70,6 +70,10 @@
                                                     'noedit' => 'y');
     
     $fieldspec['task_context']              = array('type' => 'string',
+                                                    'size' => 255,
+                                                    'noedit' => 'y');
+    
+    $fieldspec['object_id']                 = array('type' => 'string',
                                                     'size' => 255,
                                                     'noedit' => 'y');
     

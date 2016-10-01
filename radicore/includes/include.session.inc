@@ -141,7 +141,7 @@ function childForm ($post, $object_array, $task_id, $where=null)
         $zone = $regs['zone'];
         $zone = rtrim($zone, '#');
     } // if
-    // obtain row number in which this button was pressed
+    // obtain HTML row number in which this button was pressed
     $value = $post[$task_id];
     if (is_array($value)) {
         $offset   = key($value);
@@ -150,6 +150,7 @@ function childForm ($post, $object_array, $task_id, $where=null)
         $offset   = 1;
         $multiple = false;
     } // if
+    $offset = $offset-1;  // HTML rows start from 1, database rows start from zero
 
     if (!isset($next_task)) {
         return;
@@ -182,8 +183,9 @@ function childForm ($post, $object_array, $task_id, $where=null)
 
             // get current data from this object
             $fieldarray = $dbobject->getFieldArray();
+            // identify row number in database
             if (is_long(key($fieldarray))) {
-                $current_row = $fieldarray[$offset-1];  // extract current row from array of rows
+                $current_row = $fieldarray[$offset];
             } else {
                 $current_row = $fieldarray;  // only contains one row
             } // if
@@ -230,7 +232,7 @@ function childForm ($post, $object_array, $task_id, $where=null)
     // this must be from a navigation button
     if (isset($post['select'])) {
         // convert selection into SQL where format
-        $pkey_array = $dbobject->getPkeyArray(null, $task_array);
+        $pkey_array = $dbobject->getPkeyArray(null, $task_array, true);
         if ($dbobject->errors) {
             $errors = $dbobject->getErrors();
             return $errors;
@@ -261,7 +263,9 @@ function childForm ($post, $object_array, $task_id, $where=null)
         	// so that they can be passed to the next task
         	$task_array['sql_orderby']     = $dbobject->getOrderBy();
         	$task_array['sql_orderby_seq'] = $dbobject->sql_orderby_seq;
-            if (empty($selection)) {
+            if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
+                $search                    = $dbobject->getSearch(); // include SEARCH and SELECTION
+            } elseif (empty($selection)) {
         	    $search                    = $dbobject->getSearch();
             } // if
         	if (!empty($search)) {
@@ -269,7 +273,7 @@ function childForm ($post, $object_array, $task_id, $where=null)
         	    	// merge the SEARCH and WHERE strings
                     $where = mergeWhere($where, $search);
                     $search = null;
-        	    } elseif (preg_match('/^(output|batch|other)/i', $task_array['pattern_id'])) {
+        	    } elseif (preg_match('/^(upd4|output|batch|other)/i', $task_array['pattern_id'])) {
         	        // leave $search string alone
         	    } else {
         	        $search = null;
@@ -278,10 +282,10 @@ function childForm ($post, $object_array, $task_id, $where=null)
 	    } // if
 	} // if
 
-	if (is_object($dbobject)) {
-        // serialise object contents for saving in session array
-		$script_vars[$objectname] = serialize($dbobject);
-	} // if
+	foreach ($object_array as $zone => $object) {
+        // save object data in case there are changes which have yet to be saved to the database
+        $script_vars[$zone] = serialize($object);
+    } // foreach
 
     if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
         // current task is running in batch mode, so should the next task
@@ -302,10 +306,10 @@ function childForm ($post, $object_array, $task_id, $where=null)
         $errors = runInBackground($task_array, $script_vars);
         return $errors;
 	} else {
-        foreach ($object_array as $zone => $object) {
-            // save objects in case there are changes which have yet to be saved to the database
-            $script_vars[$zone] = serialize($object);
-        } // foreach
+        //foreach ($object_array as $zone => $object) {
+        //    // save objects in case there are changes which have yet to be saved to the database
+        //    $script_vars[$zone] = serialize($object);
+        //} // foreach
         // pass control to selected script
         $errors = scriptNext($next_task, $where, $selection, $task_array, $search);
 	} // if
@@ -778,8 +782,8 @@ function initSession($save_session_data=array())
     global $orderby_seq;        // sequence ('asc' or 'desc')
     global $page_stack;         // hierarchy of pages used in this session
     global $pagination;         // pagination values
-    global $popup_object;       //
-    global $popup_offset;       //
+    global $popup_object;       // identity of object from where popup was called
+    global $popup_offset;       // row number in current screen
     global $report;             // name of file containing report structure
     global $report_structure;   // report structure for PDF document
     global $return_action;      // set when returning to previous screen
@@ -830,7 +834,9 @@ function initSession($save_session_data=array())
     } // if
 
     // write start details to query log file, if option is turned on
-    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s'));
+    $time = getMicroTime();
+    list($secs, $msecs) = explode('.', $time);
+    logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s', $secs).".$msecs");
 
     if (defined('NO_SESSION_HANDLER')) {
         $save_session_batch = $_SESSION;
@@ -907,8 +913,7 @@ function initSession($save_session_data=array())
         // record the time at which this script started
         // (end time is determined in function XSLTransform)
         if (!isset($_SESSION['script_start'])) {
-            list($usec, $sec) = explode(' ', microtime());
-            $_SESSION['script_start'] = (float) $sec + (float) $usec;
+            $_SESSION['script_start'] = getMicroTime();
         } // if
     } // if
 
@@ -930,18 +935,18 @@ function initSession($save_session_data=array())
         } // if
     } // if
 
-    if (isset($_GET['DBGSESSID'])) {
-        if ($_GET['DBGSESSID'] == -1) {
-            // unset the cookie which starts a debug session
-            setcookie('DBGSESSID', '', time()-42000, '/');
-            $_SESSION['DEBUG-STOP'] = true;
-        } // if
-    } elseif (isset($_SESSION['DEBUG-STOP'])) {
-        // unset the cookie which starts a debug session
-        setcookie('DBGSESSID', '', time()-42000, '/');
-    } else {
-        unset($_SESSION['DEBUG-STOP']);
-    } // if
+//    if (isset($_GET['DBGSESSID'])) {
+//        if ($_GET['DBGSESSID'] == -1) {
+//            // unset the cookie which starts a debug session
+//            setcookie('DBGSESSID', '', time()-42000, '/');
+//            $_SESSION['DEBUG-STOP'] = true;
+//        } // if
+//    } elseif (isset($_SESSION['DEBUG-STOP'])) {
+//        // unset the cookie which starts a debug session
+//        setcookie('DBGSESSID', '', time()-42000, '/');
+//    } else {
+//        unset($_SESSION['DEBUG-STOP']);
+//    } // if
 
     // look for session variables associated with the current script
     if (isset($_SESSION['pages'][$PHP_SELF])) {
@@ -970,7 +975,14 @@ function initSession($save_session_data=array())
     if (isset($script_vars['log_sql_query'])) {
         if (is_True($script_vars['log_sql_query'])) {
             // turn this ON for current script
-            $GLOBALS['log_sql_query'] = true;
+            if (is_True($GLOBALS['log_sql_query'])) {
+                // it is already on, so do nothing
+            } else {
+                $GLOBALS['log_sql_query'] = true;
+                $time = getMicroTime();
+                list($secs, $msecs) = explode('.', $time);
+                logSqlQuery (null, null, "\r\n***** " .$PHP_SELF .' ' .date('Y-m-d H:i:s', $secs).".$msecs");
+            } // if
         } // if
     } // if
 
@@ -1675,7 +1687,7 @@ function initSession($save_session_data=array())
         unset ($script_vars['popup_object']);
     } // if
     if (isset($script_vars['popup_offset'])) {
-        $popup_offset = $script_vars['popup_offset'];
+        $popup_offset = (int)$script_vars['popup_offset'];
         unset ($script_vars['popup_offset']);
     } // if
 
@@ -2085,6 +2097,14 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     global $messages;
     global $page_stack;
     global $script_vars;
+    global $custom_button;
+
+    if (!empty($custom_button)) {
+        // new script activated from a custom button, so treat it like a popup
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
+        $script_vars['popup_object'] = 'db'.$btn_zone;
+        $script_vars['popup_offset'] = $btn_row;
+    } // if
 
     $parent_task = $GLOBALS['task_id'];
 
@@ -2635,11 +2655,11 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
     if (!empty($prev_script) AND !empty($prev_task)) {
         // put any messages into session array
         if (!empty($messages)) {
-            $_SESSION['pages'][$prev_script][$prev_task]['messages'] = $messages;
+            $_SESSION['pages'][$prev_script][$prev_task]['messages'] = (array)$messages;
         } // if
         // put any errors into session array
         if (!empty($errors)) {
-            $_SESSION['pages'][$prev_script][$prev_task]['errors'] = $errors;
+            $_SESSION['pages'][$prev_script][$prev_task]['errors'] = (array)$errors;
         } // if
         // show which script we are leaving, and how ('ok' or 'quit')
         if (!empty($action)) {

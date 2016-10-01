@@ -1,1 +1,1 @@
-﻿Radicore v1.95.0
+﻿Dict v2.00.0

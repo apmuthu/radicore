@@ -15,12 +15,13 @@ class radius_class
     var $max_tries;             //
     var $auth_type;             //
 
-    function radius_class ()
+    // ****************************************************************************
+    function __construct ()
     {
     	if (!extension_loaded('radius')) {
     		trigger_error("RADIUS extension is not loaded", E_USER_ERROR);
     	} // if
-    	
+
         require 'radius.config.inc';
 
         if (is_array($radserver)) {
@@ -53,8 +54,9 @@ class radius_class
             } // if
         } // foreach
 
-    } // radius_class
+    } // __construct
 
+    // ****************************************************************************
     function authenticate ($username, $password)
     // check if this username and password are valid.
     {

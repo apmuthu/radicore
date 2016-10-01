@@ -124,6 +124,9 @@ if (!empty($_FILES) and empty($errors)) {
     if ($_FILES['userfile']['size'] > $maxfilesize) {
     	// The uploaded file exceeds $maxfilesize bytes
 		$errors[] = getLanguageText('sys0129', $maxfilesize);
+    } elseif ($_FILES['userfile']['size'] == 0) {
+        // The uploaded file is empty
+        $errors[] = getLanguageText('sys0124', $filename);
     } // if
     // Check to see if a file is the correct type
     if ($filetypes == '*') {

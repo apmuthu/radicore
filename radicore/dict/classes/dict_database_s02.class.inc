@@ -12,10 +12,10 @@ class dict_dataBase_s02 extends dict_dataBase
     // ****************************************************************************
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         // find out if tables in the 'menu' database need to be qualified
@@ -25,7 +25,7 @@ class dict_dataBase_s02 extends dict_dataBase
             // obtain SUBSYS_DIR from MNU_SUBSYSTEM
             $this->sql_select = 'dict_database.*, subsys_dir';
             $this->sql_from   = 'dict_database '
-                               .'LEFT JOIN ' .$menuDB .'mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id)';
+                               ."LEFT JOIN {$menuDB}mnu_subsystem ON (mnu_subsystem.subsys_id=dict_database.subsys_id) ";
         } // if
 
         return $where;

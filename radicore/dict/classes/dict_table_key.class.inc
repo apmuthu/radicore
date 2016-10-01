@@ -13,19 +13,17 @@ class dict_table_key extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function dict_table_key ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = '';            // to be supplied by getFieldSpec_original()
-        $this->dbprefix    = '';            // to be supplied by getFieldSpec_original()
         $this->tablename   = 'dict_table_key';
         $this->dbname      = 'dict';
 
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // dict_table_key
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)

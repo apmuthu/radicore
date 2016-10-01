@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class unit_of_measure extends Default_Table
@@ -9,12 +9,11 @@ class unit_of_measure extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function unit_of_measure ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'product';
         $this->tablename   = 'unit_of_measure';
 
@@ -22,7 +21,7 @@ class unit_of_measure extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // unit_of_measure
+    } // __construct
 
     // ****************************************************************************
     function _cm_getExtraData($where, $fieldarray)
@@ -42,7 +41,7 @@ class unit_of_measure extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();

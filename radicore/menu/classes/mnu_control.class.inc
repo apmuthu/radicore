@@ -13,7 +13,7 @@ class mnu_control extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function mnu_control ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -27,7 +27,7 @@ class mnu_control extends Default_Table
 
         $this->record_id = 'SYSTEM';
 
-    } // mnu_control
+    } // __construct
 
     // ****************************************************************************
     function getControlData ($field_id, $user_data=null)
@@ -726,7 +726,7 @@ class mnu_control extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent

@@ -7,7 +7,7 @@ require_once 'x_tree_node.class.inc';
 class x_tree_node_snr extends x_tree_node
 {
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent

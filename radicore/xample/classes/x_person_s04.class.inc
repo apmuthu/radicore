@@ -50,6 +50,9 @@ class x_person_s04 extends x_person
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
         	    $row['picture']        = 'pictures/female1.jpg';
+                $row['image_label']    = 'LABEL:';
+                $row['image_01']       = 'pictures/female1.jpg';
+                $row['image_02']       = 'pictures/male2.jpg';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 5;
@@ -61,6 +64,9 @@ class x_person_s04 extends x_person
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
         	    $row['picture']        = 'pictures/female2.jpg';
+                $row['image_label']    = 'LABEL:';
+                $row['image_01']       = '';
+                $row['image_02']       = 'pictures/male2.jpg';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 25;
@@ -72,6 +78,9 @@ class x_person_s04 extends x_person
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
         	    $row['picture']        = 'pictures/female1.jpg';
+                $row['image_label']    = 'LABEL:';
+                $row['image_01']       = '';
+                $row['image_02']       = '';
         	    $outarray[] = $row;
 
         	    $row['quantity']       = 25;
@@ -83,6 +92,9 @@ class x_person_s04 extends x_person
         	    $row['extended_price'] = number_format($row['extended_price'], 2);
         	    $row['vat_percent']    = '17.5';
         	    $row['picture']        = 'pictures/female2.jpg';
+                $row['image_label']    = '';
+                $row['image_01']       = '';
+                $row['image_02']       = '';
         	    $outarray[] = $row;
 
         	    if (empty($outarray)) {
@@ -101,6 +113,8 @@ class x_person_s04 extends x_person
         	    $extra['note_text'] = "Here is another piece of text which uses a lot of words but says very little.";
         	    $outarray[] = $extra;
 
+                //$outarray = array();
+
                 break;
 
         	case 'multi3':
@@ -108,6 +122,9 @@ class x_person_s04 extends x_person
         	    $extra['vat_amount1']  = round($this->total_price * ($extra['vat_percent1'] / 100), 2);
         	    $vat_total = $extra['vat_amount1'];
         	    $extra['vat_amount1'] = number_format($extra['vat_amount1'], 2);
+
+                $extra['vat_percent2'] = null;
+                $extra['vat_amount2']  = null;
 
         	    $extra['sub_total'] = $this->total_price;
         	    $extra['vat_total'] = $vat_total;
@@ -146,10 +163,25 @@ class x_person_s04 extends x_person
 
         	case 'multi9':
                 // return a non-empty array to print an empty line
-                $outarray[] = array('dummy' => '');
+                //$outarray[] = array('dummy' => '');
+                //$outarray = array();
+                $outarray[] = array('multi9_1' => 'multi9_1', 'multi9_2' => 'multi9_2');
         		break;
 
-        	default:
+        	case 'multi10':
+                // return a non-empty array to print an empty line
+                //$outarray[] = array('dummy' => '');
+                //$outarray = array();
+                //$outarray[] = array('multi10_image' => 'images/radicore.jpg', 'multi10_text' => 'multi10');
+                break;
+
+            case 'multi11':
+                // return a non-empty array to print an empty line
+                //$outarray[] = array('dummy' => '');
+                //$outarray = array();
+                break;
+
+            default:
         		break;
         } // switch
 
@@ -188,7 +220,7 @@ class x_person_s04 extends x_person
     } // _cm_post_fetchRow
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent

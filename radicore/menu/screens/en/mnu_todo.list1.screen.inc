@@ -5,7 +5,7 @@ $structure['tables']['main'] = 'mnu_todo';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['main']['columns'][] = array('width' => 5);
-$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => 175);
 $structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => '*');
 $structure['main']['columns'][] = array('width' => 110);

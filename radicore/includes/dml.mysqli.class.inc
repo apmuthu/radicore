@@ -58,6 +58,7 @@ class mysql
     var $sql_having;
     var $sql_orderby;
     var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $sql_where_append;              // string which is too complex for where2array() function
     var $sql_union;
     var $query;                         // completed DML statement
 
@@ -66,7 +67,7 @@ class mysql
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function mysql ($args=null)
+    function __construct ($args=null)
     {
         if (is_string($args)) {
             $dbname           = $args;
@@ -101,7 +102,7 @@ class mysql
 
         return $result;
 
-    } // mysql
+    } // __construct
 
     // ****************************************************************************
     function adjustHaving ($select_str, $from_str, $where_str, $group_str, $having_str, $sort_str, $union)
@@ -243,6 +244,7 @@ class mysql
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $this->query = 'COMMIT';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
@@ -251,9 +253,10 @@ class mysql
 
         $this->query = 'SET AUTOCOMMIT=1';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1');
+        logSqlQuery ($dbname, null, 'COMMIT; UNLOCK TABLES; SET AUTOCOMMIT=1', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -308,11 +311,8 @@ class mysql
                 $this->query = "SHOW VARIABLES LIKE 'character_set%'";
                 $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
                 while ($row = mysqli_fetch_assoc($result)) {
-                    if (isset($row['VARIABLE_VALUE'])) {
-                    	$this->$row['Variable_name'] = $row['VARIABLE_VALUE'];
-                    } else {
-                        $this->$row['Variable_name'] = $row['Value'];
-                    } // if
+                    $name = $row['Variable_name'];
+                    $this->$name = $row['Value'];
                 } // while
 
                 if (version_compare($this->server_info, '4.1', '>=')) {
@@ -363,13 +363,13 @@ class mysql
 
         // build the query string and run it
         $this->query = "DELETE FROM $tablename WHERE $where";
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        // get count of affected rows as there may be more than one
-        $this->numrows = mysqli_affected_rows($this->dbconnect);
+        $this->numrows = mysqli_affected_rows($this->dbconnect);  // get count of affected rows as there may be more than one
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -400,12 +400,13 @@ class mysql
         } else {
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } // if
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
-        $count = mysqli_affected_rows($this->dbconnect);
+        $count = mysqli_affected_rows($this->dbconnect);  // get count of affected rows as there may be more than one
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -476,6 +477,7 @@ class mysql
             } // if
         } // if
 
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         if (preg_match("/SQL_CALC_FOUND_ROWS /i", $this->query) == true) {
@@ -492,9 +494,10 @@ class mysql
                 $count = $query_data[0];
             } // if
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
         $this->query = '';
 
         return $count;
@@ -532,9 +535,10 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -542,7 +546,15 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -598,6 +610,7 @@ class mysql
             } // if
         } // if
 
+        $start_time = getMicroTime();
         do {
             if ($pageno > $this->lastpage) {
                 // requested page is out of range, so reset it
@@ -622,7 +635,7 @@ class mysql
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $result = mysqli_query($this->dbconnect, $this->query);
             if ($result === false) {
-            	if (preg_match('/(2006|2013)/', mysqli_errno($this->dbconnect))) {
+            	if (preg_match('/^(2006|2013)$/', mysqli_errno($this->dbconnect))) {
             	    // connection has been lost, so re-connect and retry
             	    $this->dbconnect = false;
                     $save_query = $this->query;
@@ -660,11 +673,10 @@ class mysql
         while ($row = mysqli_fetch_assoc($result)) {
             $array[] = array_change_key_case($row, CASE_LOWER);
         } // while
-
-        //$this->numrows = mysqli_num_rows($result);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         mysqli_free_result($result);
         $this->query = '';
@@ -704,9 +716,10 @@ class mysql
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
         } // if
 
         // incorporate optional 'where' criteria
@@ -714,12 +727,20 @@ class mysql
         if (empty($where)) {
             $where_str = '';
         } else {
-            $where_str = "\n" .'WHERE ' .$this->adjustWhere($where);
+            $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "\n" ."GROUP BY $this->sql_groupby";
+            $group_str = "\nGROUP BY $this->sql_groupby";
             if (preg_match("/ WITH ROLLUP/i", $this->sql_groupby)) {
             	$this->sql_orderby = null;
             } // if
@@ -729,22 +750,22 @@ class mysql
 
         // incorporate optional HAVING parameters
         if (!empty($this->sql_having)) {
-            $having_str = "\n" ."HAVING $this->sql_having";
+            $having_str = "\nHAVING $this->sql_having";
         } else {
             $having_str = NULL;
         } // if
 
         // incorporate optional sort order
         if (!empty($this->sql_orderby)) {
-            $sort_str = "\n" ."ORDER BY $this->sql_orderby $this->sql_orderby_seq";
+            $sort_str = "\nORDER BY $this->sql_orderby $this->sql_orderby_seq";
         } else {
             $sort_str = '';
         } // if
 
         if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
-        	$limit_str = "\n" .'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
+        	$limit_str = "\nLIMIT {$rdc_limit} OFFSET {$rdc_offset}";
         } elseif ($rows_per_page > 0) {
-            $limit_str = "\n" .'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+            $limit_str = "\nLIMIT {$rows_per_page} OFFSET " .($pageno - 1) * $rows_per_page;
         } else {
             $limit_str = '';
         } // if
@@ -758,6 +779,7 @@ class mysql
             $this->sql_union = null;
         } // if
 
+        $start_time = getMicroTime();
         if ($this->unbuffered_query === true) {
             $result = mysqli_real_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $this->numrows = 0;
@@ -766,9 +788,10 @@ class mysql
             $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $this->numrows = mysqli_num_rows($result);
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         return $result;
 
@@ -783,9 +806,10 @@ class mysql
 
         // obtain 'enum' values for the specified column
         $this->query = "SHOW COLUMNS FROM $tablename LIKE '$fieldname'";
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
         $query_data = mysqli_fetch_array($result);
+        $end_time = getMicroTime();
 
         // convert the 'enum' list into an array
         // 1st, extract everything between '(' and ')'
@@ -798,10 +822,11 @@ class mysql
             $enum_array = explode(',', $enum);
         } // if
 
+        // write query to log file, if option is turned on
+        logSqlQuery ($dbname, $tablename, $this->query, count($enum_array), $start_time, $end_time);
+
         mysqli_free_result($result);
 
-        // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $enum);
         $this->query = '';
 
         return $enum_array;
@@ -1060,6 +1085,7 @@ class mysql
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
         $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
+        $start_time = getMicroTime();
         do {
             // insert this record into the database
             $this->query = "INSERT INTO $tablename SET ";
@@ -1132,9 +1158,10 @@ class mysql
                 $this->numrows = 1;  // record has been inserted
             } // if
         } while ($repeat == true);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query);
+        logSqlQuery ($dbname, $tablename, $this->query, 1, $start_time, $end_time);
 
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
@@ -1240,6 +1267,7 @@ class mysql
         //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         $repeat       = false;
         $repeat_count = 0;
+        $start_time = getMicroTime();
         do {
             $this->query = 'ROLLBACK';
             $result = mysqli_query($this->dbconnect, $this->query);
@@ -1262,9 +1290,10 @@ class mysql
 
         $this->query = 'UNLOCK TABLES';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES');
+        logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1371,18 +1400,22 @@ class mysql
 
         if (!empty($this->transaction_level)) {
             $this->query = $this->transaction_level;
+            $start_time = getMicroTime();
             $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-            logSqlQuery ($dbname, null, $this->query);
+            $end_time = getMicroTime();
+            logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
         } // if
 
         $this->query = 'START TRANSACTION';
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
         $this->query = 'SET AUTOCOMMIT=0';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'START TRANSACTION (SET AUTOCOMMIT=0)');
+        logSqlQuery ($dbname, null, 'START TRANSACTION (SET AUTOCOMMIT=0)', null, $start_time, $end_time);
         $this->query = '';
 
         if (!empty($this->table_locks)) {
@@ -1519,6 +1552,7 @@ class mysql
             $this->query = "UPDATE $tablename SET $update WHERE $where";
 
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $start_time = getMicroTime();
             $result = mysqli_query($this->dbconnect, $this->query);
             if (mysqli_warning_count($this->dbconnect) > 0) {
                 if ($rs = mysqli_query($this->dbconnect, 'SHOW WARNINGS')) {
@@ -1528,6 +1562,7 @@ class mysql
                     mysqli_free_result($rs);
                 } // if
             } // if
+            $end_time = getMicroTime();
 
             if ($result === false) {
                 $errno = mysqli_errno($this->dbconnect);
@@ -1544,7 +1579,7 @@ class mysql
         $this->numrows = mysqli_affected_rows($this->dbconnect);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1571,12 +1606,13 @@ class mysql
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
+        $start_time = getMicroTime();
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
-
         $count = mysqli_affected_rows($this->dbconnect);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($count > 0) {
             if ($this->audit_logging) {
@@ -2037,11 +2073,13 @@ class mysql
 
         if (!empty($string)) {
             $this->query = 'SET AUTOCOMMIT=0';
+            $start_time = getMicroTime();
             $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $this->query = "LOCK TABLES $string";
             $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
             // write query to log file, if option is turned on
-            logSqlQuery (null, null, $this->query);
+            logSqlQuery (null, null, "SET AUTOCOMMIT=0, LOCK TABLES $string", null, $start_time, $end_time);
             $this->query = '';
             return $result;
         } // if

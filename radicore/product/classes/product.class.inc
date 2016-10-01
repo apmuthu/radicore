@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class product extends Default_Table
@@ -9,12 +9,11 @@ class product extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function product ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'product';
         $this->tablename   = 'product';
 
@@ -22,7 +21,7 @@ class product extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // product
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -127,7 +126,7 @@ class product extends Default_Table
     } // _cm_getForeignData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         $array = array();
@@ -144,13 +143,12 @@ class product extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        //DebugBreak();
         if (empty($this->sql_search)) {
             // no search criteria to be modified
             return $where;

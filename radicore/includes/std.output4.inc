@@ -131,14 +131,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-        $dbobject->startTransaction();
+        // save current data in case a custom button jumps to another script
+        $script_vars['dbobject'] = serialize($dbobect);
         $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
         if ($dbobject->errors) {
             $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-            $dbobject->rollback();
-        } else {
-            $dbobject->commit(false);
         } // if
+        unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
         // ensure current selection is saved inside the object

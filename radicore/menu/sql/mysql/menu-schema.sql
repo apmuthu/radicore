@@ -424,6 +424,7 @@ CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `repeat_unit` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
   `task_id` varchar(80) COLLATE utf8_unicode_ci DEFAULT NULL,
   `task_context` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `object_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,

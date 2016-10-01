@@ -15,13 +15,13 @@ class currency_class
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function currency_class ()
+    function __construct ()
     {
         // nothing here
 
         return;
 
-    } // currency_class
+    } // __construct
 
     // ****************************************************************************
     function flip_currency($fieldarray, $columns, $fn_suffix='_fn', $tx_suffix='_tx')

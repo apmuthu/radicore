@@ -19,7 +19,7 @@ class date_class {
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function date_class()
+    function __construct ()
     {
         //$this->monthalpha = array(1 => 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');
         $this->monthalpha = getLanguageArray('month_names_short');
@@ -34,7 +34,7 @@ class date_class {
             $this->date_format_output = $_SESSION['date_format_output'];
         } // if
 
-    } // date_class
+    } // __construct
 
     // ****************************************************************************
     // accessor functions

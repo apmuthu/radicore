@@ -72,7 +72,7 @@ if (isset($search)) {
 $resource = $dbobject->getData_serial($where);
 
 if ($dbobject->unbuffered_query === true) {
-    // no count is avaiable
+    // no count is available
 } else {
     if (isset($stdout)) {
         $output = "<p>".$dbobject->numrows ." records read</p>\n";

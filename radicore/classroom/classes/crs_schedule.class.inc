@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class crs_schedule extends Default_Table
@@ -11,18 +11,17 @@ class crs_schedule extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function crs_schedule ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->tablename   = 'crs_schedule';
         $this->dbname      = 'classroom';
 
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // crs_schedule
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -284,7 +283,7 @@ class crs_schedule extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null)
+    function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
         // provide values for dropdown list

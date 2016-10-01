@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Copyright 1999-2015 by Geoprise Technologies Licensing, All Rights Reserved.
+// Copyright 1999-2016 by Geoprise Technologies Licensing, All Rights Reserved.
 // *****************************************************************************
 require_once 'audit_fld.class.inc';
 class audit_fld_s01 extends audit_fld
@@ -32,7 +32,7 @@ class audit_fld_s01 extends audit_fld
     } // _cm_getForeignData
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $parent_data)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
     // $parent_data may contain contents of current record in the parent object.

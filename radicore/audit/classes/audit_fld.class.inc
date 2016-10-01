@@ -7,7 +7,7 @@ require_once 'std.table.class.inc';
 class audit_fld extends Default_Table
 {
     // ****************************************************************************
-    function audit_fld ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
@@ -23,7 +23,7 @@ class audit_fld extends Default_Table
         // (otherwise there would be an endless loop)
         $this->audit_logging = false;
 
-    } // audit_fld
+    } // __construct
 
     // ****************************************************************************
     function _cm_pre_insertRecord ($rowdata)

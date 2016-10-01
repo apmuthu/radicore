@@ -249,10 +249,11 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } else {
         $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
     } // if
+    $from = "webmaster@{$_SERVER['HTTP_HOST']}";
+    $subject = 'PHP error_log message';
+
     // Send the error to the administrator by email
-    $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
-    $headers .= "\nContent-Type: text/plain; charset=UTF-8";
-    $res = error_log($mailstring, 1, $mailto, $headers);
+    $res = send_email($from, $mailto, $subject, $mailstring);
 
     //echo "<h1>This application has encountered an unrecoverable error</h1>\n";
     $header = "<h1>" .getLanguageText('sys0060') ."</h1>\n";

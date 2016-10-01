@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class survey_answer_hdr extends Default_Table
@@ -9,12 +9,11 @@ class survey_answer_hdr extends Default_Table
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function survey_answer_hdr ()
+    function __construct ()
     {
         // save directory name of current script
         $this->dirname   = dirname(__file__);
 
-        $this->dbms_engine = $GLOBALS['dbms'];
         $this->dbname      = 'survey';
         $this->tablename   = 'survey_answer_hdr';
 
@@ -22,7 +21,7 @@ class survey_answer_hdr extends Default_Table
         // (note that they may be modified at runtime)
         $this->fieldspec = $this->getFieldSpec_original();
 
-    } // survey_answer_hdr
+    } // __construct
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
@@ -65,7 +64,7 @@ class survey_answer_hdr extends Default_Table
     } // _cm_changeConfig
 
     // ***************************************************************************
-    function _cm_getForeignData ($fieldarray)
+    function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign entities.
     {
         //DebugBreak();

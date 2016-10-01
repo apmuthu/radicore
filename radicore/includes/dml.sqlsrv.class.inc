@@ -45,6 +45,7 @@ class sqlsrv
     var $sql_having;
     var $sql_orderby;
     var $sql_orderby_seq;               // 'asc' or 'desc'
+    var $sql_where_append;              // string which is too complex for where2array() function
     var $query;                         // completed DML statement
 
     var $dbconnect;                     // database connection resource
@@ -52,7 +53,7 @@ class sqlsrv
     // ****************************************************************************
     // class constructor
     // ****************************************************************************
-    function sqlsrv ($args=null)
+    function __construct ($args=null)
     {
         if (is_string($args)) {
             $dbname               = $args;
@@ -81,7 +82,16 @@ class sqlsrv
 
         return $result;
 
-    } // sqlsrv
+    } // __construct
+
+    // ****************************************************************************
+    function __destruct ()
+    {
+        if (is_resource($this->dbconnect)) {
+            $res = sqlsrv_close ($this->dbconnect);
+        } // if
+
+    } // __destruct
 
     // ****************************************************************************
     function adjustData ($string_in)
@@ -842,10 +852,12 @@ END_OF_REGEX;
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $result = sqlsrv_commit($this->dbconnect);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'COMMIT');
+        logSqlQuery ($dbname, null, 'COMMIT', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -882,7 +894,18 @@ END_OF_REGEX;
             	$this->dbname                     = $dbname;
             } // if
 
-            $dbconn = sqlsrv_connect($this->serverName, $this->connectionInfo) or trigger_error($this, E_USER_ERROR);
+            //$dbconn = sqlsrv_connect($this->serverName, $this->connectionInfo) or trigger_error($this, E_USER_ERROR);
+            $dbconn = sqlsrv_connect($this->serverName, $this->connectionInfo);
+            if ($dbconn === false) {
+                if (preg_match('/^(258)$/', $this->getErrorNo())) {
+                    // timeout error, so try again
+                    sleep(1);  // pause for 1 second
+                    $dbconn = sqlsrv_connect($this->serverName, $this->connectionInfo);
+                } // if
+                if ($dbconn === false) {
+                    trigger_error($this, E_USER_ERROR);
+                } // if
+            } // if
             if ($dbconn) {
                 $this->dbconnect = $dbconn;
 
@@ -948,13 +971,15 @@ END_OF_REGEX;
 
         // build the query string and run it
         $this->query = "DELETE FROM {$this->dbname}.{$this->dbschema}.$tablename WHERE $where";
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // get count of affected rows as there may be more than one
         $this->numrows = sqlsrv_rows_affected($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -989,12 +1014,14 @@ END_OF_REGEX;
         } else {
             $this->query = "DELETE FROM $tablename WHERE $selection";
         } // if
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         $count = sqlsrv_rows_affected($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1063,6 +1090,7 @@ END_OF_REGEX;
             } // if
         } // if
 
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         $query_data = sqlsrv_fetch_array($result, SQLSRV_FETCH_NUMERIC);
 
@@ -1082,9 +1110,10 @@ END_OF_REGEX;
         } else {
             $count = $query_data[0];
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
         $this->query = '';
 
         return $count;
@@ -1122,9 +1151,10 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN",   "INNER JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN", "\nINNER JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
             $from_str = $this->adjustFrom($from_str, $where);
         } // if
 
@@ -1134,6 +1164,14 @@ END_OF_REGEX;
             $where_str = '';
         } else {
             $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -1263,6 +1301,7 @@ END_OF_REGEX;
             } // if
         } // if
 
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
 
         // convert result set into a simple associative array for each row
@@ -1273,9 +1312,10 @@ END_OF_REGEX;
         if ($rows_per_page == 0) {
             $this->numrows = sqlsrv_num_rows($result);
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         sqlsrv_free_stmt($result);
 
@@ -1314,9 +1354,10 @@ END_OF_REGEX;
             $from_str = $tablename;
         } else {
             $from_str = $this->sql_from;
-            $search_array  = array(  "LEFT JOIN",   "RIGHT JOIN",   "CROSS JOIN");
-            $replace_array = array("\nLEFT JOIN", "\nRIGHT JOIN", "\nCROSS JOIN");
-            $from_str = str_replace($search_array, $replace_array, $from_str);
+            // insert <newline> in front of every JOIN statement for readability
+            $search_array  = array("/(?<!\n)LEFT JOIN/", "/(?<!\n)RIGHT JOIN/", "/(?<!\n)CROSS JOIN/", "/(?<!\n)INNER JOIN/");
+            $replace_array = array(      "\nLEFT JOIN",        "\nRIGHT JOIN",        "\nCROSS JOIN",        "\nINNER JOIN");
+            $from_str = preg_replace($search_array, $replace_array, $from_str);
             $from_str = $this->adjustFrom($from_str, $where);
         } // if
 
@@ -1326,6 +1367,14 @@ END_OF_REGEX;
             $where_str = '';
         } else {
             $where_str = "\nWHERE " .$this->adjustWhere($where);
+        } // if
+
+        if (!empty($this->sql_where_append)) {
+            if (empty($where_str)) {
+                $where_str = "\nWHERE {$this->sql_where_append}";
+            } else {
+                $where_str .= " AND {$this->sql_where_append}";
+            } // if
         } // if
 
         // incorporate optional GROUP BY parameters
@@ -1354,10 +1403,12 @@ END_OF_REGEX;
             $having_str = NULL;
         } // if
 
-        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
+        if (!is_null($rdc_limit) OR !is_null($rdc_offset)) {
         	//$limit_str = 'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
         	$min_rows = $rdc_offset;
-        	$max_rows = $min_rows + $rdc_limit;
+            if ($rdc_limit > 0) {
+                $max_rows = $min_rows + $rdc_limit;
+            } // if
         } elseif ($rows_per_page > 0) {
             //$limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
             $min_rows = (($pageno - 1) * $rows_per_page) +1;
@@ -1377,7 +1428,12 @@ END_OF_REGEX;
         } // if
 
         // build the query string and run it
-        if (isset($min_rows) AND isset($max_rows)) {
+        if (isset($min_rows) OR isset($max_rows)) {
+            if (isset($min_rows) AND isset($max_rows)) {
+                $rownum = "rownum BETWEEN $min_rows and $max_rows";
+            } else {
+                $rownum = "rownum > $min_rows";
+            } // if
             // default sort sequence is via primary key
             if (empty($sort_str)) {
                 $keys = array();
@@ -1390,7 +1446,7 @@ END_OF_REGEX;
                 $this->query = "SELECT * FROM ("
                              . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
                              . "\nFROM $from_str $lock_str $where_str $group_str $having_str"
-                             . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+                             . "\n) AS x WHERE $rownum";
             } else {
                 $sort_str = substr($sort_str, 9);  // remove leading 'ORDER BY'
                 $sort_str = "ORDER BY ".unqualifyOrderBy($sort_str);
@@ -1401,9 +1457,11 @@ END_OF_REGEX;
                              . "\nUNION ALL"
                              . "\n{$this->sql_union}"
                              . "\n) AS x) AS y"
-                             . "\nWHERE rownum BETWEEN $min_rows and $max_rows $sort_str";
+                             . "\nWHERE $rownum $sort_str";
             } // if
+            $start_time = getMicroTime();
             $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
         } else {
             // read all available records
             if (!empty($sort_str)) {
@@ -1416,13 +1474,15 @@ END_OF_REGEX;
                 $this->query .= "\nUNION ALL\n{$this->sql_union}";
                 $this->query .= " $sort_str";
             } // if
+            $start_time = getMicroTime();
             $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
+            $end_time = getMicroTime();
         } // if
 
         $this->numrows = sqlsrv_num_rows($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         return $result;
 
@@ -1652,6 +1712,7 @@ END_OF_REGEX;
         $repeat_count = 0;
         $pattern1 = '/(integer|decimal|numeric|float|real|double)/i';
         $pattern2 = '/^\w+[ ]*\(.*\)$/imsx';  // function(...)
+        $start_time = getMicroTime();
         do {
             // insert this record into the database
             $cols = '';
@@ -1740,19 +1801,23 @@ END_OF_REGEX;
                 $this->numrows = 1;  // record has been inserted
             } // if
         } while ($repeat == true);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query);
+        logSqlQuery ($dbname, $tablename, $this->query, 1, $start_time, $end_time);
 
 		if (!empty($auto_increment)) {
 			// obtain the last value used by auto_increment
-			$this->query = "SELECT @@identity";
+			//$this->query = "SELECT @@identity";
+            $this->query = "SELECT SCOPE_IDENTITY()";
+            $start_time = getMicroTime();
             $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $identity = sqlsrv_fetch_array($result, SQLSRV_FETCH_NUMERIC);
+            $end_time = getMicroTime();
             $fieldarray[$auto_increment] = $identity[0];
             $primary_key = $this->buildKeyString ($fieldarray, $this->primary_key);
             // write query to log file, if option is turned on
-            logSqlQuery ($dbname, $tablename, $this->query, $fieldarray[$auto_increment]);
+            logSqlQuery ($dbname, $tablename, $this->query, $fieldarray[$auto_increment], $start_time, $end_time);
 
         } elseif ($identity_insert == TRUE) {
             $this->query = "SET IDENTITY_INSERT [{$tablename}] OFF";
@@ -1859,10 +1924,12 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
+        $start_time = getMicroTime();
         $result = sqlsrv_rollback($this->dbconnect);
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'ROLLBACK');
+        logSqlQuery ($dbname, null, 'ROLLBACK', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1974,14 +2041,16 @@ END_OF_REGEX;
         // connect to database
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
+        $start_time = getMicroTime();
         $result = sqlsrv_begin_transaction($this->dbconnect);
         if (!$result) {
             $errors = sqlsrv_errors();
             trigger_error($errors[0]['code'], E_USER_ERROR);
         } // if
+        $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'BEGIN TRANSACTION');
+        logSqlQuery ($dbname, null, 'BEGIN TRANSACTION', null, $start_time, $end_time);
         $this->query = '';
 
         if (!empty($this->table_locks)) {
@@ -2130,13 +2199,15 @@ END_OF_REGEX;
 
         // append WHERE clause to SQL query
         $this->query = "UPDATE $tablename SET $update WHERE $where";
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         // get count of affected rows as there may be more than one
         $this->numrows = sqlsrv_rows_affected($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows);
+        logSqlQuery ($dbname, $tablename, $this->query, $this->numrows, $start_time, $end_time);
 
         if ($this->audit_logging) {
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -2163,12 +2234,14 @@ END_OF_REGEX;
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
+        $start_time = getMicroTime();
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $end_time = getMicroTime();
 
         $count = sqlsrv_rows_affected($result);
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, $tablename, $this->query, $count);
+        logSqlQuery ($dbname, $tablename, $this->query, $count, $start_time, $end_time);
 
         if ($count > 0) {
             if ($this->audit_logging AND !defined('TRANSIX_NO_AUDIT')) {

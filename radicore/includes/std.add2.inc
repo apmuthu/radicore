@@ -121,14 +121,13 @@ if (!empty($_POST)) {
         } elseif (empty($errors) AND !empty($custom_button)) {
             // a custom button was pressed
             list($custom_btn, $btn_row, $btn_zone) = $custom_button;
-            $dbobject->startTransaction();
+            // save current data in case a custom button jumps to another script
+            $script_vars['dbobject'] = serialize($dbobect);
             $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
             if ($dbobject->errors) {
                 $errors[$dbobject->getClassName()] = $dbobject->getErrors();
-                $dbobject->rollback();
-            } else {
-                $dbobject->commit(false);
             } // if
+            unset($custom_button);
 
         } elseif (empty($errors) AND !empty($submit_button)) {
             // this is a standard 'submit' button, so update the database
@@ -197,7 +196,7 @@ if (!empty($_POST)) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form where something has been selected
-    if (!empty($return_from) AND isset($selection) ) {
+    if (!empty($return_from) AND (!empty($popup_object) OR isset($selection))) {
         // merge previous saved variables with selection from previous form
         $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
         if ($dbobject->errors) {
