@@ -5562,6 +5562,10 @@ if (!function_exists('remove_directory')) {
     function remove_directory ($directory)
     // remove/delete the specified directory.
     {
+        if (empty($directory) OR !is_dir($directory)) {
+            return FALSE;
+        } // if
+
         $iterator = new DirectoryIterator ( $directory );
         foreach ( $iterator as $info ) {
             if ($info->isDot ()) {

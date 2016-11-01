@@ -384,7 +384,11 @@ if (!empty($return_from) AND !empty($popup_object)) {
             } // if
 
             if ($dbinner->getNumRows() == 0) {
-                if (!empty($return_from) AND ($return_action == 'OK')) {
+                if (!empty($return_from) AND ($return_action == 'search')) {
+                    $messages[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
+                    // go back to script which generated this profile
+                    scriptNext($return_from, $where);
+                } elseif (!empty($return_from) AND ($return_action == 'OK')) {
                     // have returned to this occurrence after it has been processed, so...
                     if ($scrolling[$dbouter->getClassName()]['curitem'] == $scrolling[$dbouter->getClassName()]['lastitem']) {
             	        // this is the last occurrence, so exit

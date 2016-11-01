@@ -73,11 +73,11 @@ $array['e0061'] = "Repeat Unit is required with Repeat Interval";
 $array['e0062'] = "Context is invalid without Task";
 $array['e0063'] = "This function is not valid if PATTERN_ID='BATCH'";
 $array['e0064'] = "Cannot create repeat entry";
-$array['e0065'] = "";
-$array['e0066'] = "";
-$array['e0067'] = "";
-$array['e0068'] = "";
-$array['e0069'] = "";
+$array['e0065'] = "The specified To-Do entry cannot be found";
+$array['e0066'] = "The supplied URL is not valid - report to your system administrator";
+$array['e0067'] = "This To-Do item is for a different user";
+$array['e0068'] = "This To-Do item is already marked as 'complete'";
+$array['e0069'] = "A To-Do entry with id '%1\$s' cannot be found";
 
 $array['e0070'] = "Multiple rows selected - only the 1st accepted";
 $array['e0071'] = "This entry cannot be moved UP any further";
@@ -90,7 +90,7 @@ $array['e0077'] = "";
 $array['e0078'] = "Data contains invalid HTML tag: '%1\$s'";
 $array['e0079'] = "QuickSearch options are not valid unless pattern is 'LIST' or 'POPUP'";
 
-$array['e0080'] = "";
+$array['e0080'] = "The To-Do entry does not contain an Object Id, so cannot retrieve data for insertion into email";
 $array['e0081'] = "";
 $array['e0082'] = "";
 $array['e0083'] = "";

@@ -31,7 +31,6 @@ class wf_arc extends Default_Table
 
         if (!empty($fieldarray['place_id'])) {
             // get PLACE details
-            require_once 'classes/wf_place.class.inc';
             $dbobject =& RDCsingleton::getInstance('wf_place');
             $dbobject->sql_select = 'place_type';
             $place_data = $dbobject->getData_raw("workflow_id='{$fieldarray['workflow_id']}' AND place_id='{$fieldarray['place_id']}'");
@@ -213,6 +212,36 @@ class wf_arc extends Default_Table
     } // _cm_initialise
 
     // ****************************************************************************
+    function _cm_post_deleteRecord ($fieldarray)
+    // perform custom processing after database record has been deleted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_deleteRecord
+
+    // ****************************************************************************
+    function _cm_post_insertRecord ($fieldarray)
+    // perform custom processing after database record has been inserted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_insertRecord
+
+    // ****************************************************************************
+    function _cm_post_updateRecord ($fieldarray, $old_data)
+    // perform custom processing after database record is updated.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_updateRecord
+
+    // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
@@ -229,6 +258,23 @@ class wf_arc extends Default_Table
         return $where;
 
     } // _cm_pre_getData
+
+    // ***************************************************************************
+    function _updateWorkflow ($workflow_id)
+    // set IS_VALID to FALSE to force workflow to be revalidated.
+    {
+        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $update['workflow_id'] = $workflow_id;
+        $update['is_valid']    = FALSE;
+        $update = $dbobject->updateRecord($update);
+        if ($dbobject->errors) {
+            $this->errors[$dbobject->getClassName()] = $dbobject->errors;
+            return false;
+        } // if
+
+        return true;
+
+    } // _updateWorkflow
 
     // ***************************************************************************
     function examineInwardArc ($arc_data)
@@ -249,7 +295,6 @@ class wf_arc extends Default_Table
         if ($this->errors) return;
 
         // now check that these places have the correct number of tokens
-        require_once 'classes/wf_token.class.inc';
         $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         $token_array = array();
@@ -278,7 +323,6 @@ class wf_arc extends Default_Table
         } // foreach
 
         // transition has enough input tokens, so create a workitem
-        require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
         $workitem_data['workflow_id']        = $workflow_id;
         $workitem_data['rdcaccount_id']      = $token_array[0]['rdcaccount_id'];
@@ -308,7 +352,7 @@ class wf_arc extends Default_Table
             // prepend so that workflow tasks are executed before non-workflow tasks
             append2ScriptSequence($next, true);
             // terminate current script and activate designated task
-            scriptPrevious();
+            $this->scriptPrevious();
         } // if
 
         return;

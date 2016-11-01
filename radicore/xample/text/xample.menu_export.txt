@@ -1,4 +1,4 @@
-// file created on June 26, 2014, 11:55 am
+// file created on October 7, 2016, 5:28 pm
     
 // menu details for subsystem XAMPLE
 $array['Auto-Increment']                          = 'Auto-Increment';
@@ -6,6 +6,7 @@ $array['Option']                                  = 'Option';
 $array['Person']                                  = 'Person';
 $array['Person (Multi5)']                         = 'Person (Multi5)';
 $array['Person Type']                             = 'Person Type';
+$array['test_autoincrement']                      = 'test_autoincrement';
 $array['Tree Type']                               = 'Tree Type';
 
 // navigation button details for subsystem XAMPLE
@@ -49,6 +50,7 @@ $array['addr_line_1']                             = 'addr_line_1';
 $array['addr_line_2']                             = 'addr_line_2';
 $array['addr_line_3']                             = 'addr_line_3';
 $array['address_no']                              = 'address_no';
+$array['bitwise']                                 = 'bitwise';
 $array['county']                                  = 'county';
 $array['created_date']                            = 'created_date';
 $array['created_user']                            = 'created_user';

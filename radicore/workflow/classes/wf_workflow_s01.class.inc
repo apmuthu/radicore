@@ -18,7 +18,6 @@ class wf_workflow_s01 extends wf_workflow
         $fieldarray['workflow_errors'] = null;
 
         // ********************************************************************
-        require_once 'classes/wf_place.class.inc';
         $dbplace =& RDCsingleton::getInstance('wf_place');
 
         // check that workflow contains a single START place
@@ -57,7 +56,6 @@ class wf_workflow_s01 extends wf_workflow
         } // if
 
         // ********************************************************************
-        require_once 'classes/wf_arc.class.inc';
         $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         // check that workflow contains at least one arc
@@ -107,6 +105,7 @@ class wf_workflow_s01 extends wf_workflow
 //        	$errors[] = getLanguageText('e0066');
 //        } // if
 
+        // check that there are as many AND-SPLITS as there are AND-JOINS
         $split_count = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type='AND-SPLIT'");
         $join_count  = $dbarc->getCount("workflow_id='$workflow_id' AND arc_type='AND-JOIN'");
         if ($split_count != $join_count) {
@@ -123,17 +122,15 @@ class wf_workflow_s01 extends wf_workflow
             $place_id      = $place['place_id'];
             $place_name    = $place['place_name'];
             $place_type    = $place['place_type'];
-            $inward_count  = 0;
-            $outward_count = 0;
             $dbarc->sql_select  = "wf_place.workflow_id, wf_place.place_id, wf_arc.direction, wf_arc.arc_type";
-            //$dbarc->sql_select .= ", count(arc_type) as arc_count";
             $dbarc->sql_select .= ", (SELECT count(arc_type) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND place_id='$place_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS arc_count";
             $dbarc->sql_from    = "wf_place "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_place.workflow_id AND wf_arc.place_id=wf_place.place_id) ";
-            //$dbarc->sql_groupby = "wf_place.workflow_id, wf_place.place_id, direction, arc_type";
             $dbarc->sql_groupby = '';
             $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND place_id='$place_id'");
+            $inward_count  = 0;
+            $outward_count = 0;
             foreach ($arc_data as $arc) {
                 if ($arc['direction'] == 'IN') $inward_count++;
                 if ($arc['direction'] == 'OUT') $outward_count++;
@@ -159,10 +156,10 @@ class wf_workflow_s01 extends wf_workflow
                             // "Not enough arcs of type 'OR-split (Implicit)' at place '$place_name'"
                             $errors[] = getLanguageText('e0031', $place_name);
                         } // if
-                        if ($arc['arc_count'] > 2) {
-                            // "Too many arcs of type 'OR-split (Implicit)' at place '$place_name'"
-                            $errors[] = getLanguageText('e0065', $place_name);
-                        } // if
+                        //if ($arc['arc_count'] > 2) {
+                        //    // "Too many arcs of type 'OR-split (Implicit)' at place '$place_name'"
+                        //    $errors[] = getLanguageText('e0065', $place_name);
+                        //} // if
                         break;
                     case 'OR-JOIN':
                         if ($arc['direction'] != 'OUT') {
@@ -173,10 +170,10 @@ class wf_workflow_s01 extends wf_workflow
                             // "Not enough arcs of type 'OR-join' at place '$place_name'"
                             $errors[] = getLanguageText('e0033', $place_name);
                         } // if
-//                        if ($arc['arc_count'] > 2) {
-//                            // "Too many arcs of type 'OR-join' at place '$place_name'"
-//                            $errors[] = getLanguageText('e0067', $place_name);
-//                        } // if
+                        //if ($arc['arc_count'] > 2) {
+                        //    // "Too many arcs of type 'OR-join' at place '$place_name'"
+                        //    $errors[] = getLanguageText('e0067', $place_name);
+                        //} // if
                         break;
                     case 'AND-SPLIT':
                         if ($arc['direction'] != 'OUT') {
@@ -212,7 +209,6 @@ class wf_workflow_s01 extends wf_workflow
         } // foreach
 
         // ********************************************************************
-        require_once 'classes/wf_transition.class.inc';
         $dbtransition =& RDCsingleton::getInstance('wf_transition');
 
         // check that workflow contains at least one transition
@@ -226,21 +222,18 @@ class wf_workflow_s01 extends wf_workflow
         foreach ($transition_data as $transition) {
             $transition_id   = $transition['transition_id'];
             $transition_name = $transition['transition_name'];
-            $inward_count    = 0;
-            $outward_count   = 0;
             $inward_count_by_type  = array();
             $outward_count_by_type = array();
             $dbarc->sql_select  = "wf_transition.workflow_id, wf_transition.transition_id, wf_arc.direction, wf_arc.arc_type";
-            //$dbarc->sql_select .= ", count(wf_arc.condition_field) as guard_count";
             $dbarc->sql_select .= ", (SELECT count(condition_field) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS guard_count";
-            //$dbarc->sql_select .= ", count(arc_type) as arc_count";
             $dbarc->sql_select .= ", (SELECT count(arc_type) FROM wf_arc AS x WHERE workflow_id='$workflow_id' AND transition_id='$transition_id' AND x.direction=wf_arc.direction AND x.arc_type=wf_arc.arc_type) AS arc_count";
             $dbarc->sql_from    = "wf_transition "
                                 . "LEFT JOIN wf_arc ON (wf_arc.workflow_id=wf_transition.workflow_id AND wf_arc.transition_id=wf_transition.transition_id) ";
-            //$dbarc->sql_groupby = "wf_transition.workflow_id, wf_transition.transition_id, direction, arc_type";
             $dbarc->sql_groupby = '';
             $dbarc->sql_orderby = 'workflow_id, transition_id, place_id, direction';
             $arc_data = $dbarc->getData("workflow_id='$workflow_id' AND transition_id='$transition_id'");
+            $inward_count    = 0;
+            $outward_count   = 0;
             foreach ($arc_data as $arc) {
                 if ($arc['direction'] == 'IN') {
                     $inward_count++;
@@ -262,18 +255,18 @@ class wf_workflow_s01 extends wf_workflow
                             // "Less than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
                             $errors[] = getLanguageText('e0040', $transition_name);
                         } // if
-//                        if ($arc['arc_count'] > 2) {
-//                            // "More than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
-//                            $errors[] = getLanguageText('e0041', $transition_name);
-//                        } // if
+                        //if ($arc['arc_count'] > 2) {
+                        //    // "More than 2 arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
+                        //    $errors[] = getLanguageText('e0041', $transition_name);
+                        //} // if
                         if ($arc['guard_count'] < 1) {
                             // "Less than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
                             $errors[] = getLanguageText('e0042', $transition_name);
                         } // if
-//                        if ($arc['guard_count'] > 1) {
-//                            // "More than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
-//                            $errors[] = getLanguageText('e0043', $transition_name);
-//                        } // if
+                        //if ($arc['guard_count'] > 1) {
+                        //    // "More than 1 pre-condition specified for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
+                        //    $errors[] = getLanguageText('e0043', $transition_name);
+                        //} // if
                         if ($arc['guard_count'] != ($arc['arc_count']-1)) {
                         	// "Must be 1 empty pre-condition for arcs of type 'OR-split (Explicit)' at transition '$transition_name'"
                         	$errors[] = getLanguageText('e0070', $transition_name);

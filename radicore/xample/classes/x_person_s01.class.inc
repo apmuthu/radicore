@@ -14,8 +14,12 @@ class x_person_s01 extends x_person
     function _cm_initialiseFileDownload ($fieldarray)
     // perform any initialisation for the file download operation.
     {
-        $this->download_filename = $fieldarray['picture'];
-        //$this->download_mode     = 'inline';  // disable option to save
+        if (empty($fieldarray['picture'])) {
+            // "There is no file available for download"
+            $this->errors['picture'] = getLanguageText('sys0254');
+        } else {
+            $this->download_filename = $fieldarray['picture'];
+        } // if
 
         return;
 

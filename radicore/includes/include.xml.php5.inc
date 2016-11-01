@@ -119,6 +119,15 @@ class radicore_view
         // get field specifications for current object (inluding item access details)
         //$fieldspec = $dbobject->getFieldSpec();
 
+        // see if any custom javascript has been defined
+        $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
+        if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
+            $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
+            if (is_array($javascript) AND !empty($javascript)) {
+                $this->javascript = array_merge_recursive($this->javascript, $javascript);
+            } // if
+        } // if
+
         // get data array for current object (indexed by rownum)
         $objectdata = $dbobject->getFieldArray();
         if (!is_long(key($objectdata))) {
@@ -138,13 +147,13 @@ class radicore_view
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
             // see if any custom javascript has been defined
-            $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
-            if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
-                $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
-                if (is_array($javascript) AND !empty($javascript)) {
-                    $this->javascript = array_merge_recursive($this->javascript, $javascript);
-                } // if
-            } // if
+//            $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
+//            if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
+//                $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
+//                if (is_array($javascript) AND !empty($javascript)) {
+//                    $this->javascript = array_merge_recursive($this->javascript, $javascript);
+//                } // if
+//            } // if
             if (!is_array($rowdata)) {
                 // this is not an array, so output as data now
 
@@ -419,8 +428,16 @@ class radicore_view
 
                                 // option for popup fields
                                 if ($spec['control'] == 'popup') {
-                                    if (!array_key_exists($fieldname, $screen_fields)) {
+                                    $zone = $dbobject->zone;
+                                    if ($GLOBALS['mode'] == 'list') {
+                                        // everything is read-only, so skip next bit
+                                        $condition = true;
+                                    } elseif (array_key_exists($zone.'_noedit', $dbobject->xsl_params)) {
+                                        // this zone is read-only, so skip next bit
+                                        $condition = true;
+                                    } elseif (!array_key_exists($fieldname, $screen_fields)) {
                                         // field does not exist in this screen, so skip next bit
+                                        $condition = true;
                                     } else {
                                         $child->setAttribute('control', 'popup');
                                         if (isset($spec['foreign_field'])) {

@@ -8,7 +8,7 @@
 
 $table_id = 'x_pers_opt_xref';          // table name
 
-$popup_task = 'x_option(popup)';
+$popup_task = 'x_option(popup1)';
 
 require_once 'std.add3.inc';            // activate page controller
 

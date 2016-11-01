@@ -320,6 +320,21 @@ class mysql
                     $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
                     logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
                 } // if
+                if (version_compare($this->server_info, '5.7', '>=')) {
+                    $this->query = "SELECT @@SESSION.sql_mode";
+                    $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                    $sql_mode = mysqli_fetch_array($result, MYSQLI_NUM);
+                    if (preg_match('/ONLY_FULL_GROUP_BY/i', $sql_mode[0], $regs)) {
+                        // remove ONLY_FULL_GROUP_BY as it is NOT in the current SQL standards
+                        $modes = explode(',', $sql_mode[0]);
+                        $ix = array_search($regs[0], $modes);
+                        unset($modes[$ix]);
+                        $sql_mode = implode(',', $modes);
+                        $this->query = "SET SESSION sql_mode='$sql_mode'";
+                        $result = mysqli_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
+                        logSqlQuery ($dbname, null, $this->query);  // write query to log file, if option is turned on
+                    } // if
+                } // if
                 $this->query = '';
             } // if
         } // if

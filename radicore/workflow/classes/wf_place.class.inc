@@ -67,6 +67,36 @@ class wf_place extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
+    function _cm_post_deleteRecord ($fieldarray)
+    // perform custom processing after database record has been deleted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_deleteRecord
+
+    // ****************************************************************************
+    function _cm_post_insertRecord ($fieldarray)
+    // perform custom processing after database record has been inserted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_insertRecord
+
+    // ****************************************************************************
+    function _cm_post_updateRecord ($fieldarray, $old_data)
+    // perform custom processing after database record is updated.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_updateRecord
+
+    // ****************************************************************************
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
@@ -102,6 +132,23 @@ class wf_place extends Default_Table
         return;
 
     } // _cm_validateDelete
+
+    // ***************************************************************************
+    function _updateWorkflow ($workflow_id)
+    // set IS_VALID to FALSE to force workflow to be revalidated.
+    {
+        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $update['workflow_id'] = $workflow_id;
+        $update['is_valid']    = FALSE;
+        $update = $dbobject->updateRecord($update);
+        if ($dbobject->errors) {
+            $this->errors[$dbobject->getClassName()] = $dbobject->errors;
+            return false;
+        } // if
+
+        return true;
+
+    } // _updateWorkflow
 
 // ****************************************************************************
 } // end class

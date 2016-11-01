@@ -887,6 +887,14 @@ span.error {
     text-decoration: line-through;
 }
 
+/* show spinner when a button is pressed */
+.loadingspinner {
+    background:
+		    url("../images/spin-red.gif")
+        no-repeat
+        center center;
+}
+
 /* options for printing */
 @media print {
 	div.universe {

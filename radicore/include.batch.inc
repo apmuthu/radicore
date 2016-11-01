@@ -25,10 +25,10 @@ function batchInit ($batchfile)
     chdir($curr_dir);                   // set current working directory to this
 
     // retrieve variables from file
-    if (file_exists('batch.ini')) {
-    	$ini_array = parse_ini_file('batch.ini');           // use custom file
+    if (file_exists('../batch.ini')) {
+    	$ini_array = parse_ini_file('../batch.ini');           // use custom file
     } else {
-        $ini_array = parse_ini_file('batch.ini.default');   // use default file
+        $ini_array = parse_ini_file('../batch.ini.default');   // use default file
     } // if
 
     if (isset($stdout) AND !preg_match('~(/dev/null)$~i', $stdout)) {
@@ -92,10 +92,10 @@ function batchInit ($batchfile)
     //
 
     // look for INCLUDE_PATH in optional htaccess file
-    if (file_exists('.htaccess')) {
-    	$fn = '.htaccess';
-    } elseif (file_exists('htaccess.txt')) {
-        $fn = 'htaccess.txt';
+    if (file_exists('../htaccess.txt')) {
+        $fn = '../htaccess.txt';
+    } elseif (file_exists('../.htaccess')) {
+        $fn = '../.htaccess';
     } // if
     if (!empty($fn)) {
     	$handle = fopen($fn, 'r');
@@ -118,10 +118,10 @@ function batchInit ($batchfile)
     	ini_set('include_path', trim($ini_array['include_path'], "'"));
     } // if
 
-    if (file_exists('user.ini')) {
-        $fn = 'user.ini';
-    } elseif (file_exists('.user.ini')) {
-        $fn = '.user.ini';
+    if (file_exists('../user.ini')) {
+        $fn = '../user.ini';
+    } elseif (file_exists('../.user.ini')) {
+        $fn = '../.user.ini';
     } // if
     if (!empty($fn)) {
         // alternative to htaccess when run as CGI/FastCGI

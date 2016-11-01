@@ -249,7 +249,7 @@ $array['sys0221'] = "Maximum value cannot be less than Minimum value";
 $array['sys0222'] = "Invalid value for '%1\$s'";
 $array['sys0223'] = "LIMIT must be a number which is greater than or equal to 1";
 $array['sys0224'] = "OFFSET must be a number which is greater than or equal to 0";
-$array['sys0225'] = "";
+$array['sys0225'] = "'%1\$s' must be blank if '%2\$s' is not blank";
 $array['sys0226'] = "";
 $array['sys0227'] = "1st argument must be an object";
 $array['sys0228'] = "2rd argument must be an object";
@@ -281,12 +281,23 @@ $array['sys0250'] = "Cannot save this selection without a description";
 $array['sys0251'] = "Screen Structure file has not been supplied";
 $array['sys0252'] = "User 'anonymous' has not been defined";
 $array['sys0253'] = "Value for '%1\$s' is missing from INITIAL_VALUES";
-$array['sys0254'] = "";
+$array['sys0254'] = "There is no file available for download";
 $array['sys0255'] = "";
 $array['sys0256'] = "";
 $array['sys0257'] = "";
 $array['sys0258'] = "";
 $array['sys0259'] = "";
+
+$array['sys0260'] = "Date cannot be later than today";
+$array['sys0261'] = "";
+$array['sys0262'] = "";
+$array['sys0263'] = "";
+$array['sys0264'] = "";
+$array['sys0265'] = "";
+$array['sys0266'] = "";
+$array['sys0267'] = "";
+$array['sys0268'] = "";
+$array['sys0269'] = "";
 
 // the following entries are label text for ACTION buttons
 $array['cancel']     = 'CANCEL';

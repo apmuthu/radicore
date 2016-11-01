@@ -8,6 +8,8 @@ if (!class_exists('wf_workflow')) {
 } // if
 class workflow_engine extends wf_workflow
 {
+    var $wf_user_id;
+
     // ****************************************************************************
     // This subclass deals with cases, or instances of workflow processes.
     // ****************************************************************************
@@ -28,7 +30,6 @@ class workflow_engine extends wf_workflow
         $context = trim($context, '()');
 
         // create a case (workflow instance) for this task
-        require_once 'classes/wf_case.class.inc';
         $dbcase =& RDCsingleton::getInstance('wf_case');
 
         // there may be more than one workflow, but it is unlikely
@@ -59,7 +60,6 @@ class workflow_engine extends wf_workflow
         $GLOBALS['classdir'] = dirname($this->dirname);
 
         // retrieve the current workitem
-        require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
@@ -105,7 +105,6 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find tokens on all input arcs (there may be more than one)
-        require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id, token_status';
@@ -119,7 +118,6 @@ class workflow_engine extends wf_workflow
         } // if
 
         // now mark them all as consumed
-        require_once 'classes/wf_token.class.inc';
         $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
@@ -140,7 +138,7 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         if ($arc_type_in == 'OR-SPLIT-I') {
-            // ensure the other Implicit OR-split is cancelled
+            // ensure that the other transitions from this place are cancelled
             $this->_cancelSplit ($workflow_id, $transition_id, $case_id, $place_id_in, $arc_type_in);
             if ($this->errors) {
                 return;
@@ -192,8 +190,8 @@ class workflow_engine extends wf_workflow
                     $this->errors[] = getLanguageText('e0012');
                     return;
                 } // if
-                // create a single new token
-                $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0]);
+                // create a single new token (use $this->wf_user_id in case it has been changed)
+                $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0], $this->wf_user_id);
                 if ($this->errors) return;
                 break;
 
@@ -205,7 +203,7 @@ class workflow_engine extends wf_workflow
                 } // if
                 // create a new token in every output place
                 foreach ($arc_data as $arc) {
-                    $result = $this->_createToken($dbtoken, $token_data, $arc);
+                    $result = $this->_createToken($dbtoken, $token_data, $arc, $this->wf_user_id);
                     if ($this->errors) return;
                 } // foreach
                 break;
@@ -233,7 +231,7 @@ class workflow_engine extends wf_workflow
                         } // if
                     } // if
                     if ($result == TRUE) {
-                        $token_data = $this->_createToken($dbtoken, $token_data, $arc);
+                        $token_data = $this->_createToken($dbtoken, $token_data, $arc, $this->wf_user_id);
                         if ($this->errors) return;
                         break;
                     } // if
@@ -248,7 +246,7 @@ class workflow_engine extends wf_workflow
                     return;
                 } // if
                 // create a single new token
-                $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0]);
+                $token_data = $this->_createToken($dbtoken, $token_data, $arc_data[0], $this->wf_user_id);
                 if ($this->errors) return;
                 break;
 
@@ -360,7 +358,6 @@ class workflow_engine extends wf_workflow
         $context       = trim($fieldarray['context'], '()');
 
         // mark this workitem as finished
-        require_once 'classes/wf_workitem.class.inc';
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
@@ -389,7 +386,6 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find token on input arc (there should be only one)
-        require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id';
@@ -419,7 +415,6 @@ class workflow_engine extends wf_workflow
         } // if
 
         // now mark it as consumed
-        require_once 'classes/wf_token.class.inc';
         $dbtoken =& RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
@@ -500,11 +495,12 @@ class workflow_engine extends wf_workflow
     } // _cancelSplit
 
     // ****************************************************************************
-    function _createToken ($dbtoken, $token_data, $arc_data)
+    function _createToken ($dbtoken, $token_data, $arc_data, $wf_user_id)
     // create a token at the designated place for this workflow case
     {
         $token_data['place_id']   = $arc_data['place_id'];
         $token_data['place_type'] = $arc_data['place_type'];
+        $token_data['user_id']    = $wf_user_id;
         $token_data = $dbtoken->insertRecord($token_data);
         if ($dbtoken->errors) {
             $this->errors = array_merge($this->errors, $dbtoken->getErrors());

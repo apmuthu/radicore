@@ -196,6 +196,36 @@ class wf_transition extends Default_Table
     } // _cm_popupCall
 
     // ****************************************************************************
+    function _cm_post_deleteRecord ($fieldarray)
+    // perform custom processing after database record has been deleted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_deleteRecord
+
+    // ****************************************************************************
+    function _cm_post_insertRecord ($fieldarray)
+    // perform custom processing after database record has been inserted.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_insertRecord
+
+    // ****************************************************************************
+    function _cm_post_updateRecord ($fieldarray, $old_data)
+    // perform custom processing after database record is updated.
+    {
+        $result = $this->_updateWorkflow($fieldarray['workflow_id']);
+
+        return $fieldarray;
+
+    } // _cm_post_updateRecord
+
+    // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $fieldarray=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
@@ -257,6 +287,23 @@ class wf_transition extends Default_Table
         return $rowdata;
 
     } // _cm_pre_updateRecord
+
+    // ***************************************************************************
+    function _updateWorkflow ($workflow_id)
+    // set IS_VALID to FALSE to force workflow to be revalidated.
+    {
+        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $update['workflow_id'] = $workflow_id;
+        $update['is_valid']    = FALSE;
+        $update = $dbobject->updateRecord($update);
+        if ($dbobject->errors) {
+            $this->errors[$dbobject->getClassName()] = $dbobject->errors;
+            return false;
+        } // if
+
+        return true;
+
+    } // _updateWorkflow
 
 // ****************************************************************************
 } // end class

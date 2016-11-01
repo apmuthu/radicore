@@ -64,7 +64,6 @@ class wf_token extends Default_Table
     {
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
-            require_once 'wf_case.class.inc';
             $dbobject =& RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
@@ -143,7 +142,6 @@ class wf_token extends Default_Table
             if ($this->errors) return $fieldarray;
 
             // mark any outstanding workitems as cancelled
-            require_once 'classes/wf_workitem.class.inc';
             $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
             $where = "case_id='{$fieldarray['case_id']}' AND workitem_status IN ('EN', 'IP')";
             $workitem_data = $dbworkitem->updateSelection($where);
@@ -153,7 +151,6 @@ class wf_token extends Default_Table
             } // if
 
             // mark this case as closed
-            require_once 'classes/wf_case.class.inc';
             $dbcase =& RDCsingleton::getInstance('wf_case');
             $case_data['case_id']       = $fieldarray['case_id'];
             $case_data['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
@@ -172,7 +169,6 @@ class wf_token extends Default_Table
         $place_id = $fieldarray['place_id'];
 
         // find all transitions which are joined to this place via INWARD arcs
-        require_once 'classes/wf_arc.class.inc' ;
         $dbarc =& RDCsingleton::getInstance('wf_arc');
         $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit';
         $dbarc->sql_from = 'wf_arc '
@@ -183,12 +179,12 @@ class wf_token extends Default_Table
         foreach ($arc_data as $arc_instance) {
             $arc_instance['case_id'] = $fieldarray['case_id'];
             $arc_instance['context'] = $fieldarray['context'];
-            $arc_instance['user_id'] = $fieldarray['user_id'];
-            if (empty($arc_instance['role_id'])) {
-                // not defined, so default to current user's role_id
+            if (!empty($arc_instance['role_id'])) {
+                // role_id has been specified, so unassign from user
+                $arc_instance['user_id'] = null;
+            } else {
+                // assign to role_id and optionally a specific user_id
             	$arc_instance['role_id'] = $_SESSION['role_id'];
-            } // if
-            if (!empty($fieldarray['user_id'])) {
                 $arc_instance['user_id'] = $fieldarray['user_id'];
             } // if
             $arc_instance = $dbarc->examineInwardArc($arc_instance);

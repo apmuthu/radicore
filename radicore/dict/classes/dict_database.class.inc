@@ -6,7 +6,9 @@
 require_once 'std.table.class.inc';
 class dict_dataBase extends Default_Table
 {
-    var $count;         // record count for PDF output
+    var $count;         // subsystem count for PDF output
+    var $table_count;   // count of tables within all subsystems
+    var $rel_count;     // count of relationships within all subsystems
 
     // ****************************************************************************
     // class constructor
@@ -160,6 +162,8 @@ class dict_dataBase extends Default_Table
 
         $array['database_id'] = 'Total count:';
         $array['database_desc'] = $this->count;
+        $array['table_count']   = $this->table_count;
+        $array['rel_count_snr'] = $this->rel_count;
 
         return $array;
 
@@ -172,6 +176,8 @@ class dict_dataBase extends Default_Table
         if ($GLOBALS['mode'] == 'pdf-list') {
             // accumulate totals for PDF report
             $this->count++;
+            $this->table_count = $this->table_count + $fieldarray['table_count'];
+            $this->rel_count   = $this->rel_count   + $fieldarray['rel_count_snr'];
         } // if
 
         return $fieldarray;

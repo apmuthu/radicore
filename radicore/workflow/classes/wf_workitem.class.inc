@@ -180,10 +180,12 @@ class wf_workitem extends Default_Table
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
-            $this->sql_select = 'rdcaccount_id, user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, transition_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name, task_desc';
+            $this->sql_select = 'rdcaccount_id, user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, transition_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name';
+            $this->sql_select .= ", COALESCE({$menuDB}mnu_task_alt.task_desc, {$menuDB}mnu_task.task_desc) AS task_desc";
             $this->sql_from   = 'wf_workitem '
                               . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
-                              . 'LEFT JOIN '.$menuDB.'mnu_task ON (mnu_task.task_id=wf_workitem.task_id) ';
+                              . "LEFT JOIN {$menuDB}mnu_task     ON (mnu_task.task_id    =wf_workitem.task_id) "
+                              . "LEFT JOIN {$menuDB}mnu_task_alt ON (mnu_task_alt.task_id=wf_workitem.task_id AND mnu_task_alt.language_id='{$_SESSION['user_language']}')";
         } // if
 
         return $where;

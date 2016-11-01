@@ -1,46 +1,49 @@
 <?php
-    // file created on September 17, 2007, 9:57 am
+    // file created on October 3, 2016, 9:36 am
     
     // field specifications for table workflow.wf_workitem
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
+                                                    'type_native' => 'int',
                                                     'size' => 11,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'required' => 'y',
-                                                    'default' => '1');
+                                                    'default' => '1',
+                                                    'nodisplay' => 'y',
+                                                    'nosearch' => 'y');
     
     $fieldspec['case_id']                   = array('type' => 'integer',
+                                                    'type_native' => 'int',
                                                     'size' => 10,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'pkey' => 'y',
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'required' => 'y');
     
     $fieldspec['workitem_id']               = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'required' => 'y');
     
     $fieldspec['workflow_id']               = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'workflow_id',
                                                     'noedit' => 'y');
     
     $fieldspec['transition_id']             = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'transition_id',
                                                     'noedit' => 'y');
@@ -134,12 +137,16 @@
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'task_desc',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
                                                     'parent_field' => 'user_name',
+                                                    'alt_language_table' => 'mnu_user_alt',
+                                                    'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));
     
     $this->parent_relations[]               = array('parent' => 'wf_case',
@@ -159,6 +166,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'workflow_id, case_id, workitem_id';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

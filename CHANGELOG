@@ -1,5 +1,19 @@
 ﻿RADICORE for PHP - news
 
+2016-11-01, version 2.01.0
+Database changes:
+- none
+
+Other changes:
+- updated 'include.xml.php5.inc' so that when a LIST pattern is executed it will not read the MNU_TASK data for popup tasks in order to obtain the text for the tooltip.
+- tidied up batch processing by copying file 'std.batch.inc' from each subsystem directory and renaming it as 'include.batch.inc' in the parent directory. Updated each 'std.batch.inc' so that it refers to '../include.batch.inc'. Also copied 'batch.ini.default' and 'batch.ini' from each subsystem directory into the parent directory. This means that I can update the code in '../include.batch.inc' in just one place instead of multiple directories, and that each installation needs only one copy of 'batch.ini'.
+- included file 'custom_javascript.class.inc' which will allow javascript to be specified globally for all forms and/or all fields.
+- created 'javascript' directory to contain scripts 'jquery-3.1.1.min.js' and 'jquery.cookie.min.js' which will disable a submit button when it is pressed and overlay it with a spinning red circle. This will prevent the problems caused by a user who presses a submit button more than once, thus sending multiple requests to the server.
+- modified 'include.xml.php5.inc' so that call to form_level_js() in 'custom_javascript.class.inc' is only performed once for each form.
+- updated Workflow system to allow more than two arcs on an implicit-OR-split, and removed restriction that one of the transitions must be triggered via a TIMER.
+- fixed bug which prevented putting all Radicore schemas into a single database.
+- modified 'database(output2).php' so that the PDF output shows the count of tables and relationships in each subsystem.
+
 2016-10-01, version 2.00.0
 Database changes:
 - run script menu\sql\mysql\alter_table(2016-08-30).sql to alter the structure of the MENU database.

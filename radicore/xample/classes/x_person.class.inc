@@ -527,7 +527,7 @@ class x_person extends Default_Table
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
     {
-        if ($popupname == 'x_tree_structure(popup)') {
+        if ($popupname == 'x_tree_structure(popup4)') {
             // structure must be of type 'ORG'
             $where = "tree_type_id='ORG'";
         } // if

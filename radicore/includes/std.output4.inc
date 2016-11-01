@@ -189,6 +189,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $messages = $dbobject->getMessages();
 
                 if (!empty($output)) {
+                    // remove spinner and re-enable submit button
+                    setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+30);
     	            // download to client browser
                     header("Content-type: text/comma-separated-values");
                     header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
@@ -196,9 +198,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
                     header('Pragma: public');
                     echo $output;
+                    //scriptPrevious($errors, $messages);
                 } // if
-                //unset($_SESSION['pages'][getSelf()]);
-                //scriptPrevious($errors, $messages);
                 exit;
             } // if
         } // if

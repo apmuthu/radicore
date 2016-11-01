@@ -583,6 +583,7 @@ CREATE TABLE mnu_todo (
   repeat_unit char(1) DEFAULT NULL,
   task_id nvarchar(80) DEFAULT NULL,
   task_context nvarchar(255) DEFAULT NULL,
+  object_id nvarchar(255) DEFAULT NULL,
   created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2 DEFAULT NULL,

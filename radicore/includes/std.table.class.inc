@@ -425,11 +425,10 @@ abstract class Default_Table
         $this->sql_union = null;
 
         $DML =& $this->_getDBMSengine($this->dbname);
-        if ($errors) {
-            $result = $DML->rollback($this->dbname_server);
-        } else {
-            $result = $DML->commit($this->dbname_server);
-            if ($result AND is_True($update_script_vars)) {
+
+        $result = $DML->commit($this->dbname_server);
+        if ($result) {
+            if (is_True($update_script_vars)) {
                 // update has been committed, so remove any 'run_at_cancel' reference
                 if ($this->initiated_from_controller) {
                     if (isset($GLOBALS['script_vars']['task_id_run_at_cancel'])) {
@@ -438,9 +437,9 @@ abstract class Default_Table
                     } // if
                     $script_vars = updateScriptVars($GLOBALS['script_vars']);
                 } // if
-            } else {
-                $errors[] = $this->getLanguageText('sys0009'); // 'Commit failed'
             } // if
+        } else {
+            $errors[] = $this->getLanguageText('sys0009'); // 'Commit failed'
         } // if
 
         $GLOBALS['transaction_has_started'] = FALSE;
@@ -5285,7 +5284,11 @@ abstract class Default_Table
 
         $dbobject->sql_select = 'role_id, task_id, field_id, access_type';
         $dbobject->sql_from   = 'mnu_role_taskfield ';
-        $dbobject->sql_where  = "mnu_role_taskfield.role_id IN($role_list)";
+        if (!empty($role_list)) {
+            $dbobject->sql_where  = "mnu_role_taskfield.role_id IN($role_list)";
+        } else {
+            $dbobject->sql_where  = "mnu_role_taskfield.role_id = '$role_id'";
+        } // if
 
         $dbobject->sql_orderby = 'field_id ASC, access_type DESC';  // force NED before NDI
         $PHP_SELF = getSelf();  // reduce PHP_SELF to '/dir/file.php'
@@ -8449,6 +8452,9 @@ abstract class Default_Table
                     $aliasnames = extractTableNames($this->sql_from);
                     // switch array from 'alias=name' to 'name=alias'
                     $aliasnames = array_flip($aliasnames);
+                    if (!array_key_exists($this->tablename, $aliasnames)) {
+                        $aliasnames[$this->tablename] = $this->tablename;  // there is no alias, so use original name
+                    } // if
                     // use '*' to indicate ALL columns
                     $DML->sql_select = $aliasnames[$this->tablename] .'.*, ' .$DML->sql_select;
                     // replace '*' (all columns) with a list of columns names, qualified by table/alias name
@@ -8624,12 +8630,16 @@ abstract class Default_Table
         // interface with the workflow engine
         $workflow =& RDCsingleton::getInstance('workflow_engine');
 
+        $res = $workflow->startTransaction();
+
         // look to see if this task is a workitem within an existing workflow case
         if (isset($wf_case_id) and isset($wf_workitem_id)) {
+            $workflow->wf_user_id = $this->wf_user_id;  // use this value for new transitions
             // yes it is, so mark it as finished
             $workflow->finishWorkItem($wf_case_id, $wf_workitem_id, $context, $fieldarray);
             if ($workflow->errors) {
                 $this->errors = array_merge($this->errors, $workflow->getErrors());
+                $res = $workflow->rollback();
                 return $this->errors;
             } // if
             return;
@@ -8639,8 +8649,11 @@ abstract class Default_Table
         $wf_case_id = $workflow->startWorkflowCase($GLOBALS['task_id'], $context);
         if ($workflow->errors) {
             $this->errors = array_merge($this->errors, $workflow->getErrors());
+            $res = $workflow->rollback();
             return $this->errors;
         } // if
+
+        $res = $workflow->commit(false, false);
 
         unset($workflow);
 
@@ -8755,6 +8768,7 @@ abstract class Default_Table
         // workitem exists, so store details
         $this->wf_case_id     = $workitem_data['case_id'];
         $this->wf_workitem_id = $workitem_data['workitem_id'];
+        $this->wf_user_id     = $workitem_data['user_id'];
 
         if ($workitem_data['context'] != stripslashes($context)) {
             // current primary key does not match workitem context, so ...
@@ -8917,7 +8931,7 @@ abstract class Default_Table
         $engine = null;
         // check if database name has been changed in the config file
         list($dbname2, $dbprefix, $dbms_engine) = findDBConfig($dbname);
-        $this->dbname_server = $dbprefix.$dbname;
+        $this->dbname_server = $dbprefix.$dbname2;
         $this->dbprefix      = $dbprefix;
         $args    = array('dbname' => $this->dbname_server);
 

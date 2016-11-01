@@ -20,15 +20,17 @@ $structure['title'][] = array('text' => '- Contents of DICT_DATABASE table -',
 
 // set column widths
 $structure['columns'][] = array('width' => 35);
-$structure['columns'][] = array('width' => 80);
-$structure['columns'][] = array('width' => 132);
-$structure['columns'][] = array('width' => 30);
+$structure['columns'][] = array('width' => 80, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 112, 'overflow' => 'y');
+$structure['columns'][] = array('width' => 20, 'align' => 'center');
+$structure['columns'][] = array('width' => 30, 'align' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('database_id' => 'Database Id');
 $structure['body']['fields'][] = array('database_desc' => 'Description');
 $structure['body']['fields'][] = array('db_comment' => 'Comment');
-$structure['body']['fields'][] = array('subsys_id' => 'Subsys Id');
+$structure['body']['fields'][] = array('table_count' => 'Tables');
+$structure['body']['fields'][] = array('rel_count_snr' => 'Relationships');
 
 // define contents of page footer
 $structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'halign' => 'left');

@@ -8,7 +8,7 @@
 //DebugBreak();
 $table_id = 'x_tree_node_jnr';              // table name
 
-$popup_screen = 'x_tree_node_jnr(popup)';
+$popup_screen = 'x_tree_node(popup2)jnr';
 //$popup_repeat = TRUE;
 
 require 'std.update2.inc';                  // activate page controller

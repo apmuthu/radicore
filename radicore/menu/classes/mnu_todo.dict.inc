@@ -1,5 +1,5 @@
 <?php
-    // file created on August 30, 2016, 11:19 am
+    // file created on October 11, 2016, 8:51 am
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -132,7 +132,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'due_date desc, seq_no desc';
+    $this->default_orderby                  = 'user_id, due_date, seq_no';
     
     // alternative language options 
     $this->alt_language_table               = '';

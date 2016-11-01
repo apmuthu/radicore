@@ -100,9 +100,12 @@ if ((!$conn_id) OR (!$login_result)) {
 $local_file = $temp_folder.'/'.basename($remote_file);
 $result = ftp_get($conn_id, $local_file, $remote_file, FTP_BINARY);
 
-// determine the mime-type for the specified file
-$content_type = getContentType($local_file);
+$content_type = getContentType($file);  // determine the mime-type for the specified file
 
+// remove spinner and re-enable submit button
+setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+30);
+
+// send file to client browser
 header("Content-type: " . $content_type);
 header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 if (isset($mode) and $mode == 'inline') {
