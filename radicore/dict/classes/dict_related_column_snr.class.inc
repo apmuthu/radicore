@@ -62,13 +62,13 @@ class dict_related_column_snr extends dict_related_column
         //$this->row_locks = 'EX';    // exclusive
 
         // verify that SEQ_IN_INDEX holds correct value
-        $object =& RDCsingleton::getInstance('dict_table_key');
+        $dbobject =& RDCsingleton::getInstance('dict_table_key');
         $db_id  = $rowdata['database_id_snr'];
         $tbl_id = $rowdata['table_id_snr'];
         $key_id = 'PRIMARY';
         $col_id = $rowdata['column_id_snr'];
         $dbobject->sql_select = 'seq_in_index';
-        $data = $object->getData_raw("database_id='$db_id' AND table_id='$tbl_id' AND key_name='$key_id' AND column_id='$col_id'");
+        $data = $dbobject->getData_raw("database_id='$db_id' AND table_id='$tbl_id' AND key_name='$key_id' AND column_id='$col_id'");
         if (!empty($data)) {
         	$rowdata['seq_in_index'] = $data[0]['seq_in_index'];
         } // if

@@ -358,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $search_table = $dbobject->tablename;
             } // if
             if (empty($search)) {
-                if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
+                if (isset($_SESSION['search']) AND is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
                     // clear saved search criteria
                     unset($_SESSION['search'][$search_table]);
                 } // if

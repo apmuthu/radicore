@@ -30,8 +30,8 @@ class mnu_task extends Default_Table
     // validate a selection from the menu screen or a navigation button.
     {
         // obtain security class from logon screen
-        $role_id       = $_SESSION['role_id'];
-        $role_list     = $_SESSION['role_list'];
+        $role_id       =& $_SESSION['role_id'];
+        $role_list     =& $_SESSION['role_list'];
         $ip_address    = getRealIPAddress();
 
         if (empty($role_id))   $role_id   = 'UNDEFINED';

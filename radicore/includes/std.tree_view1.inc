@@ -58,6 +58,9 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get current data from this instance
     $fieldarray = $dbobject->getFieldArray();
+    if (isset($_GET['action']) AND isset($_GET['row'])) {
+        $dbobject->performAction($_GET['action'], $_GET['row']);
+    } // if
 } else {
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
@@ -163,7 +166,7 @@ if (!empty($errors)) {
     if ($dbobject->getNumRows() < 1) {
         $messages[] = getLanguageText('sys0085'); // 'Nothing retrieved from the database.'
     } // if
-    if (isset($_GET['action'])) {
+    if (isset($_GET['action']) AND !isset($_GET['row'])) {
         $fieldarray = $dbobject->setAction($_GET['action']);
     } // if
 } // if

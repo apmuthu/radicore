@@ -8,14 +8,14 @@ class mnu_task_s03 extends mnu_task
 {
     // ****************************************************************************
     // this class is for use by script: mnu_task_(pdf)3.php
-    // purpose: to print nav_buuton details for each task
+    // purpose: to print nav_button details for each task
     // ****************************************************************************
 
     // ****************************************************************************
     function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         $this->sql_select = 'task_id, task_desc, task_type, count(task_id_snr) AS button_count';

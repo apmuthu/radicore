@@ -73,9 +73,6 @@ class wf_workitem extends Default_Table
 
         if (!array_key_exists('workflow_id', $this->lookup_data)) {
             // get list of workflow names
-            if (!class_exists('wf_workflow', false)) {
-            	require_once 'classes/wf_workflow.class.inc';
-            } // if
             $dbobject =& RDCsingleton::getInstance('wf_workflow');
             $array = $dbobject->getValRep('workflow_id');
             $this->lookup_data['workflow_id'] = $array;
@@ -180,12 +177,14 @@ class wf_workitem extends Default_Table
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
-            $this->sql_select = 'rdcaccount_id, user_id, role_id, wf_workitem.workflow_id, case_id, workitem_id, transition_id, wf_workitem.task_id, transition_trigger, workitem_status, enabled_date, cancelled_date, finished_date, deadline, context, workflow_name';
-            $this->sql_select .= ", COALESCE({$menuDB}mnu_task_alt.task_desc, {$menuDB}mnu_task.task_desc) AS task_desc";
-            $this->sql_from   = 'wf_workitem '
-                              . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
-                              . "LEFT JOIN {$menuDB}mnu_task     ON (mnu_task.task_id    =wf_workitem.task_id) "
-                              . "LEFT JOIN {$menuDB}mnu_task_alt ON (mnu_task_alt.task_id=wf_workitem.task_id AND mnu_task_alt.language_id='{$_SESSION['user_language']}')";
+            $this->sql_select  = 'wf_workitem.rdcaccount_id, wf_workitem.user_id, wf_workitem.role_id, wf_workitem.workflow_id, wf_workitem.case_id, wf_workitem.workitem_id, wf_workitem.transition_id, wf_workitem.task_id, wf_workitem.transition_trigger, wf_workitem.workitem_status, wf_workitem.enabled_date, wf_workitem.cancelled_date, wf_workitem.finished_date, wf_workitem.deadline, wf_workitem.context';
+            $this->sql_select .= ', wf_workflow.workflow_name, wf_case.case_status';
+            $this->sql_select .= ", COALESCE(mnu_task_alt.task_desc, mnu_task.task_desc) AS task_desc";
+            $this->sql_from    = 'wf_workitem '
+                               . 'LEFT JOIN wf_workflow ON (wf_workflow.workflow_id=wf_workitem.workflow_id) '
+                               . 'LEFT JOIN wf_case     ON (wf_case.case_id=wf_workitem.case_id) '
+                               . "LEFT JOIN {$menuDB}mnu_task     ON (mnu_task.task_id    =wf_workitem.task_id) "
+                               . "LEFT JOIN {$menuDB}mnu_task_alt ON (mnu_task_alt.task_id=wf_workitem.task_id AND mnu_task_alt.language_id='{$_SESSION['user_language']}')";
         } // if
 
         return $where;

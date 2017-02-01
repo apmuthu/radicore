@@ -556,6 +556,7 @@ END_OF_REGEX;
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
+            $start_time = getMicroTime();
             //$dbconn = oci_pconnect($this->dbusername, $this->dbuserpass, $this->dbhost, 'UTF8');
             $dbconn = oci_connect($this->dbusername, $this->dbuserpass, $this->dbhost, 'UTF8');
             if ($dbconn) {
@@ -582,6 +583,10 @@ END_OF_REGEX;
 //                $this->query = "ALTER SESSION SET NLS_SORT=BINARY_CI";
 //                $this->stmt  = oci_parse($dbconn, $this->query);
 //                $result = oci_execute($this->stmt) or trigger_error($this, E_USER_ERROR);
+
+                // write query to log file, if option is turned on
+                $end_time = getMicroTime();
+                logSqlQuery ($dbname, null, 'CONNECT', null, $start_time, $end_time);
             } // if
         } // if
         if (!$dbconn) {
@@ -589,6 +594,8 @@ END_OF_REGEX;
         } //
 
         if (!empty($schema)) {
+            $start_time = getMicroTime();
+
             $this->query = 'ALTER SESSION SET CURRENT_SCHEMA = "' .strtoupper($schema) .'"';
             $this->stmt  = oci_parse($dbconn, $this->query);
             if (!$result = oci_execute($this->stmt)) {
@@ -602,8 +609,10 @@ END_OF_REGEX;
             	    trigger_error($this, E_USER_ERROR);
             	} // if
             } // if
+
             // write query to log file, if option is turned on
-            logSqlQuery ($schema, null, $this->query);
+            $end_time = getMicroTime();
+            logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
         } // if
 
         $this->query     = '';

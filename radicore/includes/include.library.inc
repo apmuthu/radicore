@@ -222,7 +222,7 @@ if (!function_exists('append2ScriptSequence')) {
             } // if
         } // if
 
-        if ($prepend == true AND is_array($_SESSION['script_sequence'])) {
+        if ($prepend == true AND isset($_SESSION['script_sequence']) AND is_array($_SESSION['script_sequence'])) {
             // prepend to existing array
             $count = array_unshift($_SESSION['script_sequence'], $next);
         } else {
@@ -277,13 +277,13 @@ if (!function_exists('array_update_associative')) {
     // will not create any items in $array1 which did not previously exist.
     {
         reset($array1);  // fix for version 4.4.1
-        if (!is_string(key($array1))) {
+        if (!empty($array1) AND !is_string(key($array1))) {
             // indexed by row, so use row zero only
             $array1 = $array1[key($array1)];
         } // if
 
         reset($array2);  // fix for version 4.4.1
-        if (!is_string(key($array2))) {
+        if (!empty($array2) AND !is_string(key($array2))) {
             // indexed by row, so use row zero only
             $array2 = $array2[key($array2)];
         } // if
@@ -303,10 +303,12 @@ if (!function_exists('array_update_associative')) {
                             $array2[$fieldname] = number_unformat($array2[$fieldname]);
                         } // if
                     } // if
+                } else {
+                    $spec = array();
                 } // if
                 //if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
 				//if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
-                if (($spec['type'] == 'array' OR preg_match('/^(multidrop|m_checkbox|checkbox_multi)$/i', $spec['control'])) AND is_array($array2[$fieldname])) {
+                if (!empty($spec) AND ($spec['type'] == 'array' OR (isset($spec['control']) AND preg_match('/^(multidrop|m_checkbox|checkbox_multi)$/i', $spec['control'])) AND is_array($array2[$fieldname]))) {
                     $array1[$fieldname] = $array2[$fieldname];  // both arrays, so update
                 } elseif (!is_array($array2[$fieldname]) AND !is_array($array1[$fieldname])) {
                     $array1[$fieldname] = $array2[$fieldname];  // both scalars, so update
@@ -332,13 +334,13 @@ if (!function_exists('array_update_empty')) {
     // $allow_null will copy an empty field from array2 to array1 if it does not already exist in array1
     {
         reset($array1);  // fix for version 4.4.1
-        if (!is_string(key($array1))) {
+        if (!empty($array1) AND !is_string(key($array1))) {
             // indexed by row, so use row zero only
             $array1 = $array1[key($array1)];
         } // if
 
         reset($array2);  // fix for version 4.4.1
-        if (!is_string(key($array2))) {
+        if (!empty($array2) AND !is_string(key($array2))) {
             // indexed by row, so use row zero only
             $array2 = $array2[key($array2)];
         } // if
@@ -383,7 +385,7 @@ if (!function_exists('array_update_indexed')) {
             if (is_array($valuearray)) {
                 // copy row value from $postarray to $fieldarray for current $fieldname
                 foreach ($valuearray as $rownum => $value) {
-                    if (preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
+                    if (isset($spec['type']) AND preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
                         $value = number_unformat($value);
                     } // if
                     if ($fieldarray_key == 0) {
@@ -400,7 +402,7 @@ if (!function_exists('array_update_indexed')) {
                 } // foreach
             } else {
                 // value is not an array, so insert it into every row
-                if (preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
+                if (isset($spec['type']) AND preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
                     $valuearray = number_unformat($valuearray);
                 } // if
                 foreach ($fieldarray as $rownum => $rowdata) {
@@ -1488,6 +1490,28 @@ if (!function_exists('extractFieldNamesAssoc')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('extractNamedFields')) {
+    function extractNamedFields ($fieldarray, $old_name, $new_name=null)
+    // iterate through $fieldarray looking for fields with $old_prefix, and return them.
+    // if $new_prefix is defined then use this instead of $old_prefix
+    {
+        $output = array();
+
+        foreach ($fieldarray as $name => $value) {
+            if (preg_match("/$old_name/i", $name, $regs)) {
+                if (!empty($new_name)) {
+                    $name = str_replace($regs[0], $new_name, $name);
+                } // if
+                $output[$name] = $value;
+            } // if
+        } // foreach
+
+        return $output;
+
+    } // extractNamedFields
+} // if
+
+// ****************************************************************************
 if (!function_exists('extractFieldNamesIndexed')) {
     function extractFieldNamesIndexed ($sql_select)
     // extract field names from $sql_select and return an indexed array in
@@ -2333,10 +2357,13 @@ END_OF_REGEX;
 
 // ****************************************************************************
 if (!function_exists('findClosingParenthesis')) {
-    function findClosingParenthesis(&$string)
+    function findClosingParenthesis(&$string, $found='(')
     // an expression starts with '(', so look for the closing ')', but ignore
     // any nested '(...)', or ')' inside quoted strings.
+    // NOTE: $found may contain more than one '(', so look for same number of ')'
     {
+        $lookup = str_replace('(', ')', $found);  // look for closing braces
+
         // this pattern had to be split into 2 as it aborted with some strings
 //        $pattern3 = <<< END_OF_REGEX
 ///
@@ -2378,21 +2405,24 @@ if (!function_exists('findClosingParenthesis')) {
 |                        # or
   '(([^\\\']*(\\\.)?)*)' # quoted string
 |                        # or
-  [\(\)]                 # '(' or ')'
+  [\(\)]+                # '(' or ')' one or more
 )                        # end choice
 /xis
 END_OF_REGEX;
 
         $fieldvalue = '';
-		$count = 1;  // 1st opening brace has already been found, so start count at 1
+		//$count = 1;  // 1st opening brace has already been found, so start count at 1
+        $count = strlen($lookup);  // set to count of opening braces
 		while ($count > 0) {
 			if ($result = preg_match($pattern3b, $string, $regs)) {
-				if ($regs[0] == ')') {
-					$count--;  // closing brace, so decrement count
-					$fieldvalue = rtrim($fieldvalue);
-				} elseif ($regs[0] == '(') {
-					$count++;  // opening brace, so increment count
-				} // if
+                $fieldvalue = rtrim($fieldvalue);
+                if (substr($regs[0], 0, 1) == ')') {
+                    // closing brace(s) found
+                    $count = $count - strlen($regs[0]); // increment count
+                } elseif (substr($regs[0], 0, 1) == '(') {
+                    // opening brace(s) found
+                    $count = $count + strlen($regs[0]); // increment count
+                } // if
 				$fieldvalue .= $regs[0];  // append to current value
             } else {
                 trigger_error("Cannot extract token from: '$string'", E_USER_ERROR);
@@ -3459,7 +3489,7 @@ if (!function_exists('getParentDIR')) {
             $dir = dirname(dirname($filename));
         } // if
 
-        if (strlen($GLOBALS['https_server_suffix']) > 0) {
+        if (isset($GLOBALS['https_server_suffix']) AND strlen($GLOBALS['https_server_suffix']) > 0) {
             // if directory starts with https_server_suffix it must be stripped off
         	if (substr($dir, 0, strlen($GLOBALS['https_server_suffix'])) == $GLOBALS['https_server_suffix']) {
         		$dir = substr($dir, strlen($GLOBALS['https_server_suffix']));
@@ -3489,7 +3519,7 @@ if (!function_exists('getPatternId')) {
             $script_id = getSelf();
         } // if
 
-        if (!preg_match('/\.php/i', $script_id)) {
+        if (!preg_match('/(\.php)$/i', $script_id)) {
         	// does not end in '.php', so it is a task_id
         	$dbobject =& RDCsingleton::getInstance('mnu_task');
         	$data = $dbobject->getData("task_id='$script_id'");
@@ -3505,7 +3535,7 @@ if (!function_exists('getPatternId')) {
         	$pattern_id = 'batch';
         } else {
             if (!empty($_SESSION) AND !empty($_SESSION['pages'])) {
-                if (isset($_SESSION['pages'][$script_id])) {
+                if (isset($_SESSION['pages'][$script_id]) AND isset($_SESSION['pages'][$script_id]['pattern_id'])) {
             	    $pattern_id = $_SESSION['pages'][$script_id]['pattern_id'];
                 } else {
                     $pattern_id = 'unknown';
@@ -3640,7 +3670,7 @@ if (!function_exists('getForeignKeyValues')) {
         if ($found) {
             foreach ($reldata['fields'] as $child_field => $parent_field) {
                 // swap the field names between the PARENT and CHILD tables
-                if (isset($parent_data[$parent_field])) {
+                if (array_key_exists($parent_field, $parent_data)) {
                     $fkeyvalues[$child_field] = $parent_data[$parent_field];
                 } // if
             } // foreach
@@ -3648,7 +3678,7 @@ if (!function_exists('getForeignKeyValues')) {
             // no relationship found, so default to primary key of parent
             $pkeynames = $parentOBJ->getPkeyNamesAdjusted();
             foreach ($pkeynames as $fieldname) {
-                if (isset($parent_data[$fieldname])) {
+                if (array_key_exists($fieldname, $parent_data)) {
                     $fkeyvalues[$fieldname] = $parent_data[$fieldname];
                 } // if
             } // foreach
@@ -4868,9 +4898,10 @@ if (!function_exists('pasteData')) {
 
 // ****************************************************************************
 if (!function_exists('print_Trace')) {
-    function print_Trace ($level, $string, $trace, $indent=null)
+    function print_Trace ($level, $string, $indent=null)
     // output a segment of the array produced by debug_backrace()
     {
+        $trace = '';
         $indent .= '  ';    // increase indent by 2 spaces
         foreach ($string as $level2 => $string2) {
             $pattern = '/'                      // begin pattern
@@ -4892,7 +4923,7 @@ if (!function_exists('print_Trace')) {
                         $trace .= $indent ."$level2: object = $class\n";
                     } else {
                         $trace .= $indent ."$level2: array =\n";
-                        $trace = print_Trace($level2, $string2, $trace, $indent);
+                        $trace .= print_Trace($level2, $string2, $indent);
                     } // if
             	} elseif (is_object($string2)) {
             	    // do nothing
@@ -6842,6 +6873,18 @@ if (!function_exists('stripOperators_ex')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('strip_quotes')) {
+    function strip_quotes ($string)
+    // strip any single or double quotes from a string
+    {
+        $string = str_replace(array("'", '"'), null, $string);
+
+        return $string;
+
+    } // strip_quotes
+} // if
+
+// ****************************************************************************
 if (!function_exists('text2image')) {
     function text2image ($text, $fontheight=6, $bgcolour='#FFFF99', $textcolour='#FF0000')
     // convert a text string to an image
@@ -7350,7 +7393,7 @@ if (!function_exists('where2array')) {
         if ($array1[key($array1)] == '(' AND end($array1) == ')') {
         	// array begins with '(' and ends with ')', but does it have right number of 'OR's?
         	$count = array_count_values($array1);
-            if ($count['('] == $count[')'] AND $count['OR'] == $count['(']-1) {
+            if ($count['('] == $count[')'] AND (!empty($count['OR']) AND $count['OR'] == $count['(']-1)) {
                 $array1 = splitWhereByRow($array1);
             	if (is_null($pageno) or $pageno === FALSE) {
             	    // do nothing
@@ -7407,6 +7450,8 @@ if (!function_exists('where2indexedArray')) {
 ~
 ^
 (                            # start choice
+ [\(]{2,}                    # two or more '('
+|
  [ ]*AND(?=\()               # 'AND(' but without the '(' - see pattern 2
 |                            # or
  [ ]*AND[ ]+                 # 'AND' followed by 1 or more spaces
@@ -7687,15 +7732,26 @@ END_OF_REGEX;
             $found = $regs[0];
             $where = trim(substr($where, strlen($found)));
 
-            if (strlen($found) == 1 AND $found == '(') {
-                // single '(' character, so search for matching ')'
-                $output[] = trim($found);     // output leading '(' on its own
-                $found = findClosingParenthesis($where);
-                if (substr($found, -1, 1) == ')') {
-                    $found = substr($found, 0, -1);          // strip trailing ')'
-                	$output2 = where2indexedArray($found);   // split into possible sub-expressions
-                	$output = array_merge($output, $output2);
-                	$found = ')';             // output trailing ')' on its own
+            //if (strlen($found) == 1 AND $found == '(') {
+            if (substr($found, 0, 1) == '(') {
+                if (substr_count($found, '(') == 1) {
+                    // single '(' character, so search for matching ')'
+                    $prepend = trim($found);
+                    $output[] = $prepend;     // output leading '(' on its own
+                    $found = findClosingParenthesis($where, $found);
+                    if (substr($found, -1, 1) == ')') {
+                        // does this contain multiple 'name=value' substrings?
+                        $found = substr($found, 0, -1);          // strip trailing ')'
+                        $output2 = where2indexedArray($found);
+                        $output = array_merge($output, $output2);
+                        $found = ')';               // output trailing ')' on its own
+                    } // if
+                } else {
+                    // multiple '(' found, so search for matching ')'
+                    $prepend = $found;
+                    $found = findClosingParenthesis($where, $found);
+                    $output[] = $prepend.$found;
+                    $found = null;
                 } // if
 
             } elseif (strlen($found) > 1  AND substr($found, -1, 1) == '(') {
@@ -7721,7 +7777,7 @@ END_OF_REGEX;
 
             if (trim($found) == ',') {
                 // this is a comma separator, so ignore it
-            } else {
+            } elseif (!empty($found)) {
                 // expression is complete, so add to output array
                 $output[] = trim($found);
             } // if

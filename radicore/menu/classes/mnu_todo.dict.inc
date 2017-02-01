@@ -1,5 +1,5 @@
 <?php
-    // file created on October 11, 2016, 8:51 am
+    // file created on December 19, 2016, 6:50 am
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -12,7 +12,7 @@
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
                                                     'type_native' => 'smallint',
-                                                    'size' => 6,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -22,7 +22,8 @@
                                                     'nosearch' => 'y');
     
     $fieldspec['item_desc']                 = array('type' => 'string',
-                                                    'size' => 80);
+                                                    'size' => 80,
+                                                    'required' => 'y');
     
     $fieldspec['item_notes']                = array('type' => 'string',
                                                     'size' => 65535,
@@ -37,7 +38,7 @@
     
     $fieldspec['visibility']                = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'required' => 'y');
@@ -132,7 +133,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'user_id, due_date, seq_no';
+    $this->default_orderby                  = 'due_date desc, seq_no desc';
     
     // alternative language options 
     $this->alt_language_table               = '';

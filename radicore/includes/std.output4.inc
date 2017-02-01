@@ -198,6 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
                     header('Pragma: public');
                     echo $output;
+                    flush();
                     //scriptPrevious($errors, $messages);
                 } // if
                 exit;

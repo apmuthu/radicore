@@ -45,11 +45,15 @@ class dict_dataBase extends Default_Table
     // perform custom formatting before values are shown to the user.
     // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
-        if ($fieldarray['rel_count_snr'] == 0) {
-            $fieldarray['rel_count_snr'] = null;
+        if (isset($fieldarray['rel_count_snr'])) {
+            if ($fieldarray['rel_count_snr'] == 0) {
+                $fieldarray['rel_count_snr'] = null;
+            } // if
         } // if
-        if ($fieldarray['rel_count_jnr'] == 0) {
-            $fieldarray['rel_count_jnr'] = null;
+        if (isset($fieldarray['rel_count_jnr'])) {
+            if ($fieldarray['rel_count_jnr'] == 0) {
+                $fieldarray['rel_count_jnr'] = null;
+            } // if
         } // if
 
         return $fieldarray;

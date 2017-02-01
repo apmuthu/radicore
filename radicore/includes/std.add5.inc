@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.add5.inc
@@ -32,6 +32,15 @@ $original_selection = $selection;
 //    } // if
 //} // if
 
+if (!empty($selection) AND (!isset($return_from) OR $return_action == 'choose')) {
+    // $selection takes precedence over $where
+    //$where     = $selection;
+    //$selection = null;
+    $new_selection = true;
+} else{
+    $new_selection = false;
+} // if
+
 if (isset($_POST['quit']) OR isset($_GET['quit'])) {
     if (isset($script_vars['dbouter'])) {
         require_once "classes/$outer_table.class.inc";
@@ -50,6 +59,7 @@ if (isset($_POST['quit']) OR isset($_GET['quit'])) {
 // define action buttons
 $act_buttons['submitBtn']  = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
 $act_buttons['submitstay'] = 'submitstay';
+$act_buttons['submitnext'] = 'submitnext';
 $act_buttons['quit']       = 'cancel';
 
 // create a class instance for the OUTER database table
@@ -118,6 +128,7 @@ $dbouter->setChildObject($dbinner);
 $dbinner->setParentObject($dbouter);
 
 if (!empty($_POST)) {
+    $messages = array();
     // identify if one of the 'submit' buttons has been pressed
     $submit_button = check_submit_button($act_buttons, $_POST);
     $task_button   = check_task_button($_POST);
@@ -194,6 +205,8 @@ if (!empty($_POST)) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();
             } // if
         } // if
+        $messages = array_merge($messages, $dbouter->getMessages());
+        $messages = array_merge($messages, $dbinner->getMessages());
         if ($errors) {
             $dbinner->rollback();
         } else {
@@ -201,19 +214,24 @@ if (!empty($_POST)) {
             $dbinner->wf_case_id     = $dbouter->wf_case_id;
             $dbinner->wf_workitem_id = $dbouter->wf_workitem_id;
             $dbinner->wf_context     = $dbouter->wf_context;
-            $messages = $dbinner->getMessages();
             $errors = $dbinner->commit();
-            if ($errors) {
-                $dbinner->rollback();
-            } else {
-                //$messages = $dbinner->getMessages();
-                if (isset($_POST['submitstay'])) {
-                    // re-initialise data for a new record
-                    $inner_data = $dbinner->getInitialDataMultiple($outer_data);
-                    $inner_data = $dbinner->getExtraData($inner_data);
+            if (empty($errors)) {
+                $messages[] = getLanguageText('sys0091'); // 'Update successful'
+            } // if
+            if (isset($_POST['submitnext'])) {
+                $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
+                $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
+                if ($curitem < $lastitem) {
+                    // skip to the next item
+                    $curitem++;
+                    $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
+                    $dbouter->setPageNo($curitem);
+                    $where = $scrolling[$dbouter->getClassName()]['where'];
+                    $fieldarray = $dbouter->getData($where);
+                    $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
                 } else {
-                    // update was OK - return to previous screen
-                    scriptPrevious($errors, $messages, 'insert', $dbinner->getInstruction());
+                    // there is no next item, so return to previous screen
+                    scriptPrevious($errors, $messages, 'update', $dbinner->getInstruction());
                 } // if
             } // if
         } // if
@@ -224,6 +242,21 @@ if (!empty($_POST)) {
 } // if
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    if (isset($scrolling)) {
+        if ($new_selection === true) {
+            // selection has changed, so use new value in $where
+            $dbouter->setPageNo(1);
+        } else {
+            // use previous values from scrolling array
+            $where = $scrolling[$dbouter->getClassName()]['where'];
+            if (isset($_GET['scrolling']) AND $_GET['scrolling'] == $dbouter->getClassName()) {
+                // set index number of item to be read from current $where list
+                $dbouter->setPageNo($_GET['item']);
+            } else {
+                $dbouter->setPageNo($scrolling[$dbouter->getClassName()]['curitem']);
+            } // if
+        } // if
+    } // if
     // check to see if we are returning from a child form
     if (!empty($return_from) AND !empty($popup_object)) {
         if (isset($selection) AND $popup_object == 'dbouter') {
@@ -251,9 +284,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             scriptPrevious(getLanguageText('sys0085')); // 'Nothing retrieved from the database.'
         } // if
 
+        // set variables to be included in XML output
+        $scrolling[$dbouter->getClassName()]['curitem']  = $dbouter->getPageNo();
+        $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
+        $scrolling[$dbouter->getClassName()]['where']    = $where;
+
         // save these variables for later in the same session in case INNER performs a scriptNext()
         $script_vars['where']     = unqualifyWhere($where);
         $script_vars['dbouter']   = serialize($dbouter);
+        $script_vars['scrolling'] = $scrolling;
         $script_vars = updateScriptVars ($script_vars);
 
         // get data for INNER entity
@@ -276,6 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 $script_vars['where']     = unqualifyWhere($where);
 $script_vars['dbouter']   = serialize($dbouter);
 $script_vars['dbinner']   = serialize($dbinner);
+$script_vars['scrolling']  = $scrolling;
 $script_vars = updateScriptVars ($script_vars);
 
 $dbouter->fieldarray = $outer_data;  // replace data lost during serialization

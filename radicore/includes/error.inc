@@ -34,7 +34,8 @@ if (version_compare(phpversion(), '5.0.0', '<')) {
 } // if
 
 // ****************************************************************************
-function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
+//function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
+function errorHandler ($errno, $errstr, $errfile, $errline)
 // If the error condition is E_USER_ERROR or above then abort
 {
     if ($errno != E_STRICT) {
@@ -44,6 +45,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } // if
 
     //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
+
+    $trace = debug_backtrace();
+    $errcontext = $trace[0]['args'][4];
 
     switch ($errno) {
         case E_USER_WARNING:
@@ -102,6 +106,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
             $GLOBALS['php_errormsg']  = $errstr;
             $GLOBALS['php_errorfile'] = $errfile;
             $GLOBALS['php_errorline'] = $errline;
+            if (version_compare(phpversion(), '7.0.0', '>=')) {
+                error_clear_last();
+            } // if
             return;
         case E_USER_ERROR:
         case E_ERROR:
@@ -222,17 +229,17 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
 
     // retrieve and format debug_backtrace for output
     if (isset($errcontext['exception'])) {
-        $result = $errcontext['exception']->getTrace();
-    } else {
-        $result = debug_backtrace();
+        $trace = $errcontext['exception']->getTrace();
+    //} else {
+    //    $trace = debug_backtrace();
     } // if
     //$trace_hdg = "<p>Backtrace:</p>\n";
     $trace_hdg  = "<p>" .getLanguageText('sys0075') ."</p>\n";
-    $trace     = null;
-    foreach ($result as $level => $string) {
-        $trace .= "$level: array =\n";
+    $trace_out  = '';
+    foreach ($trace as $level => $string) {
+        $trace_out .= "$level: array =\n";
         if (is_array($string)) {
-            $trace = print_Trace($level, $string, $trace);
+            $trace_out .= print_Trace($level, $string);
         } // if
     } // foreach
 
@@ -241,19 +248,19 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     $mailstring  = strip_tags($errorstring);
     $mailstring .= str_replace($search, '', $history);
     $mailstring .= str_replace($search, '', $trace_hdg);
-    $mailstring .= $trace;
-    if (defined('ERROR_LOG_MAILTO')) {
-    	$mailto = ERROR_LOG_MAILTO;
-    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
-        $mailto = $_SERVER['SERVER_ADMIN'];
-    } else {
-        $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
-    } // if
-    $from = "webmaster@{$_SERVER['HTTP_HOST']}";
-    $subject = 'PHP error_log message';
+    $mailstring .= $trace_out;
+//    if (defined('ERROR_LOG_MAILTO')) {
+//    	$mailto = ERROR_LOG_MAILTO;
+//    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
+//        $mailto = $_SERVER['SERVER_ADMIN'];
+//    } else {
+//        $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
+//    } // if
+//    $from = "webmaster@{$_SERVER['HTTP_HOST']}";
+//    $subject = 'PHP error_log message';
 
-    // Send the error to the administrator by email
-    $res = send_email($from, $mailto, $subject, $mailstring);
+//    // Send the error to the administrator by email
+//    $res = send_email($from, $mailto, $subject, $mailstring);
 
     //echo "<h1>This application has encountered an unrecoverable error</h1>\n";
     $header = "<h1>" .getLanguageText('sys0060') ."</h1>\n";
@@ -317,7 +324,21 @@ function errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
     } else {
         $logfile = $_SERVER['DOCUMENT_ROOT'].getParentDIR().'/error_logs/errorlog.html';  // write into default file
     } // if
-    error_log("$errorstring\n$history\n$trace_hdg<pre>\n" .htmlspecialchars($trace, ENT_COMPAT, 'UTF-8') ."\n</pre>", 3, $logfile);
+    $res = error_log("$errorstring\n$history\n$trace_hdg<pre>\n" .htmlspecialchars($trace_out, ENT_COMPAT, 'UTF-8') ."\n</pre>", 3, $logfile);
+
+    // send email to administrator
+    if (defined('ERROR_LOG_MAILTO')) {
+        $mailto = ERROR_LOG_MAILTO;
+    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
+        $mailto = $_SERVER['SERVER_ADMIN'];
+    } else {
+        $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
+    } // if
+    $from = "webmaster@{$_SERVER['HTTP_HOST']}";
+    $subject = 'PHP error_log message';
+
+    // Send the error to the administrator by email
+    $res = send_email($from, $mailto, $subject, $mailstring);
 
     // rollback any incomplete transaction
     if (isset($errcontext['this'])) {
@@ -401,34 +422,55 @@ function XSLT_errorHandler ($parser, $errorno, $level, $fields)
 } // XSLT_errorHandler
 
 // ****************************************************************************
-if (version_compare(phpversion(), '5.0.0', '>=')) {
-    // only valid if PHP version is 5.0.0 or higher
-    // ****************************************************************************
-    function exception_handler($exception)
-    // catch-all for unhandled exceptions.
-    {
-        //$string = 'Uncaught exception from ' .get_class($exception) .', message = ' .$exception->getMessage();
-        $string = getLanguageText('sys0062', get_class($exception), $exception->getMessage());
+function exception_handler($exception)
+// catch-all for unhandled exceptions.
+{
+    //$string = 'Uncaught exception from ' .get_class($exception) .', message = ' .$exception->getMessage();
+    $string = getLanguageText('sys0062', get_class($exception), $exception->getMessage());
 
-        $string .= ', code='.$exception->getCode();
-        $string .= ', file='.$exception->getFile();
-        $string .= ', line='.$exception->getLine();
+    $string .= ', code='.$exception->getCode();
+    $string .= ', file='.$exception->getFile();
+    $string .= ', line='.$exception->getLine();
 
-        if (method_exists($exception, 'getTrace')) {
-            $trace = $exception->getTrace();
-            if (is_array($trace) AND array_key_exists('0', $trace)) {
-                $trace = $trace[0];
-            } // if
-            $string .= ', '.format_array($trace);
+    if (method_exists($exception, 'getTrace')) {
+        $trace = $exception->getTrace();
+        if (is_array($trace) AND array_key_exists('0', $trace)) {
+            $trace = $trace[0];
         } // if
+        $string .= ', '.format_array($trace);
+    } // if
 
-        trigger_error($string, E_USER_ERROR);
+    trigger_error($string, E_USER_ERROR);
 
-    } // exception_handler
+} // exception_handler
 
-    set_exception_handler('exception_handler');
+set_exception_handler('exception_handler');
 
-} // if
+// ****************************************************************************
+function shutdown_handler()
+// catch-all for errors not handled in standard errorHandler.
+{
+    $error = error_get_last();
+    if ($error['type'] === E_ERROR) {
+        // fatal error has occured
+        if (defined('ERROR_LOG')) {
+            $logfile = ERROR_LOG;  // write into specified file
+        } elseif (defined('ERROR_LOG_DIR')) {
+            $logfile = ERROR_LOG_DIR.'/errorlog.html';  // write into specified directory
+        } else {
+            $logfile = $_SERVER['DOCUMENT_ROOT'].getParentDIR().'/error_logs/errorlog.html';  // write into default file
+        } // if
+        $string = '['.date(DATE_RFC850).']'."<br>\n";
+        $string .= 'script='.$_SERVER['SCRIPT_FILENAME']."<br>\n";
+        foreach ($error as $key => $value) {
+            $string .= "$key=$value <br>\n";
+        } // foreach
+        $res = error_log("\n<p>$string</p>", 3, $logfile);
+    } // if
+
+} // shutdown_handler
+
+register_shutdown_function('shutdown_handler');
 
 // ****************************************************************************
 

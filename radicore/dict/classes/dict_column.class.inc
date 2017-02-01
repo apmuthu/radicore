@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class dict_column extends Default_Table
@@ -59,6 +59,10 @@ class dict_column extends Default_Table
     // Make field visible if it is valid for this column type, and
     // initialise the value if it is not.
     {
+        if (empty($fieldarray['col_type'])) {
+            return $fieldarray;
+        } // if
+
         $type     = $fieldarray['col_type'];
         $colspecs = $this->_cm_getColSpecs($type, $fieldarray);
 
@@ -848,6 +852,8 @@ class dict_column extends Default_Table
     function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {
+        $array = array();
+
         if ($item == 'align_hv') {
             return getLanguageArray('align_hv');
         } // if

@@ -246,7 +246,9 @@ class csv_class
             $output = $dbobject->_cm_post_output($output, $csvout);
         } // if
 
-        fclose($csvouth);
+        if (is_resource($csvouth)) {
+            fclose($csvouth);
+        } // if
 
         return $output;
 

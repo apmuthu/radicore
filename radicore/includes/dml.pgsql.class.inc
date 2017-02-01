@@ -381,6 +381,7 @@ END_OF_REGEX;
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
+            $start_time = getMicroTime();
             if (!empty($this->dbport)) {
             	$string = "host={$this->dbhost} user={$this->dbusername} password={$this->dbuserpass} dbname={$this->dbname} port={$this->dbport} ";
             } else {
@@ -427,19 +428,27 @@ END_OF_REGEX;
                 $data = pg_fetch_row($result);
                 $this->server_version  = $data[0];
                 $this->query = '';
+
+                // write query to log file, if option is turned on
+                $end_time = getMicroTime();
+                logSqlQuery ($dbname, null, 'CONNECT', null, $start_time, $end_time);
             } // if
         } // if
         if (!$dbconn) {
             return FALSE;
         } elseif ($schema) {
+            $start_time = getMicroTime();
+
             if (strtolower($schema) != 'public') {
                 $schema = '"' .$schema .'", public';
             } // if
             $this->query = 'SET search_path TO ' .$schema;
             $result = pg_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
-            // write query to log file, if option is turned on
-            logSqlQuery ($schema, null, $this->query);
             $this->query = '';
+
+            // write query to log file, if option is turned on
+            $end_time = getMicroTime();
+            logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
         } // if
 
         $this->schema = $schema;

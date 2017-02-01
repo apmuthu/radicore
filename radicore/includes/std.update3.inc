@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.update3.inc
@@ -139,20 +139,25 @@ if (!empty($_POST)) {
 		    // errors are keyed by object name
 		    $errors[$dbobject->getClassName()] = $dbobject->getErrors();
 	    } // if
+        if (!empty($dbobject->messages)) {
+            $messages = array_merge($messages, $dbobject->messages);
+        } // if
+        if (!empty($msg) AND is_array($msg)) {
+            $messages = array_merge($messages, $msg);
+        } elseif (is_string($msg)) {
+            $messages[] = $msg;
+        } // if
+        $msg = null;
         if (empty($errors)) {
             $errors = $dbobject->commit();
             if (empty($errors)) {
                 // update was OK - return to previous screen
-                scriptPrevious(null, $msg, 'update', $dbobject->getInstruction());
+                scriptPrevious(null, $messages, 'update', $dbobject->getInstruction());
             } // if
         } else {
             $dbobject->rollback();
         } // if
     } // if
-} // if
-
-if (!empty($msg) AND !is_array($msg)) {
-	$messages[] = $msg;
 } // if
 
 // build list of objects for output to XML data

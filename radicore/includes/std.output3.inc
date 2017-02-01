@@ -13,14 +13,14 @@
 
 // Note that there is no dialog with the user (apart from the download box)
 
+$mode = 'pdf-detail';   // identify output mode
+
 if (preg_match('/cli/i', php_sapi_name())) {
     // being run from the command line, so initialisation has already been done
 } else {
     require_once 'include.general.inc';
     initSession();          // load session variables
 } // if
-
-$mode = 'pdf-detail';   // identify output mode
 
 //if (!empty($selection) AND !isset($return_from)) {
 //    if (empty($where)) {

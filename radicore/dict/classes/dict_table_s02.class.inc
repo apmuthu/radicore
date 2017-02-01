@@ -535,7 +535,7 @@ class dict_table_s02 extends dict_table
                 $colobj->sql_orderby = 'seq_in_index';
                 $data = $colobj->getData("database_id_snr='$db_id_snr' AND table_id_snr='$tbl_id_snr' AND database_id_jnr='$db_id_jnr' AND table_id_jnr='$tbl_id_jnr' AND seq_no='$seq_no'");
                 foreach ($data as $row => $coldata) {
-                    if (in_array($coldata['column_id_jnr'], $this->deprecated)) {
+                    if (is_array($this->deprecated) AND in_array($coldata['column_id_jnr'], $this->deprecated)) {
                         // this column has been deprecated, so ignore this relationship
                         $entry = null;
                         break;  // break out of this FOREACH loop

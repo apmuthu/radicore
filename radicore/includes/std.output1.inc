@@ -115,6 +115,7 @@ if (!isset($GLOBALS['batch'])) {
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Pragma: public');
     echo $output;
+    flush();
     scriptPrevious();
 } else {
     // write to disk file

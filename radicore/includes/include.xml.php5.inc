@@ -164,10 +164,6 @@ class radicore_view
                 $value = $node->appendChild($value);
 
             } else {
-                if (array_key_exists('rdc_to_be_deleted', $rowdata)) {
-                    // causes row to be shown as non-editable and non-selectable
-                    $node->setAttribute('rdc_to_be_deleted', 'y');
-                } // if
                 // look for optional attributes just for this row
                 if (array_key_exists('rdc_rowspecs', $rowdata)) {
             	    foreach ($rowdata['rdc_rowspecs'] as $key => $value) {
@@ -178,6 +174,10 @@ class radicore_view
                 $css_array = array();  // optional css class specifications
                 // format data for output (this converts dates and numbers)
                 $rowdata = $dbobject->formatData($rowdata, $css_array);
+                if (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                    // causes row to be shown as non-editable and non-selectable
+                    $node->setAttribute('rdc_to_be_deleted', 'y');
+                } // if
                 // look for a change in field specifications
                 if (isset($rowdata['rdc_fieldspec']) AND is_array($rowdata['rdc_fieldspec'])) {
                     // merge 'fieldspec' with 'fieldspecs'
@@ -196,6 +196,9 @@ class radicore_view
                 foreach ($rowdata as $fieldname => $fieldvalue) {
                     if (preg_match('/^task#/', $fieldname)) {
                         // ignore this field
+                        $ignore = true;
+                    } elseif (preg_match('/^\d/', $fieldname)) {
+                        // begins with a number, so ignore this field
                         $ignore = true;
                     } else {
                         try {
@@ -297,19 +300,32 @@ class radicore_view
                                 } // if
                                 if ($spec['type'] == 'boolean') {
                                     if (!isset($spec['control'])) {
-                                        // no 'control' set, so default to radiogroup
+                                        // no 'control' set, so default to 'radiogroup'
                             	        $spec['control'] = 'radiogroup';
                                     } // if
                                     if (!isset($spec['optionlist'])) {
-                                        // no 'optionlist' set, so default to $fieldname
-                            	        $spec['optionlist'] = $fieldname;
+                                        // no 'optionlist' set, so default to 'boolean'
+                            	        $spec['optionlist'] = 'boolean';
                                     } // if
                                     $optionlist = $spec['optionlist'];
+                                    if ($optionlist == 'boolean') {
+                                        // TRUE/FALSE can be shown in different ways, so switch to relevant option list
+                                        if (isset($spec['true'])) {
+                                            if ($spec['true'] == '1') {
+                                                $optionlist = 'boolean_10';
+                                            } elseif ($spec['true'] == 'T') {
+                                                $optionlist = 'boolean_TF';
+                                            } elseif ($spec['true'] == 'Y') {
+                                                $optionlist = 'boolean_YN';
+                                            } // if
+                                            $spec['optionlist'] = $optionlist;
+                                        } // if
+                                    } // if
                                     if (isset($dbobject->lookup_data[$optionlist])) {
                                         $lookup = $dbobject->lookup_data[$optionlist];
                                     } else {
                         	            // no list set, so use default (true=Yes, false=No)
-                        		        $lookup = getLanguageArray('boolean');
+                        		        $lookup = getLanguageArray($optionlist);
                                     } // if
                                     // ensure 'true' and 'false' are set to field specifications
                                     $lookup = fixTrueFalseArray($lookup, $spec);
@@ -513,6 +529,8 @@ class radicore_view
                                             $label = preg_replace('/\[url=.*\]/u', '', $hyperlink);
                                             // store label and url as separate parts
                                             $array_out[$ix]['label'] = $label;
+                                            // replace '%%rownum' with current row number, if defined
+                                            $url = str_replace('%%rownum', $rownum, $url);
                                             $array_out[$ix]['url']   = $url;
                                         } else {
                                             $array_out[$ix]['label'] = $hyperlink;
@@ -812,20 +830,22 @@ class radicore_view
                     	    } // if
                         } // foreach
                     } // if
-            	    if ($spec['type'] == 'enum' AND array_key_exists(0, $data)) {
-                	    // blank entry already exists, so do not add another
-                    } elseif (isset($spec['control']) AND $spec['control'] == 'multidrop') {
-                        // do not add blank entry
-                    } elseif (!array_key_exists(' ', $data)) {
-                        // array does not contain blank entry, so insert one
-                        $data2= array('' => $undefined);
-                        // append all existing array entries (so as not to resequence any numerical keys)
-                        foreach ($data as $key => $value) {
-                    	    $data2[$key] = $value;
-                        } // foreach
-                        $lookup[$name] = $data2;
+                    if (!empty($data)) {
+                        if ($spec['type'] == 'enum' AND array_key_exists(0, $data)) {
+                	        // blank entry already exists, so do not add another
+                        } elseif (isset($spec['control']) AND $spec['control'] == 'multidrop') {
+                            // do not add blank entry
+                        } elseif (!array_key_exists(' ', $data)) {
+                            // array does not contain blank entry, so insert one
+                            $data2 = array('' => $undefined);
+                            // append all existing array entries (so as not to resequence any numerical keys)
+                            foreach ($data as $key => $value) {
+                    	        $data2[$key] = $value;
+                            } // foreach
+                            $lookup[$name] = $data2;
+                        } // if
+                        $lookup_items[$name] = 'done';
                     } // if
-                    $lookup_items[$name] = 'done';
                 } // if
             } // foreach
 
@@ -884,38 +904,40 @@ class radicore_view
             } else {
                 $jumpto = array();
             } // if
-            foreach ($optionlist as $id => $optvalue) {
-                $child = $doc->createElement('option');
-                $child = $occ->appendChild($child);
-                $child->setAttribute('key', $id);
+            if (!empty($optionlist)) {
+                foreach ($optionlist as $id => $optvalue) {
+                    $child = $doc->createElement('option');
+                    $child = $occ->appendChild($child);
+                    $child->setAttribute('key', $id);
 
-                if (array_key_exists($id, $jumpto)) {
-                    $child->setAttribute('rel', $jumpto[$id]);
-                } // if
+                    if (array_key_exists($id, $jumpto)) {
+                        $child->setAttribute('rel', $jumpto[$id]);
+                    } // if
 
-                if (array_key_exists($lookupname, $lookup_css)) {
-            	    if (array_key_exists($id, $lookup_css[$lookupname])) {
-            	        // set css 'class' attribute for this entry
-            	        $child->setAttribute('class', $lookup_css[$lookupname][$id]);
-            	    } // if
-                } // if
+                    if (array_key_exists($lookupname, $lookup_css)) {
+            	        if (array_key_exists($id, $lookup_css[$lookupname])) {
+            	            // set css 'class' attribute for this entry
+            	            $child->setAttribute('class', $lookup_css[$lookupname][$id]);
+            	        } // if
+                    } // if
 
-                if (is_array($optvalue)) {
-            	    foreach ($optvalue as $key1 => $value1) {
-            		    if ($key1 == 'value') {
-            			    $value1 = convertEncoding($value1, 'UTF-8');
-                            $value = $doc->createTextNode($value1);
-                            $value = $child->appendChild($value);
-            		    } else {
-            		        $child->setAttribute($key1, $value1);
-            		    } // if
-            	    } // foreach
-                } else {
-                    $optvalue = convertEncoding($optvalue, 'UTF-8');
-                    $value = $doc->createTextNode($optvalue);
-                    $value = $child->appendChild($value);
-                } // if
-            } // foreach
+                    if (is_array($optvalue)) {
+            	        foreach ($optvalue as $key1 => $value1) {
+            		        if ($key1 == 'value') {
+            			        $value1 = convertEncoding($value1, 'UTF-8');
+                                $value = $doc->createTextNode($value1);
+                                $value = $child->appendChild($value);
+            		        } else {
+            		            $child->setAttribute($key1, $value1);
+            		        } // if
+            	        } // foreach
+                    } else {
+                        $optvalue = convertEncoding($optvalue, 'UTF-8');
+                        $value = $doc->createTextNode($optvalue);
+                        $value = $child->appendChild($value);
+                    } // if
+                } // foreach
+            } // if
         } // foreach
 
         return;
@@ -1040,15 +1062,30 @@ class radicore_view
             } // if
             $try[] = 'custom_xsl_params.class.inc';
             foreach ($try as $fname) {
-                if ($fp = fopen($fname, 'r', true)) {
-                    fclose($fp);
-                    // file found, so load it and instantiate object
-                    require_once($fname);
-                    $tempobj = new custom_xsl_params();
-                    $xsl_params = $tempobj->amend_text($xsl_params);
-                    unset($tempobj);
-                    break;
-                } // if
+//                if ($fp = @fopen($fname, 'r', true)) {
+//                    fclose($fp);
+//                    // file found, so load it and instantiate object
+//                    require_once($fname);
+//                    $tempobj = new custom_xsl_params();
+//                    $xsl_params = $tempobj->amend_text($xsl_params);
+//                    unset($tempobj);
+//                    break;
+//                } // if
+                try {
+                    $fileinfo = new SplFileInfo($fname);
+                    if ($fileobj = $fileinfo->openFile('r', true)) {
+                        // file found, so load it and instantiate object
+                        require_once($fname);
+                        $tempobj = new custom_xsl_params();
+                        $xsl_params = $tempobj->amend_text($xsl_params);
+                        unset($tempobj);
+                        break;
+                    } // if
+                } catch (Exception $e) {
+                    // file does not exist, so ignore this error
+                } // try
+                unset($fileinfo);
+                unset($fileobj);
             } // foreach
         } // if
 
@@ -1450,14 +1487,27 @@ class radicore_view
                 $try[] = "custom_javascript.class.{$project_code}.inc";
             } // if
             $try[] = 'custom_javascript.class.inc';
-            foreach ($try as $fn) {
-                if ($fp = @fopen($fn, 'r', true)) {
-                    fclose($fp);
-                    // file found, so load it and instantiate object
-                    require_once($fn);
-                    $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
-                    break;
-                } // if
+            foreach ($try as $fname) {
+//                if ($fp = @fopen($fname, 'r', true)) {
+//                    fclose($fp);
+//                    // file found, so load it and instantiate object
+//                    require_once($fname);
+//                    $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+//                    break;
+//                } // if
+                try {
+                    $fileinfo = new SplFileInfo($fname);
+                    if ($fileobj = $fileinfo->openFile('r', true)) {
+                        // file found, so load it and instantiate object
+                        require_once($fname);
+                        $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+                        break;
+                    } // if
+                } catch (Exception $e) {
+                    // file does not exist, so ignore this error
+                } // try
+                unset($fileinfo);
+                unset($fileobj);
             } // foreach
         } // if
 
@@ -1471,54 +1521,70 @@ class radicore_view
     {
         $names = array();
 
+        if (empty($screen_structure)) {
+            return $names;
+        } // if
+
+        $objectname_short = removeTableSuffix($objectname);
+
         // find the screen zone for this table
         $zone = '';
         foreach ($screen_structure['tables'] as $key => $value) {
+            $value_short = removeTableSuffix($value);
             if ($value == $objectname) {
                 $zone = $key;
+                break;
+            } elseif ($value == $objectname_short) {
+                $zone = $key;
+                break;
+            } elseif ($value_short == $objectname) {
+                $zone = $key;
+                break;
             } // if
         } // foreach
 
-        // extract field details one row at a time
-        foreach ($screen_structure[$zone]['fields'] as $row => $rowdata) {
-            if (is_string(key($rowdata))) {
-                // not indexed by cell number, so assume 'fieldname' => 'label'
+        if (isset($screen_structure[$zone]['fields']) AND is_array($screen_structure[$zone]['fields'])) {
+            // extract field details one row at a time
+            foreach ($screen_structure[$zone]['fields'] as $row => $rowdata) {
+                if (is_string(key($rowdata))) {
+                    // not indexed by cell number, so assume 'fieldname' => 'label'
 
-                $rowdata = array_change_key_case($rowdata, CASE_LOWER);
+                    $rowdata = array_change_key_case($rowdata, CASE_LOWER);
 
-                // if 'nodisplay' attribute is set then do not output this column
-                if (!array_key_exists('nodisplay', $rowdata)) {
-                    foreach ($rowdata as $fieldname => $fieldlabel) {
-                        $fieldname = trim($fieldname);
-                        if (empty($fieldname)) {
-                            $fieldname = 'null';
-                        } // if
-                        if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
-                            // ignore 'nosort' entry
-                        } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
-                            // ignore
+                    // if 'nodisplay' attribute is set then do not output this column
+                    if (!array_key_exists('nodisplay', $rowdata)) {
+                        foreach ($rowdata as $fieldname => $fieldlabel) {
+                            $fieldname = trim($fieldname);
+                            if (empty($fieldname)) {
+                                $fieldname = 'null';
+                            } // if
+                            if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
+                                // ignore 'nosort' entry
+                            } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
+                                // ignore
 
-                        } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
-                            // ignore
+                            } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
+                                // ignore
 
-                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $fieldname, $regs)) {
-                            // ignore
+                            } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $fieldname, $regs)) {
+                                // ignore
 
-                        } else {
-                            $names[] = $fieldname;
+                            } else {
+                                $names[] = $fieldname;
+                            } // if
+                        } // foreach
+                    } // if
+                } else {
+                    // there is a separate entry for each cell in the current row
+                    foreach ($rowdata as $cellno => $cellspec) {
+                        $cellspec = array_change_key_case($cellspec, CASE_LOWER);
+                        if (isset($cellspec['field'])) {
+                            $names[] = strtolower($cellspec['field']);
                         } // if
                     } // foreach
                 } // if
-            } else {
-                // there is a separate entry for each cell in the current row
-                foreach ($rowdata as $cellno => $cellspec) {
-                    $cellspec = array_change_key_case($cellspec, CASE_LOWER);
-                    if (isset($cellspec['field'])) {
-                        $names[] = strtolower($cellspec['field']);
-                    } // if
-                } // foreach
-            } // if
-        } // foreach
+            } // foreach
+        } // if
 
         return $names;
 
@@ -1541,7 +1607,7 @@ class radicore_view
 
         if (is_True($_SERVER['HTTPS'])) {
             // use one or the other of these, whichever is available
-            if (strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
+            if (isset($_SERVER['PATH_TRANSLATED']) AND strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
         	    $dir = getParentDIR($_SERVER['PATH_TRANSLATED']);
             } else {
                 $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
@@ -1889,10 +1955,12 @@ class radicore_view
             $value = $doc->createTextNode(trim($button['button_text']));
             $value = $child->appendChild($value);
 
-            // use task description as a tooltip
-            $button['task_desc'] = $button['task_desc'];
-            $button['task_desc'] = convertEncoding($button['task_desc'], 'UTF-8');
-            $child->setAttribute('tooltip', $button['task_desc']);
+            if (!empty($button['task_desc'])) {
+                // use task description as a tooltip
+                $button['task_desc'] = $button['task_desc'];
+                $button['task_desc'] = convertEncoding($button['task_desc'], 'UTF-8');
+                $child->setAttribute('tooltip', $button['task_desc']);
+            } // if
         } // foreach
 
         return;

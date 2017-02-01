@@ -88,6 +88,7 @@ class wf_token extends Default_Table
         $query = "SELECT max(token_id) FROM $this->tablename WHERE case_id='{$fieldarray['case_id']}'";
         $count = $this->getCount($query);
         $fieldarray['token_id'] = $count + 1;
+        $this->retry_on_duplicate_key = 'token_id';
 
         // not allowed to set this field on INSERT
         $this->fieldspec['token_status']['nodisplay'] = 'y';
@@ -123,8 +124,6 @@ class wf_token extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        //$fieldarray['context'] = $fieldarray['context'];
-
         if ($fieldarray['place_type'] == '9') {
             // this is the END place, so ....
             // mark this token as consumed
@@ -138,13 +137,15 @@ class wf_token extends Default_Table
 
             // mark any outstanding tokens as cancelled
             $where = "case_id='{$fieldarray['case_id']}' AND token_status IN ('FREE', 'LOCK')";
-            $token_data = $this->updateSelection($where);
+            $replace = "token_status='CANC'";
+            $msg = $this->updateSelection($where, $replace);
             if ($this->errors) return $fieldarray;
 
             // mark any outstanding workitems as cancelled
             $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
             $where = "case_id='{$fieldarray['case_id']}' AND workitem_status IN ('EN', 'IP')";
-            $workitem_data = $dbworkitem->updateSelection($where);
+            $replace = "workitem_status='CA'";
+            $msg = $dbworkitem->updateSelection($where, $replace);
             if ($dbworkitem->errors) {
                 $this->errors = array_merge($this->errors, $dbworkitem->getErrors());
                 return $fieldarray;
@@ -185,7 +186,9 @@ class wf_token extends Default_Table
             } else {
                 // assign to role_id and optionally a specific user_id
             	$arc_instance['role_id'] = $_SESSION['role_id'];
-                $arc_instance['user_id'] = $fieldarray['user_id'];
+                if (isset($fieldarray['user_id'])) {
+                    $arc_instance['user_id'] = $fieldarray['user_id'];
+                } // if
             } // if
             $arc_instance = $dbarc->examineInwardArc($arc_instance);
             if ($dbarc->errors) {
@@ -199,11 +202,10 @@ class wf_token extends Default_Table
     } // _cm_post_insertRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
+    // (WHERE is supplied in two formats - string and array).
+    // $parent_data may contain contents of current record in the parent object.
     {
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {

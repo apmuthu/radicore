@@ -55,7 +55,7 @@ if (isset($script_vars['dbouter'])) {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
-    $dbobject->initiated_from_controller = true;
+    $dbouter->initiated_from_controller = true;
     $dbouter->sql_select     = &$outer_sql_select;
     $dbouter->sql_from       = &$outer_sql_from;
     $dbouter->sql_where      = &$outer_sql_where;
@@ -177,7 +177,7 @@ if (empty($where)) {
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $where = $dbouter->reset($where);
+    $null = $dbouter->reset($where);
 } // if
 
 // get data for the outer table
@@ -254,7 +254,7 @@ $where = array2where($outer_data, $pkeynames, $dbouter);
 
 if (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $dbinner->reset($where);
+    $null= $dbinner->reset($where);
 } // if
 
 // get data from the database

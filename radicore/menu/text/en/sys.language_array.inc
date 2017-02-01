@@ -2,8 +2,17 @@
 
 // Each entry must be an array of values
 
-$array['boolean']  = array('true' => 'Yes',
-                           'false' => 'No');
+$array['boolean']    = array('true' => 'Yes',
+                             'false' => 'No');
+
+$array['boolean_10'] = array('1' => 'Yes',
+                             '0' => 'No');
+
+$array['boolean_TF'] = array('T' => 'Yes',
+                             'F' => 'No');
+
+$array['boolean_YN'] = array('Y' => 'Yes',
+                             'N' => 'No');
 
 $array['curr_or_hist'] = array('C' => 'Current',
                                'H' => 'Historic',

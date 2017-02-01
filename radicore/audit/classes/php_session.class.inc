@@ -102,11 +102,13 @@ class php_session extends Default_Table
             list($dbname2, $dbprefix, $dbms_engine) = findDBConfig($this->dbname);
             switch ($dbms_engine) {
                 case 'sqlsrv':
-                    // deal with any UTF-8 characters
-                    $session_data = iconv('iso-8859-1', 'UTF-8//TRANSLIT', $session_data);
-                    // cause this column to be converted into binary
-                    $this->allow_db_function[] = 'session_data';
-                    $session_data = "CONVERT(varbinary(max),'$session_data')";
+                    if (!empty($session_data)) {
+                        // deal with any UTF-8 characters
+                        $session_data = iconv('iso-8859-1', 'UTF-8//TRANSLIT', $session_data);
+                        // cause this column to be converted into binary
+                        $this->allow_db_function[] = 'session_data';
+                        $session_data = "CONVERT(varbinary(max),'$session_data')";
+                    } // if
                     //$query = "SELECT CONVERT(varbinary(max),?) AS result";
                     //$result = null;
                     //$params = array(&$session_data);

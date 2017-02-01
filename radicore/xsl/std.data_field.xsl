@@ -851,11 +851,27 @@
           </xsl:when>
           
           <xsl:when test="$item/@control='button'">
-            <xsl:call-template name="button">
-              <xsl:with-param name="item" select="$item"/>
-              <xsl:with-param name="multiple" select="$multiple"/>
-              <xsl:with-param name="position" select="$position"/>
-            </xsl:call-template>
+            <xsl:choose>
+              <xsl:when test="$item/array">
+                <!-- display this as an array of buttons -->
+                <xsl:for-each select="$item/array">
+                  <xsl:call-template name="button">
+                    <xsl:with-param name="item" select="."/>
+                    <xsl:with-param name="multiple" select="$multiple"/>
+                    <xsl:with-param name="position" select="$position"/>
+                  </xsl:call-template>
+                  <xsl:text>&#160; </xsl:text> <!-- insert two spaces as a separator -->
+                </xsl:for-each>
+              </xsl:when>
+              <xsl:otherwise>
+                <!-- display this as a single button -->
+                <xsl:call-template name="button">
+                  <xsl:with-param name="item" select="$item"/>
+                  <xsl:with-param name="multiple" select="$multiple"/>
+                  <xsl:with-param name="position" select="$position"/>
+                </xsl:call-template>
+              </xsl:otherwise>
+            </xsl:choose>
           </xsl:when>
 
           <xsl:when test="$item/@control='checkbox'">
@@ -1119,7 +1135,7 @@
 
 <!--
 ****************************************************************************************
-* BUTTON - create a '<buuton ...>' control
+* BUTTON - create a '<button ...>' control
 ****************************************************************************************
 -->
 <xsl:template name="button">
@@ -1813,7 +1829,6 @@
 -->
 <xsl:template name="hyperlink">
   <xsl:param name="item"/>
-  <xsl:param name="data"/>        <!-- data from the current row -->
   <xsl:param name="cellattr"/>    <!-- structure/row/cell attributes -->
 
   <xsl:if test="string-length(normalize-space($item)) > 0">

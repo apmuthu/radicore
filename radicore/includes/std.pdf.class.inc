@@ -1109,15 +1109,19 @@ class PDF extends TCPDF
                         if (substr($text, 0, 2) == '%%') {
                             // replace field name with field data
                         	$fieldname = substr($text, 2);
-                        	if (isset($this->fieldarray[$fieldname]) OR is_null($this->fieldarray[$fieldname])) {
-                        		$text = $this->fieldarray[$fieldname];
-                        		$attributes['text'] = $text;
-                        		if (isset($attributes['print_only_once'])) {
-                        		    // empty this field so that it is not output again if the page overflows
-                        		    // (when used in conjunction with 'ignore_if_empty')
-                        			$this->fieldarray[$fieldname] = '';
-                        		} // if
-                        	} // if
+                            if (array_key_exists($fieldname, $this->fieldarray)) {
+                        	    if (isset($this->fieldarray[$fieldname]) OR is_null($this->fieldarray[$fieldname])) {
+                        		    $text = $this->fieldarray[$fieldname];
+                        		    $attributes['text'] = $text;
+                        		    if (isset($attributes['print_only_once'])) {
+                        		        // empty this field so that it is not output again if the page overflows
+                        		        // (when used in conjunction with 'ignore_if_empty')
+                        			    $this->fieldarray[$fieldname] = '';
+                        		    } // if
+                        	    } // if
+                            } else {
+                                $attributes['text'] = null;
+                            } // if
                         } // if
             	    } elseif (isset($attributes['type'])) {
             	        switch (strtolower($attributes['type'])) {

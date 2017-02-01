@@ -424,40 +424,55 @@ abstract class Default_Table
 
         $this->sql_union = null;
 
-        $DML =& $this->_getDBMSengine($this->dbname);
-
-        $result = $DML->commit($this->dbname_server);
-        if ($result) {
-            if (is_True($update_script_vars)) {
-                // update has been committed, so remove any 'run_at_cancel' reference
-                if ($this->initiated_from_controller) {
-                    if (isset($GLOBALS['script_vars']['task_id_run_at_cancel'])) {
-                        unset($GLOBALS['script_vars']['task_id_run_at_cancel']);
-                        unset($GLOBALS['script_vars']['task_id_run_at_cancel_context']);
-                    } // if
-                    $script_vars = updateScriptVars($GLOBALS['script_vars']);
-                } // if
-            } // if
+        if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
+            $condition = true;  // workflow not enabled, so do nothing
         } else {
-            $errors[] = $this->getLanguageText('sys0009'); // 'Commit failed'
+            if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
+                $condition = true;  // no workflows allowed on this database
+            } elseif (array_key_exists('rdc_has_errors', $this->fieldarray)) {
+                $condition = true;  // update failed, so do nothing
+            } else {
+                // if this task+context is a pending workitem then update it
+                $errors = $this->_examineWorkflow($this->fieldarray);
+            } // if
+        } // if
+
+        $DML =& $this->_getDBMSengine($this->dbname);
+        if ($errors) {
+            $result = $DML->rollback($this->dbname_server);
+        } else {
+            if ($result = $DML->commit($this->dbname_server)) {
+                if (is_True($update_script_vars)) {
+                    // update has been committed, so remove any 'run_at_cancel' reference
+                    if ($this->initiated_from_controller) {
+                        if (isset($GLOBALS['script_vars']['task_id_run_at_cancel'])) {
+                            unset($GLOBALS['script_vars']['task_id_run_at_cancel']);
+                            unset($GLOBALS['script_vars']['task_id_run_at_cancel_context']);
+                        } // if
+                        $script_vars = updateScriptVars($GLOBALS['script_vars']);
+                    } // if
+                } // if
+            } else {
+                $errors[] = $this->getLanguageText('sys0009'); // 'Commit failed'
+            } // if
         } // if
 
         $GLOBALS['transaction_has_started'] = FALSE;
 
-        if (empty($errors)) {
-            if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
-                $condition = true;  // workflow not enabled, so do nothing
-            } else {
-                if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
-                    $condition = true;  // no workflows allowed on this database
-                } elseif (array_key_exists('rdc_has_errors', $this->fieldarray)) {
-                    $condition = true;  // update failed, so do nothing
-                } else {
-                    // if this task+context is a pending workitem then update it
-                    $errors = $this->_examineWorkflow($this->fieldarray);
-                } // if
-            } // if
-        } // if
+//        if (empty($errors)) {
+//            if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
+//                $condition = true;  // workflow not enabled, so do nothing
+//            } else {
+//                if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
+//                    $condition = true;  // no workflows allowed on this database
+//                } elseif (array_key_exists('rdc_has_errors', $this->fieldarray)) {
+//                    $condition = true;  // update failed, so do nothing
+//                } else {
+//                    // if this task+context is a pending workitem then update it
+//                    $errors = $this->_examineWorkflow($this->fieldarray);
+//                } // if
+//            } // if
+//        } // if
 
         return $errors;
 
@@ -1738,7 +1753,11 @@ abstract class Default_Table
                                             $timezone_client = $_SESSION['timezone_client'];     // timezone of logon user
                                         } // if
                                     } else {
-                                        $timezone_client = $_SESSION['timezone_client'];    // timezone of logon user
+                                        if (!empty($_SESSION['timezone_client'])) {
+                                            $timezone_client = $_SESSION['timezone_client'];    // timezone of logon user
+                                        } else {
+                                            $timezone_client = '';
+                                        } // if
                                     } // if
                                     $fieldvalue = convertTZdate($date, '12:00:00', $_SESSION['timezone_server'], $timezone_client);
                                 } // if
@@ -1771,7 +1790,11 @@ abstract class Default_Table
                                             $timezone_client = $_SESSION['timezone_client'];     // timezone of logon user
                                         } // if
                                     } else {
-                                        $timezone_client = $_SESSION['timezone_client'];    // timezone of logon user
+                                        if (!empty($_SESSION['timezone_client'])) {
+                                            $timezone_client = $_SESSION['timezone_client'];    // timezone of logon user
+                                        } else {
+                                            $timezone_client = '';
+                                        } // if
                                     } // if
                                     $fieldvalue = convertTZ($datetime, $_SESSION['timezone_server'], $timezone_client);
                                 } // if
@@ -2227,7 +2250,9 @@ abstract class Default_Table
             } // if
         } // if
 
-        if ($GLOBALS['mode'] != 'insert') {
+        if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'insert') {
+            // do nothing
+        } else {
             // clear 'nodisplay' option which may have been set in previous iteration
             foreach ($this->fieldspec as $field => $spec) {
                 if (array_key_exists('autoinsert', $spec) OR array_key_exists('autoupdate', $spec)) {
@@ -2295,7 +2320,7 @@ abstract class Default_Table
             if (!empty($where_array['rdcaccount_id'])) {
                 // value has already been supplied, so continue
             } else {
-                $account_id = $_SESSION['rdcaccount_id'];
+                $account_id =& $_SESSION['rdcaccount_id'];
                 if (empty($account_id)) {
                     // no account id supplied, so read everything on these tables only
                 } else {
@@ -2916,7 +2941,7 @@ abstract class Default_Table
         } // if
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
-            $account_id = $_SESSION['rdcaccount_id'];
+            $account_id =& $_SESSION['rdcaccount_id'];
             if (empty($account_id)) {
                 $account_id = 1;  // change from NULL to the shared account
             } // if
@@ -3253,11 +3278,15 @@ abstract class Default_Table
         } // if
 
         $this->rows_per_page = $rows_per_page;  // restore
-        $this->lastpage      = ceil($this->numrows/$this->rows_per_page);
+        if ($this->rows_per_page > 0) {
+            $this->lastpage = ceil($this->numrows/$this->rows_per_page);
+        } else {
+            $this->lastpage = 1;
+        } // if
         if ($pageno       > $this->lastpage) {
             $this->pageno = $this->lastpage;
         } else {
-            $this->pageno    = $pageno;
+            $this->pageno = $pageno;
         } // if
 
         if (!empty($this->select_string)) {
@@ -3604,16 +3633,18 @@ abstract class Default_Table
     function getUploadSubdir ()
     // return the name of this table.
     {
+        $subdir = null;
+
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getUploadSubdir')) {
-                $subdir = $this->custom_processing_object->_cm_getUploadSubdir();
+                $subdir = $this->custom_processing_object->_cm_getUploadSubdir($subdir);
             } // if
         } // if
         if ($this->custom_replaces_standard) {
             $this->custom_replaces_standard = false;
         } else {
             if (empty($subdir)) {
-                $subdir = $this->_cm_getUploadSubdir();
+                $subdir = $this->_cm_getUploadSubdir($subdir);
             } // if
         } // if
 
@@ -3867,7 +3898,7 @@ abstract class Default_Table
                         // not a valid value, so remove it
                         unset($fieldarray[$fieldname]);
                     } else {
-                        if (array_key_exists('control', $this->fieldspec[$fieldname])) {
+                        if (isset($this->fieldspec[$fieldname]) AND array_key_exists('control', $this->fieldspec[$fieldname])) {
                             // if 'control' is set then only operators of '=' are allowed
                             if (preg_match('/^=/', trim($fieldvalue))) {
                                 $fieldarray[$fieldname] = stripOperators($fieldvalue);
@@ -3921,7 +3952,7 @@ abstract class Default_Table
                 $search_table = $this->tablename;
             } // if
 
-            if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
+            if (isset($_SESSION['search']) AND is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
                 // retrieve previous search criteria and copy into this screen
                 $previous = $_SESSION['search'][$search_table];
                 // convert from string to associative array
@@ -4192,34 +4223,67 @@ abstract class Default_Table
             } // if
         } // if
 
-        if (!$this->errors) {
+        if (empty($this->errors)) {
+            $insert_count   = 0;
+            $update_count   = 0;
+            $delete_count   = 0;
+            $unchange_count = 0;
             // insert each row one by one
-            foreach ($fieldarray as $rownum => $data) {
-                if (!empty($data)) {
-                    $this->numrows = 0;
-                    $fieldarray[$rownum] = $this->insertRecord($fieldarray[$rownum]);
-                    if (!empty($this->errors)) {
-                        // keep $errors separate for each row
-                        $errors[$rownum] = $this->errors;
+            foreach ($fieldarray as $rownum => $rowdata) {
+                if (!empty($rowdata)) {
+                    if (array_key_exists('rdc_to_be_updated', $rowdata)) {
+                        //$pageno = $this->pageno;  // save
+                        $fieldarray[$rownum] = $this->updateRecord($rowdata);
+                        if (!empty($this->errors)) {
+                            $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                        } elseif ($this->numrows > 0) {
+                            $update_count = $update_count + $this->numrows;
+                        } else {
+                            $unchange_count++;
+                        } // if
+                        //$this->pageno = $pageno;  // restore
+
+                    } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                        $fieldarray[$rownum] = $this->deleteRecord($rowdata);
+                        if (!empty($this->errors)) {
+                            $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                        } elseif ($this->numrows > 0) {
+                            $delete_count = $delete_count + $this->numrows;
+                        } else {
+                            $unchange_count++;
+                        } // if
+
                     } else {
-                        $count = $count + $this->numrows;
-//                        if ($GLOBALS['mode'] == 'batch') {
-//                            if ($count % 100 == 0) {
-//                                echo "<p>$count records written</p>\n";
-//                            } // if
-//                        } // if
+                        $this->numrows = 0;
+                        $fieldarray[$rownum] = $this->insertRecord($rowdata);
+                        if (!empty($this->errors)) {
+                            $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                        } else {
+                            $insert_count = $insert_count + $this->numrows;
+                        } // if
                     } // if
                 } // if
             } // foreach
 
             $this->errors  = $errors;
-            $this->numrows = $count;
+            $this->numrows = $insert_count;
 
             if (is_True($this->no_display_count)) {
                 // do not display record count
-            } else {
-                // 'X records were inserted into tablename'
-                $this->messages[] = $this->getLanguageText('sys0005', $count, strtoupper($this->tablename));
+            } elseif (empty($errors)) {
+                // '$count records were updated in $tablename'
+                if ($delete_count > 0) {
+                    $this->messages[] = $this->getLanguageText('sys0004', $delete_count, strtoupper($this->tablename));
+                } // if
+                if ($insert_count > 0) {
+                    $this->messages[] = $this->getLanguageText('sys0005', $insert_count, strtoupper($this->tablename));
+                } // if
+                if ($update_count > 0) {
+                    $this->messages[] = $this->getLanguageText('sys0006', $update_count, strtoupper($this->tablename));
+                } // if
+                if ($unchange_count > 0) {
+                    $this->messages[] = $this->getLanguageText('sys0262', $unchange_count, strtoupper($this->tablename));
+                } // if
             } // if
 
             if (empty($this->errors)) {
@@ -4580,6 +4644,34 @@ abstract class Default_Table
         return $result;
 
     } // multiQuery
+
+    // ****************************************************************************
+    function performAction ($action, $row)
+    // perform an action on the specified row
+    {
+        $row = (int)$row;
+        if ($row < 0 OR $row > count($this->fieldarray)-1) {
+            return;  // row number out of bounds, so ignore
+        } // if
+
+        $fieldarray = $this->fieldarray[$row];
+
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_performAction')) {
+                $fieldarray = $this->custom_processing_object->_cm_performAction($fieldarray, $action);
+            } // if
+        } // if
+        if (empty($this->errors)) {
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $fieldarray = $this->_cm_performAction($fieldarray, $action);
+            } // if
+        } // if
+
+        return;
+
+    } // performAction
 
     // ****************************************************************************
     function popupCall (&$popupname, $where, &$script_vars, $fieldarray, &$settings, $offset=null)
@@ -5180,7 +5272,7 @@ abstract class Default_Table
                 } // foreach
                 break;
             default:
-                $this->errors[] = $this->getLanguageText('sys0012'); // 'setAction: 2nd parameter is unknown action'
+                $this->errors[] = $this->getLanguageText('sys0012', $action); // 'setAction: X is unknown action'
         } // switch
 
         return $this->fieldarray;
@@ -5260,6 +5352,10 @@ abstract class Default_Table
     {
         //$this->errors = array();
         $array = array();
+
+        if (empty($_SESSION['logon_user_id'])) {
+            return $array;
+        } // if
 
         // MNU_ROLE_TASKFIELD contains a list of fields for the current task
         // which may have the default ACCESS_TYPE altered for the current role.
@@ -5605,7 +5701,11 @@ abstract class Default_Table
             } else {
                 $search_table = $this->tablename;
             } // if
-            $_SESSION['search'][$search_table] = mergeWhere($_SESSION['search'][$search_table], $sql_search);
+            if (isset($_SESSION['search'][$search_table])) {
+                $_SESSION['search'][$search_table] = mergeWhere($_SESSION['search'][$search_table], $sql_search);
+            } else {
+                $_SESSION['search'][$search_table] = $sql_search;
+            } // if
         } // if
 
         return;
@@ -5915,7 +6015,7 @@ abstract class Default_Table
 
                 $operators = "/^(<>|<=|<|>=|>|!=|=|LIKE |IS NOT |IS |IN |BETWEEN )/i";
                 // does $fieldvalue start with a valid operator?
-                if (!preg_match($operators, ltrim($fieldvalue), $regs)) {
+                if (is_string($fieldvalue) AND !preg_match($operators, ltrim($fieldvalue), $regs)) {
                     // no, so value can be (un)formatted
                     switch (strtolower($fieldspec['type'])) {
                         case 'string':
@@ -6282,35 +6382,43 @@ abstract class Default_Table
             $delete_count   = 0;
             $unchange_count = 0;
             // now update each row in the database
-            foreach ($fieldarray as $row => $data) {
-                if (array_key_exists('rdc_to_be_inserted', $data)) {
+            foreach ($fieldarray as $rownum => $rowdata) {
+                if (array_key_exists('rdc_to_be_inserted', $rowdata)) {
                     $pageno = $this->pageno;  // save
-                    $fieldarray[$row] = $this->insertRecord($data);
-                    $insert_count = $insert_count+$this->numrows;
+                    $this->numrows = 0;
+                    $fieldarray[$rownum] = $this->insertRecord($rowdata);
+                    if (!empty($this->errors)) {
+                        $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                    } elseif ($this->numrows > 0) {
+                        $insert_count = $insert_count + $this->numrows;
+                    } // if
                     $this->pageno = $pageno;  // restore
 
-                } elseif (array_key_exists('rdc_to_be_deleted', $data)) {
-                    $fieldarray[$row] = $this->deleteRecord($data);
-                    $delete_count = $delete_count+$this->numrows;
+                } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
+                    $fieldarray[$rownum] = $this->deleteRecord($rowdata);
+                    if (!empty($this->errors)) {
+                        $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                    } elseif ($this->numrows > 0) {
+                        $delete_count = $delete_count + $this->numrows;
+                    } else {
+                        $unchange_count++;
+                    } // if
 
                 } else {
-                    $fieldarray[$row] = $this->updateRecord($data);
-                    $update_count = $update_count+$this->numrows;
-                } // if
-                if (!empty($this->errors)) {
-                    if (count($fieldarray) > 1) {
-                        // keep $errors separate for each row
-                        $errors[$row] = $this->errors;
+                    $fieldarray[$rownum] = $this->updateRecord($rowdata);
+                    if (!empty($this->errors)) {
+                        $errors[$rownum] = $this->errors;  // keep $errors separate for each row
+                    } elseif ($this->numrows > 0) {
+                        $update_count = $update_count + $this->numrows;
                     } else {
-                        $errors = $this->errors;
+                        $unchange_count++;
                     } // if
-                } else {
-                    $count = $count + $this->numrows;
                 } // if
             } // foreach
+
             // overwrite proper variables
             $this->errors  = $errors;
-            $this->numrows = $count;
+            $this->numrows = $update_count;
         } // if
 
         if (is_True($this->no_display_count)) {
@@ -6325,6 +6433,9 @@ abstract class Default_Table
             } // if
             if ($update_count > 0) {
                 $this->messages[] = $this->getLanguageText('sys0006', $update_count, strtoupper($this->tablename));
+            } // if
+            if ($unchange_count > 0) {
+                $this->messages[] = $this->getLanguageText('sys0262', $unchange_count, strtoupper($this->tablename));
             } // if
         } // if
 
@@ -6577,6 +6688,7 @@ abstract class Default_Table
         $this->errors = array();
 
         if (is_array($selection) AND is_long(key($selection))) {
+            // this is an indexed array, so reduce to first entry only
             $selection = $selection[key($selection)];
         } // if
 
@@ -6931,7 +7043,7 @@ abstract class Default_Table
         } // foreach
 
         // perform any custom pre-update validation
-        $fieldarray = $this->custom_validateUpdate($fieldarray, null);
+        $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
 
         return $fieldarray;
 
@@ -7105,6 +7217,17 @@ abstract class Default_Table
     } // _cm_getEmailParams
 
     // ****************************************************************************
+    function _cm_getExcelLabelRownum ($label_rownum)
+    // get row number which contains the column headings in the current Excel worksheet.
+    {
+        // custom codce goes here
+        //$label_rownum = 3;
+
+        return $label_rownum;
+
+    } // _cm_getExcelLabelRownum
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -7265,7 +7388,7 @@ abstract class Default_Table
             return $this->upload_subdir;
         } // if
 
-        return;
+        return $subdir;
 
     } // _cm_getUploadSubdir
 
@@ -7505,6 +7628,16 @@ abstract class Default_Table
         } // if
 
     } // _cm_output_multi
+
+    // ****************************************************************************
+    function _cm_performAction ($fieldarray, $action)
+    // perform an action on the specified row
+    {
+        // custom code goes here
+
+        return $fieldarray;
+
+    } // _cm_performAction
 
     // ****************************************************************************
     function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
@@ -7923,6 +8056,17 @@ abstract class Default_Table
         return;
 
     } // _cm_restart
+
+    // ****************************************************************************
+    function _cm_setExcelPreLabelData ($data)
+    // load rows of data which appeared before the column headings in the current Excel worksheet.
+    // (only used when ->getExcelLabelRownum() returns a value greater than 1)
+    {
+        $this->pre_label_data = $data;
+
+        return;
+
+    } // _cm_setExcelPreLabelData
 
     // ****************************************************************************
     function _cm_setJavaScript ($javascript)
@@ -8379,6 +8523,13 @@ abstract class Default_Table
         $array = $DML->insertRecord($this->dbname_server, $this->tablename, $fieldarray);
 
         $this->errors  = array_merge($this->errors, $DML->getErrors());
+        if (isset($this->messages)) {
+            if (!is_array($this->messages)) {
+                $this->messages = (array)$this->messages;
+            } // if
+        } else {
+            $this->messages = array();
+        } // if
         if (method_exists($DML, 'getMessages')) {
             $this->messages = array_merge($this->messages, $DML->getMessages());
         } // if
@@ -8426,7 +8577,7 @@ abstract class Default_Table
                 $where_array = where2array($where);
                 $parent_data =& $this->getParentData();
                 $checkPrimaryKey = $this->checkPrimaryKey;  // save
-                $this->checkPrimaryKey = true;  //change
+                $this->checkPrimaryKey = true;  // change
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
                         $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
@@ -8440,6 +8591,14 @@ abstract class Default_Table
                     if ($this->errors) return;
                 } // if
                 $this->checkPrimaryKey = $checkPrimaryKey;  // restore
+                if (empty($this->sql_select)) {
+                    // still empty, so execute default code
+                    $this->sql_from    = null;
+                    $this->sql_groupby = null;
+                    $this->sql_having  = null;
+                    $this->sql_union   = null;
+                    $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+                } // if
             } // if
             $having_array = array();
             $where = qualifyWhere($where, $this->tablename, $this->fieldspec, $this->sql_from, null, null, $having_array);
@@ -8526,6 +8685,13 @@ abstract class Default_Table
         $array = $DML->updateRecord($this->dbname_server, $this->tablename, $fieldarray, $oldarray, $where);
 
         $this->errors  = array_merge($this->errors, $DML->getErrors());
+        if (isset($this->messages)) {
+            if (!is_array($this->messages)) {
+                $this->messages = (array)$this->messages;
+            } // if
+        } else {
+            $this->messages = array();
+        } // if
         if (method_exists($DML, 'getMessages')) {
             $this->messages = array_merge($this->messages, $DML->getMessages());
         } // if
@@ -8560,6 +8726,13 @@ abstract class Default_Table
             } // if
             $count = $DML->updateSelection($this->dbname_server, $this->tablename, $replace, $selection);
             $this->errors = array_merge($this->errors, $DML->getErrors());
+            if (isset($this->messages)) {
+                if (!is_array($this->messages)) {
+                    $this->messages = (array)$this->messages;
+                } // if
+            } else {
+                $this->messages = array();
+            } // if
             if (method_exists($DML, 'getMessages')) {
                 $this->messages = array_merge($this->messages, $DML->getMessages());
             } // if
@@ -8630,7 +8803,7 @@ abstract class Default_Table
         // interface with the workflow engine
         $workflow =& RDCsingleton::getInstance('workflow_engine');
 
-        $res = $workflow->startTransaction();
+        //$res = $workflow->startTransaction();
 
         // look to see if this task is a workitem within an existing workflow case
         if (isset($wf_case_id) and isset($wf_workitem_id)) {
@@ -8642,6 +8815,7 @@ abstract class Default_Table
                 $res = $workflow->rollback();
                 return $this->errors;
             } // if
+            //$res = $workflow->commit(false, false);
             return;
         } // if
 
@@ -8653,7 +8827,7 @@ abstract class Default_Table
             return $this->errors;
         } // if
 
-        $res = $workflow->commit(false, false);
+        //$res = $workflow->commit(false, false);
 
         unset($workflow);
 
@@ -8676,13 +8850,15 @@ abstract class Default_Table
         // look for a workitem that matches this task_id and context
         $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
 
-        // ensure that a selection of multiple rows is reduced to a single row
-        $multiples = splitWhereByRow($where);
-        $where = array_shift($multiples);
+        if (is_array($where)) {
+            // ensure that a selection of multiple rows is reduced to a single row
+            $multiples = splitWhereByRow($where);
+            $where = array_shift($multiples);
+        } // if
 
         $context = addslashes(trim($where, ' ()'));
         // use 'LIKE' as the passed context may have been trimmed
-        $workitem_where = "task_id='{$GLOBALS['task_id']}' AND workitem_status IN ('EN','IP')";
+        $workitem_where = "task_id='{$GLOBALS['task_id']}' AND workitem_status IN ('EN','IP') AND case_status='OP'";
         $workitem_data = $dbworkitem->getData($workitem_where." AND context LIKE '{$context}%'");
         if ($dbworkitem->errors) {
             $this->errors = array_merge($this->errors, $dbworkitem->getErrors());

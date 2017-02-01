@@ -106,6 +106,8 @@ if ($csv->errors) {
 } // if
 
 if (!isset($GLOBALS['batch'])) {
+    // remove spinner and re-enable submit button
+    setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+30);
     // send to client browser
     header("Content-type: text/comma-separated-values");
     header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
@@ -113,7 +115,8 @@ if (!isset($GLOBALS['batch'])) {
     header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Pragma: public');
     echo $output;
-    unset($_SESSION['pages'][getSelf()]);
+    flush();
+    scriptPrevious();
 } else {
     // write to disk file
     if (!empty($output) AND !empty($csvout)) {

@@ -31,7 +31,7 @@ class mnu_role extends Default_Table
         $this->errors = array();
         $result       = array();
 
-        if (empty($user_id)) {
+        if (empty($user_id) AND !empty($_SESSION['logon_user_id'])) {
             $user_id = $_SESSION['logon_user_id'];
         } // if
         if (empty($user_id)) {
@@ -304,7 +304,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
     function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         // only do this if sql_select is empty

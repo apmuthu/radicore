@@ -6,7 +6,7 @@
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
@@ -14,13 +14,14 @@
             indent="yes"
             encoding="UTF-8"
 />
-  
+
 <!-- display details for a tree node (horizontally) -->
 <xsl:template name="display_tree_node">
   <xsl:param name="zone"/>   <!-- could be 'main', 'inner', 'outer', etc -->
 
   <xsl:variable name="table" select="name()"/>          <!-- current table name -->
   <xsl:variable name="position" select="position()"/>   <!-- current row within table -->
+  <xsl:variable name="noselect" select="@noselect"/>    <!-- 'noselect' flag for this occurrence -->
 
   <!-- obtain the names used for each of the node components -->
   <xsl:variable name="id" select="/root/structure/*[name()=$zone]/node_data_names/@id"/>
@@ -40,8 +41,10 @@
     </xsl:attribute>
 
     <td>
-      <!-- this cell contains the checkbox to make selections -->
-      <xsl:call-template name="selectbox"/>
+      <xsl:if test="not($noselect)">
+        <!-- this cell contains the checkbox to make selections -->
+        <xsl:call-template name="selectbox"/>
+      </xsl:if>
     </td>
 
     <!-- these table cells contain the actual data -->
@@ -55,6 +58,7 @@
         <xsl:with-param name="expanded" select="//*[name()=$table][position()=$position]/*[name()=$expanded]"/>
         <xsl:with-param name="icon" select="//*[name()=$table][position()=$position]/*[name()=$icon]"/>
         <xsl:with-param name="f-s-depth" select="//*[name()=$table][position()=$position+1]/*[name()=$depth]"/>
+        <xsl:with-param name="noselect" select="$noselect"/>
       </xsl:call-template>
     </td>
 
@@ -77,6 +81,7 @@
   <xsl:param name="expanded"/>
   <xsl:param name="icon"/>
   <xsl:param name="f-s-depth"/> <!-- following sibling depth -->
+  <xsl:param name="noselect"/>
 
   <!-- insert a bookmark -->
   <a name="{$id}"></a>
@@ -137,8 +142,20 @@
         <xsl:attribute name="class">text</xsl:attribute>
       </xsl:otherwise>
     </xsl:choose>
+    
     <!-- now include the description's text -->
-    <xsl:value-of select="$desc" />
+    <xsl:choose>
+      <xsl:when test="$desc/@control='hyperlink' and not($noselect='y')">
+        <!-- display this as a single hyperlink -->
+        <xsl:call-template name="hyperlink">
+          <xsl:with-param name="item" select="$desc"/>
+        </xsl:call-template>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="$desc" />
+      </xsl:otherwise>
+    </xsl:choose>
+    
     <!-- check if field has error attribute set -->
     <xsl:if test="$desc/@error">
       <br/><span class="error"><xsl:value-of select="$desc/@error"/></span>

@@ -342,11 +342,11 @@ class XMLRPC_client
 
         // obtain backtrace data
         $result = debug_backtrace();
-        $trace = null;
+        $trace = '';
         foreach ($result as $level => $string) {
             $trace .= "$level: array =\n";
             if (is_array($string)) {
-                $trace = print_Trace($level, $string, $trace);
+                $trace .= print_Trace($level, $string);
             } // if
         } // foreach
 

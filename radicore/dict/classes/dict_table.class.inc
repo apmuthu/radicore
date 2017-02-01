@@ -134,9 +134,6 @@ class dict_table extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        $database_id = $fieldarray['database_id'];
-        $table_id    = $fieldarray['table_id'];
-
         if (!array_key_exists('audit_logging', $this->lookup_data)) {
             // get arrays to put into LOOKUP_DATA
             $array = $this->getValRep('audit_logging');
@@ -154,17 +151,21 @@ class dict_table extends Default_Table
             if (!empty($fieldarray['database_id'])) {
             	// get contents of foreign table and add as a LOOKUP list
                 $dbobject =& RDCsingleton::getInstance('dict_table');
-                $array    = $dbobject->getValRep('table_id', "database_id='$database_id'");
+                $array    = $dbobject->getValRep('table_id', "database_id='{$fieldarray['database_id']}'");
                 $this->lookup_data['table_id'] = $array;
             } // if
         } // if
 
         if (!array_key_exists('nameof_start_date', $this->lookup_data)) {
-            // get list of column names which could be aliases for start/end date
-            $dbobject =& RDCsingleton::getInstance('dict_column');
-            $array    = $dbobject->getValRep('column_id', "database_id='$database_id' AND table_id='$table_id'");
-            $this->lookup_data['nameof_start_date'] = $array;
-            $this->lookup_data['nameof_end_date'] = $array;
+            if (!empty($fieldarray['database_id']) AND !empty($fieldarray['table_id'])) {
+                $database_id = $fieldarray['database_id'];
+                $table_id    = $fieldarray['table_id'];
+                // get list of column names which could be aliases for start/end date
+                $dbobject =& RDCsingleton::getInstance('dict_column');
+                $array    = $dbobject->getValRep('column_id', "database_id='$database_id' AND table_id='$table_id'");
+                $this->lookup_data['nameof_start_date'] = $array;
+                $this->lookup_data['nameof_end_date'] = $array;
+            } // if
         } // if
 
         $pattern_id = getPatternId();

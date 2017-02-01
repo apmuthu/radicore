@@ -112,16 +112,21 @@ class sqlsrv
 /imsx
 END_OF_PATTERN;
 
+        $string_out = '';
         if (preg_match($pattern, $string_in, $regs, PREG_OFFSET_CAPTURE)) {
             // found "function(......)" so see if it contains a 'quoted_string'
-            $regs['quoted_string'][0] = trim($regs['quoted_string'][0]);
-            if (!empty($regs['quoted_string'][0])) {
-                // a quoted string has been found, so escape any quotes within it
-                $quoted_string = $regs['quoted_string'][0];
-                $length1 = strlen($quoted_string);
-                $offset1 = $regs['quoted_string'][1];
-                $quoted_string = str_replace("'", "''", $quoted_string);
-                $string_out = substr_replace($string_in, $quoted_string, $offset1, $length1);
+            if (isset($regs['quoted_string'])) {
+                $regs['quoted_string'][0] = trim($regs['quoted_string'][0]);
+                if (!empty($regs['quoted_string'][0])) {
+                    // a quoted string has been found, so escape any quotes within it
+                    $quoted_string = $regs['quoted_string'][0];
+                    $length1 = strlen($quoted_string);
+                    $offset1 = $regs['quoted_string'][1];
+                    $quoted_string = str_replace("'", "''", $quoted_string);
+                    $string_out = substr_replace($string_in, $quoted_string, $offset1, $length1);
+                } else {
+                    $string_out = str_replace("'", "''", $string_in);
+                } // if
             } else {
                 $string_out = str_replace("'", "''", $string_in);
             } // if
@@ -238,15 +243,31 @@ END_OF_REGEX;
         } // if
 
         // turn $group_str into an array (delimiter is ',' followed by zero or more spaces)
-        $group_array = preg_split('/, */', $group_str);
+        $group_array       = preg_split('/, */', $group_str);
+        $group_array_count = $group_array;
 
         list($field_alias, $field_orig) = extractFieldNamesIndexed ($select_str);
         foreach ($field_alias as $ix => $fieldname) {
         	if ($fieldname == $field_orig[$ix]) {
         	    // $fieldname is not an alias for an expression, so include in $group_array
         		if (!in_array($fieldname, $group_array)) {
-        			$group_array[] = $fieldname;
+        			$group_array[]       = $fieldname;
+                    $group_array_count[] = $fieldname;
         		} // if
+            } else {
+                if (preg_match('/\([ ]*SELECT\b/i', $field_orig[$ix])) {
+                    // this is a subquery, so ignore it
+                } elseif (preg_match('/^\w+\s*\(/i', $field_orig[$ix])) {
+                    // this is a function (word(...)), so ignore it
+                } else {
+                    // field name is aliased, but use the original name instead
+                    list($original, $alias) = getFieldAlias3($field_orig[$ix]);
+                    if (preg_match('/^\d/', $original)) {
+                        // this begins with a number, so ignore it
+                    } elseif (!in_array($original, $group_array)) {
+                        $group_array[] = $original;
+                    } // if
+                } // if
         	} // if
         } // foreach
 
@@ -271,9 +292,10 @@ END_OF_REGEX;
         } //  if
 
         // convert amended array back into a string
-        $group_str = implode(', ', $group_array);
+        $group_str       = implode(', ', $group_array);
+        $group_str_count = implode(', ', $group_array_count);
 
-        return $group_str;
+        return array($group_str, $group_str_count);
 
     } // adjustGroupBy
 
@@ -288,6 +310,7 @@ END_OF_REGEX;
         $replace = array( '=1',            '=0');
         $having_str = preg_replace($search, $replace, $having_str);
 
+        $orderby_array = array();
         if (!empty($sort_str)) {
             $sort_str = preg_replace('/^ORDER BY /iu', '', $sort_str);
             $orderby_array = explode(',', $sort_str);
@@ -557,7 +580,7 @@ EOD;
                         $when_length = strlen($when_string);
                         $offset2 += $when_length+6;
 
-                        $parts = preg_split('/[ ](AND|OR)[ ]/i', $when_string, $regs2a);
+                        $parts = preg_split('/[ ](AND|OR)[ ]/i', $when_string);
                         foreach ($parts as $part) {
                             list($name, $operator, $value) = splitNameOperatorValue($part);
                             if (array_key_exists($name, $alias_names)) {
@@ -630,7 +653,7 @@ EOD;
         $output = '';
 
         while (preg_match($pattern, $input, $regs, PREG_OFFSET_CAPTURE)) {
-            foreach ($regs as $i => $found) {
+            foreach ($regs as $ix => $found) {
                 if ($ix == 0) {
                     $word  = $found[0];
                     $start = $found[1];
@@ -882,6 +905,8 @@ END_OF_REGEX;
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
+            $start_time = getMicroTime();
+
             // fill in default settings
             if (!isset($this->connectionInfo['CharacterSet'])) {
             	$this->connectionInfo['CharacterSet'] = 'UTF-8';
@@ -929,10 +954,12 @@ END_OF_REGEX;
 
                 $this->query = "SET IMPLICIT_TRANSACTIONS OFF";
                 $result = sqlsrv_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
-                // write query to log file, if option is turned on
-                logSqlQuery ($dbname, null, $this->query);
 
                 $this->query = '';
+
+                // write query to log file, if option is turned on
+                $end_time = getMicroTime();
+                logSqlQuery ($dbname, null, 'CONNECT', null, $start_time, $end_time);
             } // if
         } // if
         if (!$dbconn) {
@@ -941,12 +968,18 @@ END_OF_REGEX;
 
         //if (!empty($dbname) AND $dbname != $this->dbname_prev) {
         if (!empty($dbname)) {
+            $start_time = getMicroTime();
+
             $this->query = "USE [$dbname]";
             $result = sqlsrv_query($dbconn, $this->query) or trigger_error($this, E_USER_ERROR);
             // write query to log file, if option is turned on
             logSqlQuery ($dbname, null, $this->query);
             $this->query = '';
             $this->dbname = $dbname;
+
+            // write query to log file, if option is turned on
+            $end_time = getMicroTime();
+            logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
         } // if
 
         $this->dbname_prev = $dbname;
@@ -1176,10 +1209,13 @@ END_OF_REGEX;
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "\nGROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
-            //$group_str = "\nGROUP BY $this->sql_groupby";
+            // note that there are two versions of $group_str
+            list($group_str, $group_str_count) = $this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            $group_str       = "\nGROUP BY " .$group_str;
+            $group_str_count = "\nGROUP BY " .$group_str_count;
         } else {
-            $group_str = NULL;
+            $group_str       = NULL;
+            $group_str_count = NULL;
         } // if
 
         // incorporate optional sort order
@@ -1204,10 +1240,10 @@ END_OF_REGEX;
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
             if (empty($this->sql_union)) {
-                $query = "SELECT count(*) FROM $from_str $where_str $group_str $having_str";
+                $query = "SELECT count(*) FROM $from_str $where_str $group_str_count $having_str";
             } else {
                 // build query
-                $query = "SELECT count(*) FROM (\nSELECT $select_str \nFROM $from_str \n$where_str $group_str $having_str \nUNION ALL\n {$this->sql_union} \n) AS x";
+                $query = "SELECT count(*) FROM (\nSELECT $select_str FROM $from_str $where_str $group_str_count $having_str \nUNION ALL\n {$this->sql_union} \n) AS x";
             } // if
             $this->numrows = $this->getCount($dbname, $tablename, $query);
 
@@ -1379,8 +1415,8 @@ END_OF_REGEX;
 
         // incorporate optional GROUP BY parameters
         if (!empty($this->sql_groupby)) {
-            $group_str = "\nGROUP BY " .$this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
-            //$group_str = "GROUP BY $this->sql_groupby";
+            list($group_str, $group_str_count) = $this->adjustGroupBy ($select_str, $this->sql_groupby, $this->sql_orderby);
+            $group_str       = "\nGROUP BY " .$group_str;
         } else {
             $group_str = NULL;
         } // if

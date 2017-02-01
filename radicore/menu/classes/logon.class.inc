@@ -95,7 +95,7 @@ class logon extends mnu_user
         $fieldarray = $this->validatePassword ($logon_user_id, $logon_password, $ip_address, $external_auth_off);
 
         if (!empty($this->errors)) {
-            $this->PasswordRetries($user_id, $updatearray['user_password']);
+            $this->PasswordRetries($logon_user_id, $logon_password);
             $this->fieldarray['user_password'] = '';
             return $this->errors;
         } // if
@@ -185,6 +185,8 @@ class logon extends mnu_user
         $_SESSION['date_format_input']  = $fieldarray['input_date_format'];
         $_SESSION['date_format_output'] = $fieldarray['output_date_format'];
         //$_SESSION['selection_lock']   = true;
+
+        $_SESSION['display_foreign_currency'] = false;
 
         // save list of roles from MNU_USER_ROLE table
         $array = explode(',', $fieldarray['role_list']);

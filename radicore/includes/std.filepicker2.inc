@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker2.inc
@@ -79,6 +79,7 @@ if (isset($script_vars['fileobject'])) {
     // do not display the 'show nn' hyperlinks
     $fileobject->xsl_params['noshow'] = 'y';
     // perform any initialisation
+    $fileobject->search = null;
     $where = $fileobject->initialise($where, $selection);
     if (!isset($search)) $search = null;
     $fileobject->initialiseFilePicker($where, $search);
@@ -115,7 +116,7 @@ if (!empty($_POST)) {
 
 if (isset($_POST['reset'])) {
     // re-initialise all settings to start afresh
-    $where = $fileobject->reset($where);
+    $null = $fileobject->reset($where);
 } // if
 
 $ftp_server = $fileobject->ftp_server;

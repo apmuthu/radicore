@@ -32,6 +32,8 @@ class wf_transition extends Default_Table
         if ($GLOBALS['mode'] == 'search') {
             $this->fieldspec['task_id']['allow_input'] = 'y';
             $this->fieldspec['task_id']['foreign_field'] = 'task_id';
+            unset($this->fieldspec['workflow_name']['noedit']);
+            unset($this->fieldspec['transition_trigger']['noedit']);
         } // if
 
         return $fieldarray;
@@ -106,12 +108,13 @@ class wf_transition extends Default_Table
     // Perform custom processing for the getInitialData method.
     // $fieldarray contains data from the initial $where clause.
     {
-        if (isset($fieldarray['workflow_id'])) {
+        if (!empty($fieldarray['workflow_id']) AND empty($fieldarray['transition_id'])) {
             // set transition_id to next available number for this workflow_id
             $workflow_id = $fieldarray['workflow_id'];
             $query = "SELECT max(transition_id) FROM $this->tablename WHERE workflow_id='$workflow_id'";
             $count = $this->getCount($query);
             $fieldarray['transition_id'] = $count + 1;
+            $retry_on_duplicate_key = 'transition_id';
         } // if
 
         return $fieldarray;
@@ -154,7 +157,7 @@ class wf_transition extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered.
@@ -206,6 +209,22 @@ class wf_transition extends Default_Table
     } // _cm_post_deleteRecord
 
     // ****************************************************************************
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    {
+        foreach ($rows as $rownum => $rowdata) {
+            if (isset($rowdata['task_id']) AND $rowdata['task_id'] == '.') {
+                $rowdata['task_id'] = null;  // remove dummy entry
+                $rows[$rownum] = $rowdata;
+            } // if
+        } // foreach
+
+        return $rows;
+
+    } // _cm_post_getData
+
+    // ****************************************************************************
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record has been inserted.
     {
@@ -226,11 +245,10 @@ class wf_transition extends Default_Table
     } // _cm_post_updateRecord
 
     // ****************************************************************************
-    function _cm_pre_getData ($where, $where_array, $fieldarray=null)
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
-    // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
-    // class, not just its primary key.
+    // (WHERE is supplied in two formats - string and array).
+    // $parent_data may contain contents of current record in the parent object.
     {
         // find out if tables in the 'menu' database need to be qualified
         $menuDB = findDBName('menu', $this->dbname);
@@ -238,10 +256,10 @@ class wf_transition extends Default_Table
         // only do this if sql_select is empty
         if (empty($this->sql_select)) {
             // include columns from foreign table
-            $this->sql_select = 'wf_transition.*, task_desc, role_desc';
+            $this->sql_select = 'wf_transition.*, mnu_task.task_desc, mnu_role.role_desc';
             $this->sql_from   = 'wf_transition '
-                              . 'LEFT JOIN '.$menuDB.'mnu_task ON (mnu_task.task_id=wf_transition.task_id) '
-                              . 'LEFT JOIN '.$menuDB.'mnu_role ON (mnu_role.role_id=wf_transition.role_id)';
+                              . "LEFT JOIN {$menuDB}mnu_task ON (mnu_task.task_id=wf_transition.task_id) "
+                              . "LEFT JOIN {$menuDB}mnu_role ON (mnu_role.role_id=wf_transition.role_id) ";
         } // if
 
         return $where;

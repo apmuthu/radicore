@@ -172,13 +172,15 @@ class mnu_user extends Default_Table
             $logon_password = $password;
         } // if
 
+        $user_id        = addslashes($user_id);
+        $logon_password = addslashes($logon_password);
+
         // join to MNU_ROLE to obtain start_task_id
         $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
         $this->sql_from   = 'mnu_user'
                           ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
                           .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
-        $where = "mnu_user.user_id='" .addslashes($user_id) ."'";
-        $user_id = addslashes($user_id);
+        $where = "mnu_user.user_id='{$user_id}'";
         if (!empty($ip_address)) {
             // lookup on MNU_USER_IP_ADDRESS to see if this IP address is valid
             $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
@@ -192,7 +194,7 @@ class mnu_user extends Default_Table
         $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_id, '{$_SESSION['default_language']}'))";
         if ($auth_array['authentication'] == 'INTERNAL') {
             // include user_password in selection criteria
-            $where .= " AND user_password='" .addslashes($logon_password) ."'";
+            $where .= " AND user_password='{$logon_password}'";
         } // if
         $fieldarray = $this->getData_raw($where);
         if ($this->numrows < 1) {
@@ -382,7 +384,8 @@ class mnu_user extends Default_Table
                                                         'task_id' => 'mnu_user_role(list2)');
             if (empty($where)) {
                 if (empty($fieldarray['user_roles'])) {
-                    $fieldarray['user_roles'] = null;
+                    //$fieldarray['user_roles'] = null;
+                    $fieldarray['user_roles'] = getLanguageText('user_roles');
                 } // if
             } // if
         } // if
@@ -508,18 +511,20 @@ class mnu_user extends Default_Table
         } // if
 
         if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
-            $dateobj =& RDCsingleton::getInstance('date_class');
-            // combine 'date' and 'time' fields before performing timezone conversion
-            $date = $fieldarray['logon_date'];
-            $time = $fieldarray['logon_time'];
-            $fieldarray['logon_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-            $fieldarray['logon_date'] = $dateobj->getExternalDate($fieldarray['logon_date']);
-            $fieldarray['logon_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-            $date = $fieldarray['pswd_chg_date'];
-            $time = $fieldarray['pswd_chg_time'];
-            $fieldarray['pswd_chg_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-            $fieldarray['pswd_chg_date'] = $dateobj->getExternalDate($fieldarray['pswd_chg_date']);
-            $fieldarray['pswd_chg_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            if (isset($fieldarray['logon_date']) AND isset($fieldarray['logon_time'])) {
+                $dateobj =& RDCsingleton::getInstance('date_class');
+                // combine 'date' and 'time' fields before performing timezone conversion
+                $date = $fieldarray['logon_date'];
+                $time = $fieldarray['logon_time'];
+                $fieldarray['logon_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+                $fieldarray['logon_date'] = $dateobj->getExternalDate($fieldarray['logon_date']);
+                $fieldarray['logon_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+                $date = $fieldarray['pswd_chg_date'];
+                $time = $fieldarray['pswd_chg_time'];
+                $fieldarray['pswd_chg_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+                $fieldarray['pswd_chg_date'] = $dateobj->getExternalDate($fieldarray['pswd_chg_date']);
+                $fieldarray['pswd_chg_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+            } // if
         } // if
 
         return $fieldarray;
@@ -674,7 +679,14 @@ class mnu_user extends Default_Table
         // this may be called from the home page, so insert user's id
         if (empty($where)) {
             if (preg_match('/(upd1|enq1|list2)/i', $pattern_id)) {
-            	$where = "user_id='" .$_SESSION['logon_user_id'] ."'";
+                $prev_task    = getPreviousTask();
+                $prev_pattern = getPatternId($prev_task);
+                if (preg_match('/^(list)/i', $prev_pattern)) {
+                    // nothing selected from a list form, so leave $WHERE blank
+                } else {
+                    // default to LOGON_USER_ID
+            	    $where = "user_id='" .$_SESSION['logon_user_id'] ."'";
+                } // if
             } // if
         } else {
             if ($GLOBALS['mode'] == 'search') {

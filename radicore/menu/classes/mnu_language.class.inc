@@ -47,7 +47,7 @@ class mnu_language extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        if ($GLOBALS['mode'] == 'insert') {
+        if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'insert') {
             $this->fieldspec['language_name']['nodisplay'] = 'y';
         } else {
             // do not use dropdown if not in INSERT screen

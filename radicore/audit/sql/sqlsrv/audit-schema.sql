@@ -75,8 +75,8 @@ CREATE TABLE audit_fld (
   tran_seq_no smallint NOT NULL DEFAULT '0',
   table_seq_no smallint NOT NULL DEFAULT '0',
   field_id nvarchar(255) NOT NULL DEFAULT '',
-  old_value ntext,
-  new_value ntext,
+  old_value nvarchar(MAX),
+  new_value nvarchar(MAX),
   PRIMARY KEY (session_id,tran_seq_no,table_seq_no,field_id)
 );
 CREATE INDEX audit_fld_field_id ON audit_fld (field_id);

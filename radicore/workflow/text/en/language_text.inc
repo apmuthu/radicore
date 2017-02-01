@@ -82,42 +82,42 @@ $array['e0070'] = "Must be 1 empty pre-condition for arcs of type 'OR-split (Exp
 $array['e0071'] = "Must be in format HHH:MM";
 $array['e0072'] = "Cannot specify more than 999 hours";
 $array['e0073'] = "Cannot specify more than 59 minutes";
-$array['e0074'] = "";
-$array['e0075'] = "";
-$array['e0076'] = "";
-$array['e0077'] = "";
-$array['e0078'] = "";
+$array['e0074'] = "Cannot specify CONDITION_FIELD without CONDITION_OPERATOR";
+$array['e0075'] = "Cannot specify CONDITION_FIELD without CONDITION_VALUE";
+$array['e0076'] = "CONDITION_FIELD cannot be found in data array";
+$array['e0077'] = "CONDITION_OPERATOR is not valid";
+$array['e0078'] = "CONDITION_FIELD must be in format 'name' or 'strlen(name)'";
 $array['e0079'] = "";
 
-// menu details for subsystem WORKFLOW
-$array['Case']                                    = 'Case';
-$array['Expired Workitems']                       = 'Expired Workitems';
-$array['Token']                                   = 'Token';
-$array['Workflow']                                = 'Workflow';
-$array['Workitem']                                = 'Workitem';
+$array['e0080'] = "Cannot set place namne to either START or END as these are reserved words";
+$array['e0081'] = "Workflow %1\$s is valid";
+$array['e0082'] = "Task settings does not contain a value for CASE_STATUS - cannot continue";
+$array['e0083'] = "Invalid value (%1\$s) for CASE_STATUS in task settings - cannot continue";
+$array['e0084'] = "Press SUBMIT to change status to '%1\$s'";
+$array['e0085'] = "Invalid - cannot change status from '%1\$s' to '%2\$s'";
+$array['e0086'] = "";
+$array['e0087'] = "";
+$array['e0088'] = "";
+$array['e0089'] = "";
+
+// menu details for subsystem WORKFLOW (redundant)
 
 // task details for subsystem WORKFLOW (NOT REQUIRED AS OF VERSION 1.77.0)
 
-// navigation button details for subsystem WORKFLOW
-$array['Arcs']                                    = 'Arcs';
-$array['Cases']                                   = 'Cases';
-$array['Fire']                                    = 'Fire';
-$array['Places']                                  = 'Places';
-$array['Tokens']                                  = 'Tokens';
-$array['Transitions']                             = 'Transitions';
-$array['Validate']                                = 'Validate';
-$array['WorkItems']                               = 'WorkItems';
+// navigation button details for subsystem WORKFLOW (redundant)
 
-// field names for subsystem XXX
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
-$array['']     = '';
+// field names for subsystem WORKFLOW
+$array['new_transition_auto']                   = 'New AUTO Transition';
+$array['new_transition_user']                   = 'New USER Transition';
+$array['new_transition_time']                   = 'New TIME Transition';
+$array['new_transition_msg']                    = 'New MSG Transition';
+$array['new_place']                             = 'New PLACE';
+$array['arc_sequential']                        = 'Sequential';
+$array['arc_explicit_or']                       = 'Explicit OR Split';
+$array['arc_implicit_or']                       = 'Implicit OR Split';
+$array['arc_or_join']                           = 'OR Join';
+$array['arc_and_split']                         = 'AND Split';
+$array['arc_and_join']                          = 'AND Join';
 $array['']     = '';
 
 // field labels for subsystem WORKFLOW

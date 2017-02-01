@@ -43,6 +43,7 @@ if (isset($_POST['quit'])) {
 // define action buttons
 $act_buttons['expand']   = 'expand';
 $act_buttons['collapse'] = 'collapse';
+$act_buttons['reset']    = 'reset';
 $act_buttons['quit']     = 'close';
 if (array_key_exists('select_one', $settings)) {
 	if (!is_True($settings['select_one'])) {
@@ -63,6 +64,9 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get current data from this instance
     $inner_data = $dbinner->getFieldArray();
+    if (isset($_GET['action']) AND isset($_GET['row'])) {
+        $dbinner->performAction($_GET['action'], $_GET['row']);
+    } // if
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
@@ -237,6 +241,15 @@ if (!empty($errors)) {
         $expanded = null;
     } // if
 
+    if (isset($search)) {
+        // from search screen
+        $dbinner->setSqlSearch($search, true);
+    } // if
+    if (isset($_POST['reset'])) {
+        // initialise all settings to start afresh
+        $null = $dbinner->reset($where, true);
+    } // if
+
     // get data for the inner table
     // we start with the root node(s) for the selected tree_type
     $inner_data = $dbinner->getNodeData($expanded, $where);
@@ -249,7 +262,7 @@ if (!empty($errors)) {
 if (count($inner_data) < 1) {
     $errors[] = getLanguageText('sys0088', strtoupper($inner_table)); // 'No entries found on $inner_table'
 } // if
-if (isset($_GET['action'])) {
+if (isset($_GET['action']) AND !isset($_GET['row'])) {
     $inner_data = $dbinner->setAction($_GET['action']);
 } // if
 

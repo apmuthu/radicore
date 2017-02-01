@@ -174,7 +174,7 @@ END_OF_REGEX;
         	$this->fields_not_for_trimming[$key] = strtolower($value);
         } // foreach
 
-        if ($fieldspec['type'] == 'enum') {
+        if (isset($fieldspec['type']) AND $fieldspec['type'] == 'enum') {
             // get enum array for this field
             $enum = $callingOBJ->getValRep($fieldname);
             // if we already have the value do not replace it
@@ -184,7 +184,7 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (preg_match('/(set|array|varray)/i', $fieldspec['type'])) {
+        if (isset($fieldspec['type']) AND preg_match('/(set|array|varray)/i', $fieldspec['type'])) {
             // convert $fieldvalue array into a string with comma separator
             if (is_array($fieldvalue)) {
                 foreach ($fieldvalue as $key => $value) {
@@ -254,12 +254,12 @@ END_OF_REGEX;
                     // load default value
                     $fieldvalue = $fieldspec['default'];
                 } // if
-			} elseif (preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type'])) {
+			} elseif (isset($fieldspec['type']) AND preg_match('/(decimal|numeric|integer|float|real|double)/i', $fieldspec['type'])) {
 				$fieldvalue = null;  // numeric fields cannot be set to an empty string, so use NULL instead
             } // if
         } // if
 
-        if ($fieldspec['type'] == 'boolean' AND is_bool($fieldvalue)) {
+        if (isset($fieldspec['type']) AND $fieldspec['type'] == 'boolean' AND is_bool($fieldvalue)) {
             // convert BOOLEAN to correct values
             if (isset($fieldspec['true']) AND $fieldvalue === true) {
                 $fieldvalue = $fieldspec['true'];
@@ -279,21 +279,23 @@ END_OF_REGEX;
                     $errors[$fieldname] = $callingOBJ->getLanguageText('sys0020', $translated_fieldname);
                 } // if
             } // if
-            if (preg_match('/(date)/i', $fieldspec['type'])) {
-                if (isset($fieldspec['infinityisnull'])) {
-                    $fieldvalue = '9999-12-31';
+            if (isset($fieldspec['type'])) {
+                if (preg_match('/(date)/i', $fieldspec['type'])) {
+                    if (isset($fieldspec['infinityisnull'])) {
+                        $fieldvalue = '9999-12-31';
+                    } // if
                 } // if
-            } // if
-            if (preg_match('/(datetime)/i', $fieldspec['type'])) {
-                if (isset($fieldspec['infinityisnull'])) {
-                    $fieldvalue = '9999-12-31 23:59:59';
+                if (preg_match('/(datetime)/i', $fieldspec['type'])) {
+                    if (isset($fieldspec['infinityisnull'])) {
+                        $fieldvalue = '9999-12-31 23:59:59';
+                    } // if
                 } // if
-            } // if
-            if ($fieldspec['type'] == 'boolean') {
-                if (isset($fieldspec['false'])) {
-                	$fieldvalue = $fieldspec['false'];
-                } else {
-                    $fieldvalue = false;
+                if ($fieldspec['type'] == 'boolean') {
+                    if (isset($fieldspec['false'])) {
+                	    $fieldvalue = $fieldspec['false'];
+                    } else {
+                        $fieldvalue = false;
+                    } // if
                 } // if
             } // if
             // nothing left to validate, so return now

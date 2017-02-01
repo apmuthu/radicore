@@ -4,6 +4,8 @@ add2.php
 add3.php
 add4.php
 add5.php
+add6.php
+add7.php
 batch.php
 del1.php
 del2.php
@@ -22,6 +24,7 @@ list1.popup.php
 list2.php
 list2.popup.php
 list3.php
+list4.php
 multi1.php
 multi2.php
 multi3.php
@@ -41,9 +44,7 @@ popup4.php
 search.php
 timetable1.php
 tree1.php
-tree1.popup.php
 tree2.php
-tree2.popup.php
 upd1.php
 upd2.php
 upd3.php
@@ -53,7 +54,10 @@ alias.class.inc
 default.class.inc
 output2.report.inc
 output3.report.inc
+output5.report.inc
 add5.screen.inc
+add6.screen.inc
+add7.screen.inc
 del4.screen.inc
 detail1.screen.inc
 erase1.screen.inc
@@ -64,11 +68,13 @@ link1.screen.inc
 list1.screen.inc
 list2.screen.inc
 list3.screen.inc
+list4.screen.inc
 multi1.screen.inc
 multi2.screen.inc
 multi3.screen.inc
 multi4.screen.inc
 multi5.screen.inc
+multi6.screen.inc
 output4.screen.inc
 popup1.screen.inc
 popup2.screen.inc

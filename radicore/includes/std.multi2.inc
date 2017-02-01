@@ -251,6 +251,8 @@ if (!empty($_POST)) {
                 } // if
             } // if
             $do_retrieve = true;
+        } else {
+            $dbinner->rollback();
         } // if
     } // if
     // refetch data in case it has changed

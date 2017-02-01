@@ -112,8 +112,8 @@ class mnu_nav_button extends Default_Table
             	list($original, $alias) = preg_split('/ as /i', $regs[0]);
             	$search_table = $original;
             } // if
-            if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$search_table])) {
-                if (preg_match("/^curr_or_hist='[a-z]{1}'$/i", $_SESSION['search'][$search_table])) {
+            if (isset($_SESSION['search']) AND is_array($_SESSION['search']) AND !empty($_SESSION['search'][$search_table])) {
+                if (preg_match("/^curr_or_hist[ ]*=[ ]*[']?\w[']?$/i", $_SESSION['search'][$search_table])) {
                     // contains only "curr_or_hist='X'", so ignore it
                 } else {
                     // previous search data is available, so create extra button
@@ -216,7 +216,7 @@ class mnu_nav_button extends Default_Table
     function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         $pattern_id = getPatternId();

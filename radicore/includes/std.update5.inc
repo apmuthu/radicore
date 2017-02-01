@@ -13,12 +13,13 @@
 
 // NOTE: There is no dialog with the user.
 
+$mode = 'update';   // identify mode for xsl file
+
 if (preg_match('/cli/i', php_sapi_name())) {
     // being run from the command line, so initialisation has already been done
 } else {
     require_once 'include.general.inc';
-    initSession();      // load session variables
-    $mode = 'update';   // identify mode for xsl file
+    initSession();      // load session variable
 } // if
 
 //if (!empty($selection) AND !isset($return_from)) {

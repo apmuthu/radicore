@@ -1,5 +1,17 @@
 ﻿RADICORE for PHP - news
 
+2017-02-01, version 2.02.0
+Database changes:
+- run script workflow\sql\workflow.menu_export(2016-11-02).sql in order to update the contents of the MENU database
+
+Other changes:
+- found and fixed a number of "Undefined index" and "Undefined variable" notices.
+- fixed a bug in the logon class which failed to include the user_id when writing to the AUDIT_LOGON_ERRORS table.
+- added new tasks to the Workflow subsystem to allow a case status to be changed in the following ways (a) from OPEN to SUSPENDED, (b) from OPEN to CANCELLED, (c) from SUSPENDED to OPEN, and (d) from SUSPENDED to CANCELLED. You will need to run script workflow\sql\workflow.menu_export(2016-11-02).sql in order to update the contents of the MENU database.
+- modified 'std.table.class.inc' so that the insertMultiple() method can perform updates and deletes as well as inserts.
+- modified 'std.table.class.inc' so that the updateMultiple() method can perform inserts and deletes as well as updates.
+- modified 'include.session.inc' so that the initSession() function will strip all single and double quotes from the $_GET array before it is processed.
+
 2016-11-01, version 2.01.0
 Database changes:
 - none

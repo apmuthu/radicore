@@ -282,10 +282,12 @@ function childForm ($post, $object_array, $task_id, $where=null)
 	    } // if
 	} // if
 
-	foreach ($object_array as $zone => $object) {
-        // save object data in case there are changes which have yet to be saved to the database
-        $script_vars[$zone] = serialize($object);
-    } // foreach
+    if (is_array($object_array)) {
+        foreach ($object_array as $zone => $object) {
+            // save object data in case there are changes which have yet to be saved to the database
+            $script_vars[$zone] = serialize($object);
+        } // foreach
+    } // if
 
     if (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
         // current task is running in batch mode, so should the next task
@@ -583,7 +585,7 @@ function getPreviousScript ($curr_task=null)
         } // if
     } // if
 
-    if (array_key_exists($curr_task, $page_stack)) {
+    if (is_array($page_stack) AND array_key_exists($curr_task, $page_stack)) {
         // look for the current task in the page stack
         // (starting at the end and work backwards)
         $end           = end($page_stack);
@@ -833,6 +835,10 @@ function initSession($save_session_data=array())
         $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     } // if
 
+    if (!empty($_GET)) {
+        $_GET = array_map('strip_quotes', $_GET);  // strip all single and double quotes
+    } // if
+
     // write start details to query log file, if option is turned on
     $time = getMicroTime();
     list($secs, $msecs) = explode('.', $time);
@@ -854,7 +860,7 @@ function initSession($save_session_data=array())
 	    } // if
 	} // if
     if (empty($_SESSION) OR isset($GLOBALS['batch'])) {
-        if (!empty($argv)) {
+        if (!empty($argv) AND isset($argv[1]) AND isset($argv[2])) {
             if ($argv[1] == 'PHPSESSID' AND !empty($argv[2])) {
                 session_name($argv[1]);
                 session_id($argv[2]);
@@ -869,7 +875,15 @@ function initSession($save_session_data=array())
             } // if
         } // if
         if (!isset($_SESSION['pages'])) {
-            $res = @session_start();                    // open/reopen session
+            if (version_compare(phpversion(), '5.4.0', '>=')) {
+                if (session_status() == PHP_SESSION_NONE) {
+                    $res = @session_start();                    // open/reopen session
+                } // if
+            } else {
+                if (!isset($_SESSION) OR !is_array($_SESSION) OR empty($_SESSION)) {
+                    $res = @session_start();                    // open/reopen session
+                } // if
+            } // if
             if (isset($save_session_batch)) {
                 // do not overwrite certain values from the starting session
                 if (!empty($_SESSION['logon_user_id'])) {
@@ -896,7 +910,7 @@ function initSession($save_session_data=array())
 
     logstuff("session_id: " .session_id(), __FUNCTION__, __LINE__);
 
-    if ($GLOBALS['mode'] == 'protx') {
+    if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'protx') {
         // dealing with a payment on the PROTX server, so skip the rest
         return;
     } // if
@@ -922,7 +936,7 @@ function initSession($save_session_data=array())
     	unset($_SESSION['no_getdata']);
     } // if
 
-    if ($GLOBALS['mode'] == 'logon') {
+    if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
         // this is a logon screen (there could be several) so save its ID
         $logon_screen = $PHP_SELF;
         setcookie('logon_screen_'.$session_name, $PHP_SELF, 0, '/');
@@ -1218,8 +1232,12 @@ function initSession($save_session_data=array())
 				$location = 'HTTP://' .$_SERVER['HTTP_HOST'];
 			} // if
             $location .= $_SERVER['PHP_SELF'];
-            parse_str($query_string, $array);
-            unset($array['action']);
+            if (!empty($query_string)) {
+                parse_str($query_string, $array);
+                unset($array['action']);
+            } else {
+                $array = array();
+            } // if
             $location .= '?' .adjustQueryString($array);
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
@@ -2122,8 +2140,12 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             // do not save any search criteria set in childform() method
             unset($_SESSION['pages'][$PHP_SELF][$page_task]['search']);
         } else {
-            // reload variables for new task
-            $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
+            if (isset($_SESSION['pages'][$PHP_SELF][$task_id])) {
+                // reload variables for new task
+                $script_vars = $_SESSION['pages'][$PHP_SELF][$task_id];
+            } else {
+                $script_vars = array();
+            } // if
         } // if
     } // if
 
@@ -2235,7 +2257,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         } // if
 
         if (empty($next)) {
-            if (!isset($append) AND $last['task_id'] == $task_id) {
+            if (!isset($append) AND (!empty($last) AND$last['task_id'] == $task_id)) {
         	    // obtain last entry in array and process it now
                 $next = $last;
             } else {
@@ -2265,7 +2287,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             if (array_key_exists('previous', $next)) {
                 $previous = $next['previous'];
             } // if
-            if ($task_id == $first['task_id']) {
+            if (isset($first['task_id']) AND $task_id == $first['task_id']) {
         	    if (empty($first['action'])) {
         		    // no action is required, so no need to keep this entry
         		    $null = array_shift($_SESSION['script_sequence']);
@@ -2297,22 +2319,28 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     // find out if this task has been set to be run at the end of an existing task
     foreach ($_SESSION['pages'] as $page_script => $page_data) {
-    	foreach ($page_data['task_array'] as $page_task => $task_data) {
-    		if (isset($page_data[$page_task]['task_id_run_at_end'])) {
-    			if ($page_data[$page_task]['task_id_run_at_end'] == $task_id
-    		    AND $page_data[$page_task]['task_id_run_at_end_context'] == $where) {
-    		        // this task has been nominated, but is already being run, so...
-    		        // remove it so that it is not run again autmatically
-                    unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end']);
-                    unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end_context']);
-    			} // if
-    		} // if
-    	} // foreach
+        if (!empty($page_data['task_array']) AND is_array($page_data['task_array'])) {
+            foreach ($page_data['task_array'] as $page_task => $task_data) {
+    		    if (isset($page_data[$page_task]['task_id_run_at_end'])) {
+    			    if ($page_data[$page_task]['task_id_run_at_end'] == $task_id
+    		        AND $page_data[$page_task]['task_id_run_at_end_context'] == $where) {
+    		            // this task has been nominated, but is already being run, so...
+    		            // remove it so that it is not run again autmatically
+                        unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end']);
+                        unset($_SESSION['pages'][$page_script][$page_task]['task_id_run_at_end_context']);
+    			    } // if
+    		    } // if
+    	    } // foreach
+        } // if
     } // foreach
 
     $script_id = $task_array['script_id'];
 
-    $settings = mergeSettings($task_array['settings'], $settings_bf);
+    if (!empty($task_array['settings'])) {
+        $settings = mergeSettings($task_array['settings'], $settings_bf);
+    } else {
+        $settings = $settings_bf;
+    } // if
 
     if ($script_id == basename($script_id)) {
         // script name is not qualified, so insert directory name
@@ -2323,7 +2351,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         } // if
     } // if
 
-    if ($script_id == $PHP_SELF and $task_id == $_SESSION['pages'][$script_id]['task_id']) {
+    if ($script_id == $PHP_SELF AND (array_key_exists($script_id, $_SESSION['pages']) AND $task_id == $_SESSION['pages'][$script_id]['task_id'])) {
         // new script/task is same as current script/task, so do nothing
     } else {
         $save_script_vars = $script_vars;
@@ -2489,7 +2517,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         $task_array['pattern_id'] = 'batch';
     } // if
 
-    if (preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
+    if (!empty($task_array['pattern_id']) AND preg_match('/batch/i', $task_array['pattern_id'], $regs)) {
         // this is to be run in the background as a batch process
         if (!empty($where)) {
         	$task_array['where'] = $where;
@@ -2597,7 +2625,11 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             } // if
             // script is done, so drop it from array
             $null = array_shift($_SESSION['script_sequence']);
-            $first = $_SESSION['script_sequence'][0];
+            if (!empty($_SESSION['script_sequence'])) {
+                $first = $_SESSION['script_sequence'][0];
+            } else {
+                $first = null;
+            } // if
             $page_stack = reducePageStack($task_id);
 
         } elseif ($last['task_id'] == $task_id) {
@@ -2691,7 +2723,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         logstuff("location: $location", __FUNCTION__, __LINE__);
 
         session_write_close();
-        header('Location: ' .$location);
+        if (!headers_sent()) {
+            header('Location: ' .$location);
+        } // if
         exit;
     } else {
         if (!empty($messages)) {
@@ -2716,7 +2750,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         logstuff("location: $location", __FUNCTION__, __LINE__);
 
         session_write_close();
-        header('Location: ' .$location);
+        if (!headers_sent()) {
+            header('Location: ' .$location);
+        } // if
         exit;
     } // if
 

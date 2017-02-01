@@ -82,7 +82,7 @@ class radicore_SimpleXMLElement extends SimpleXMLElement
         } // foreach
 
         unset($this->index_attribute);
-        unset($this->$cdata_elements);
+        unset($this->cdata_elements);
 
         return $node;
     } // addArray

@@ -189,7 +189,7 @@ $script_vars = updateScriptVars ($script_vars);
 
 $dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) AND $submit_button) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) AND !empty($submit_button)) {
     // repeat current task with GET instead of POST
     scriptNext($GLOBALS['task_id'], $where);
 } // if

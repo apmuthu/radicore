@@ -15,18 +15,22 @@ class wf_workitem_user extends wf_workitem
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        $dirname = dirname($this->dirname) ."/classes/custom-processing/";
-        $fname = $dirname .'cp_' .get_class($this) .'.class.inc';
-        if (file_exists($fname)) {
-            $class_name = 'cp_' .get_class($this);
-            if (!class_exists($class_name)) {
-            	include_once($fname);
-            } // if
-            if (class_exists($class_name)) {
-                $object = new $class_name;
+        if (is_object($this->custom_processing_object)) {
+            // project-specific class found, so skip this next bit
+        } else {
+            $dirname = dirname($this->dirname) ."/classes/custom-processing/";
+            $fname = $dirname .'cp_' .get_class($this) .'.class.inc';
+            if (file_exists($fname)) {
+                $class_name = 'cp_' .get_class($this);
+                if (!class_exists($class_name)) {
+            	    include_once($fname);
+                } // if
+                if (class_exists($class_name)) {
+                    $object = new $class_name;
 
-                $rows = $object->_cm_post_getData ($rows, $where);
+                    $rows = $object->_cm_post_getData ($rows, $where);
 
+                } // if
             } // if
         } // if
 

@@ -347,6 +347,8 @@ class wf_workflow_s01 extends wf_workflow
             $this->messages[] = getLanguageText('e0057', $workflow_id);
         } else {
             $fieldarray['is_valid'] = 'Y';
+            // "Workflow $workflow_id is valid."
+            $this->messages[] = getLanguageText('e0081', $workflow_id);
         } // if
 
         return $fieldarray;

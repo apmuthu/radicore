@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.filepicker1.inc
@@ -78,6 +78,7 @@ if (isset($script_vars['fileobject'])) {
         $fileobject->setDefaultOrderby($task_orderby);
     } // if
     // perform any initialisation
+    $fileobject->search = null;
     $where = $fileobject->initialise($where, $selection);
     if (!isset($search)) $search = null;
     $fileobject->initialiseFilePicker($where, $search);
@@ -149,7 +150,7 @@ if (!empty($_POST)) {
 
 if (isset($_POST['reset'])) {
     // re-initialise all settings to start afresh
-    $where = $fileobject->reset($where);
+    $null = $fileobject->reset($where);
     $file_list = null;  // rebuild list of files
     $fileobject->search = null;
 } // if

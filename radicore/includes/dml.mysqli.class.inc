@@ -281,6 +281,7 @@ class mysql
         $dbconn = $this->dbconnect;
 
         if (!$dbconn) {
+            $start_time = getMicroTime();
             $dbconn = mysqli_init();
             if (!empty($this->ssl_key)) {
                 $result = $dbconn->ssl_set($this->ssl_key, $this->ssl_cert, $this->ssl_ca, $this->ssl_capath, $this->ssl_cipher) or trigger_error($this, E_USER_ERROR);
@@ -336,6 +337,10 @@ class mysql
                     } // if
                 } // if
                 $this->query = '';
+
+                // write query to log file, if option is turned on
+                $end_time = getMicroTime();
+                logSqlQuery ($dbname, null, 'CONNECT', null, $start_time, $end_time);
             } // if
         } // if
 
@@ -347,6 +352,8 @@ class mysql
             // skip this next bit to avoid a "commands out of sync" error
         } else {
             if ($this->dbname) {
+                $start_time = getMicroTime();
+
                 if (!mysqli_select_db($dbconn, $this->dbname)) {
                     if (mysqli_errno($this->dbconnect) == 2006) {
                         // connection has been lost, so re-connect
@@ -357,6 +364,10 @@ class mysql
                         return FALSE;
             	    } // if
                 } // if
+
+                // write query to log file, if option is turned on
+                $end_time = getMicroTime();
+                logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
             } // if
         } // if
 
@@ -1305,10 +1316,13 @@ class mysql
 
         $this->query = 'UNLOCK TABLES';
         $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+
+        $this->query = 'SET AUTOCOMMIT=1';
+        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         $end_time = getMicroTime();
 
         // write query to log file, if option is turned on
-        logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES', null, $start_time, $end_time);
+        logSqlQuery ($dbname, null, 'ROLLBACK; UNLOCK TABLES; SET AUTOCOMMIT=1', null, $start_time, $end_time);
         $this->query = '';
 
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
@@ -1929,7 +1943,7 @@ class mysql
             if (isset($maxvalue)) {
                 $columnarray['col_maxvalue'] = $maxvalue;
                 if (is_True($columnarray['col_unsigned'])) {
-                    if ($maxvalue == $specs['maxvalue']) {
+                    if (isset($specs['maxvalue']) AND $specs['maxvalue'] == $maxvalue) {
                         $columnarray['col_maxvalue'] = ($columnarray['col_maxvalue']*2)+1;
                     } // if
                 } // if

@@ -1431,7 +1431,7 @@ class dict_table_s04 extends dict_table
                             // ignore this next bit
                         } else {
                             $string_in = '';
-                            if (array_key_exists('columns', $done[$zone])) {
+                            if (!empty($done[$zone]) AND array_key_exists('columns', $done[$zone])) {
                     	        // already been done, so do not repeat
                             } else {
                                 $done[$zone]['columns'] = true;
