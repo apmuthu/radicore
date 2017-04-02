@@ -22,6 +22,26 @@ class mnu_account extends Default_Table
     } // __construct
 
     // ****************************************************************************
+    function getFieldSpec_original ()
+    // set the specifications for this database table.
+    {
+        $fieldspec = parent::getFieldSpec_original();
+
+        // remove references to any relationships which do not exist in this installation
+        foreach ($this->child_relations as $index => $relation) {
+            if (isset($relation['subsys_dir'])) {
+                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
+                if (!file_exists($classname)) {
+                    unset($this->child_relations[$index]);
+                } // if
+            } // if
+        } // foreach
+
+        return $fieldspec;
+
+    } // getFieldSpec_original
+
+    // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)
     // Change the table configuration for the duration of this instance.
     // $where = a string in SQL 'where' format.

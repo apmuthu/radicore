@@ -67,7 +67,7 @@ if (isset($script_vars['dbobject'])) {
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -101,7 +101,7 @@ if (isset($_POST['choose']) or isset($_POST['choosenull'])) {
 
 } elseif (isset($_POST['reset'])) {
     // initialise all settings to start afresh
-    $where = $dbobject->reset($where);
+    $null = $dbobject->reset($where);
 
 } elseif (!empty($_POST)) {
     if ($task_button = check_task_button($_POST)) {

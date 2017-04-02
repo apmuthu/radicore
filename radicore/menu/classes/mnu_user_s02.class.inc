@@ -1,13 +1,14 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s02 extends mnu_user
 {
     // ****************************************************************************
-    // This class is for use by script: mnu_user_upd(b).php
+    // This class is for use by script: mnu_user(upd1)b.php
+    // It will reset the user's password
     // ****************************************************************************
 
     // ****************************************************************************
@@ -63,6 +64,13 @@ class mnu_user_s02 extends mnu_user
 
         // replace the current password with the new one
         $fieldarray['user_password'] = $new_password;
+
+        if (is_True($this->force_pswd_chg)) {
+            // force user to change password at next logon
+            $fieldarray['force_pswd_chg'] = 'Y';
+        } else {
+            $fieldarray['force_pswd_chg'] = 'N';
+        } // if
 
         // perform standard processing defined in the parent class
         $fieldarray = parent::_cm_commonValidation($fieldarray, $originaldata);

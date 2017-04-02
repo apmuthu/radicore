@@ -269,14 +269,13 @@ function childForm ($post, $object_array, $task_id, $where=null)
         	    $search                    = $dbobject->getSearch();
             } // if
         	if (!empty($search)) {
-        	    if (preg_match('/^(list)/i', $task_array['pattern_id'])) {
-        	    	// merge the SEARCH and WHERE strings
-                    $where = mergeWhere($where, $search);
-                    $search = null;
+        	    if (!empty($selection)) {
+                    $search = null;  // selection is via primary key, so $search is irrelevant
+                } elseif (preg_match('/^(list|tree)/i', $task_array['pattern_id'])) {
+                    //$where = mergeWhere($where, $search);
+                    //$search = null;
         	    } elseif (preg_match('/^(upd4|output|batch|other)/i', $task_array['pattern_id'])) {
         	        // leave $search string alone
-        	    } else {
-        	        $search = null;
         	    } // if
         	} // if
 	    } // if
@@ -1946,12 +1945,6 @@ function runInBackground ($task_array, $save_script_vars)
 // run this task in a separate process in the background.
 {
     $errors = array();
-
-//    if (!extension_loaded('curl')) {
-//        // CURL functions are not available
-//    	$errors[] = getLanguageText('sys0070', 'CURL');
-//        return $errors;
-//    } // if
 
     $dir = dirname($_SERVER['PHP_SELF']);
 

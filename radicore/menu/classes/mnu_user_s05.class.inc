@@ -129,18 +129,21 @@ class mnu_user_s05 extends mnu_user
             $subject = getLanguageText('sys0153') .' ' .$_SERVER['HTTP_HOST'];
         	$body    = "Hi,\n\n" .$subject ."\n\n" . $password;
 
-        	if (isset($_SERVER['SERVER_ADMIN'])) {
+        	if (!empty($_SERVER['SERVER_ADMIN'])) {
                 $sender  = $_SERVER['SERVER_ADMIN'];
             } else {
-                $sender  = 'webmaster@radicore.org';
+                $sender  = "webmaster@{$_SERVER['HTTP_HOST']}";
             } // if
 
-        	//$headers = "From: $sender\r\n";
-        	//$result = mail($email_addr, $subject, $body, $headers);
-            $result = send_email($sender, $email_addr, $subject, $body);
+        	$result = send_email($sender, $email_addr, $subject, $body);
 
-        	// "Your password has been e-mailed"
-            scriptPrevious(null, getLanguageText('sys0152'));
+            if ($result) {
+                // "Your password has been e-mailed"
+                $this->scriptPrevious(null, getLanguageText('sys0152'));
+            } else {
+                // "E-mail could not be sent"
+                $this->scriptPrevious(null, getLanguageText('sys0155'));
+            } // if
         } // if
 
         return $rowdata;

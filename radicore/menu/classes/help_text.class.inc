@@ -27,6 +27,8 @@ class help_text extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
+        $this->no_submit_on_error = false;
+
         // replace HTML line breaks with newline
         $pattern[]   = "<br>";
         $pattern[]   = "<br/>";
@@ -36,6 +38,14 @@ class help_text extends Default_Table
         if (isset($fieldarray['help_text'])) {
         	$text = $fieldarray['help_text'];
         	$fieldarray['help_text'] = str_replace($pattern, $replacement, $text);
+        } // if
+
+        // look for invalid HTML tags
+        $pattern = "~(<script|</script>|<object|</object>|<applet|</applet>|<embed|</embed>|<\?php|\?>|<form|</form>|<input|</input>|[ ]href[ ]*=[ ]*('|\")[^#])~i";
+        if (preg_match($pattern, $fieldarray['help_text'], $regs)) {
+            // "Data contains invalid HTML tag: 'X'"
+            $this->errors['help_text'] = getLanguageText('e0078', $regs[0]);
+            return $fieldarray;
         } // if
 
         return $fieldarray;
@@ -58,7 +68,7 @@ class help_text extends Default_Table
     function _cm_pre_getData ($where, $where_array, $parent_data=null)
     // perform custom processing before database record(s) are retrieved.
     // (WHERE is supplied in two formats - string and array)
-    // $fieldarray may contain full details of the current record in the parent
+    // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
         if (isset($_POST['retrieve'])) {

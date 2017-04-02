@@ -108,6 +108,7 @@ function batchInit ($batchfile)
                 	$include_path = ini_get('include_path');
                 	$include_path .= $arg;
                 	ini_set('include_path', $include_path);
+                    break;
                 } // if
     	    } // if
         } // while
@@ -132,6 +133,7 @@ function batchInit ($batchfile)
                 if (substr($value, 0, 1) == ';') {
                     // append to current value
                     $value = ini_get('include_path').$value;
+                    break;
                 } // if
             } // if
         	$result = ini_set($key, $value);
@@ -257,6 +259,8 @@ function batchScriptSequence ()
     $script_sequence = $_SESSION['script_sequence'];
     unset($_SESSION['script_sequence']);
     //session_write_close();
+
+    $errors = array();
 
     while (!empty($script_sequence)) {
         $next = array_shift($script_sequence);

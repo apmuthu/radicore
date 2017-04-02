@@ -10,6 +10,7 @@ class mnu_user extends Default_Table
     var $pswd_hidden;       // is password field displayed or hidden?
     var $pswd_encrypt;      // is password encrypted in the database?
     var $pswd_format;       // password format
+    var $force_pswd_chg;    // force password change?
 
     // ****************************************************************************
     // class constructor
@@ -176,7 +177,7 @@ class mnu_user extends Default_Table
         $logon_password = addslashes($logon_password);
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
+        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, force_pswd_chg, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
         $this->sql_from   = 'mnu_user'
                           ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
                           .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
@@ -343,6 +344,7 @@ class mnu_user extends Default_Table
             unset($this->fieldspec['logon_time']['noedit']);
             $this->fieldspec['user_password']['nodisplay'] = 'y';
             unset($this->fieldspec['ip_address']['noedit']);
+            unset($this->fieldspec['force_pswd_chg']['noedit']);
             // add field to allow searching on the MNU_USER_ROLE table
             $this->fieldspec['role_id']     = array('type' => 'string',
                                                     'size' => 16,
@@ -375,6 +377,7 @@ class mnu_user extends Default_Table
                 // not insert mode, so cannot edit this field
                 $this->fieldspec['user_password']['noedit'] = 'y';
             } // if
+            $this->fieldspec['force_pswd_chg']['noedit']    = 'y';
         } // if
 
         if ($mode == 'update') {
@@ -704,9 +707,10 @@ class mnu_user extends Default_Table
 
         // find out if user passwords are to be hidden or not
     	$dbobject =& RDCsingleton::getInstance('mnu_control');
-        $this->pswd_hidden  = $dbobject->getControlData('pswd_hidden');
-        $this->pswd_encrypt = $dbobject->getControlData('pswd_encrypt');
-        $this->pswd_format  = $dbobject->getControlData('pswd_format');
+        $this->pswd_hidden    = $dbobject->getControlData('pswd_hidden');
+        $this->pswd_encrypt   = $dbobject->getControlData('pswd_encrypt');
+        $this->pswd_format    = $dbobject->getControlData('pswd_format');
+        $this->force_pswd_chg = $dbobject->getControlData('force_pswd_chg');
         unset($dbobject);
 
         return $where;
@@ -855,6 +859,22 @@ class mnu_user extends Default_Table
         return $rowdata;
 
     } // _cm_pre_updateRecord
+
+    // ****************************************************************************
+    function _cm_validateSearch ($fieldarray)
+    // perform custom validation on data entered via a search screen.
+    // put any errors into $this->errors.
+    {
+        if (!empty($fieldarray['user_timezone']) AND is_numeric($fieldarray['user_timezone'])) {
+            // replace withrelevant tet from dropdown list
+            if (!empty($this->lookup_data['user_timezone'])) {
+                $fieldarray['user_timezone'] = $this->lookup_data['user_timezone'][$fieldarray['user_timezone']];
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_validateSearch
 
 // ****************************************************************************
 } // end class

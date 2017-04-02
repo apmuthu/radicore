@@ -1,5 +1,18 @@
 ﻿RADICORE for PHP - news
 
+2017-04-02, version 2.03.0
+Database changes:
+- run script menu\sql\mysql\alter_table(2017-02-12).sql in order to change the structure of the MENU database
+
+Other changes:
+- fixed bug in where2indexedArray() so that it deals with '(SELECT COUNT(*) FROM .....) = 0' properly.
+- modified processing of $this->no_foreign_data so that it will still process _cm_getForeignData() but skip processing of $this->parent_relations array.
+- added column FORCE_PSWD_CHG to table MNU_USER which will force the user to change his password at the next logon regardless of any policy on days or logons. This flag will be set to 'Y' whenever a user's password is reset, but only if the corresponding 'Force Change?' value on the Menu Control record is set to 'Y'.
+- modified processing of WHERE string to allow both of the following:
+-- lower(product_name) LIKE '%hello%'
+-- product_name ILIKE '%hello%'
+- added the ability to filter records from the display in the _cm_post_getData() method.
+
 2017-02-01, version 2.02.0
 Database changes:
 - run script workflow\sql\workflow.menu_export(2016-11-02).sql in order to update the contents of the MENU database

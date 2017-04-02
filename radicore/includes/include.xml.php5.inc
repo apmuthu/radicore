@@ -831,7 +831,7 @@ class radicore_view
                         } // foreach
                     } // if
                     if (!empty($data)) {
-                        if ($spec['type'] == 'enum' AND array_key_exists(0, $data)) {
+                        if (isset($spec['type']) AND $spec['type'] == 'enum' AND array_key_exists(0, $data)) {
                 	        // blank entry already exists, so do not add another
                         } elseif (isset($spec['control']) AND $spec['control'] == 'multidrop') {
                             // do not add blank entry

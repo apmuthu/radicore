@@ -19,4 +19,4 @@ php_value session.gc_maxlifetime 14400
 php_value session.cookie_httponly 1
 php_value arg_separator.output "&amp;"
 php_value url_rewriter.tags "a=href,area=href,frame=src,input=src,fieldset="
-php_value always_populate_raw_post_data -1
+php_value always_populate_raw_post_data 1

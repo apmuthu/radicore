@@ -380,6 +380,8 @@ if (!empty($return_from) AND !empty($popup_object)) {
         	    // no errors, so get data from the database
                 $inner_data = $dbinner->getData($inner_where);
                 $inner_data = $dbinner->getExtraData($inner_data);
+            } else {
+                $inner_data = array();
             } // if
             if ($dbinner->errors) {
                 $errors[$dbinner->getClassName()] = $dbinner->getErrors();

@@ -43,7 +43,7 @@ class x_tree_node_jnr extends x_tree_node
     } // _cm_initialise
 
     // ****************************************************************************
-    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.

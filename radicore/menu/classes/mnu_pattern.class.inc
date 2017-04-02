@@ -99,6 +99,23 @@ class mnu_pattern extends Default_Table
 
     } // _cm_post_fetchRow
 
+    // ****************************************************************************
+    function _cm_post_getData ($rows, &$where)
+    // perform custom processing after database record(s) are retrieved.
+    // NOTE: $where is passed BY REFERENCE so that it may be modified.
+    {
+//        if (!empty($rows)) {
+//            foreach ($rows as $rownum => $rowdata) {
+//                if (preg_match('/(2)$/', $rowdata['pattern_id'])) {
+//                    unset($rows[$rownum]);
+//                } // if
+//            } // foreach
+//        } // if
+
+        return $rows;
+
+    } // _cm_post_getData
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

@@ -188,6 +188,8 @@ class wf_token extends Default_Table
             	$arc_instance['role_id'] = $_SESSION['role_id'];
                 if (isset($fieldarray['user_id'])) {
                     $arc_instance['user_id'] = $fieldarray['user_id'];
+                } else {
+                    $arc_instance['user_id'] = null;
                 } // if
             } // if
             $arc_instance = $dbarc->examineInwardArc($arc_instance);

@@ -225,8 +225,9 @@ class logon extends mnu_user
                     // the next bit does not apply
                 } else {
                     // find out if user needs to change his password
-                    if ($mnu_control->getControlData('pswd_change', $updatearray)) {
-                        $next['task_id']  = 'mnu_user(upd1)b';
+                    if ($mnu_control->getControlData('pswd_change', $updatearray)
+                     OR is_True($updatearray['force_pswd_chg'])) {
+                        $next['task_id']  = 'mnu_user(upd1)a';
                         $next['where']    = "user_id='$logon_user_id'";
                         $next['action']   = 'OK';
                         // 'You must change your password';

@@ -321,7 +321,7 @@ class audit_tbl extends Default_Table
                 } // if
             } // if
         	if ($GLOBALS['mode'] == 'search') {
-        	    if (is_array($_SESSION['search']) AND isset($_SESSION['search'][$this->tablename])) {
+        	    if (isset($_SESSION['search']) AND is_array($_SESSION['search']) AND isset($_SESSION['search'][$this->tablename])) {
         	        // previous search criteria exists, so don't change it
         	    } else {
                     // set initial values in screen

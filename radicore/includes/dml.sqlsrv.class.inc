@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class sqlsrv
@@ -33,6 +33,7 @@ class sqlsrv
     var $rows_per_page;                 // page size for multi-row forms
     var $row_locks;                     // SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
+    var $skip_offset;                   // force diferent offset after rows have been skipped
     var $table_locks;                   // array of tables to be locked
     var $transaction_level;             // transaction level
     var $unique_keys = array();         // array of candidate keys
@@ -1297,7 +1298,11 @@ END_OF_REGEX;
         // build the query string and run it
         if ($rows_per_page > 0) {
             // insert code for pagination ...
-            $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            if (!empty($this->skip_offset)) {
+                $min_rows = $this->skip_offset;  // use pre-calculated value
+            } else {
+                $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            } // if
             $max_rows = ($min_rows + $rows_per_page) -1;
             if (empty($sort_str)) {
                 // default sort sequence is via primary key
@@ -1440,7 +1445,6 @@ END_OF_REGEX;
         } // if
 
         if (!is_null($rdc_limit) OR !is_null($rdc_offset)) {
-        	//$limit_str = 'LIMIT ' .$rdc_limit .' OFFSET ' .$rdc_offset;
         	$min_rows = $rdc_offset;
             if ($rdc_limit > 0) {
                 $max_rows = $min_rows + $rdc_limit;

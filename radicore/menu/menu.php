@@ -61,8 +61,8 @@ if (isset($_GET['todo_id'])) {
    $todo_id = (int)$_GET['todo_id'];
    $where = "user_id='{$_SESSION['logon_user_id']}' AND seq_no='$todo_id'";
    $todo_data = $db_todo->getData($where);
-   if ($todo_data->errors) {
-       $errors = array_merge($errors, $todo_data->getErrors());
+   if ($db_todo->errors) {
+       $errors = array_merge($errors, $db_todo->getErrors());
    } elseif (empty($todo_data)) {
        // "Requested record not found"
        $errors[] = getLanguageText('sys0119');

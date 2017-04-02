@@ -6,9 +6,6 @@
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s02 extends mnu_subsystem
 {
-    // member variables
-    var $text_out;          // to be written to a text file
-
     // ****************************************************************************
     // This subclass is used by: mnu_subsystem_build.php
     // Purpose: to build the subsystem's directory structure

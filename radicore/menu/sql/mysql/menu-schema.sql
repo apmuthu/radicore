@@ -2,7 +2,7 @@
 -- Host:                         127.0.0.1
 -- Server version:               5.7.17-log - MySQL Community Server (GPL)
 -- Server OS:                    Win64
--- HeidiSQL Version:             9.4.0.5142
+-- HeidiSQL Version:             9.4.0.5151
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -442,8 +442,9 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `pswd_chg_date` date DEFAULT NULL,
   `pswd_chg_time` time DEFAULT NULL,
   `pswd_count` smallint(6) unsigned DEFAULT NULL,
-  `in_use` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `is_disabled` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `force_pswd_chg` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
+  `in_use` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
+  `is_disabled` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `logon_date` date DEFAULT NULL,
   `logon_time` time DEFAULT NULL,
   `language_id` varchar(6) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -452,7 +453,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `ip_address` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
   `email_addr` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `external_id` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `is_external_auth_off` char(1) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `is_external_auth_off` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
   `party_id` int(11) unsigned DEFAULT NULL,
   `user_timezone` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',

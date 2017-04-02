@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_control extends Default_Table
@@ -48,7 +48,7 @@ class mnu_control extends Default_Table
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_ENCRYPT'";
                 $data = $this->getData_raw($where);
 
-                if (is_True($data[0]['field_value'])) {
+                if (!empty($data) AND is_True($data[0]['field_value'])) {
                     $result = true;
                 } else {
                     $result = false;
@@ -59,7 +59,7 @@ class mnu_control extends Default_Table
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_HIDDEN'";
                 $data = $this->getData_raw($where);
 
-                if (is_True($data[0]['field_value'])) {
+                if (!empty($data) AND is_True($data[0]['field_value'])) {
                     $result = true;
                 } else {
                     $result = false;
@@ -82,104 +82,119 @@ class mnu_control extends Default_Table
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_RETRIES'";
                 $data = $this->getData_raw($where);
 
-                $result = $data[0]['field_value'];
+                $result =& $data[0]['field_value'];
         	    break;
 
         	case 'PSWD_CHANGE';
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_CHANGE'";
                 $data = $this->getData_raw($where);
 
-                switch ($data[0]['field_value']) {
-                    case 'AR':
-                        // no change is required
-                        $result = false;
-                        break;
+                if (!empty($data)) {
+                    switch ($data[0]['field_value']) {
+                        case 'AR':
+                            // no change is required
+                            $result = false;
+                            break;
 
-                    case 'AD';
-                        // check the number of days since password was last changed
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
-                        $data = $this->getData_raw($where);
-                        $count = $data[0]['field_value'];
-                        // compare with date in passed data
-                        $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
-                        if ($due_date < strtotime('now')) {
-                            $result = true; // password must be changed
-                        } // if
-                        break;
+                        case 'AD';
+                            // check the number of days since password was last changed
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
+                            $data = $this->getData_raw($where);
+                            $count =& $data[0]['field_value'];
+                            // compare with date in passed data
+                            $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
+                            if ($due_date < strtotime('now')) {
+                                $result = true; // password must be changed
+                            } // if
+                            break;
 
-                    case 'AL':
-                        // check the number of times this user has logged in
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
-                        $data = $this->getData_raw($where);
-                        $count = $data[0]['field_value'];
-                        // compare with count in passed data
-                        if ($user_data['pswd_count'] > $count) {
-                            $result = true; // password must be changed
-                        } // if
-                        break;
+                        case 'AL':
+                            // check the number of times this user has logged in
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
+                            $data = $this->getData_raw($where);
+                            $count =& $data[0]['field_value'];
+                            // compare with count in passed data
+                            if ($user_data['pswd_count'] > $count) {
+                                $result = true; // password must be changed
+                            } // if
+                            break;
 
-                    default:
-                        break;
+                        default:
+                            break;
+                    } // switch
                 } // if
 
                 break;
 
-        	case 'PSWD_EXPIRES';
+        	case 'FORCE_PSWD_CHG':
+                $where = "record_id='SYSTEM' AND field_id='FORCE_PSWD_CHG'";
+                $data = $this->getData_raw($where);
+
+                if (!empty($data) AND is_True($data[0]['field_value'])) {
+                    $result = true;
+                } else {
+                    $result = false;
+                } // if
+                break;
+
+            case 'PSWD_EXPIRES';
         	    // identify if/when the current password will expire
         	    $where = "record_id='SYSTEM' AND field_id='PSWD_CHANGE'";
                 $data = $this->getData_raw($where);
 
-                switch ($data[0]['field_value']) {
-                    case 'AR':
-                        // no change is required
-                        $result = false;
-                        break;
+                if (!empty($data)) {
+                    switch ($data[0]['field_value']) {
+                        case 'AR':
+                            // no change is required
+                            $result = false;
+                            break;
 
-                    case 'AD';
-                        // identify the number of days warning period
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
-                        $data = $this->getData_raw($where);
-                        $limit = $data[0]['field_value'];
+                        case 'AD';
+                            // identify the number of days warning period
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
+                            $data = $this->getData_raw($where);
+                            $limit = $data[0]['field_value'];
 
-                        // check the number of days since password was last changed
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
-                        $data = $this->getData_raw($where);
-                        $count = $data[0]['field_value'];
-                        // compare date in passed data with todays date
-                        $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
-                        $diff_seconds = $due_date - strtotime('now');
-                        $diff_days    = floor($diff_seconds / 86400);
-                        if ($diff_days > 0) {
-                            if ($diff_days <= $limit) {
-                                // "Your password will expire in N days"
-                                $result = $this->getLanguageText('e0040', $diff_days);
+                            // check the number of days since password was last changed
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_DAYS'";
+                            $data = $this->getData_raw($where);
+                            $count = $data[0]['field_value'];
+                            // compare date in passed data with todays date
+                            $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
+                            $diff_seconds = $due_date - strtotime('now');
+                            $diff_days    = floor($diff_seconds / 86400);
+                            if ($diff_days > 0) {
+                                if ($diff_days <= $limit) {
+                                    // "Your password will expire in N days"
+                                    $result = $this->getLanguageText('e0040', $diff_days);
+                                } // if
                             } // if
-                        } // if
-                        break;
+                            break;
 
-                    case 'AL':
-                        // identify the number of logons warning period
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
-                        $data = $this->getData_raw($where);
-                        $limit = $data[0]['field_value'];
+                        case 'AL':
+                            // identify the number of logons warning period
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_WARNING'";
+                            $data = $this->getData_raw($where);
+                            $limit = $data[0]['field_value'];
 
-                        // check the number of times this user has logged in
-                        $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
-                        $data = $this->getData_raw($where);
-                        $count = $data[0]['field_value'];
-                        // compare with count in passed data
-                        $diff_count = floor($count - $user_data['pswd_count']);
+                            // check the number of times this user has logged in
+                            $where = "record_id='SYSTEM' AND field_id='PSWD_COUNT'";
+                            $data = $this->getData_raw($where);
+                            $count = $data[0]['field_value'];
+                            // compare with count in passed data
+                            $diff_count = floor($count - $user_data['pswd_count']);
 
-                        if ($diff_count > 0) {
-                            if ($diff_count <= $limit) {
-                                // "Your password will expire in N logons"
-                                $result = $this->getLanguageText('e0041', $diff_count);
+                            if ($diff_count > 0) {
+                                if ($diff_count <= $limit) {
+                                    // "Your password will expire in N logons"
+                                    $result = $this->getLanguageText('e0041', $diff_count);
+                                } // if
                             } // if
-                        } // if
-                        break;
+                            break;
 
-                    default:
-                        break;
+                        default:
+                            break;
+                    } // switch
                 } // if
 
                 break;
@@ -188,7 +203,7 @@ class mnu_control extends Default_Table
                 $where = "record_id='SYSTEM' AND field_id='DEFAULT_LANGUAGE'";
                 $data = $this->getData_raw($where);
 
-                $result = $data[0]['field_value'];
+                $result =& $data[0]['field_value'];
                 if (empty($result)) {
                 	$result = 'en';
                 } // if
@@ -200,7 +215,7 @@ class mnu_control extends Default_Table
                 $where = "record_id='SYSTEM' AND field_id='LOGIN_TYPE'";
                 $data = $this->getData_raw($where);
 
-                $result = $data[0]['field_value'];
+                $result =& $data[0]['field_value'];
                 if (empty($result)) {
                 	$result = 'USER';
                 } // if
@@ -307,6 +322,10 @@ class mnu_control extends Default_Table
             $fieldspec['pswd_warning']          = array('type' => 'integer',
                                                         'size' => 3,
                                                         'unsigned' => 'y');
+            // force password to be changed at next logon following a reset
+            $fieldspec['force_pswd_chg']        = array('type' => 'boolean',
+                                                        'true' => 'Y',
+                                                        'false' => 'N');
             // specify the format of user passwords
             $fieldspec['pswd_format_minlen']    = array('type' => 'integer',
                                                         'size' => 3,

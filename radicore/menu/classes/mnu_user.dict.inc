@@ -1,5 +1,5 @@
 <?php
-    // file created on September 29, 2016, 9:37 am
+    // file created on February 13, 2017, 12:30 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -42,8 +42,19 @@
                                                     'maxvalue' => 65535,
                                                     'noedit' => 'y');
     
+    $fieldspec['force_pswd_chg']            = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
+    
     $fieldspec['in_use']                    = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -51,6 +62,8 @@
     
     $fieldspec['is_disabled']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -93,6 +106,8 @@
     
     $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',

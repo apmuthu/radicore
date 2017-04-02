@@ -76,6 +76,7 @@ if (isset($script_vars['dbobject'])) {
 } // if
 
 if (!empty($_POST)) {
+    $submit_button = null;
     //if (isset($_POST['copy'])) {
     //    // save current data so that it be be PASTed later
     //    $messages = copyForm($_POST, $dbobject);

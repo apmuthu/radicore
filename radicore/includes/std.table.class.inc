@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 abstract class Default_Table
@@ -77,6 +77,7 @@ abstract class Default_Table
 
     var $outer_table;                   // used in an outer-link-inner relationship
     var $pageno;                        // requested page number
+    var $prev_pageno;                   // previous page number
     var $parent_relations = array();    // parent relationship specifications (optional)
 
     var $parent_object;                 // reference to parent object (if there is one in current task)
@@ -96,6 +97,7 @@ abstract class Default_Table
     var $retry_on_duplicate_key;        // field name to be incremented when insert fails
     var $reuse_previous_select = true;  // reuse previous SELECT in _dml_ReadBeforeUpdate()
     var $rows_per_page = 0;             // page size for multi-row forms
+    var $skip_offset = 0;               // used when _cm_post_getData method drops any rows
     var $row_locks;                     // FALSE, SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
     var $row_offset;                    // identifies current row in a multi-row display
@@ -409,6 +411,7 @@ abstract class Default_Table
 
         $this->scrollindex = 0;
         $this->pageno      = 0;
+        $this->prev_pageno = 0;
         $this->numrows     = 0;
         $this->lastpage    = 0;
 
@@ -458,21 +461,6 @@ abstract class Default_Table
         } // if
 
         $GLOBALS['transaction_has_started'] = FALSE;
-
-//        if (empty($errors)) {
-//            if (!is_True($update_workflow) OR defined('TRANSIX_NO_WORKFLOW') OR defined('RADICORE_NO_WORKFLOW')) {
-//                $condition = true;  // workflow not enabled, so do nothing
-//            } else {
-//                if (preg_match('/^(workflow|audit)$/i', $this->dbname)) {
-//                    $condition = true;  // no workflows allowed on this database
-//                } elseif (array_key_exists('rdc_has_errors', $this->fieldarray)) {
-//                    $condition = true;  // update failed, so do nothing
-//                } else {
-//                    // if this task+context is a pending workitem then update it
-//                    $errors = $this->_examineWorkflow($this->fieldarray);
-//                } // if
-//            } // if
-//        } // if
 
         return $errors;
 
@@ -1121,7 +1109,18 @@ abstract class Default_Table
         } // if
 
         // call custom method for specific processing
-        $msg = $this->_cm_deleteSelection($selection);
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_deleteSelection')) {
+                $count = $this->custom_processing_object->_cm_deleteSelection($selection);
+                if ($this->errors) return;
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $msg = $this->_cm_deleteSelection($selection);
+            if ($this->errors) return;
+        } // if
 
         return $msg;
 
@@ -1145,40 +1144,57 @@ abstract class Default_Table
         list($where, $errors) = isPkeyComplete($fieldarray, $this->getPkeyNames());
         if (!empty($errors)) {
             $this->errors = $errors;
+            return $fieldarray;
         } // if
 
-        if (empty($this->errors)) {
-            // get field specifications for this database table
-            $fieldspec = $this->fieldspec;
+        // get field specifications for this database table
+        $fieldspec = $this->fieldspec;
 
-            // remove any non-database fields from input array
-            foreach ($fieldarray as $field => $fieldvalue) {
-                // check that $field exists in $fieldspec array
-                if (!array_key_exists($field, $fieldspec)) {
-                    // it does not (like the SUBMIT button, for example), so remove it
-                    unset ($fieldarray[$field]);
-                } // if
-            } // foreach
-        } // if
+        // remove any non-database fields from input array
+        foreach ($fieldarray as $field => $fieldvalue) {
+            // check that $field exists in $fieldspec array
+            if (!array_key_exists($field, $fieldspec)) {
+                // it does not (like the SUBMIT button, for example), so remove it
+                unset ($fieldarray[$field]);
+            } // if
+        } // foreach
 
         // perform any custom pre-erase processing
-        if (empty($this->errors)) {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_eraseRecord')) {
+                $fieldarray = $this->custom_processing_object->_cm_pre_eraseRecord($fieldarray);
+                if ($this->errors) return $fieldarray;
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
             $fieldarray = $this->_cm_pre_eraseRecord($fieldarray);
+            if ($this->errors) return $fieldarray;
         } // if
 
-        // delete any tables related to the specified record
-        if (empty($this->errors)) {
+        if (!empty($fieldarray)) {
+            // delete any tables related to the specified record
             $this->eraseRelations($fieldarray);
-        } // if
+            if ($this->errors) return $fieldarray;
 
-        // delete the specified record
-        if (empty($this->errors)) {
+            // delete the specified record
             $this->_dml_deleteRecord($fieldarray);
+            if ($this->errors) return $fieldarray;
         } // if
 
         // perform any custom post-delete processing
-        if (empty($this->errors)) {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_eraseRecord')) {
+                $fieldarray = $this->custom_processing_object->_cm_post_eraseRecord($fieldarray);
+                if ($this->errors) return $fieldarray;
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
             $fieldarray = $this->_cm_post_eraseRecord($fieldarray);
+            if ($this->errors) return $fieldarray;
         } // if
 
         return $fieldarray;
@@ -2132,6 +2148,10 @@ abstract class Default_Table
         $this->errors = array();    // initialise
         $data_raw     = array();
 
+        if ($this->pageno <= 1) {
+            $this->skip_offset = 0;
+        } // if
+
         $pattern_id   = getPatternId();
 
 //        if (!empty($this->sql_where)) {
@@ -2208,8 +2228,9 @@ abstract class Default_Table
             if (empty($this->scrollarray)) {
                 // set record/page counts from contents of $this->fieldarray
                 if ($this->numrows == 0) {
-                    $this->lastpage = 0;
-                    $this->pageno   = 0;
+                    $this->lastpage    = 0;
+                    $this->pageno      = 0;
+                    $this->prev_pageno = 0;
                 } else {
                     if ($this->rows_per_page > 0) {
                         $this->lastpage = ceil($this->numrows/$this->rows_per_page);
@@ -2217,7 +2238,8 @@ abstract class Default_Table
                         $this->lastpage = $this->numrows;
                     } // if
                     if ($this->pageno < 1) {
-                        $this->pageno = 1;
+                        $this->pageno      = 1;
+                        $this->prev_pageno = 0;
                     } elseif ($this->pageno > $this->lastpage) {
                         $this->pageno = $this->lastpage;
                     } // if
@@ -2265,18 +2287,47 @@ abstract class Default_Table
             $data_raw = $this->_processInstruction($data_raw);
         } // if
 
+        $save_rowcount = count($data_raw);  // save this in case somerows are skipped
+
         // perform any custom post-retrieve processing
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
-                $data_raw = $this->custom_processing_object->_cm_post_getData($data_raw, $where);
+        $data_raw = $this->_post_getData($data_raw, $where);
+
+        $this->where = $where;
+
+        if ($this->rows_per_page > 0) {
+            // pagination is in force
+            if (count($data_raw) < $save_rowcount) {
+                $save_numrows = $this->numrows;
+                $data_raw = array_merge($data_raw);  // re-sequence this array
+                // some rows have been skipped, so read forward one row at a time until current page is full
+                if (empty($this->skip_offset)) {
+                    $this->skip_offset = ($this->rows_per_page * $this->pageno);  // identify next row number (starting from zero)
+                } else {
+                    $this->skip_offset = $this->skip_offset + $this->rows_per_page;  // continue from previous offset
+                } // if
+                $resource = $this->_dml_getData_serial($where_str, null, $this->skip_offset);
+
+                while (count($data_raw) < $save_rowcount) {
+                    $next = $this->fetchRow($resource);
+                    if (empty($next)) {
+                        break;
+                    } else {
+                        $this->skip_offset++;
+                        $next = array($next);  // convert from associative to indexed
+                        $null = null;
+                        $next = $this->_post_getData($next, $null);
+                        if (!empty($next)) {
+                            $next = $next[key($next)];  // convert from indexed to associative
+                            $data_raw[] = $next;
+                        } // if
+                    } // if
+                } // while
+                $this->free_result($resource);
+                $this->numrows = $save_numrows;
+                // recalculate page number of last row
+                $this->pageno = ceil($this->skip_offset / $this->rows_per_page);
             } // if
         } // if
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $data_raw = $this->_cm_post_getData($data_raw, $where);
-        } // if
-        $this->where = $where;
 
         if (is_True($this->initiated_from_controller) AND count($data_raw) == 1) {
             if (preg_match('/(mnu_user)$/i', $this->tablename)) {
@@ -2314,7 +2365,17 @@ abstract class Default_Table
         $this->errors = array();
 
         // convert $where from string to an associative array
-        $where_array = where2array($where);
+        $where_array = where2array($where, false, false);
+        if (!empty($where_array['curr_or_hist'])) {
+            // move from $where to $search
+            $search_array = where2array($this->sql_search, false, false);
+            if (empty($search_array['curr_or_hist'])) {
+                $search_array['curr_or_hist'] = $where_array['curr_or_hist'];
+                $this->sql_search = array2where($search_array);
+            } // if
+            unset($where_array['curr_or_hist']);
+            $where = array2where($where_array);
+        } // if
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
             if (!empty($where_array['rdcaccount_id'])) {
@@ -2560,14 +2621,14 @@ abstract class Default_Table
             //$where = array2where($fieldarray[$key]);
         } // if
 
-        if (is_True($this->no_foreign_data)) {
-            // skip this next bit
-        } else {
+        //if (is_True($this->no_foreign_data)) {
+        //    // skip this next bit
+        //} else {
             // retrieve data from foreign (parent) tables for each row
             foreach ($fieldarray as $rownum => $rowdata) {
                 $fieldarray[$rownum] = $this->getForeignData($rowdata, $rownum);
             } // foreach
-        } // if
+        //} // if
 
         // change current table configuration (optional)
         $fieldarray[$key] = $this->changeConfig($where, $fieldarray[$key]);
@@ -2779,6 +2840,10 @@ abstract class Default_Table
             $fieldarray = $this->_cm_getForeignData($fieldarray, $rownum);
         } // if
 
+        if (is_True($this->no_foreign_data)) {
+            return $fieldarray;  // skip this next bit
+        } //
+
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
 
         foreach ($this->parent_relations as $reldata) {
@@ -2803,6 +2868,13 @@ abstract class Default_Table
                             break;
                         } // if
                         if (preg_match('/^(IS NULL|IS NOT NULL)$/i', trim($fieldarray[$fldchild]))) {
+                            if ($GLOBALS['mode'] != 'search') {
+                                // does not contain a proper value, so do not attempt to read
+                                $fieldarray[$fldchild] = null;
+                            } // if
+                            $where_array = array();
+                            break;
+                        } elseif (preg_match('/^(<>|<=|<|>=|>|!=|=)/i', trim($fieldarray[$fldchild]))) {
                             if ($GLOBALS['mode'] != 'search') {
                                 // does not contain a proper value, so do not attempt to read
                                 $fieldarray[$fldchild] = null;
@@ -2941,7 +3013,11 @@ abstract class Default_Table
         } // if
 
         if (isset($this->fieldspec['rdcaccount_id'])) {
-            $account_id =& $_SESSION['rdcaccount_id'];
+            if (!empty($_SESSION['rdcaccount_id'])) {
+                $account_id = $_SESSION['rdcaccount_id'];
+            } else {
+                $account_id = null;
+            } // if
             if (empty($account_id)) {
                 $account_id = 1;  // change from NULL to the shared account
             } // if
@@ -2950,7 +3026,7 @@ abstract class Default_Table
                 $this->errors['rdcaccount_id'] = getLanguageText('sys0232', $account_id, $fieldarray['rdcaccount_id']);
                 return $fieldarray;
             } else {
-                // always use this user's account_id
+                // default to the current user's account_id
                 $fieldarray['rdcaccount_id'] = $account_id;
             } // if
         } // if
@@ -2960,6 +3036,7 @@ abstract class Default_Table
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
                 $fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
+                if (!is_array($fieldarray)) $fieldarray = array();
             } // if
         } // if
         if ($this->errors) return $fieldarray;
@@ -2967,6 +3044,7 @@ abstract class Default_Table
             $this->custom_replaces_standard = false;
         } else {
             $fieldarray = $this->_cm_getInitialData($fieldarray);
+            if (!is_array($fieldarray)) $fieldarray = array();
         } // if
         if ($this->errors) return $fieldarray;
 
@@ -3051,6 +3129,7 @@ abstract class Default_Table
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getInitialDataMultiple')) {
                 $fieldarray = $this->custom_processing_object->_cm_getInitialDataMultiple($fieldarray);
+                if (!is_array($fieldarray)) $fieldarray = array();
             } // if
         } // if
         if ($this->errors) return $fieldarray;
@@ -3060,6 +3139,7 @@ abstract class Default_Table
         } else {
             // perform any custom processing (optional)
             $fieldarray = $this->_cm_getInitialDataMultiple($fieldarray);
+            if (!is_array($fieldarray)) $fieldarray = array();
         } // if
         if ($this->errors) return $fieldarray;
 
@@ -3721,8 +3801,9 @@ abstract class Default_Table
     // perform any initialisation for the current task.
     // Note that $selection is PASSED BY REFERENCE as it may be updated.
     {
-        $this->pageno = null;
-        $this->where  = null;
+        $this->pageno      = null;
+        $this->prev_pageno = null;
+        $this->where       = null;
 
         $this->sql_groupby_orig = $this->sql_groupby;  // do NOT lose this value!
 
@@ -3814,21 +3895,6 @@ abstract class Default_Table
         // convert $where string to an array
         $fieldarray  = where2array($where, false, false);
 
-        if (isset($this->fieldspec['rdcaccount_id'])) {
-            if (count($fieldarray) == 1) {
-//                $fieldarray = unqualifyFieldArray($fieldarray);
-//                if (isset($fieldarray['rdcaccount_id'])) {
-//                    // 'rdcaccount_id' is the only value, so can we remove it?
-//                    if (preg_match('/^(mnu_account)/i', $this->tablename)) {
-//                        // this is allowed on this table
-//                    } else {
-//                        $where = null;
-//                        $fieldarray = array();
-//                    } // if
-//                } // if
-            } // if
-        } // if
-
         if (!empty($this->alt_language_table)) {
             if ($GLOBALS['mode'] == 'update') {
                 if ($_SESSION['user_language'] != $_SESSION['default_language']) {
@@ -3838,11 +3904,18 @@ abstract class Default_Table
                         $fieldnames = explode(', ', $this->alt_language_cols);
                         $display_message = false;
                         foreach ($fieldnames as $fieldname) {
-                            $this->fieldspec[$fieldname]['noedit'] = 'y';
-                            $this->noedit_array[$fieldname] = true;
-                            if (in_array($fieldname, $screen_fields)) {
-                                $display_message = true;
-                            } // if
+                            if       (array_key_exists('noedit', $this->fieldspec[$fieldname])) {
+								// cannot be changed, so do nothing
+                            } elseif (array_key_exists('nodisplay', $this->fieldspec[$fieldname])) {
+                                // cannot be changed, so do nothing
+							} else {
+                                // switch field from editable to non-editable
+								$this->fieldspec[$fieldname]['noedit'] = 'y';
+								$this->noedit_array[$fieldname] = true;
+								if (in_array($fieldname, $screen_fields)) {
+									$display_message = true;
+								} // if
+							} // if
                         } // foreach
                         if ($display_message == true) {
                             $this->messages[] = $this->getLanguageText('sys0180');
@@ -4476,6 +4549,7 @@ abstract class Default_Table
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
                 $fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
+                if (!is_array($fieldarray)) $fieldarray = array();
             } // if
         } // if
         if (empty($this->errors)) {
@@ -4483,6 +4557,7 @@ abstract class Default_Table
                 $this->custom_replaces_standard = false;
             } else {
                 $fieldarray = $this->_cm_getInitialData($fieldarray);
+                if (!is_array($fieldarray)) $fieldarray = array();
             } // if
         } // if
 
@@ -4524,11 +4599,10 @@ abstract class Default_Table
                     // value has already been supplied (from a COPY?) so don't change it
                     $condition = true;
                 } else {
-                    $account_id = $_SESSION['rdcaccount_id'];
-                    if (empty($account_id) OR $account_id == 1) {
-                        $insertarray['rdcaccount_id'] = 1;
+                    if (empty($_SESSION['rdcaccount_id'])) {
+                        $condition = true;  // leave current value untouched
                     } else {
-                        $insertarray['rdcaccount_id'] = $account_id;
+                        $insertarray['rdcaccount_id'] = $_SESSION['rdcaccount_id'];
                     } // if
                 } // if
             } // if
@@ -4807,13 +4881,15 @@ abstract class Default_Table
             return $fieldarray;
         } // if
 
-        // convert selection string into an associative array
-        //$select_array = where2array($selection);
         $rows = splitWhereByRow($selection);
         if (count($rows) == 1) {
+            // single row, so create an associative array
             $select_array = where2array($rows[0]);
         } else {
-            $select_array = $rows;
+            // multiple rows, so create an indexed array
+            foreach ($rows as $rowdata) {
+                $select_array[] = where2array($rowdata);
+            } // foreach
         } // if
 
         // find entry in $fieldspec which uses this popup form
@@ -4842,7 +4918,7 @@ abstract class Default_Table
                         $single_row = $this->_cm_popupReturn($single_row, $return_from, $select_array, $return_files);
                     } // if
 
-                    if (is_long(key($select_array))) {
+                    if (is_array($select_array) AND is_long(key($select_array))) {
                         // array is indexed with multiple rows, so convert to associative for a single row
                         $select_array_assoc = where2array($select_array[0]);
                     } else {
@@ -5535,6 +5611,8 @@ abstract class Default_Table
     function setPageNo ($pageno=null)
     // this allows a particular page number to be selected (see getData)
     {
+        $this->prev_pageno = $this->pageno;
+
         if (empty($pageno)) {
             $this->pageno = 1;
         } else {
@@ -5543,6 +5621,16 @@ abstract class Default_Table
 
         // a new page has been selected, so clear what was selected on the previous page
         $this->select_string = null;
+
+        if ($this->pageno < $this->prev_pageno) {
+            $this->skip_offset = 0;     // going backwards, so clear offset
+        } elseif ($this->pageno > $this->prev_pageno) {
+            if (!empty($this->skip_offset)) {
+                $this->skip_offset++;   // going forwards, so increment offset
+            } // if
+        } elseif ($this->pageno == 1) {
+            $this->skip_offset = 0;     // (re)starting, so clear offset
+        } // if
 
         return;
 
@@ -6482,20 +6570,12 @@ abstract class Default_Table
         // shift all field names to lower case
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
 
-        //if ($this->initiated_from_controller) {
-            // deal with numbers in foreign formats
-            //$fieldarray = $this->unFormatNumber($fieldarray);  // (NOTE: this is now done in array_update_associative() function)
-            // deal with datetime in different timezones
-            //$fieldarray = $this->convertTimeZone($fieldarray);  // (NOTE: this is now done after the _cm_pre_updateRecord() method)
-        //} // if
-
-        //$updatearray = $fieldarray;  // copy to temporary area
-
         if (empty($this->errors)) {
             // perform any custom pre-update processing
             if (is_object($this->custom_processing_object)) {
                 if (method_exists($this->custom_processing_object, '_cm_pre_updateRecord')) {
                     $fieldarray = $this->custom_processing_object->_cm_pre_updateRecord($fieldarray);
+                    if (!is_array($fieldarray)) $fieldarray = array();
                 } // if
             } // if
             if (empty($this->errors)) {
@@ -6503,6 +6583,7 @@ abstract class Default_Table
                     $this->custom_replaces_standard = false;
                 } else {
                     $fieldarray = $this->_cm_pre_updateRecord($fieldarray);
+                    if (!is_array($fieldarray)) $fieldarray = array();
                 } // if
             } // if
         } // if
@@ -6596,7 +6677,9 @@ abstract class Default_Table
                     $updatearray = $this->custom_validateUpdate($updatearray, $originaldata);
                 } // if
 
-                $updatearray = array_change_key_case($updatearray, CASE_LOWER);
+                if (is_array($updatearray) AND !empty($updatearray)) {
+                    $updatearray = array_change_key_case($updatearray, CASE_LOWER);
+                } // if
 
             } // if
         } // if
@@ -6774,9 +6857,11 @@ abstract class Default_Table
 
         if (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
             if (!empty($_SESSION['rdcaccount_id'])) {
-                if (!isset($fieldarray['rdcaccount_id'])) {
+                if (!array_key_exists('rdcaccount_id', $fieldarray)) {
                     // Column 'rdcaccount_id' is missing from SELECT list
                     $this->errors['rdcaccount_id'] = $this->getLanguageText('sys0233');
+                } elseif (empty($fieldarray['rdcaccount_id'])) {
+                    $condition = true;  // current user has NULL account_id, so skip next bit
                 } else {
                     if ($fieldarray['rdcaccount_id'] != $_SESSION['rdcaccount_id']) {
                         // not allowed to delete a shared record
@@ -8409,6 +8494,7 @@ abstract class Default_Table
         $DML->primary_key      = $this->getPkeyNames();
         $DML->pageno           = $this->pageno;
         $DML->rows_per_page    = $this->rows_per_page;
+        $DML->skip_offset      = $this->skip_offset;
         $DML->sql_select       = $this->sql_select;
         $DML->sql_from         = $this->sql_from;
         $DML->sql_groupby      = $this->sql_groupby;
@@ -9042,6 +9128,7 @@ abstract class Default_Table
                 $cpo->no_display_count          =& $this->no_display_count;
                 $cpo->numrows                   =& $this->numrows;
                 $cpo->pageno                    =& $this->pageno;
+                $cpo->lastpage                  =& $this->lastpage;
                 $cpo->parent_relations          =& $this->parent_relations;
                 $cpo->primary_key               =& $this->primary_key;
                 $cpo->query                     =& $this->query;
@@ -9407,6 +9494,25 @@ abstract class Default_Table
         return $fieldarray;
 
     } // _processInstruction
+
+    // ****************************************************************************
+    function _post_getData ($data_raw, $where)
+    // perform any custom post-retrieve processing
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_post_getData')) {
+                $data_raw = $this->custom_processing_object->_cm_post_getData($data_raw, $where);
+            } // if
+        } // if
+        if ($this->custom_replaces_standard) {
+            $this->custom_replaces_standard = false;
+        } else {
+            $data_raw = $this->_cm_post_getData($data_raw, $where);
+        } // if
+
+        return $data_raw;
+
+    } // _post_getData
 
     // ****************************************************************************
     function _qualify_dbname ($target_db, $this_db)

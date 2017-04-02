@@ -657,6 +657,7 @@ CREATE TABLE mnu_user (
     pswd_chg_date date,
     pswd_chg_time time without time zone,
     pswd_count smallint,
+    force_pswd_chg character(1) DEFAULT 'N'::bpchar NOT NULL,
     in_use character(1) DEFAULT 'N'::bpchar NOT NULL,
     is_disabled character(1) DEFAULT 'N'::bpchar NOT NULL,
     logon_date date,

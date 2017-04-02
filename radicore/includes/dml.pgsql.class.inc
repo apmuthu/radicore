@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class pgsql
@@ -37,6 +37,7 @@ class pgsql
     var $rows_per_page;                 // page size for multi-row forms
     var $row_locks;                     // SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
+    var $skip_offset;                   // force diferent offset after rows have been skipped
     var $table_locks;                   // array of tables to be locked
     var $transaction_level;             // transaction level
     var $unique_keys = array();         // array of candidate keys
@@ -709,9 +710,15 @@ END_OF_REGEX;
 
         // set the limit and offset values to retrieve the specified page number
         if ($rows_per_page > 0) {
-            $limit_str = 'LIMIT ' .$rows_per_page .' OFFSET ' .($pageno - 1) * $rows_per_page;
+            // set options for pagination
+            if (!empty($this->skip_offset)) {
+                $offset = $this->skip_offset -1;  // use pre-calculated value
+            } else {
+                $offset = ($pageno - 1) * $rows_per_page;
+            } // if
+            $limit_str = "\nLIMIT {$rows_per_page} OFFSET {$offset}";
         } else {
-            $limit_str = '';
+            $limit_str = '';  // no pagination
         } // if
 
         $lock_str = null;
@@ -869,8 +876,14 @@ END_OF_REGEX;
             $having_str = NULL;
         } // if
 
-        if (!is_null($rdc_limit) AND !is_null($rdc_offset)) {
-        	$limit_str = "\nLIMIT {$rdc_limit} OFFSET {$rdc_offset}";
+        if (!is_null($rdc_limit) OR !is_null($rdc_offset)) {
+        	if (empty($rdc_limit)) {
+                $rdc_limit = 999999999;
+            } // if
+            if (empty($rdc_offset)) {
+                $rdc_offset = 0;
+            } // if
+            $limit_str = "\nLIMIT {$rdc_limit} OFFSET {$rdc_offset}";
         } elseif ($rows_per_page > 0) {
             $limit_str = "\nLIMIT {$rows_per_page} OFFSET " .($pageno - 1) * $rows_per_page;
         } else {

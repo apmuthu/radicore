@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class oracle
@@ -33,6 +33,7 @@ class oracle
     var $rows_per_page;                 // page size for multi-row forms
     var $row_locks;                     // SH=shared, EX=exclusive
     var $row_locks_supp;                // supplemental lock type
+    var $skip_offset;                   // force diferent offset after rows have been skipped
     var $stmt;                          // sql statement resource
     var $table_locks;                   // array of tables to be locked
     var $transaction_level;             // transaction level
@@ -942,7 +943,11 @@ END_OF_REGEX;
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
         if ($rows_per_page > 0) {
             // insert code for pagination
-            $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            if (!empty($this->skip_offset)) {
+                $min_rows = $this->skip_offset;  // use pre-calculated value
+            } else {
+                $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            } // if
             $max_rows = ($min_rows + $rows_per_page) -1;
             $this->query = 'select * from ( select a.*, rownum as rnum from ( '
                          . $this->query
@@ -1097,7 +1102,11 @@ END_OF_REGEX;
         $this->query = "SELECT $select_str FROM $from_str $where_str $group_str $having_str $sort_str $lock_str";
         if ($rows_per_page > 0) {
             // insert code for pagination
-            $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            if (!empty($this->skip_offset)) {
+                $min_rows = $this->skip_offset;  // use pre-calculated value
+            } else {
+                $min_rows = (($pageno - 1) * $rows_per_page) +1;
+            } // if
             $max_rows = ($min_rows + $rows_per_page) -1;
             $this->query = 'select * from ( select a.*, rownum as rnum from ( '
                          . $this->query

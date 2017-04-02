@@ -25,7 +25,10 @@ $structure['main']['fields'][4][] = array('field' => 'pswd_days', 'colspan' => 2
 $structure['main']['fields'][5][] = array('label' => 'Password Retries');
 $structure['main']['fields'][5][] = array('field' => 'pswd_retries', 'colspan' => 1);
 $structure['main']['fields'][5][] = array('label' => 'Password Warning', 'colspan' => 2);
-$structure['main']['fields'][5][] = array('field' => 'pswd_warning', 'colspan' => 4);
+//$structure['main']['fields'][5][] = array('field' => 'pswd_warning', 'colspan' => 4);
+$structure['main']['fields'][5][] = array('field' => 'pswd_warning');
+$structure['main']['fields'][5][] = array('label' => 'Force Change?');
+$structure['main']['fields'][5][] = array('field' => 'force_pswd_chg', 'colspan' => 2);
 
 $structure['main']['fields'][6][] = array('label' => 'Format: Minimum length');
 $structure['main']['fields'][6][] = array('field' => 'pswd_format_minlen', 'colspan' => 1);

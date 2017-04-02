@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains generic functions
@@ -654,7 +654,9 @@ if (!function_exists('array2where')) {
                             //if (is_null($fieldvalue) AND !array_key_exists($fieldname, $primary_key)) {
                             if (strlen($fieldvalue) == 0) {
                             	$string = $fieldname .' IS NULL';
-                            //} elseif (substr($fieldvalue, 0, 1) == '(') {
+                            } elseif (preg_match('/^\w+[ ]*\(\)$/i', $fieldvalue)) {
+                                // value is 'function()', so output as-is
+                                $string = $fieldname ."=" .$fieldvalue;
                             } elseif (preg_match('/^\(.*\)$/i', $fieldvalue)) {
                                 // value is '(subquery)', so output as-is
                                 $string = $fieldname ."=" .$fieldvalue;
@@ -669,43 +671,41 @@ if (!function_exists('array2where')) {
                         } elseif (preg_match('/^[a-zA-Z_]+/', $operator)) {
                             // operator is alphabetic, so insert space after fieldname
                             $string = $fieldname.' '.ltrim($fieldvalue);
-                            //$string = $fieldname.' '.$operator.' '.$delimiter.$value.$delimiter;
+
                         } elseif (preg_match('/(&|~|\^|<<|>>|\|)[ ]*[0-9]+/', $operator, $regs)) {
-                            // contains biwise operator, so insert spaces
+                            // contains bitwise operator, so insert spaces
                             $string = $fieldname.' '.$operator.' '.$value;
+
+                        } elseif (preg_match('/^=/', $operator, $regs)) {
+                            //if (is_numeric($value)) {
+                            //    $delimiter = null;  // numeric values need not be delimited
+                            //    $value = trim($value);
+                            //} // if
+                            $string = $fieldname.$operator.$delimiter.$value.$delimiter;
+
                         } elseif (preg_match('/^(<>|<=|<|>=|>)/', $operator, $regs)) {
                             if (is_numeric($value)) {
                                 $delimiter = null;  // numeric values need not be delimited
+                                $value = trim($value);
                             } // if
-                            //if (!empty($delimiter)) {
-                                $string = $fieldname.' '.$operator.' '.$delimiter.$value.$delimiter;
-                            //} else {
-                            //    $string = $fieldname.' '.$operator.' '.$value;
-                                // this operator can only be used on a number
-                                //if (is_numeric($value)) {
-                                //    $string = $fieldname .$fieldvalue;
-                                //} else{
-                                //    // treat $operator as if it is part of $fieldvalue
-                                //    $string = $fieldname ."='" .addslashes($fieldvalue) ."'";
-                                //} // if
-                            //} // if
+                            $string = $fieldname.' '.$operator.' '.$delimiter.$value.$delimiter;
 
                         } elseif (!array_key_exists($fieldname_unq, $fieldspec)) {
                             // field is not in fieldspec, so use 'as-is'
-                            $string = $fieldname .$fieldvalue;
+                            $string = $fieldname.' '.$fieldvalue;
 
                         } else {
                             if (empty($delimiter)) {
                                 if (preg_match('/(int|decimal|numeric|float|double|real)/i', $type)) {
                                 	// value is numeric, so value need not be enclosed in quotes
-                                	$string = $fieldname .$fieldvalue;
+                                	$string = $fieldname.' '.$fieldvalue;
                                 } else {
                                     // there is no delimiter, so operator is part of the value
                                     $string = $fieldname ."='" .addslashes($fieldvalue) ."'";
                                 } // if
                             } else {
                             	// the operator and value are combined, so use 'as-is'
-                            	$string = $fieldname .$fieldvalue;
+                            	$string = $fieldname.' '.$fieldvalue;
                             } // if
                         } // if
                     } // if
@@ -849,11 +849,11 @@ if (!function_exists('calculate_age')) {
         $date = date('Y-m-d', $birthday);
         list($dob_yy, $dob_mm, $dob_dd) = explode('-',$date);
 
+        // set comparison date
         if (!empty($as_at_date)) {
             $date = strtotime($as_at_date);
-        } // if
-        if (empty($date)) {
-            $date = time();
+        } else {
+            $date = time();  // default is today
         } // if
 
         $year_diff = '';
@@ -1492,8 +1492,8 @@ if (!function_exists('extractFieldNamesAssoc')) {
 // ****************************************************************************
 if (!function_exists('extractNamedFields')) {
     function extractNamedFields ($fieldarray, $old_name, $new_name=null)
-    // iterate through $fieldarray looking for fields with $old_prefix, and return them.
-    // if $new_prefix is defined then use this instead of $old_prefix
+    // iterate through $fieldarray looking for fields with $old_name, and return them.
+    // if $new_name is defined then use this instead of $old_name
     {
         $output = array();
 
@@ -1540,7 +1540,7 @@ if (!function_exists('extractOperatorValue')) {
     function extractOperatorValue ($input)
     // split string such as "='value'" or "=value" into "=" and "value"
     {
-        $pattern = <<< END_OF_REGEX
+        $pattern1 = <<< END_OF_REGEX
 /
 ^                            # begins with
 (                       # start choice
@@ -1553,23 +1553,19 @@ if (!function_exists('extractOperatorValue')) {
 (                            # start choice
  <>|<=|<|>=|>|!=|=           # comparison operators
  |                           # or
- NOT[ ]+LIKE[ ]+             # NOT LIKE
+ (NOT[ ]+)?(I|R)?LIKE[ ]+    # [NOT] [I|R]LIKE
  |                           # or
- LIKE[ ]+                    # LIKE
+ (NOT[ ]+)?REGEXP[ ]+        # [NOT] REGEXP
  |                           # or
  IS[ ]+NOT[ ]+               # IS NOT
  |                           # or
  IS[ ]+                      # IS
  |                           # or
- NOT[ ]+IN[ ]*(?=\()         # 'NOT IN(' but without the '('
- |                           # or
- IN[ ]*(?=\()                # 'IN(' but without the '('
+ (NOT[ ]+)?IN[ ]*(?=\()      # '[NOT] IN(' but without the '('
  |                           # or
  IN[^a-zA-Z0-9 _-]           # 'IN' not followed by an alphanumeric character, space, underscore or dash
  |                           # or
- NOT[ ]+BETWEEN[ ]+          # NOT BETWEEN
- |                           # or
- BETWEEN[ ]+                 # BETWEEN
+ (NOT[ ]+)?BETWEEN[ ]+       # [NOT] BETWEEN
  |                           # or
  (-|\+)                      # '-' or '+'
  [ ]*                        # 0 or more spaces
@@ -1579,30 +1575,51 @@ if (!function_exists('extractOperatorValue')) {
 /xi
 END_OF_REGEX;
 
+        $pattern2 = <<< END_OF_REGEX
+/
+^                            # begins with
+[ ]*                         # any spaces
+(                            # start choice
+  \w+[ ]*\(\)                # word()
+|                            # or
+  \w+[ ]*\(.+?\)             # word(...)
+|                            # or
+  \w+(\.\w+)?$               # word[.word] with nothing after
+|                            # or
+  \([ ]*\w+                  # (word ..)
+)                            # end choice
+/xi
+END_OF_REGEX;
+
         $input = ltrim($input);
-        if (preg_match($pattern, $input, $regs)) {
+        if (preg_match($pattern1, $input, $regs)) {
             $operator = $regs[0];
             // split operator from value
             $value = substr($input, strlen($operator));
-            $value = trim($value);
+            //$value = trim($value);
 
-            if (preg_match('/between/i', $operator)) {
+            if (preg_match('/\bbetween\b/i', $operator)) {
                 // this has two values, so do not strip leading and trailing delimiters
             	$delimiter = null;
             } else {
-                // the next character is the delimiter (single or double quote)
-                $delimiter = substr($value, 0, 1);
+                // the first  non-blank character is the delimiter (single or double quote)
+                preg_match('/[^ ]/', $value, $regs);
+                $delimiter = $regs[0];
             } // if
             if ($delimiter == '"' or $delimiter == "'") {
                 // delimiter found, so remove from both ends of string
+                $value = trim($value);
                 $value = substr($value, 1);
                 $value = substr($value, 0, -1);
             } else {
             	// no delimiter found
                 $delimiter = null;
-                if (preg_match('/^(<>|<=|<|>=|>)/', $operator)) {
+                if (preg_match('/^(<>|<=|<|>=|>|!=|=)/', $operator)) {
                     // these are operators only on numeric values
-                    if (!is_numeric($value)) {
+                    if (preg_match($pattern2, $value)) {
+                        // contains 'word(...)' so leave operator
+                        $value = trim($value);
+                    } elseif (!is_numeric($value)) {
                         // not numeric, so should be part of the string value
                         $value = $operator.$value;
                         $operator = null;
@@ -2148,10 +2165,14 @@ END_OF_REGEX;
                             $bitwise = $regs['bitwise'];
                             $operator = ' '.$operator;  // insert leading space
                         } // if
+                        $operator = trim($operator);
+                        if (!preg_match('/^[ ]*=[ ]*$/', $operator)) {
+                            $operator = ' '.$operator.' ';  // not '=', so put spaces either side
+                        } // if
                         if ($qualified === true) {
-                        	$array4[] = $namearray[0] .'.' .$fieldname .$operator .$fieldvalue;
+                        	$array4[] = "{$namearray[0]}.{$fieldname}{$operator}{$fieldvalue}";
                         } else {
-                            $array4[] = $fieldname .$operator .$fieldvalue;
+                            $array4[] = "{$fieldname}{$operator}{$fieldvalue}";
                         } // if
                     } else {
                         // field is not valid, so previous separator is not required
@@ -2336,7 +2357,11 @@ END_OF_REGEX;
                     if (!empty($prev_separator)) {
                     	$array4[] = $prev_separator;
                     } // if
-                	$array4[] = $fieldname .$operator .$fieldvalue;
+                    $operator = trim($operator);
+                    if (!preg_match('/^[ ]*=[ ]*$/', $operator)) {
+                        $operator = ' '.$operator.' ';  // not '=', so put spaces either side
+                    } // if
+                	$array4[] = "{$fieldname}{$operator}{$fieldvalue}";
                 } // if
                 $prev_separator = null;
             } // if
@@ -2356,6 +2381,46 @@ END_OF_REGEX;
 } // if
 
 // ****************************************************************************
+if (!function_exists('findClosingEnd')) {
+    function findClosingEnd(&$string)
+    // an expression starts with 'CASE', so look for the closing 'END',
+    // but ignore any nested 'CASE ... END)'.
+    {
+
+
+        $pattern3b = <<< END_OF_REGEX
+/
+.*?
+(?P<keyword>\bCASE\b|\bEND\b)       # 'CASE' or 'END'
+/xis
+END_OF_REGEX;
+
+        $fieldvalue = '';
+		$count = 1;  // 1st CASE has already been found, so start count at 1
+		while ($count > 0) {
+			if ($result = preg_match($pattern3b, $string, $regs)) {
+                $fieldvalue = rtrim($fieldvalue);
+                $fieldvalue .= $regs[0];  // append to current value
+                if (preg_match('/case/i', $regs['keyword'])) {
+                    $count++;  // nested CASE found
+                } else {
+                    $count--;  // END found
+                } // if
+            } else {
+                trigger_error("Cannot find matching END in: '$string'", E_USER_ERROR);
+			} // if
+			$string = substr($string, strlen($regs[0]));   // remove value from string
+			if (strlen($string) == 0 AND $count > 0) {
+				$count = 0;  // nothing left to extract, so force exit
+			} // if
+		} // while
+
+        return $fieldvalue;
+
+    } // findClosingEnd
+} // if
+
+// ****************************************************************************
 if (!function_exists('findClosingParenthesis')) {
     function findClosingParenthesis(&$string, $found='(')
     // an expression starts with '(', so look for the closing ')', but ignore
@@ -2364,37 +2429,18 @@ if (!function_exists('findClosingParenthesis')) {
     {
         $lookup = str_replace('(', ')', $found);  // look for closing braces
 
-        // this pattern had to be split into 2 as it aborted with some strings
-//        $pattern3 = <<< END_OF_REGEX
-///
-//^                            # begins with
-//[ ]*                         # 0 or more spaces
-//(                            # start choice - operator
-// \(                          # begins with '('
-//  (                          # start choice
-//   \([^\(\)]*\)              # '(...)'
-//   |                         # or
-//   '(([^\\\']*(\\\.)?)*)'    # quoted string
-//   |                         # or
-//   .*?                       # any characters
-//  )+                         # end choice
-// \)+                         # ends with ')'
-//)                            # end choice
-///xi
-//END_OF_REGEX;
-
-//        $pattern3a = <<< END_OF_REGEX
-///
-//^                            # begins with
-//[ ]*                         # 0 or more spaces
-//\(                           # then '('
-///xi
-//END_OF_REGEX;
-
         $pattern3b = <<< END_OF_REGEX
 /
 ^                        # starts with
 (                        # start choice
+  (?<function>             # start pattern
+   (
+   \([ ]*\*[ ]*\)          # (*)
+   |                       # or
+   \([ ]*\w+(\.\w+)?[ ]*\) # (word[.word])
+   )
+)                        # end pattern
+|                        # or
   (                      # start choice
   [^\(\)']+              # anything except '(', ')' and single quote
   '(([^\\\']*(\\\.)?)*)' # quoted string
@@ -2403,7 +2449,7 @@ if (!function_exists('findClosingParenthesis')) {
 |                        # or
   [^\(\)']+              # anything except '(', ')' and single quote
 |                        # or
-  '(([^\\\']*(\\\.)?)*)' # quoted string
+  ('(([^\\\']*(\\\.)?)*)'[ ]*(,)?[ ]*)+  # quoted string [, ] one or more times
 |                        # or
   [\(\)]+                # '(' or ')' one or more
 )                        # end choice
@@ -2411,27 +2457,43 @@ if (!function_exists('findClosingParenthesis')) {
 END_OF_REGEX;
 
         $fieldvalue = '';
-		//$count = 1;  // 1st opening brace has already been found, so start count at 1
+        //$count = 1;  // 1st opening brace has already been found, so start count at 1
         $count = strlen($lookup);  // set to count of opening braces
-		while ($count > 0) {
-			if ($result = preg_match($pattern3b, $string, $regs)) {
-                $fieldvalue = rtrim($fieldvalue);
-                if (substr($regs[0], 0, 1) == ')') {
+        while ($count > 0) {
+            if ($result = preg_match($pattern3b, $string, $regs)) {
+                $string = substr($string, strlen($regs[0]));   // remove value from string
+                $found = trim($regs[0]);
+                if (!empty($regs['function'])) {
+                    $found = str_replace(' ', '', $found);  // strip spaces
+                } elseif (substr($found, 0, 1) == ')') {
                     // closing brace(s) found
-                    $count = $count - strlen($regs[0]); // increment count
-                } elseif (substr($regs[0], 0, 1) == '(') {
+                    $count = $count - strlen($found); // increment count
+                } elseif (substr($found, 0, 1) == '(') {
                     // opening brace(s) found
-                    $count = $count + strlen($regs[0]); // increment count
+                    $count = $count + strlen($found); // increment count
                 } // if
-				$fieldvalue .= $regs[0];  // append to current value
+                if (!empty($fieldvalue)) {
+                    $fieldvalue = rtrim($fieldvalue);
+                    if (!empty($regs['function'])) {
+                        // do nothing
+                    } elseif (preg_match('/\w+$/', $fieldvalue)) {
+                        if (preg_match('/\b(AND|OR|WHEN|THEN|ELSE|ON|IN)$/i', $fieldvalue)) {
+                            $fieldvalue .= ' ';  // insert space before next word
+                        } else {
+                            // do nothing
+                        } // if
+                    } elseif (substr($fieldvalue, -1, 1) != '(' AND substr($found, 0, 1) != ')') {
+                        $fieldvalue .= ' ';  // insert space before next word
+                    } // if
+                } // if
+                $fieldvalue .= $found;  // append to current value
             } else {
                 trigger_error("Cannot extract token from: '$string'", E_USER_ERROR);
-			} // if
-			$string = substr($string, strlen($regs[0]));   // remove value from string
-			if (strlen($string) == 0 AND $count > 0) {
-				$count = 0;  // nothing left to extract, so force exit
-			} // if
-		} // while
+            } // if
+            if (strlen($string) == 0 AND $count > 0) {
+                $count = 0;  // nothing left to extract, so force exit
+            } // if
+        } // while
 
         return $fieldvalue;
 
@@ -4154,7 +4216,11 @@ END_OF_REGEX;
                 	// closing parenthesis found, so output this string as an indexed entry
                 	if (empty($prev_separator)) {
                 	    // no separator available, so revert to default
-                		$array_out[] = 'AND '.$paren_string;
+                        if (empty($array_out)) {
+                            $array_out[] = $paren_string;
+                        } else {
+                		    $array_out[] = 'AND '.$paren_string;
+                        } // if
                 	} else {
                 	    $array_out[] = $prev_separator.' '.$paren_string;
                 	} // if
@@ -4223,20 +4289,24 @@ END_OF_REGEX;
                     $duff = array();
             	    // split element into its component parts
             		list($fieldname, $operator, $fieldvalue) = splitNameOperatorValue($string);
+                    $operator = trim($operator);
+                    if (!preg_match('/^[ ]*=[ ]*$/', $operator)) {
+                        $operator = ' '.$operator.' ';  // not '=', so put spaces either side
+                    } // if
             		if (!empty($prev_separator)) {
-            			$array_out[] = $prev_separator .' ' .$fieldname .$operator .$fieldvalue;
+            			$array_out[] = "{$prev_separator} {$fieldname}{$operator}{$fieldvalue}";
             		    $prev_separator = null;
 
-            		} elseif ($use_latest === true) {
-            		    // add to array, overwriting any previous entry
-            			$array_out[$fieldname] = $operator .$fieldvalue;
-
             		} else {
-                    	if (!array_key_exists($fieldname, $array_out)) {
+                        if ($use_latest === true) {
+            		        // add to array, overwriting any previous entry
+            			    $array_out[$fieldname] = ltrim($operator).$fieldvalue;
+
+            		    } elseif (!array_key_exists($fieldname, $array_out)) {
                     	    // $fieldname is not in $array_out, so add it
-                    		$array_out[$fieldname] = $operator .$fieldvalue;
-                    	} // if
-            		} // if
+                    	    $array_out[$fieldname] = ltrim($operator).$fieldvalue;
+            		    } // if
+                    } // if
             		if (!empty($string)) {
             			// extract any separator between each element
             		    $string = extractSeparator($string, $duff);
@@ -5357,7 +5427,7 @@ END_OF_REGEX;
                         // fieldname is a quoted string, so leave it alone
                     } else {
             		    $array4 = array();
-            		    $array4[$fieldname] = $operator.$fieldvalue;
+            		    $array4[$fieldname] = "{$operator} {$fieldvalue}";
             		    $array5 = qualifyField ($array4, $tablename, $fieldspec, $table_array, $sql_search_table, $select_alias, $having_array);
                         if (empty($array5)) {
                             unset($array3[$ix]);  // remove this entry
@@ -6490,8 +6560,8 @@ if (!function_exists('setColumnAttributes')) {
             	if (is_int($field)) {
                     // this is an array of fields
                     foreach ($col_data as $col2 => $col_data2) {
-                    	$type  = key($col_data2);
-                    	if ($type == 'field') {
+                        $type  = key($col_data2);
+                        if ($type == 'field') {
                     		$field = $col_data2[$type];
                         	foreach ($input_data as $input_field => $input_array) {
                         		if ($input_field == $field) {
@@ -6507,8 +6577,8 @@ if (!function_exists('setColumnAttributes')) {
             	} else {
             	    // array is keyed by field name
                 	foreach ($input_data as $input_field => $input_array) {
-                		if ($input_field == $field) {
-                			foreach ($input_array as $attr_name => $attr_value) {
+                        if ($input_field == $field) {
+                            foreach ($input_array as $attr_name => $attr_value) {
                                 if (preg_match('/(width|align)/i', $attr_name)) {
                                     $screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
                                 } else {
@@ -6599,7 +6669,7 @@ if (!function_exists('splitNameOperatorValue')) {
 |                            # or
  '(([^\\\']*(\\\.)?)*)'      # quoted string
 |                            # or
-\(CASE[ ].+?([ ]END\))+      # '(CASE ... END)[ END)]'
+\(CASE[ ]+                   # '(CASE '
 )                            # end choice
 ~xi
 END_OF_REGEX;
@@ -6693,6 +6763,15 @@ END_OF_REGEX;
 
             if (substr($fieldname, 0, 1) == '(' AND substr($fieldname, -1, 1) == ')') {
                 // string begins with '(' and ends with ')', so leave it alone
+            } elseif (preg_match('/^\(?[ ]*(\bCASE\b)/i', $fieldname , $regs)) {
+                // full expression is '(CASE ... END) operator value'
+                $fieldname .= findClosingEnd($where);  // extract '(CASE ... END)'
+                if (substr($regs[0], 0, 1) == '(') {
+                    $fieldname .= ')';  // begins with '(' so must end with ')'
+                    if (substr($where, 0, 1) == ')') {
+                        $where = substr($where, 1);  // remove leading ')'
+                    } // if
+                } // if
             } else {
                 $fieldname = strtolower($fieldname);
                 if (preg_match('/(NOT[ ]+EXISTS|EXISTS)/i', $fieldname)) {
@@ -6721,7 +6800,7 @@ END_OF_REGEX;
 
             $operator = trim(strtoupper($operator));
             if (preg_match('/[a-zA-Z_]+[ ]*[a-zA-Z_]*/', trim($operator))) {
-            	$operator = " $operator ";  // operator is alphabetic, so enclose in spaces
+            	$operator = " {$operator} ";  // operator is alphabetic, so enclose in spaces
             } // if
         } // if
 
@@ -7127,7 +7206,11 @@ END_OF_REGEX;
                 	if (!empty($namearray[1])) {
                 	    if ($namearray[0] == $tablename OR $tablename == '*') {
                 	    	$fieldname = $namearray[1];
-                	    	$array3[$ix] = $fieldname .$operator .$fieldvalue;
+                            $operator = trim($operator);
+                            if (!preg_match('/^[ ]*=[ ]*$/', $operator)) {
+                                $operator = ' '.$operator.' ';  // not '=', so put spaces either side
+                            } // if
+                	    	$array3[$ix] = "{$fieldname}{$operator}{$fieldvalue}";
                 	    } // if
                     } // if
                 } // if
@@ -7395,7 +7478,7 @@ if (!function_exists('where2array')) {
         	$count = array_count_values($array1);
             if ($count['('] == $count[')'] AND (!empty($count['OR']) AND $count['OR'] == $count['(']-1)) {
                 $array1 = splitWhereByRow($array1);
-            	if (is_null($pageno) or $pageno === FALSE) {
+            	if (is_null($pageno) OR $pageno === FALSE) {
             	    // do nothing
             	} else {
             	    $pageno = (int)$pageno;
@@ -7434,6 +7517,8 @@ if (!function_exists('where2indexedArray')) {
     // or possibly: name [NOT] IN (1,2,...,99)
     // or possibly: name=(subquery)
     // or possibly: (name1, name2)=(subquery)
+    // or possibly: (SELECT COUNT(*) FROM ...) = 0
+    // or possibly: function(name) = 'value'
     {
         // if input string is empty there is nothing to do
         if (empty($where)) return array();
@@ -7451,7 +7536,7 @@ if (!function_exists('where2indexedArray')) {
 ^
 (                            # start choice
  [\(]{2,}                    # two or more '('
-|
+|                            # or
  [ ]*AND(?=\()               # 'AND(' but without the '(' - see pattern 2
 |                            # or
  [ ]*AND[ ]+                 # 'AND' followed by 1 or more spaces
@@ -7461,10 +7546,12 @@ if (!function_exists('where2indexedArray')) {
  [ ]*OR[ ]+                  # 'OR' followed by 1 or more spaces
 |                            # or
  NOT[ ]*\(                   # 'NOT (' - see pattern 2
+|                                   # or
+ \([ ]*SELECT[ ]+COUNT\(.+\).+\)    # (select count(*) from ...)
 |                            # or
  \([ ]*(SELECT|CASE)[ ]+     # '(select ' or '(case '
 |                            # or
- (NOT[ ]+EXISTS|EXISTS)      # [NOT] EXISTS
+ (NOT[ ]+)?EXISTS            # [NOT] EXISTS
  [ ]*                        # 0 or more spaces
  \(                          # starts with '(' - see pattern 2
 |                            # or
@@ -7474,27 +7561,25 @@ if (!function_exists('where2indexedArray')) {
  [ ]+                        # 1 or more spaces
  NULL                        # NULL
 |                            # or
+ (                           # start choice
  \w+(\.\w+)?                 # word [.word]
+ |                           # or
+ \w+\(\w+(\.\w+)?\)          # function(word [.word])
+ )                           # end choice
  [ ]+                        # 1 or more spaces
- (NOT[ ]+LIKE|LIKE)          # [NOT] LIKE
+ (NOT[ ]+)?(I|R)?LIKE        # [NOT] [I|R]LIKE
  [ ]*                        # 0 or more spaces
  '(([^\\\']*(\\\.)?)*)'      # quoted string
 |                            # or
  \w+(\.\w+)?                 # word [.word]
  [ ]+                        # 1 or more spaces
- (NOT[ ]+RLIKE|RLIKE)        # [NOT] RLIKE
+ (NOT[ ]+)?REGEXP            # [NOT] REGEXP
  [ ]*                        # 0 or more spaces
  '(([^\\\']*(\\\.)?)*)'      # quoted string
 |                            # or
  \w+(\.\w+)?                 # word [.word]
  [ ]+                        # 1 or more spaces
- (NOT[ ]+REGEXP|REGEXP)      # [NOT] REGEXP
- [ ]*                        # 0 or more spaces
- '(([^\\\']*(\\\.)?)*)'      # quoted string
-|                            # or
- \w+(\.\w+)?                 # word [.word]
- [ ]+                        # 1 or more spaces
- (NOT[ ]+BETWEEN|BETWEEN)    # [NOT] BETWEEN
+ (NOT[ ]+)?BETWEEN           # [NOT] BETWEEN
  [ ]+                        # 1 or more spaces
  (                           # start choice
   '(([^\\\']*(\\\.)?)*)'        # quoted string
@@ -7513,15 +7598,6 @@ if (!function_exists('where2indexedArray')) {
  (NOT[ ]+IN|IN)              # [NOT] IN
  [ ]*                        # 0 or more spaces
  \(                          # '(' followed by
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'        # quoted string
-  |                             # or
-  [ ,]*                         # space or comma
-  |                             # or
-  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
- )                           # end choice
- +                           # 1 or more times
- \)                          # ')'
 |                            # or
  (                           # start choice
   \w+(\.\w+)?                # word[.word]
@@ -7561,7 +7637,9 @@ if (!function_exists('where2indexedArray')) {
   '(([^\\\']*(\\\.)?)*)'     # quoted string
  )                           # end choice
  [ ]*                        # 0 or more spaces
- (<>|<=|<|>=|>|!=|=)         # comparison operators
+ (?P<operator>               # pattern name
+  (<>|<=|<|>=|>|!=|=|LIKE)    # comparison operators
+ )                           # end pattern
  [ ]*                        # 0 or more spaces
  (                           # start choice
   (ANY|ALL|SOME)             # 'ANY' or 'ALL' or 'SOME'
@@ -7595,6 +7673,7 @@ if (!function_exists('where2indexedArray')) {
   (\+|-)[ ]*[0-9]+              # +/- digits
   |                             # or
   \w+(\.\w+)?                   # word[.word]
+  (\(\))?                       # optional '()'
   |                             # or
   '(([^\\\']*(\\\.)?)*)'        # quoted string
   |                             # or
@@ -7603,9 +7682,6 @@ if (!function_exists('where2indexedArray')) {
   \(                            # '('
  )                           # end choice
 |                            # or
- (                           # start choice
-  \w+(\.\w+)?                # word [.word]
-  |                          # or
   \(                         # '(' followed by
   (?>                        # start atomic group
   (                          # start choice
@@ -7618,13 +7694,12 @@ if (!function_exists('where2indexedArray')) {
   )                          # end atomic group
   ++                         # 1 or more times (possessive quantifier)
   \)                         # ending with ')'
- )                           # end choice
- [ ]+                        # 1 or more spaces
- (NOT[ ]+IN|IN)              # [NOT] IN
- [ ]*                        # 0 or more spaces
- \(                          # starts with '(' - see pattern 2
 |                            # or
- \(                          # begins with '(' - see pattern 2
+  \w+(\.\w+)?                # word [.word]
+  [ ]*                       # any spaces
+  \(                         # '('
+|
+  \(                         # begins with '(' - see pattern 2
 )                            # end choice
 ~xism
 END_OF_REGEX;
@@ -7660,6 +7735,8 @@ END_OF_REGEX;
 |                            # or
  \([ ]*(SELECT|CASE)[ ]+     # '(select ' or '(case '
 |                            # or
+ COUNT\(.+\).+               # 'count(*) ...'
+|                            # or
  \(                          # begins with '(' - see pattern 2
 )                            # end choice
 ~xism
@@ -7674,7 +7751,8 @@ END_OF_REGEX;
   |             # or
   \w+(\.\w+)?   # word [.word]
  )              # end choice
- [,]*           # optional comma
+ [ ]*           # optional space
+ [-,\+]*        # optional minus,comma,plus
  [ ]*           # optional space
 )+              # end group, 1 or more times
 ~xism
@@ -7701,15 +7779,40 @@ END_OF_REGEX;
 /
 ^                              # begins with
 [ ]*                           # 0 or more spaces
-(<>|<=|<|>=|>|!=|=)            # comparison operators
+(?P<operator>                  # pattern name
+  (<>|<=|<|>=|>|!=|=|(I|R)?LIKE|IN)   # comparison operators
+)                              # end pattern
 [ ]*                           # 0 or more spaces
 (                              # start choice
- \w+(\.\w+)?                   # word[.word]
- |                             # or
- '(([^\\\']*(\\\.)?)*)'        # quoted string
- |                             # or
- [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
-)                              # end choice
+  \(                           # '('
+  |                            # or
+  (?P<value>                     # pattern name
+    (                              # start choice
+     \w+(\.\w+)?                   # word[.word]
+     ([ ]*\(\))?                   # '()' optional
+     |                             # or
+     '(([^\\\']*(\\\.)?)*)'        # quoted string
+     |                             # or
+     [-+]?\d*\.?\d+([eE][-+]?\d+)? # digits (with or without decimals)
+    )                              # end choice
+  )                              # end pattern
+)                              #end choice
+/xism
+END_OF_REGEX;
+
+        $pattern2c = <<< END_OF_REGEX
+/
+^                              # begins with
+\(                             # (
+[ ]*                           # 0 or more spaces
+\w+(\.\w+)?                    # word[.word]
+[ ]*                           # 0 or more spaces
+(NOT)?                         # optional NOT
+[ ]*                           # 0 or more spaces
+(?P<operator>                  # pattern name
+  (<>|<=|<|>=|>|!=|=|(I|R)?LIKE|IN|BETWEEN)   # comparison operators
+)                              # end pattern
+[ ]*                           # 0 or more spaces
 /xism
 END_OF_REGEX;
 
@@ -7733,12 +7836,53 @@ END_OF_REGEX;
             $where = trim(substr($where, strlen($found)));
 
             //if (strlen($found) == 1 AND $found == '(') {
-            if (substr($found, 0, 1) == '(') {
-                if (substr_count($found, '(') == 1) {
+            if (!empty($regs['operator'])) {
+                // contains name-operator-value so continue
+                if (substr($found, -1, 1) == '(') {
+                    $found .= findClosingParenthesis($where);  // opening '(' found, find closing ')'
+                } // if
+            } elseif (substr($found, 0, 1) == '(') {
+                if (preg_match('/^\([ ]*(SELECT|CASE)\b/i', $found , $regs)) {
+                    // full expression is '(word ...) operator value'
+                    if (substr($found, -1 , 1) != ')') {
+                        $found .= findClosingParenthesis($where);  // extract '(word ...)'
+                    } // if
+                    // now look for 'operator value'
+                    if ($result = preg_match($pattern2a, $where, $regs)) {
+                        // found '= (SELECT ...', so this is part of same expression
+                        $found .= ' '.findClosingParenthesis($where);
+
+                    } elseif ($result = preg_match($pattern2b, $where, $regs)) {
+                        $found .= ' '.$regs['operator'].' '.$regs['value'];
+                        $where = trim(substr($where, strlen($regs[0])));
+                    } else {
+                        trigger_error("Cannot extract token (operator+value) from: '$where'", E_USER_ERROR);
+                    } // if
+
+                } elseif (substr($found, 0, 1) == '(' AND substr($found, -1, 1) == ')') {
+                    if ($result = preg_match($pattern2c, $found, $regs)) {
+                        // found '(word = ....)', so explode contents
+                        $output[] = '(';
+                        $found = substr($found, 1);          // strip leading ')'
+                        $found = substr($found, 0, -1);      // strip trailing ')'
+                        $output2 = where2indexedArray($found);
+                        $output = array_merge($output, $output2);
+                        $found = ')';
+                    } elseif ($result = preg_match($pattern2b, $where, $regs)) {
+                        if (!empty($regs['value'])) {
+                            $found .= ' '.$regs['operator'].' '.$regs['value'];
+                            $where = trim(substr($where, strlen($regs[0])));
+                        } elseif (substr($regs[0], -1, 1) == '(') {
+                            $found .= ' '.$regs[0];
+                            $where = trim(substr($where, strlen($regs[0])));
+                            $found .= findClosingParenthesis($where);
+                        } // if
+                    } // if
+
+               } elseif (substr_count($found, '(') == 1) {
                     // single '(' character, so search for matching ')'
-                    $prepend = trim($found);
-                    $output[] = $prepend;     // output leading '(' on its own
-                    $found = findClosingParenthesis($where, $found);
+                    $output[] = '(';     // output leading '(' on its own
+                    $found = findClosingParenthesis($where, '(');
                     if (substr($found, -1, 1) == ')') {
                         // does this contain multiple 'name=value' substrings?
                         $found = substr($found, 0, -1);          // strip trailing ')'
@@ -7746,6 +7890,14 @@ END_OF_REGEX;
                         $output = array_merge($output, $output2);
                         $found = ')';               // output trailing ')' on its own
                     } // if
+
+                } elseif (preg_match('/^\([ ]*(SELECT COUNT\()/i', $found , $regs)) {
+                    // found '(SELECT COUNT(*) FROM ...)'
+                    if ($result = preg_match($pattern2b, $where, $regs)) {
+                        $found .= ' '.$regs[0];  // append operator and value
+                        $where = trim(substr($where, strlen($regs[0])));
+                    } // if
+
                 } else {
                     // multiple '(' found, so search for matching ')'
                     $prepend = $found;
@@ -7758,20 +7910,9 @@ END_OF_REGEX;
                 // multiple characters ending in '(', so search for matching ')'
                 $found = trim($found);
                 $found .= findClosingParenthesis($where);
-
-            } elseif (preg_match('/^\([ ]*(SELECT|CASE)/i', $found , $regs)) {
-                // full expression is '(word ...) operator value'
-                $found .= findClosingParenthesis($where);  // extract '(word ...)'
-                // now look for 'operator value'
-                if ($result = preg_match($pattern2a, $where, $regs)) {
-                    // found '= (SELECT ...', so this is part of same expression
-                    $found .= findClosingParenthesis($where);
-
-                } elseif ($result = preg_match($pattern2b, $where, $regs)) {
-                    $found .= $regs[0];
+                if ($result = preg_match($pattern2b, $where, $regs)) {
+                    $found .= ' '.$regs['operator'].' '.$regs['value'];
                     $where = trim(substr($where, strlen($regs[0])));
-                } else {
-                    trigger_error("Cannot extract token (operator+value) from: '$where'", E_USER_ERROR);
                 } // if
             } // if
 

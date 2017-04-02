@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s01 extends mnu_user
@@ -77,6 +77,9 @@ class mnu_user_s01 extends mnu_user
             $this->errors['new_password2'] = getLanguageText('e0031'); // 'Repeat password does not match new password';
             return $fieldarray;
         } // if
+
+        // turn of switch which forces user to change his password
+        $fieldarray['force_pswd_chg'] = 'N';
 
         // perform standard processing defined in the parent class
         $fieldarray = parent::_cm_commonValidation($fieldarray, $originaldata);
