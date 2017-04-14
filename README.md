@@ -29,8 +29,10 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
   * `XMLRPC/allowed_ip_addr.inc`
   * `SOAP/allowed_ip_addr.inc`
 * `phpinfo.php` if present (in the webroot of the Radicore installation), will need to be removed when all installation / debugging is done.
+* `includes/config.inc` should not be part of the release but must be copied from `includes/config.inc.default` and edited as needed
 * In some versions remove redundant files if they exist, like:
   * `survey/sql/oracle/Copy of survey-data.sql`
   * `htaccess.demo.txt`
+  * `includes/config.copy.inc`
 * The `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
 * The `htaccess.demo.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
