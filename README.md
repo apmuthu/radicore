@@ -21,6 +21,7 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
 
 * Installation instructions are now contained in file `installation.html` and consequently the `readme.txt` file will stand removed.
 * The readme-<YYYY-MM-DD>.txt file will now be the CHANGELOG file in the root folder.
+* All component (and example prototype) versions are in the `version.txt` file in each folder like audit | default (test) | dict | menu | workflow | product | survey | classroom | xample
 * Security backdoors and debugging aids (search for `80.177.120.119` in the files - some will be missing in some versions):
 ** `menu/index.php`
 ** `includes/include.xml.php4.inc`
