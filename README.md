@@ -28,3 +28,4 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
   * `includes/include.xml.php5.inc`
   * `XMLRPC/allowed_ip_addr.inc`
   * `SOAP/allowed_ip_addr.inc`
+* `phpinfo.php` if present (in the webroot of the Radicore installation), will need to be removed when all installation / debugging is done.
