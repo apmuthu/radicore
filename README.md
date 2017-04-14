@@ -21,3 +21,9 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
 
 * Installation instructions are now contained in file `installation.html` and consequently the `readme.txt` file will stand removed.
 * The readme-<YYYY-MM-DD>.txt file will now be the CHANGELOG file in the root folder.
+* Security backdoors and debugging aids (search for `80.177.120.119` in the files - some will be missing in some versions):
+** `menu/index.php`
+** `includes/include.xml.php4.inc`
+** `includes/include.xml.php5.inc`
+** `XMLRPC/allowed_ip_addr.inc`
+** `SOAP/allowed_ip_addr.inc`
