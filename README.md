@@ -32,7 +32,7 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
 * `includes/config.inc` should not be part of the release but must be copied from `includes/config.inc.default` and edited as needed
 * In some versions remove redundant files if they exist, like:
   * `survey/sql/oracle/Copy of survey-data.sql`
-  * `htaccess.demo.txt`
+  * `htaccess.demo.txt` - keep if `htaccess.txt` is absent
   * `includes/config.copy.inc`
 * The `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
 * The `htaccess.demo.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
