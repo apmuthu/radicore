@@ -34,5 +34,6 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
   * `survey/sql/oracle/Copy of survey-data.sql`
   * `htaccess.demo.txt` - keep if `htaccess.txt` is absent
   * `includes/config.copy.inc`
-* The `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
-* The `htaccess.demo.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
+* `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
+* `htaccess.demo.txt` or `htaccess.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
+* `includes/config.live.inc` is missing in some releases and is a template for some config.inc implementations
