@@ -37,3 +37,5 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
 * `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
 * `htaccess.demo.txt` or `htaccess.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
 * `includes/config.live.inc` is missing in some releases and is a template for some config.inc implementations
+* `classroom/sql/crss.menu_export.sql` where present, should actually be named `classroom/sql/classroom.menu_export.sql`
+* `xample.menu_export.sql` and `xample.dict_export.sql` are present redundantly in `xample/sql` and `xample/sql/mysql` folders
