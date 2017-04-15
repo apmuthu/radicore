@@ -17,9 +17,9 @@ RADICORE is an open source Rapid Application Development Toolkit for building Ad
 
 The project's author has stated that he has no (current) plans to use GitHub and hence the unofficial mirror here. It is based on key releases only. It will be updated only when I have the time. Please use the official links above so as not to fracture the project's access and development.
 
-The (current) purpose of this repo is to enable those who prefer the Git model of development to assist in testing and development, migration and incremental version management by forking the project in an open manner.
+The (current) purpose of [this repo](https://github.com/apmuthu/radicore) is to enable those who prefer the Git model of development to assist in testing and development, migration and incremental version management by forking the project in an open manner.
 
-* Installation instructions are now contained in file `installation.html` and consequently the `readme.txt` file will stand removed.
+* Installation instructions are now contained in file `installation.html` and hence the `readme.txt` file stands removed.
 * The readme-<YYYY-MM-DD>.txt file will now be the CHANGELOG file in the root folder.
 * All component (and example prototype) versions are in the `version.txt` file in each folder like `audit` | `default` (test) | `dict` | `menu` | `workflow` | `product` | `survey` | `classroom` | `xample`
 * Security backdoors and debugging aids (search for `80.177.120.119` in the files - some will be missing in some versions):
@@ -35,7 +35,7 @@ The (current) purpose of this repo is to enable those who prefer the Git model o
   * `htaccess.demo.txt` - keep if `htaccess.txt` is absent
   * `includes/config.copy.inc`
 * `.htaccess` file is to be deleted for windows. It is meant for linux only and adjusted as needed
-* `htaccess.demo.txt` or `htaccess.txt` is meant to be renamed as .htaccess for windows and adjusted as needed
-* `includes/config.live.inc` is missing in some releases and is a template for some config.inc implementations
+* `htaccess.demo.txt` or `htaccess.txt` is meant to be renamed as `.htaccess` for windows and adjusted as needed
+* `includes/config.live.inc` is missing in some releases and is a template for some `includes/config.inc` implementations
 * `classroom/sql/crss.menu_export.sql` where present, should actually be named `classroom/sql/classroom.menu_export.sql`
 * `xample.menu_export.sql` and `xample.dict_export.sql` are present redundantly in `xample/sql` and `xample/sql/mysql` folders
