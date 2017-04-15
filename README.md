@@ -39,3 +39,27 @@ The (current) purpose of [this repo](https://github.com/apmuthu/radicore) is to 
 * `includes/config.live.inc` is missing in some releases and is a template for some `includes/config.inc` implementations
 * `classroom/sql/crss.menu_export.sql` where present, should actually be named `classroom/sql/classroom.menu_export.sql`
 * `xample.menu_export.sql` and `xample.dict_export.sql` are present redundantly in `xample/sql` and `xample/sql/mysql` folders
+
+As GitHub does not like empty folders, the following will need to be created manually:
+* `logs`
+* `audit/sql/logs`
+* `classroom/sql/logs`
+* `default/classes/custom-processing`
+* `default/reports/custom-processing`
+* `default/screens/custom-processing`
+* `default/sql/logs`
+* `default/sql/mysql`
+* `default/sql/oracle`
+* `default/sql/postgresql`
+* `default/sql/sqlsrv`
+* `default/text/custom-processing`
+* `dict/sql/logs`
+* `includes/tcpdf/cache`
+* `menu/sql/logs`
+* `product/sql/logs`
+* `survey/sql/logs`
+* `workflow/sql/log`
+* `xample/files/upload`
+* `xample/sql/logs`
+* `xample/videos`
+
