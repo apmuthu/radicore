@@ -28,7 +28,7 @@ The (current) purpose of [this repo](https://github.com/apmuthu/radicore) is to 
   * `includes/include.xml.php5.inc`
   * `XMLRPC/allowed_ip_addr.inc`
   * `SOAP/allowed_ip_addr.inc`
-* `phpinfo.php` if present (in the webroot of the Radicore installation), will need to be removed when all installation / debugging is done.
+* `phpinfo.php` if present (in the webroot of the Radicore installation), [will need to be removed](http://radicore.org/fud/index.php?t=msg&th=2608&goto=6305&#msg_6305) when all installation / debugging is done.
 * `includes/config.inc` should not be part of the release but must be copied from `includes/config.inc.default` and edited as needed
 * In some versions remove redundant files if they exist, like:
   * `survey/sql/oracle/Copy of survey-data.sql`
