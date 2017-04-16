@@ -18,7 +18,7 @@ mkdir -p \
     menu/sql/logs \
     product/sql/logs \
     survey/sql/logs \
-    workflow/sql/log \
+    workflow/sql/logs \
     xample/files/upload \
     xample/sql/logs \
     xample/videos
