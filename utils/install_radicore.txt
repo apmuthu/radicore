@@ -1,0 +1,94 @@
+#!/usr/bin/bash
+# The commands in this file should be executed in parts
+# Manual intervention is necessary wherever blank lines arise
+# Assumes a MySQL user 'appusr' has been created and credentials set for use of radicore from 'localhost'
+
+apt-get update
+apt-get dist-upgrade
+updatedb
+nano /etc/php5/apache2/php.ini
+#    include_path = ".:/usr/share/php:/var/www/webroot/radicore/includes"
+
+service apache2 restart
+
+# upload radicore zip file to /var/www
+
+cd /var/www/webroot
+unzip ../radicore-2017-04-02.zip
+cd radicore
+unzip "*-prototype.zip"
+rm *-prototype.zip
+chmod 755 create_empty_folders.sh
+./create_empty_folders.sh
+
+cd /var/www/webroot/radicore
+ls */sql/mysql/*-schema.sql -l
+<<"COMMENT"
+  audit/sql/mysql/audit-schema.sql
+  dict/sql/mysql/dict-schema.sql
+  menu/sql/mysql/menu-schema.sql
+  workflow/sql/mysql/workflow-schema.sql
+    classroom/sql/mysql/classroom-schema.sql
+    product/sql/mysql/product-schema.sql
+    survey/sql/mysql/survey-schema.sql
+    xample/sql/mysql/xample-schema.sql
+COMMENT
+
+ls */sql/mysql/*-data.sql -l
+<<"COMMENT"
+## No audit data here
+  dict/sql/mysql/dict-data.sql
+  menu/sql/mysql/menu-data.sql
+  workflow/sql/mysql/workflow-data.sql
+    classroom/sql/mysql/classroom-data.sql
+    product/sql/mysql/product-data.sql
+    survey/sql/mysql/survey-data.sql
+    xample/sql/mysql/xample-data.sql
+COMMENT
+
+ls */sql/*.dict_export.sql -l
+<<"COMMENT"
+  audit/sql/audit.dict_export.sql
+  dict/sql/dict.dict_export.sql
+  menu/sql/menu.dict_export.sql
+  workflow/sql/workflow.dict_export.sql
+    classroom/sql/classroom.dict_export.sql
+    product/sql/product.dict_export.sql
+    survey/sql/survey.dict_export.sql
+    xample/sql/xample.dict_export.sql
+COMMENT
+
+ls */sql/*.menu_export.sql -l
+<<"COMMENT"
+  audit/sql/audit.menu_export.sql
+  dict/sql/dict.menu_export.sql
+  menu/sql/menu.menu_export.sql
+  menu/sql/misc.menu_export.sql
+  workflow/sql/workflow.menu_export.sql
+    classroom/sql/crss.menu_export.sql
+    product/sql/product.menu_export.sql
+    survey/sql/survey.menu_export.sql
+    xample/sql/xample.menu_export.sql
+COMMENT
+
+chmod 755 create_databases.sh
+./create_databases.sh
+
+chmod 755 create_tables.sh
+./create_tables.sh
+
+cd /var/www/webroot/radicore
+cp includes/config.inc.default includes/config.inc
+# Edit radicore/includes/config.inc for db credentials
+nano radicore/includes/config.inc
+
+chown -R www-data:www-data ../radicore
+
+tail -n 15 /var/log/apache2/error.log
+# purge logs with:
+# > /var/log/apache2/error.log
+
+# Browse to http://domain.tld/radicore
+# restricted user: demo / demo
+# Global User: AJM / password
+# Other Global Users: MGR / password

@@ -63,3 +63,4 @@ As GitHub does not like empty folders, the following will need to be created man
 * `xample/sql/logs`
 * `xample/videos`
 
+The files in the `utils` folder will be useful for installation and maintenance.
