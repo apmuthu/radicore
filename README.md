@@ -22,6 +22,8 @@ The (current) purpose of [this repo](https://github.com/apmuthu/radicore) is to 
 * Installation instructions are now contained in file `installation.html` and hence the `readme.txt` file stands removed.
 * The readme-<YYYY-MM-DD>.txt file will now be the CHANGELOG file in the root folder.
 * All component (and example prototype) versions are in the `version.txt` file in each folder like `audit` | `default` (test) | `dict` | `menu` | `workflow` | `product` | `survey` | `classroom` | `xample`
+* [TCPDF v6.2.12 dated 2015-09-12](https://github.com/tecnickcom/TCPDF/archive/6.2.12.zip) for PHP5 and ( [5.9.178_PHP4 atted 2012-08-02](https://sourceforge.net/projects/tcpdf/files/OldFiles/tcpdf_5_9_178_php4.zip/download) ) are in `includes/tcpdf` folder. `tcpdf.php` is renamed to be `tcpdf_php5.php` and all `examples`, `tools` and many `fonts` have been stripped off the original library. Old versions of TCPDF are [archived](https://sourceforge.net/projects/tcpdf/files/OldFiles/).
+* The last version of TCPDF that supports PHP4 is [v5.9.209](https://sourceforge.net/projects/tcpdf/files/OldFiles/tcpdf_5_9_209_php4.zip/download) released on 2013-03-16.
 * Security backdoors and debugging aids (search for `80.177.120.119` in the files - some will be missing in some versions):
   * `menu/index.php`
   * `includes/include.xml.php4.inc`
