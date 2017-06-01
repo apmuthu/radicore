@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2012 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s02 extends dict_dataBase
@@ -79,11 +79,14 @@ class dict_dataBase_s02 extends dict_dataBase
             // export contents of DICT_RELATIONSHIP for this database table
         	$tableobj->sql_select = '*';
 
+            // look for children within the same database
         	$tableobj->sql_from   = 'dict_relationship';
-        	$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
+        	//$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
+            $where = "database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr=database_id_snr";
         	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
         	$output = $this->_extractRelationships ($tableobj, $where, $output);
 
+            // look for parents
         	$tableobj->sql_from   = 'dict_relationship';
         	$where = "database_id_snr!='$database_id' AND database_id_jnr='$database_id' AND table_id_jnr='$table_id'";
         	$tableobj->sql_orderby = 'database_id_snr,table_id_snr,seq_no';
@@ -147,7 +150,7 @@ class dict_dataBase_s02 extends dict_dataBase
 
     // ****************************************************************************
     function _extractRelationships ($tableobj, $where, $output)
-    // extract relationships and wrte to $output
+    // extract relationships and write to $output
     {
         $data = $tableobj->getData_raw($where);
         foreach ($data as $reldata) {

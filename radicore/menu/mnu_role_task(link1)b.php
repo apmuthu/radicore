@@ -13,7 +13,7 @@ $inner_table = 'mnu_task';                      // name of inner table
 $screen = 'mnu_role_task.link1(b).screen.inc';  // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'mnu_role.role_id, mnu_role.role_desc';
+$outer_sql_select = 'mnu_role.role_id, mnu_role.role_name';
 $outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 

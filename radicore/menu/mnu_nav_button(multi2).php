@@ -11,7 +11,7 @@ $inner_table = 'mnu_nav_button';                // name of inner table
 $screen = 'mnu_nav_button.multi2.screen.inc';   // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'task_id,task_desc,task_type,pattern_id';
+$outer_sql_select = 'task_id, task_name, task_type, pattern_id';
 $outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 

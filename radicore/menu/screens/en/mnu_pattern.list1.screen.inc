@@ -10,7 +10,7 @@ $structure['main']['columns'][] = array('width' => 10, 'align' => 'right');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('pattern_id' => 'ID');
-$structure['main']['fields'][] = array('pattern_desc' => 'Description');
+$structure['main']['fields'][] = array('pattern_name' => 'Name');
 $structure['main']['fields'][] = array('task_count' => 'Tasks');
 
 ?>

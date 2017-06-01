@@ -1,5 +1,5 @@
 <?php
-    // file created on September 21, 2015, 8:33 am
+    // file created on May 5, 2017, 9:06 am
     
     // field specifications for table menu.help_text_alt
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -17,6 +17,7 @@
     
     $fieldspec['help_text']                 = array('type' => 'string',
                                                     'size' => 65535,
+                                                    'required' => 'y',
                                                     'control' => 'multiline',
                                                     'cols' => 80,
                                                     'rows' => 15);

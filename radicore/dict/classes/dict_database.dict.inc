@@ -1,5 +1,5 @@
 <?php
-    // file created on December 5, 2015, 10:00 am
+    // file created on May 12, 2017, 2:58 pm
     
     // field specifications for table dict.dict_database
     $fieldspec['database_id']               = array('type' => 'string',
@@ -10,11 +10,11 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'database_id');
     
-    $fieldspec['database_desc']             = array('type' => 'string',
-                                                    'size' => 255,
+    $fieldspec['database_name']             = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['db_comment']                = array('type' => 'string',
+    $fieldspec['database_desc']             = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
@@ -76,11 +76,7 @@
                                                     'fields' => array('database_id' => 'database_id'));
     
     // parent relationship details 
-    $this->parent_relations[]               = array('parent' => 'mnu_subsystem',
-                                                    'dbname' => 'menu',
-                                                    'subsys_dir' => 'menu',
-                                                    'parent_field' => 'subsys_desc',
-                                                    'fields' => array('subsys_id' => 'subsys_id'));
+    $this->parent_relations                 = array();
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;

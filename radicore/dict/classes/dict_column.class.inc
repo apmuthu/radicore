@@ -872,7 +872,7 @@ class dict_column extends Default_Table
 
         if ($item == 'column_id') {
             // get data from the database
-            $this->sql_select     = 'column_id, column_desc';
+            $this->sql_select     = 'column_id, column_name';
             $this->sql_orderby    = 'column_seq';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData($where);
@@ -1130,8 +1130,8 @@ class dict_column extends Default_Table
         // reuse existing SELECT statement in _dml_ReadBeforeUpdate() method
         //$this->reuse_previous_select = true;
 
-        if (preg_match('/^(deprecated)/i', $fieldarray['column_desc'])) {
-            $fieldarray['column_desc'] = 'DEPRECATED';
+        if (preg_match('/^(deprecated)/i', $fieldarray['column_name'])) {
+            $fieldarray['column_name'] = 'DEPRECATED';
         } // if
 
         return $fieldarray;

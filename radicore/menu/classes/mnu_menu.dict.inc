@@ -1,5 +1,5 @@
 <?php
-    // file created on January 28, 2016, 5:45 pm
+    // file created on May 18, 2017, 1:51 pm
     
     // field specifications for table menu.mnu_menu
     $fieldspec['menu_id']                   = array('type' => 'string',
@@ -16,7 +16,7 @@
     
     $fieldspec['sort_seq']                  = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'zerofill' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
@@ -68,16 +68,16 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_snr',
-                                                    'parent_field' => 'task_desc AS task_desc_snr',
+                                                    'parent_field' => 'task_name AS task_name_snr',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('menu_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alias' => 'mnu_task_jnr',
-                                                    'parent_field' => 'task_desc AS task_desc_jnr',
+                                                    'parent_field' => 'task_name AS task_name_jnr',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id_jnr' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

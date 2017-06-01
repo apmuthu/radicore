@@ -97,15 +97,28 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
 
         if ($mode == 'search') {
             $prev_script = getPreviousScript();
-            $pattern_id  = getPatternId($prev_script);
+            $prev_pattern_id  = getPatternId($prev_script);
             //if (basename($prev_script) == 'mnu_role_task_link(a).php') {
-            if ($pattern_id == 'LINK1') {
+            if ($prev_pattern_id == 'LINK1') {
                 // add an extra field to the field list
                 $this->fieldspec['selected'] = array('type' => 'boolean');
             } // if
             // turn off 'noedit' attribute for search screen
             unset($this->fieldspec['role_id']['noedit']);
             //unset($fieldarray['role_id']);
+
+        } elseif ($mode == 'update') {
+            // this value is already displayed in the start_task_id field
+            unset($fieldarray['start_task_name']);
+
+        } elseif ($mode != 'insert') {
+            // do not display start_task_name in the start_task_id field
+            unset($this->fieldspec['start_task_id']['control']);
+        } // if
+
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
         } // if
 
         return $fieldarray;
@@ -133,6 +146,22 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -145,7 +174,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
 //        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('role_id' => 'Role Id',
-//                               'role_desc' => 'Role Desc');
+//                               'role_name' => 'Role Name');
 //                $this->lookup_data['quicksearch_field'] = $array;
 //            } // if
 //        } // if
@@ -162,8 +191,8 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
 
         if ($item == 'role_id') {
             // get data from the database
-            $this->sql_select     = 'role_id, role_desc';
-            $this->sql_orderby    = 'role_desc';
+            $this->sql_select     = 'role_id, role_name';
+            $this->sql_orderby    = 'role_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 
@@ -187,7 +216,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
         $array = array();
 
         $array['role_id'] = 'Total count:';
-        $array['role_desc'] = $this->count;
+        $array['role_name'] = $this->count;
 
         return $array;
 
@@ -310,7 +339,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='
         // only do this if sql_select is empty
 //        if (empty($this->sql_select)) {
 //            // include columns from foreign table
-//            $this->sql_select = 'mnu_role.*, mnu_task.task_id AS start_task_id, mnu_task.task_desc as start_task_desc';
+//            $this->sql_select = 'mnu_role.*, mnu_task.task_id AS start_task_id, mnu_task.task_name as start_task_name';
 //            $this->sql_from   = 'mnu_role '
 //                              . 'LEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role.start_task_id)';
 //        } // if

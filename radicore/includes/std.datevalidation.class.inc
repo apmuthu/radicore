@@ -274,14 +274,24 @@ class date_class {
                     break;
 
                 default:
-                    $this->errors = getLanguageText('sys0047', $date_format);
+                    //$this->errors = getLanguageText('sys0047', $date_format);
+                    $msg = getLanguageText('sys0047', $date_format);
+                    throw new Exception($msg, 47);
                     return false;
             } // switch
-            $result = $this->verifyDate($day, $month, $year);
-            if ($result === false) {
-                // "Invalid date format, expecting 'xx xx xx'
-                $this->errors = getLanguageText('sys0046', $date_format);
-            } // if
+//            $result = $this->verifyDate($day, $month, $year);
+//            if ($result === false) {
+//                // "Invalid date format, expecting 'xx xx xx'
+//                //$this->errors = getLanguageText('sys0046', $date_format);
+//                $msg = getLanguageText('sys0046', $date_format);
+//                throw new Exception($msg, 46);
+//            } // if
+            try {
+                $result = $this->verifyDate($day, $month, $year);
+            } catch (Exception $e) {
+                $msg = getLanguageText('sys0046', $date_format);
+                throw new Exception($msg, 46);
+            } // try
             return $result;
         } // if
 
@@ -439,7 +449,9 @@ class date_class {
             return $this->internaldate;
         } // if
 
-        $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+        //$this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+        $msg = getLanguageText('sys0040'); // 'This is not a valid date'
+        throw new Exception($msg, 40);
 
         return false;
 
@@ -504,7 +516,9 @@ class date_class {
             return $result;
         } // if
 
-        $this->errors = getLanguageText('sys0041'); // 'This is not a valid time'
+        //$this->errors = getLanguageText('sys0041'); // 'This is not a valid time'
+        $msg = getLanguageText('sys0041'); // 'This is not a valid time'
+        throw new Exception($msg, 41);
 
         return false;
 
@@ -553,7 +567,9 @@ class date_class {
             return $result;
         } // if
 
-        $this->errors = getLanguageText('sys0048'); // 'This is not a valid datetime'
+        //$this->errors = getLanguageText('sys0048'); // 'This is not a valid datetime'
+        $msg = getLanguageText('sys0048'); // 'This is not a valid datetime'
+        throw new Exception($msg, 48);
 
         return false;
 
@@ -573,7 +589,9 @@ class date_class {
             if (array_key_exists($month, $month_array)) {
             	$month_n = $month_array[$month];
             } else {
-                $this->errors = getLanguageText('sys0042'); // 'Month name is invalid'
+                //$this->errors = getLanguageText('sys0042'); // 'Month name is invalid'
+                $msg = getLanguageText('sys0042'); // 'Month name is invalid'
+                throw new Exception($msg, 42);
                 return false;
             } // if
         } else {
@@ -608,7 +626,9 @@ class date_class {
         } // if
 
         if (!checkdate($month_n, $day, $year)) {
-            $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+            //$this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+            $msg = getLanguageText('sys0040'); // 'This is not a valid date'
+            throw new Exception($msg, 40);
             return false;
         } else {
             if (strlen($day) < 2) {
@@ -629,17 +649,23 @@ class date_class {
     function verifyTime ($hours, $minutes, $seconds)
     {
         if ($hours > 23) {
-            $this->errors = getLanguageText('sys0043'); // 'Invalid HOURS'
+            //$this->errors = getLanguageText('sys0043'); // 'Invalid HOURS'
+            $msg = getLanguageText('sys0043'); // 'Invalid HOURS'
+            throw new Exception($msg, 43);
             return false;
         } // if
 
         if ($minutes > 59) {
-            $this->errors = getLanguageText('sys0044'); // 'Invalid MINUTES'
+            //$this->errors = getLanguageText('sys0044'); // 'Invalid MINUTES'
+            $msg = getLanguageText('sys0044'); // 'Invalid MINUTES'
+            throw new Exception($msg, 44);
             return false;
         } // if
 
         if ($seconds > 59) {
-            $this->errors = getLanguageText('sys0045'); // 'Invalid SECONDS'
+            //$this->errors = getLanguageText('sys0045'); // 'Invalid SECONDS'
+            $msg = getLanguageText('sys0045'); // 'Invalid SECONDS'
+            throw new Exception($msg, 45);
             return false;
         } // if
 
@@ -675,9 +701,11 @@ class date_class {
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($input == '00000000') {
-                	return '';
+                    return '';
                 } elseif (!checkdate($regs[2], $regs[3], $regs[1])) {
-                    $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+                    //$this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+                    $msg = getLanguageText('sys0040'); // 'This is not a valid date'
+                    throw new Exception($msg, 40);
                     return false;
                 } else {
                     $this->externaldate = $this->_formatDate($regs[3], $regs[2], $regs[1], $date_format);
@@ -685,7 +713,9 @@ class date_class {
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0046', 'yyyymmdd'); // Invalid date format: expected 'yyyymmdd'
+            //$this->errors = getLanguageText('sys0046', 'yyyymmdd'); // Invalid date format: expected 'yyyymmdd'
+            $msg = getLanguageText('sys0046', 'yyyymmdd'); // Invalid date format: expected 'yyyymmdd'
+            throw new Exception($msg, 46);
             return false;
         } // if
 
@@ -702,12 +732,14 @@ class date_class {
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($result = $this->verifyDate($regs[1], $regs[3], $regs[5])) {
-                	$this->externaldate = $this->getExternalDate($result);
+                    $this->externaldate = $this->getExternalDate($result);
                     return $this->externaldate;
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0046','dd-Mmm-yy'); // Invalid date format: expected 'dd-Mmm-yy'
+            //$this->errors = getLanguageText('sys0046','dd-Mmm-yy'); // Invalid date format: expected 'dd-Mmm-yy'
+            $msg = getLanguageText('sys0046','dd-Mmm-yy'); // Invalid date format: expected 'dd-Mmm-yy'
+            throw new Exception($msg, 46);
             return false;
         } // if
 
@@ -724,9 +756,11 @@ class date_class {
                      . '/';
             if (preg_match($pattern, $input, $regs)) {
                 if ($input == '0000-00-00') {
-                	return '';
+                    return '';
                 } elseif (!checkdate($regs[3], $regs[5], $regs[1])) {
-                    $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+                    //$this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+                    $msg = getLanguageText('sys0040'); // 'This is not a valid date'
+                    throw new Exception($msg, 40);
                     return false;
                 } else {
                     $this->externaldate = $this->_formatDate($regs[5], $regs[3], $regs[1], $date_format);
@@ -734,13 +768,15 @@ class date_class {
                 } // if
             } // if
 
-            $this->errors = getLanguageText('sys0046','dd-mm-yyyy'); // Invalid date format: expected 'dd-mm-yyyy'
+            //$this->errors = getLanguageText('sys0046','dd-mm-yyyy'); // Invalid date format: expected 'dd-mm-yyyy'
+            $msg = getLanguageText('sys0046','dd-mm-yyyy'); // Invalid date format: expected 'dd-mm-yyyy'
+            throw new Exception($msg, 46);
             return false;
         } // if
 
         if (strlen($input) == 11) {
-        	// this could already be in external format, so leave it alone
-        	return $input;
+            // this could already be in external format, so leave it alone
+            return $input;
         } // if
 
         if (strlen($input) > 11) {
@@ -751,11 +787,53 @@ class date_class {
             return $this->externaldate;
         } // if
 
-        $this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+        //$this->errors = getLanguageText('sys0040'); // 'This is not a valid date'
+        $msg = getLanguageText('sys0040'); // 'This is not a valid date'
+        throw new Exception($msg, 40);
 
         return $input;
 
     } // getExternalDate
+
+    // ****************************************************************************
+    function getExternalDateTime ($input, $date_format=null)
+    // convert date from internal format (as used in the database)
+    // to external format (as shown to the user))
+    {
+        if (empty($date_format)) {                      // AJM - 2014-04-22
+            $date_format = $this->date_format_output;   // AJM - 2014-04-22
+        } // if                                         // AJM - 2014-04-22
+        if (empty($date_format)) {              // AJM - 2014-02-15
+            $date_format = $this->date_format;  // AJM - 2014-02-15
+        } // if                                 // AJM - 2014-02-15
+
+        $pattern = '/'
+                 . '^'               // begins with
+                 . '(?P<date>'       // start named pattern
+                 . '[\d]{4}-[\d]{2}-[\d]{2}'    // '9999-99-99'
+                 . ')'               // end named pattern
+                 . '[ ]*'            // space
+                 . '(?P<time>'       // start named pattern
+                 . '([\d]{2}:[\d]{2}){1}'       // 'HH:MM'
+                 . '(:[\d]{2})?'                // optional ':SS'
+                 . ')'               // end named pattern
+                 . '/';
+
+        // look for a time portion (ends with '99:99' or '99:99:99')
+        if (preg_match($pattern, $input, $regs)) {
+            $date = $regs['date'];
+            $time = $regs['time'];
+            $this->externaldate = $this->getExternalDate($date, $date_format);
+            return $this->externaldate.' '.trim($time);
+        } else {
+            //$this->errors = getLanguageText('sys0048'); // 'This is not a valid datetime'
+            $msg = getLanguageText('sys0048'); // 'This is not a valid datetime'
+            throw new Exception($msg, 48);
+        } // if
+
+        return $input;
+
+    } // getExternalDateTime
 
     // ****************************************************************************
     function addDays ($internaldate, $days)

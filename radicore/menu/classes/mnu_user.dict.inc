@@ -1,5 +1,5 @@
 <?php
-    // file created on February 13, 2017, 12:30 pm
+    // file created on May 21, 2017, 3:27 pm
     
     // field specifications for table menu.mnu_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -9,7 +9,7 @@
                                                     'uppercase' => 'y');
     
     $fieldspec['user_name']                 = array('type' => 'string',
-                                                    'size' => 30,
+                                                    'size' => 40,
                                                     'required' => 'y');
     
     $fieldspec['user_password']             = array('type' => 'string',
@@ -27,12 +27,8 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'rdcaccount_id');
     
-    $fieldspec['pswd_chg_date']             = array('type' => 'date',
-                                                    'size' => 12,
-                                                    'noedit' => 'y');
-    
-    $fieldspec['pswd_chg_time']             = array('type' => 'time',
-                                                    'size' => 10,
+    $fieldspec['pswd_change_datetime']      = array('type' => 'datetime',
+                                                    'size' => 20,
                                                     'noedit' => 'y');
     
     $fieldspec['pswd_count']                = array('type' => 'integer',
@@ -69,16 +65,13 @@
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
-    $fieldspec['logon_date']                = array('type' => 'date',
-                                                    'size' => 12,
-                                                    'noedit' => 'y');
-    
-    $fieldspec['logon_time']                = array('type' => 'time',
-                                                    'size' => 10,
+    $fieldspec['logon_datetime']            = array('type' => 'datetime',
+                                                    'size' => 20,
                                                     'noedit' => 'y');
     
     $fieldspec['language_id']               = array('type' => 'string',
                                                     'size' => 6,
+                                                    'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'language_id');
     
@@ -98,6 +91,7 @@
     
     $fieldspec['email_addr']                = array('type' => 'string',
                                                     'size' => 50,
+                                                    'required' => 'y',
                                                     'lowercase' => 'y',
                                                     'subtype' => 'email');
     
@@ -123,6 +117,15 @@
                                                     'size' => 40,
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'user_timezone');
+    
+    $fieldspec['allow_responsive_gui']      = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -189,18 +192,6 @@
     
     $this->child_relations[]                = array('child' => 'mnu_user_role',
                                                     'type' => 'DEL',
-                                                    'fields' => array('user_id' => 'user_id'));
-    
-    $this->child_relations[]                = array('child' => 'survey_answer_hdr',
-                                                    'dbname' => 'survey',
-                                                    'subsys_dir' => 'survey',
-                                                    'type' => 'RES',
-                                                    'fields' => array('user_id' => 'user_id'));
-    
-    $this->child_relations[]                = array('child' => 'wf_workitem',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
-                                                    'type' => 'RES',
                                                     'fields' => array('user_id' => 'user_id'));
     
     // parent relationship details 

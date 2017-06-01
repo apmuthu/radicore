@@ -1,5 +1,5 @@
 <?php
-    // file created on January 1, 2013, 1:32 pm
+    // file created on May 5, 2017, 9:06 am
     
     // field specifications for table menu.help_text
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -56,9 +56,9 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

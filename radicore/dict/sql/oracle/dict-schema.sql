@@ -23,8 +23,8 @@ CREATE TABLE dict_column (
   table_id varchar2(64) NOT NULL,
   column_id varchar2(64) NOT NULL,
   column_seq number(6) NOT NULL,
-  column_desc varchar2(255) NOT NULL,
-  col_comment clob,
+  column_name varchar2(80) NOT NULL,
+  column_desc clob,
   col_type varchar2(20) NOT NULL,
   col_type_native varchar2(32) NOT NULL,
   col_array_type varchar2(20),
@@ -68,9 +68,9 @@ CREATE TABLE dict_column (
   multi_cols number(3),
   multi_rows number(3),
   custom_validation varchar2(255),
-  created_date timestamp NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id,table_id,column_id)
 );
@@ -84,12 +84,12 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON dict_column TO PUBLIC;
 
 CREATE TABLE dict_database (
   database_id varchar2(64) NOT NULL,
-  database_desc varchar2(255) NOT NULL,
-  db_comment clob,
+  database_name varchar2(80) NOT NULL,
+  database_desc clob,
   subsys_id varchar2(16) NOT NULL,
-  created_date timestamp NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id)
 );
@@ -110,9 +110,9 @@ CREATE TABLE dict_related_column (
   seq_no number(3) NOT NULL,
   column_id_jnr varchar2(64),
   seq_in_index number(4) NOT NULL,
-  created_date timestamp NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id_snr,table_id_snr,column_id_snr,database_id_jnr,table_id_jnr,seq_no)
 );
@@ -132,16 +132,16 @@ CREATE TABLE dict_relationship (
   seq_no number(3) NOT NULL,
   table_alias_snr varchar2(64),
   table_alias_jnr varchar2(64),
-  relation_desc varchar2(255),
-  rel_comment clob,
-  rel_type char(3) DEFAULT 'RES' NOT NULL,
+  relation_name varchar2(80),
+  relation_desc clob,
+  relation_type char(3) DEFAULT 'RES' NOT NULL,
   orderby varchar2(64),
   parent_field varchar2(64),
   calc_field varchar2(255),
-  key_name varchar2(64) DEFAULT 'PRIMARY' NOT NULL),
-  created_date timestamp NOT NULL,
+  key_name varchar2(64) DEFAULT 'PRIMARY' NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id_snr,table_id_snr,database_id_jnr,table_id_jnr,seq_no)
 );
@@ -156,17 +156,17 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON dict_relationship TO PUBLIC;
 CREATE TABLE dict_table (
   database_id varchar2(64) NOT NULL,
   table_id varchar2(64) NOT NULL,
-  table_desc varchar2(255) NOT NULL,
-  tbl_comment clob,
+  table_name varchar2(80) NOT NULL,
+  table_desc clob,
   audit_logging char(1) default 'Y' NOT NULL,
   default_orderby varchar2(64),
   alt_language_table varchar2(64),
   alt_language_cols varchar2(4000),
   nameof_start_date varchar2(40),
   nameof_end_date varchar2(40),
-  created_date timestamp NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id,table_id)
 );
@@ -186,9 +186,9 @@ CREATE TABLE dict_table_key (
   seq_in_index number(3) NOT NULL,
   is_unique char(1) default 'N' NOT NULL,
   column_seq number(3),
-  created_date timestamp NOT NULL,
+  created_date timestamp(0) NOT NULL,
   created_user varchar2(16) default 'UNKNOWN' NOT NULL,
-  revised_date timestamp,
+  revised_date timestamp(0),
   revised_user varchar2(16),
   PRIMARY KEY  (database_id,table_id,key_name,column_id)
 );

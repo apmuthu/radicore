@@ -59,7 +59,7 @@ $array['no_audit']              = array('NAL' => 'NOAUDIT');
 
 $array['no_search']             = array('NSR' => 'NOSEARCH');
 
-$array['rel_type']              = array('RES' => 'RESTRICTED',
+$array['relation_type']         = array('RES' => 'RESTRICTED',
                                         'DEL' => 'CASCADE (framework)',
                                         'NUL' => 'NULLIFY (framework)',
                                         'DEX' => 'CASCADE (FK constraint)',

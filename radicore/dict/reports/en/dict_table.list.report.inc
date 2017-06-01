@@ -28,7 +28,7 @@ $structure['columns'][] = array('width' => 45);
 // identify column names and associated labels
 $structure['body']['fields'][] = array('database_id' => 'Database Id');
 $structure['body']['fields'][] = array('table_id' => 'Table Id');
-$structure['body']['fields'][] = array('table_desc' => 'Description');
+$structure['body']['fields'][] = array('table_name' => 'Name');
 $structure['body']['fields'][] = array('default_orderby' => 'Order By');
 $structure['body']['fields'][] = array('audit_logging' => 'Audit Logging?');
 

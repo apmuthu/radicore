@@ -1,5 +1,5 @@
 <?php
-    // file created on May 19, 2016, 12:46 pm
+    // file created on May 5, 2017, 9:07 am
     
     // field specifications for table menu.mnu_saved_selection
     $fieldspec['selection_id']              = array('type' => 'integer',
@@ -11,7 +11,7 @@
                                                     'pkey' => 'y',
                                                     'required' => 'y');
     
-    $fieldspec['selection_desc']            = array('type' => 'string',
+    $fieldspec['selection_name']            = array('type' => 'string',
                                                     'size' => 80,
                                                     'required' => 'y');
     
@@ -27,7 +27,7 @@
                                                     'required' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)a',
-                                                    'foreign_field' => 'task_desc');
+                                                    'foreign_field' => 'task_name');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -70,10 +70,10 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
-                                                    'fields' => array('user_id' => 'task_id'));
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
+                                                    'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',

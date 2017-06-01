@@ -5,7 +5,7 @@ $structure['tables']['main'] = 'mnu_user';
 
 $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => 150);
-$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => 150);
 $structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][1] = array('user_id' => 'User Id', 'colspan' => 3);
@@ -46,15 +46,15 @@ $structure['main']['fields'][14] = array('party_id' => 'Party Id', 'colspan' => 
 $structure['main']['fields'][15] = array('ip_address' => 'IP Address', 'colspan' => 3);
 
 $structure['main']['fields'][16][] = array('label' => 'Password Change Date');
-$structure['main']['fields'][16][] = array('field' => 'pswd_chg_date');
-$structure['main']['fields'][16][] = array('field' => 'pswd_chg_time', 'colspan' => 2);
+$structure['main']['fields'][16][] = array('field' => 'pswd_change_datetime', 'colspan' => 3);
 
 $structure['main']['fields'][17] = array('force_pswd_chg' => 'Force Password Change?', 'colspan' => 3);
 $structure['main']['fields'][18] = array('pswd_count' => 'Password Count', 'colspan' => 3);
 
 $structure['main']['fields'][19][] = array('label' => 'Logon Date');
-$structure['main']['fields'][19][] = array('field' => 'logon_date');
-$structure['main']['fields'][19][] = array('field' => 'logon_time', 'colspan' => 2);
+$structure['main']['fields'][19][] = array('field' => 'logon_datetime', 'colspan' => 3);
+
+$structure['main']['fields'][] = array('allow_responsive_gui' => 'Allow Responsive GUI', 'colspan' => 3);
 
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 

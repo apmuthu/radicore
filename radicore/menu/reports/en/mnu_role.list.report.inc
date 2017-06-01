@@ -26,7 +26,7 @@ $structure['columns'][] = array('width' => 35, 'halign' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('role_id' => 'Role Id');
-$structure['body']['fields'][] = array('role_desc' => 'Description');
+$structure['body']['fields'][] = array('role_name' => 'Name');
 $structure['body']['fields'][] = array('start_task_id' => 'Start Task');
 $structure['body']['fields'][] = array('global_access' => "Global Access?");
 

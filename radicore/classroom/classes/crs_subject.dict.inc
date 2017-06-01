@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:07 am
+    // file created on April 17, 2017, 12:46 pm
     
     // field specifications for table classroom.crs_subject
     $fieldspec['subject_id']                = array('type' => 'string',
@@ -15,7 +15,7 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y',
                                                     'nosearch' => 'y');
@@ -59,6 +59,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = 'subject_name';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

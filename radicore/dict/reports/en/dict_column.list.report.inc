@@ -34,7 +34,7 @@ $structure['body']['fields'][] = array('database_id' => 'Database Id');
 $structure['body']['fields'][] = array('table_id' => 'Table Id');
 $structure['body']['fields'][] = array('column_seq' => 'Seq');
 $structure['body']['fields'][] = array('column_id' => 'Column Id');
-$structure['body']['fields'][] = array('column_desc' => 'Description');
+$structure['body']['fields'][] = array('column_name' => 'Name');
 $structure['body']['fields'][] = array('col_type' => 'Type');
 $structure['body']['fields'][] = array('col_maxsize' => 'Size');
 $structure['body']['fields'][] = array('col_null' => 'Null');

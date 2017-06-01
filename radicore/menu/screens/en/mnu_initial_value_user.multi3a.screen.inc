@@ -13,7 +13,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 $structure['outer']['fields'][1][] = array('label' => 'Task Id');
 $structure['outer']['fields'][1][] = array('field' => 'task_id');
 $structure['outer']['fields'][1][] = array('label' => 'Name');
-$structure['outer']['fields'][1][] = array('field' => 'task_desc');
+$structure['outer']['fields'][1][] = array('field' => 'task_name');
 
 $structure['tables']['middle'] = 'mnu_user';
 

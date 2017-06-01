@@ -1,5 +1,5 @@
 <?php
-    // file created on April 22, 2013, 2:18 pm
+    // file created on May 7, 2017, 9:33 am
     
     // field specifications for table menu.mnu_time_limit_user
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -8,12 +8,12 @@
                                                     'required' => 'y');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
                                                     'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['scheduled_start_time']      = array('type' => 'time',
@@ -27,6 +27,7 @@
                                                     'default' => '17:00:00');
     
     $fieldspec['scheduled_monday']          = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '1',
                                                     'true' => '1',
@@ -36,6 +37,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_tuesday']         = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '1',
                                                     'true' => '1',
@@ -45,6 +47,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_wednesday']       = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '1',
                                                     'true' => '1',
@@ -54,6 +57,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_thursday']        = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '1',
                                                     'true' => '1',
@@ -63,6 +67,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_friday']          = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '1',
                                                     'true' => '1',
@@ -72,6 +77,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_saturday']        = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '0',
                                                     'true' => '1',
@@ -81,6 +87,7 @@
                                                     'align_lr' => 'R');
     
     $fieldspec['scheduled_sunday']          = array('type' => 'boolean',
+                                                    'type_native' => 'tinyint',
                                                     'required' => 'y',
                                                     'default' => '0',
                                                     'true' => '1',
@@ -130,6 +137,8 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',
+                                                    'alt_language_table' => 'mnu_user_alt',
+                                                    'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));
     
     // determines if database updates are recorded in an audit log 

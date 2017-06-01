@@ -1,5 +1,5 @@
 <?php
-    // file created on May 18, 2016, 1:48 pm
+    // file created on May 5, 2017, 9:07 am
     
     // field specifications for table menu.mnu_task_field
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -26,7 +26,7 @@
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
-                                                    'control' => 'radio',
+                                                    'control' => 'dropdown',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
@@ -82,9 +82,9 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

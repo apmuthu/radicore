@@ -1,5 +1,5 @@
 <?php
-    // file created on November 16, 2009, 4:14 pm
+    // file created on May 5, 2017, 9:07 am
     
     // field specifications for table menu.mnu_task_ip_address
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -52,6 +52,8 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
+                                                    'alt_language_table' => 'mnu_task_alt',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_language extends Default_Table
@@ -20,26 +20,6 @@ class mnu_language extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // __construct
-
-    // ****************************************************************************
-    function getFieldSpec_original ()
-    // set the specifications for this database table.
-    {
-        $fieldspec = parent::getFieldSpec_original();
-
-        // remove references to any relationships which do not exist in this installation
-        foreach ($this->child_relations as $index => $relation) {
-        	if (isset($relation['subsys_dir'])) {
-                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
-                if (!file_exists($classname)) {
-                	unset($this->child_relations[$index]);
-                } // if
-        	} // if
-        } // foreach
-
-        return $fieldspec;
-
-    } // getFieldSpec_original
 
     // ****************************************************************************
     function _cm_changeConfig ($where, $fieldarray)

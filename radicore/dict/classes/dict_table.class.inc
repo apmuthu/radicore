@@ -208,7 +208,7 @@ class dict_table extends Default_Table
 
         if ($item == 'table_id') {
             // get data from the database, ignoring any tables which have no entries on DICT_COLUMN
-            $this->sql_select     = 'table_id, table_desc';
+            $this->sql_select     = 'table_id, table_name';
             //$this->sql_select    .= ', count(dict_column.table_id) as column_count';
             $this->sql_select    .= ', (SELECT COUNT(table_id) FROM dict_column WHERE dict_column.database_id=dict_table.database_id AND dict_column.table_id=dict_table.table_id GROUP BY dict_column.table_id) AS column_count';
             $this->sql_orderby    = 'table_id';
@@ -250,7 +250,7 @@ class dict_table extends Default_Table
         $array = array();
 
         $array['table_id'] = 'Total count:';
-        $array['table_desc'] = $this->count;
+        $array['table_name'] = $this->count;
 
         return $array;
 

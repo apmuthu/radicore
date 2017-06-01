@@ -5,7 +5,7 @@ $structure['tables']['outer'] = 'mnu_subsystem';
 
 $structure['outer']['columns'][] = array('width' => '25%');
 
-$structure['outer']['fields'][] = array('subsys_desc' => 'Subsystem');
+$structure['outer']['fields'][] = array('subsys_name' => 'Subsystem');
 
 $structure['tables']['inner'] = 'dict_database';
 
@@ -15,6 +15,6 @@ $structure['inner']['columns'][] = array('width' => '*');
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('database_id' => 'Database Id');
-$structure['inner']['fields'][] = array('database_desc' => 'Description');
+$structure['inner']['fields'][] = array('database_name' => 'Name');
 
 ?>

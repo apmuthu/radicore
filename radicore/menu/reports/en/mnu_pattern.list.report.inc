@@ -21,14 +21,14 @@ $structure['title'][] = array('text' => '- Contents of MNU_PATTERN table -',
 // set column widths
 $structure['columns'][] = array('width' => 42);
 $structure['columns'][] = array('width' => 145);
+$structure['columns'][] = array('width' => 20, 'halign' => 'center');
 $structure['columns'][] = array('width' => 25, 'halign' => 'center');
-$structure['columns'][] = array('width' => 25, 'halign' => 'center');
-$structure['columns'][] = array('width' => 25, 'halign' => 'center');
+$structure['columns'][] = array('width' => 30, 'halign' => 'center');
 $structure['columns'][] = array('width' => 15, 'halign' => 'right');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
-$structure['body']['fields'][] = array('pattern_desc' => 'Description');
+$structure['body']['fields'][] = array('pattern_name' => 'Name');
 $structure['body']['fields'][] = array('visible_screen' => 'Visible?');
 $structure['body']['fields'][] = array('context_preselect' => 'Preselect?');
 $structure['body']['fields'][] = array('keep_data' => 'Keep Data?');

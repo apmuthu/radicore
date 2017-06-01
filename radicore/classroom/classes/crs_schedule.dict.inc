@@ -1,5 +1,5 @@
 <?php
-    // file created on January 23, 2007, 6:53 pm
+    // file created on April 17, 2017, 12:45 pm
     
     // field specifications for table classroom.crs_schedule
     $fieldspec['schedule_id']               = array('type' => 'integer',
@@ -56,6 +56,7 @@
                                                     'optionlist' => 'lesson_id');
     
     $fieldspec['is_valid']                  = array('type' => 'boolean',
+                                                    'type_native' => 'char',
                                                     'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
@@ -74,7 +75,7 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y',
                                                     'nosearch' => 'y');
@@ -127,6 +128,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

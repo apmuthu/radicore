@@ -11,6 +11,7 @@ $structure['main']['columns'][] = array('width' => '*');
 // the SHORT format defines two cells per row, a label followed by a field, as in:
 $structure['main']['fields'][] = array('rdcaccount_id' => 'Account Id');
 $structure['main']['fields'][] = array('account_name' => 'Account Name');
+$structure['main']['fields'][] = array('account_desc' => 'Description');
 //$structure['main']['fields'][] = array('rdcversion' => 'Version Number');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');
 $structure['main']['fields'][] = array('created_user' => 'Created User');

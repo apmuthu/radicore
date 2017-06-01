@@ -1,5 +1,5 @@
 <?php
-    // file created on December 5, 2015, 10:00 am
+    // file created on May 12, 2017, 2:58 pm
     
     // field specifications for table dict.dict_relationship
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -55,22 +55,23 @@
                                                     'size' => 64,
                                                     'lowercase' => 'y');
     
-    $fieldspec['relation_desc']             = array('type' => 'string',
-                                                    'size' => 255);
+    $fieldspec['relation_name']             = array('type' => 'string',
+                                                    'size' => 80,
+                                                    'required' => 'y');
     
-    $fieldspec['rel_comment']               = array('type' => 'string',
+    $fieldspec['relation_desc']             = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
                                                     'rows' => 5,
                                                     'nosearch' => 'y');
     
-    $fieldspec['rel_type']                  = array('type' => 'string',
+    $fieldspec['relation_type']             = array('type' => 'string',
                                                     'size' => 3,
                                                     'required' => 'y',
                                                     'default' => 'RES',
                                                     'control' => 'dropdown',
-                                                    'optionlist' => 'rel_type');
+                                                    'optionlist' => 'relation_type');
     
     $fieldspec['orderby']                   = array('type' => 'string',
                                                     'size' => 64,
@@ -150,13 +151,13 @@
     
     $this->parent_relations[]               = array('parent' => 'dict_table',
                                                     'alias' => 'dict_table_snr',
-                                                    'parent_field' => 'table_desc as table_desc_snr',
+                                                    'parent_field' => 'table_name as table_name_snr',
                                                     'fields' => array('database_id_snr' => 'database_id',
                                                                       'table_id_snr' => 'table_id'));
     
     $this->parent_relations[]               = array('parent' => 'dict_table',
                                                     'alias' => 'dict_table_jnr',
-                                                    'parent_field' => 'table_desc as table_desc_jnr',
+                                                    'parent_field' => 'table_name as table_name_jnr',
                                                     'fields' => array('database_id_jnr' => 'database_id',
                                                                       'table_id_jnr' => 'table_id'));
     

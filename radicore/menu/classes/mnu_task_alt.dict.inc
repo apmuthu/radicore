@@ -1,5 +1,5 @@
 <?php
-    // file created on September 21, 2015, 8:37 am
+    // file created on May 7, 2017, 9:31 am
     
     // field specifications for table menu.mnu_task_alt
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -15,12 +15,19 @@
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'language_id');
     
-    $fieldspec['task_desc']                 = array('type' => 'string',
+    $fieldspec['task_name']                 = array('type' => 'string',
                                                     'size' => 80,
                                                     'required' => 'y');
     
+    $fieldspec['task_desc']                 = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 80,
+                                                    'rows' => 5);
+    
     $fieldspec['button_text']               = array('type' => 'string',
-                                                    'size' => 80);
+                                                    'size' => 40,
+                                                    'required' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -66,7 +73,7 @@
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

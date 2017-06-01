@@ -1,5 +1,5 @@
 <?php
-    // file created on May 19, 2016, 12:46 pm
+    // file created on May 5, 2017, 9:07 am
     
     // field specifications for table menu.mnu_saved_selection_data
     $fieldspec['selection_id']              = array('type' => 'integer',

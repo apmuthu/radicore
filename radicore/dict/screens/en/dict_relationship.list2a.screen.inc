@@ -23,6 +23,6 @@ $structure['inner']['columns'][] = array('width' => 175);
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('database_id_jnr' => 'Database Id (jnr)');
 $structure['inner']['fields'][] = array('table_id_jnr' => 'Table Id (jnr)');
-$structure['inner']['fields'][] = array('rel_type' => 'Constraint');
+$structure['inner']['fields'][] = array('relation_type' => 'Constraint');
 
 ?>

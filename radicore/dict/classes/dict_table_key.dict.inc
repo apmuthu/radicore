@@ -1,5 +1,5 @@
 <?php
-    // file created on January 10, 2015, 3:04 pm
+    // file created on May 12, 2017, 2:58 pm
     
     // field specifications for table dict.dict_table_key
     $fieldspec['database_id']               = array('type' => 'string',
@@ -19,7 +19,8 @@
     $fieldspec['key_name']                  = array('type' => 'string',
                                                     'size' => 64,
                                                     'pkey' => 'y',
-                                                    'required' => 'y');
+                                                    'required' => 'y',
+                                                    'uppercase' => 'y');
     
     $fieldspec['column_id']                 = array('type' => 'string',
                                                     'size' => 64,
@@ -28,7 +29,8 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['seq_in_index']              = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'required' => 'y',
@@ -38,15 +40,14 @@
     
     $fieldspec['is_unique']                 = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
                                                     'optionlist' => 'boolean');
     
     $fieldspec['column_seq']                = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'noedit' => 'y',
@@ -99,7 +100,7 @@
                                                                       'column_id' => 'column_id'));
     
     $this->parent_relations[]               = array('parent' => 'dict_table',
-                                                    'parent_field' => 'table_desc',
+                                                    'parent_field' => 'table_name',
                                                     'fields' => array('database_id' => 'database_id',
                                                                       'table_id' => 'table_id'));
     

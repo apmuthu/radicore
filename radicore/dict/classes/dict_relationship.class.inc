@@ -48,6 +48,7 @@ class dict_relationship extends Default_Table
             } // if
             // change from DROPDOWN to TEXT field
             unset($this->fieldspec['parent_field']['control']);
+            unset($this->fieldspec['key_name']['control']);
         } // if
 
         if ($GLOBALS['task_id'] == 'dict_related_column(multi4)a' OR $GLOBALS['task_id'] == 'dict_related_column(multi4)b') {
@@ -79,14 +80,14 @@ class dict_relationship extends Default_Table
             } // if
         } // if
 
-        if (empty($fieldarray['relation_desc'])) {
-        	if (!empty($fieldarray['table_id_snr']) and !empty($fieldarray['table_id_jnr'])) {
-        		$fieldarray['relation_desc'] = 'Links ' .strtoupper($fieldarray['table_id_snr']) .' to ' .strtoupper($fieldarray['table_id_jnr']);
-        	} // if
-        } // if
+//        if (empty($fieldarray['relation_name'])) {
+//        	if (!empty($fieldarray['table_id_snr']) and !empty($fieldarray['table_id_jnr'])) {
+//        		$fieldarray['relation_name'] = 'Links ' .strtoupper($fieldarray['table_id_snr']) .' to ' .strtoupper($fieldarray['table_id_jnr']);
+//        	} // if
+//        } // if
 
         if (!empty($fieldarray['orderby'])) {
-            if ($fieldarray['rel_type'] != 'DEL') {
+            if ($fieldarray['relation_type'] != 'DEL') {
                 $this->errors['orderby'] = getLanguageText('e0020'); // "Invalid unless relation type = 'DELETE'";
             } // if
         } // if
@@ -189,10 +190,10 @@ class dict_relationship extends Default_Table
             $this->lookup_data['parent_field'] = $array;
         } // if
 
-        if (!array_key_exists('rel_type', $this->lookup_data)) {
+        if (!array_key_exists('relation_type', $this->lookup_data)) {
             // get array of relationship types
-            $array = $this->getValRep('rel_type');
-            $this->lookup_data['rel_type'] = $array;
+            $array = $this->getValRep('relation_type');
+            $this->lookup_data['relation_type'] = $array;
         } // if
 
         //if (!array_key_exists('key_name', $this->lookup_data)) {
@@ -229,12 +230,12 @@ class dict_relationship extends Default_Table
     {
         $array = array();
 
-        if ($item == 'rel_type') {
+        if ($item == 'relation_type') {
 //            // provide values for dropdown list
 //            $array['RES'] = 'RESTRICTED';
 //            $array['DEL'] = 'CASCADE';
 //            $array['NUL'] = 'NULLIFY';
-            $array = getLanguageArray('rel_type');
+            $array = getLanguageArray('relation_type');
             return $array;
         } // if
 
@@ -453,9 +454,11 @@ class dict_relationship extends Default_Table
     function _cm_pre_insertRecord ($fieldarray)
     // perform custom processing before database record is inserted.
     {
-//        if (empty($fieldarray['seq_no'])) {
-//            $fieldarray['seq_no'] = '0';
-//        } // if
+        if (empty($fieldarray['relation_name'])) {
+            if (!empty($fieldarray['table_id_snr']) and !empty($fieldarray['table_id_jnr'])) {
+                $fieldarray['relation_name'] = 'Links ' .strtoupper($fieldarray['table_id_snr']) .' to ' .strtoupper($fieldarray['table_id_jnr']);
+            } // if
+        } // if
 
         return $fieldarray;
 

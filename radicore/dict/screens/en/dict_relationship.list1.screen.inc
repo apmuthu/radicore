@@ -15,6 +15,6 @@ $structure['main']['fields'][] = array('database_id_snr' => 'Database Id (snr)')
 $structure['main']['fields'][] = array('table_id_snr' => 'Table Id (snr)');
 $structure['main']['fields'][] = array('database_id_jnr' => 'Database Id (jnr)');
 $structure['main']['fields'][] = array('table_id_jnr' => 'Table Id (jnr)');
-$structure['main']['fields'][] = array('rel_type' => 'Constraint');
+$structure['main']['fields'][] = array('relation_type' => 'Constraint');
 
 ?>

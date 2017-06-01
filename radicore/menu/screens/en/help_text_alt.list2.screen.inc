@@ -9,7 +9,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('task_id' => 'Task Id');
-$structure['outer']['fields'][] = array('task_desc' => 'Task Description');
+$structure['outer']['fields'][] = array('task_name' => 'Task Name');
 
 $structure['tables']['inner'] = 'help_text_alt';
 

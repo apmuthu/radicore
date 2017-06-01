@@ -1,25 +1,26 @@
 <?php
-    // file created on May 19, 2016, 12:37 pm
+    // file created on May 7, 2017, 9:26 am
     
     // field specifications for table menu.mnu_language
     $fieldspec['language_id']               = array('type' => 'string',
                                                     'size' => 5,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'uppercase' => 'y',
+                                                    'lowercase' => 'y',
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'language_id');
     
     $fieldspec['language_name']             = array('type' => 'string',
-                                                    'size' => 40);
+                                                    'size' => 40,
+                                                    'required' => 'y');
     
     $fieldspec['input_date_format']         = array('type' => 'string',
-                                                    'size' => 12,
+                                                    'size' => 20,
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'date_format');
     
     $fieldspec['output_date_format']        = array('type' => 'string',
-                                                    'size' => 12,
+                                                    'size' => 20,
                                                     'control' => 'dropdown',
                                                     'optionlist' => 'date_format');
     
@@ -75,6 +76,30 @@
                                                     'fields' => array('language_id' => 'language_id'));
     
     $this->child_relations[]                = array('child' => 'mnu_user_alt',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_category_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_feature_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
+                                                    'type' => 'RES',
+                                                    'fields' => array('language_id' => 'language_id'));
+    
+    $this->child_relations[]                = array('child' => 'product_feature_category_alt',
+                                                    'dbname' => 'product',
+                                                    'subsys_dir' => 'product',
                                                     'type' => 'RES',
                                                     'fields' => array('language_id' => 'language_id'));
     

@@ -29,6 +29,6 @@ $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('seq_no' => 'Id');
 $structure['inner']['fields'][] = array('sort_seq' => 'Sort');
 $structure['inner']['fields'][] = array('task_id' => 'Task Id');
-$structure['inner']['fields'][] = array('task_desc' => 'Description');
+$structure['inner']['fields'][] = array('task_name' => 'Task Name');
 
 ?>

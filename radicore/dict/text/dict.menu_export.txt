@@ -1,4 +1,4 @@
-// file created on May 20, 2016, 9:31 am
+// file created on May 15, 2017, 5:23 pm
     
 // menu details for subsystem DICT
 $array['Columns']                                 = 'Columns';
@@ -47,7 +47,6 @@ $array['calc_field']                              = 'calc_field';
 $array['checkbox_label']                          = 'checkbox_label';
 $array['col_array_type']                          = 'col_array_type';
 $array['col_auto_increment']                      = 'col_auto_increment';
-$array['col_comment']                             = 'col_comment';
 $array['col_default']                             = 'col_default';
 $array['col_key']                                 = 'col_key';
 $array['col_maxsize']                             = 'col_maxsize';
@@ -66,6 +65,7 @@ $array['column_desc']                             = 'column_desc';
 $array['column_id']                               = 'column_id';
 $array['column_id_jnr']                           = 'column_id_jnr';
 $array['column_id_snr']                           = 'column_id_snr';
+$array['column_name']                             = 'column_name';
 $array['column_seq']                              = 'column_seq';
 $array['control']                                 = 'control';
 $array['created_date']                            = 'created_date';
@@ -75,7 +75,7 @@ $array['database_desc']                           = 'database_desc';
 $array['database_id']                             = 'database_id';
 $array['database_id_jnr']                         = 'database_id_jnr';
 $array['database_id_snr']                         = 'database_id_snr';
-$array['db_comment']                              = 'db_comment';
+$array['database_name']                           = 'database_name';
 $array['default_orderby']                         = 'default_orderby';
 $array['foreign_field']                           = 'foreign_field';
 $array['image_height']                            = 'image_height';
@@ -96,9 +96,9 @@ $array['noedit_nodisplay']                        = 'noedit_nodisplay';
 $array['optionlist']                              = 'optionlist';
 $array['orderby']                                 = 'orderby';
 $array['parent_field']                            = 'parent_field';
-$array['rel_comment']                             = 'rel_comment';
-$array['rel_type']                                = 'rel_type';
 $array['relation_desc']                           = 'relation_desc';
+$array['relation_name']                           = 'relation_name';
+$array['relation_type']                           = 'relation_type';
 $array['revised_date']                            = 'revised_date';
 $array['revised_user']                            = 'revised_user';
 $array['seq_in_index']                            = 'seq_in_index';
@@ -110,8 +110,8 @@ $array['table_desc']                              = 'table_desc';
 $array['table_id']                                = 'table_id';
 $array['table_id_jnr']                            = 'table_id_jnr';
 $array['table_id_snr']                            = 'table_id_snr';
+$array['table_name']                              = 'table_name';
 $array['task_id']                                 = 'task_id';
-$array['tbl_comment']                             = 'tbl_comment';
 $array['upper_lowercase']                         = 'upper_lowercase';
 $array['user_maxvalue']                           = 'user_maxvalue';
 $array['user_minvalue']                           = 'user_minvalue';

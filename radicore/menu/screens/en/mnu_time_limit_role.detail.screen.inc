@@ -17,7 +17,7 @@ $structure['main']['columns'][] = array('width' => '*');
 // the SHORT format defines two cells per row, a label followed by a field, as in:
 $structure['main']['fields'][1][] = array('label' => 'Role Id');
 $structure['main']['fields'][1][] = array('field' => 'role_id');
-$structure['main']['fields'][1][] = array('field' => 'role_desc', 'colspan' => 6);
+$structure['main']['fields'][1][] = array('field' => 'role_name', 'colspan' => 6);
 
 $structure['main']['fields'][2] = array('seq_no' => 'Seq No', 'colspan' => 7);
 

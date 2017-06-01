@@ -10,7 +10,7 @@ $structure['main']['columns'][] = array('width' => 50);
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('task_id' => 'Task');
-$structure['main']['fields'][] = array('task_desc' => 'Description');
+$structure['main']['fields'][] = array('task_name' => 'Name');
 $structure['main']['fields'][] = array('task_type' => 'Type');
 
 ?>

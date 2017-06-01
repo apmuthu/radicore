@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_table.class.inc';
 class dict_table_s01 extends dict_table
@@ -32,7 +32,7 @@ class dict_table_s01 extends dict_table
                 // insert details of new database table
                 $fieldarray[$i]['database_id'] = $dbname;
                 $fieldarray[$i]['table_id']    = $tablename;
-                $fieldarray[$i]['table_desc']  = ucwords(str_replace('_', ' ', $tablename));
+                $fieldarray[$i]['table_name']  = ucwords(str_replace('_', ' ', $tablename));
                 $i++;
             } // if
         } // foreach

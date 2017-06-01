@@ -6,10 +6,10 @@ $structure['tables']['main'] = 'mnu_nav_button';
 $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => '75%');
 
-$structure['main']['fields'][] = array('task_id_snr' => 'Task Id');
-$structure['main']['fields'][] = array('task_desc_snr' => 'Description');
+$structure['main']['fields'][] = array('task_id_snr' => 'Parent Task');
+$structure['main']['fields'][] = array('task_name_snr' => 'Parent Name');
 $structure['main']['fields'][] = array('task_id_jnr' => 'Button Id');
-$structure['main']['fields'][] = array('task_desc_jnr' => 'Description');
+$structure['main']['fields'][] = array('task_name_jnr' => 'Task Name');
 $structure['main']['fields'][] = array('sort_seq' => 'Sort Sequence');
 $structure['main']['fields'][] = array('button_text' => 'Button Text');
 $structure['main']['fields'][] = array('context_preselect' => 'Preselect?');

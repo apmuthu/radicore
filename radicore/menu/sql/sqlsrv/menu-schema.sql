@@ -73,8 +73,8 @@ CREATE TABLE help_text (
   help_text ntext NOT NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2(0) DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id)
 );
 go
@@ -90,8 +90,8 @@ CREATE TABLE help_text_alt (
   help_text ntext NOT NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2(0) DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,language_id)
 );
 go
@@ -103,12 +103,13 @@ go
 
 CREATE TABLE mnu_account (
   rdcaccount_id int NOT NULL IDENTITY(1,1),
-  account_name nvarchar(255) NOT NULL,
+  account_name nvarchar(80) NOT NULL,
+  account_desc ntext,
   rdcversion int NOT NULL DEFAULT '1',
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
-  revised_date datetime2(0) DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (rdcaccount_id)
 );
 go
@@ -121,11 +122,11 @@ go
 CREATE TABLE mnu_control (
   record_id nvarchar(16) NOT NULL,
   field_id nvarchar(32) NOT NULL,
-  field_value nvarchar(255) DEFAULT NULL,
+  field_value nvarchar(255) NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2(0) DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (record_id,field_id)
 );
 go
@@ -139,13 +140,13 @@ CREATE TABLE mnu_favourite (
   user_id nvarchar(16) NOT NULL,
   seq_no smallint NOT NULL DEFAULT '0',
   task_id nvarchar(80) NOT NULL,
-  task_desc nvarchar(80) NOT NULL,
+  task_name nvarchar(80) NOT NULL,
   sort_seq smallint NOT NULL DEFAULT '0',
-  breadcrumbs nvarchar(4000) DEFAULT NULL,
+  breadcrumbs nvarchar(4000) NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2(0) DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id,seq_no)
 );
 go
@@ -159,12 +160,12 @@ CREATE TABLE mnu_initial_value_role (
   role_id nvarchar(16) NOT NULL,
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
-  initial_value nvarchar(255) DEFAULT NULL,
+  initial_value nvarchar(255) NULL,
   is_noedit char(1) DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (role_id,task_id,field_id)
 );
 CREATE INDEX mnu_initial_value_role_task_id ON mnu_initial_value_role (task_id);
@@ -179,12 +180,12 @@ CREATE TABLE mnu_initial_value_user (
   user_id nvarchar(16) NOT NULL,
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
-  initial_value nvarchar(255) DEFAULT NULL,
+  initial_value nvarchar(255) NULL,
   is_noedit char(1) DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id,task_id,field_id)
 );
 CREATE INDEX mnu_initial_value_user_task_id ON mnu_initial_value_user (task_id);
@@ -198,12 +199,12 @@ go
 CREATE TABLE mnu_language (
   language_id nvarchar(5) NOT NULL DEFAULT 'EN',
   language_name nvarchar(40) NOT NULL DEFAULT 'English',
-  input_date_format nvarchar(12) DEFAULT NULL,
-  output_date_format nvarchar(12) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  input_date_format nvarchar(12) NULL,
+  output_date_format nvarchar(12) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (language_id)
 );
 go
@@ -218,10 +219,10 @@ CREATE TABLE mnu_menu (
   task_id_jnr nvarchar(80) NOT NULL,
   sort_seq tinyint NOT NULL DEFAULT '000',
   button_text nvarchar(40) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (menu_id,task_id_jnr)
 );
 go
@@ -237,11 +238,11 @@ CREATE TABLE mnu_motd (
   motd_message ntext NOT NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',
-  role_id nvarchar(16) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  role_id nvarchar(16) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (motd_id)
 );
 go
@@ -255,12 +256,12 @@ CREATE TABLE mnu_nav_button (
   task_id_snr nvarchar(80) NOT NULL,
   task_id_jnr nvarchar(80) NOT NULL,
   sort_seq tinyint NOT NULL DEFAULT '000',
-  button_text nvarchar(40) DEFAULT NULL,
+  button_text nvarchar(40) NOT NULL,
   context_preselect char(1) DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id_snr,task_id_jnr)
 );
 go
@@ -272,15 +273,15 @@ go
 
 CREATE TABLE mnu_pattern (
   pattern_id nvarchar(16) NOT NULL,
-  pattern_desc nvarchar(60) NOT NULL,
-  pattern_long_desc ntext,
+  pattern_name nvarchar(60) NOT NULL,
+  pattern_desc ntext,
   visible_screen char(1) DEFAULT 'N',
   context_preselect char(1) DEFAULT 'N',
   keep_data char(1) DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (pattern_id)
 );
 go
@@ -292,14 +293,16 @@ go
 
 CREATE TABLE mnu_role (
   role_id nvarchar(16) NOT NULL,
-  role_desc nvarchar(30) NOT NULL,
+  role_name nvarchar(80) NOT NULL,
+  role_desc ntext,
   start_task_id nvarchar(80) NOT NULL,
   global_access char(1) DEFAULT 'N',
-  is_external_auth_off char(1) DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  is_external_auth_off char(1) NOT NULL DEFAULT 'N',
+  allow_responsive_gui char(1) NOT NULL DEFAULT 'N',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (role_id)
 );
 go
@@ -312,10 +315,10 @@ go
 CREATE TABLE mnu_role_task (
   role_id nvarchar(16) NOT NULL,
   task_id nvarchar(80) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (role_id,task_id)
 );
 go
@@ -329,11 +332,11 @@ CREATE TABLE mnu_role_taskfield (
   role_id nvarchar(16) NOT NULL,
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
-  access_type nvarchar(4) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  access_type nvarchar(4) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (role_id,task_id,field_id)
 );
 CREATE INDEX mnu_role_taskfield_task_id ON mnu_role_taskfield (task_id);
@@ -346,13 +349,13 @@ go
 
 CREATE TABLE mnu_saved_selection (
   selection_id int NOT NULL IDENTITY(1,1),
-  selection_desc nvarchar(80) NOT NULL,
+  selection_name nvarchar(80) NOT NULL,
   user_id nvarchar(16) NOT NULL,
   task_id nvarchar(80) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (selection_id)
 );
 go
@@ -367,11 +370,11 @@ go
 CREATE TABLE mnu_saved_selection_data (
   selection_id int NOT NULL,
   fieldname nvarchar(80) NOT NULL,
-  fieldvalue nvarchar(80) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  fieldvalue nvarchar(80) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (selection_id,fieldname)
 );
 go
@@ -381,13 +384,14 @@ go
 
 CREATE TABLE mnu_subsystem (
   subsys_id nvarchar(16) NOT NULL,
-  subsys_desc nvarchar(255) NOT NULL,
-  subsys_dir nvarchar(255) DEFAULT NULL,
-  task_prefix nvarchar(8) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  subsys_name nvarchar(80) NOT NULL,
+  subsys_desc ntext,
+  subsys_dir nvarchar(255) NOT NULL,
+  task_prefix nvarchar(8) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (subsys_id)
 );
 go
@@ -399,29 +403,31 @@ go
 
 CREATE TABLE mnu_task (
   task_id nvarchar(80) NOT NULL,
-  task_desc nvarchar(80) NOT NULL,
-  button_text nvarchar(80) DEFAULT NULL,
-  task_type nvarchar(4) DEFAULT NULL,
-  script_id nvarchar(80) DEFAULT NULL,
+  task_name nvarchar(80) NOT NULL,
+  task_desc ntext,
+  button_text nvarchar(40) NULL,
+  task_type nvarchar(4) NULL,
+  script_id nvarchar(80) NULL,
   is_disabled char(1) DEFAULT 'N',
-  pattern_id nvarchar(16) DEFAULT NULL,
-  subsys_id nvarchar(16) DEFAULT NULL,
-  initial_passthru nvarchar(80) DEFAULT NULL,
-  selection_fixed nvarchar(255) DEFAULT NULL,
-  selection_temp nvarchar(255) DEFAULT NULL,
-  settings nvarchar(255) DEFAULT NULL,
-  order_by nvarchar(255) DEFAULT NULL,
+  pattern_id nvarchar(16) NULL,
+  subsys_id nvarchar(16) NULL,
+  initial_passthru nvarchar(80) NULL,
+  selection_fixed nvarchar(255) NULL,
+  selection_temp nvarchar(255) NULL,
+  settings nvarchar(255) NULL,
+  order_by nvarchar(255) NULL,
   keep_data char(1) DEFAULT 'N',
   log_sql_query char(1) DEFAULT 'N',
-  screen_refresh smallint DEFAULT NULL,
+  screen_refresh smallint NULL,
   use_https char(1) DEFAULT 'N',
-  max_execution_time smallint DEFAULT NULL,
-  task_id_run_at_end nvarchar(80) DEFAULT NULL,
-  task_id_run_at_cancel nvarchar(80) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  max_execution_time smallint NULL,
+  task_id_run_at_end nvarchar(80) NULL,
+  task_id_run_at_cancel nvarchar(80) NULL,
+  allow_responsive_gui char(1) NOT NULL DEFAULT 'N',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id)
 );
 CREATE INDEX mnu_task_subsys_id ON mnu_task (subsys_id);
@@ -436,12 +442,13 @@ go
 CREATE TABLE mnu_task_alt (
   task_id nvarchar(80) NOT NULL,
   language_id nvarchar(5) NOT NULL,
-  task_desc nvarchar(80) NOT NULL,
-  button_text nvarchar(80) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  task_name nvarchar(80) NOT NULL,
+  task_desc ntext,
+  button_text nvarchar(40) NOT NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,language_id)
 );
 go
@@ -454,12 +461,12 @@ go
 CREATE TABLE mnu_task_field (
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
-  field_desc nvarchar(255) DEFAULT NULL,
+  field_desc nvarchar(255) NULL,
   is_documentation_only CHAR(1) NOT NULL DEFAULT 'N',
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,field_id)
 );
 go
@@ -472,10 +479,10 @@ go
 CREATE TABLE mnu_task_ip_address (
   task_id nvarchar(80) NOT NULL,
   ip_address nvarchar(40) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,ip_address)
 );
 go
@@ -488,12 +495,12 @@ go
 CREATE TABLE mnu_task_quicksearch (
   task_id nvarchar(80) NOT NULL,
   field_id nvarchar(40) NOT NULL,
-  sort_seq smallint NOT NULL DEFAULT '0',
+  sort_seq smallint NOT NULL,
   field_name nvarchar(40) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,field_id)
 );
 go
@@ -508,10 +515,10 @@ CREATE TABLE mnu_task_quicksearch_alt (
   field_id nvarchar(40) NOT NULL,
   language_id nvarchar(5) NOT NULL,
   field_name nvarchar(40) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (task_id,field_id,language_id)
 );
 go
@@ -524,8 +531,8 @@ go
 CREATE TABLE mnu_time_limit_role (
 	role_id nvarchar(16), 
 	seq_no smallint NOT NULL DEFAULT '0',
-	scheduled_start_time time(0) DEFAULT NULL,
-	scheduled_end_time time(0) DEFAULT NULL,
+	scheduled_start_time time(0) NULL,
+	scheduled_end_time time(0) NULL,
 	scheduled_monday char(1) NOT NULL DEFAULT 'Y',
 	scheduled_tuesday char(1) NOT NULL DEFAULT 'Y',
 	scheduled_wednesday char(1) NOT NULL DEFAULT 'Y',
@@ -535,8 +542,8 @@ CREATE TABLE mnu_time_limit_role (
 	scheduled_sunday char(1) NOT NULL DEFAULT 'N',
 	created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   	created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  	revised_date datetime2(0) DEFAULT NULL,
-  	revised_user nvarchar(16) DEFAULT NULL,
+  	revised_date datetime2(0) NULL,
+  	revised_user nvarchar(16) NULL,
 	PRIMARY KEY (role_id, seq_no)
 );
 go
@@ -549,8 +556,8 @@ go
 CREATE TABLE mnu_time_limit_user (
 	user_id nvarchar(16), 
 	seq_no smallint NOT NULL DEFAULT '0',
-	scheduled_start_time time(0) DEFAULT NULL,
-	scheduled_end_time time(0) DEFAULT NULL,
+	scheduled_start_time time(0) NULL,
+	scheduled_end_time time(0) NULL,
 	scheduled_monday char(1) NOT NULL DEFAULT 'Y',
 	scheduled_tuesday char(1) NOT NULL DEFAULT 'Y',
 	scheduled_wednesday char(1) NOT NULL DEFAULT 'Y',
@@ -560,8 +567,8 @@ CREATE TABLE mnu_time_limit_user (
 	scheduled_sunday char(1) NOT NULL DEFAULT 'N',
 	created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   	created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  	revised_date datetime2(0) DEFAULT NULL,
-  	revised_user nvarchar(16) DEFAULT NULL,
+  	revised_date datetime2(0) NULL,
+  	revised_user nvarchar(16) NULL,
 	PRIMARY KEY (user_id, seq_no)
 );
 go
@@ -574,20 +581,20 @@ go
 CREATE TABLE mnu_todo (
   user_id nvarchar(16) NOT NULL,
   seq_no smallint NOT NULL DEFAULT '0',
-  item_desc nvarchar(80) NOT NULL,
-  item_notes ntext,
+  item_name nvarchar(80) NOT NULL,
+  item_desc ntext,
   due_date date NOT NULL DEFAULT '0000-00-00',
   visibility tinyint NOT NULL DEFAULT '0',
   is_complete char(1) NOT NULL DEFAULT 'N',
-  repeat_interval decimal(3,0) DEFAULT NULL,
-  repeat_unit char(1) DEFAULT NULL,
-  task_id nvarchar(80) DEFAULT NULL,
-  task_context nvarchar(255) DEFAULT NULL,
-  object_id nvarchar(255) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  repeat_interval decimal(3,0) NULL,
+  repeat_unit char(1) NULL,
+  task_id nvarchar(80) NULL,
+  task_context nvarchar(255) NULL,
+  object_id nvarchar(255) NULL,
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id,seq_no)
 );
 go
@@ -599,34 +606,34 @@ go
 
 CREATE TABLE mnu_user (
   user_id nvarchar(16) NOT NULL,
-  user_name nvarchar(30) NOT NULL,
+  user_name nvarchar(40) NOT NULL,
   user_password nvarchar(40) NOT NULL,
-  rdcaccount_id int DEFAULT NULL,
-  pswd_chg_date date DEFAULT NULL,
-  pswd_chg_time time(0) DEFAULT NULL,
-  pswd_count smallint DEFAULT NULL,
+  rdcaccount_id int NULL,
+  pswd_change_datetime datetime2(0) NULL,
+  pswd_count smallint NULL,
   force_pswd_chg char(1) DEFAULT 'N',
   in_use char(1) NOT NULL DEFAULT 'N',
   is_disabled char(1) NOT NULL DEFAULT 'N',
-  logon_date date DEFAULT NULL,
-  logon_time time(0) DEFAULT NULL,
-  language_id nvarchar(6) DEFAULT NULL,
+  logon_datetime datetime2(0) NULL,
+  language_id nvarchar(6) NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',
-  ip_address nvarchar(40) DEFAULT NULL,
-  email_addr nvarchar(50) DEFAULT NULL,
-  external_id nvarchar(255) DEFAULT NULL,
+  ip_address nvarchar(40) NULL,
+  email_addr nvarchar(50) NOT NULL,
+  external_id nvarchar(255) NULL,
   is_external_auth_off char(1) DEFAULT 'N',
-  party_id int DEFAULT NULL,
-  user_timezone nvarchar(40) DEFAULT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  party_id int NULL,
+  user_timezone nvarchar(40) NULL,
+  allow_responsive_gui char(1) NOT NULL DEFAULT 'N',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
-  PRIMARY KEY (user_id),
-  UNIQUE (email_addr)
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
+  PRIMARY KEY (user_id)
 );
 CREATE INDEX mnu_user_rdcaccount_id ON mnu_user (rdcaccount_id);
+CREATE INDEX mnu_user_party_id ON mnu_user (party_id);
+CREATE UNIQUE INDEX UQ1_mnu_user ON mnu_user (email_addr) WHERE email_addr IS NOT NULL;
 go
 -- --------------------------------------------------------
 
@@ -636,11 +643,11 @@ go
 CREATE TABLE mnu_user_alt (
   user_id nvarchar(16), 
   language_id nvarchar(5),
-  user_name nvarchar(30) NOT NULL,  
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  user_name nvarchar(40) NOT NULL,  
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id, language_id)
 );
 GO
@@ -653,10 +660,10 @@ GO
 CREATE TABLE mnu_user_ip_address (
   user_id nvarchar(16) NOT NULL,
   ip_address nvarchar(40) NOT NULL,
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id,ip_address)
 );
 go
@@ -670,11 +677,12 @@ CREATE TABLE mnu_user_role (
   user_id nvarchar(16), 
   role_id nvarchar(16),
   is_primary char(1) DEFAULT 'N', 
-  created_date datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
+  created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
-  revised_date datetime2 DEFAULT NULL,
-  revised_user nvarchar(16) DEFAULT NULL,
+  revised_date datetime2(0) NULL,
+  revised_user nvarchar(16) NULL,
   PRIMARY KEY (user_id, role_id)
 );
 go
 
+-- finished

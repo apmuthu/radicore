@@ -27,7 +27,7 @@ $structure['middle']['columns'][] = array('width' => '*');
 $structure['middle']['fields'][1][] = array('label' => 'Task Id');
 $structure['middle']['fields'][1][] = array('field' => 'task_id');
 $structure['middle']['fields'][1][] = array('label' => 'Name');
-$structure['middle']['fields'][1][] = array('field' => 'task_desc');
+$structure['middle']['fields'][1][] = array('field' => 'task_name');
 
 $structure['tables']['inner'] = 'mnu_initial_value_user';
 

@@ -7,7 +7,7 @@ $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => 250);
 
 $structure['main']['fields'][] = array('task_id' => 'Task');
-$structure['main']['fields'][] = array('task_desc' => 'Description');
+$structure['main']['fields'][] = array('task_name' => 'Task Name');
 $structure['main']['fields'][] = array('field_id' => 'Field Id');
 $structure['main']['fields'][] = array('field_desc' => 'Description');
 $structure['main']['fields'][] = array('is_documentation_only' => 'Is Documentation Only?');

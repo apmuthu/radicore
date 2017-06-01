@@ -4,9 +4,10 @@ $structure['xsl_file'] = 'std.list2.xsl';
 $structure['tables']['outer'] = 'mnu_task';
 
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 $structure['outer']['fields'][] = array('task_id' => 'Task Id');
-$structure['outer']['fields'][] = array('task_desc' => 'Description');
+$structure['outer']['fields'][] = array('task_name' => 'Name');
 
 $structure['tables']['inner'] = 'mnu_task_field';
 

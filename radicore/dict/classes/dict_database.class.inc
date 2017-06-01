@@ -121,7 +121,7 @@ class dict_dataBase extends Default_Table
 //        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('database_id' => 'Database Id',
-//                               'database_desc' => 'Database Desc',
+//                               'database_name' => 'Database Name',
 //                               'subsys_id' => 'Subsys Id');
 //                $this->lookup_data['quicksearch_field'] = $array;
 //            } // if
@@ -139,8 +139,8 @@ class dict_dataBase extends Default_Table
 
         if ($item == 'database_id') {
             // get data from the database
-            $this->sql_select     = 'database_id, database_desc';
-            $this->sql_orderby    = 'database_desc';
+            $this->sql_select     = 'database_id, database_name';
+            $this->sql_orderby    = 'database_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 
@@ -165,7 +165,7 @@ class dict_dataBase extends Default_Table
         $array = array();
 
         $array['database_id'] = 'Total count:';
-        $array['database_desc'] = $this->count;
+        $array['database_name'] = $this->count;
         $array['table_count']   = $this->table_count;
         $array['rel_count_snr'] = $this->rel_count;
 

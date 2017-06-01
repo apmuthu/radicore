@@ -30,8 +30,8 @@ $structure['body']['fields'][1][] = array('field' => 'table_id', 'width' => 55);
 
 $structure['body']['fields'][2] = array('column_seq' => 'Seq');
 $structure['body']['fields'][3] = array('column_id' => 'Column Id');
-$structure['body']['fields'][4] = array('column_desc' => 'Description');
-$structure['body']['fields'][5] = array('col_comment' => 'Comments');
+$structure['body']['fields'][4] = array('column_name' => 'Name');
+$structure['body']['fields'][5] = array('column_desc' => 'Description');
 
 $structure['body']['fields'][6][] = array('label' => 'Column Type', 'width' => 40);
 $structure['body']['fields'][6][] = array('field' => 'col_type', 'width' => 55);

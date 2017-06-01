@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class logon extends mnu_user
@@ -175,16 +175,17 @@ class logon extends mnu_user
         } // if
 
         // make logon data available throughout the session
-        $_SESSION['logon_user_id']      = $logon_user_id;
-        $_SESSION['logon_user_name']    = $fieldarray['user_name'];
-        $_SESSION['role_id']            = $fieldarray['role_id'];
-        $_SESSION['logon_email_addr']   = $fieldarray['email_addr'];
-        $_SESSION['rdcaccount_id']      = $fieldarray['rdcaccount_id'];
-        $_SESSION['logon_party_id']     = $fieldarray['party_id'];
-        $_SESSION['start_task_id']      = $fieldarray['start_task_id'];
-        $_SESSION['date_format_input']  = $fieldarray['input_date_format'];
-        $_SESSION['date_format_output'] = $fieldarray['output_date_format'];
-        //$_SESSION['selection_lock']   = true;
+        $_SESSION['logon_user_id']        = $logon_user_id;
+        $_SESSION['logon_user_name']      = $fieldarray['user_name'];
+        $_SESSION['role_id']              = $fieldarray['role_id'];
+        $_SESSION['logon_email_addr']     = $fieldarray['email_addr'];
+        $_SESSION['rdcaccount_id']        = $fieldarray['rdcaccount_id'];
+        $_SESSION['logon_party_id']       = $fieldarray['party_id'];
+        $_SESSION['start_task_id']        = $fieldarray['start_task_id'];
+        $_SESSION['date_format_input']    = $fieldarray['input_date_format'];
+        $_SESSION['date_format_output']   = $fieldarray['output_date_format'];
+        $_SESSION['allow_responsive_gui'] = $fieldarray['allow_responsive_gui'];
+        //$_SESSION['selection_lock']     = true;
 
         $_SESSION['display_foreign_currency'] = false;
 
@@ -208,13 +209,12 @@ class logon extends mnu_user
         } // if
 
         // update user record to show that he/she has logged in
-        $updatearray['user_id']       = $logon_user_id;
-        //$updatearray['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
-        $updatearray['pswd_count']    = $fieldarray['pswd_count'] + 1;
-        $updatearray['logon_date']    = getTimeStamp('date');
-        $updatearray['logon_time']    = getTimeStamp('time');
-        $updatearray['in_use']        = true;
-        $updatearray['ip_address']    = $ip_address;
+        $updatearray['user_id']        = $logon_user_id;
+        //$updatearray['rdcaccount_id']  = $fieldarray['rdcaccount_id'];
+        $updatearray['pswd_count']     = $fieldarray['pswd_count'] + 1;
+        $updatearray['logon_datetime'] = getTimeStamp();
+        $updatearray['in_use']         = true;
+        $updatearray['ip_address']     = $ip_address;
         unset($updatearray['user_password']);
 
         $updatearray = $this->updateRecord($updatearray);

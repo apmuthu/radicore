@@ -16,9 +16,10 @@
 	2010-03-21 Named entity support added by request from Gregory Coburn
 
 -->
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:doe="disable-output-escaping" exclude-result-prefixes="doe">
-    <xsl:output method="xml"
+    
+    <xsl:output method="html"
                 indent="yes"
                 encoding="UTF-8"/>
 

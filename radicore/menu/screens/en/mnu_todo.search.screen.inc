@@ -16,8 +16,8 @@ $structure['main']['fields'][1][] = array('field' => '');
 $structure['main']['fields'][1][] = array('field' => '');
 
 $structure['main']['fields'][2] = array('seq_no' => 'Seq No', 'colspan' => 3);
-$structure['main']['fields'][3] = array('item_desc' => 'Description', 'colspan' => 3);
-$structure['main']['fields'][4] = array('item_notes' => 'Notes', 'colspan' => 3);
+$structure['main']['fields'][3] = array('item_name' => 'Item Name', 'colspan' => 3);
+$structure['main']['fields'][4] = array('item_desc' => 'Description', 'colspan' => 3);
 
 $structure['main']['fields'][5][] = array('label' => 'Due Date');
 $structure['main']['fields'][5][] = array('field' => 'due_date');

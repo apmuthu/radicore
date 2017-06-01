@@ -1,10 +1,10 @@
 <?php
-$structure['xsl_file'] = 'std.detail1.xsl';
+$structure['xsl_file'] = 'logon.xsl';
 
 $structure['tables']['main'] = 'logon';
 
-$structure['main']['columns'][] = array('width' => '30%');
-$structure['main']['columns'][] = array('width' => '70%');
+$structure['main']['columns'][] = array('width' => '35%');
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][] = array('user_id' => 'User Id');
 $structure['main']['fields'][] = array('email_addr' => 'Email', 'size' => 40);

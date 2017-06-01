@@ -172,9 +172,9 @@ class dict_column_s01 extends dict_column
                     $update['user_maxvalue'] = $update['col_maxvalue'];
                 } // if
 
-                if (!empty($dict_data[$ix]['col_comment'])) {
-                    // do not overwrite previous comment
-                    unset($update['col_comment']);
+                if (!empty($dict_data[$ix]['column_desc'])) {
+                    // do not overwrite previous description
+                    unset($update['column_desc']);
                 } // if
 
                 if (is_True($update['col_null'])) {
@@ -198,7 +198,7 @@ class dict_column_s01 extends dict_column
         foreach ($db_data as $row => $columndata) {
         	// insert details of new column/field
             $seq = $row+1;
-            $insert_array[$seq]['column_desc']   = ucwords(strtolower(str_replace('_', ' ', $columndata['column_id'])));
+            $insert_array[$seq]['column_name']   = ucwords(strtolower(str_replace('_', ' ', $columndata['column_id'])));
             if (isset($columndata['user_size'])) {
                 $insert_array[$seq]['user_size'] = $columndata['user_size'];
             } else {

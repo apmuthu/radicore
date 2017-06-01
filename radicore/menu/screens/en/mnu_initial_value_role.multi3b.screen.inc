@@ -8,7 +8,7 @@ $structure['outer']['columns'][] = array('width' => '25%');
 $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
-$structure['outer']['fields'][] = array('role_desc' => 'Role');
+$structure['outer']['fields'][] = array('role_name' => 'Role');
 
 $structure['tables']['middle'] = 'mnu_task';
 
@@ -22,7 +22,7 @@ $structure['middle']['columns'][] = array('width' => '*');
 $structure['middle']['fields'][1][] = array('label' => 'Task Id');
 $structure['middle']['fields'][1][] = array('field' => 'task_id');
 $structure['middle']['fields'][1][] = array('label' => 'Name');
-$structure['middle']['fields'][1][] = array('field' => 'task_desc');
+$structure['middle']['fields'][1][] = array('field' => 'task_name');
 
 $structure['tables']['inner'] = 'mnu_initial_value_role';
 

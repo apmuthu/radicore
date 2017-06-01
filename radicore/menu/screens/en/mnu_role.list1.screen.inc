@@ -12,7 +12,7 @@ $structure['main']['columns'][] = array('width' => 25, 'align' => 'right');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('role_id' => 'Role');
-$structure['main']['fields'][] = array('role_desc' => 'Description');
+$structure['main']['fields'][] = array('role_name' => 'Name');
 $structure['main']['fields'][] = array('start_task_id' => 'Start Task');
 $structure['main']['fields'][] = array('global_access' => 'Global Access');
 $structure['main']['fields'][] = array('count' => 'Users');

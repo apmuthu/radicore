@@ -16,7 +16,7 @@ $structure['main']['fields'][3][] = array('field' => 'subsys_dir');
 $structure['main']['fields'][3][] = array('label' => 'Task Prefix');
 $structure['main']['fields'][3][] = array('field' => 'task_prefix');
 
-$structure['main']['fields'][] = array('pattern_desc' => 'Pattern', 'colspan' => 3);
+$structure['main']['fields'][] = array('pattern_name' => 'Pattern', 'colspan' => 3);
 $structure['main']['fields'][] = array('task_id' => 'Task ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('script_id' => 'Script ID', 'colspan' => 3);
 $structure['main']['fields'][] = array('tablename' => 'Table Name', 'colspan' => 3);

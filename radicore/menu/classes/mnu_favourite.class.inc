@@ -43,8 +43,8 @@ class mnu_favourite extends Default_Table
     // $fieldarray = the contents of $where as an array.
     {
         if (!empty($fieldarray)) {
-        	if (empty($fieldarray['task_desc'])) {
-            	$fieldarray['task_desc'] = $fieldarray['task_desc_original'];
+        	if (empty($fieldarray['task_name'])) {
+            	$fieldarray['task_name'] = $fieldarray['task_name_original'];
             } // if
         } // if
 
@@ -69,7 +69,7 @@ class mnu_favourite extends Default_Table
         	$fieldarray['sort_seq'] = $fieldarray['seq_no'];
         } // if
 
-        if (empty($fieldarray['task_desc']) AND !empty($fieldarray['task_id'])) {
+        if (empty($fieldarray['task_name']) AND !empty($fieldarray['task_id'])) {
         	$fieldarray = $this->getForeignData($fieldarray);
         } // if
 
@@ -116,8 +116,8 @@ class mnu_favourite extends Default_Table
 
         if ($return_from == 'mnu_task(popup1)') {
             // initialise field so that it can be reloaded in getForeignData()
-            $fieldarray['task_desc']          = null;
-            $fieldarray['task_desc_original'] = null;
+            $fieldarray['task_name']          = null;
+            $fieldarray['task_name_original'] = null;
         } // if
 
         return $fieldarray;
@@ -151,8 +151,8 @@ class mnu_favourite extends Default_Table
     // perform custom processing before database record is inserted.
     // if anything is placed in $this->errors the insert will be terminated.
     {
-        if (empty($rowdata['task_desc']) AND !empty($rowdata['task_desc_original'])) {
-        	$rowdata['task_desc'] = $rowdata['task_desc_original'];
+        if (empty($rowdata['task_name']) AND !empty($rowdata['task_name_original'])) {
+        	$rowdata['task_name'] = $rowdata['task_name_original'];
         } // if
 
         if (!empty($rowdata['current_menu']) AND !empty($rowdata['breadcrumbs'])) {

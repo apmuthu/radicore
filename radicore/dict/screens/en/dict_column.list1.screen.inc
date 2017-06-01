@@ -15,6 +15,6 @@ $structure['main']['fields'][] = array('database_id' => 'Database Id');
 $structure['main']['fields'][] = array('table_id' => 'Table Id');
 $structure['main']['fields'][] = array('column_seq' => 'Seq');
 $structure['main']['fields'][] = array('column_id' => 'Column Id');
-$structure['main']['fields'][] = array('column_desc' => 'Description');
+$structure['main']['fields'][] = array('column_name' => 'Name');
 
 ?>

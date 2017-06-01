@@ -4,7 +4,7 @@
 //*****************************************************************************
 
 $table_id = 'mnu_role';                     // table name
-$screen   = 'mnu_role.detail.screen.inc';   // file identifying screen structure
+$screen   = 'mnu_role.add1.screen.inc';   // file identifying screen structure
 
 require 'std.add1.inc';                     // activate page controller
 

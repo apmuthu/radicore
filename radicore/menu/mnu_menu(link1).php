@@ -13,7 +13,7 @@ $inner_table = 'mnu_task_jnr';                  // name of inner table
 $screen      = 'mnu_menu.link1.screen.inc';     // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'task_id,task_desc,task_type';
+$outer_sql_select = 'task_id, task_name, task_type';
 $outer_sql_from   = NULL;
 $outer_sql_where  = NULL;
 

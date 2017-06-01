@@ -67,9 +67,9 @@ class mnu_favourite_s05 extends mnu_favourite
 
         // create entries for default favourites
         $fieldarray = array();
-        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_user(upd1)a', 'task_desc' => 'Change Password');
-        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_todo(list2)', 'task_desc' => 'To-Do');
-        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_motd(list1)', 'task_desc' => 'MOTD');
+        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_user(upd1)a', 'task_name' => 'Change Password');
+        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_todo(list2)', 'task_name' => 'To-Do');
+        $fieldarray[] = array('user_id' => $user_id, 'task_id' => 'mnu_motd(list1)', 'task_name' => 'MOTD');
 
         return $fieldarray;
 

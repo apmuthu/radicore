@@ -1,5 +1,5 @@
 <?php
-    // file created on November 3, 2006, 11:07 am
+    // file created on April 17, 2017, 12:45 pm
     
     // field specifications for table classroom.crs_student_lesson
     $fieldspec['student_id']                = array('type' => 'integer',
@@ -42,6 +42,14 @@
     
     // default sort sequence 
     $this->default_orderby                  = '';
+    
+    // alternative language options 
+    $this->alt_language_table               = '';
+    $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

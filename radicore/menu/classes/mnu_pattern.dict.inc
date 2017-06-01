@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:46 pm
+    // file created on May 7, 2017, 9:28 am
     
     // field specifications for table menu.mnu_pattern
     $fieldspec['pattern_id']                = array('type' => 'string',
@@ -8,17 +8,19 @@
                                                     'required' => 'y',
                                                     'uppercase' => 'y');
     
-    $fieldspec['pattern_desc']              = array('type' => 'string',
-                                                    'size' => 60,
+    $fieldspec['pattern_name']              = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['pattern_long_desc']         = array('type' => 'string',
+    $fieldspec['pattern_desc']              = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
                                                     'rows' => 5);
     
     $fieldspec['visible_screen']            = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -26,6 +28,8 @@
                                                     'optionlist' => 'boolean');
     
     $fieldspec['context_preselect']         = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -33,6 +37,8 @@
                                                     'optionlist' => 'boolean');
     
     $fieldspec['keep_data']                 = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -90,6 +96,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

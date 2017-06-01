@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_subsystem extends Default_Table
@@ -50,7 +50,7 @@ class mnu_subsystem extends Default_Table
     {
 //        if ($fieldarray['count'] <= 50) {
 //            $css_array['count'] = 'red';
-//            $css_array['subsys_desc'] = 'red';
+//            $css_array['subsys_name'] = 'red';
 //        } // if
 
         return $fieldarray;
@@ -70,7 +70,7 @@ class mnu_subsystem extends Default_Table
 //        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('subsys_id' => 'Subsys Id',
-//                               'subsys_desc' => 'Subsys Desc',
+//                               'subsys_name' => 'Subsys Desc',
 //                               'subsys_dir' => 'Subsys Directory',
 //                               'task_prefix' => 'Task Prefix');
 //                $this->lookup_data['quicksearch_field'] = $array;
@@ -89,8 +89,8 @@ class mnu_subsystem extends Default_Table
 
         if ($item == 'subsys_id') {
             // get data from the database
-            $this->sql_select     = 'subsys_id, subsys_desc';
-            $this->sql_orderby    = 'subsys_desc';
+            $this->sql_select     = 'subsys_id, subsys_name';
+            $this->sql_orderby    = 'subsys_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData(null);
 
@@ -114,7 +114,7 @@ class mnu_subsystem extends Default_Table
     {
         $array = array();
 
-        $array['subsys_desc'] = 'Total count for all Subsystems:';
+        $array['subsys_name'] = 'Total count for all Subsystems:';
         $array['count'] = $this->count;
 
         return $array;
@@ -154,43 +154,53 @@ class mnu_subsystem extends Default_Table
             if ($dbengine == 'mysql') {
                 // replace standard code (which is slow) with this hard-coded turbo version
                 $from = 'mnu_task
-    , help_text
-    , mnu_favourite
-    , mnu_initial_value_role
-    , mnu_initial_value_user
-    , menu_snr
-    , menu_jnr
-    , nav_button_snr
-    , nav_button_jnr
-    , mnu_role
-    , mnu_role_task
-    , mnu_role_taskfield
-    , mnu_task_field
-    , mnu_task_ip_address
-    , mnu_todo';
+, mnu_task_alt
+, help_text
+, help_text_alt
+, mnu_favourite
+, mnu_initial_value_role
+, mnu_initial_value_user
+, menu_snr
+, menu_jnr
+, nav_button_snr
+, nav_button_jnr
+, mnu_role
+, mnu_role_task
+, mnu_role_taskfield
+, mnu_task_field
+, mnu_task_ip_address
+, mnu_todo';
                 $using = 'mnu_task
-    LEFT JOIN help_text ON (help_text.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_favourite ON (mnu_favourite.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_menu AS menu_snr ON (menu_snr.menu_id=mnu_task.task_id)
-    LEFT JOIN mnu_menu AS menu_jnr ON (menu_jnr.task_id_jnr=mnu_task.task_id)
-    LEFT JOIN mnu_nav_button AS nav_button_snr ON (nav_button_snr.task_id_snr=mnu_task.task_id)
-    LEFT JOIN mnu_nav_button AS nav_button_jnr ON (nav_button_jnr.task_id_jnr=mnu_task.task_id)
-    LEFT JOIN mnu_role ON (mnu_role.start_task_id=mnu_task.task_id)
-    LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_task_ip_address ON (mnu_task_ip_address.task_id=mnu_task.task_id)
-    LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
+LEFT JOIN mnu_task_alt ON (mnu_task_alt.task_id=mnu_task.task_id)
+LEFT JOIN help_text ON (help_text.task_id=mnu_task.task_id)
+LEFT JOIN help_text_alt ON (help_text_alt.task_id=mnu_task.task_id)
+LEFT JOIN mnu_favourite ON (mnu_favourite.task_id=mnu_task.task_id)
+LEFT JOIN mnu_initial_value_role ON (mnu_initial_value_role.task_id=mnu_task.task_id)
+LEFT JOIN mnu_initial_value_user ON (mnu_initial_value_user.task_id=mnu_task.task_id)
+LEFT JOIN mnu_menu AS menu_snr ON (menu_snr.menu_id=mnu_task.task_id)
+LEFT JOIN mnu_menu AS menu_jnr ON (menu_jnr.task_id_jnr=mnu_task.task_id)
+LEFT JOIN mnu_nav_button AS nav_button_snr ON (nav_button_snr.task_id_snr=mnu_task.task_id)
+LEFT JOIN mnu_nav_button AS nav_button_jnr ON (nav_button_jnr.task_id_jnr=mnu_task.task_id)
+LEFT JOIN mnu_role ON (mnu_role.start_task_id=mnu_task.task_id)
+LEFT JOIN mnu_role_task ON (mnu_role_task.task_id=mnu_task.task_id)
+LEFT JOIN mnu_role_taskfield ON (mnu_role_taskfield.task_id=mnu_task.task_id)
+LEFT JOIN mnu_task_field ON (mnu_task_field.task_id=mnu_task.task_id)
+LEFT JOIN mnu_task_ip_address ON (mnu_task_ip_address.task_id=mnu_task.task_id)
+LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
 
                 $selection ="mnu_task.task_id='{$row['task_id']}'";
+                if (!is_True($GLOBALS['transaction_has_started'])) {
+                    $dbobject->startTransaction();
+                } // if
                 $sub_count = $this->_dml_deleteSelection($selection, $from, $using);
                 $child_count = $child_count + $sub_count;
                 $count++;
+                $dbobject->commit();
             } else {
                 // do it the old fashioned way, one mnu_task at a time
-                $dbobject->startTransaction();
+                if (!is_True($GLOBALS['transaction_has_started'])) {
+                    $dbobject->startTransaction();
+                } // if
                 $delete = $dbobject->eraseRecord($row);
                 if ($dbobject->errors) {
                     $this->errors[$dbobject->getClassName()] = $dbobject->errors;
@@ -212,8 +222,6 @@ class mnu_subsystem extends Default_Table
         $this->messages[] = "$count task records have been deleted";
         $this->messages[] = "$child_count child records have been deleted";
 
-        // LEFT JOIN mnu_control ON (mnu_control.record_id=mnu_subsystem.subsys_id)';
-
         return $fieldarray;
 
     } // _cm_pre_eraseRecord
@@ -230,7 +238,7 @@ class mnu_subsystem extends Default_Table
 //        $this->errors['internal-class']['foobar'] = "error message concerning '[x]foobar'";
 //        $this->errors['internal-class'][1] = "error message concerning '[x][1]foobar'";
 //        $this->errors[2]['foobar'] = "error message concerning '[2]foobar'";
-//        $this->errors['subsys_desc'] = 'dummy message for subsys_desc';
+//        $this->errors['subsys_name'] = 'dummy message for subsys_name';
 
         return $rowdata;
 

@@ -1,5 +1,5 @@
 <?php
-    // file created on June 21, 2014, 5:33 pm
+    // file created on May 12, 2017, 2:58 pm
     
     // field specifications for table dict.dict_table
     $fieldspec['database_id']               = array('type' => 'string',
@@ -16,11 +16,11 @@
                                                     'required' => 'y',
                                                     'lowercase' => 'y');
     
-    $fieldspec['table_desc']                = array('type' => 'string',
-                                                    'size' => 255,
+    $fieldspec['table_name']                = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['tbl_comment']               = array('type' => 'string',
+    $fieldspec['table_desc']                = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 75,
@@ -29,8 +29,6 @@
     
     $fieldspec['audit_logging']             = array('type' => 'boolean',
                                                     'type_native' => 'char',
-                                                    'required' => 'y',
-                                                    'default' => 'Y',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'dropdown',
@@ -112,12 +110,6 @@
                                                     'fields' => array('database_id' => 'database_id_jnr',
                                                                       'table_id' => 'table_id_jnr'));
     
-    $this->child_relations[]                = array('child' => 'dict_table',
-                                                    'alias' => 'dict_table_jnr',
-                                                    'type' => 'RES',
-                                                    'fields' => array('database_id' => 'database_id',
-                                                                      'table_id' => 'alt_language_table'));
-    
     $this->child_relations[]                = array('child' => 'dict_table_key',
                                                     'type' => 'DEL',
                                                     'fields' => array('database_id' => 'database_id',
@@ -125,13 +117,8 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'dict_database',
-                                                    'parent_field' => 'database_desc',
+                                                    'parent_field' => 'database_name',
                                                     'fields' => array('database_id' => 'database_id'));
-    
-    $this->parent_relations[]               = array('parent' => 'dict_table',
-                                                    'alias' => 'dict_table_snr',
-                                                    'fields' => array('database_id' => 'database_id',
-                                                                      'alt_language_table' => 'table_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;

@@ -16,7 +16,7 @@ class mnu_task_s02 extends mnu_task
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        $this->fieldspec['task_desc']['noedit'] = 'y';
+        $this->fieldspec['task_name']['noedit'] = 'y';
         $this->fieldspec['new_task_id']     = array('type' => 'string',
                                                     'size' => $this->fieldspec['task_id']['size'],
                                                     'required' => 'y',

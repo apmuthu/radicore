@@ -27,7 +27,7 @@ $structure['columns'][] = array('width' => 25, 'halign' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('task_id' => 'Task Id');
-$structure['body']['fields'][] = array('task_desc' => 'Description');
+$structure['body']['fields'][] = array('task_name' => 'Name');
 $structure['body']['fields'][] = array('subsys_id' => 'Subsys Id');
 $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
 $structure['body']['fields'][] = array('task_type' => 'Task Type');

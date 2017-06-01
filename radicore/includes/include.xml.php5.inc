@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains functions related to XML and XSL for use with PHP 5
@@ -14,6 +14,14 @@ class radicore_view
     var $orderby_seq;                   // sort sequence (ASC or DESC)
     var $javascript;                    // optional javascript
     var $quicksearch_field;             // optional - see setQuickSearch()
+    var $allow_responsive_gui = false;  //
+
+    // the bootstrap library divides the page into 12 cells, and in Radicore detail
+    // screens there are columns for labels and columns for data. Simple screens have
+    // just two columns with one label and one field on each line, but some screens
+    // may have several labels and fields on a single line.
+    var $grid_cells = array();          // the width in cells of each column
+    var $field_cells = array();         // identifies the column number for each label or field
 
     // *****************************************************************************
     function __construct ($screen_structure)
@@ -122,7 +130,7 @@ class radicore_view
         // see if any custom javascript has been defined
         $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
         if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
-            $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
+            $javascript = $jsOBJ->form_level_js($GLOBALS['task_id'], $this->allow_responsive_gui);
             if (is_array($javascript) AND !empty($javascript)) {
                 $this->javascript = array_merge_recursive($this->javascript, $javascript);
             } // if
@@ -146,14 +154,6 @@ class radicore_view
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
-            // see if any custom javascript has been defined
-//            $jsOBJ = $this->getCustomJavascript($GLOBALS['project_code']);
-//            if (is_object($jsOBJ) AND method_exists($jsOBJ, 'form_level_js')) {
-//                $javascript = $jsOBJ->form_level_js($GLOBALS['task_id']);
-//                if (is_array($javascript) AND !empty($javascript)) {
-//                    $this->javascript = array_merge_recursive($this->javascript, $javascript);
-//                } // if
-//            } // if
             if (!is_array($rowdata)) {
                 // this is not an array, so output as data now
 
@@ -402,7 +402,7 @@ class radicore_view
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
                                             if(!empty($task_data)) {
                                                 $task_data = $task_data[0];
-                                                $child->setAttribute('tooltip', $task_data['task_desc']);
+                                                $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
                                         if (isset($spec['subtype'])) {
@@ -471,7 +471,7 @@ class radicore_view
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
                                             if(!empty($task_data)) {
                                                 $task_data = $task_data[0];
-                                                $child->setAttribute('tooltip', $task_data['task_desc']);
+                                                $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
                                         if (isset($spec['allow_input'])) {
@@ -804,6 +804,15 @@ class radicore_view
 
         static $lookup_items = array(); // list of items that have been loaded
 
+        if (is_array($this->quicksearch_field) AND !empty($this->quicksearch_field)) {
+            $lookup['quicksearch_field'] = $this->quicksearch_field;
+            $this->quicksearch_field = true;  // indicate that this field has been loaded
+        } elseif ($this->quicksearch_field === true) {
+            unset($lookup['quicksearch_field']);  // has already been loaded, so don't repeat
+        } elseif ($this->quicksearch_field === false) {
+            unset($lookup['quicksearch_field']);  // 'print' option has been selected, so exclude
+        } // if
+
         if (!empty($lookup)) {
     	    if ($GLOBALS['mode'] == 'search') {
                 $undefined = getLanguageText('undefined');
@@ -856,14 +865,14 @@ class radicore_view
                 } else {
                     $jumpto_data = array();
                 } // if
-                if (is_array($this->quicksearch_field) AND !empty($this->quicksearch_field)) {
-                    $lookup['quicksearch_field'] = $this->quicksearch_field;
-                    $this->quicksearch_field = true;  // indicate that this field has been loaded
-                } elseif ($this->quicksearch_field === true) {
-                    unset($lookup['quicksearch_field']);  // has already been loaded, so don't repeat
-                } elseif ($this->quicksearch_field === false) {
-                    unset($lookup['quicksearch_field']);  // 'print' option has been selected, so exclude
-                } // if
+//                if (is_array($this->quicksearch_field) AND !empty($this->quicksearch_field)) {
+//                    $lookup['quicksearch_field'] = $this->quicksearch_field;
+//                    $this->quicksearch_field = true;  // indicate that this field has been loaded
+//                } elseif ($this->quicksearch_field === true) {
+//                    unset($lookup['quicksearch_field']);  // has already been loaded, so don't repeat
+//                } elseif ($this->quicksearch_field === false) {
+//                    unset($lookup['quicksearch_field']);  // 'print' option has been selected, so exclude
+//                } // if
                 $this->addLookup2XMLdoc($lookup, $lookup_css, $doc, $root, $jumpto_data);
             } // if
         } // if
@@ -988,7 +997,7 @@ class radicore_view
         $task_data = $dbobject->getData("task_id='$task_id'");
         if(!empty($task_data)) {
             $task_data = $task_data[0];
-            $xsl_params['title'] = $task_data['task_desc'];
+            $xsl_params['title'] = $task_data['task_name'];
         } else {
             $xsl_params['title'] = $title;
         } // if
@@ -1036,10 +1045,7 @@ class radicore_view
             $xsl_params['client-side'] = 'true';
         } // if
 
-//        if (file_exists('../css/xsl_params.inc')) {
-//            // include overrides from optional file
-//            include('../css/xsl_params.inc');
-//        } // if
+        // load data from file 'xsl_params.inc'
         $try = array();
         if (!empty($GLOBALS['project_code'])) {
             $try[] = "../css/xsl_params.{$GLOBALS['project_code']}.inc";
@@ -1055,6 +1061,7 @@ class radicore_view
         if (isset($_SESSION['logon_user_name'])) {
     	    $xsl_params['text']['logged-in-as'] = getLanguageText('xsl_logged_in_as');
             $xsl_params['logged-in-as']         = $_SESSION['logon_user_name'];
+            $xsl_params['logged-in-as-name']    = $_SESSION['logon_user_name'];
             // look for custom text which needs to be inserted
             $try = array();
             if (!empty($GLOBALS['project_code'])) {
@@ -1107,7 +1114,7 @@ class radicore_view
         $dir = getParentDIR();
 
         if (is_True($_SERVER['HTTPS'])) {
-            $xsl_params['help_root'] = 'HTTP://'  .$GLOBALS['http_server'] .dirname($PHP_SELF);
+            $xsl_params['help_root'] = 'HTTPS://' .$GLOBALS['http_server'] .dirname($PHP_SELF);
             $xsl_params['doc_root']  = 'HTTPS://' .$GLOBALS['https_server'] .$dir;
         } else {
             $xsl_params['help_root'] = 'HTTP://' .$_SERVER['HTTP_HOST'] .dirname($_SERVER['PHP_SELF']);
@@ -1193,6 +1200,7 @@ class radicore_view
     // build XML document using the database objects identified in $xml_objects
     {
         global $act_buttons;
+        global $allow_responsive_gui;   // from task options
         global $current_menu;
         global $current_menu_tab;
         global $menu_buttons;
@@ -1213,12 +1221,27 @@ class radicore_view
         $this->javascript = array();
         $errors           = (array)$errors;
 
+        if (!isset($_SESSION['logon_user_id'])) {
+            // user not identified yet (logon screen?), so default to true
+            $allow_responsive_gui = true;
+        } elseif (isset($allow_responsive_gui)) {
+            // task allows responsive GUI, but does the user?
+            if (is_True($allow_responsive_gui) AND is_True($_SESSION['allow_responsive_gui'])) {
+                $allow_responsive_gui = true;
+            } else {
+                $allow_responsive_gui = false;
+            } // if
+        } else {
+            $allow_responsive_gui = false;
+        } // if
+        $this->allow_responsive_gui = $allow_responsive_gui;
+
         // create a new XML document
         $xml_doc = new DomDocument('1.0', 'UTF-8');
 
         // get name of XSL file
         $screen_structure =& $this->structure;
-        $xsl_file = $this->getXSLfile($xml_doc, $xsl_file, $screen_structure);
+        $xsl_file = $this->getXSLfile($xml_doc, $xsl_file, $screen_structure, $allow_responsive_gui);
 
         // add root node
         $node_array['root'] = $xml_doc->createElement('root');
@@ -1385,7 +1408,7 @@ class radicore_view
 
         if (!empty($screen_structure)) {
             // put screen structure into XML document
-            $this->setScreenStructure($xml_doc, $root, $screen_structure);
+            $this->setScreenStructure($xml_doc, $root, $screen_structure, $allow_responsive_gui);
         } // if
 
         // look for optional HEADER.TXT
@@ -1591,7 +1614,7 @@ class radicore_view
     } // getFieldsInScreen
 
     // ****************************************************************************
-    function getXSLfile ($xml_doc, $xsl_file, $screen_structure)
+    function getXSLfile ($xml_doc, $xsl_file, $screen_structure, $allow_responsive_gui=false)
     // extract name of XSL file from screen structure.
     {
         if (is_array($screen_structure)) {
@@ -1605,6 +1628,14 @@ class radicore_view
             trigger_error(getLanguageText('sys0074', $screen), E_USER_ERROR);
         } // if
 
+        if (is_True($allow_responsive_gui) AND is_dir('../responsive-web/xsl')) {
+            $xsl_dir = '/responsive-web/xsl/';  // use files in this directory instead
+        } else {
+            // directory does not exist, so cannot output responsive GUI
+            $xsl_dir = '/xsl/';
+            $this->allow_responsive_gui = false;
+        } // if
+
         if (is_True($_SERVER['HTTPS'])) {
             // use one or the other of these, whichever is available
             if (isset($_SERVER['PATH_TRANSLATED']) AND strlen($_SERVER['PATH_TRANSLATED']) > strlen($_SERVER['SCRIPT_FILENAME'])) {
@@ -1612,9 +1643,9 @@ class radicore_view
             } else {
                 $dir = getParentDIR($_SERVER['SCRIPT_FILENAME']);
             } // if
-            $filename = $dir .'/xsl/' .$xsl_file;
+            $filename = $dir .$xsl_dir .$xsl_file;
         } else {
-            $filename = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/xsl/' .$xsl_file;
+            $filename = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .$xsl_dir .$xsl_file;
         } // if
         //logstuff("filename: " .$filename, __FUNCTION__, __LINE__);
 
@@ -1623,7 +1654,7 @@ class radicore_view
             trigger_error(getLanguageText('sys0057', $filename), E_USER_ERROR);
         } // if
 
-        $xsl_url = $GLOBALS['url_files'].getParentDIR().'/xsl/' .$xsl_file;
+        $xsl_url = $GLOBALS['url_files'].getParentDIR().$xsl_dir .$xsl_file;
 
         if (is_true($_SESSION['XSLT_client_side'])) {
     	    $pi = $xml_doc->createProcessingInstruction('xml-stylesheet', 'type="text/xsl" href="' .$xsl_url .'"');
@@ -1700,9 +1731,20 @@ class radicore_view
             } // if
         } // foreach
 
-        // identify global CSS file and add it to the front of this array
-        $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'];
-        array_unshift($css_files, $default_css);
+        if (is_True($this->allow_responsive_gui)) {
+            // start with the default css file
+            $default_css = getParentDIR() .'/responsive-web/css/style_default.css';
+            array_unshift($css_files, $default_css);
+        } else {
+            // identify global CSS file and add it to the front of this array
+            $default_css = getParentDIR() .'/css/' .$_SESSION['css_file'];
+            array_unshift($css_files, $default_css);
+        } // if
+
+        if (is_True($this->allow_responsive_gui)) {
+            $responsive_css = getParentDIR() .'/responsive-web/css/bootstrap.min.css';
+            array_unshift($css_files, $responsive_css);
+        } // if
 
         // find out if there is a browser-specific CSS file
         $browserid = getBrowserVersion();
@@ -1877,7 +1919,7 @@ class radicore_view
         $occ = $doc->createElement('menubar');
         $occ = $root->appendChild($occ);
 
-        foreach ($menu_buttons as $task_id => $task_desc) {
+        foreach ($menu_buttons as $task_id => $task_name) {
             // add each button to the xml document
             $child = $doc->createElement('button');
             $child->setAttribute('id', $task_id);
@@ -1887,11 +1929,17 @@ class radicore_view
             $child = $occ->appendChild($child);
 
             // convert text into output language
-            $task_desc = getLanguageText($task_desc);
+            $task_name = getLanguageText($task_name);
 
-            $task_desc = convertEncoding($task_desc, 'UTF-8');
+            $task_name = str_replace(' ', '&nbsp;', trim($task_name));
+            //$task_name = str_replace(' ', chr(160), trim($task_name));
+            //$task_name = str_replace(' ', '&#160;', trim($task_name));
 
-            $value = $doc->createTextNode(trim($task_desc));
+            $task_name = convertEncoding($task_name, 'UTF-8');
+
+            $value = $doc->createTextNode($task_name);
+            //$value = $doc->createCDATASection($task_name);
+
             $value = $child->appendChild($value);
         } // foreach
 
@@ -1955,11 +2003,12 @@ class radicore_view
             $value = $doc->createTextNode(trim($button['button_text']));
             $value = $child->appendChild($value);
 
-            if (!empty($button['task_desc'])) {
+            if (!empty($button['task_name'])) {
                 // use task description as a tooltip
-                $button['task_desc'] = $button['task_desc'];
-                $button['task_desc'] = convertEncoding($button['task_desc'], 'UTF-8');
-                $child->setAttribute('tooltip', $button['task_desc']);
+                $button['task_name'] = convertEncoding($button['task_name'], 'UTF-8');
+                $child->setAttribute('tooltip', $button['task_name']);
+            } else {
+                $child->setAttribute('tooltip', $button['button_text']);
             } // if
         } // foreach
 
@@ -2011,9 +2060,11 @@ class radicore_view
     } // setQuickSearch
 
     // ****************************************************************************
-    function setScreenStructure ($xml_doc, $root, $structure)
+    function setScreenStructure ($xml_doc, $root, $structure, $allow_responsive_gui=false)
     // extract screen structure from named file and insert details into XML document.
     {
+        $pattern_id = getPatternId();
+
         // define node to contain all structure elements
         $occ = $xml_doc->createElement('structure');
         $occ = $root->appendChild($occ);
@@ -2022,6 +2073,13 @@ class radicore_view
         foreach ($structure['tables'] as $zone => $id) {
             $id = removeTableSuffix(strtolower(trim($id)));
             $zone = strtolower(trim($zone));
+            // identify whether this zone is in DETAIL or LIST mode
+            $is_list_mode = false;
+            if (preg_match('/^(list1|popup1|tree1|popup3)$/i', $pattern_id)) {
+                $is_list_mode = true;
+            } elseif (preg_match('/^(list|popup|link|tree)/i', $pattern_id) AND $zone == 'inner') {
+                $is_list_mode = true;
+            } // if
             // add this table name as a child to the structure element
             $table = $xml_doc->createElement($zone);
             $table = $occ->appendChild($table);
@@ -2037,14 +2095,22 @@ class radicore_view
                     if (!empty($input['rel'])) {
                         $table_row->setAttribute('rel', $input['rel']);
                     } // if
-                    $xml_doc = $this->_setScreen_columns($xml_doc, $table_row, $input);
-                    $xml_doc = $this->_setScreen_fields($xml_doc, $table_row, $input);
+                    if ($allow_responsive_gui AND !$is_list_mode) {
+                        $xml_doc = $this->_setGrid_Cell_widths($xml_doc, $table_row, $input, $zone);
+                    } else {
+                        $xml_doc = $this->_setScreen_columns($xml_doc, $table_row, $input);
+                    } // if
+                    $xml_doc = $this->_setScreen_fields($xml_doc, $table_row, $input, $zone, $allow_responsive_gui);
                 } // foreach
             } else {
                 // there is only one structure for this zone
                 $input = $structure[$zone];
-                $xml_doc = $this->_setScreen_columns($xml_doc, $table, $input);
-                $xml_doc = $this->_setScreen_fields($xml_doc, $table, $input);
+                if ($allow_responsive_gui AND !$is_list_mode) {
+                    $xml_doc = $this->_setGrid_Cell_widths($xml_doc, $table, $input, $zone);
+                } else {
+                    $xml_doc = $this->_setScreen_columns($xml_doc, $table, $input);
+                } // if
+                $xml_doc = $this->_setScreen_fields($xml_doc, $table, $input, $zone, $allow_responsive_gui);
             } // if
 
             // insert tree node data names, if supplied
@@ -2062,6 +2128,99 @@ class radicore_view
         return;
 
     } // setScreenStructure
+
+    // ****************************************************************************
+    function _setGrid_Cell_widths ($xml_doc, $element, $input, $zone)
+    // construct a list of cell widths when using bootstrap grid system
+    {
+        $info = array();
+
+        $pattern = <<< END_OF_REGEX
+/
+(                   # start choice
+(?P<percent>        # pattern name
+  \d+(\.\d+)?(?=%)  # NN[.NN]%
+)                   # end pattern
+|                   # or
+(\d+|\*)            # NN or '*'
+)                   # end choice
+/xism
+END_OF_REGEX;
+
+        if (isset($input['columns'])) {
+            $grid = $xml_doc->createElement('grid');
+            $grid = $element->appendChild($grid);
+            $cells_remaining = 12;  // there are 12 cells in the bootstrap grid system
+            $star_column = 0;  // column with its width set to '*' (asterisk or star)
+            foreach ($input['columns'] as $row => $array) {
+                $array = array_change_key_case($array, CASE_LOWER);
+                if (array_key_exists('nodisplay', $array)) {
+                    // 'nodisplay' attribute is set, so do not output this column
+                } else {
+                    $class_value = '';
+                    foreach ($array as $attrname => $attrvalue) {
+                        $attrname  = trim($attrname);
+                        $attrvalue = trim($attrvalue);
+                        if (preg_match('/^(width)$/i', $attrname)) {
+                            // grid has 12 cells, so calculate number of cells for each column
+                            $size = 1;  // default width is 1 cell
+                            if (preg_match($pattern, $attrvalue, $regs)) {
+                                if (!empty($regs['percent'])) {
+                                    $size = floor(12 * $regs['percent'] / 100);
+
+                                } elseif ($regs[0] == '*') {
+                                    // use remaining space, but as there may be following columns we don't knowwhat that is yet
+                                    $size = 1;  // not last cell, so defaut to 1
+                                    $star_column = $row;
+                                } else {
+                                    // calculate nearest cell size (assuming each cell is 75 pixels wide)
+                                    $size = floor($regs[0] / 75);
+                                } // if
+                            } // if
+                            $info[$row]['grid_size'] = $size;
+                            $cells_remaining = $cells_remaining - $size;
+
+                        } elseif (preg_match('/^(align|valign|class)$/i', $attrname)) {
+                            // these values must be merged into a single string separated with a space
+                            if (empty($class_value)) {
+                                $class_value = $attrvalue;
+                            } else {
+                                $class_value .= ' '.$attrvalue;
+                            } // if
+                        } else {
+                            $info[$row]['attributes'][$attrname] = $attrvalue;
+                        } // if
+                    } // foreach
+                    if (!empty($star_column)) {
+                        $info[$row]['grid_size'] += $cells_remaining;
+                    } // if
+                    if (!empty($class_value)) {
+                        $info[$row]['class'] = $class_value;
+                    } // if
+                } // if
+            } // foreach
+            // add these finalised grid sizes to the XML document
+            foreach ($info as $row => $grid_data) {
+                $column = $xml_doc->createElement('column');
+                $column = $grid->appendChild($column);
+                $column->setAttribute('grid_size', $grid_data['grid_size']);
+                if (!empty($grid_data['class'])) {
+                    $column->setAttribute('class', $grid_data['class']);
+                } // if
+                if (isset($grid_data['attributes'])) {
+                    // include any additional attributes
+                    foreach ($grid_data['attributes'] as $attrname => $attrvalue) {
+                        $column->setAttribute($attrname, $attrvalue);
+                    } // foreach
+                } // if
+            } // foreach
+        } // if
+
+        $this->grid_cells[$zone] = $info;
+
+        return $xml_doc;
+
+    } // _setGrid_Cell_widths
 
     // ****************************************************************************
     function _setScreen_columns ($xml_doc, $element, $input)
@@ -2105,7 +2264,7 @@ class radicore_view
     } // _setScreen_columns
 
     // ****************************************************************************
-    function _setScreen_fields ($xml_doc, $element, $input)
+    function _setScreen_fields ($xml_doc, $element, $input, $zone=null, $allow_responsive_gui=false)
     // insert 'field' details into the current XML document
     {
         // test for 'old' format file
@@ -2113,6 +2272,14 @@ class radicore_view
             // "FIELDS array for zone '$zone' in screen structure file is not indexed by rownum"
             trigger_error(getLanguageText('sys0053', $zone), E_USER_ERROR);
         } // if
+
+        if (is_True($allow_responsive_gui)) {
+            // look for multi-column lines which contain a 'rowspan' property
+            $input['fields'] = $this->_adjust_Rowspan($input['fields']);
+            reset($input['fields']);
+        } // if
+
+        $info = array();
 
         // extract field details one row at a time
         foreach ($input['fields'] as $row => $rowdata) {
@@ -2123,36 +2290,56 @@ class radicore_view
 
                 $rowdata = array_change_key_case($rowdata, CASE_LOWER);
 
-                // if 'nodisplay' attribute is set then do not output this column
-                if (!array_key_exists('nodisplay', $rowdata)) {
-                    foreach ($rowdata as $fieldname => $fieldlabel) {
-                        $fieldname = trim($fieldname);
-                        if (empty($fieldname)) {
-                            $fieldname = 'null';
+                if (array_key_exists('nodisplay', $rowdata)) {
+                    // 'nodisplay' attribute is set, so do not output this column
+                } else {
+                    $fieldname  = null;
+                    $fieldlabel = null;
+                    foreach ($rowdata as $key => $value) {
+                        $key = trim($key);
+                        if (!empty($key) AND empty($fieldname)) {
+                            $fieldname  = $key;
+                            $fieldlabel = $value;
                         } // if
-                        if (preg_match('/^(nosort)$/i', $fieldname, $regs)) {
+
+                        // this may be used when $this->allow_responsive_gui is set to TRUE
+                        if (!isset($info[$fieldname])) {
+                            $info[$fieldname]['column'] = 2;  // field value is in 2nd column
+                        } // if
+
+                        if (preg_match('/^(nosort)$/i', $key, $regs)) {
                             // ignore 'nosort' entry
-                        } elseif ($fieldname=='size' AND is_numeric($fieldlabel)) {
+                        } elseif ($key == 'size' AND is_numeric($value)) {
                             // 'size=<numeric>' is an attribute of the previous field, whereas
                             // 'size=<string>' is a new 'field=label' pair
-                            $cell->setAttribute($fieldname, $fieldlabel);
-                        } elseif ($fieldname == 'javascript' and is_array($fieldlabel)) {
-                            foreach ($fieldlabel as $sttr => $attrvalue) {
+                            $cell->setAttribute($key, $value);
+                        } elseif ($key == 'javascript' and is_array($value)) {
+                            foreach ($value as $sttr => $attrvalue) {
                                 // add this entry as an attribute to the current row
                                 $rowocc->setAttribute($sttr, $attrvalue);
                             } // foreach
-                        } elseif (preg_match('/^(imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $fieldname, $regs)) {
+                        } elseif (preg_match('/^(size|imagewidth|imageheight|colspan|rowspan|cols|rows|class|display-empty|label-only)$/i', $key, $regs)) {
                             // write these out as attributes on the current cell
-                            $cell->setAttribute($regs[0], $fieldlabel);
+                            $cell->setAttribute($regs[0], $value);
+
+                            if (is_True($allow_responsive_gui)) {
+                                if (preg_match('/^(colspan)$/i', $key)) {
+                                    $info[$fieldname]['colspan'] = $value;
+                                    // convert 'colspan' to 'grid_size'
+                                    $info[$fieldname] = $this->_convert_colspan_to_gridsize($info[$fieldname], $this->grid_cells[$zone]);
+                                    $cell->setAttribute('grid_size', $info[$fieldname]['grid_size']);
+                                } // if
+                            } // if
+
                         } else {
                             $cell = $xml_doc->createElement('cell');
                             $cell = $rowocc->appendChild($cell);
 
                             // convert text into output language
-                            $fieldlabel = getLanguageText($fieldlabel);
+                            $value = getLanguageText($value);
 
-                            $fieldlabel = convertEncoding($fieldlabel, 'UTF-8');
-                            $cell->setAttribute('label', $fieldlabel);
+                            $value = convertEncoding($value, 'UTF-8');
+                            $cell->setAttribute('label', $value);
 
                             if (array_key_exists('nosort', $rowdata)) {
                                 $cell->setAttribute('nosort', 'y');
@@ -2161,13 +2348,15 @@ class radicore_view
                             $cell = $xml_doc->createElement('cell');
                             $cell = $rowocc->appendChild($cell);
 
-                            $cell->setAttribute('field', $fieldname);
+                            $cell->setAttribute('field', $key);
 
                         } // if
                     } // foreach
                 } // if
             } else {
                 // there is a separate entry for each cell in the current row
+                $last_column_used = 0;
+                $first_column = key($rowdata);
                 foreach ($rowdata as $cellno => $cellspec) {
                     $cellspec = array_change_key_case($cellspec, CASE_LOWER);
                     if (key($cellspec) == 'javascript' and is_array($cellspec[key($cellspec)])) {
@@ -2190,17 +2379,120 @@ class radicore_view
                                 // convert text into output language
                                 $cellvalue = getLanguageText($cellvalue);
                             } // if
-                            // add this entry as an attribute to the current cell
-                            $cell->setAttribute($celltype, $cellvalue);
+                            if ($celltype == 'colspan' AND $cellvalue == 1) {
+                                // do not write this value out
+                            } else {
+                                // add this entry as an attribute to the current cell
+                                $cell->setAttribute($celltype, $cellvalue);
+                            } // if
+
+                            if (is_True($allow_responsive_gui)) {
+                                if ($cellno == $first_column) {
+                                    // ignore 1st column as this is for primary label
+                                    $last_column_used = 1;
+                                } else {
+                                    if (preg_match('/^(field|label)$/i', $celltype)) {
+                                        if ($celltype == 'field') {
+                                            if (!isset($info[$cellvalue])) {
+                                                $info[$cellvalue]['column'] = $last_column_used+1;
+                                                if (!empty($cellspec['colspan'])) {
+                                                    $info[$cellvalue]['colspan'] = $cellspec['colspan'];
+                                                } // if
+                                                // convert 'colspan' to 'grid_size'
+                                                $info[$cellvalue] = $this->_convert_colspan_to_gridsize($info[$cellvalue], $this->grid_cells[$zone]);
+                                                $cell->setAttribute('grid_size', $info[$cellvalue]['grid_size']);
+                                            } // if
+                                        } elseif ($celltype == 'label') {
+                                            // convert 'colspan' to 'grid_size'
+                                            $temp['column'] = $last_column_used+1;
+                                            if (!empty($cellspec['colspan'])) {
+                                                $temp['colspan'] = $cellspec['colspan'];
+                                            } // if
+                                            $temp = $this->_convert_colspan_to_gridsize($temp, $this->grid_cells[$zone]);
+                                            $cell->setAttribute('grid_size', $temp['grid_size']);
+                                        } // if
+                                        // identify the last column to be used
+                                        if (!empty($cellspec['colspan'])) {
+                                            // last value waswider than a single column
+                                            $last_column_used = $last_column_used + $cellspec['colspan'];
+                                        } else {
+                                            $last_column_used = $last_column_used + 1;
+                                        } // if
+                                    } // if
+                                } // if
+                            } // if
                         } // foreach
                     } // if
                 } // foreach
             } // if
         } // foreach
 
+        if (is_True($this->allow_responsive_gui)) {
+            $this->field_cells[$zone] = $info;
+        } // if
+
         return $xml_doc;
 
     } // _setScreen_fields
+
+    // ****************************************************************************
+    function _adjust_Rowspan($structure)
+    // look for multi-column lines which contain a 'rowspan' property
+    {
+        $saved_rowspan = array();
+
+        foreach ($structure as $row => $rowdata) {
+            if (!empty($saved_rowspan)) {
+                // merge data from previous row with this one
+                $adjusted = $saved_rowspan;             // start with data from previous row
+                foreach ($rowdata as $key => $value) {  // append data from current row
+                    $adjusted[$key] = $value;
+                } // foreach
+                $structure[$row] = $adjusted;
+                $saved_rowspan = array();
+            } // if
+            if (is_long(key($rowdata))) {
+                foreach ($rowdata as $ix => $cell) {
+                    if (!empty($cell['rowspan'])) {
+                        unset($cell['rowspan']);
+                        if (!empty($cell['label'])) $cell['label'] = '';
+                        if (!empty($cell['field'])) $cell['field'] = '';
+                        $saved_rowspan[$ix] = $cell;
+                    } // if
+                } // foreach
+            } // if
+        } // foreach
+
+        return $structure;
+
+    } // _adjust_Rowspan
+
+    // ****************************************************************************
+    function _convert_colspan_to_gridsize($fieldinfo, $grid_cells)
+    // NOTE: grid_cells start at index zero while $fieldinfo['column'] starts at 1
+    {
+        $grid_column = $fieldinfo['column'] - 1;
+        $grid_size   = 0;
+
+        if (empty($fieldinfo['colspan'])) {
+            // fetch the cell width of this column
+            $grid_size   = $grid_cells[$grid_column]['grid_size'];
+        } else {
+            // accumulate widths from specified number of columns
+            $span = $fieldinfo['colspan'];
+            $i    = $grid_column;
+            while ($span > 0) {
+                $grid_size = $grid_size + $grid_cells[$i]['grid_size'];
+                $i++;
+                $span--;
+            } // while
+        } // if
+
+        $fieldinfo['grid_size'] = $grid_size;
+
+        return $fieldinfo;
+
+    } // _convert_colspan_to_gridsize
 
     // ****************************************************************************
     function setScrollbar ($xml_doc, $root, $scrolling)

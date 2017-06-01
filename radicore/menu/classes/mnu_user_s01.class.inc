@@ -16,6 +16,14 @@ class mnu_user_s01 extends mnu_user
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        // create 'old_password' field
+        if (!isset($fieldarray['old_password'])) $fieldarray['old_password'] = '';
+        $this->fieldspec['old_password']['type'] = 'string';
+        $this->fieldspec['old_password']['size'] = $this->fieldspec['user_password']['size'];
+        $this->fieldspec['old_password']['password'] = 'y';
+        $this->fieldspec['old_password']['required'] = 'y';
+        $this->fieldspec['old_password']['nondb']    = 'y';
+
         // create 'new_password' field
         if (!isset($fieldarray['new_password1'])) $fieldarray['new_password1'] = '';
         $this->fieldspec['new_password1']['type'] = 'string';
@@ -38,6 +46,11 @@ class mnu_user_s01 extends mnu_user
         // cannot change user_name
         $this->fieldspec['user_name']['noedit'] = 'y';
 
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -50,14 +63,14 @@ class mnu_user_s01 extends mnu_user
             $crypt_obj =& RDCsingleton::getInstance('encryption_class');
             // encrypt input password and compare with original
             $key    = $fieldarray['user_id'];
-            $string = $fieldarray['user_password'];
+            $string = $fieldarray['old_password'];
             $spec   = $this->fieldspec['user_password'];
             $string = $crypt_obj->encrypt($key, $string, $spec['size']);
             if ($crypt_obj->errors) {
-            	$this->errors['user_password'] = $crypt_obj->errors[0];
+            	$this->errors['old_password'] = $crypt_obj->errors[0];
             } // if
         } else {
-            $string = $fieldarray['user_password'];
+            $string = $fieldarray['old_password'];
         } // if
 
         // input password must match original password
@@ -87,6 +100,24 @@ class mnu_user_s01 extends mnu_user
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        // this is here to override the method in the parent class
+
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
     // ****************************************************************************
     function _cm_initialise ($where, &$selection, $search)
@@ -127,6 +158,26 @@ class mnu_user_s01 extends mnu_user
         return $rows;
 
     } // _cm_post_getData
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($fieldarray)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        //$this->row_locks = 'SH';    // shared
+        //$this->row_locks = 'EX';    // exclusive
+        //$this->row_locks_supp = '?' // DBMS-specific
+
+        // do not reuse existing customised SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = false;
+
+        // user_password is not used in this task
+        unset($fieldarray['user_password']);
+        $this->fieldspec['user_password']['nodisplay'] = 'y';
+
+        return $fieldarray;
+
+    } // _cm_pre_updateRecord
 
 // ****************************************************************************
 } // end class

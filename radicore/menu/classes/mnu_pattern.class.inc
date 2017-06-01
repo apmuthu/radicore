@@ -38,7 +38,7 @@ class mnu_pattern extends Default_Table
 //        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('pattern_id' => 'Pattern Id',
-//                               'pattern_desc' => 'Pattern Desc');
+//                               'pattern_name' => 'Pattern Name');
 //                $this->lookup_data['quicksearch_field'] = $array;
 //            } // if
 //        } // if
@@ -55,8 +55,8 @@ class mnu_pattern extends Default_Table
 
         if ($item == 'pattern_id') {
             // get data from the database
-            $this->sql_select     = 'pattern_id, pattern_desc';
-            $this->sql_orderby    = 'pattern_desc';
+            $this->sql_select     = 'pattern_id, pattern_name';
+            $this->sql_orderby    = 'pattern_name';
             $this->sql_ordery_seq = 'asc';
             $data = $this->getData($where);
 
@@ -98,23 +98,6 @@ class mnu_pattern extends Default_Table
         return $fieldarray;
 
     } // _cm_post_fetchRow
-
-    // ****************************************************************************
-    function _cm_post_getData ($rows, &$where)
-    // perform custom processing after database record(s) are retrieved.
-    // NOTE: $where is passed BY REFERENCE so that it may be modified.
-    {
-//        if (!empty($rows)) {
-//            foreach ($rows as $rownum => $rowdata) {
-//                if (preg_match('/(2)$/', $rowdata['pattern_id'])) {
-//                    unset($rows[$rownum]);
-//                } // if
-//            } // foreach
-//        } // if
-
-        return $rows;
-
-    } // _cm_post_getData
 
 // ****************************************************************************
 } // end class

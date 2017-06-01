@@ -22,6 +22,76 @@ class mnu_user_role extends Default_Table
     } // __construct
 
     // ****************************************************************************
+    function _cm_changeConfig ($where, $fieldarray)
+    // Change the table configuration for the duration of this instance.
+    // $where = a string in SQL 'where' format.
+    // $fieldarray = the contents of $where as an array.
+    {
+        $pattern_id = getPatternId();
+
+        if (preg_match('/^(enq|upd|del|list|add)/i', $pattern_id)) {
+            $this->fieldspec['is_external_auth_off']    = array('type' => 'boolean',
+                                                                'optionlist' => 'boolean_YN',
+                                                                'noedit' => 'y',
+                                                                'nondb' => 'y');
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_getForeignData ($fieldarray, $rownum=null)
+    // Retrieve data from foreign (parent) tables.
+    // $rownum identifies current row number.
+    {
+        if (empty($fieldarray['start_task_id']) OR empty($fieldarray['is_external_auth_off'])) {
+            if (!empty($fieldarray['role_id'])) {
+                $dbobject1 =& RDCsingleton::getInstance('mnu_role');
+                $data1 = $dbobject1->getData("role_id='{$fieldarray['role_id']}'");
+                if (!empty($data1)) {
+                    $data1 = $data1[0];
+                    $fieldarray['start_task_id']        = $data1['start_task_id'];
+                    $fieldarray['start_task_name']      = $data1['start_task_name'];
+                    $fieldarray['is_external_auth_off'] = $data1['is_external_auth_off'];
+                } // if
+            } // if
+            if (empty($fieldarray['start_task_name']) AND !empty($fieldarray['start_task_id'])) {
+                $dbobject2 =& RDCsingleton::getInstance('mnu_task');
+                $data2 = $dbobject2->getData("task_id='{$fieldarray['start_task_id']}'");
+                if (!empty($data2)) {
+                    $data2 = $data2[0];
+                    $fieldarray['start_task_name'] = $data2['task_name'];
+                } // if
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getForeignData
+
+    // ****************************************************************************
+    function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
+    // process a selection returned from a popup screen.
+    // $fieldarray contains the record data when the popup button was pressed.
+    // $return_from identifies which popup screen was called.
+    // $select_array contains an array of item(s) selected in that popup screen.
+    // $return_files contains a list of all files loaded via a fileupload task.
+    // NOTE: $select_array is passed BY REFERENCE so that it can be modified.
+    {
+        if ($return_from == 'mnu_role(popup1)') {
+            // initialise associated fields
+            $fieldarray['role_name']            = null;
+            $fieldarray['start_task_id']        = null;
+            $fieldarray['start_task_name']      = null;
+            $fieldarray['is_external_auth_off'] = null;
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_popupReturn
+
+    // ****************************************************************************
     function _cm_post_deleteRecord ($fieldarray)
     // perform custom processing after database record has been deleted.
     {
@@ -69,6 +139,34 @@ class mnu_user_role extends Default_Table
         return $fieldarray;
 
     } // _cm_post_updateRecord
+
+    // ****************************************************************************
+    function _cm_pre_getData ($where, $where_array, $parent_data=null)
+    // perform custom processing before database record(s) are retrieved.
+    // (WHERE is supplied in two formats - string and array)
+    // $parent_data may contain contents of current record in the parent object.
+    {
+        //$pattern_id = getPatternId();
+
+        //if (preg_match('/^(list)/i', $pattern_id)) {
+            if (empty($this->sql_from)) {
+                // construct default SELECT and FROM clauses using parent relations
+                $this->sql_from    = null;
+                $this->sql_groupby = null;
+                $this->sql_having  = null;
+                $this->sql_union   = null;
+                $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
+                // link to MNU_ROLE for START_TASK_ID
+                if (!preg_match('/\bstart_task_id\b/i', $this->sql_select)) {
+                    $this->sql_select .= ', mnu_role.start_task_id, mnu_task.task_name AS start_task_name';
+                    $this->sql_from   .= "\nLEFT JOIN mnu_task ON (mnu_task.task_id=mnu_role.start_task_id)";
+                } // if
+            } // if
+        //} // if
+
+        return $where;
+
+    } // _cm_pre_getData
 
     // ****************************************************************************
     function _cm_validateDelete ($rowdata, $parent_table)

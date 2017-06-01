@@ -32,4 +32,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 require 'std.update1.inc';  // activate page controller
 
 ?>
-;

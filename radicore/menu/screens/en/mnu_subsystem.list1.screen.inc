@@ -12,7 +12,7 @@ $structure['main']['columns'][] = array('width' => 10, 'align' => 'right');
 
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('subsys_id' => 'ID');
-$structure['main']['fields'][] = array('subsys_desc' => 'Description');
+$structure['main']['fields'][] = array('subsys_name' => 'Name');
 $structure['main']['fields'][] = array('subsys_dir' => 'Directory');
 $structure['main']['fields'][] = array('task_prefix' => 'Task Prefix');
 $structure['main']['fields'][] = array('task_count' => 'Tasks');

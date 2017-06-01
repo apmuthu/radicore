@@ -1,5 +1,55 @@
 ﻿RADICORE for PHP - news
 
+2017-06-01, version 2.04.0
+Database changes:
+- run script dict\sql\mysql\alter_table(2017-05-01).sql in order to change the structure of the DICT database
+- run script menu\sql\mysql\alter_table(2017-05-01).sql in order to change the structure of the MENU database
+- run script dict\sql\mysql\dict.menu_export(2017-05-01).sql in order to update the contents of the MENU database
+
+You are advised to re-export all your application database details after this update.
+You are advised to re-export all your application subsystem details after this update.
+
+Other changes:
+- updated all XSL stylesheets to output web pages with DOCTYPE for HTML5 instead of XHTML.
+- modified std.table.class.inc so that if the getExtraData() method is given an associative array it will return an associative array. If it is given an indexed array it will return an indexed array.
+- modified include.library.inc so that the array_update_indexed() function will reset $fieldarray to ensure that the pointer starts at the first entry.
+- modified include.library.inc so that the formatNumber() function will exit if the input argument is not numeric.
+- modified std.validation.class.inc so that the validateNumber() will round any values for minvalue and $maxvalue to remove any unwanted decimal places.
+- updated std.multi2.inc so that the sort order used in the parent form is used for the inner entity.
+- updated std.multi3.inc to fix 'undefined variable' when returning from a child form.
+- modified dict_database_s02.class.inc so that child relationships are not exported unless the child table is in the same database as the parent.
+- updated std.datevalidation.class.inc so that it throws exceptions instead of populating $this->errors.
+- updated include.xml.php5.inc so that if a page is displayed using HTTPS then the hyperlink for the 'help' page will also use HTTPS.
+- modified the logon screen so that when switching between HTTP and HTTPS it passes the session_id via a cookie instead of in the URL.
+- updated tables in the DICT database to create consistent names for XX_NAME and XX_DESC columns:
+-- the DICT_COLUMN.COLUMN_DESC column is renamed to COLUMN_NAME varchar(80)
+-- the DICT_COLUMN.COL_COMMENT column is renamed to COLUMN_DESC text
+-- the DICT_DATABASE.DATABASE_DESC column is renamed to DATABASE_NAME varchar(80)
+-- the DICT_DATABASE.DB_COMMENT column is renamed to DATABASE_DESC text
+-- the DICT_RELATIONSHIP.RELATION_DESC column is renamed to RELATION_NAME varchar(80)
+-- the DICT_RELATIONSHIP.REL_COMMENT column is renamed to RELATION_DESC text
+-- the DICT_RELATIONSHIP.REL_TYPE column is renamed to RELATION_TYPE char(3)
+-- the DICT_TABLE.TABLE_DESC column is renamed to TABLE_NAME varchar(80)
+-- the DICT_TABLE.TBL_COMMENT column is renamed to TABLE_DESC text
+- updated tables in the MENU database to create consistent names for XX_NAME and XX_DESC columns:
+-- the MNU_ACCOUNT.ACCOUNT_DESC column is added
+-- the MNU_FAVOURITE.TASK_DESC column is renamed to TASK_NAME
+-- the MNU_PATTERN.PATTERN_DESC column is renamed to PATTERN_NAME
+-- the MNU_PATTERN.PATTERN_DESC column is added
+-- the MNU_ROLE.ROLE_DESC column is renamed to ROLE_NAME
+-- the MNU_ROLE.ROLE_DESC column is added
+-- the MNU_SAVED_SELECTION.SELECTION_DESC column is renamed to SELECTION_NAME
+-- the MNU_SUBSYSTEM.SUBSYS_DESC column is renamed to SUBSYSY_NAME
+-- the MNU_SUBSYSTEM.SUBSYS_DESC column is added
+-- the MNU_TASK.TASK_DESC column is renamed to TASK_NAME
+-- the MNU_TASK.TASK_DESC column is added
+-- the MNU_TASK_ALT.TASK_DESC column is renamed to TASK_NAME
+-- the MNU_TASK_ALT.TASK_DESC column is added
+-- the MNU_TODO.ITEM_DESC column is renamed to ITEM_NAME
+-- the MNU_TODO.ITEM_NOTES column is renamed to ITEM_DESC
+- updated the MNU_USER table to replace the pswd_chg_date and pswd_chg_time columns with a single pswd_change_datetime
+- updated the MNU_USER table to replace the logon_date and logon_time columns with a single logon_datetime
+
 2017-04-02, version 2.03.0
 Database changes:
 - run script menu\sql\mysql\alter_table(2017-02-12).sql in order to change the structure of the MENU database
@@ -31,13 +81,14 @@ Database changes:
 
 Other changes:
 - updated 'include.xml.php5.inc' so that when a LIST pattern is executed it will not read the MNU_TASK data for popup tasks in order to obtain the text for the tooltip.
-- tidied up batch processing by copying file 'std.batch.inc' from each subsystem directory and renaming it as 'include.batch.inc' in the parent directory. Updated each 'std.batch.inc' so that it refers to '../include.batch.inc'. Also copied 'batch.ini.default' and 'batch.ini' from each subsystem directory into the parent directory. This means that I can update the code in '../include.batch.inc' in just one place instead of multiple directories, and that each installation needs only one copy of 'batch.ini'.
+- tidied up batch processing by copying file 'std.batch.inc' from each subsystem directory and renaming it as 'include.batch.inc' in the parent directory. Updated each 'std.batch.inc' so that it refers to '../include.batch.inc'. Also copied 'batch.ini.default' and 'batch.ini' from each susbsystem directory into the parent directory. This means that I can update the code in '../include.batch.inc' in just one place instead of multiple directories, and that each installation needs only one copy of 'batch.ini'.
 - included file 'custom_javascript.class.inc' which will allow javascript to be specified globally for all forms and/or all fields.
 - created 'javascript' directory to contain scripts 'jquery-3.1.1.min.js' and 'jquery.cookie.min.js' which will disable a submit button when it is pressed and overlay it with a spinning red circle. This will prevent the problems caused by a user who presses a submit button more than once, thus sending multiple requests to the server.
 - modified 'include.xml.php5.inc' so that call to form_level_js() in 'custom_javascript.class.inc' is only performed once for each form.
 - updated Workflow system to allow more than two arcs on an implicit-OR-split, and removed restriction that one of the transitions must be triggered via a TIMER.
 - fixed bug which prevented putting all Radicore schemas into a single database.
 - modified 'database(output2).php' so that the PDF output shows the count of tables and relationships in each subsystem.
+
 
 2016-10-01, version 2.00.0
 Database changes:
@@ -66,15 +117,16 @@ Other changes:
 - updated SQL Server processing to avoid the error 'New transaction is not allowed because there are other threads running in the session'. Calls to $dbobject->getDataSerial() and $dbobject->fetchRow() are now done using a separate instance of the database driver. This means that if any database updates are performed after a call to ->fetchRow() the call to ->startTransaction() will no longer fail.
 - updated 'std.validation.class.inc' to disallow a '%' character from being used in a primary or unique key as this is used as the 'wildcard' character in database searches.
 - updated 'std.filepicker.list1.xsl' to allow video files as well as still images.
-- updated 'std.table.class.inc' so that when a task is initiated via append2ScriptSequence() with 'action' = 'OK' (meaning that the QUIT/CANCEL button is invalid and the task should only be terminated with a SUBMIT button) then the QUIT/CANCEL button is removed so that it cannot be pressed.
+- updated 'std.table.class.inc' so that when a task is initiated via append2ScriptSequence() with 'action' = 'OK' (meaning that the QUIT button is invalid and the task should only be terminated with a SUBMIT button) then the QUIT/CANCEL button is removed so that it cannot be pressed.
+
 
 2016-07-01, version 1.96.0
 Database changes:
 - none
 
 Other changes:
-- fixed bug in 'logon.class.inc' and 'mnu_user.class.inc' which failed to deal with passwords which had not been encrypted before being stored in the database.
-- fixed bug in 'mnu_user.class.inc' which only deal with users with the same value for rdcaccount_id as the logon user when toggling between encrypted and unencrypted passwords.
+- fixed bug in 'logon.class.inc' and mnu_user.class.inc' which failed to deal with passwords which had not been encrypted before being stored in the database.
+- fixed bug in 'mnu_user.class.inc' which which only deal with users with the same value for rdcaccount_id as the logon user when toggling between encrypted and unencrypted passwords.
 - fixed bug in 'std.validation.class.inc' which rejected a field's subtype of 'video'.
 - fixed bug in 'dml.pgsql.class.inc' regarding the error "FOR UPDATE cannot be applied to the nullable side of an outer join".
 - fixed bug in 'dml.sqlsrv.class.inc' where referencing an alias name which is the product of a previous expression has to be replaced by the original expression.

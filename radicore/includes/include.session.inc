@@ -764,57 +764,58 @@ function getTimePeriodStatus ($user_id, $role_id)
 function initSession($save_session_data=array())
 // initialise session data
 {
-    global $argv;               // command line arguments
-    global $button_text;        // button text for current task
-    global $current_menu;       // currently active menu on menu bar
-    global $current_menu_tab;   // currently active tab on menu bar
-    global $errors;             // array of error messages
-    global $instruction;        // optional instruction returned by previous script
-    global $keep_data;          // keep data in session after exit?
-    global $lock_rows;          // lock database rows during transaction? FALSE/SH/EX
-    global $lock_tables;        // lock database tables during transaction? TRUE/FALSE
-    global $log_sql_query;      // Yes/No switch
-    global $lookup;             // array of lookup values
-    global $menu_buttons;       // array of menu buttons
-    global $messages;           // optional array of messages
-    global $nav_buttons_omit;   // tasks to be removed from navigation bar
-    global $no_getdata;         // flag to ignore next getData() method
-    global $orderby;            // field names for ORDER BY clause of SELECT
-    global $orderby_seq;        // sequence ('asc' or 'desc')
-    global $page_stack;         // hierarchy of pages used in this session
-    global $pagination;         // pagination values
-    global $popup_object;       // identity of object from where popup was called
-    global $popup_offset;       // row number in current screen
-    global $report;             // name of file containing report structure
-    global $report_structure;   // report structure for PDF document
-    global $return_action;      // set when returning to previous screen
-    global $return_files;       // set when returning to previous screen
-    global $return_from;        // set when returning to previous screen
-    global $return_string;      // set when returning to previous screen (optional)
-    global $screen;             // file containing screen structure
-    global $screen_structure;   // stucture of screen for XSL stylesheet
-    global $screen_refresh;     // force screen to refresh every 'n' seconds
-    global $script_count;       // number of times this script has been called in this cycle
-    global $script_start;       // start time
-    global $script_vars;        // variables belonging to current script
-    global $scrolling;          // scrolling values
-    global $search;             // extra selection criteria from search screen
-    global $quicksearch;        // extra selection criteria from list screen
-    global $selection;          // a selection of rows made in one screen that is passed back to another
-    global $session_name;       // session name, to allow multiple sessions from the same PC
-    global $settings;           // optional array of settings
-    global $sql_orderby;        // used in ORDER BY in an sql SELECT statement
-    global $sql_orderby_seq;    // sequence ('asc' or 'desc')
-    global $subsys_dir;         // directory in which subsystem is located
-    global $task_id;            // current task identity on menu database
-    global $task_orderby;       // ORDER BY defined in task parameters
-    global $task_selection;     // selection criteria defined in task parameters
+    global $argv;                   // command line arguments
+    global $allow_responsive_gui;   // Yes/No switch
+    global $button_text;            // button text for current task
+    global $current_menu;           // currently active menu on menu bar
+    global $current_menu_tab;       // currently active tab on menu bar
+    global $errors;                 // array of error messages
+    global $instruction;            // optional instruction returned by previous script
+    global $keep_data;              // keep data in session after exit?
+    global $lock_rows;              // lock database rows during transaction? FALSE/SH/EX
+    global $lock_tables;            // lock database tables during transaction? TRUE/FALSE
+    global $log_sql_query;          // Yes/No switch
+    global $lookup;                 // array of lookup values
+    global $menu_buttons;           // array of menu buttons
+    global $messages;               // optional array of messages
+    global $nav_buttons_omit;       // tasks to be removed from navigation bar
+    global $no_getdata;             // flag to ignore next getData() method
+    global $orderby;                // field names for ORDER BY clause of SELECT
+    global $orderby_seq;            // sequence ('asc' or 'desc')
+    global $page_stack;             // hierarchy of pages used in this session
+    global $pagination;             // pagination values
+    global $popup_object;           // identity of object from where popup was called
+    global $popup_offset;           // row number in current screen
+    global $report;                 // name of file containing report structure
+    global $report_structure;       // report structure for PDF document
+    global $return_action;          // set when returning to previous screen
+    global $return_files;           // set when returning to previous screen
+    global $return_from;            // set when returning to previous screen
+    global $return_string;          // set when returning to previous screen (optional)
+    global $screen;                 // file containing screen structure
+    global $screen_structure;       // stucture of screen for XSL stylesheet
+    global $screen_refresh;         // force screen to refresh every 'n' seconds
+    global $script_count;           // number of times this script has been called in this cycle
+    global $script_start;           // start time
+    global $script_vars;            // variables belonging to current script
+    global $scrolling;              // scrolling values
+    global $search;                 // extra selection criteria from search screen
+    global $quicksearch;            // extra selection criteria from list screen
+    global $selection;              // a selection of rows made in one screen that is passed back to another
+    global $session_name;           // session name, to allow multiple sessions from the same PC
+    global $settings;               // optional array of settings
+    global $sql_orderby;            // used in ORDER BY in an sql SELECT statement
+    global $sql_orderby_seq;        // sequence ('asc' or 'desc')
+    global $subsys_dir;             // directory in which subsystem is located
+    global $task_id;                // current task identity on menu database
+    global $task_orderby;           // ORDER BY defined in task parameters
+    global $task_selection;         // selection criteria defined in task parameters
     global $transaction_has_started;    // Yes/No switch
-    global $title;              // script title
-    global $where;              // selection criteria, used in SQL query
-    global $wf_case_id;         // identifies a workflow workitem
-    global $wf_workitem_id;     // identifies a workflow workitem
-    global $XSLT_client_side;   // on/off switch for client-side XSL transformations
+    global $title;                  // script title
+    global $where;                  // selection criteria, used in SQL query
+    global $wf_case_id;             // identifies a workflow workitem
+    global $wf_workitem_id;         // identifies a workflow workitem
+    global $XSLT_client_side;       // on/off switch for client-side XSL transformations
 
     $errors   = array();
     $messages = array();
@@ -870,7 +871,9 @@ function initSession($save_session_data=array())
                 session_name($session_name);    // set the session name
             } // if
             if (isset($_GET['session_id'])) {
-                session_id($_GET['session_id']);    // set the session id
+                session_id($_GET['session_id']);        // supplied in the URL
+            } elseif (isset($_COOKIE[$session_name])) {
+                session_id($_COOKIE[$session_name]);    // supplied in a cookie
             } // if
         } // if
         if (!isset($_SESSION['pages'])) {
@@ -1237,7 +1240,7 @@ function initSession($save_session_data=array())
             } else {
                 $array = array();
             } // if
-            $location .= '?' .adjustQueryString($array);
+            $location .= '?' .adjustQueryString($array, false);
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
 
@@ -1388,7 +1391,7 @@ function initSession($save_session_data=array())
             	    $location = 'HTTPS://' .$GLOBALS['https_server']
             	                           .getParentDIR()
             	                           .$PHP_SELF;
-            	    $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], true);
+            	    $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], false);
 
                     logstuff("location: $location", __FUNCTION__, __LINE__);
 
@@ -1404,7 +1407,7 @@ function initSession($save_session_data=array())
                 $location = 'HTTP://' .$GLOBALS['http_server']
                                       .getParentDIR()
                                       .$PHP_SELF;
-                $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], true);
+                $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], false);
 
                 logstuff("location: $location", __FUNCTION__, __LINE__);
 
@@ -1457,7 +1460,7 @@ function initSession($save_session_data=array())
                 $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
             } // if
             $location .= getParentDIR().$script_id;
-            $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING']);
+            $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], false);
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
 
@@ -1745,6 +1748,13 @@ function initSession($save_session_data=array())
         } else {
             $return_files = null;
         } // if
+    } // if
+
+    if (isset($script_vars['allow_responsive_gui'])) {
+        // does this task allow for a responsive GUI? (see include.xml.php.inc for details)
+        $allow_responsive_gui = $script_vars['allow_responsive_gui'];
+    } else {
+        $allow_responsive_gui = false;
     } // if
 
     // get current scrolling information
@@ -2390,8 +2400,8 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             $script_vars['task_id_run_at_cancel_context'] = $where;
         } // if
 
-        if (!empty($task_array['task_desc'])) {
-            $script_vars['title'] = $task_array['task_desc'];
+        if (!empty($task_array['task_name'])) {
+            $script_vars['title'] = $task_array['task_name'];
         } // if
 
         //if (!empty($where)) {
@@ -2399,7 +2409,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         //} // if
 
         if (!empty($task_array['selection_fixed'])) {
-            $task_array['selection_fixed'] = str_replace('$logon_party_id', $_SESSION['logon_party_id'], $task_array['selection_fixed']);
+            $task_array['selection_fixed'] = str_replace('$logon_party_id', "'{$_SESSION['logon_party_id']}'", $task_array['selection_fixed']);
             $script_vars['selection_fixed'] = $task_array['selection_fixed'];
             if (empty($script_vars['where'])) {
             	$script_vars['where'] = $task_array['selection_fixed'];
@@ -2412,7 +2422,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
         } // if
 
         if (!empty($task_array['selection_temp'])) {
-            $task_array['selection_temp'] = str_replace('$logon_party_id', $_SESSION['logon_party_id'], $task_array['selection_temp']);
+            $task_array['selection_temp'] = str_replace('$logon_party_id', "'{$_SESSION['logon_party_id']}'", $task_array['selection_temp']);
             if (!isset($script_vars['script_count'])) {
                 // script has not been executed yet, so load initial search string
                 if (empty($script_vars['search'])) {
@@ -2499,6 +2509,12 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             $script_vars['wf_case_id']     = $wf_case_id;
             $script_vars['wf_workitem_id'] = $wf_workitem_id;
         } // if
+
+        if (is_True($task_array['allow_responsive_gui'])) {
+            $script_vars['allow_responsive_gui'] = true;
+        } else {
+            $script_vars['allow_responsive_gui'] = false;
+        } // if
     } // if
 
     if (!empty($messages)) {
@@ -2543,9 +2559,9 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     } // if
     $location .= getParentDIR().$script_id;
     if (isset($query_string)) {
-        $location .= '?' .adjustQueryString($query_string);
+        $location .= '?' .adjustQueryString($query_string, false);
 	} else {
-		$location .= '?' .adjustQueryString();
+		$location .= '?' .adjustQueryString(false, false);
     } // if
 
     logstuff("location: $location", __FUNCTION__, __LINE__);
@@ -2775,14 +2791,14 @@ function scriptRestart (&$object, $query_string=null)
 } // scriptRestart
 
 // ****************************************************************************
-function updatePageStack ($task_id, $task_desc, $script_id)
+function updatePageStack ($task_id, $task_name, $script_id)
 // update page stack with current selection.
 {
     // remove redundant entries from page stack
     $page_stack = reducePageStack($task_id);
 
     // add current selection to stack
-    $page_stack[$task_id]['button_text'] = $task_desc;
+    $page_stack[$task_id]['button_text'] = $task_name;
     $page_stack[$task_id]['script_id']   = $script_id;
 
     // save data in global area

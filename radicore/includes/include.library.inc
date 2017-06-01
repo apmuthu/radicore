@@ -153,8 +153,10 @@ if (!function_exists('adjustQueryString')) {
     {
     	if (is_array($query_string)) {
     		$array = $query_string;
-    	} else {
+    	} elseif (is_string($query_string)) {
         	parse_str($query_string, $array);
+        } else {
+            $array = array();
 		} // if
 
         $session_name = session_name();
@@ -372,6 +374,7 @@ if (!function_exists('array_update_indexed')) {
     // if they did not previously exist, which is not what I want. This version
     // will not create any items in $fieldarray which did not previously exist.
     {
+        reset($fieldarray);
         $fieldarray_key = key($fieldarray);  // does index start at 0 or 1?
 
         // transfer values from $postarray to $fieldarray
@@ -1233,7 +1236,12 @@ if (!function_exists('convertTZdate')) {
             return $date;  // no conversion possible
         } else {
             $dateobj =& RDCsingleton::getInstance('date_class');
-            $date    = $dateobj->getInternalDate($date);
+            //$date    = $dateobj->getInternalDate($date);
+            try {
+                $date = $dateobj->getInternalDate($date);
+            } catch (Exception $e) {
+                return $date;  // no conversion possible
+            } // try
         } // if
 
         if (empty($tz_in) OR empty($tz_out)) {
@@ -2593,7 +2601,7 @@ if (!function_exists('findDBName')) {
             } // if
         } // if
 
-        if (!empty($target_dbschema)) {
+        if (!empty($output) AND !empty($target_dbschema)) {
             $output .= $target_dbschema.'.';  // this is for SQL Server
         } // if
 
@@ -2784,6 +2792,10 @@ if (!function_exists('formatNumber')) {
     // format number according to current locale settings.
     {
         if (strlen($input) == 0) return;
+
+        if (!is_numeric($input)) {
+            return $input;
+        } // if
 
         $decimal_point  = $GLOBALS['localeconv']['decimal_point'];
         $thousands_sep  = $GLOBALS['localeconv']['thousands_sep'];
@@ -3467,6 +3479,7 @@ if (!function_exists('getLanguageText')) {
             } // if
         } // if
 
+        $dir = realpath($curr_dir.'/text');
         if (!is_array($array2)) {
             $array2 = array();
             // find file in a language subdirectory
@@ -3489,9 +3502,9 @@ if (!function_exists('getLanguageText')) {
     	    } // if
             if (!empty($GLOBALS['project_code'])) {
                 // now look for a file of custom messages
-                $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
-                if (!empty($dir)) {
-                    $fname = getLanguageFile('language_text.inc', $dir, true);
+                $dir2 = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+                if (!empty($dir2)) {
+                    $fname = getLanguageFile('language_text.inc', $dir2, true);
                     if ($fname) {
                         $array4 = require $fname;  // import contents of disk file
                         // custom values replace standard values
@@ -6274,18 +6287,20 @@ if (!function_exists('selection2where')) {
         } else {
             // $select is a string containing a single selection
             $where = null;
-            foreach ($pkeyarray[$select] as $fieldname => $fieldvalue) {
-                if (is_null($fieldvalue)) {
-                	$fieldvalue = ' IS NULL';
-                } else {
-                    $fieldvalue = "='".addslashes($fieldvalue)."'";
-                } // if
-                if (empty($where)) {
-                    $where = "$fieldname$fieldvalue";
-                } else {
-                    $where .= " AND $fieldname$fieldvalue";
-                } // if
-            } // foreach
+            if (strlen($select) > 0) {
+                foreach ($pkeyarray[$select] as $fieldname => $fieldvalue) {
+                    if (is_null($fieldvalue)) {
+                	    $fieldvalue = ' IS NULL';
+                    } else {
+                        $fieldvalue = "='".addslashes($fieldvalue)."'";
+                    } // if
+                    if (empty($where)) {
+                        $where = "$fieldname$fieldvalue";
+                    } else {
+                        $where .= " AND $fieldname$fieldvalue";
+                    } // if
+                } // foreach
+            } // if
         } // if
 
         return $where;

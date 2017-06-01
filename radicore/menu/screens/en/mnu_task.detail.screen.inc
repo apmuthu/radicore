@@ -8,7 +8,8 @@ $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => '25%');
 
-$structure['main']['fields'][] = array('task_id' => 'Task', 'colspan' => 3);
+$structure['main']['fields'][] = array('task_id' => 'Task ID', 'colspan' => 3);
+$structure['main']['fields'][] = array('task_name' => 'Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('task_desc' => 'Description', 'colspan' => 3);
 $structure['main']['fields'][] = array('button_text' => 'Button Text', 'colspan' => 3);
 $structure['main']['fields'][] = array('task_type' => 'Type', 'colspan' => 3);
@@ -37,23 +38,25 @@ $structure['main']['fields'][16] = array('max_execution_time' => 'Max. Execution
 $structure['main']['fields'][17] = array('task_id_run_at_end' => 'Run at End', 'colspan' => 3);
 $structure['main']['fields'][18] = array('task_id_run_at_cancel' => 'Run at Cancel', 'colspan' => 3);
 
-$structure['main']['fields'][19][] = array('label' => 'Created Date');
-$structure['main']['fields'][19][] = array('field' => 'created_date');
-$structure['main']['fields'][19][] = array('label' => 'Created By');
-$structure['main']['fields'][19][] = array('field' => 'created_user');
+$structure['main']['fields'][19] = array('allow_responsive_gui' => 'Allow Responsive GUI', 'colspan' => 3);
 
-$structure['main']['fields'][20][] = array('label' => 'Revised Date');
-$structure['main']['fields'][20][] = array('field' => 'revised_date');
-$structure['main']['fields'][20][] = array('label' => 'Revised By');
-$structure['main']['fields'][20][] = array('field' => 'revised_user');
+$structure['main']['fields'][20][] = array('label' => 'Created Date');
+$structure['main']['fields'][20][] = array('field' => 'created_date');
+$structure['main']['fields'][20][] = array('label' => 'Created By');
+$structure['main']['fields'][20][] = array('field' => 'created_user');
 
-$structure['main']['fields'][21] = array('selected' => 'Selected', 'colspan' => 3);
+$structure['main']['fields'][21][] = array('label' => 'Revised Date');
+$structure['main']['fields'][21][] = array('field' => 'revised_date');
+$structure['main']['fields'][21][] = array('label' => 'Revised By');
+$structure['main']['fields'][21][] = array('field' => 'revised_user');
+
+$structure['main']['fields'][22] = array('selected' => 'Selected', 'colspan' => 3);
 
 // this is here in case no multi-field line is displayed, as a browser bug causes
 // the output to ignore the 'colspan' attibute
-$structure['main']['fields'][22][] = array('label' => '');
-$structure['main']['fields'][22][] = array('field' => 'blank');
-$structure['main']['fields'][22][] = array('label' => '');
-$structure['main']['fields'][22][] = array('field' => 'blank');
+$structure['main']['fields'][23][] = array('label' => '');
+$structure['main']['fields'][23][] = array('field' => 'blank');
+$structure['main']['fields'][23][] = array('label' => '');
+$structure['main']['fields'][23][] = array('field' => 'blank');
 
 ?>

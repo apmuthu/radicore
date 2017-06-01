@@ -79,7 +79,7 @@ $taskOBJ = new mnu_task;
 $data = $taskOBJ->getData("task_id='{$task_id}'");
 if (!empty($data)) {
     $data = $data[0];
-    $help_desc = $data['task_desc'];
+    $help_desc = $data['task_name'];
 } else {
     $help_desc = getLanguageText($task_id);
 } // if

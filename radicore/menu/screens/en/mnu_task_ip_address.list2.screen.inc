@@ -10,7 +10,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 // identify the field names and their screen labels
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('task_id' => 'Task Id');
-$structure['outer']['fields'][] = array('task_desc' => 'Description');
+$structure['outer']['fields'][] = array('task_name' => 'Name');
 
 $structure['tables']['inner'] = 'mnu_task_ip_address';
 

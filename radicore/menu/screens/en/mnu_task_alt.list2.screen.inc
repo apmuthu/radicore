@@ -9,7 +9,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('task_id' => 'Task Id');
-$structure['outer']['fields'][] = array('task_desc' => 'Task Description');
+$structure['outer']['fields'][] = array('task_name' => 'Task Name');
 $structure['outer']['fields'][] = array('button_text' => 'Button Text');
 
 $structure['tables']['inner'] = 'mnu_task_alt';
@@ -23,7 +23,7 @@ $structure['inner']['columns'][] = array('width' => 250);
 // identify the field names and their screen labels
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('language_id' => 'Language Id');
-$structure['inner']['fields'][] = array('task_desc' => 'Task Description');
+$structure['inner']['fields'][] = array('task_name' => 'Task Name');
 $structure['inner']['fields'][] = array('button_text' => 'Button Text');
 
 ?>

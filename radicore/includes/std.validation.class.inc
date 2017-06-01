@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class validation_class
@@ -481,12 +481,18 @@ END_OF_REGEX;
 
             case 'date':
                 // value must be a date
-                if (!$internaldate = $this->dateobj->getInternalDate($fieldvalue)) {
-                    $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
-                } else {
-                    // set date to internal format
+//                if (!$internaldate = $this->dateobj->getInternalDate($fieldvalue)) {
+//                    $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
+//                } else {
+//                    // set date to internal format
+//                    $fieldvalue = $internaldate;
+//                } // if
+                try {
+                    $internaldate = $this->dateobj->getInternalDate($fieldvalue);
                     $fieldvalue = $internaldate;
-                } // if
+                } catch (Exception $e) {
+                    $this->errors[$fieldname] = "$translated_fieldname: " . $e->getMessage();
+                } // try
                 break;
 
             case 'datetime':
@@ -497,23 +503,35 @@ END_OF_REGEX;
                     // let this through
                 } else {
                     // value must be a combined date and time
-                    if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue, $fieldspec)) {
-                        $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
-                    } else {
-                        // set date to internal format
+//                    if (!$internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue, $fieldspec)) {
+//                        $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
+//                    } else {
+//                        // set date to internal format
+//                        $fieldvalue = $internaldatetime;
+//                    } // if
+                    try {
+                        $internaldatetime = $this->dateobj->getInternalDateTime($fieldvalue, $fieldspec);
                         $fieldvalue = $internaldatetime;
-                    } // if
+                    } catch (Exception $e) {
+                        $this->errors[$fieldname] = "$translated_fieldname: " . $e->getMessage();
+                    } // try
                 } // if
                 break;
 
             case 'time':
                 // value must be a time
-                if (!$internaltime = $this->dateobj->getInternaltime($fieldvalue)) {
-                    $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
-                } else {
-                    // set time to internal format
+//                if (!$internaltime = $this->dateobj->getInternaltime($fieldvalue)) {
+//                    $this->errors[$fieldname] = "$translated_fieldname: " . $this->dateobj->getErrors();
+//                } else {
+//                    // set time to internal format
+//                    $fieldvalue = $internaltime;
+//                } // if
+                try {
+                    $internaltime = $this->dateobj->getInternalTime($fieldvalue);
                     $fieldvalue = $internaltime;
-                } // if
+                } catch (Exception $e) {
+                    $this->errors[$fieldname] = "$translated_fieldname: " . $e->getMessage();
+                } // try
                 break;
 
             default:
@@ -698,6 +716,9 @@ END_OF_REGEX;
                 // adjust values to include decimal places
                 $minvalue = $minvalue / pow(10, $scale);
                 $maxvalue = $maxvalue / pow(10, $scale);
+                // remove rounding errors
+                $minvalue = number_format($minvalue, $scale, '.', '');
+                $maxvalue = number_format($maxvalue, $scale, '.', '');
             } // if
 
             // adjust min value if value is unsigned

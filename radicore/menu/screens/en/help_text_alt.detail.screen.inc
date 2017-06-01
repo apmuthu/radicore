@@ -10,7 +10,7 @@ $structure['main']['columns'][] = array('width' => '*');
 // identify the contents of each row in the table (two formats are allowed)
 // the SHORT format defines two cells per row, a label followed by a field, as in:
 $structure['main']['fields'][] = array('task_id' => 'Task Id');
-$structure['main']['fields'][] = array('task_desc' => 'Task Description');
+$structure['main']['fields'][] = array('task_name' => 'Task Name');
 $structure['main']['fields'][] = array('language_id' => 'Language Id');
 $structure['main']['fields'][] = array('help_text' => 'Help Text');
 $structure['main']['fields'][] = array('created_date' => 'Created Date');

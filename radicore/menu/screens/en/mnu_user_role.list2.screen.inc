@@ -19,12 +19,14 @@ $structure['inner']['columns'][] = array('width' => 125);
 $structure['inner']['columns'][] = array('width' => 250);
 $structure['inner']['columns'][] = array('width' => 100, 'align' => 'center');
 $structure['inner']['columns'][] = array('width' => '*');
+$structure['inner']['columns'][] = array('width' => 100, 'align' => 'center');
 
 // identify the field names and their screen labels
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('role_id' => 'Role Id');
-$structure['inner']['fields'][] = array('role_desc' => 'Description');
-$structure['inner']['fields'][] = array('is_primary' => 'Is Primary?');
-$structure['inner']['fields'][] = array('' => '');
+$structure['inner']['fields'][] = array('role_name' => 'Name');
+$structure['inner']['fields'][] = array('is_primary' => 'Primary?');
+$structure['inner']['fields'][] = array('start_task_name' => 'Start Task');
+$structure['inner']['fields'][] = array('is_external_auth_off' => 'Ext Auth Off?');
 
 ?>

@@ -1,5 +1,5 @@
 <?php
-    // file created on December 19, 2016, 6:50 am
+    // file created on May 7, 2017, 9:34 am
     
     // field specifications for table menu.mnu_todo
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -12,20 +12,19 @@
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
                                                     'type_native' => 'smallint',
-                                                    'size' => 5,
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y',
                                                     'nosearch' => 'y');
     
-    $fieldspec['item_desc']                 = array('type' => 'string',
+    $fieldspec['item_name']                 = array('type' => 'string',
                                                     'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['item_notes']                = array('type' => 'string',
+    $fieldspec['item_desc']                 = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
@@ -45,6 +44,8 @@
     
     $fieldspec['is_complete']               = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
                                                     'control' => 'radio',
@@ -67,7 +68,7 @@
                                                     'size' => 80,
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)a',
-                                                    'foreign_field' => 'task_desc',
+                                                    'foreign_field' => 'task_name',
                                                     'noedit' => 'y');
     
     $fieldspec['task_context']              = array('type' => 'string',
@@ -75,8 +76,7 @@
                                                     'noedit' => 'y');
     
     $fieldspec['object_id']                 = array('type' => 'string',
-                                                    'size' => 255,
-                                                    'noedit' => 'y');
+                                                    'size' => 255);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -118,9 +118,9 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
@@ -133,7 +133,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'due_date desc, seq_no desc';
+    $this->default_orderby                  = 'user_id, due_date, seq_no';
     
     // alternative language options 
     $this->alt_language_table               = '';

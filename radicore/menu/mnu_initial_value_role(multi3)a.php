@@ -15,7 +15,7 @@ $inner_table  = 'mnu_initial_value_role_s01';                 // name of inner t
 $screen       = 'mnu_initial_value_role.multi3a.screen.inc';  // file identifying screen structure
 
 // customise the SQL SELECT statement
-$outer_sql_select  = 'task_id, task_desc, task_type';
+$outer_sql_select  = 'task_id, task_name, task_type';
 $outer_sql_from    = 'mnu_task';
 $outer_sql_where   = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
 $outer_sql_groupby = null;
@@ -23,7 +23,7 @@ $outer_sql_having  = null;
 $outer_sql_orderby = null;
 $outer_sql_orderby_table = null;
 
-$middle_sql_select  = 'mnu_role.role_id, role_desc, global_access';
+$middle_sql_select  = 'mnu_role.role_id, role_name, global_access';
 $middle_sql_from    = 'mnu_role';
 $middle_sql_where   = null;
 $middle_sql_groupby = null;

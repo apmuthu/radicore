@@ -1,17 +1,18 @@
 <?xml version='1.0'?>
 <xsl:stylesheet version="1.0"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns="http://www.w3.org/1999/xhtml">
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
-<xsl:output method="xml" 
+<xsl:output method="html" 
             indent="yes"
+            omit-xml-declaration="yes"
+            doctype-system="about:legacy-compat"
             encoding="UTF-8"
 />
   
@@ -22,6 +23,7 @@
 
   <!-- output standard <HEAD> element into HTML document -->
   <head>
+    <meta charset="utf-8"/>
     <title><xsl:value-of select="$title"/></title>
 
     <xsl:if test="/root/params/screen_refresh">
@@ -44,10 +46,10 @@
     <xsl:for-each select="/root/javascript/head">
       <xsl:choose>
         <xsl:when test="@type='file'">
-          <script language="javascript" src="{node()}" />
+          <script src="{node()}">&#160;</script>
         </xsl:when>
         <xsl:when test="@type='code'">
-          <script language="javascript">
+          <script>
             <!--<xsl:value-of select="node()" disable-output-escaping="yes"/>-->
             <xsl:call-template name="disable-output-escaping">
               <xsl:with-param name="string" select="node()" />
@@ -99,10 +101,10 @@
   <xsl:for-each select="/root/javascript/foot">
     <xsl:choose>
       <xsl:when test="@type='file'">
-        <script language="javascript" src="{node()}" />
+        <script src="{node()}">&#160;</script>
       </xsl:when>
       <xsl:when test="@type='code'">
-        <script language="javascript">
+        <script>
           <!--<xsl:value-of select="node()" disable-output-escaping="yes"/>-->
           <xsl:call-template name="disable-output-escaping">
             <xsl:with-param name="string" select="node()" />

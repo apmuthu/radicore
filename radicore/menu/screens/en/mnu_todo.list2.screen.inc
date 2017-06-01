@@ -28,8 +28,8 @@ $structure['inner']['columns'][] = array('width' => 30);
 // identify the field names and their screen labels
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('seq_no' => 'Seq');
+$structure['inner']['fields'][] = array('item_name' => 'Item Name');
 $structure['inner']['fields'][] = array('item_desc' => 'Description');
-$structure['inner']['fields'][] = array('item_notes' => 'Notes');
 $structure['inner']['fields'][] = array('due_date' => 'Due Date');
 $structure['inner']['fields'][] = array('is_complete' => 'Done?');
 

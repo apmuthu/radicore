@@ -1,5 +1,5 @@
 <?php
-    // file created on May 24, 2016, 2:35 pm
+    // file created on May 5, 2017, 9:07 am
     
     // field specifications for table menu.mnu_task_quicksearch_alt
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -20,7 +20,7 @@
                                                     'optionlist' => 'language_id');
     
     $fieldspec['field_name']                = array('type' => 'string',
-                                                    'size' => 40,
+                                                    'size' => 80,
                                                     'required' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
@@ -67,9 +67,9 @@
                                                     'fields' => array('language_id' => 'language_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task_quicksearch',

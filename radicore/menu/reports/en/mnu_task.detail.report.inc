@@ -26,6 +26,7 @@ $structure['columns'][] = array('width' => 140, 'halign' => 'left');
 
 // format 1: one field and label per line
 $structure['body']['fields'][] = array('task_id' => 'Task Id');
+$structure['body']['fields'][] = array('task_name' => 'Name');
 $structure['body']['fields'][] = array('task_desc' => 'Description');
 $structure['body']['fields'][] = array('button_text' => 'Button Text');
 $structure['body']['fields'][] = array('task_type' => 'Task Type');
@@ -68,7 +69,7 @@ $structure['multi1']['fields'][1][] = array('label' => 'Button Text', 'width' =>
 // identify output for 2nd additional zone
 $structure['multi2']['fields'][1][] = array('field' => 'sort_seq', 'width' => 10, 'halign' => 'center');
 $structure['multi2']['fields'][1][] = array('field' => 'task_id_jnr', 'width' => 50);
-$structure['multi2']['fields'][1][] = array('field' => 'task_desc_jnr', 'width' => 90);
+$structure['multi2']['fields'][1][] = array('field' => 'task_name_jnr', 'width' => 90);
 $structure['multi2']['fields'][1][] = array('field' => 'button_text', 'width' => 40);
 
 ?>

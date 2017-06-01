@@ -1,20 +1,18 @@
 <?xml version='1.0'?>
 <xsl:stylesheet version="1.0"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns="http://www.w3.org/1999/xhtml">
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2011 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
-<xsl:output method='xml'
+<xsl:output method='html'
             indent="yes"
             omit-xml-declaration="yes"
-            doctype-public = "-//W3C//DTD XHTML 1.0 Strict//EN"
-            doctype-system = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            doctype-system="about:legacy-compat"
             encoding="UTF-8"
 />
 
@@ -126,7 +124,7 @@
 
     <xsl:for-each select="/root/mnu_favourite" >
       <!-- insert a submit button for each entry -->
-      <input class="button" type="submit" name="favourite#{task_id}" value="{task_desc}">
+      <input class="button" type="submit" name="favourite#{task_id}" value="{task_name}">
         <xsl:if test="tooltip">
           <xsl:attribute name="title">
             <xsl:value-of select="tooltip"/>
@@ -159,15 +157,15 @@
             <a href="{$script}?{$session}&amp;todo_id={seq_no}">
               <xsl:value-of select="due_date" />
               <xsl:text> - </xsl:text>
-              <xsl:value-of select="item_desc" />
+              <xsl:value-of select="item_name" />
               <xsl:text> - </xsl:text>
-              <xsl:value-of select="item_notes" />
+              <xsl:value-of select="item_desc" />
             </a>  
           </xsl:when>
           <xsl:otherwise>
             <xsl:value-of select="due_date" />
             <xsl:text> - </xsl:text>
-            <xsl:value-of select="item_desc" />
+            <xsl:value-of select="item_name" />
           </xsl:otherwise>
         </xsl:choose>
         

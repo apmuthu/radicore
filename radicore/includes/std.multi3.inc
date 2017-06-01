@@ -107,6 +107,8 @@ if (isset($script_vars['dbmiddle'])) {
     $middle_data = $dbmiddle->getFieldArray();
     // redo any configuration changes
     $middle_data = $dbmiddle->getExtraData($middle_data);
+    // restore WHERE string
+    $middle_where = $scrolling[$dbmiddle->getClassName()]['where'];
 } else {
     // create new instance for initial activation of this script
     $dbmiddle = new $middle_table;

@@ -26,7 +26,7 @@ abstract class Default_Table
     var $custom_replaces_standard = false;  // if set to TRUE in a custom method then the standard method must not be run
 
     var $dbms_engine = '';              // database engine (mysql, postgresql, oracle, etc)
-    var $dbname;                        // database name as recorded in the Data Dictionary
+    var $dbname = 'unknown';            // database name as recorded in the Data Dictionary
     var $dbname_server;                 // database name after being switched in the CONFIG.INC file
     var $dbname_old;                    // refer to _switch_database() method
     var $dbprefix = '';                 // prefix (for shared servers)
@@ -111,7 +111,7 @@ abstract class Default_Table
     var $skip_getdata = false;          // YES/NO switch
     var $skip_validation = false;       // YES/NO switch
 
-    var $tablename;                     // table name (internal)
+    var $tablename = 'unknown';         // table name (internal)
     var $transaction_level;             // transaction level
 
     var $unbuffered_query = false;      // used in getData_serial()
@@ -1757,11 +1757,12 @@ abstract class Default_Table
                                 $fieldvalue = rtrim($fieldvalue, '%');
                             } elseif (!empty($fieldvalue)) {
                                 if ($this->no_convert_timezone === FALSE AND isset($_SESSION['timezone_server'])) {
-                                    $date = $dateobj->getInternalDate($fieldvalue);
-                                    if ($date === false) {
-                                        $this->errors[$fieldname] = $dateobj->errors;
-                                        return $fieldarray;
-                                    } // if
+                                    try {
+                                        $date = $dateobj->getInternalDate($fieldvalue);
+                                    } catch (Exception $e) {
+                                        $this->errors[$fieldname] = $e->getMessage();
+                                        $date = $fieldvalue;
+                                    } // try
                                     if (isset($_SESSION['display_timezone_party']) AND is_True($_SESSION['display_timezone_party'])) {
                                         if (!empty($fieldarray['party_timezone'])) {
                                             $timezone_client = $fieldarray['party_timezone'];    // timezone of data's party
@@ -1778,11 +1779,12 @@ abstract class Default_Table
                                     $fieldvalue = convertTZdate($date, '12:00:00', $_SESSION['timezone_server'], $timezone_client);
                                 } // if
                                 // convert date from internal to external format
-                                if ($date = $dateobj->getExternalDate($fieldvalue, $_SESSION['date_format_output'])) {
+                                try {
+                                    $date = $dateobj->getExternalDate($fieldvalue, $_SESSION['date_format_output']);
                                     $fieldvalue = $date;
-                                } else {
+                                } catch (Exception $e) {
                                     // date cannot be converted, so leave as is
-                                } // if
+                                } // try
                             } // if
                         } // if
                         break;
@@ -1794,11 +1796,11 @@ abstract class Default_Table
                         } else {
                             if (!empty($fieldvalue)) {
                                 if ($this->no_convert_timezone === FALSE AND isset($_SESSION['timezone_server'])) {
-                                    $datetime = $dateobj->getInternalDateTime($fieldvalue, $fieldspec);
-                                    if ($datetime === false) {
-                                        $this->errors[$fieldname] = $dateobj->errors;
-                                        return $fieldarray;
-                                    } // if
+                                    try {
+                                        $datetime = $dateobj->getInternalDateTime($fieldvalue, $fieldspec);
+                                    } catch (Exception $e) {
+                                        $datetime = $fieldvalue;
+                                    } // try
                                     if (isset($_SESSION['display_timezone_party']) AND is_True($_SESSION['display_timezone_party'])) {
                                         if (!empty($fieldarray['party_timezone'])) {
                                             $timezone_client = $fieldarray['party_timezone'];    // timezone of data's party
@@ -1812,22 +1814,20 @@ abstract class Default_Table
                                             $timezone_client = '';
                                         } // if
                                     } // if
-                                    $fieldvalue = convertTZ($datetime, $_SESSION['timezone_server'], $timezone_client);
+                                    try {
+                                         $result = convertTZ($datetime, $_SESSION['timezone_server'], $timezone_client);
+                                         $fieldvalue = $result;
+                                    } catch (Exception $e) {
+                                        // date cannot be converted, so leave as is
+                                    } // try
                                 } // if
-                                // look for a time portion (ends with '99:99' or '99:99:99')
-                                if (preg_match($pattern1, $fieldvalue, $regs)) {
-                                    $date = $regs['date'];
-                                    $time = $regs['time'];
-                                } else {
-                                    $date = $fieldvalue;
-                                    $time = null;
-                                } // if
-                                // convert date from internal to external format
-                                if ($date = $dateobj->getExternalDate($date, $_SESSION['date_format_output'])) {
-                                    $fieldvalue = trim($date) .' ' .trim($time);
-                                } else {
+                                // convert datetime from internal to external format
+                                try {
+                                    $result = $dateobj->getExternalDateTime($fieldvalue, $_SESSION['date_format_output']);
+                                    $fieldvalue = $result;
+                                } catch (Exception $e) {
                                     // date cannot be converted, so leave as is
-                                } // if
+                                } // try
                             } // if
                         } // if
                         break;
@@ -1836,7 +1836,7 @@ abstract class Default_Table
                             // exclude the seconds portion of the time
                             $fieldvalue = substr($fieldarray[$fieldname], 0, 5);
                         } elseif (isset($fieldspec['size']) and $fieldspec['size'] == 8) {
-                            // exclude the seconds portion of the time
+                            // include the seconds portion of the time
                             $fieldvalue = substr($fieldarray[$fieldname], 0, 8);
                         } // if
                         break;
@@ -1846,10 +1846,12 @@ abstract class Default_Table
                                 $fieldvalue = ''; // value is zero, so display blank
                             } // if
                         } // if
-                        if (isset($fieldspec['zerofill']) AND isset($fieldspec['size'])) {
-                            while (strlen($fieldvalue) < $fieldspec['size']){
-                                $fieldvalue = '0'.$fieldvalue;
-                            } // while
+                        if ($GLOBALS['mode'] != 'search') {
+                            if (isset($fieldspec['zerofill']) AND isset($fieldspec['size'])) {
+                                while (strlen($fieldvalue) < $fieldspec['size']){
+                                    $fieldvalue = '0'.$fieldvalue;
+                                } // while
+                            } // if
                         } // if
                         break;
                     case 'double':
@@ -2596,8 +2598,11 @@ abstract class Default_Table
     {
         //$this->errors = array();
 
+        $associative = false;
+
         // $input may be an array or a string
         if (empty($input)) {
+            $associative   = true;
             $fieldarray[0] = array();
             $key           = 0;
             $where         = null;
@@ -2610,12 +2615,13 @@ abstract class Default_Table
             reset($input);   // fix for version 4.4.1
             if (is_string(key($input))) {
                 // associative array, so set it to row zero
+                $associative   = true;
                 $fieldarray[0] = $input;
                 $key           = 0;
             } else {
                 // indexed by row, so use it as-is
-                $fieldarray = $input;
-                $key        = key($input);
+                $fieldarray    = $input;
+                $key           = key($input);
             } // if
             // convert first row in $fieldarray to a string
             //$where = array2where($fieldarray[$key]);
@@ -2677,10 +2683,15 @@ abstract class Default_Table
             $fieldarray[0]['rdc_save_selection'] = getLanguageText('Save Selection');
         } // if
 
+        if (is_True($associative)) {
+            $fieldarray = $fieldarray[0];  //convert from indexed to associative
+        } // if
+
         // store updated $fieldarray within this object
         $this->fieldarray = $fieldarray;
 
-        return $this->getFieldArray();
+        //return $this->getFieldArray();
+        return $fieldarray;
 
     } // getExtraData
 
@@ -2766,7 +2777,7 @@ abstract class Default_Table
         $this->nameof_end_date    = '';
 
         $tablename = $this->getTableName();
-        if ($tablename != 'default') {
+        //if ($tablename != 'unknown') {
             // include table specifications generated by Data Dictionary
             $attempt = array();  // an array of possible file names
             if (!empty($GLOBALS['project_code'])) {
@@ -2793,7 +2804,7 @@ abstract class Default_Table
             if (is_bool($save_audit_logging) OR !empty($save_audit_logging)) {
                 $this->audit_logging = $save_audit_logging;
             } // if
-        } // if
+        //} // if
 
         if (!empty($_SESSION['date_format_output'])) {
             $dateobj =& RDCsingleton::getInstance('date_class');
@@ -2809,11 +2820,21 @@ abstract class Default_Table
             $this->audit_logging = false;
         } // if
 
-        if ($this->dbname != 'default') {
+        //if ($this->dbname != 'unknown') {
             if (!is_object($this->custom_processing_object)) {
                 $this->_getCustomProcessingObject();
             } // if
-        } // if
+        //} // if
+
+        // remove references to any relationships which do not exist in this installation
+        foreach ($this->child_relations as $index => $relation) {
+            if (isset($relation['subsys_dir'])) {
+                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
+                if (!file_exists($classname)) {
+                    unset($this->child_relations[$index]);
+                } // if
+            } // if
+        } // foreach
 
         return $fieldspec;
 
@@ -7152,7 +7173,7 @@ abstract class Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
-        // customisable code goes here
+        // custom code goes here
 
         return $fieldarray;
 
@@ -8213,7 +8234,7 @@ abstract class Default_Table
     function _cm_updateSelection ($selection, $replace)
     // update multiple rows in a single operation.
     {
-        if ($this->dbname == 'default' AND $this->tablename == 'default') {
+        if ($this->dbname == 'unknown' AND $this->tablename == 'unknown') {
             // possibly called from custom processing object, so do nothing
             return;
         } // if

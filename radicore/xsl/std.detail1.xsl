@@ -1,20 +1,18 @@
 <?xml version='1.0'?>
 <xsl:stylesheet version="1.0"
-                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns="http://www.w3.org/1999/xhtml">
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
 <!--
 //*****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 //*****************************************************************************
 -->
 
-<xsl:output method='xml'
+<xsl:output method='html'
             indent="yes"
             omit-xml-declaration="yes"
-            doctype-public = "-//W3C//DTD XHTML 1.0 Strict//EN"
-            doctype-system = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+            doctype-system="about:legacy-compat"
             encoding="UTF-8"
 />
 
@@ -44,26 +42,13 @@
 
     <form id="{/root/params/script_short}" method="post" action="{$script}">
   
-      <div>
-        <xsl:attribute name="class">
-          <xsl:choose>
-            <xsl:when test="$mode='logon'">logon</xsl:when>
-            <xsl:when test="$mode='recover'">recover</xsl:when>
-            <xsl:otherwise>universe</xsl:otherwise>
-          </xsl:choose>
-        </xsl:attribute>
+      <div class="universe">
   
         <!-- create help button -->
         <xsl:call-template name="help" />
   
-        <xsl:choose>
-          <xsl:when test="$mode='logon'"></xsl:when>
-          <xsl:when test="$mode='recover'"></xsl:when>
-          <xsl:otherwise>
-            <!-- create menu buttons -->
-            <xsl:call-template name="menubar" />
-          </xsl:otherwise>
-        </xsl:choose>
+        <!-- create menu buttons -->
+        <xsl:call-template name="menubar" />
   
         <div class="body">
   

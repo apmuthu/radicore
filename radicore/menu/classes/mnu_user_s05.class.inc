@@ -87,7 +87,12 @@ class mnu_user_s05 extends mnu_user
     {
         $this->skip_getdata    = true;
         $this->checkPrimaryKey = false;
-        $this->fieldarray[0]['email_addr'] = '';
+        if (is_long(key($this->fieldarray))) {
+            $fieldarray =& $this->fieldarray[0];
+        } else {
+            $fieldarray =& $this->fieldarray;
+        } // if
+        $fieldarray['email_addr'] = '';
 
         // "Enter e-mail address where password is to be sent"
         $this->messages[]      = getLanguageText('sys0150');
@@ -104,6 +109,11 @@ class mnu_user_s05 extends mnu_user
     // errors are added to $this->errors.
     {
         $rowdata = $this->_cm_changeConfig('', $rowdata);
+
+        if (empty($rowdata['email_addr'])) {
+            $this->errors['email_addr'] = getLanguageText('sys0020', 'email_addr');
+            return $rowdata;
+        } // if
 
         $email_addr = addslashes($rowdata['email_addr']);
         $data = $this->getData_raw("email_addr='$email_addr'");

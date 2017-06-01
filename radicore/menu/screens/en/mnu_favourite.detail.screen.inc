@@ -6,7 +6,7 @@ $structure['tables']['main'] = 'mnu_favourite';
 // identify the column specs - may use 'width' or 'class'
 $structure['main']['columns'][] = array('width' => '20%');
 $structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 100);
+$structure['main']['columns'][] = array('width' => 125);
 $structure['main']['columns'][] = array('width' => '*');
 
 // identify the contents of each row in the table (two formats are allowed)
@@ -22,7 +22,7 @@ $structure['main']['fields'][2][] = array('label' => 'Sort Sequence');
 $structure['main']['fields'][2][] = array('field' => 'sort_seq');
 
 $structure['main']['fields'][] = array('task_id' => 'Task Id', 'colspan' => 3);
-$structure['main']['fields'][] = array('task_desc' => 'Task Desc', 'colspan' => 3);
+$structure['main']['fields'][] = array('task_name' => 'Task Name', 'colspan' => 3);
 
 //$structure['main']['fields'][] = array('breadcrumbs' => 'Breadcrumbs', 'colspan' => 3);
 

@@ -7,6 +7,7 @@ $structure['main']['columns'][] = array('width' => '25%');
 $structure['main']['columns'][] = array('width' => '75%');
 
 $structure['main']['fields'][] = array('subsys_id' => 'ID');
+$structure['main']['fields'][] = array('subsys_name' => 'Name');
 $structure['main']['fields'][] = array('subsys_desc' => 'Description');
 $structure['main']['fields'][] = array('subsys_dir' => 'Directory');
 $structure['main']['fields'][] = array('task_prefix' => 'Task Prefix');

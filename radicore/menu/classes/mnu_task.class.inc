@@ -42,7 +42,7 @@ class mnu_task extends Default_Table
         // - an entry on mnu_role_task (if no entry exists then access is denied)
         // - mnu_role.global_access (if 'Y' this simulates an entry on mnu_role_task for everything)
         // - mnu_task.is_disabled (if 'Y' then task is temporarily disabled and cannot be used)
-        $this->sql_select = 'mnu_task.task_id, task_desc, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel'
+        $this->sql_select = 'mnu_task.task_id, task_name, button_text, task_type, pattern_id, script_id, subsys_dir, initial_passthru, selection_fixed, selection_temp, settings, order_by, is_disabled, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui'
                           .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role WHERE global_access='Y' AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS global_access"
                           .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_task.task_id AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
         // - check that IP address is valid
@@ -121,6 +121,7 @@ class mnu_task extends Default_Table
             unset($this->fieldspec['initial_passthru']['control']);
             unset($this->fieldspec['task_id_run_at_end']['control']);
             unset($this->fieldspec['task_id_run_at_cancel']['control']);
+            unset($this->fieldspec['task_desc']['control']);
 
             $prev_script = getPreviousScript();
             $pattern_id  = getPatternId($prev_script);
@@ -179,6 +180,11 @@ class mnu_task extends Default_Table
                 unset($this->fieldspec['task_id_run_at_end']['nodisplay']);
                 unset($this->fieldspec['task_id_run_at_cancel']['nodisplay']);
             } // if
+        } // if
+
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
         } // if
 
         return $fieldarray;
@@ -286,6 +292,22 @@ class mnu_task extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
+
+    // ****************************************************************************
     function _cm_getExtraData ($where, $fieldarray)
     // Perform custom processing for the getExtraData method.
     // $where = a string in SQL 'where' format.
@@ -318,7 +340,7 @@ class mnu_task extends Default_Table
 //            if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('task_id' => 'Task Id',
-//                               'task_desc' => 'Task Desc',
+//                               'task_name' => 'Task Name',
 //                               'pattern_id' => 'Pattern Id');
 //                $this->lookup_data['quicksearch_field'] = $array;
 //            } // if
@@ -369,7 +391,7 @@ class mnu_task extends Default_Table
         $array = array();
 
         $array['task_id'] = 'Total count:';
-        $array['task_desc'] = $this->count;
+        $array['task_name'] = $this->count;
 
         return $array;
 
@@ -580,9 +602,9 @@ class mnu_task extends Default_Table
             $fieldarray['script_id']  = 'menu.php';
         } // if
 
-        if (strlen($fieldarray['task_desc']) > $this->fieldspec['task_desc']['size']) {
+        if (strlen($fieldarray['task_name']) > $this->fieldspec['task_name']['size']) {
             // automatically truncate data (may come from data dictionary)
-        	$fieldarray['task_desc'] = substr($fieldarray['task_desc'], 0, $this->fieldspec['task_desc']['size']);
+        	$fieldarray['task_name'] = substr($fieldarray['task_name'], 0, $this->fieldspec['task_name']['size']);
         } // if
 
         if (strlen($fieldarray['button_text']) > $this->fieldspec['button_text']['size']) {

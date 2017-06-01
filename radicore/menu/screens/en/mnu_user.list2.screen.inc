@@ -4,8 +4,9 @@ $structure['xsl_file'] = 'std.list2.xsl';
 $structure['tables']['outer'] = 'mnu_role';
 
 $structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '*');
 
-$structure['outer']['fields'][] = array('role_desc' => 'Role');
+$structure['outer']['fields'][] = array('role_name' => 'Role');
 
 $structure['tables']['inner'] = 'mnu_user_role';
 

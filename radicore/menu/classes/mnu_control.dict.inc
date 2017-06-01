@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:36 pm
+    // file created on May 5, 2017, 9:06 am
     
     // field specifications for table menu.mnu_control
     $fieldspec['record_id']                 = array('type' => 'string',
@@ -67,6 +67,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

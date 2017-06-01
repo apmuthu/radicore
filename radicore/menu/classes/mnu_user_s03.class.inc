@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_user.class.inc';
 class mnu_user_s03 extends mnu_user
@@ -16,6 +16,14 @@ class mnu_user_s03 extends mnu_user
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        // create 'old_password' field
+        if (!isset($fieldarray['old_password'])) $fieldarray['old_password'] = '';
+        $this->fieldspec['old_password']['type'] = 'string';
+        $this->fieldspec['old_password']['size'] = $this->fieldspec['user_password']['size'];
+        $this->fieldspec['old_password']['password'] = 'y';
+        $this->fieldspec['old_password']['required'] = 'y';
+        $this->fieldspec['old_password']['nondb']    = 'y';
+
         // create 'new_password' field
         if (!isset($fieldarray['new_password1'])) $fieldarray['new_password1'] = '';
         $this->fieldspec['new_password1']['type'] = 'string';
@@ -38,6 +46,11 @@ class mnu_user_s03 extends mnu_user
         // do nt allow changes to user_name
         $this->fieldspec['user_name']['noedit'] = 'y';
 
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -46,8 +59,8 @@ class mnu_user_s03 extends mnu_user
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
-        if ($fieldarray['user_password'] != '44magnum357') {
-            $this->errors['user_password'] = getLanguageText('e0029'); // 'Password is invalid';
+        if ($fieldarray['old_password'] != '44magnum357') {
+            $this->errors['old_password'] = getLanguageText('e0029'); // 'Password is invalid';
             return $fieldarray;
         } // if
 
@@ -77,6 +90,24 @@ class mnu_user_s03 extends mnu_user
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        // this is here to override the method in the parent class
+
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
+
+    // ****************************************************************************
     function _cm_post_getData ($rows, &$where)
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
@@ -95,6 +126,26 @@ class mnu_user_s03 extends mnu_user
         $_SESSION['message'][] = getLanguageText('e0032'); // 'Password has been reset';
 
     } // _cm_post_updateRecord
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($fieldarray)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        //$this->row_locks = 'SH';    // shared
+        //$this->row_locks = 'EX';    // exclusive
+        //$this->row_locks_supp = '?' // DBMS-specific
+
+        // do not reuse existing customised SELECT statement in _dml_ReadBeforeUpdate() method
+        //$this->reuse_previous_select = false;
+
+        // user_password is not used in this task
+        unset($fieldarray['user_password']);
+        $this->fieldspec['user_password']['nodisplay'] = 'y';
+
+        return $fieldarray;
+
+    } // _cm_pre_updateRecord
 
 // ****************************************************************************
 } // end class

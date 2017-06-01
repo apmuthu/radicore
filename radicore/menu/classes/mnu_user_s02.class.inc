@@ -41,6 +41,11 @@ class mnu_user_s02 extends mnu_user
         // do not allow changes to user_name
         $this->fieldspec['user_name']['noedit'] = 'y';
 
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
+        } // if
+
         return $fieldarray;
 
     } // _cm_changeConfig
@@ -50,10 +55,10 @@ class mnu_user_s02 extends mnu_user
     // perform validation that is common to INSERT and UPDATE.
     {
         // input password must not be same as original password
-        if ($fieldarray['new_password1'] == $fieldarray['user_password']) {
-            $this->errors['new_password1'] = getLanguageText('e0030'); // 'New password must not match current password';
-            return $fieldarray;
-        } // if
+//        if ($fieldarray['new_password1'] == $fieldarray['user_password']) {
+//            $this->errors['new_password1'] = getLanguageText('e0030'); // 'New password must not match current password';
+//            return $fieldarray;
+//        } // if
 
         // validate new password
         $new_password = $fieldarray['new_password1'];
@@ -78,6 +83,22 @@ class mnu_user_s02 extends mnu_user
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
+            } // if
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
 // ****************************************************************************
 } // end class

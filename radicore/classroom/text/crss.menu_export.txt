@@ -1,4 +1,4 @@
-// file created on April 22, 2014, 5:19 am
+// file created on May 5, 2017, 9:23 am
     
 // menu details for subsystem CRSS
 $array['Classes']                                 = 'Classes';
@@ -31,5 +31,46 @@ $array['Students']                                = 'Students';
 $array['Update']                                  = 'Update';
 
 // column details for subsystem CRSS
+$array['class_id']                                = 'class_id';
+$array['class_name']                              = 'class_name';
+$array['class_notes']                             = 'class_notes';
+$array['conflict_id']                             = 'conflict_id';
+$array['conflict_type']                           = 'conflict_type';
+$array['created_date']                            = 'created_date';
+$array['created_user']                            = 'created_user';
+$array['day_no']                                  = 'day_no';
+$array['end_time']                                = 'end_time';
+$array['first_name']                              = 'first_name';
+$array['initials']                                = 'initials';
+$array['is_active']                               = 'is_active';
+$array['is_valid']                                = 'is_valid';
+$array['last_day_no']                             = 'last_day_no';
+$array['last_name']                               = 'last_name';
+$array['lesson_id']                               = 'lesson_id';
+$array['lesson_id1']                              = 'lesson_id1';
+$array['lesson_id2']                              = 'lesson_id2';
+$array['lesson_name']                             = 'lesson_name';
+$array['lesson_notes']                            = 'lesson_notes';
+$array['lesson_short_name']                       = 'lesson_short_name';
+$array['revised_date']                            = 'revised_date';
+$array['revised_user']                            = 'revised_user';
+$array['room_capacity']                           = 'room_capacity';
+$array['room_desc']                               = 'room_desc';
+$array['room_id']                                 = 'room_id';
+$array['room_notes']                              = 'room_notes';
+$array['schedule_desc']                           = 'schedule_desc';
+$array['schedule_errors']                         = 'schedule_errors';
+$array['schedule_id']                             = 'schedule_id';
+$array['schedule_notes']                          = 'schedule_notes';
+$array['seq_no']                                  = 'seq_no';
+$array['start_time']                              = 'start_time';
+$array['student_id']                              = 'student_id';
+$array['student_notes']                           = 'student_notes';
+$array['subject_id']                              = 'subject_id';
+$array['subject_name']                            = 'subject_name';
+$array['teacher_id']                              = 'teacher_id';
+$array['teacher_notes']                           = 'teacher_notes';
+$array['title']                                   = 'title';
+$array['year']                                    = 'year';
 
 // finished

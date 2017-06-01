@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user extends Default_Table
@@ -28,26 +28,6 @@ class mnu_user extends Default_Table
         $this->fieldspec = $this->getFieldSpec_original();
 
     } // __construct
-
-    // ****************************************************************************
-    function getFieldSpec_original ()
-    // set the specifications for this database table.
-    {
-        $fieldspec = parent::getFieldSpec_original();
-
-        // remove references to any relationships which do not exist in this installation
-        foreach ($this->child_relations as $index => $relation) {
-            if (isset($relation['subsys_dir'])) {
-                $classname = '../'. $relation['subsys_dir'] .'/classes/' .$relation['child'] .'.class.inc';
-                if (!file_exists($classname)) {
-                    unset($this->child_relations[$index]);
-                } // if
-            } // if
-        } // foreach
-
-        return $fieldspec;
-
-    } // getFieldSpec_original
 
     // ****************************************************************************
     function switchPasswords ($switch)
@@ -177,7 +157,8 @@ class mnu_user extends Default_Table
         $logon_password = addslashes($logon_password);
 
         // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_chg_date, force_pswd_chg, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id ';
+        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_change_datetime, force_pswd_chg, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id '
+                          . ", CASE WHEN mnu_user.allow_responsive_gui='Y' THEN 'Y' ELSE mnu_role.allow_responsive_gui END AS allow_responsive_gui";
         $this->sql_from   = 'mnu_user'
                           ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
                           .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
@@ -199,7 +180,7 @@ class mnu_user extends Default_Table
         } // if
         $fieldarray = $this->getData_raw($where);
         if ($this->numrows < 1) {
-            $this->errors['user_password'] = getLanguageText('sys0142'); // 'Security violation';
+            $this->errors[] = getLanguageText('sys0142'); // 'Security violation';
             return $logonarray;
         } // if
         $fieldarray = $fieldarray[0];
@@ -334,14 +315,27 @@ class mnu_user extends Default_Table
     // $where = a string in SQL 'where' format.
     // $fieldarray = the contents of $where as an array.
     {
+        $pattern_id = getPatternId();
+
+        $this->fieldspec['user_password']['nodisplay'] = 'y';  // this field is usually hidden
+        if (is_True($this->initiated_from_controller)) {
+            if (preg_match('/^(ENQ1)$/i', $pattern_id)) {
+                if ($this->pswd_hidden) {
+                    // password is hidden
+                } else {
+                    // password is visible but not editable
+                    unset($this->fieldspec['user_password']['nodisplay']);
+                    $this->fieldspec['user_password']['noedit'] = 'y';
+                } // if
+            } // if
+        } // if
+
         global $mode;
         if ($mode == 'search') {
             // remove certain 'noedit' flags
-            unset($this->fieldspec['pswd_chg_date']['noedit']);
-            unset($this->fieldspec['pswd_chg_time']['noedit']);
+            unset($this->fieldspec['pswd_change_datetime']['noedit']);
             unset($this->fieldspec['pswd_count']['noedit']);
-            unset($this->fieldspec['logon_date']['noedit']);
-            unset($this->fieldspec['logon_time']['noedit']);
+            unset($this->fieldspec['logon_datetime']['noedit']);
             $this->fieldspec['user_password']['nodisplay'] = 'y';
             unset($this->fieldspec['ip_address']['noedit']);
             unset($this->fieldspec['force_pswd_chg']['noedit']);
@@ -354,14 +348,12 @@ class mnu_user extends Default_Table
 
         } elseif ($mode == 'insert' AND is_True($this->initiated_from_controller)) {
             // these fields should not appear on INSERT screen
-            $this->fieldspec['pswd_chg_date']['nodisplay'] = 'y';
-            $this->fieldspec['pswd_chg_time']['nodisplay'] = 'y';
-            $this->fieldspec['pswd_count']['nodisplay']    = 'y';
-            $this->fieldspec['in_use']['nodisplay']        = 'y';
-            $this->fieldspec['is_disabled']['nodisplay']   = 'y';
-            $this->fieldspec['logon_date']['nodisplay']    = 'y';
-            $this->fieldspec['logon_time']['nodisplay']    = 'y';
-            $this->fieldspec['ip_address']['nodisplay']    = 'y';
+            $this->fieldspec['pswd_change_datetime']['nodisplay'] = 'y';
+            $this->fieldspec['pswd_count']['nodisplay']           = 'y';
+            $this->fieldspec['in_use']['nodisplay']               = 'y';
+            $this->fieldspec['is_disabled']['nodisplay']          = 'y';
+            $this->fieldspec['logon_datetime']['nodisplay']       = 'y';
+            $this->fieldspec['ip_address']['nodisplay']           = 'y';
             // add field which will be written to the MNU_USER_ROLE table
             $this->fieldspec['role_id']     = array('type' => 'string',
                                                     'size' => 16,
@@ -370,13 +362,13 @@ class mnu_user extends Default_Table
                                                     //'nondb' => 'y',
                                                     'optionlist' => 'role_id');
         } else {
-            if ($this->pswd_hidden) {
-            	// not insert mode, so cannot edit this field
-                $this->fieldspec['user_password']['nodisplay'] = 'y';
-            } else {
-                // not insert mode, so cannot edit this field
-                $this->fieldspec['user_password']['noedit'] = 'y';
-            } // if
+//            if ($this->pswd_hidden) {
+//            	// not insert mode, so cannot edit this field
+//                $this->fieldspec['user_password']['nodisplay'] = 'y';
+//            } else {
+//                // not insert mode, so cannot edit this field
+//                $this->fieldspec['user_password']['noedit'] = 'y';
+//            } // if
             $this->fieldspec['force_pswd_chg']['noedit']    = 'y';
         } // if
 
@@ -407,6 +399,11 @@ class mnu_user extends Default_Table
             $this->fieldspec['user_timezone']['nodisplay'] = 'y';
         } // if
 
+        if (!is_dir('../responsive-web/xsl')) {
+            // directory does not exist, so remove this field
+            unset($this->fieldspec['allow_responsive_gui']);
+        } // if
+
 //        if (empty($where) AND !empty($fieldarray)) {
 //            if (!isset($fieldarray['abc'])) $fieldarray['abc'] = 'anything';
 //        } // if
@@ -419,6 +416,9 @@ class mnu_user extends Default_Table
     function _cm_commonValidation ($fieldarray, $originaldata)
     // perform validation that is common to INSERT and UPDATE.
     {
+        // by default every text field is to be trimmed
+        $this->fields_not_for_trimming = array();
+
         if ($fieldarray['start_date'] > $fieldarray['end_date']) {
             // 'Start Date cannot be later than End Date';
             $this->errors['start_date'] = getLanguageText('sys0190');
@@ -466,8 +466,6 @@ class mnu_user extends Default_Table
                 } else {
                     // replace plain text string with encrypted version
                     $fieldarray['user_password'] = $encrypted_string;
-                    // insert dummy field to say that password has been encrypted
-                    $fieldarray['pswd_is_encrypted'] = true;
                     $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
                 } // if
             } // if
@@ -476,9 +474,8 @@ class mnu_user extends Default_Table
 		if (isset($fieldarray['user_password'])) {
 		    if ($fieldarray['user_password'] != $originaldata['user_password']) {
             	// set change date and time, and reset count
-            	$fieldarray['pswd_chg_date'] = getTimeStamp('date');
-            	$fieldarray['pswd_chg_time'] = getTimeStamp('time');
-            	$fieldarray['pswd_count']    = 0;
+            	$fieldarray['pswd_change_datetime'] = getTimeStamp();
+            	$fieldarray['pswd_count']           = 0;
         	} // if
 		} // if
 
@@ -497,8 +494,12 @@ class mnu_user extends Default_Table
     // perform custom formatting before values are shown to the user.
     // Note: $css_array is passed BY REFERENCE as it may be modified.
     {
-        if (is_True($this->pswd_encrypt)) {
-        	if (isset($fieldarray['pswd_is_encrypted']) AND is_True($fieldarray['pswd_is_encrypted'])) {
+        if (isset($this->fieldspec['user_password']['nodisplay'])) {
+            // do not display the password
+            unset($fieldarray['user_password']);
+        } else {
+            // display the password
+            if (is_True($this->pswd_encrypt)) {
             	// decrypt the password
                 if (!empty($fieldarray['user_id']) AND !empty($fieldarray['user_password'])) {
                     $crypt_obj =& RDCsingleton::getInstance('encryption_class');
@@ -509,24 +510,13 @@ class mnu_user extends Default_Table
                     	$this->errors['user_password'] = $crypt_obj->errors[0];
                     } // if
                 } // if
-                unset($fieldarray['pswd_is_encrypted']);
             } // if
         } // if
 
-        if (isset($_SESSION['timezone_server']) AND isset($_SESSION['timezone_client'])) {
-            if (isset($fieldarray['logon_date']) AND isset($fieldarray['logon_time'])) {
-                $dateobj =& RDCsingleton::getInstance('date_class');
-                // combine 'date' and 'time' fields before performing timezone conversion
-                $date = $fieldarray['logon_date'];
-                $time = $fieldarray['logon_time'];
-                $fieldarray['logon_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-                $fieldarray['logon_date'] = $dateobj->getExternalDate($fieldarray['logon_date']);
-                $fieldarray['logon_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-                $date = $fieldarray['pswd_chg_date'];
-                $time = $fieldarray['pswd_chg_time'];
-                $fieldarray['pswd_chg_date'] = convertTZdate($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
-                $fieldarray['pswd_chg_date'] = $dateobj->getExternalDate($fieldarray['pswd_chg_date']);
-                $fieldarray['pswd_chg_time'] = convertTZtime($date, $time, $_SESSION['timezone_server'], $_SESSION['timezone_client']);
+        if (isset($fieldarray['allow_responsive_gui'])) {
+            if (!isset($this->fieldspec['allow_responsive_gui'])) {
+                // fieldspec does not exist, so remove field from output
+                unset($fieldarray['allow_responsive_gui']);
             } // if
         } // if
 
@@ -748,12 +738,7 @@ class mnu_user extends Default_Table
     // perform custom processing after database record(s) are retrieved.
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
-        if (is_True($this->pswd_encrypt)) {
-        	foreach ($rows as $row => $rowdata) {
-                // insert dummy field to say that data is currently encrypted
-            	$rows[$row]['pswd_is_encrypted'] = true;
-            } // foreach
-        } // if
+        // custom code goes here
 
         return $rows;
 
@@ -797,9 +782,9 @@ class mnu_user extends Default_Table
             $this->sql_union   = null;
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
             // retrieve one or more roles from MNU_USER_ROLE
-            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_desc ORDER BY is_primary DESC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id) AS role_list)";
+            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_name ORDER BY is_primary DESC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id) AS role_list)";
             // retrieve primary role from MNU_USER_ROLE
-            $this->sql_select .= ", (SELECT role_desc FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND is_primary='Y' LIMIT 1) AS role_id";
+            $this->sql_select .= ", (SELECT role_name FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND is_primary='Y' LIMIT 1) AS role_id";
         } // if
 
         if (!empty($this->sql_search)) {
@@ -821,14 +806,6 @@ class mnu_user extends Default_Table
     // perform custom processing before database record is inserted.
     // if anything is placed in $this->errors the insert will be terminated.
     {
-        if (isset($rowdata['user_password'])) {
-            // if pswd is being input it has not been encrypted yet
-        	unset($rowdata['pswd_is_encrypted']);
-            $this->fields_not_for_trimming = array();  // pswd is plain text, so trim() it
-        } else {
-            $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
-        } // if
-
         if (empty($rowdata['email_addr'])) {
             // create default value as SQLSRV does not allow duplicate keys containing NULL
             $rowdata['email_addr'] = $rowdata['user_id'].'@null.null';
@@ -843,18 +820,7 @@ class mnu_user extends Default_Table
     // perform custom processing before database record is updated.
     // errors are added to $this->errors.
     {
-        if (isset($rowdata['user_password'])) {
-            $spec = $this->fieldspec['user_password'];
-            if (isset($spec['noedit']) or isset($spec['nodisplay'])) {
-            	// not being input by user, so leave alone
-                $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
-            } else {
-                // if pswd is being input it has not been encrypted yet
-            	unset($rowdata['pswd_is_encrypted']);
-                $this->fields_not_for_trimming = array();  // pswd is plain text, so trim() it
-            } // if
-
-        } // if
+        // custom code goes here
 
         return $rowdata;
 

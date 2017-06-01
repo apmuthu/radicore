@@ -1,5 +1,5 @@
 <?php
-    // file created on April 20, 2014, 6:18 am
+    // file created on May 21, 2017, 3:24 pm
     
     // field specifications for table menu.mnu_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -8,9 +8,15 @@
                                                     'required' => 'y',
                                                     'uppercase' => 'y');
     
-    $fieldspec['role_desc']                 = array('type' => 'string',
-                                                    'size' => 30,
+    $fieldspec['role_name']                 = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
+    
+    $fieldspec['role_desc']                 = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 80,
+                                                    'rows' => 5);
     
     $fieldspec['start_task_id']             = array('type' => 'string',
                                                     'size' => 80,
@@ -18,10 +24,11 @@
                                                     'lowercase' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)b',
-                                                    'foreign_field' => 'start_task_desc');
+                                                    'foreign_field' => 'start_task_name');
     
     $fieldspec['global_access']             = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -30,6 +37,16 @@
     
     $fieldspec['is_external_auth_off']      = array('type' => 'boolean',
                                                     'type_native' => 'char',
+                                                    'required' => 'y',
+                                                    'default' => 'N',
+                                                    'true' => 'Y',
+                                                    'false' => 'N',
+                                                    'control' => 'radio',
+                                                    'optionlist' => 'boolean');
+    
+    $fieldspec['allow_responsive_gui']      = array('type' => 'boolean',
+                                                    'type_native' => 'char',
+                                                    'required' => 'y',
                                                     'default' => 'N',
                                                     'true' => 'Y',
                                                     'false' => 'N',
@@ -95,23 +112,11 @@
                                                     'type' => 'RES',
                                                     'fields' => array('role_id' => 'role_id'));
     
-    $this->child_relations[]                = array('child' => 'wf_transition',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
-                                                    'type' => 'RES',
-                                                    'fields' => array('role_id' => 'role_id'));
-    
-    $this->child_relations[]                = array('child' => 'wf_workitem',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
-                                                    'type' => 'RES',
-                                                    'fields' => array('role_id' => 'role_id'));
-    
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc AS start_task_desc',
+                                                    'parent_field' => 'task_name AS start_task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('start_task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

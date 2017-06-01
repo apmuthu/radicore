@@ -1,5 +1,5 @@
 <?php
-    // file created on May 21, 2016, 10:28 am
+    // file created on May 12, 2017, 5:07 pm
     
     // field specifications for table dict.dict_column
     $fieldspec['database_id']               = array('type' => 'string',
@@ -31,15 +31,14 @@
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y',
                                                     'nosearch' => 'y');
     
-    $fieldspec['column_desc']               = array('type' => 'string',
-                                                    'size' => 255,
+    $fieldspec['column_name']               = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
     
-    $fieldspec['col_comment']               = array('type' => 'string',
+    $fieldspec['column_desc']               = array('type' => 'string',
                                                     'size' => 65535,
                                                     'control' => 'multiline',
                                                     'cols' => 70,
@@ -63,13 +62,13 @@
     
     $fieldspec['user_size']                 = array('type' => 'integer',
                                                     'type_native' => 'bigint',
-                                                    'size' => 21,
+                                                    'size' => 20,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.84467440737096e19);
     
     $fieldspec['col_maxsize']               = array('type' => 'integer',
                                                     'type_native' => 'bigint',
-                                                    'size' => 21,
+                                                    'size' => 20,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.84467440737096e19,
                                                     'noedit' => 'y');
@@ -118,13 +117,13 @@
     
     $fieldspec['col_precision']             = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255);
     
     $fieldspec['col_scale']                 = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255);
     
@@ -205,7 +204,7 @@
     
     $fieldspec['image_height']              = array('type' => 'integer',
                                                     'type_native' => 'smallint',
-                                                    'size' => 6,
+                                                    'size' => 5,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535);
     
@@ -265,13 +264,13 @@
     
     $fieldspec['multi_cols']                = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255);
     
     $fieldspec['multi_rows']                = array('type' => 'integer',
                                                     'type_native' => 'tinyint',
-                                                    'size' => 4,
+                                                    'size' => 3,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255);
     
@@ -337,16 +336,16 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'dict_table',
-                                                    'parent_field' => 'table_desc',
+                                                    'parent_field' => 'table_name',
                                                     'fields' => array('database_id' => 'database_id',
                                                                       'table_id' => 'table_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_task',
                                                     'dbname' => 'menu',
                                                     'subsys_dir' => 'menu',
-                                                    'parent_field' => 'task_desc',
+                                                    'parent_field' => 'task_name',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     // determines if database updates are recorded in an audit log 

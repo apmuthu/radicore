@@ -1,9 +1,10 @@
 <?php
-    // file created on September 7, 2014, 9:05 am
+    // file created on May 5, 2017, 9:06 am
     
     // field specifications for table menu.mnu_account
     $fieldspec['rdcaccount_id']             = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'type_native' => 'int',
+                                                    'size' => 11,
                                                     'auto_increment' => 'y',
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
@@ -12,11 +13,18 @@
                                                     'noedit' => 'y');
     
     $fieldspec['account_name']              = array('type' => 'string',
-                                                    'size' => 255,
+                                                    'size' => 80,
                                                     'required' => 'y');
     
+    $fieldspec['account_desc']              = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 80,
+                                                    'rows' => 5);
+    
     $fieldspec['rdcversion']                = array('type' => 'integer',
-                                                    'size' => 10,
+                                                    'type_native' => 'int',
+                                                    'size' => 11,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 4294967295,
                                                     'required' => 'y',
@@ -35,6 +43,7 @@
     
     $fieldspec['created_user']              = array('type' => 'string',
                                                     'size' => 16,
+                                                    'required' => 'y',
                                                     'default' => 'UNKNOWN',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y',
@@ -60,24 +69,6 @@
     
     // child relationship details 
     $this->child_relations[]                = array('child' => 'mnu_user',
-                                                    'type' => 'RES',
-                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
-    
-    $this->child_relations[]                = array('child' => 'wf_case',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
-                                                    'type' => 'RES',
-                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
-    
-    $this->child_relations[]                = array('child' => 'wf_token',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
-                                                    'type' => 'RES',
-                                                    'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
-    
-    $this->child_relations[]                = array('child' => 'wf_workitem',
-                                                    'dbname' => 'workflow',
-                                                    'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('rdcaccount_id' => 'rdcaccount_id'));
     

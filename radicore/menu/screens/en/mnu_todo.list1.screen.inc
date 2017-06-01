@@ -14,8 +14,8 @@ $structure['main']['columns'][] = array('width' => 30);
 // identify the field names and their screen labels
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('user_id' => 'User Id');
+$structure['main']['fields'][] = array('item_name' => 'Item Name');
 $structure['main']['fields'][] = array('item_desc' => 'Description');
-$structure['main']['fields'][] = array('item_notes' => 'Notes');
 $structure['main']['fields'][] = array('due_date' => 'Due Date');
 $structure['main']['fields'][] = array('is_complete' => 'Done?');
 

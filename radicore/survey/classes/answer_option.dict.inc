@@ -1,5 +1,5 @@
 <?php
-    // file created on December 1, 2015, 4:07 pm
+    // file created on April 17, 2017, 1:01 pm
     
     // field specifications for table survey.answer_option
     $fieldspec['survey_id']                 = array('type' => 'integer',
@@ -55,7 +55,7 @@
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y',
                                                     'noedit' => 'y',
                                                     'nosearch' => 'y');

@@ -5,7 +5,7 @@
 //*****************************************************************************
 
 $table_id = 'mnu_user_role';                    // table id
-$screen   = 'mnu_user_role.detail.screen.inc';  // file identifying screen structure
+$screen   = 'mnu_user_role.search.screen.inc';  // file identifying screen structure
 
 $sql_search_table = null;			// name under which details will be saved
 

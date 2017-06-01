@@ -31,7 +31,7 @@ class mnu_todo extends Default_Table
     {
         if ($GLOBALS['mode'] == 'list') {
         	// change field from multi-line to ordinary text
-        	unset($this->fieldspec['item_notes']['control']);
+        	unset($this->fieldspec['item_desc']['control']);
         } // if
 
         if ($GLOBALS['mode'] == 'search') {
@@ -81,13 +81,18 @@ class mnu_todo extends Default_Table
         if (!preg_match('/(search|insert|update)/i', $GLOBALS['mode'])) {
         	if (!is_True($fieldarray['is_complete'])) {
                 $today = getTimeStamp('date');
-                $dateobj = RDCsingleton::getInstance('date_class');
-                $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
-                if ($due_date < $today) {
-                    foreach ($this->fieldspec as $field => $specs) {
-                    	$css_array[$field] = 'overdue';
-                    } // foreach
-                } // if
+                $dateobj =& RDCsingleton::getInstance('date_class');
+                //$due_date = $dateobj->getInternalDate($fieldarray['due_date']);
+                try {
+                    $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
+                    if ($due_date < $today) {
+                        foreach ($this->fieldspec as $field => $specs) {
+                            $css_array[$field] = 'overdue';
+                        } // foreach
+                    } // if
+                } catch (Exception $e) {
+                    // date conversion failed (should not happen)
+                } // try
             } // if
         } // if
 
@@ -121,7 +126,7 @@ class mnu_todo extends Default_Table
 //        	if (!array_key_exists('quicksearch_field', $this->lookup_data)) {
 //                // set list of field names for QuickSearch option
 //                $array = array('user_id' => 'User Id',
-//                               'item_desc' => 'Item Desc');
+//                               'item_name' => 'Item Name');
 //                $this->lookup_data['quicksearch_field'] = $array;
 //            } // if
 //        } // if
@@ -166,7 +171,7 @@ class mnu_todo extends Default_Table
         		$new_data                = $rowdata;
         		$new_data['is_complete'] = 'N';
 
-        		$dateobj = RDCsingleton::getInstance('date_class');
+        		$dateobj =& RDCsingleton::getInstance('date_class');
                 switch ($rowdata['repeat_unit']) {
                 	case 'D':  // days
                 		$new_date = $dateobj->addDays($rowdata['due_date'], $rowdata['repeat_interval']);
@@ -216,9 +221,9 @@ class mnu_todo extends Default_Table
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
             if ($GLOBALS['mode'] == 'list') {
             	// for LIST screens reduce length of notes to 100 characters
-            	$this->sql_select .= ", CONCAT(SUBSTR(item_notes, 1, 100),' ...') AS item_notes";
-            	// fix for oracle: will not allow menu_todo.* (which contains item_notes) plus item_notes (again)
-            	$replace = 'mnu_todo.user_id, mnu_todo.seq_no, mnu_todo.item_desc, mnu_todo.due_date, mnu_todo.is_complete';
+            	$this->sql_select .= ", CONCAT(SUBSTR(item_desc, 1, 100),' ...') AS item_desc";
+            	// fix for oracle: will not allow menu_todo.* (which contains item_desc) plus item_desc (again)
+            	$replace = 'mnu_todo.user_id, mnu_todo.seq_no, mnu_todo.item_name, mnu_todo.due_date, mnu_todo.is_complete';
             	$this->sql_select = str_replace('mnu_todo.*', $replace, $this->sql_select);
             } // if
         } // if
@@ -234,12 +239,16 @@ class mnu_todo extends Default_Table
         require_once 'std.datevalidation.class.inc';
         $dateobj =& RDCsingleton::getInstance('date_class');
 
-        $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
-
-        if ($due_date <= getTimeStamp ('date')) {
-            // 'Due Date must be in the future'
-        	$this->errors['due_date'] = $this->getLanguageText('e0033');
-        } // if
+        //$due_date = $dateobj->getInternalDate($fieldarray['due_date']);
+        try {
+            $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
+            if ($due_date <= getTimeStamp ('date')) {
+                // 'Due Date must be in the future'
+                $this->errors['due_date'] = $this->getLanguageText('e0033');
+            } // if
+        } catch (Exception $e) {
+            // date conversion failed (should not happen)
+        } // try
 
         return $fieldarray;
 

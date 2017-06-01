@@ -1,5 +1,5 @@
 <?php
-    // file created on April 24, 2014, 6:41 am
+    // file created on May 7, 2017, 9:23 am
     
     // field specifications for table menu.mnu_favourite
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -14,25 +14,25 @@
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['task_id']                   = array('type' => 'string',
                                                     'size' => 80,
+                                                    'required' => 'y',
                                                     'control' => 'popup',
                                                     'task_id' => 'mnu_task(popup1)a',
                                                     'foreign_field' => 'task_id');
     
-    $fieldspec['task_desc']                 = array('type' => 'string',
-                                                    'size' => 80);
+    $fieldspec['task_name']                 = array('type' => 'string',
+                                                    'size' => 80,
+                                                    'required' => 'y');
     
     $fieldspec['sort_seq']                  = array('type' => 'integer',
                                                     'type_native' => 'smallint',
                                                     'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
-                                                    'required' => 'y',
-                                                    'default' => '0');
+                                                    'required' => 'y');
     
     $fieldspec['breadcrumbs']               = array('type' => 'string',
                                                     'size' => 4000,
@@ -79,13 +79,15 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_task',
-                                                    'parent_field' => 'task_desc AS task_desc_original',
+                                                    'parent_field' => 'task_name AS task_name_original',
                                                     'alt_language_table' => 'mnu_task_alt',
-                                                    'alt_language_cols' => 'task_desc, button_text',
+                                                    'alt_language_cols' => 'task_name, task_desc, button_text',
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->parent_relations[]               = array('parent' => 'mnu_user',
                                                     'parent_field' => 'user_name',
+                                                    'alt_language_table' => 'mnu_user_alt',
+                                                    'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));
     
     // determines if database updates are recorded in an audit log 

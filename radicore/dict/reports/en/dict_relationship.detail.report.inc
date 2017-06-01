@@ -41,12 +41,13 @@ $structure['body']['fields'][4][] = array('label' => 'Alias (jnr)', 'width' => 1
 $structure['body']['fields'][4][] = array('field' => 'table_alias_jnr', 'width' => 55);
 
 $structure['body']['fields'][] = array('seq_no' => 'Seq Number');
+$structure['body']['fields'][] = array('relation_name' => 'Name');
 $structure['body']['fields'][] = array('relation_desc' => 'Description');
-$structure['body']['fields'][] = array('comment' => 'Comments');
-$structure['body']['fields'][] = array('rel_type' => 'Relationship Type');
+$structure['body']['fields'][] = array('relation_type' => 'Relationship Type');
 $structure['body']['fields'][] = array('orderby' => 'Order By');
 $structure['body']['fields'][] = array('parent_field' => 'Parent Field');
 $structure['body']['fields'][] = array('calc_field' => 'Calculated Field');
+$structure['body']['fields'][] = array('key_name' => 'Key Name');
 
 $structure['body']['fields'][35][] = array('label' => 'Created Date', 'width' => 40);
 $structure['body']['fields'][35][] = array('field' => 'created_date', 'width' => 55);

@@ -21,12 +21,13 @@ $structure['outer']['fields'][3][] = array('field' => 'table_id_jnr');
 $structure['outer']['fields'][] = array('table_alias_jnr' => 'Alias (jnr)', 'size' => 35);
 
 $structure['outer']['fields'][] = array('seq_no' => 'Seq Number', 'colspan' => 3);
+$structure['outer']['fields'][] = array('relation_name' => 'Name', 'colspan' => 3);
 $structure['outer']['fields'][] = array('relation_desc' => 'Description', 'colspan' => 3);
-$structure['outer']['fields'][] = array('rel_comment' => 'Comments', 'colspan' => 3);
-$structure['outer']['fields'][] = array('rel_type' => 'Relationship Type', 'colspan' => 3);
+$structure['outer']['fields'][] = array('relation_type' => 'Relationship Type', 'colspan' => 3);
 $structure['outer']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['outer']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);
 $structure['outer']['fields'][] = array('calc_field' => 'Calculated Field', 'colspan' => 3);
+$structure['outer']['fields'][] = array('key_name' => 'Key Name', 'colspan' => 3);
 
 $structure['tables']['inner'] = 'dict_related_column';
 

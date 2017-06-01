@@ -225,7 +225,7 @@ class dict_table_s02 extends dict_table
                 if (strlen($rowdata['table_alias_jnr']) > 0) {
                     $entry .= "\n{$indent2}'alias' => '{$rowdata['table_alias_jnr']}',";
                 } // if
-                $entry .= "\n{$indent2}'type' => '{$rowdata['rel_type']}',";
+                $entry .= "\n{$indent2}'type' => '{$rowdata['relation_type']}',";
                 if (!empty($rowdata['orderby'])) {
                     $entry .= "\n{$indent2}'orderby' => '{$rowdata['orderby']}',";
                 } // if
@@ -270,7 +270,7 @@ class dict_table_s02 extends dict_table
 
 		if (array_key_exists('column_id', $column_array[0])) {
 		    foreach ($column_array as $column) {
-                if ($column['column_desc'] == 'DEPRECATED') {
+                if (preg_match('/^(DEPRECATED)$/i', $column['column_name'])) {
                     // ignore this column
                     $this->deprecated[] = $column['column_id'];
                 } else {

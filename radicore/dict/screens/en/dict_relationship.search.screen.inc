@@ -21,12 +21,13 @@ $structure['main']['fields'][3][] = array('field' => 'table_id_jnr');
 $structure['main']['fields'][] = array('table_alias_jnr' => 'Alias (jnr)', 'size' => 35);
 
 $structure['main']['fields'][] = array('seq_no' => 'Seq Number', 'colspan' => 3);
+$structure['main']['fields'][] = array('relation_name' => 'Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('relation_desc' => 'Description', 'colspan' => 3);
-$structure['main']['fields'][] = array('rel_comment' => 'Comments', 'colspan' => 3);
-$structure['main']['fields'][] = array('rel_type' => 'Relationship Type', 'colspan' => 3);
+$structure['main']['fields'][] = array('relation_type' => 'Relationship Type', 'colspan' => 3);
 $structure['main']['fields'][] = array('orderby' => 'Order By', 'colspan' => 3);
 $structure['main']['fields'][] = array('parent_field' => 'Parent Field', 'colspan' => 3);
 $structure['main']['fields'][] = array('calc_field' => 'Calculated Field', 'colspan' => 3);
+$structure['main']['fields'][] = array('key_name' => 'Key Name', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 3);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 3);

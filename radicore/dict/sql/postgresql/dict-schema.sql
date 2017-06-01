@@ -39,9 +39,10 @@ CREATE TABLE dict.dict_column (
   table_id character varying(64) NOT NULL,
   column_id character varying(64) NOT NULL,
   column_seq smallint NOT NULL,
-  column_desc character varying(255) NOT NULL,
-  col_comment text,
+  column_name character varying(80) NOT NULL,
+  column_desc text,
   col_type character varying(20),
+  col_type_native character varying(32),
   col_array_type character varying(20),
   col_values text,
   user_size bigint,
@@ -86,8 +87,7 @@ CREATE TABLE dict.dict_column (
   created_date timestamp without time zone NOT NULL DEFAULT '2000-01-01 00:00:00'::timestamp without time zone,
   created_user character varying(16) NOT NULL DEFAULT 'UNKNOWN'::character varying,
   revised_date timestamp without time zone,
-  revised_user character varying(16),
-  col_type_native character varying(32)
+  revised_user character varying(16)
 );
 
 ALTER TABLE dict.dict_column OWNER TO postgres;
@@ -99,10 +99,10 @@ ALTER TABLE dict.dict_column OWNER TO postgres;
 --
 
 CREATE TABLE dict_database (
-    database_id character varying(64) DEFAULT ''::character varying NOT NULL,
-    database_desc character varying(255) DEFAULT ''::character varying NOT NULL,
-    db_comment text,
-    subsys_id character varying(16) DEFAULT ''::character varying NOT NULL,
+    database_id character varying(64) NOT NULL,
+    database_name character varying(80) NOT NULL,
+    database_desc text,
+    subsys_id character varying(16) NOT NULL,
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     revised_date timestamp without time zone,
@@ -119,11 +119,11 @@ ALTER TABLE dict.dict_database OWNER TO postgres;
 --
 
 CREATE TABLE dict_related_column (
-    database_id_snr character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id_snr character varying(64) DEFAULT ''::character varying NOT NULL,
-    column_id_snr character varying(64) DEFAULT ''::character varying NOT NULL,
-    database_id_jnr character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id_jnr character varying(64) DEFAULT ''::character varying NOT NULL,
+    database_id_snr character varying(64) NOT NULL,
+    table_id_snr character varying(64) NOT NULL,
+    column_id_snr character varying(64) NOT NULL,
+    database_id_jnr character varying(64) NOT NULL,
+    table_id_jnr character varying(64) NOT NULL,
     seq_no smallint DEFAULT (0)::smallint NOT NULL,
     column_id_jnr character varying(64),
     seq_in_index smallint DEFAULT (0)::smallint NOT NULL,
@@ -143,16 +143,16 @@ ALTER TABLE dict.dict_related_column OWNER TO postgres;
 --
 
 CREATE TABLE dict_relationship (
-    database_id_snr character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id_snr character varying(64) DEFAULT ''::character varying NOT NULL,
-    database_id_jnr character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id_jnr character varying(64) DEFAULT ''::character varying NOT NULL,
+    database_id_snr character varying(64) NOT NULL,
+    table_id_snr character varying(64) NOT NULL,
+    database_id_jnr character varying(64) NOT NULL,
+    table_id_jnr character varying(64) NOT NULL,
     seq_no smallint DEFAULT (0)::smallint NOT NULL,
     table_alias_snr character varying(64),
     table_alias_jnr character varying(64),
-    relation_desc character varying(255),
-    rel_comment text,
-    rel_type character(3) DEFAULT 'RES'::bpchar NOT NULL,
+    relation_name character varying(80),
+    relation_desc text,
+    relation_type character(3) DEFAULT 'RES'::bpchar NOT NULL,
     orderby character varying(64),
     parent_field character varying(64),
     calc_field character varying(255),
@@ -173,10 +173,10 @@ ALTER TABLE dict.dict_relationship OWNER TO postgres;
 --
 
 CREATE TABLE dict_table (
-    database_id character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_desc character varying(255) DEFAULT ''::character varying NOT NULL,
-    tbl_comment text,
+    database_id character varying(64) NOT NULL,
+    table_id character varying(64) NOT NULL,
+    table_name character varying(80) NOT NULL,
+    table_desc text,
     audit_logging character(1) DEFAULT 'Y'::bpchar NOT NULL,
     default_orderby character varying(64),
     alt_language_table character varying(64),
@@ -199,10 +199,10 @@ ALTER TABLE dict.dict_table OWNER TO postgres;
 --
 
 CREATE TABLE dict_table_key (
-    database_id character varying(64) DEFAULT ''::character varying NOT NULL,
-    table_id character varying(64) DEFAULT ''::character varying NOT NULL,
-    key_name character varying(64) DEFAULT ''::character varying NOT NULL,
-    column_id character varying(64) DEFAULT ''::character varying NOT NULL,
+    database_id character varying(64) NOT NULL,
+    table_id character varying(64) NOT NULL,
+    key_name character varying(64) NOT NULL,
+    column_id character varying(64) NOT NULL,
     seq_in_index smallint DEFAULT (0)::smallint NOT NULL,
     is_unique character(1) DEFAULT 'N'::bpchar NOT NULL,
     column_seq smallint,

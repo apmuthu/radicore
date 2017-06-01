@@ -37,10 +37,9 @@ if (isset($session_name) AND preg_match('/^menu/i', $session_name)) {
 } // if
 session_name($session_name);
 if (isset($_GET['session_id'])) {
-    session_id($_GET['session_id']);    // set the session id
-//} elseif (isset($_COOKIE['PHPSESSID'])) {
-	//session_id($_COOKIE['PHPSESSID']);
-	//setcookie('PHPSESSID', '', time()-3600);
+    session_id($_GET['session_id']);        // supplied in the URL
+} elseif (isset($_COOKIE[$session_name])) {
+	session_id($_COOKIE[$session_name]);    // supplied in a cookie
 } // if
 session_start();
 

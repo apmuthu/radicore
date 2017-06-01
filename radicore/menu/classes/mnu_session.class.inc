@@ -44,6 +44,11 @@ class mnu_session extends Default_Table
                                                     'optionlist' => 'css_file',
                                                     'required' => 'y');
 
+        if (is_dir('../responsive-web/xsl')) {
+            // allow responsive GUI?
+            $fieldspec['allow_responsive_gui']  = array('type' => 'boolean');
+        } // if
+
         $this->fieldspec = $fieldspec;
 
 //        if (empty($this->css_files)) {
@@ -91,10 +96,14 @@ class mnu_session extends Default_Table
         $this->skip_getdata = true;
 
         // construct data manually instead
-        $row['log_xml_document']   = $_SESSION['log_xml_document'];
-        $row['log_sql_query']      = $_SESSION['log_sql_query'];
-        $row['drop_saved_pages']   = false;
-        $row['css_file']           = $_SESSION['css_file'];
+        $row['log_xml_document']     = $_SESSION['log_xml_document'];
+        $row['log_sql_query']        = $_SESSION['log_sql_query'];
+        $row['drop_saved_pages']     = false;
+        $row['css_file']             = $_SESSION['css_file'];
+
+        if (isset($this->fieldspec['allow_responsive_gui'])) {
+            $row['allow_responsive_gui'] = $_SESSION['allow_responsive_gui'];
+        } // if
 
         $this->fieldarray[0] = $row;
 
@@ -142,6 +151,10 @@ class mnu_session extends Default_Table
         // save it so that it can be reproduced when moving between HTTP and HTTPS protocols
         $_SESSION['cookie_data']['theme'] = $fieldarray['css_file'];
         $_SESSION['cookie_time']['theme'] = time()+7776000;
+
+        if (isset($this->fieldspec['allow_responsive_gui'])) {
+            $_SESSION['allow_responsive_gui'] = $fieldarray['allow_responsive_gui'];
+        } // if
 
         return;
 

@@ -1,8 +1,9 @@
 <?php
-    // file created on May 6, 2009, 2:48 pm
+    // file created on May 7, 2017, 9:26 am
     
     // field specifications for table menu.mnu_motd
     $fieldspec['motd_id']                   = array('type' => 'integer',
+                                                    'type_native' => 'int',
                                                     'size' => 11,
                                                     'auto_increment' => 'y',
                                                     'minvalue' => 0,
@@ -16,7 +17,6 @@
     
     $fieldspec['motd_message']              = array('type' => 'string',
                                                     'size' => 65535,
-                                                    'required' => 'y',
                                                     'control' => 'multiline',
                                                     'cols' => 100,
                                                     'rows' => 15);
@@ -75,7 +75,7 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_role',
-                                                    'parent_field' => 'role_desc',
+                                                    'parent_field' => 'role_name',
                                                     'fields' => array('role_id' => 'role_id'));
     
     // determines if database updates are recorded in an audit log 

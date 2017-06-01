@@ -1,5 +1,5 @@
 <?php
-    // file created on January 30, 2008, 2:57 pm
+    // file created on May 16, 2017, 5:18 pm
     
     // field specifications for table menu.mnu_subsystem
     $fieldspec['subsys_id']                 = array('type' => 'string',
@@ -8,9 +8,15 @@
                                                     'required' => 'y',
                                                     'uppercase' => 'y');
     
-    $fieldspec['subsys_desc']               = array('type' => 'string',
-                                                    'size' => 255,
+    $fieldspec['subsys_name']               = array('type' => 'string',
+                                                    'size' => 80,
                                                     'required' => 'y');
+    
+    $fieldspec['subsys_desc']               = array('type' => 'string',
+                                                    'size' => 65535,
+                                                    'control' => 'multiline',
+                                                    'cols' => 80,
+                                                    'rows' => 5);
     
     $fieldspec['subsys_dir']                = array('type' => 'string',
                                                     'size' => 255,
@@ -56,12 +62,6 @@
     $this->unique_keys                      = array();
     
     // child relationship details 
-    $this->child_relations[]                = array('child' => 'dict_database',
-                                                    'dbname' => 'dict',
-                                                    'subsys_dir' => 'dict',
-                                                    'type' => 'RES',
-                                                    'fields' => array('subsys_id' => 'subsys_id'));
-    
     $this->child_relations[]                = array('child' => 'mnu_task',
                                                     'type' => 'RES',
                                                     'fields' => array('subsys_id' => 'subsys_id'));
@@ -78,6 +78,10 @@
     // alternative language options 
     $this->alt_language_table               = '';
     $this->alt_language_cols                = '';
+    
+    // alias names 
+    $this->nameof_start_date                = '';
+    $this->nameof_end_date                  = '';
     
     // finished
 ?>

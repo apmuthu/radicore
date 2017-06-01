@@ -23,6 +23,6 @@ $structure['inner']['columns'][] = array('width' => '*');
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('column_seq' => 'Seq');
 $structure['inner']['fields'][] = array('column_id' => 'Column Id');
-$structure['inner']['fields'][] = array('column_desc' => 'Description');
+$structure['inner']['fields'][] = array('column_name' => 'Name');
 
 ?>

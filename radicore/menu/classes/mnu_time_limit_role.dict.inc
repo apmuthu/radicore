@@ -1,5 +1,5 @@
 <?php
-    // file created on April 27, 2013, 9:57 pm
+    // file created on May 7, 2017, 9:32 am
     
     // field specifications for table menu.mnu_time_limit_role
     $fieldspec['role_id']                   = array('type' => 'string',
@@ -14,7 +14,6 @@
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
                                                     'required' => 'y',
-                                                    'default' => '0',
                                                     'noedit' => 'y');
     
     $fieldspec['scheduled_start_time']      = array('type' => 'time',
@@ -34,7 +33,8 @@
                                                     'true' => '1',
                                                     'false' => '0',
                                                     'control' => 'checkbox',
-                                                    'label' => 'Monday');
+                                                    'label' => 'Monday',
+                                                    'align_lr' => 'R');
     
     $fieldspec['scheduled_tuesday']         = array('type' => 'boolean',
                                                     'type_native' => 'tinyint',
@@ -136,7 +136,7 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_role',
-                                                    'parent_field' => 'role_desc',
+                                                    'parent_field' => 'role_name',
                                                     'fields' => array('role_id' => 'role_id'));
     
     // determines if database updates are recorded in an audit log 

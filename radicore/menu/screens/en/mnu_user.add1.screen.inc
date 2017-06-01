@@ -45,14 +45,14 @@ $structure['main']['fields'][15] = array('party_id' => 'Party Id', 'colspan' => 
 $structure['main']['fields'][16] = array('ip_address' => 'IP Address', 'colspan' => 3);
 
 $structure['main']['fields'][17][] = array('label' => 'Password Change Date');
-$structure['main']['fields'][17][] = array('field' => 'pswd_chg_date');
-$structure['main']['fields'][17][] = array('field' => 'pswd_chg_time', 'colspan' => 2);
+$structure['main']['fields'][17][] = array('field' => 'pswd_change_datetime', 'colspan' => 3);
 
 $structure['main']['fields'][18] = array('pswd_count' => 'Password Count', 'colspan' => 3);
 
 $structure['main']['fields'][19][] = array('label' => 'Logon Date');
-$structure['main']['fields'][19][] = array('field' => 'logon_date');
-$structure['main']['fields'][19][] = array('field' => 'logon_time', 'colspan' => 2);
+$structure['main']['fields'][19][] = array('field' => 'logon_datetime', 'colspan' => 3);
+
+$structure['main']['fields'][] = array('allow_responsive_gui' => 'Allow Responsive GUI', 'colspan' => 3);
 
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 3);
 

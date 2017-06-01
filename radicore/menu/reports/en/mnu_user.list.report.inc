@@ -21,7 +21,7 @@ $structure['title'][] = array('text' => '- Contents of MNU_USER table -',
 // set column widths
 $structure['columns'][] = array('width' => 32);
 $structure['columns'][] = array('width' => 60);
-$structure['columns'][] = array('width' => 50);
+$structure['columns'][] = array('width' => 50, 'overflow' => 'y');
 $structure['columns'][] = array('width' => 75);
 $structure['columns'][] = array('width' => 30);
 $structure['columns'][] = array('width' => 30);

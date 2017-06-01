@@ -36,7 +36,7 @@ $structure['body']['fields'][] = array('database_id_jnr' => 'Database (Jnr)');
 $structure['body']['fields'][] = array('table_id_jnr' => 'Table (Jnr)');
 $structure['body']['fields'][] = array('table_alias_jnr' => 'Alias (Jnr)');
 $structure['body']['fields'][] = array('seq_no' => 'Seq');
-$structure['body']['fields'][] = array('rel_type' => 'Type');
+$structure['body']['fields'][] = array('relation_type' => 'Type');
 
 // define contents of page footer
 $structure['foot1'][] = array('type' => 'date',   'align' => 'left',   'halign' => 'left');

@@ -84,7 +84,9 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
-    } //if
+    } elseif (!empty($orderby)) {
+        $dbouter->setDefaultOrderby($orderby);
+    } // if
     $dbouter->xsl_params = array('outer_noedit' => 'y');  // set this object to 'noedit'
     $dbouter->setRowsPerPage(1);  // scroll through one item at a time
     $dbouter->checkPrimaryKey = true;  // check that primary key is complete
@@ -375,8 +377,8 @@ if (!empty($return_from) AND !empty($popup_object)) {
         if (!empty($return_from) AND isset($selection)) {
             $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, $popup_offset, $return_files);
         } else {
-            //if (empty($errors[$dbinner->getClassName()])) {
-            if (empty($errors)) {
+            //if (empty($errors)) {
+            if (empty($dbouter->errors)) {
         	    // no errors, so get data from the database
                 $inner_data = $dbinner->getData($inner_where);
                 $inner_data = $dbinner->getExtraData($inner_data);

@@ -18,7 +18,7 @@ $structure['inner']['columns'][] = array('width' => 75, 'align' => 'center');
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('table_id' => 'Table Id');
-$structure['inner']['fields'][] = array('table_desc' => 'Description');
+$structure['inner']['fields'][] = array('table_name' => 'Name');
 $structure['inner']['fields'][] = array('column_count' => 'Columns');
 $structure['inner']['fields'][] = array('rel_count_snr' => 'Child Relationships');
 $structure['inner']['fields'][] = array('rel_count_jnr' => 'Parent Relationships');

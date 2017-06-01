@@ -12,7 +12,7 @@ $structure['main']['columns'][] = array('width' => 300);
 // identify the field names and their screen labels
 $structure['main']['fields'][] = array('selectbox' => 'Select');
 $structure['main']['fields'][] = array('database_id' => 'Database Id');
-$structure['main']['fields'][] = array('database_desc' => 'Database Description');
+$structure['main']['fields'][] = array('database_name' => 'Database Name');
 $structure['main']['fields'][] = array('subsys_id' => 'Subsys Id');
 
 ?>

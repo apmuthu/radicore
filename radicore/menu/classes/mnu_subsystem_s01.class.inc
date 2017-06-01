@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'mnu_subsystem.class.inc';
 class mnu_subsystem_s01 extends mnu_subsystem
@@ -72,7 +72,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
         $this->_createMenuDesc($data, $subsys_id);
 
 		// process task descriptions
-//    	$taskobj->sql_select = 'task_id, task_desc';
+//    	$taskobj->sql_select = 'task_id, task_name';
 //    	$taskobj->sql_from   = 'mnu_task';
 //    	$taskobj->sql_orderby = 'task_id';
 //      $data = $taskobj->getData("subsys_id='$subsys_id' AND task_type='PROC'");
@@ -116,6 +116,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     function _createFieldDesc ($field_array, $subsys_id)
     // put field (column) details into the output file.
     {
+        $array = array();
         // transfer details to an array to remove duplicate entries
         foreach ($field_array as $field) {
         	$array[$field['column_id']] = $field['column_id'];
@@ -197,7 +198,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
 	    foreach ($task_array as $task) {
             $entry = $indent .'$array' ."['" .$task['task_id'] ."']";
             $entry = str_pad($entry, 50);
-            $entry .= "= '" .addcslashes($task['task_desc'], "'") ."';\r\n";
+            $entry .= "= '" .addcslashes($task['task_name'], "'") ."';\r\n";
 
             $this->text_out .= $entry;
         } // foreach
@@ -250,29 +251,6 @@ class mnu_subsystem_s01 extends mnu_subsystem
             $data = $taskobj->getData_raw(null);
             $output = $this->_exportSqlData('mnu_time_limit_role', $data, $output);
 
-            // export contents of MNU_ROLE for entries used by this subsystem
-//        	$taskobj->sql_select = 'DISTINCT role_id';
-//        	$taskobj->sql_from   = 'mnu_role_task '
-//        	                     . 'left join mnu_task ON (mnu_role_task.task_id=mnu_task.task_id)';
-//        	$taskobj->sql_orderby = 'role_id';
-//            $data = $taskobj->getData_raw("mnu_task.subsys_id='$subsys_id'");
-//
-//            if (count($data) > 0) {
-//                // extract details of all roles which are actually used
-//                $range = null;
-//                foreach ($data as $row) {
-//                	if (empty($range)) {
-//                		$range = "'" .$row['role_id'] ."'";
-//                	} else {
-//                	    $range .= ",'" .$row['role_id'] ."'";
-//                	} // if
-//                } // foreach
-//            	$taskobj->sql_select = '*';
-//            	$taskobj->sql_from   = 'mnu_role';
-//            	$taskobj->sql_orderby = 'role_id';
-//                $data = $taskobj->getData_raw("role_id IN ($range)");
-//                $output = $this->_exportSqlData('mnu_role', $data, $output);
-//            } // if
         } else {
             // export the contents of MNU_ROLE which contains tasks within this subsystem
             $taskobj->sql_select = 'mnu_role.*';
@@ -292,7 +270,6 @@ WHERE mnu_task.subsys_id='$subsys_id'
     	$taskobj->sql_select = '*';
     	$taskobj->sql_from   = '';
     	$taskobj->sql_orderby = 'task_id';
-        //$data = $taskobj->getData_raw("subsys_id='$subsys_id' AND task_type='PROC'");
         $data = $taskobj->getData_raw("subsys_id='$subsys_id'");
         foreach ($data as $task_data) {
         	$output = $this->_exportSqlData('mnu_task', $task_data, $output);
@@ -368,15 +345,15 @@ WHERE mnu_task.subsys_id='$subsys_id'
             $taskobj->sql_select = 'help_text.*';
             $taskobj->sql_from   = 'help_text';
             $taskobj->sql_orderby = 'help_text.task_id';
-            $data = $taskobj->getData_raw("task_id='$task_id'");
-            $output = $this->_exportSqlData('help_text', $data, $output);
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('help_text', $data2, $output);
 
             // export the contents of HELP_TEXT_ALT for this task
             $taskobj->sql_select = 'help_text_alt.*';
             $taskobj->sql_from   = 'help_text_alt';
             $taskobj->sql_orderby = 'help_text_alt.task_id, help_text_alt.language_id';
-            $data = $taskobj->getData_raw("task_id='$task_id'");
-            $output = $this->_exportSqlData('help_text_alt', $data, $output);
+            $data2 = $taskobj->getData_raw("task_id='$task_id'");
+            $output = $this->_exportSqlData('help_text_alt', $data2, $output);
 
         } // foreach
 
@@ -388,7 +365,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
         $output = $this->_exportSqlData('mnu_task', $data, $output);
 
         // export the contents of MNU_MENU for this subsystem (1st pass)
-        // (where subsys_id of menu_id and task_id_jnr is the same as current subsys_id)
+        // (where the child option has the same subsys_id as the parent menu)
     	$taskobj->sql_select = 'mnu_menu.*';
     	$taskobj->sql_from   = 'mnu_menu '
     	                      .'LEFT JOIN mnu_task AS SNR ON (menu_id=SNR.task_id) '
@@ -398,7 +375,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
         $output = $this->_exportSqlData('mnu_menu', $data, $output);
 
         // export the contents of MNU_MENU for this subsystem (2nd pass)
-        // (where subsys_id of menu_id is not the same as current subsys_id)
+        // (where the parent menu has a different subsys_id from the child option)
     	$taskobj->sql_select = 'mnu_menu.*';
     	$taskobj->sql_from   = 'mnu_menu '
     	                      .'LEFT JOIN mnu_task AS SNR ON (menu_id=SNR.task_id) '
@@ -488,7 +465,8 @@ WHERE mnu_task.subsys_id='$subsys_id'
         $output .= "-- finished\r\n";
 
         // write completed text file to disk
-        $this->_writeTextFile ($output, $subsys_id, "$subsys_dir/sql", 'sql');
+        $project_code = isset($GLOBALS['project_code']) ? $GLOBALS['project_code'] : null;
+        $this->_writeTextFile ($output, $subsys_id, "$subsys_dir/sql", 'sql', $project_code);
 
         return;
 
@@ -536,10 +514,14 @@ WHERE mnu_task.subsys_id='$subsys_id'
     } // _exportSqlData
 
     // ****************************************************************************
-    function _writeTextFile ($text, $subsys_id, $subsys_dir, $type)
+    function _writeTextFile ($text, $subsys_id, $subsys_dir, $type, $project_code=null)
     // write the contents of $text to a disk file.
     {
-        $sname = $subsys_dir .'/' .strtolower($subsys_id) .'.menu_export.' .$type;
+        if (!empty($project_code)) {
+            $sname = $subsys_dir .'/' .strtolower($subsys_id) .".menu_export($project_code).{$type}";
+        } else {
+            $sname = $subsys_dir .'/' .strtolower($subsys_id) .".menu_export.{$type}";
+        } // if
         $fname = $_SERVER['DOCUMENT_ROOT'] .getParentDIR() .'/' .$sname;
         if (!$fp = fopen($fname, 'w')) {
             $this->errors[] = getLanguageText('sys0076', $fname); // 'Cannot open file $fname'

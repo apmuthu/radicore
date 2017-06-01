@@ -23,7 +23,7 @@ $outer_sql_having  = null;
 $outer_sql_orderby = null;
 $outer_sql_orderby_table = null;
 
-$middle_sql_select  = 'mnu_task.task_id, task_desc';
+$middle_sql_select  = 'mnu_task.task_id, task_name';
 $middle_sql_from    = 'mnu_task';
 $middle_sql_where   = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
 $middle_sql_groupby = '';

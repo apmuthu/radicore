@@ -18,10 +18,10 @@ class mnu_task_s03 extends mnu_task
     // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        $this->sql_select = 'task_id, task_desc, task_type, count(task_id_snr) AS button_count';
+        $this->sql_select = 'task_id, task_name, task_type, count(task_id_snr) AS button_count';
         $this->sql_from   = 'mnu_task '
                           . 'LEFT JOIN mnu_nav_button ON (mnu_nav_button.task_id_snr=mnu_task.task_id) ';
-        $this->sql_groupby = 'task_id, task_desc, task_type ';
+        $this->sql_groupby = 'task_id, task_name, task_type ';
         $this->sql_having = 'button_count > 0';
 
         return $where;

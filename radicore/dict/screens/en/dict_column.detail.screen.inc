@@ -17,8 +17,8 @@ $structure['main']['fields'][1][] = array('field' => 'table_id', 'colspan' => 3)
 
 $structure['main']['fields'][2] = array('column_seq' => 'Seq', 'colspan' => 5);
 $structure['main']['fields'][3] = array('column_id' => 'Column Id', 'colspan' => 5);
-$structure['main']['fields'][4] = array('column_desc' => 'Description', 'colspan' => 5);
-$structure['main']['fields'][5] = array('col_comment' => 'Comments', 'colspan' => 5);
+$structure['main']['fields'][4] = array('column_name' => 'Name', 'colspan' => 5);
+$structure['main']['fields'][5] = array('column_desc' => 'Description', 'colspan' => 5);
 
 //$structure['main']['fields'][6][] = array('label' => 'Column Type');
 //$structure['main']['fields'][6][] = array('field' => 'col_type', 'colspan' => 2);

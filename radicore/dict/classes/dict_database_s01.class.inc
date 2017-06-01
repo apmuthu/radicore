@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'dict_database.class.inc';
 class dict_dataBase_s01 extends dict_dataBase
@@ -217,7 +217,7 @@ class dict_dataBase_s01 extends dict_dataBase
     // obtain the object that deals with the database engine for this table.
     {
         $engine = null;
-        $args   = array('dbname' => $dbname);
+        //$args   = array('dbname' => $dbname);
 
         // multi-server option
         // find out which server deals with this dbhost
@@ -331,9 +331,9 @@ class dict_dataBase_s01 extends dict_dataBase
         } // if
 
         if (isset($servernum)) {
-            $DML =& RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true, $unbuffered_query);
+            $DML =& RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true);
         } else {
-            $DML =& RDCsingleton::getInstance($engine, $args, true, $unbuffered_query);
+            $DML =& RDCsingleton::getInstance($engine, $args, true);
         } // if
 
         return $DML;

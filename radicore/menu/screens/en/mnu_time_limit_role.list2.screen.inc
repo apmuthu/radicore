@@ -9,7 +9,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('role_id' => 'Role Id');
-$structure['outer']['fields'][] = array('role_desc' => 'Role Description');
+$structure['outer']['fields'][] = array('role_name' => 'Role Name');
 
 $structure['tables']['inner'] = 'mnu_time_limit_role';
 

@@ -39,7 +39,7 @@ class mnu_subsystem_s02 extends mnu_subsystem
         // create a menu task for this subsystem
         $dbobject =& RDCsingleton::getInstance('mnu_task');
         $task_array['task_id']     = $rowdata[0]['subsys_id'];
-        $task_array['task_desc']   = 'Main menu for ' .$rowdata[0]['subsys_id'] .' subsystem';
+        $task_array['task_name']   = 'Main menu for ' .$rowdata[0]['subsys_id'] .' subsystem';
         $task_array['button_text'] = $rowdata[0]['subsys_id'];
         $task_array['task_type']   = 'MENU';
         $task_array['subsys_id']   = $rowdata[0]['subsys_id'];

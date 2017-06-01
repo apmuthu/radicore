@@ -102,10 +102,17 @@ class mnu_control extends Default_Table
                             $data = $this->getData_raw($where);
                             $count =& $data[0]['field_value'];
                             // compare with date in passed data
-                            $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
-                            if ($due_date < strtotime('now')) {
-                                $result = true; // password must be changed
-                            } // if
+                            $dateobj =& RDCsingleton::getInstance('date_class');
+                            try {
+                                $pswd_change_date = $dateobj->getInternalDate($user_data['pswd_change_datetime']);
+                                $due_date = strtotime("{$pswd_change_date} +$count days");
+                                if ($due_date < strtotime('now')) {
+                                    $result = true; // password must be changed
+                                } // if
+                            } catch (Exception $e) {
+                                // do nothing
+                            } // try
+
                             break;
 
                         case 'AL':
@@ -160,15 +167,21 @@ class mnu_control extends Default_Table
                             $data = $this->getData_raw($where);
                             $count = $data[0]['field_value'];
                             // compare date in passed data with todays date
-                            $due_date = strtotime("{$user_data['pswd_chg_date']} +$count days");
-                            $diff_seconds = $due_date - strtotime('now');
-                            $diff_days    = floor($diff_seconds / 86400);
-                            if ($diff_days > 0) {
-                                if ($diff_days <= $limit) {
-                                    // "Your password will expire in N days"
-                                    $result = $this->getLanguageText('e0040', $diff_days);
+                            $dateobj =& RDCsingleton::getInstance('date_class');
+                            try {
+                                $pswd_change_date = $user_data['pswd_change_datetime'];
+                                $due_date = strtotime("{$pswd_change_date} +$count days");
+                                $diff_seconds = $due_date - strtotime('now');
+                                $diff_days    = floor($diff_seconds / 86400);
+                                if ($diff_days > 0) {
+                                    if ($diff_days <= $limit) {
+                                        // "Your password will expire in N days"
+                                        $result = $this->getLanguageText('e0040', $diff_days);
+                                    } // if
                                 } // if
-                            } // if
+                            } catch (Exception $e) {
+                                // do nothing
+                            } // try
                             break;
 
                         case 'AL':

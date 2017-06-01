@@ -1,5 +1,5 @@
 <?php
-    // file created on June 21, 2014, 5:32 pm
+    // file created on May 12, 2017, 2:58 pm
     
     // field specifications for table dict.dict_related_column
     $fieldspec['database_id_snr']           = array('type' => 'string',
@@ -33,7 +33,8 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['seq_no']                    = array('type' => 'integer',
-                                                    'size' => 3,
+                                                    'type_native' => 'tinyint',
+                                                    'size' => 4,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
                                                     'pkey' => 'y',
@@ -45,6 +46,7 @@
                                                     'lowercase' => 'y');
     
     $fieldspec['seq_in_index']              = array('type' => 'integer',
+                                                    'type_native' => 'tinyint',
                                                     'size' => 4,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 255,
@@ -97,14 +99,14 @@
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'dict_column',
                                                     'alias' => 'dict_column_snr',
-                                                    'parent_field' => 'column_desc AS column_desc_snr',
+                                                    'parent_field' => 'column_name AS column_name_snr',
                                                     'fields' => array('database_id_snr' => 'database_id',
                                                                       'table_id_snr' => 'table_id',
                                                                       'column_id_snr' => 'column_id'));
     
     $this->parent_relations[]               = array('parent' => 'dict_column',
                                                     'alias' => 'dict_column_jnr',
-                                                    'parent_field' => 'column_desc AS column_desc_jnr',
+                                                    'parent_field' => 'column_name AS column_name_jnr',
                                                     'fields' => array('database_id_jnr' => 'database_id',
                                                                       'table_id_jnr' => 'table_id',
                                                                       'column_id_jnr' => 'column_id'));

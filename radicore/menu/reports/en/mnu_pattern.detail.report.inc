@@ -26,8 +26,8 @@ $structure['columns'][] = array('width' => 150, 'halign' => 'left');
 
 // format 1: one field and label per line
 $structure['body']['fields'][] = array('pattern_id' => 'Pattern Id');
+$structure['body']['fields'][] = array('pattern_name' => 'Name');
 $structure['body']['fields'][] = array('pattern_desc' => 'Description');
-$structure['body']['fields'][] = array('pattern_long_desc' => 'Long Description');
 $structure['body']['fields'][] = array('visible_screen' => 'Visible Screen?');
 $structure['body']['fields'][] = array('context_preselect' => 'Context Preselect?');
 $structure['body']['fields'][] = array('keep_data' => 'Keep Data?');

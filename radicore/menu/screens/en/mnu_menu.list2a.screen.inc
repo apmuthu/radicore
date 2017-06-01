@@ -9,7 +9,7 @@ $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels
 $structure['outer']['fields'][] = array('task_id' => 'Task Id');
-$structure['outer']['fields'][] = array('task_desc' => 'Task Description');
+$structure['outer']['fields'][] = array('task_name' => 'Task Name');
 
 $structure['tables']['inner'] = 'mnu_menu_snr';
 
@@ -23,7 +23,7 @@ $structure['inner']['columns'][] = array('width' => 150);
 // identify the field names and their screen labels
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
 $structure['inner']['fields'][] = array('menu_id' => 'Menu Id');
-$structure['inner']['fields'][] = array('task_desc_snr' => 'Description');
+$structure['inner']['fields'][] = array('task_name_snr' => 'Menu Name');
 $structure['inner']['fields'][] = array('sort_seq' => 'Sort Seq');
 $structure['inner']['fields'][] = array('button_text' => 'Button Text');
 

@@ -27,8 +27,8 @@ $structure['columns'][] = array('width' => 30, 'align' => 'center');
 
 // identify column names and associated labels
 $structure['body']['fields'][] = array('database_id' => 'Database Id');
+$structure['body']['fields'][] = array('database_name' => 'Name');
 $structure['body']['fields'][] = array('database_desc' => 'Description');
-$structure['body']['fields'][] = array('db_comment' => 'Comment');
 $structure['body']['fields'][] = array('table_count' => 'Tables');
 $structure['body']['fields'][] = array('rel_count_snr' => 'Relationships');
 

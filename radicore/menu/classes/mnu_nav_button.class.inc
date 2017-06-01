@@ -50,7 +50,7 @@ class mnu_nav_button extends Default_Table
         if (is_True($global_access)) {
             // if global_access is ON then all buttons can be accessed without restriction
             // (unless a task has been disabled)
-            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
+            $this->sql_select = 'x.task_id, x.task_name, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect';
             $this->sql_from   = 'mnu_nav_button '
                               . 'LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
                               . 'LEFT JOIN mnu_task AS x ON (x.task_id = mnu_nav_button.task_id_jnr) ';
@@ -60,7 +60,7 @@ class mnu_nav_button extends Default_Table
             // if global_access is OFF then a button cannot be loaded unless it has an
             // entry on MNU_ROLE_TASK for the current role
             // (or if it has been disabled)
-            $this->sql_select = 'x.task_id, x.task_desc, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect'
+            $this->sql_select = 'x.task_id, x.task_name, x.script_id, x.pattern_id, x.is_disabled, mnu_nav_button.button_text, mnu_nav_button.context_preselect'
                               .", CASE WHEN EXISTS(SELECT 1 FROM mnu_role_task WHERE task_id=mnu_nav_button.task_id_jnr AND role_id IN($role_list) ) THEN 'Y' ELSE 'N' END AS access_allowed";
             $this->sql_from   = 'mnu_nav_button'
                               .' LEFT JOIN mnu_task ON (mnu_task.task_id = mnu_nav_button.task_id_snr) '
@@ -84,10 +84,10 @@ class mnu_nav_button extends Default_Table
 
         if ($_SESSION['user_language'] != $_SESSION['default_language']) {
             // obtain some text in an alternative language
-            $this->sql_select .= ", COALESCE((SELECT task_desc FROM mnu_task_alt WHERE mnu_task_alt.task_id=mnu_nav_button.task_id_jnr AND mnu_task_alt.language_id='{$_SESSION['user_language']}'), x.task_desc) AS task_desc";
+            $this->sql_select .= ", COALESCE((SELECT task_name FROM mnu_task_alt WHERE mnu_task_alt.task_id=mnu_nav_button.task_id_jnr AND mnu_task_alt.language_id='{$_SESSION['user_language']}'), x.task_name) AS task_name";
             // extract all elements within current SELECT clause into an associative array
             $select_array = extractSelectList($this->sql_select);
-            $select_array = removeDuplicateNameFromSelect($select_array, 'x.task_desc');
+            $select_array = removeDuplicateNameFromSelect($select_array, 'x.task_name');
             // convert array back into a string
             $this->sql_select = implode(', ', $select_array);
         } // if
@@ -164,6 +164,19 @@ class mnu_nav_button extends Default_Table
         return $fieldarray;
 
     } // _cm_commonValidation
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if (isset($fieldarray['selected']) AND !is_True($fieldarray['selected'])) {
+            $fieldarray['sort_seq'] = null;  // not selected, so this field is blank instead of zero
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
     // ****************************************************************************
     function _cm_getDatabaseLock ()
@@ -253,6 +266,9 @@ class mnu_nav_button extends Default_Table
             $dbobject->sql_select = 'button_text,task_type,pattern_id';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
             $fieldarray = array_merge($fieldarray, $data[0]);
+            if (strlen($fieldarray['button_text']) > $this->fieldspec['button_text']['size']) {
+                $fieldarray['button_text'] = substr($fieldarray['button_text'], 0, $this->fieldspec['button_text']['size']);
+            } // if
 
             if (!array_key_exists('context_preselect', $fieldarray)) {
                 // get default context_preselect from mnu_pattern table

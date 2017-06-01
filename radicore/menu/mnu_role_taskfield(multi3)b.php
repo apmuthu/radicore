@@ -14,13 +14,13 @@ $inner_table  = 'mnu_role_taskfield_s01';               // name of table to be a
 $screen = 'mnu_role_taskfield.multi3(b).screen.inc';    // file identifying screen structure
 
 // identify extra parameters for a JOIN
-$outer_sql_select = 'mnu_role.role_id, role_desc, global_access';
+$outer_sql_select = 'mnu_role.role_id, role_name, global_access';
 $outer_sql_from   = 'mnu_role';
 $outer_sql_where  = '';
 $outer_sql_groupby = '';
 $outer_sql_having = '';
 
-$middle_sql_select = 'mnu_task.task_id, task_desc';
+$middle_sql_select = 'mnu_task.task_id, task_name';
 $middle_sql_from   = 'mnu_task';
 $middle_sql_where  = "EXISTS(SELECT 1 FROM mnu_task_field WHERE task_id=mnu_task.task_id AND is_documentation_only='N')";
 $middle_sql_groupby = '';
