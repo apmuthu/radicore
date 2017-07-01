@@ -2355,6 +2355,13 @@ abstract class Default_Table
             } // if
         } // if
 
+        if (!is_True($this->initiated_from_controller)) {
+            // get any missing data from parent tables
+            foreach ($data_raw as $rownum => &$rowdata) {
+                $rowdata = $this->getForeignData($rowdata, $rownum);
+            } // foreach
+        } // if
+
         $this->fieldarray = $data_raw;
 
         return $this->fieldarray;
@@ -3196,12 +3203,12 @@ abstract class Default_Table
         $this->checkMessageDirectory();
 
         // call the function in the standard library
-        $string = getLanguageArray ($id);
+        $array = getLanguageArray ($id);
 
         $GLOBALS['classdir'] = $classdir;  // restore
         chdir($cwd);
 
-        return $string;
+        return $array;
 
     } // getLanguageArray
 
@@ -4777,6 +4784,8 @@ abstract class Default_Table
     // NOTE: $script_vars is passed BY REFERENCE as it may be altered.
     // NOTE: $offset identifies the row number (if there is more than one).
     {
+        $this->errors = array();  // clear any previous errors
+
         // clear any previous selection
         $script_vars['selection'] = NULL;
 
@@ -8739,7 +8748,9 @@ abstract class Default_Table
             $DML->sql_select       = $this->sql_select;
             if (!empty($DML->sql_select)) {
                 // ensure this selects ALL fields from the primary table
-                if (!preg_match('/' .$this->tablename .'\.\*/', $DML->sql_select)) {
+                if ($DML->sql_select == '*' OR preg_match('/' .$this->tablename .'\.\*/', $DML->sql_select)) {
+                    // all fields selected, so ignore next bit
+                } else {
                     // see if the table name has an alias
                     $aliasnames = extractTableNames($this->sql_from);
                     // switch array from 'alias=name' to 'name=alias'

@@ -761,10 +761,9 @@ function getTimePeriodStatus ($user_id, $role_id)
 } // getTimePeriodStatus
 
 // ****************************************************************************
-function initSession($save_session_data=array())
+function initSession($save_session_data=array(), $argv=array())
 // initialise session data
 {
-    global $argv;                   // command line arguments
     global $allow_responsive_gui;   // Yes/No switch
     global $button_text;            // button text for current task
     global $current_menu;           // currently active menu on menu bar
@@ -865,7 +864,6 @@ function initSession($save_session_data=array())
             if ($argv[1] == 'PHPSESSID' AND !empty($argv[2])) {
                 session_name($argv[1]);
                 session_id($argv[2]);
-                unset($argv);  // this is no longer required
             } // if
         } else {
             if (isset($session_name)) {
@@ -1351,8 +1349,11 @@ function initSession($save_session_data=array())
     if (!isset($_SESSION['date_format_input'])) {
         $dbobject =& RDCsingleton::getInstance('mnu_language');
         $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
-        $_SESSION['date_format_input']  = $data[0]['input_date_format'];
-        $_SESSION['date_format_output'] = $data[0]['output_date_format'];
+        if (!empty($data)) {
+            $data = $data[0];
+            $_SESSION['date_format_input']  = $data['input_date_format'];
+            $_SESSION['date_format_output'] = $data['output_date_format'];
+        } // if
         unset($dbobject);
     } // if
 
@@ -1980,7 +1981,7 @@ function runInBackground ($task_array, $save_script_vars)
     fclose($fp);
     chdir($cwd);
 
-    $save_session_name   = session_name('batch');
+    $save_session_name   = session_name('PHPSESSID');
     $save_session_id     = session_id();
     $save_session_search =& $_SESSION['search'];
 
@@ -1997,25 +1998,45 @@ function runInBackground ($task_array, $save_script_vars)
     } // if
 
     $script_vars = array();
+    if (isset($task_array['where'])) {
+        $script_vars['where'] = $task_array['where'];
+        $arg4 = $task_array['where'];
+    } else {
+        $arg4 = null;
+    } // if
     if (isset($task_array['selection'])) {
     	$script_vars['selection'] = $task_array['selection'];
-    } // if
-    if (isset($task_array['where'])) {
-    	$script_vars['where'] = $task_array['where'];
+        $arg5 = $task_array['selection'];
+    } else {
+        $arg5 = null;
     } // if
     if (isset($task_array['search'])) {
     	$script_vars['search'] = $task_array['search'];
-    } // if
-    if (isset($task_array['sql_orderby'])) {
-    	$script_vars['orderby'] = $task_array['sql_orderby'];
-    } // if
-    if (isset($task_array['sql_orderby_seq'])) {
-    	$script_vars['orderby_seq'] = $task_array['sql_orderby_seq'];
+        $arg6 = $task_array['search'];
+    } else {
+        $arg6 = null;
     } // if
     if (isset($task_array['settings'])) {
         $script_vars['settings'] = $task_array['settings'];
         parse_str($task_array['settings'], $settings_array);
+        $arg7 = $task_array['settings'];
+    } else {
+        $arg7 = null;
     } // if
+    if (isset($task_array['sql_orderby'])) {
+    	$script_vars['orderby'] = $task_array['sql_orderby'];
+        $arg8 = $task_array['sql_orderby'];
+    } else {
+        $arg8 = null;
+    } // if
+    if (isset($task_array['sql_orderby_seq'])) {
+    	$script_vars['orderby_seq'] = $task_array['sql_orderby_seq'];
+        $arg9 = $task_array['sql_orderby_seq'];
+    } else {
+        $arg9 = null;
+    } // if
+    // pass these values as extra arguments in case they are not picked up from the session data
+    $extra_args = "\"$arg4\" \"$arg5\" \"$arg6\" \"$arg7\"";
 
     // load parameters into session data for the background script
     $task_id = $task_array['task_id'];
@@ -2034,11 +2055,11 @@ function runInBackground ($task_array, $save_script_vars)
         // this code is for linux and unix system
         if (isset($settings_array['rdc_wait']) AND is_True($settings_array['rdc_wait'])) {
             // start script and wait for it to finish
-            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null";
+            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id $extra_args >/dev/null";
             $result = exec($command_line);
         } else {
             // start script, but do not wait for it to finish
-            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id >/dev/null &";
+            $command_line = "/usr/bin/php '$script_name' PHPSESSID $session_id $extra_args >/dev/null &";
             $result = exec($command_line);
         } // if
 
@@ -2052,11 +2073,11 @@ function runInBackground ($task_array, $save_script_vars)
         //$settings_array['rdc_wait'] = true;
         if (isset($settings_array['rdc_wait']) AND is_True($settings_array['rdc_wait'])) {
             // start script and wait for it to finish
-            $command_line = "$php_exe $script_name PHPSESSID $session_id";
+            $command_line = "$php_exe $script_name PHPSESSID $session_id $extra_args";
             exec($command_line, $output, $return_var);
         } else {
             // start script, but do not wait for it to finish
-            $command_line = "start $php_exe $script_name PHPSESSID $session_id";
+            $command_line = "start $php_exe $script_name PHPSESSID $session_id $extra_args";
             if ($resource = popen($command_line, "r")) {
                 //$message = fread($resource, 1024);
             } // if
@@ -2799,7 +2820,11 @@ function updatePageStack ($task_id, $task_name, $script_id)
     $page_stack = reducePageStack($task_id);
 
     // add current selection to stack
-    $page_stack[$task_id]['button_text'] = $task_name;
+    if (empty($page_stack)) {
+        $page_stack[$task_id]['button_text'] = getLanguageText('Home');
+    } else {
+        $page_stack[$task_id]['button_text'] = $task_name;
+    } // if
     $page_stack[$task_id]['script_id']   = $script_id;
 
     // save data in global area

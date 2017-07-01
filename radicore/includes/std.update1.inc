@@ -110,6 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             // returning from a script that does not want any pending changes to be lost
         } else {
             $fieldarray = $dbobject->getData($where);
+            if (!empty($fieldarray)) {
+                $fieldarray = $fieldarray[0];
+            } // if
             $fieldarray = $dbobject->getExtraData($fieldarray);
         } // if
         $fieldarray = $dbobject->validateUpdate($fieldarray);

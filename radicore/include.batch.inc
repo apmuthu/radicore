@@ -172,8 +172,22 @@ function batchInit ($batchfile)
     } // if
 
     if (!empty($_SERVER['SERVER_PROTOCOL']) OR !empty($argv)) {
-        initSession();
+        initSession(null, $argv);
     } // if
+
+    if (empty($where) AND !empty($argv[4])) {
+        $where = $argv[4];
+    } // if
+    if (empty($selection) AND !empty($argv[5])) {
+        $selection = $argv[5];
+    } // if
+    if (empty($search) AND !empty($argv[6])) {
+        $search = $argv[6];
+    } // if
+    if (empty($settings) AND !empty($argv[7])) {
+        $settings = $argv[7];
+    } // if
+    unset($argv);
 
     if (empty($_SESSION['role_list'])) {
         $dbobject =& RDCsingleton::getInstance('menu/mnu_user_role');

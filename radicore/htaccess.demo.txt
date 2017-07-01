@@ -3,7 +3,7 @@
   Deny from all
 </Files>
 
-php_value include_path ".;E:\www.radicore.org\includes.;F:\Apache2\HTDOCS\GMX-Transix\includes"
+php_value include_path ".;E:\www.radicore.org\includes"
 
 php_value default_charset "UTF-8"
 php_value mbstring.internal_encoding "UTF-8"

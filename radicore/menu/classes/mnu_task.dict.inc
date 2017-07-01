@@ -1,5 +1,5 @@
 <?php
-    // file created on May 21, 2017, 3:19 pm
+    // file created on June 23, 2017, 9:05 pm
     
     // field specifications for table menu.mnu_task
     $fieldspec['task_id']                   = array('type' => 'string',
@@ -263,6 +263,24 @@
                                                     'fields' => array('task_id' => 'task_id'));
     
     $this->child_relations[]                = array('child' => 'mnu_todo',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'wf_transition',
+                                                    'dbname' => 'workflow',
+                                                    'subsys_dir' => 'workflow',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'task_id'));
+    
+    $this->child_relations[]                = array('child' => 'wf_workflow',
+                                                    'dbname' => 'workflow',
+                                                    'subsys_dir' => 'workflow',
+                                                    'type' => 'RES',
+                                                    'fields' => array('task_id' => 'start_task_id'));
+    
+    $this->child_relations[]                = array('child' => 'wf_workitem',
+                                                    'dbname' => 'workflow',
+                                                    'subsys_dir' => 'workflow',
                                                     'type' => 'RES',
                                                     'fields' => array('task_id' => 'task_id'));
     

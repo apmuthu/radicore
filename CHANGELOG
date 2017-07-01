@@ -1,5 +1,18 @@
 ﻿RADICORE for PHP - news
 
+2017-07-01, version 2.04.2
+Database changes:
+- None
+
+Other changes:
+- fixed bug in mnu_user.class.inc which caused the user_password field to be hidden in the 'Add User' task. This is not a good idea as it is a required field.
+- modified std.update1.inc so that after the call to $dbobject->getData() the result in $fieldarray is converted from an indexed array to an associative array.
+- modified std.singleton.php5.class.inc so that if the input argument contains more than one '/' it will be treated as a complete path name and will not be subject to any adjustments.
+- fixed bug in std.search1.inc which failed to deal properly with leaving a popup screen without having made a selection.
+- modified include.session.inc to pass $where, $selection and $search strings as arguments on the exec($command_line) call to get around the problem which caused these values to be not retrieved from the $_SESSION array.
+- modified std.table.class.inc so that after a call to $dbobject->getData() from anything other than a page controller a call to ->getForeignData() will be made automatically to include any missing data from foreign tables. This will prevent the need to perform this operation manually.
+- fixed bug in _dml_ReadBeforeUpdate() method of std.table.class.inc so that the select string is not adjusted if it contains either '*' or '<tablename>.*'.
+
 2017-06-14, version 2.04.1
 Database changes:
 - None

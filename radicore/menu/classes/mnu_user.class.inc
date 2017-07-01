@@ -347,6 +347,8 @@ class mnu_user extends Default_Table
                                                     'optionlist' => 'role_id');
 
         } elseif ($mode == 'insert' AND is_True($this->initiated_from_controller)) {
+            // this field must appear on input screens
+            unset($this->fieldspec['user_password']['nodisplay']);
             // these fields should not appear on INSERT screen
             $this->fieldspec['pswd_change_datetime']['nodisplay'] = 'y';
             $this->fieldspec['pswd_count']['nodisplay']           = 'y';

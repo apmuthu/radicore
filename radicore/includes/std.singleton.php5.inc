@@ -47,7 +47,7 @@ class RDCsingleton
             $server .= 'unbuffered_';
         } // if
 
-        if (substr_count($class, '/')) {
+        if (substr_count($class, '/') == 1) {
 	        // use leading directory name as the subsystem name
 	        $subsystem = basename(dirname($class));     // only one directory allowed
 	    	$classname = basename($class);              // strip leading directories
@@ -69,6 +69,10 @@ class RDCsingleton
                 $include_path .= PATH_SEPARATOR ."../$subsystem";
                 ini_set('include_path', $include_path);
             } // if
+        } elseif (substr_count($class, '/') > 1) {
+            // use path name 'as-is'
+            $classname = basename($class);              // strip leading directories
+            $filename  = "$class.class.inc";
         } else {
             $classname = $class;
             $filename  = "classes/$classname.class.inc";

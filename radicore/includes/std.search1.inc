@@ -80,7 +80,7 @@ if (isset($_POST['clear'])) {
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
-    if (!empty($return_from) AND isset($selection)) {
+    if (!empty($return_from) AND (!empty($popup_object) OR isset($selection))) {
         // merge previous saved variables with selection from popup form
         $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
         if ($dbobject->errors) {
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $dateobj =& RDCsingleton::getInstance('date_class');
         foreach ($fieldarray as $field => $value) {
             // check that $field exists in $fieldspec array
-            if (!isset($fieldspec[$field]) OR isset($fieldspec[$field]['noedit'])) {
+            if (!isset($fieldspec[$field]) OR isset($fieldspec[$field]['noedit']) OR isset($fieldspec[$field]['nosearch'])) {
                 // it does not (like the SUBMIT button, for example), so ignore it
                 //unset($fieldarray[$field]);
             } else {
@@ -167,6 +167,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // deal with non-empty fields only
                 if ((is_string($value) AND strlen($value) > 0) OR (is_array($value) AND count($value) > 0)) {
                     $spec     = $fieldspec[$field];
+                    if (!isset($spec['type'])) {
+                        $spec['type'] = 'string';  // not specified so default to 'string'
+                    } // if
                     $operator = '=';
                     if (is_string($value) AND preg_match('/^(is not null|is null)$/i', $value, $regs )) {
                         $value = strtoupper($regs[0]);
