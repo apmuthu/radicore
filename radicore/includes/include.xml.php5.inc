@@ -667,7 +667,7 @@ class radicore_view
 
                             if (is_object($jsOBJ) AND method_exists($jsOBJ, 'field_level_js')) {
                                 // look for custom javascript which needs to be inserted
-                                $javascript = $jsOBJ->field_level_js($fieldname, $fieldvalue, $spec);
+                                $javascript = $jsOBJ->field_level_js($fieldname, $fieldvalue, $spec, $this->allow_responsive_gui);
                                 if (!empty($javascript) AND is_array($javascript)) {
                                     foreach ($javascript as $event_name => $event_body) {
                                         $child->setAttribute($event_name, $event_body);
@@ -2073,13 +2073,6 @@ class radicore_view
         foreach ($structure['tables'] as $zone => $id) {
             $id = removeTableSuffix(strtolower(trim($id)));
             $zone = strtolower(trim($zone));
-            // identify whether this zone is in DETAIL or LIST mode
-            $is_list_mode = false;
-            if (preg_match('/^(list1|popup1|tree1|popup3)$/i', $pattern_id)) {
-                $is_list_mode = true;
-            } elseif (preg_match('/^(list|popup|link|tree)/i', $pattern_id) AND $zone == 'inner') {
-                $is_list_mode = true;
-            } // if
             // add this table name as a child to the structure element
             $table = $xml_doc->createElement($zone);
             $table = $occ->appendChild($table);
@@ -2095,7 +2088,7 @@ class radicore_view
                     if (!empty($input['rel'])) {
                         $table_row->setAttribute('rel', $input['rel']);
                     } // if
-                    if ($allow_responsive_gui AND !$is_list_mode) {
+                    if ($allow_responsive_gui) {
                         $xml_doc = $this->_setGrid_Cell_widths($xml_doc, $table_row, $input, $zone);
                     } else {
                         $xml_doc = $this->_setScreen_columns($xml_doc, $table_row, $input);
@@ -2105,7 +2098,7 @@ class radicore_view
             } else {
                 // there is only one structure for this zone
                 $input = $structure[$zone];
-                if ($allow_responsive_gui AND !$is_list_mode) {
+                if ($allow_responsive_gui) {
                     $xml_doc = $this->_setGrid_Cell_widths($xml_doc, $table, $input, $zone);
                 } else {
                     $xml_doc = $this->_setScreen_columns($xml_doc, $table, $input);
@@ -2148,7 +2141,7 @@ class radicore_view
 END_OF_REGEX;
 
         if (isset($input['columns'])) {
-            $grid = $xml_doc->createElement('grid');
+            $grid = $xml_doc->createElement('columns');
             $grid = $element->appendChild($grid);
             $cells_remaining = 12;  // there are 12 cells in the bootstrap grid system
             $star_column = 0;  // column with its width set to '*' (asterisk or star)
@@ -2177,7 +2170,11 @@ END_OF_REGEX;
                                     $size = floor($regs[0] / 75);
                                 } // if
                             } // if
+                            if ($size < 1) {
+                                $size = 1;  // set to minimum size
+                            } // if
                             $info[$row]['grid_size'] = $size;
+                            $info[$row]['width']     = $attrvalue;
                             $cells_remaining = $cells_remaining - $size;
 
                         } elseif (preg_match('/^(align|valign|class)$/i', $attrname)) {
@@ -2203,6 +2200,7 @@ END_OF_REGEX;
             foreach ($info as $row => $grid_data) {
                 $column = $xml_doc->createElement('column');
                 $column = $grid->appendChild($column);
+                $column->setAttribute('width', $grid_data['width']);
                 $column->setAttribute('grid_size', $grid_data['grid_size']);
                 if (!empty($grid_data['class'])) {
                     $column->setAttribute('class', $grid_data['class']);
@@ -2309,10 +2307,6 @@ END_OF_REGEX;
 
                         if (preg_match('/^(nosort)$/i', $key, $regs)) {
                             // ignore 'nosort' entry
-                        } elseif ($key == 'size' AND is_numeric($value)) {
-                            // 'size=<numeric>' is an attribute of the previous field, whereas
-                            // 'size=<string>' is a new 'field=label' pair
-                            $cell->setAttribute($key, $value);
                         } elseif ($key == 'javascript' and is_array($value)) {
                             foreach ($value as $sttr => $attrvalue) {
                                 // add this entry as an attribute to the current row

@@ -6,6 +6,8 @@
 require_once 'mnu_user.class.inc';
 class logon extends mnu_user
 {
+    var $login_type;
+
     // ****************************************************************************
     // this subclass is used by scripts: logon.php and error.inc
     // ****************************************************************************
@@ -46,6 +48,7 @@ class logon extends mnu_user
         $mnu_control =& RDCsingleton::getInstance('mnu_control');
 
         $login_type = $mnu_control->getControlData('login_type');
+        $this->login_type = $login_type;
         if ($login_type == 'EMAIL') {
             // login using email address
             $this->fieldspec['email_addr']['required'] = 'y';
@@ -72,6 +75,7 @@ class logon extends mnu_user
         } // if
 
         if ($login_type == 'EMAIL') {
+            // convert email address into a user ID
             $data = $this->getData("email_addr='{$logonarray['email_addr']}'");
             if (empty($data)) {
                 $this->errors[] = getLanguageText('sys0142'); // 'Security violation';
@@ -467,6 +471,21 @@ class logon extends mnu_user
         return $fieldarray;
 
     } // _cm_changeConfig
+
+    // ****************************************************************************
+    function _cm_formatData ($fieldarray, &$css_array)
+    // perform custom formatting before values are shown to the user.
+    // Note: $css_array is passed BY REFERENCE as it may be modified.
+    {
+        if ($this->login_type == 'EMAIL') {
+            unset($fieldarray['user_id']);
+        } else {
+            unset($fieldarray['email_addr']);
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_formatData
 
     // ****************************************************************************
     function _cm_getInitialData ($fieldarray)

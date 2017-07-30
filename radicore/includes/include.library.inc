@@ -6261,6 +6261,10 @@ if (!function_exists('selection2where')) {
     // $pkeyarray is an array of primary key name/value pairs for each row.
     // $select identifies which row(s) have been selected.
     {
+        if (empty($pkeyarray)) {
+            return '';
+        } // if
+
         if (is_array($select)) {
             $where_array = array();
             // for each row that has been selected...
@@ -6510,7 +6514,7 @@ if (!function_exists('send_email')) {
                 $filename = trim($attachment['filename']);
                 if (!empty($attachment['filepath'])) {
                 	$filepath = trim($attachment['filepath']);
-                	$filebody = file_get_contents($filepath);
+                    $filebody = file_get_contents($filepath);
                 } else {
                     $filebody = $attachment['filebody'];
                 } // if

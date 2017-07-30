@@ -8,14 +8,14 @@
     $fieldspec['filename']                  = array('type' => 'string',
                                                     'size' => 255);
 
-    $fieldspec['file']                      = array('type' => 'string',
+    $fieldspec['file_name']                 = array('type' => 'string',
                                                     'size' => 255);
 
     // primary key details
-    $this->primary_key                      = array('file');
+    $this->primary_key                      = array('file_name');
 
     // default sort sequence
-    $this->default_orderby                  = 'file';
+    $this->default_orderby                  = 'file_date';
 
     // finished
 ?>

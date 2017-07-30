@@ -56,7 +56,7 @@ class mnu_file extends Default_Table
     // $task_id identifies the task to which the primary key(s) will be passed.
     // $pattern_id identifies the task's pattern.
     {
-        $pkey_array = array('file');  // replace array
+        $pkey_array = array('file_name');  // replace array
 
         return $pkey_array;
 
@@ -128,7 +128,7 @@ class mnu_file extends Default_Table
     // if anything is placed in $this->errors the deletion will be terminated.
     {
         // this entry exists in the file system, not the database
-        $filename = $this->picker_subdir .'/' .$rowdata['file'];
+        $filename = $this->picker_subdir .'/' .$rowdata['file_name'];
 
         $result = unlink($filename);
 

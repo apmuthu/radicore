@@ -11,8 +11,8 @@ $structure['main']['columns'][] = array('width' => '17%');
 
 // identify the field names and their screen labels
 $structure['main']['fields'][] = array('selectbox' => 'S');
-$structure['main']['fields'][] = array('file' => 'File Name');
-$structure['main']['fields'][] = array('size' => 'Size');
-$structure['main']['fields'][] = array('date' => 'File Date');
+$structure['main']['fields'][] = array('file_name' => 'File Name');
+$structure['main']['fields'][] = array('file_size' => 'Size');
+$structure['main']['fields'][] = array('file_date' => 'File Date');
 
 ?>

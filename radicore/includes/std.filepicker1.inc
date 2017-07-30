@@ -229,11 +229,11 @@ if (empty($file_list)) {
                 if (is_dir($subdir.DIRECTORY_SEPARATOR.$file)) {
                     if (!empty($pattern)) {
                         if (preg_match('/'.$pattern.'/i', $file)) {
-                            $file_list[$rownum]['file'] = $file;
+                            $file_list[$rownum]['file_name'] = $file;
                             $rownum++;
                         } // if
                     } else {
-                        $file_list[$rownum]['file'] = $file;
+                        $file_list[$rownum]['file_name'] = $file;
                         $rownum++;
                     } // if
                 } // if
@@ -241,18 +241,18 @@ if (empty($file_list)) {
                 // only files of right type are appended to array
                 if (!empty($pattern)) {
                     if (preg_match('/'.$pattern.'/i', $file)) {
-            	        $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+            	        $file_list[$rownum]['file_name'] = $file;  // display filename without the directory name
                     } // if
                 } else {
-                    $file_list[$rownum]['file'] = $file;  // display filename without the directory name
+                    $file_list[$rownum]['file_name'] = $file;  // display filename without the directory name
                 } // if
                 if (array_key_exists($rownum, $file_list)) {
-                    $file_list[$rownum]['date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
-                    $file_list[$rownum]['size'] = filesize("$subdir/$file");
+                    $file_list[$rownum]['file_date'] = date('Y-m-d H:i:s', filemtime("$subdir/$file"));
+                    $file_list[$rownum]['file_size'] = filesize("$subdir/$file");
                     // set up arrays for sorting
                     $filename[$rownum] = strtolower($file);
-                    $filedate[$rownum] = $file_list[$rownum]['date'];
-                    $filesize[$rownum] = $file_list[$rownum]['size'];
+                    $filedate[$rownum] = $file_list[$rownum]['file_date'];
+                    $filesize[$rownum] = $file_list[$rownum]['file_size'];
                     $rownum++;
                 } // if
             } // if
@@ -289,8 +289,8 @@ if (isset($_GET['orderby'])) {
 	$fileobject->setOrderBy($_GET['orderby'], $fileobject->sql_orderby_seq);
 } // if
 $orderby = $fileobject->getOrderBy();
-if (!preg_match('/(file|size|date)/i', $orderby)) {
-	$orderby = 'file';
+if (!preg_match('/(file_name|file_size|file_date)/i', $orderby)) {
+	$orderby = 'file_name';
 	$fileobject->setOrderBy($orderby, $fileobject->sql_orderby_seq, false);
 } // if
 $fileobject->sql_orderby = $orderby;
@@ -300,19 +300,24 @@ if (isset($_GET['refresh'])) {
 } else {
     $orderby_seq = $fileobject->getOrderBySeq($orderby, $fileobject->sql_orderby_seq);
 } // if
-// set sequence to be used by array_multisort
-if (empty($orderby_seq) OR $orderby_seq == 'asc') {
- 	$multisort_seq = SORT_ASC;
-} else {
-    $multisort_seq = SORT_DESC;
-} // if
 
-if ($orderby == 'size') {
-	array_multisort($filesize, $multisort_seq, $file_list);
-} elseif ($orderby == 'date') {
-    array_multisort($filedate, $multisort_seq, $file_list);
-} else {  // $orderby == 'file'
-    array_multisort($filename, $multisort_seq, $file_list);
+if (preg_match('/^(directory)$/i', $filemask)) {
+    // sorting is turned off for directories
+} else {
+        // set sequence to be used by array_multisort
+    if (empty($orderby_seq) OR $orderby_seq == 'asc') {
+        $multisort_seq = SORT_ASC;
+    } else {
+        $multisort_seq = SORT_DESC;
+    } // if
+
+    if ($orderby == 'file_size') {
+        array_multisort($filesize, $multisort_seq, $file_list);
+    } elseif ($orderby == 'file_date') {
+        array_multisort($filedate, $multisort_seq, $file_list);
+    } else {  // $orderby == 'file_name'
+        array_multisort($filename, $multisort_seq, $file_list);
+    } // if
 } // if
 
 // set pagination data

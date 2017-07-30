@@ -1,4 +1,4 @@
--- file created on May 12, 2017, 5:08 pm
+-- file created on June 9, 2017, 7:39 am
 
 REPLACE INTO `dict_database` (`database_id`, `database_name`, `database_desc`, `subsys_id`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('dict', 'Data Dictionary', 'Author: A J Marston
 Date: June, 2005
@@ -158,6 +158,10 @@ REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_i
 REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_name`, `relation_desc`, `relation_type`, `orderby`, `parent_field`, `calc_field`, `key_name`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('dict', 'dict_database', 'dict', 'dict_table', '0', NULL, NULL, 'Links DICT_DATABASE to DICT_TABLE', NULL, 'DEL', NULL, 'database_name', NULL, 'PRIMARY', '2005-04-07 17:06:31', 'AJM', '2006-11-03 11:08:43', 'AJM');
 
 REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('dict', 'dict_database', 'database_id', 'dict', 'dict_table', '0', 'database_id', '1', '2005-04-07 17:06:31', 'AJM', '2006-08-22 15:54:48', 'AJM');
+
+REPLACE INTO `dict_relationship` (`database_id_snr`, `table_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `table_alias_snr`, `table_alias_jnr`, `relation_name`, `relation_desc`, `relation_type`, `orderby`, `parent_field`, `calc_field`, `key_name`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('menu', 'mnu_subsystem', 'dict', 'dict_database', '0', NULL, NULL, 'Links MNU_SUBSYSTEM to DICT_DATABASE', NULL, 'RES', NULL, 'subsys_name', NULL, 'PRIMARY', '2017-06-09 07:38:13', 'AJM', NULL, NULL);
+
+REPLACE INTO `dict_related_column` (`database_id_snr`, `table_id_snr`, `column_id_snr`, `database_id_jnr`, `table_id_jnr`, `seq_no`, `column_id_jnr`, `seq_in_index`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('menu', 'mnu_subsystem', 'subsys_id', 'dict', 'dict_database', '0', 'subsys_id', '1', '2017-06-09 07:38:14', 'AJM', '2017-06-09 07:38:28', 'AJM');
 
 REPLACE INTO `dict_table` (`database_id`, `table_id`, `table_name`, `table_desc`, `audit_logging`, `default_orderby`, `alt_language_table`, `alt_language_cols`, `nameof_start_date`, `nameof_end_date`, `created_date`, `created_user`, `revised_date`, `revised_user`) VALUES ('dict', 'dict_related_column', 'Related Column', 'This holds the details of all the columns that are involved in a relationship.', 'Y', 'seq_in_index', NULL, NULL, NULL, NULL, '2005-04-07 14:14:05', 'AJM', '2015-12-22 13:30:02', 'batch');
 

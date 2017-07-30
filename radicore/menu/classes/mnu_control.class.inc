@@ -711,14 +711,16 @@ class mnu_control extends Default_Table
         $where_array = where2array($where);
 
         if (!empty($where_array['field_id'])) {
-            // only a single field was specified, so create a null value if not found
-            $fieldname = strtolower($where_array['field_id']);
-            if (strpos($fieldname, '%') === FALSE) {
-                // does not contain wildcard operator, so LIKE was not used
-        	    if (!array_key_exists($fieldname, $fieldarray[0])) {
-                    $fieldarray[0][$fieldname] = null;
+            do {
+                list($name, $operator, $value) = splitNameOperatorValue($where);
+                if ($name == 'field_id' AND $operator == '=') {
+                    // only a single field was specified, so create a null value if not found
+                    $fieldname = strtolower($value);
+                    if (!array_key_exists($fieldname, $fieldarray[0])) {
+                        $fieldarray[0][$fieldname] = null;
+                    } // if
                 } // if
-            } // if
+            } while (!empty($where));
         } else {
             // insert any missing fields from $fieldspec
             foreach ($fieldspec as $fieldname => $spec) {

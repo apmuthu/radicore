@@ -27,10 +27,10 @@ ALTER TABLE MNU_SUBSYSTEM RENAME COLUMN SUBSYS_DESC TO SUBSYS_NAME;
 ALTER TABLE MNU_SUBSYSTEM MODIFY (SUBSYS_NAME VARCHAR2(80 BYTE) );
 ALTER TABLE MNU_SUBSYSTEM ADD (SUBSYS_DESC CLOB );
 
-UPDATE mnu_task SET is_disabled='N' WHERE is_disabled IS NULL);
-UPDATE mnu_task SET keep_data='N' WHERE keep_data IS NULL);
-UPDATE mnu_task SET log_sql_query='N' WHERE log_sql_query IS NULL);
-UPDATE mnu_task SET use_https='N' WHERE use_https IS NULL);
+UPDATE mnu_task SET is_disabled='N' WHERE is_disabled IS NULL;
+UPDATE mnu_task SET keep_data='N' WHERE keep_data IS NULL;
+UPDATE mnu_task SET log_sql_query='N' WHERE log_sql_query IS NULL;
+UPDATE mnu_task SET use_https='N' WHERE use_https IS NULL;
 
 ALTER TABLE MNU_TASK RENAME COLUMN TASK_DESC TO TASK_NAME;
 ALTER TABLE MNU_TASK MODIFY (TASK_NAME NOT NULL);

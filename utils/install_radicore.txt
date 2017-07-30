@@ -14,7 +14,7 @@ service apache2 restart
 # upload radicore zip file to /var/www
 
 cd /var/www/webroot
-unzip ../radicore-2017-06-01.zip
+unzip ../radicore-2017-06-14.zip
 cd radicore
 unzip "*-prototype.zip"
 rm *-prototype.zip

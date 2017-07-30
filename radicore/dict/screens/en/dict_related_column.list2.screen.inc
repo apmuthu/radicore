@@ -6,7 +6,7 @@ $structure['tables']['outer'] = 'dict_relationship';
 $structure['outer']['columns'][] = array('width' => '25%');
 $structure['outer']['columns'][] = array('width' => '24%');
 $structure['outer']['columns'][] = array('width' => '18%');
-$structure['outer']['columns'][] = array('width' => '35%');
+$structure['outer']['columns'][] = array('width' => '*');
 
 $structure['outer']['fields'][1][] = array('label' => 'Database Id (snr)', 'rowspan' => 2);
 $structure['outer']['fields'][1][] = array('field' => 'database_id_snr', 'rowspan' => 2);

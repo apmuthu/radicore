@@ -490,24 +490,26 @@ abstract class Default_Table
             if (!empty($fieldarray[$field])) {
                 if (preg_match('/^(datetime|timestamp)$/i', $spec['type'])) {
                     if (!isset($spec['noedit']) AND !isset($spec['nodisplay'])) {
-                        $datetime = $dateobj->getInternalDateTime($fieldarray[$field], $spec);
-                        if ($datetime === false) {
-                            $this->errors[$field] = $dateobj->errors;
-                        } // if
-                        $fieldarray[$field] = convertTZ($datetime,
-                                                        $timezone_client,
-                                                        $_SESSION['timezone_server']);
+                        try {
+                            $datetime = $dateobj->getInternalDateTime($fieldarray[$field], $spec);
+                            $fieldarray[$field] = convertTZ($datetime,
+                                                            $timezone_client,
+                                                            $_SESSION['timezone_server']);
+                        } catch (Exception $e) {
+                            $this->errors[$field] = $e->getMessage();
+                        } // try
                     } // if
                 } elseif (preg_match('/^(date)$/i', $spec['type'])) {
                     if (!isset($spec['noedit']) AND !isset($spec['nodisplay'])) {
-                        $date = $dateobj->getInternalDate($fieldarray[$field]);
-                        if ($date === false) {
-                            $this->errors[$field] = $dateobj->errors;
-                        } // if
-                        $fieldarray[$field] = convertTZdate($date,
-                                                            '12:00:00',
-                                                            $timezone_client,
-                                                            $_SESSION['timezone_server']);
+                        try {
+                            $date = $dateobj->getInternalDate($fieldarray[$field]);
+                            $fieldarray[$field] = convertTZdate($date,
+                                                                '12:00:00',
+                                                                $timezone_client,
+                                                                $_SESSION['timezone_server']);
+                        } catch (Exception $e) {
+                            $this->errors[$field] = $e->getMessage();
+                        } // try
                     } // if
                 } // if
             } // if
@@ -4210,8 +4212,8 @@ abstract class Default_Table
         } // if
 
         // activate the QUICKSEARCH bar for the filename
-        $this->lookup_data['quicksearch_field'] = array('filename' => getLanguageText('Name'));
-        $this->xsl_params['quicksearch_default'] = 'filename';
+        $this->lookup_data['quicksearch_field'] = array('file_name' => getLanguageText('Name'));
+        $this->xsl_params['quicksearch_default'] = 'file_name';
 
         // turn array of file types into a string
         $string = '';
@@ -5427,6 +5429,30 @@ abstract class Default_Table
         return;
 
     } // setCurrentOrHistoric
+
+    // ****************************************************************************
+    function setDateRange ($target_date)
+    // sets a date range using the start/end dates for this table
+    {
+        if (!empty($this->nameof_start_date)) {
+            $start_date = $this->nameof_start_date;
+        } else {
+            $start_date = 'start_date';
+        } // if
+        if (!empty($this->nameof_end_date)) {
+            $end_date   = $this->nameof_end_date;
+        } else {
+            $end_date   = 'end_date';
+        } // if
+
+        $search[$start_date] = "<='{$target_date} 23:59:59'";
+        $search[$end_date]   = ">='{$target_date} 00:00:00'";
+
+        $string = array2where($search);
+
+        return $string;
+
+    } // setDateRange
 
     // ****************************************************************************
     function setDefaultOrderBy ($sql_orderby='')
@@ -9409,7 +9435,11 @@ abstract class Default_Table
             return $fieldarray;
         } // if
 
-        $user_id   = $_SESSION['logon_user_id'];
+        if (isset($_SESSION['logon_user_id'])) {
+            $user_id   = $_SESSION['logon_user_id'];
+        } else {
+            $user_id   = 'UNKNOWN';
+        } // if
         $role_id   = $_SESSION['role_id'];
         $role_list =& $_SESSION['role_list'];
         if (empty($role_list)) {
@@ -9579,7 +9609,11 @@ abstract class Default_Table
                 } elseif (preg_match('/^(mnu_user|mnu_account)$/i', $this->tablename)) {
                     // do not use account restriction when reading these tables
                 } else {
-                    $account_id = $_SESSION['rdcaccount_id'];
+                    if (isset($_SESSION['rdcaccount_id'])) {
+                        $account_id = $_SESSION['rdcaccount_id'];
+                    } else {
+                        $account_id = null;
+                    } // if
                     if (empty($account_id)) {
                         $account_id_string = null;  // read all accounts
                     } elseif ($account_id == 1) {

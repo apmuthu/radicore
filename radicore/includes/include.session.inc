@@ -358,7 +358,7 @@ function chooseButton ($postarray, $dbobject, $objectname='dbobject')
         $errors   = $dbobject->errors;
         $messages = $dbobject->messages;
         if (empty($errors)) {
-            if (is_True($_SESSION['selection_lock'])) {
+            if (isset($_SESSION['selection_lock'])AND is_True($_SESSION['selection_lock'])) {
                 // save this selection for next activation
         	    $dbobject->select_string = $selection;
         	    // serialise object contents for saving in session array
@@ -853,6 +853,7 @@ function initSession($save_session_data=array())
 	        if (is_True($GLOBALS['batch'])) {
 	            if (!empty($_SESSION)) {
 	                $save_session_batch = $_SESSION;
+                    unset($_SESSION);
 	            } // if
 	        } else {
 	            unset($GLOBALS['batch']);

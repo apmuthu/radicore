@@ -1,0 +1,7 @@
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+ALTER SESSION SET NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+SET SCAN OFF;
+
+-- ALTER SESSION SET CURRENT_SCHEMA = "MENU";
+
+UPDATE mnu_task SET order_by='file_date desc', revised_date='2017-06-05 17:44:11', revised_user='AJM' WHERE task_id='batch_log(filepicker)';

@@ -12,6 +12,9 @@ ALTER TABLE `dict_relationship` CHANGE COLUMN `relation_desc` `relation_name` VA
 ALTER TABLE `dict_relationship` CHANGE COLUMN `rel_comment` `relation_desc` TEXT NULL AFTER `relation_name`;
 ALTER TABLE `dict_relationship` CHANGE COLUMN `rel_type` `relation_type` CHAR(3) NOT NULL DEFAULT 'RES' AFTER `relation_desc`;
 
+UPDATE dict_table SET tbl_comment=table_desc WHERE tbl_comment IS NULL;
+UPDATE dict_table SET table_desc=SUBSTRING(table_desc,1,80);
+
 ALTER TABLE `dict_table` CHANGE COLUMN `table_desc` `table_name` VARCHAR(80) NOT NULL AFTER `table_id`;
 ALTER TABLE `dict_table` CHANGE COLUMN `tbl_comment` `table_desc` TEXT NULL AFTER `table_name`;
 

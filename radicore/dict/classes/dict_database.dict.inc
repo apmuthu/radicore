@@ -1,5 +1,5 @@
 <?php
-    // file created on May 12, 2017, 2:58 pm
+    // file created on June 9, 2017, 7:38 am
     
     // field specifications for table dict.dict_database
     $fieldspec['database_id']               = array('type' => 'string',
@@ -76,7 +76,11 @@
                                                     'fields' => array('database_id' => 'database_id'));
     
     // parent relationship details 
-    $this->parent_relations                 = array();
+    $this->parent_relations[]               = array('parent' => 'mnu_subsystem',
+                                                    'dbname' => 'menu',
+                                                    'subsys_dir' => 'menu',
+                                                    'parent_field' => 'subsys_name',
+                                                    'fields' => array('subsys_id' => 'subsys_id'));
     
     // determines if database updates are recorded in an audit log 
     $this->audit_logging                    = TRUE;

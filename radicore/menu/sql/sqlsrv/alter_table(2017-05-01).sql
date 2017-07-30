@@ -65,6 +65,10 @@ go
 
 exec sp_rename 'mnu_task.task_desc', 'task_name', 'COLUMN';
 ALTER TABLE [dbo].[mnu_task] ADD task_desc ntext;
+
+
+UPDATE mnu_task SET button_text=SUBSTRING(button_text,1,40);
+UPDATE mnu_task SET button_text=task_id WHERE button_text IS NULL;
 ALTER TABLE [dbo].[mnu_task] ALTER COLUMN button_text NVARCHAR(40) NOT NULL;
 go
 
@@ -86,6 +90,7 @@ ALTER TABLE [dbo].[mnu_user] ALTER COLUMN user_name NVARCHAR(40) NOT NULL;
 go
 
 exec #Drop_Unique_keys @TableName='mnu_user';
+UPDATE mnu_user SET email_addr=user_id + '@null.null' WHERE email_addr IS NULL;
 ALTER TABLE [dbo].[mnu_user] ALTER COLUMN email_addr NVARCHAR(50) NOT NULL;
 CREATE UNIQUE INDEX UQ1_mnu_user ON mnu_user(email_addr) WHERE email_addr IS NOT NULL;
 go

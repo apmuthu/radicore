@@ -1,5 +1,14 @@
 ﻿RADICORE for PHP - news
 
+2017-06-14, version 2.04.1
+Database changes:
+- None
+
+Other changes:
+- fixed problem in filepicker screens by renaming 'file', 'size' and 'date' fields to 'file_name', 'file_size' and 'file_date'. This to to resolve confusion between 'size' being used as an attribute as well as a name.
+- fixed bug in a batch process started from a navigation button which caused it to lose the current selection criteria.
+- fixed bug in "List Database" screen which caused it not to show the subsystem name.
+
 2017-06-01, version 2.04.0
 Database changes:
 - run script dict\sql\mysql\alter_table(2017-05-01).sql in order to change the structure of the DICT database
@@ -12,14 +21,14 @@ You are advised to re-export all your application subsystem details after this u
 Other changes:
 - updated all XSL stylesheets to output web pages with DOCTYPE for HTML5 instead of XHTML.
 - modified std.table.class.inc so that if the getExtraData() method is given an associative array it will return an associative array. If it is given an indexed array it will return an indexed array.
-- modified include.library.inc so that the array_update_indexed() function will reset $fieldarray to ensure that the pointer starts at the first entry.
+- modified include.library.inc so that the array_update_indexed() function wil reset $fieldarray to ensure that the pointer starts at the first entry.
 - modified include.library.inc so that the formatNumber() function will exit if the input argument is not numeric.
 - modified std.validation.class.inc so that the validateNumber() will round any values for minvalue and $maxvalue to remove any unwanted decimal places.
 - updated std.multi2.inc so that the sort order used in the parent form is used for the inner entity.
 - updated std.multi3.inc to fix 'undefined variable' when returning from a child form.
 - modified dict_database_s02.class.inc so that child relationships are not exported unless the child table is in the same database as the parent.
 - updated std.datevalidation.class.inc so that it throws exceptions instead of populating $this->errors.
-- updated include.xml.php5.inc so that if a page is displayed using HTTPS then the hyperlink for the 'help' page will also use HTTPS.
+- updated include.xml.php5.inc so that if a pageis displayed using HTTPS then the hyperlink for the 'help' page will also use HTTPS.
 - modified the logon screen so that when switching between HTTP and HTTPS it passes the session_id via a cookie instead of in the URL.
 - updated tables in the DICT database to create consistent names for XX_NAME and XX_DESC columns:
 -- the DICT_COLUMN.COLUMN_DESC column is renamed to COLUMN_NAME varchar(80)
@@ -37,7 +46,7 @@ Other changes:
 -- the MNU_PATTERN.PATTERN_DESC column is renamed to PATTERN_NAME
 -- the MNU_PATTERN.PATTERN_DESC column is added
 -- the MNU_ROLE.ROLE_DESC column is renamed to ROLE_NAME
--- the MNU_ROLE.ROLE_DESC column is added
+-- the MNU_ROLE.ROLE_DESC columnis added
 -- the MNU_SAVED_SELECTION.SELECTION_DESC column is renamed to SELECTION_NAME
 -- the MNU_SUBSYSTEM.SUBSYS_DESC column is renamed to SUBSYSY_NAME
 -- the MNU_SUBSYSTEM.SUBSYS_DESC column is added
@@ -49,6 +58,7 @@ Other changes:
 -- the MNU_TODO.ITEM_NOTES column is renamed to ITEM_DESC
 - updated the MNU_USER table to replace the pswd_chg_date and pswd_chg_time columns with a single pswd_change_datetime
 - updated the MNU_USER table to replace the logon_date and logon_time columns with a single logon_datetime
+
 
 2017-04-02, version 2.03.0
 Database changes:

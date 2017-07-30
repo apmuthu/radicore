@@ -25,7 +25,7 @@
 
 <!-- get the name of the MAIN table, and other variables -->
 <xsl:variable name="main" select="/root/structure/main/@id"/>
-<xsl:variable name="numrows" select="count(/root/filepicker/file)"/>
+<xsl:variable name="numrows" select="count(/root/filepicker/file_name)"/>
   
 <!-- image width and height may be defined in one of two places -->
 <xsl:variable name="file_directory" select="/root/params/file_directory" />
@@ -187,12 +187,12 @@
         <xsl:variable name="fieldvalue">
           <xsl:choose>
             <xsl:when test="$fieldname='image'">
-              <!-- replace 'image' value with 'file' value -->
-              <xsl:value-of select="$data/*[name()='file']" />
+              <!-- replace 'image' value with 'file_name' value -->
+              <xsl:value-of select="$data/*[name()='file_name']" />
             </xsl:when>
             <xsl:when test="$fieldname='video'">
-              <!-- replace 'image' value with 'file' value -->
-              <xsl:value-of select="$data/*[name()='file']" />
+              <!-- replace 'image' value with 'file_name' value -->
+              <xsl:value-of select="$data/*[name()='file_name']" />
             </xsl:when>
             <xsl:otherwise>
               <xsl:value-of select="$data/*[name()=$fieldname]" />
@@ -200,7 +200,7 @@
           </xsl:choose>
         </xsl:variable>
         
-        <xsl:variable name="cellattr" select="/root/filepicker[position()=$position]/file[@*]" />
+        <xsl:variable name="cellattr" select="/root/filepicker[position()=$position]/file_name[@*]" />
         
         <xsl:call-template name="display_file">
           <xsl:with-param name="fieldname"  select="$fieldname" />
@@ -228,12 +228,12 @@
             <xsl:variable name="fieldvalue">
               <xsl:choose>
                 <xsl:when test="$fieldname='image'">
-                  <!-- replace 'image' value with 'file' value -->
-                  <xsl:value-of select="$next/*[name()='file']" />
+                  <!-- replace 'image' value with 'file_name' value -->
+                  <xsl:value-of select="$next/*[name()='file_name']" />
                 </xsl:when>
                 <xsl:when test="$fieldname='video'">
-                  <!-- replace 'image' value with 'file' value -->
-                  <xsl:value-of select="$next/*[name()='file']" />
+                  <!-- replace 'image' value with 'file_name' value -->
+                  <xsl:value-of select="$next/*[name()='file_name']" />
                 </xsl:when>
                 <xsl:otherwise>
                   <xsl:value-of select="$next/*[name()=$fieldname]" />
@@ -241,7 +241,7 @@
               </xsl:choose>
             </xsl:variable>
             
-            <xsl:variable name="cellattr" select="/root/filepicker[position()=$position+1]/file[@*]" />
+            <xsl:variable name="cellattr" select="/root/filepicker[position()=$position+1]/file_name[@*]" />
             
             <xsl:call-template name="display_file">
               <xsl:with-param name="fieldname"  select="$fieldname" />
@@ -282,7 +282,7 @@
         </xsl:call-template>
       </xsl:when>
       
-      <xsl:when test="$fieldname='file'">
+      <xsl:when test="$fieldname='file_name'">
         <xsl:choose>
           <xsl:when test="/root/params/no_hyperlink">
             <!-- display file name as plain text, not a hyperlink -->
@@ -292,7 +292,7 @@
           <xsl:variable name="link">
               <xsl:choose>
                 <xsl:when test="/root/params/hyperlink_direct">
-                  <!-- link directly to the file -->
+                  <!-- link directly to the file_name -->
                   <xsl:value-of select="concat($file_directory, '/', $fieldvalue)" />
                 </xsl:when>
                 <xsl:otherwise>
