@@ -10,14 +10,13 @@ $structure['outer']['fields'][] = array('audit_dtl_key' => 'Key');
 
 $structure['tables']['middle'] = 'audit_tbl';
 
-$structure['middle']['columns'][] = array('width' => '10%');
-$structure['middle']['columns'][] = array('width' => '20%');
-$structure['middle']['columns'][] = array('width' => '10%');
-$structure['middle']['columns'][] = array('width' => '15%');
-$structure['middle']['columns'][] = array('width' => '10%');
-$structure['middle']['columns'][] = array('width' => '15%');
-//$structure['middle']['columns'][] = array('width' => '3%');
-$structure['middle']['columns'][] = array('width' => '10%');
+$structure['middle']['columns'][] = array('width' => '8.4%');
+$structure['middle']['columns'][] = array('width' => '16.7%');
+$structure['middle']['columns'][] = array('width' => '8.4%');
+$structure['middle']['columns'][] = array('width' => '16.7%');
+$structure['middle']['columns'][] = array('width' => '8.4%');
+$structure['middle']['columns'][] = array('width' => '16.7%');
+$structure['middle']['columns'][] = array('width' => '8.4%');
 $structure['middle']['columns'][] = array('width' => '*');
 
 $structure['middle']['fields'][1][] = array('label' => 'User Id');
@@ -37,7 +36,7 @@ $structure['middle']['fields'][2][] = array('label' => 'Table Name');
 $structure['middle']['fields'][2][] = array('field' => 'table_name', 'colspan' => 3);
 
 $structure['middle']['fields'][3][] = array('label' => 'Pkey');
-$structure['middle']['fields'][3][] = array('field' => 'pkey', 'colspan' => 8);
+$structure['middle']['fields'][3][] = array('field' => 'pkey', 'colspan' => 7);
 
 $structure['tables']['inner'] = 'audit_fld';
 

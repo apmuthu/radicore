@@ -1,4 +1,4 @@
-// file created on May 12, 2017, 1:29 pm
+// file created on July 24, 2017, 6:31 pm
     
 // menu details for subsystem MENU
 $array['Admin']                                   = 'Admin';
@@ -82,6 +82,7 @@ $array['User Roles']                              = 'User Roles';
 $array['access_type']                             = 'access_type';
 $array['account_desc']                            = 'account_desc';
 $array['account_name']                            = 'account_name';
+$array['allow_responsive_gui']                    = 'allow_responsive_gui';
 $array['breadcrumbs']                             = 'breadcrumbs';
 $array['button_text']                             = 'button_text';
 $array['context_preselect']                       = 'context_preselect';
@@ -110,7 +111,6 @@ $array['is_disabled']                             = 'is_disabled';
 $array['is_documentation_only']                   = 'is_documentation_only';
 $array['is_external_auth_off']                    = 'is_external_auth_off';
 $array['is_noedit']                               = 'is_noedit';
-$array['is_primary']                              = 'is_primary';
 $array['item_desc']                               = 'item_desc';
 $array['item_name']                               = 'item_name';
 $array['keep_data']                               = 'keep_data';
@@ -126,6 +126,7 @@ $array['motd_subject']                            = 'motd_subject';
 $array['object_id']                               = 'object_id';
 $array['order_by']                                = 'order_by';
 $array['output_date_format']                      = 'output_date_format';
+$array['output_name']                             = 'output_name';
 $array['party_id']                                = 'party_id';
 $array['pattern_desc']                            = 'pattern_desc';
 $array['pattern_id']                              = 'pattern_id';

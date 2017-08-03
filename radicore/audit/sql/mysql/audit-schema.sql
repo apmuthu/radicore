@@ -15,9 +15,9 @@ CREATE TABLE IF NOT EXISTS `audit_fld` (
   `session_id` bigint(20) unsigned NOT NULL,
   `tran_seq_no` smallint(6) unsigned NOT NULL,
   `table_seq_no` smallint(6) unsigned NOT NULL,
-  `field_id` varchar(255) CHARACTER SET utf8 NOT NULL DEFAULT '',
-  `old_value` text CHARACTER SET utf8,
-  `new_value` text CHARACTER SET utf8,
+  `field_id` varchar(255) NOT NULL DEFAULT '',
+  `old_value` text,
+  `new_value` text,
   PRIMARY KEY (`session_id`,`tran_seq_no`,`table_seq_no`,`field_id`),
   KEY `field_id` (`field_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Field data';
@@ -29,10 +29,10 @@ CREATE TABLE IF NOT EXISTS `audit_fld` (
 CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `err_timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `ip_address` varchar(40) CHARACTER SET utf8 DEFAULT NULL,
-  `user_id` varchar(16) CHARACTER SET utf8 DEFAULT NULL,
-  `user_password` varchar(16) CHARACTER SET utf8 DEFAULT NULL,
-  `email_addr` varchar(50) CHARACTER SET utf8 DEFAULT NULL,
+  `ip_address` varchar(40) DEFAULT NULL,
+  `user_id` varchar(16) DEFAULT NULL,
+  `user_password` varchar(16) DEFAULT NULL,
+  `email_addr` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `audit_logon_errors` (
 -- Dumping structure for table audit.audit_ssn
 CREATE TABLE IF NOT EXISTS `audit_ssn` (
   `session_id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(16) CHARACTER SET utf8 NOT NULL DEFAULT 'UNKNOWN',
+  `user_id` varchar(16) NOT NULL DEFAULT 'UNKNOWN',
   `ssn_datetime` datetime NOT NULL,
   PRIMARY KEY (`session_id`),
   KEY `ssn_datetime` (`ssn_datetime`)
@@ -56,9 +56,9 @@ CREATE TABLE IF NOT EXISTS `audit_tbl` (
   `session_id` bigint(20) unsigned NOT NULL,
   `tran_seq_no` smallint(6) unsigned NOT NULL,
   `table_seq_no` smallint(6) unsigned NOT NULL,
-  `base_name` varchar(64) CHARACTER SET utf8 DEFAULT NULL,
-  `table_name` varchar(64) CHARACTER SET utf8 DEFAULT NULL,
-  `pkey` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `base_name` varchar(64) DEFAULT NULL,
+  `table_name` varchar(64) DEFAULT NULL,
+  `pkey` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`session_id`,`tran_seq_no`,`table_seq_no`),
   KEY `pkey` (`pkey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Table data';
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
   `session_id` bigint(20) unsigned NOT NULL,
   `tran_seq_no` smallint(6) unsigned NOT NULL,
   `trn_datetime` datetime NOT NULL,
-  `task_id` varchar(80) CHARACTER SET utf8 DEFAULT NULL,
+  `task_id` varchar(80) DEFAULT NULL,
   PRIMARY KEY (`session_id`,`tran_seq_no`),
   KEY `trn_datetime` (`trn_datetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Audit Trail Transaction data';
@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS `audit_trn` (
 
 -- Dumping structure for table audit.php_session
 CREATE TABLE IF NOT EXISTS `php_session` (
-  `session_id` varchar(32) CHARACTER SET utf8 NOT NULL DEFAULT '',
-  `user_id` varchar(16) CHARACTER SET utf8 DEFAULT NULL,
+  `session_id` varchar(32) NOT NULL DEFAULT '',
+  `user_id` varchar(16) DEFAULT NULL,
   `date_created` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `last_updated` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `session_data` longblob,

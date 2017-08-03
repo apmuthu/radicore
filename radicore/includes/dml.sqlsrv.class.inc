@@ -459,6 +459,18 @@ END_OF_REGEX;
 
         // replace: (SELECT GROUP_CONCAT(table.field ORDER BY .... SEPARATOR ',') FROM table WHERE a=b) AS alias
         // with   : alias=STUFF((SELECT ','+field FROM table WHERE user_id=mnu_user.user_id FOR XML PATH('')) , 1, 1, '' ),
+        $pattern2 = <<< END_OF_REGEX
+/
+(                          # start choice
+  \w+                      # word
+  |                        # or
+  '(([^\\\']*(\\\.)?)*)'   # quoted string
+  |                        # or
+  [ ]*,[ ]*                # [space]comma[space]
+)                          # end choice
+/xims
+END_OF_REGEX;
+
         if ($count = preg_match_all("/(?<= group_concat\().+?(\)[ ]AS[ ]\w+)/ims", $output, $regs)) {
             foreach ($regs[0] as $string1) {
                 $count = preg_match('/.+(?=[ ]order[ ]by)/i', $string1, $regs2);
@@ -472,8 +484,7 @@ END_OF_REGEX;
                 if ($count > 0) {
                     $orderby = trim($regs2[0]);
                 } else {
-                    //$orderby = $part1;
-                    preg_match('/\w+/', $part1, $regs3);
+                    preg_match('/\w+/', $part1, $regs3);  // extract first word in $part1
                     $orderby = $regs3[0];
                 } // if
                 $count = preg_match("/(?<=separator[ ])'.+?'/i", $string1, $regs2);
@@ -497,6 +508,25 @@ END_OF_REGEX;
                 $string1 = str_replace(']', "\]", $string1);
                 $string1 = str_replace('.', "\.", $string1);
                 $string1 = str_replace('?', "\?", $string1);
+
+                $count = preg_match_all($pattern2, $part1, $regs);
+                if ($count > 0) {
+                    $part2 = null;
+                    foreach ($regs[0] as $ix => $value) {
+                        if (preg_match('/\w+/', $value)) {
+                            // this is a word
+                            $part2 .= "CAST($value AS VARCHAR)";
+                        } elseif (preg_match("/'(([^\\\']*(\\\.)?)*)'/", $value)) {
+                            // this is a quoted string
+                            $part2 .= $value;
+                        } elseif (preg_match('/[ ]*,[ ]*/', $value)) {
+                            // this is a comma concatenator
+                            $part2 .= ' + ';  // string concatenator
+                        } // if
+                    } // foreach
+                    $part1 = $part2;
+                } // if
+
                 $string2 = "$alias=STUFF((SELECT $separator+$part1 FROM $from WHERE $where ORDER BY $orderby FOR XML PATH('')) , 1, 1, '' )";
                 $output  = preg_replace('/\(select[ ]group_concat\(' .$string1 .'/iu', $string2, $output, 1);
             } // foreach

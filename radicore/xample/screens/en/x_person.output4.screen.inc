@@ -1,24 +1,41 @@
 <?php
-$structure['xsl_file'] = 'std.detail1.xsl';
+$structure['xsl_file'] = 'std.list2.xsl';
 
-$structure['tables']['main'] = 'x_person';
+$structure['tables']['outer'] = 'output4_header';
 
 // identify the column specs - may use 'width' or 'class'
-$structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => '*');
+$structure['outer']['columns'][] = array('width' => '25%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '*');
 
-$structure['main']['fields'][0][] = array('label' => 'Restore Selection');
-$structure['main']['fields'][0][] = array('field' => 'rdc_restore_selection', 'colspan' => 3);
+$structure['outer']['fields'][0][] = array('label' => 'Restore Selection');
+$structure['outer']['fields'][0][] = array('field' => 'rdc_restore_selection', 'colspan' => 3);
 
-$structure['main']['fields'][1][] = array('label' => 'Description');
-$structure['main']['fields'][1][] = array('field' => 'rdc_selection_desc', 'size' => 50);
-$structure['main']['fields'][1][] = array('field' => 'rdc_save_selection', 'colspan' => 2);
+$structure['outer']['fields'][1][] = array('label' => 'Description');
+$structure['outer']['fields'][1][] = array('field' => 'rdc_selection_desc', 'size' => 50, 'colspan' => 2);
+$structure['outer']['fields'][1][] = array('field' => 'button_group');
 
-$structure['main']['fields'][2][] = array('label' => 'blank', 'class' => 'divider');
-$structure['main']['fields'][2][] = array('field' => 'blank', 'colspan' => 3, 'class' => 'divider');
+$structure['outer']['fields'][2][] = array('label' => 'rdc_limit');
+$structure['outer']['fields'][2][] = array('field' => 'rdc_limit');
+$structure['outer']['fields'][2][] = array('label' => 'rdc_offset');
+$structure['outer']['fields'][2][] = array('field' => 'rdc_offset');
 
-// the contents of this screen are constructed at run time
+//$structure['main']['fields'][2][] = array('label' => 'blank', 'class' => 'divider');
+//$structure['main']['fields'][2][] = array('field' => 'blank', 'colspan' => 3, 'class' => 'divider');
+
+$structure['tables']['inner'] = 'x_person';
+
+// identify the column specs - may use 'width' or 'class'
+$structure['inner']['columns'][] = array('width' => '16.7%', 'align' => 'right');
+$structure['inner']['columns'][] = array('width' => '8.4%');
+$structure['inner']['columns'][] = array('width' => '8.4%');
+$structure['inner']['columns'][] = array('width' => '*');
+
+// identify the field names and their screen labels
+$structure['inner']['fields'][] = array('fieldname' => 'Field Name');
+$structure['inner']['fields'][] = array('selected' => 'Selected');
+$structure['inner']['fields'][] = array('sort_seq' => 'Sort Seq');
+$structure['inner']['fields'][] = array('output_name' => 'Label');
 
 ?>

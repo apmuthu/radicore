@@ -284,6 +284,7 @@ if (!empty($_POST)) {
                 $messages[] = getLanguageText('sys0091'); // 'Update successful'
             } // if
             if (isset($_POST['submitnext'])) {
+                $next_outer  = false;
                 $next_middle = false;
                 if ($dbinner->rows_per_page == 1) {
                     $curitem  = $dbinner->getPageNo();
@@ -298,13 +299,24 @@ if (!empty($_POST)) {
                     $curitem  = $scrolling[$dbmiddle->getClassName()]['curitem'];
                     $lastitem = $scrolling[$dbmiddle->getClassName()]['lastitem'];
                     if ($curitem < $lastitem) {
-                        // skip to the next item
+                        // skip to the next item in the MIDDLE entity
                         $curitem++;
                         $scrolling[$dbmiddle->getClassName()]['curitem'] = $curitem;
                         $dbmiddle->setPageNo($curitem);
                         $where = $scrolling[$dbouter->getClassName()]['where'];
                         $fieldarray = $dbmiddle->getData($where);
                         $scrolling[$dbmiddle->getClassName()]['lastitem'] = $dbmiddle->getLastPage();
+                    } elseif (isset($scrolling[$dbouter->getClassName()])) {
+                        $curitem  = $scrolling[$dbouter->getClassName()]['curitem'];
+                        $lastitem = $scrolling[$dbouter->getClassName()]['lastitem'];
+                        if ($curitem < $lastitem) {
+                            // skip to the next item in the OUTER entity
+                            $curitem++;
+                            $scrolling[$dbouter->getClassName()]['curitem'] = $curitem;
+                            $dbouter->setPageNo($curitem);
+                            $where = $scrolling[$dbouter->getClassName()]['where'];
+                            $dbmiddle->setPageNo(1);  // reset to first row of child table
+                        } // if
                     } // if
                 } // if
             } // if

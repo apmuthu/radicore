@@ -30,6 +30,7 @@ class mnu_role extends Default_Table
     {
         $this->errors = array();
         $result       = array();
+        $today        = getTimeStamp('date');
 
         if (empty($user_id) AND !empty($_SESSION['logon_user_id'])) {
             $user_id = $_SESSION['logon_user_id'];
@@ -54,9 +55,11 @@ class mnu_role extends Default_Table
             $this->sql_select = 'mnu_role.role_id, global_access';
             $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}') AS role_list";
             $this->sql_from   = "mnu_role
-LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}' AND mur.is_primary='Y')";
+LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}')";
+            $where  = "mnu_role.role_id=mur.role_id";
+            $where .= " AND mur.sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00')";
             $this->setRowsPerPage(1);  // ensure that only one entry is retrieved
-            $role_data = $this->getData_raw("mnu_role.role_id=mur.role_id");
+            $role_data = $this->getData_raw($where);
             if ($this->numrows <> 1) {
                 // 'Role does not exist for user 'x';
                 $this->errors[] = getLanguageText('sys0013', $user_id);

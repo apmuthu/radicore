@@ -100,19 +100,18 @@ function menu_viewPatternId ( $func, $params, $user_data )
     if ( $result = $dbobject->fetchRow ( $resource ) ) {
 
         // Extract the variables we want to send in our response
-        $entry['pattern_id']    = $result['pattern_id'];
-        $entry['pattern_desc']  = $result['pattern_desc'];
-        $entry['pattern_long_desc']  = $result['pattern_long_desc'];
-        $entry['pattern_desc']  = $result['pattern_desc'];
-        $entry['visible_screen']  = $result['visible_screen'];
-        $entry['context_preselect']  = $result['context_preselect'];
-        $entry['keep_data']  = $result['keep_data'];
-        $entry['created_date']  = $result['created_date'];
+        $entry['pattern_id']        = $result['pattern_id'];
+        $entry['pattern_name']      = $result['pattern_name'];
+        $entry['pattern_desc']      = $result['pattern_desc'];
+        $entry['visible_screen']    = $result['visible_screen'];
+        $entry['context_preselect'] = $result['context_preselect'];
+        $entry['keep_data']         = $result['keep_data'];
+        $entry['created_date']      = $result['created_date'];
         xmlrpc_set_type($entry['created_date'], 'datetime');
-        $entry['created_user']  = $result['created_user'];
-        $entry['revised_date']  = $result['revised_date'];
+        $entry['created_user']      = $result['created_user'];
+        $entry['revised_date']      = $result['revised_date'];
         xmlrpc_set_type($entry['revised_date'], 'datetime');
-        $entry['revised_user']  = $result['revised_user'];
+        $entry['revised_user']      = $result['revised_user'];
 
         $response = $entry;
         //XMLRPC_fatal_error(1234, "menu_viewPatternId() error: Unable to read entry");

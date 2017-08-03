@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // name = std.output4.inc
@@ -38,65 +38,81 @@ if (isset($_POST['quit'])) {
 $act_buttons['submitBtn'] = 'submit';  // do not use name 'submit' as this conflicts with javascript 'submit()' function.
 $act_buttons['quit']      = 'cancel';
 
+// create an instance for the header area
+require_once "output4_header.class.inc";
+if (isset($script_vars['dbouter'])) {
+    $dbouter = unserialize($script_vars['dbouter']);
+    $outer_data = $dbouter->getFieldArray(); // get data from this instance
+    $outer_data = $dbouter->getExtraData($outer_data);
+    $dbouter->setFieldArray($outer_data);
+} else {
+    $dbouter = new output4_header;
+    // indicate that this object was started from a page controller
+    $dbouter->initiated_from_controller = true;
+    $dbouter->zone                      = 'outer';
+    $dbouter->setRowsPerPage(1);
+    //$null = $dbouter->initialise();  // perform any initialisation
+    $outer_data = array();
+    $outer_data = $dbouter->getExtraData($outer_data);
+} //if
+
 // create a class instance for the main database table
 require_once "classes/$table_id.class.inc";
-if (isset($script_vars['dbobject'])) {
+if (isset($script_vars['dbinner'])) {
     // use data from previous instance for this script
-    $dbobject = unserialize($script_vars['dbobject']);
+    $dbinner = unserialize($script_vars['dbinner']);
     if (!empty($return_from)) {
         // see if any action is required when being restarted
-        $dbobject->restart($return_from, $return_action, $return_string, $return_files);
+        $dbinner->restart($return_from, $return_action, $return_string, $return_files);
     } // if
-    $dbobject->setRowsPerPage(1);  // allow only one row in selection screen
     // get data from previous instance
-    $fieldarray = $dbobject->getFieldArray();
+    $inner_data = $dbinner->getFieldArray();
+    $inner_data = $dbinner->getExtraData($inner_data);
+    $dbinner->fieldspec = $dbinner->saved_fieldspec;
 } else {
-    $dbobject = new $table_id;
+    $dbinner = new $table_id;
     // indicate that this object was started from a page controller
-    $dbobject->initiated_from_controller = true;
-    $dbobject->setRowsPerPage(1);  // // allow only one row in selection screen
-    $dbobject->sql_select  = &$sql_select;
-    $dbobject->sql_from    = &$sql_from;
-    $dbobject->sql_where   = &$sql_where;
-    $dbobject->sql_groupby = &$sql_groupby;
-    $dbobject->sql_having  = &$sql_having;
+    $dbinner->initiated_from_controller = true;
+    $dbinner->sql_select  = &$sql_select;
+    $dbinner->sql_from    = &$sql_from;
+    $dbinner->sql_where   = &$sql_where;
+    $dbinner->sql_groupby = &$sql_groupby;
+    $dbinner->sql_having  = &$sql_having;
     if (!empty($sql_orderby)) {
-        $dbobject->setDefaultOrderby($sql_orderby);
+        $dbinner->setDefaultOrderby($sql_orderby);
     } elseif (isset($task_orderby)) {
-        $dbobject->setDefaultOrderby($task_orderby);
+        $dbinner->setDefaultOrderby($task_orderby);
     } // if
 
     // perform any initialisation
-    $where = $dbobject->initialise($where, $selection, $search);
-    if ($dbobject->errors) {
-       	scriptPrevious($dbobject->getErrors());
+    $where = $dbinner->initialise($where, $selection, $search);
+    if ($dbinner->errors) {
+       	scriptPrevious($dbinner->getErrors());
     } // if
 
     // get any data for lookup lists
-    $null = $dbobject->getExtraData($where);
-
-    // set sort order (if defined)
-    if (!empty($orderby)) {
-        $string = validateSortItem('', $orderby, $dbobject);
-        $dbobject->setOrderBy($string);
-        if (!empty($orderby_seq)) {
-            $dbobject->setOrderBySeq($orderby_seq);
-        } // if
-    } // if
+    $inner_data = $dbinner->getExtraData($where);
 
     // load optional criteria from search screen
     if (isset($search)) {
-        $dbobject->setSqlSearch($search);
+        $dbinner->setSqlSearch($search);
+    } // if
+    $inner_data = $dbinner->getColumnNames($where);
+    if ($dbinner->errors) {
+        $errors[$dbinner->getClassName()] = $dbinner->getErrors();
     } // if
 } // if
+
+$dbouter->setChildObject($dbinner);
+$dbinner->setParentObject($dbouter);
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     // check if we are returning from a child form
     if (!empty($return_from) AND (!empty($popup_object) OR isset($selection))) {
         // merge previous saved variables with selection from popup form
-        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
-        if ($dbobject->errors) {
-            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+        $inner_data = $dbinner->popupReturn($inner_data, basename($return_from), $selection, null, $return_files);
+        if ($dbinner->errors) {
+            $errors[$dbinner->getClassName()] = $dbinner->getErrors();
         } // if
     } // if
 } // if
@@ -109,43 +125,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($submit_button OR $task_button OR $custom_button) {
         // merge original data with POSTed data (so that fields which were displayed
         // but not POSTed are sent back if any errors are displayed).
-        $fieldarray = array_update_associative($fieldarray, $_POST, $dbobject->fieldspec);
+        $inner_data = array_update_indexed($inner_data, $_POST, $dbinner->fieldspec);
         // ensure that changes are stored inside relevant object
-        $dbobject->setFieldArray($fieldarray);
+        $dbinner->setFieldArray($inner_data);
 
     } else {
         // deal with a javascript 'submit()'.
-        $fieldarray = $dbobject->updateFieldArray($fieldarray, $_POST);
-        if ($dbobject->errors) {
-            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+        $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
+        if ($dbouter->errors) {
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
+        $inner_data = $dbinner->getFieldArray();  // inner data may have been rebuilt
     } // if
 
     if (empty($errors) AND !empty($task_button)) {
         // look for a navigation or popup button which jumps to another script
-        $child_errors = childForm($_POST, array('dbobject' => $dbobject), $task_button);
+        $child_errors = childForm($_POST, array('dbinner' => $dbinner), $task_button);
         if (is_array($child_errors)) {
-            $errors[$dbobject->getClassName()] = $child_errors;
+            $errors[$dbinner->getClassName()] = $child_errors;
         } // if
 
     } elseif (empty($errors) AND !empty($custom_button)) {
         // a custom button was pressed
         list($custom_btn, $btn_row, $btn_zone) = $custom_button;
         // save current data in case a custom button jumps to another script
-        $script_vars['dbobject'] = serialize($dbobect);
-        $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, $_POST);
-        if ($dbobject->errors) {
-            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+        $script_vars['dbouter'] = serialize($dbouter);
+        $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
+        if ($dbouter->errors) {
+            $errors[$dbouter->getClassName()] = $dbouter->getErrors();
         } // if
         unset($custom_button);
 
     } elseif (empty($errors) AND !empty($submit_button)) {
-        // ensure current selection is saved inside the object
-        $dbobject->saved_selection = $fieldarray;
-        // reset original field specifications
-        $dbobject->fieldspec = $dbobject->getFieldspec_original();
-        $fieldarray = $dbobject->changeConfig($where, $fieldarray);
-
         // look for LIMIT and OFFSET values
         $rdc_limit  =& $_POST['rdc_limit'];
         $rdc_offset =& $_POST['rdc_offset'];
@@ -158,14 +169,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $errors['rdc_offset'] = getLanguageText('sys0224');
         } // if
 
-        if (empty($errors)) {
-            $dbobject->setRowsPerPage(0);  // allow multiple rows to be retrieved
-            // get data from the database
-            $resource = $dbobject->getData_serial($where, $rdc_limit, $rdc_offset);
+        // check that all data is valid before we continue
+        foreach ($inner_data as $rownum => &$rowdata) {
+            $rowdata = $dbinner->validateUpdate($rowdata, true);  // perform PRIMARY validation only
+            if ($dbinner->errors) {
+                $errors[$dbinner->getClassName()][$rownum] = $dbinner->getErrors();
+            } // if
+        } // foreach
+        unset($rowdata);
 
-            if ($dbobject->getNumRows() <= 0) {
+        if (empty($errors)) {
+            $dbinner->fieldspec = $dbinner->getFieldSpec_original();
+            $dbinner->setRowsPerPage(0);  // allow ALL rows to be retrieved
+            // get data from the database
+            $resource = $dbinner->getData_serial($where, $rdc_limit, $rdc_offset);
+
+            if ($dbinner->getNumRows() <= 0) {
                 // 'Nothing retrieved from the database.'
-                //scriptPrevious(getLanguageText('sys0085'));
                 $errors[] = getLanguageText('sys0085');
             } // if
 
@@ -177,16 +197,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 // create an instance of the CSV object
                 require_once 'std.csv.class.inc';
-                $csv = new csv_class($dbobject);
+                $csv = new csv_class($dbinner);
 
                 // transform output to CSV format
-                $output = $csv->outputCSV($resource, $_POST);
+                $output = $csv->outputCSV($resource, $dbouter);
                 if ($csv->errors) {
                     $string = format_array($csv->errors);
                     display_on_stdout($string);
                 } // if
-                //$errors = $dbobject->getErrors();
-                $messages = $dbobject->getMessages();
 
                 if (!empty($output)) {
                     // remove spinner and re-enable submit button
@@ -209,23 +227,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 $mode = 'update';      // identify mode for building the screen
 
-if (empty($dbobject->saved_selection)) {
-    $fieldarray = $dbobject->getColumnNames($where);  // not done yet, so do it now
-} // if
-
-$screen_structure = $dbobject->saved_screen_structure;   // use generated structure
-$dbobject->fieldspec = $dbobject->saved_fieldspec;       // use generated field specs
+$messages = $dbouter->getMessages();
+$messages = array_merge($messages, $dbinner->getMessages());
 
 // save these variables for later in the same session
-$script_vars['where']     = $where;
-$script_vars['dbobject']  = serialize($dbobject);
-$script_vars['scrolling'] = $scrolling;
+$script_vars['where']    = $where;
+$script_vars['dbouter']  = serialize($dbouter);
+$script_vars['dbinner']  = serialize($dbinner);
 $script_vars = updateScriptVars ($script_vars);
 
-$dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
+$dbouter->fieldarray  = $outer_data;  // replace data lost during serialization
+$dbinner->fieldarray  = $inner_data;
 
 // build list of objects for output to XML data
-$xml_objects[]['root'] = &$dbobject;
+$xml_objects[]['root'] = &$dbouter;
+$xml_objects[][$dbouter->getClassName()] = &$dbinner;
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);

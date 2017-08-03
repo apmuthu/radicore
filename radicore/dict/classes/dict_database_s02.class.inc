@@ -81,8 +81,8 @@ class dict_dataBase_s02 extends dict_dataBase
 
             // look for children within the same database
         	$tableobj->sql_from   = 'dict_relationship';
-        	//$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
-            $where = "database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr=database_id_snr";
+        	$where = "database_id_snr='$database_id' AND table_id_snr='$table_id'";
+            //$where = "database_id_snr='$database_id' AND table_id_snr='$table_id' AND database_id_jnr=database_id_snr";
         	$tableobj->sql_orderby = 'database_id_jnr,table_id_jnr,seq_no';
         	$output = $this->_extractRelationships ($tableobj, $where, $output);
 

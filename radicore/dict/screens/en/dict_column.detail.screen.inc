@@ -4,11 +4,11 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 $structure['tables']['main'] = 'dict_column';
 
 $structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => '20%');
-$structure['main']['columns'][] = array('width' => '15%');
-$structure['main']['columns'][] = array('width' => '15%');
-$structure['main']['columns'][] = array('width' => '10%');
-$structure['main']['columns'][] = array('width' => '15%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '8.4%');
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][1][] = array('label' => 'Database Id');
 $structure['main']['fields'][1][] = array('field' => 'database_id');
@@ -104,13 +104,13 @@ $structure['main']['fields'][34][] = array('label' => 'Align L/R');
 $structure['main']['fields'][34][] = array('field' => 'align_lr', 'colspan' => 3);
 
 $structure['main']['fields'][35][] = array('label' => 'Created Date');
-$structure['main']['fields'][35][] = array('field' => 'created_date', 'colspan' => 2);
-$structure['main']['fields'][35][] = array('label' => 'Created By',);
-$structure['main']['fields'][35][] = array('field' => 'created_user', 'colspan' => 2);
+$structure['main']['fields'][35][] = array('field' => 'created_date');
+$structure['main']['fields'][35][] = array('label' => 'Created By');
+$structure['main']['fields'][35][] = array('field' => 'created_user', 'colspan' => 3);
 
 $structure['main']['fields'][36][] = array('label' => 'Revised Date');
-$structure['main']['fields'][36][] = array('field' => 'revised_date', 'colspan' => 2);
+$structure['main']['fields'][36][] = array('field' => 'revised_date');
 $structure['main']['fields'][36][] = array('label' => 'Revised By');
-$structure['main']['fields'][36][] = array('field' => 'revised_user', 'colspan' => 2);
+$structure['main']['fields'][36][] = array('field' => 'revised_user', 'colspan' => 3);
 
 ?>

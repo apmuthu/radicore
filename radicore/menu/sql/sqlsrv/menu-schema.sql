@@ -371,6 +371,8 @@ CREATE TABLE mnu_saved_selection_data (
   selection_id int NOT NULL,
   fieldname nvarchar(80) NOT NULL,
   fieldvalue nvarchar(80) NULL,
+  sort_seq smallint NULL,
+  output_name nvarchar(80) NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2(0) NULL,
@@ -674,9 +676,11 @@ go
 --
 
 CREATE TABLE mnu_user_role (
-  user_id nvarchar(16), 
-  role_id nvarchar(16),
-  is_primary char(1) DEFAULT 'N', 
+  user_id nvarchar(16) NOT NULL, 
+  role_id nvarchar(16) NOT NULL,
+  sort_seq int NOT NULL,
+  start_date date NOT NULL DEFAULT ('2000-01-01'),
+  end_date date NULL DEFAULT ('9999-12-31'),
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
   revised_date datetime2(0) NULL,

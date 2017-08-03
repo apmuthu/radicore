@@ -13,6 +13,12 @@ require('include.general.inc');
 // include the standard XML-RPC library
 require('std.xmlrpc.inc');
 
+$mode = 'xmlrpc';
+
+if (empty($HTTP_RAW_POST_DATA)) {
+    $HTTP_RAW_POST_DATA = file_get_contents("php://input");
+} // if
+
 if (empty($HTTP_RAW_POST_DATA) AND !empty($_POST)) {
     // populate $HTTP_RAW_POST_DATA from $_POST
     $HTTP_RAW_POST_DATA = implode('&', $_POST);

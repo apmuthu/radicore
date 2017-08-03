@@ -418,7 +418,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
 
             	// export contents of MNU_USER_ROLE for this user
                 $user_role_obj = RDCsingleton::getInstance('mnu_user_role');
-                $user_role_obj->sql_orderby = 'user_id ASC, is_primary DESC, role_id ASC';
+                $user_role_obj->sql_orderby = 'user_id ASC, sort_seq ASC, role_id ASC';
                 $data2 = $user_role_obj->getData_raw("user_id='$user_id'");
                 $output = $this->_exportSqlData('mnu_user_role', $data2, $output);
 

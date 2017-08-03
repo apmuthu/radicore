@@ -17,8 +17,8 @@ $structure['tables']['inner'] = 'mnu_nav_button_snr';
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => '25%');
 $structure['inner']['columns'][] = array('width' => '*');
-$structure['inner']['columns'][] = array('width' => 25);
-$structure['inner']['columns'][] = array('width' => 85);
+$structure['inner']['columns'][] = array('width' => 55);
+$structure['inner']['columns'][] = array('width' => 120);
 $structure['inner']['columns'][] = array('width' => 150);
 
 // identify the field names and their screen labels

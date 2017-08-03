@@ -67,7 +67,7 @@ class csv_class
     } // getErrors
 
     // ****************************************************************************
-    function outputCSV ($resource, $fieldlist=null)
+    function outputCSV ($resource, $parent_object=null)
     // read database resource one record at a time and output to a CSV file.
     // $fieldlist (optional) has a Yes/No flag against each field name, and
     // only those with a 'Yes' flag should be included in the output.
@@ -128,35 +128,31 @@ class csv_class
                 return false;
             } // if
             $row_count++;
-            if (!empty($fieldlist) AND is_array($fieldlist)) {
-                // $fieldlist contains a list of field names which should be included in the output.
-                // $save_selection identifies the order in which they should be output.
-                if (!is_array($dbobject->saved_selection) OR empty($dbobject->saved_selection)) {
-                    $dbobject->saved_selection = $fieldlist;
-                } // if
-                $sorted = array();
-                // now resequence and edit the data
-                foreach ($dbobject->saved_selection as $name => $flag) {
-                    if (array_key_exists($name, $fieldarray)) {
-                        if ($dbobject->saved_selection[$name] == 'Y') {
-                            $sorted[$name] = $fieldarray[$name];
-                        } // if
-                    } // if
-                } // foreach
-                $fieldarray = $sorted;
-            } // if
             if ($row_count == 1 AND !is_True($dbobject->no_csv_header)) {
                 // first row, so output field names as labels
-                foreach ($fieldarray as $fieldname => $fieldvalue) {
-                    $header[] = $fieldname;
-                    $fieldname = getLanguageText($fieldname);
-                    if ($tab_delimited) {
-                        $output .= $fieldname ."\t";
-                        //$output .= '"' .$fieldname .'"' ."\t";
-                    } else {
-                        $output .= '"' .str_replace('"', "'", $fieldname) .'",';
-                    } // if
-                } // foreach
+                if (!empty($parent_object) AND is_object($parent_object)) {
+                    // $parent_object contains a list of field names which should be included in the output.
+                    $header = $parent_object->getFieldLabels($fieldarray);
+                    foreach ($header as $label) {
+                        if ($tab_delimited) {
+                            $output .= $label ."\t";
+                            //$output .= '"' .$fieldname .'"' ."\t";
+                        } else {
+                            $output .= '"' .str_replace('"', "'", $label) .'",';
+                        } // if
+                    } // foreach
+                } else {
+                    foreach ($fieldarray as $fieldname => $fieldvalue) {
+                        $header[] = $fieldname;
+                        $fieldname = getLanguageText($fieldname);
+                        if ($tab_delimited) {
+                            $output .= $fieldname ."\t";
+                            //$output .= '"' .$fieldname .'"' ."\t";
+                        } else {
+                            $output .= '"' .str_replace('"', "'", $fieldname) .'",';
+                        } // if
+                    } // foreach
+                } // if
                 // strip last ',' or "\t" and append <newline>
                 $output = rtrim($output, $delimiter);
                 $output .= "\r\n";
@@ -171,6 +167,10 @@ class csv_class
                 // perform any data formatting
                 $null = array();
                 $fieldarray = $dbobject->formatData($fieldarray, $null);
+                if (!empty($parent_object) AND is_object($parent_object)) {
+                    // arrange fields into the specified sequence
+                    $fieldarray = $parent_object->setFieldSequence($fieldarray);
+                } // if
                 // output each field as data
                 foreach ($fieldarray as $fieldname => $fieldvalue) {
                     // replace any tab characters which may be in the data

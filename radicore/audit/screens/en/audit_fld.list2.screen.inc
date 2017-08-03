@@ -3,14 +3,13 @@ $structure['xsl_file'] = 'std.list2.xsl';
 
 $structure['tables']['outer'] = 'audit_tbl';
 
-$structure['outer']['columns'][] = array('width' => '10%');
-$structure['outer']['columns'][] = array('width' => '20%');
-$structure['outer']['columns'][] = array('width' => '10%');
-$structure['outer']['columns'][] = array('width' => '15%');
-$structure['outer']['columns'][] = array('width' => '10%');
-$structure['outer']['columns'][] = array('width' => '15%');
-//$structure['outer']['columns'][] = array('width' => '3%');
-$structure['outer']['columns'][] = array('width' => '10%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '16.7%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '16.7%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '16.7%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
 $structure['outer']['columns'][] = array('width' => '*');
 
 $structure['outer']['fields'][1][] = array('label' => 'User Id');
@@ -30,7 +29,7 @@ $structure['outer']['fields'][2][] = array('label' => 'Table Name');
 $structure['outer']['fields'][2][] = array('field' => 'table_name', 'colspan' => 3);
 
 $structure['outer']['fields'][3][] = array('label' => 'Pkey');
-$structure['outer']['fields'][3][] = array('field' => 'pkey', 'colspan' => 8);
+$structure['outer']['fields'][3][] = array('field' => 'pkey', 'colspan' => 7);
 
 $structure['tables']['inner'] = 'audit_fld';
 

@@ -290,6 +290,8 @@ if (!function_exists('array_update_associative')) {
             $array2 = $array2[key($array2)];
         } // if
 
+        $dateobj =& RDCsingleton::getInstance('date_class');
+
         foreach ($array2 as $fieldname => $fieldvalue) {
             if (array_key_exists($fieldname, $array1)) {
                 if (isset($fieldspec[$fieldname])) {
@@ -303,6 +305,24 @@ if (!function_exists('array_update_associative')) {
                             } // foreach
                         } else {
                             $array2[$fieldname] = number_unformat($array2[$fieldname]);
+                        } // if
+                    } elseif ($spec['type'] == 'date') {
+                        if (!empty($array2[$fieldname])) {
+                           try {
+                                $internal_date = $dateobj->getInternalDate($array2[$fieldname]);
+                                $array2[$fieldname] = $internal_date;
+                            } catch (Exception $e) {
+
+                            } // try
+                        } // if
+                    } elseif (preg_match('/(datetime|timestamp)/i', $spec['type'])) {
+                        if (!empty($array2[$fieldname])) {
+                            try {
+                                $internal_datetime = $dateobj->getInternalDateTime($array2[$fieldname]);
+                                $array2[$fieldname] = $internal_datetime;
+                            } catch (Exception $e) {
+
+                            } // try
                         } // if
                     } // if
                 } else {
@@ -348,9 +368,12 @@ if (!function_exists('array_update_empty')) {
         } // if
 
         foreach ($array2 as $fieldname => $fieldvalue) {
-            if (empty($array1[$fieldname]) AND (is_True($allow_null) OR !empty($array2[$fieldname]))) {
+            if (isset($array1[$fieldname]) AND (!empty($array1[$fieldname]) OR strlen($array1[$fieldname]) > 0)) {
+                $ignore = 1;  // field already exists in array1, so do not overwrite it
+            } elseif (is_True($allow_null) OR (!empty($array2[$fieldname]) OR strlen($array2[$fieldname]) > 0)) {
+                // the contents of $array1 may be overwritten
                 if (isset($fieldspec[$fieldname]['autoinsert']) OR isset($fieldspec[$fieldname]['autoupdate'])) {
-                    // ignore this field
+                    $ignore = 2;  // ignore this field
                 } else {
                     if (is_array($fieldvalue) AND is_array($extra)) {
                         // append $extra before adding to $array1
@@ -358,6 +381,8 @@ if (!function_exists('array_update_empty')) {
                     } // if
                     $array1[$fieldname] = $fieldvalue;
                 } // if
+            } else {
+                $ignore = 3;  // ignore this field
             } // if
         } // foreach
 
@@ -374,6 +399,8 @@ if (!function_exists('array_update_indexed')) {
     // if they did not previously exist, which is not what I want. This version
     // will not create any items in $fieldarray which did not previously exist.
     {
+        $pattern_id = getPatternId();
+
         reset($fieldarray);
         $fieldarray_key = key($fieldarray);  // does index start at 0 or 1?
 
@@ -386,7 +413,7 @@ if (!function_exists('array_update_indexed')) {
                 $spec = array();
             } // if
             if (is_array($valuearray)) {
-                // copy row value from $postarray to $fieldarray for current $fieldname
+                // copy row value from $postarray to each row in $fieldarray for current $fieldname
                 foreach ($valuearray as $rownum => $value) {
                     if (isset($spec['type']) AND preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
                         $value = number_unformat($value);
@@ -404,13 +431,21 @@ if (!function_exists('array_update_indexed')) {
                     } // if
                 } // foreach
             } else {
-                // value is not an array, so insert it into every row
-                if (isset($spec['type']) AND preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
-                    $valuearray = number_unformat($valuearray);
-                } // if
-                foreach ($fieldarray as $rownum => $rowdata) {
-                    $fieldarray[$rownum][$fieldname] = $valuearray;
-                } // foreach
+                if (preg_match('/#/i', $fieldname)) {
+                    // contains invalid characters, so ignore it
+                } elseif (preg_match('/session_name/i', $fieldname)) {
+                    // contains invalid name, so ignore it
+                } elseif (preg_match('/output4/i', $pattern_id) AND preg_match('/^rdc_/i', $fieldname)) {
+                    // contains invalid name, so ignore it
+                } else {
+                    // value is not an array, so insert it into every row
+                    if (isset($spec['type']) AND preg_match('/(decimal|numeric|float|real|double|integer)/i', $spec['type'])) {
+                        $valuearray = number_unformat($valuearray);
+                    } // if
+                    foreach ($fieldarray as $rownum => $rowdata) {
+                        $fieldarray[$rownum][$fieldname] = $valuearray;
+                    } // foreach
+                } // else
             } // if
         } // foreach
 
@@ -2515,7 +2550,9 @@ if (!function_exists('findDBConfig')) {
     // It may have been given a prefix, or switched to another name.
     {
         $switch_dbnames = array();
+        $dbengine       = null;
         $dbschema       = null;
+        $dbprefix       = null;
 
         if (empty($GLOBALS['servers'])) {
             // use same settings for all databases
@@ -3192,14 +3229,20 @@ if (!function_exists('getLanguageArray')) {
         static $array2;         // for language_array.inc
         static $language;       // current language
         static $curr_dir;       // current directory used for $array2 contents
+        static $curr_project;   // current project code for custom processing
+        static $array3;         // for custom sys.language_array.inc
+        static $array4;         // for custom language_array.inc
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
             //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
         } // if
+
         $cwd = getcwd();
+        $cwd = str_replace('\\', '/', $cwd);  // replace back slashes with forward slashes
 
         if (!empty($GLOBALS['classdir'])) {
+            $GLOBALS['classdir'] = str_replace('\\', '/', $GLOBALS['classdir']);  // replace back slashes with forward slashes
             if ($curr_dir != $GLOBALS['classdir']) {
                 $curr_dir  = $GLOBALS['classdir'];
             } // if
@@ -3224,22 +3267,24 @@ if (!function_exists('getLanguageArray')) {
         // if language has changed then reload contents of both arrays
         if (!empty($GLOBALS['party_language'])) {
             if ($GLOBALS['party_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $GLOBALS['party_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $GLOBALS['party_language'];
             } // if
         } elseif (!empty($_SESSION['user_language'])) {
             if ($_SESSION['user_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $_SESSION['user_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $_SESSION['user_language'];
             } // if
         } elseif (!empty($_SESSION['default_language'])) {
             if ($_SESSION['default_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $_SESSION['default_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $_SESSION['default_language'];
             } // if
+        } else {
+            $language = 'en';
         } // if
 
         if (!is_array($array1)) {
@@ -3253,7 +3298,7 @@ if (!function_exists('getLanguageArray')) {
             $fname = getLanguageFile('sys.language_array.inc', $dir);
             $array1 = require $fname;  // import contents of disk file
             if (empty($array1)) {
-            	//trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
                 trigger_error("File $fname is empty", E_USER_ERROR);
             } // if
             unset($array);
@@ -3266,46 +3311,57 @@ if (!function_exists('getLanguageArray')) {
             $fname = getLanguageFile('language_array.inc', $dir);
             $array2 = require $fname;  // import contents of disk file
             if (empty($array2)) {
-            	// 'File $fname is empty'
+                // 'File $fname is empty'
                 trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
             } // if
             unset($array);
         } // if
 
         if (!empty($GLOBALS['project_code'])) {
+            if ($GLOBALS['project_code'] != $curr_project) {
+                $array3 = array();
+                $array4 = array();
+            } // if
             // now look for a file of custom messages
             $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
             if (!empty($dir)) {
-                $fname = getLanguageFile('language_array.inc', $dir, true);
-                if ($fname) {
+                $fname = getLanguageFile('sys.language_array.inc', $dir, true);
+                if ($fname AND empty($array3)) {
                     $array3 = require $fname;  // import contents of disk file
                     // custom values replace standard values
                     $array1 = array_merge($array1, $array3);
-                    $array2 = array_merge($array2, $array3);
-                    unset($array3);
+                    //unset($array3);
+                } // if
+                $fname = getLanguageFile('language_array.inc', $dir, true);
+                if ($fname AND empty($array4)) {
+                    $array4 = require $fname;  // import contents of disk file
+                    // custom values replace standard values
+                    $array2 = array_merge($array2, $array4);
+                    //unset($array3);
                 } // if
             } // if
+            $curr_project = $GLOBALS['project_code'];
         } // if
 
         // perform lookup for specified $id ($array2 first, then $array1)
         if (isset($array2[$id])) {
-        	$result = $array2[$id];
+            $result = $array2[$id];
         } elseif (isset($array1[$id])) {
-        	$result = $array1[$id];
+            $result = $array1[$id];
         } else {
             $result = null;
         } // if
         if (empty($result)) {
-        	// nothing found, so return original input as an array
+            // nothing found, so return original input as an array
             $result = array($id => $id);
         } // if
 
         foreach ($result as $key => $value) {
             $value2 = array();
             if (is_array($value)) {
-            	foreach ($value as $key1 => $value1) {
-            		$value2[$key1] = convertEncoding($value1, 'UTF-8');
-            	} // foreach
+                foreach ($value as $key1 => $value1) {
+                    $value2[$key1] = convertEncoding($value1, 'UTF-8');
+                } // foreach
             } else {
                 $value2 = convertEncoding($value, 'UTF-8');
             } // if
@@ -3329,7 +3385,7 @@ if (!function_exists('getLanguageFile')) {
         $language_array = array();  // a list of possible language options
 
         if (!empty($GLOBALS['party_language'])) {
-        	$language_array[] = $GLOBALS['party_language'];
+            $language_array[] = $GLOBALS['party_language'];
         } // if
 
         if (!empty($_SESSION['user_language'])) {
@@ -3337,16 +3393,16 @@ if (!function_exists('getLanguageFile')) {
         } // if
 
         if (!function_exists('getBrowserLanguage')) {
-            require('language_detection.inc');
+            require_once('language_detection.inc');
         } // if
         $browser_language = getBrowserLanguage($directory);
         if (!empty($browser_language)) {
-        	$language_array[] = $browser_language;
+            $language_array[] = $browser_language;
         } // if
 
         // last possible entries are the application default, then 'English'
         if (!empty($_SESSION['default_language'])) {
-        	$language_array[] = $_SESSION['default_language'];
+            $language_array[] = $_SESSION['default_language'];
         } // if
         $language_array[] = 'en';
 
@@ -3354,10 +3410,10 @@ if (!function_exists('getLanguageFile')) {
         foreach ($language_array as $language) {
             // change hyphen to underscore before file system lookup
             $language = str_replace('-', '_', strtolower($language));
-        	$fname = "$directory/$language/$filename";
-        	if (file_exists($fname)) {
-        	    break;
-        	} // if
+            $fname = "$directory/$language/$filename";
+            if (file_exists($fname)) {
+                break;
+            } // if
         } // foreach
 
         if (!file_exists($fname)) {
@@ -3366,7 +3422,7 @@ if (!function_exists('getLanguageFile')) {
             } else {
                 if (preg_match('/^sys/i', $filename)) {
                     // cannot find 'sys' file, so use literal as translation is not possible
-                	trigger_error("File $fname cannot be found", E_USER_ERROR);
+                    trigger_error("File $fname cannot be found", E_USER_ERROR);
                 } else {
                     trigger_error(getLanguageText('sys0056', $fname), E_USER_ERROR);
                 } // if
@@ -3387,13 +3443,21 @@ if (!function_exists('getLanguageText')) {
         static $array2;         // for language_text.inc (subsystem messages)
         static $language;       // current language
         static $curr_dir;       // current directory used for $array2 contents
+        static $curr_project;   // current project code for custom processing
+        static $array3;         // for custom sys.language_text.inc
+        static $array4;         // for custom language_text.inc
+        static $array5;         // for 'audit/text/language_text.inc'
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
             //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
         } // if
+
         $cwd = getcwd();
+        $cwd = str_replace('\\', '/', $cwd);  // replace back slashes with forward slashes
+
         if (!empty($GLOBALS['classdir'])) {
+            $GLOBALS['classdir'] = str_replace('\\', '/', $GLOBALS['classdir']);  // replace back slashes with forward slashes
             if ($curr_dir != $GLOBALS['classdir']) {
                 $curr_dir  = $GLOBALS['classdir'];
             } // if
@@ -3405,9 +3469,13 @@ if (!function_exists('getLanguageText')) {
             $curr_dir = $dir_script;
         } // if
         if (!empty($curr_dir) AND $curr_dir != $cwd) {
-            $cwd = $curr_dir;
-            $res = chdir($cwd);
-            $array2   = false;  // cause this to be reloaded
+            if (basename($curr_dir) == 'audit') {
+                // this data will be in $array5
+            } else {
+                $cwd = $curr_dir;
+                $res = chdir($cwd);
+                $array2   = false;  // cause this to be reloaded
+            } // if
         } else {
             $curr_dir = $cwd;
         } // if
@@ -3418,22 +3486,24 @@ if (!function_exists('getLanguageText')) {
         // if language has changed then reload contents of both arrays
         if (!empty($GLOBALS['party_language'])) {
             if ($GLOBALS['party_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $GLOBALS['party_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $GLOBALS['party_language'];
             } // if
         } elseif (!empty($_SESSION['user_language'])) {
             if ($_SESSION['user_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $_SESSION['user_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $_SESSION['user_language'];
             } // if
         } elseif (!empty($_SESSION['default_language'])) {
             if ($_SESSION['default_language'] != $language) {
-            	$array1 = false;
-            	$array2 = false;
-            	$language = $_SESSION['default_language'];
+                $array1 = false;
+                $array2 = false;
+                $language = $_SESSION['default_language'];
             } // if
+        } else {
+            $language = 'en';
         } // if
 
         if (!is_array($array1)) {
@@ -3451,7 +3521,7 @@ if (!function_exists('getLanguageText')) {
                 $fname = getLanguageFile('sys.language_text.inc', $dir);
             } // if
             if ($fname) {
-            	$array1 = require $fname;  // import contents of disk file
+                $array1 = require $fname;  // import contents of disk file
                 if (empty($array1)) {
                     //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
                     trigger_error("File $fname is empty", E_USER_ERROR);
@@ -3460,71 +3530,97 @@ if (!function_exists('getLanguageText')) {
                 // extract identity of language subdirectory
                 $language = basename(dirname($fname));
                 // use this language in the XSL transformation
-            	$GLOBALS['output_language'] = $language;
+                $GLOBALS['output_language'] = $language;
             } else {
                 $array1 = array();
-            } // if
-            if (!empty($GLOBALS['project_code'])) {
-                // now look for a file of custom messages
-                $dir = realpath($dir.'/custom-processing/'.$GLOBALS['project_code']);
-                if (!empty($dir)) {
-                    $fname = getLanguageFile('sys.language_text.inc', $dir, true);
-                    if ($fname) {
-                        $array3 = require $fname;  // import contents of disk file
-                        // custom values replace standard values
-                        $array1 = array_merge($array1, $array3);
-                        unset($array3);
-                    } // if
-                } // if
             } // if
         } // if
 
         $dir = realpath($curr_dir.'/text');
-        if (!is_array($array2)) {
-            $array2 = array();
-            // find file in a language subdirectory
-            $dir = realpath($curr_dir.'/text');
-            if (defined('RDC_WITHIN_ERROR_HANDLER')) {
-    	        // do not fail if this file is not found
-                $fname = getLanguageFile('language_text.inc', $dir, true);
-    	    } else {
-    	        $fname = getLanguageFile('language_text.inc', $dir);
-    	    } // if
-    	    if ($fname) {
-    	    	$array2 = require $fname;  // import contents of disk file
-                if (empty($array2)) {
-                	// 'File $fname is empty'
-                    trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+        if (basename($curr_dir) == 'audit') {
+            if (!is_array($array5)) {
+                $array5 = array();
+                // find file in a language subdirectory
+                $dir = realpath($curr_dir.'/text');
+                if (defined('RDC_WITHIN_ERROR_HANDLER')) {
+                    // do not fail if this file is not found
+                    $fname = getLanguageFile('language_text.inc', $dir, true);
+                } else {
+                    $fname = getLanguageFile('language_text.inc', $dir);
                 } // if
-                unset($array);
-    	    } else {
-    	        $array2 = array();
-    	    } // if
-            if (!empty($GLOBALS['project_code'])) {
-                // now look for a file of custom messages
-                $dir2 = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
-                if (!empty($dir2)) {
-                    $fname = getLanguageFile('language_text.inc', $dir2, true);
-                    if ($fname) {
-                        $array4 = require $fname;  // import contents of disk file
-                        // custom values replace standard values
-                        $array2 = array_merge($array2, $array4);
-                        unset($array4);
+                if ($fname) {
+                    $array5 = require $fname;  // import contents of disk file
+                    if (empty($array5)) {
+                        // 'File $fname is empty'
+                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
                     } // if
+                    unset($array);
+                } else {
+                    $array5 = array();
+                } // if
+            } // if
+        } else {
+            if (!is_array($array2)) {
+                $array2 = array();
+                // find file in a language subdirectory
+                $dir = realpath($curr_dir.'/text');
+                if (defined('RDC_WITHIN_ERROR_HANDLER')) {
+                    // do not fail if this file is not found
+                    $fname = getLanguageFile('language_text.inc', $dir, true);
+                } else {
+                    $fname = getLanguageFile('language_text.inc', $dir);
+                } // if
+                if ($fname) {
+                    $array2 = require $fname;  // import contents of disk file
+                    if (empty($array2)) {
+                        // 'File $fname is empty'
+                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    } // if
+                    unset($array);
+                } else {
+                    $array2 = array();
                 } // if
             } // if
         } // if
 
+        if (!empty($GLOBALS['project_code'])) {
+            if ($GLOBALS['project_code'] != $curr_project) {
+                $array3 = array();
+                $array4 = array();
+            } // if
+            // now look for a file of custom messages
+            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+            if (!empty($dir)) {
+                $fname = getLanguageFile('sys.language_text.inc', $dir, true);
+                if ($fname AND empty($array3)) {
+                    $array3 = require $fname;  // import contents of disk file
+                    // custom values replace standard values
+                    $array1 = array_merge($array1, $array3);
+                    //unset($array3);
+                } // if
+                $fname = getLanguageFile('language_text.inc', $dir, true);
+                if ($fname AND empty($array4)) {
+                    $array4 = require $fname;  // import contents of disk file
+                    // custom values replace standard values
+                    $array2 = array_merge($array2, $array4);
+                    //unset($array3);
+                } // if
+            } // if
+            $curr_project = $GLOBALS['project_code'];
+        } // if
+
         // perform lookup for specified $id ($array2 first, then $array1)
-        if (isset($array2[$id])) {
-        	$string = $array2[$id];
+        if (isset($array5[$id])) {
+            $string = $array5[$id];
+        } elseif (isset($array2[$id])) {
+            $string = $array2[$id];
         } elseif (isset($array1[$id])) {
-        	$string = $array1[$id];
+            $string = $array1[$id];
         } else {
             $string = null;
         } // if
         if (empty($string)) {
-        	// nothing found, so return original $id
+            // nothing found, so return original $id
             $string = trim($id ." $arg1 $arg2 $arg3 $arg4 $arg5");
         } // if
 
@@ -3532,7 +3628,7 @@ if (!function_exists('getLanguageText')) {
 
         if (!is_null($arg1)) {
             // insert argument(s) into string
-        	$string = sprintf($string, $arg1, $arg2, $arg3, $arg4, $arg5);
+            $string = sprintf($string, $arg1, $arg2, $arg3, $arg4, $arg5);
         } // if
 
         return $string;
@@ -5000,7 +5096,7 @@ if (!function_exists('print_Trace')) {
                 // ignore
             } else {
             	if (is_array($string2)) {
-                    if (isset($string2['this'])) {
+                    if (isset($string2['this']) AND is_object($string2['this'])) {
                         // output class name, but no class properties
                         $class = get_class($string2['this']);
                         $trace .= $indent ."$level2: object = $class\n";
@@ -5851,9 +5947,9 @@ if (!function_exists('replaceScreenColumns')) {
         global $screen_structure;
 
         if (is_array($screen_structure)) {
-            if (array_key_exists('fields', $screen_structure['inner'])) {
+            if (array_key_exists('inner', $screen_structure) AND array_key_exists('fields', $screen_structure['inner'])) {
                 $zone = 'inner';
-            } elseif (array_key_exists('fields', $screen_structure['main'])) {
+            } elseif (array_key_exists('main', $screen_structure) AND array_key_exists('fields', $screen_structure['main'])) {
                 $zone = 'main';
             } else {
                 return FALSE;
@@ -6338,7 +6434,7 @@ if (!function_exists('send_email')) {
 
         if (defined('USE_SWIFTMAILER')) {
             require_once('include.swiftmailer.inc');
-            require('SwiftMailer/swift_required.php');
+            require_once('SwiftMailer/swift_required.php');
             $message = Swift_Message::newInstance();
             $message->setSubject($subject);
             $from = SWIFT_email_address2array($from);
@@ -6513,7 +6609,7 @@ if (!function_exists('send_email')) {
             foreach ($attachments as $ix => $attachment) {
                 $filename = trim($attachment['filename']);
                 if (!empty($attachment['filepath'])) {
-                	$filepath = trim($attachment['filepath']);
+                    $filepath = trim($attachment['filepath']);
                     $filebody = file_get_contents($filepath);
                 } else {
                     $filebody = $attachment['filebody'];
@@ -7488,6 +7584,7 @@ if (!function_exists('where2array')) {
     // 3 - strip operators from the associative array (optional)
     {
         // if input string is empty there is nothing to do
+        $where = trim($where);
         if (empty($where)) return array();
 
         $array1 = where2indexedArray($where);   // convert string into indexed array
@@ -7540,6 +7637,9 @@ if (!function_exists('where2indexedArray')) {
     // or possibly: function(name) = 'value'
     {
         // if input string is empty there is nothing to do
+        if (is_string($where)) {
+            $where = trim($where);
+        } // if
         if (empty($where)) return array();
 
         if (is_array($where)) {
@@ -7600,17 +7700,10 @@ if (!function_exists('where2indexedArray')) {
  [ ]+                        # 1 or more spaces
  (NOT[ ]+)?BETWEEN           # [NOT] BETWEEN
  [ ]+                        # 1 or more spaces
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'        # quoted string
-  |                             # or
-  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
- )                           # end choice
- [ ]*AND[ ]*                 # AND
- (                           # start choice
-  '(([^\\\']*(\\\.)?)*)'        # quoted string
-  |                             # or
-  [-+]?\d*\.?\d+([eE][-+]?\d+)? # number (decimal, floating point)
- )                           # end choice
+ .+?                         # any characters (non-greedy)
+ [ ]AND[ ]                   # AND
+ .+?                         # any characters (non-greedy)
+ (?=[ ]+(AND|OR))            # followed by AND or OR (excluded)
 |                            # or
  \w+(\.\w+)?                 # word [.word]
  [ ]+                        # 1 or more spaces
@@ -7726,6 +7819,19 @@ END_OF_REGEX;
         $pattern1a = <<< END_OF_REGEX
 /
 ^
+\w+(\.\w+)?                # word [.word]
+[ ]+                       # 1 or more spaces
+(NOT[ ]+)?BETWEEN          # [NOT] BETWEEN
+[ ]+                       # 1 or more spaces
+.+                         # any characters
+[ ]AND[ ]                  # AND
+.+                         # any characters
+/imsx
+END_OF_REGEX;
+
+        $pattern1b = <<< END_OF_REGEX
+/
+^
 \w+(\.\w+)?             # word[.word]
 [ ]*                    # 0 or more spaces
 (&|~|\^|<<|>>|\|)       # bitwise operators
@@ -7738,7 +7844,7 @@ END_OF_REGEX;
 /imsx
 END_OF_REGEX;
 
-        $pattern1b = <<< END_OF_REGEX
+        $pattern1c = <<< END_OF_REGEX
 ~
 ^                            # begins with
 (                            # start choice
@@ -7761,7 +7867,7 @@ END_OF_REGEX;
 ~xism
 END_OF_REGEX;
 
-        $pattern1c = <<< END_OF_REGEX
+        $pattern1d = <<< END_OF_REGEX
 ~
 ^
 (               # start group
@@ -7777,7 +7883,7 @@ END_OF_REGEX;
 ~xism
 END_OF_REGEX;
 
-        $pattern1d = <<< END_OF_REGEX
+        $pattern1e = <<< END_OF_REGEX
 ~
 ^
 (,|\))          # ',' or ')'
@@ -7836,7 +7942,7 @@ END_OF_REGEX;
 END_OF_REGEX;
 
         $input = $where;
-        $where = trim(preg_replace("/\s+/u", " ", $where));  // replace tabs and newlines with ' '
+        //$where = trim(preg_replace("/\s+/u", " ", $where));  // replace tabs and newlines with ' '
         $output = array();
         while (!empty($where)) {
             $where = trim($where);
@@ -7844,9 +7950,11 @@ END_OF_REGEX;
             	if (!$result = preg_match($pattern1a, $where, $regs)) {
 	                if (!$result = preg_match($pattern1b, $where, $regs)) {
                         if (!$result = preg_match($pattern1c, $where, $regs)) {
-	                        if (!$result = preg_match($pattern1d, $where, $regs)) {
-	                            trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
-	                        } // if
+                            if (!$result = preg_match($pattern1d, $where, $regs)) {
+	                            if (!$result = preg_match($pattern1e, $where, $regs)) {
+	                                trigger_error("Cannot extract token from: '$where'", E_USER_ERROR);
+	                            } // if
+                            } // if
                         } // if
 	                } // if
 	        	} // if

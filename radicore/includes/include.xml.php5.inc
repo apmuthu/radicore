@@ -690,9 +690,10 @@ class radicore_view
                             $child->setAttribute('noedit', 'y');
                             // if an error message exists put it into the error attribute
                             if (!empty($object_errors)) {
-                                if (array_key_exists($rownum, $object_errors) and is_array($object_errors[$rownum])) {
-                                    if (array_key_exists($fieldname, $object_errors[$rownum])) {
-                                        $child->setAttribute('error', $object_errors[$rownum][$fieldname]);
+                                if (array_key_exists($rownum, $object_errors) AND is_array($object_errors[$rownum])) {
+                                    $row_errors = $object_errors[$rownum];
+                                    if (array_key_exists($fieldname, $row_errors) AND array_key_exists($fieldname, $screen_fields)) {
+                                        $child->setAttribute('error', $row_errors[$fieldname]);
                                         unset($object_errors[$rownum][$fieldname]);
                                     } // if
                                 } // if
@@ -1080,7 +1081,7 @@ class radicore_view
 //                } // if
                 try {
                     $fileinfo = new SplFileInfo($fname);
-                    if ($fileobj = $fileinfo->openFile('r', true)) {
+                    if ($fileobj = @$fileinfo->openFile('r', true)) {
                         // file found, so load it and instantiate object
                         require_once($fname);
                         $tempobj = new custom_xsl_params();
@@ -1520,7 +1521,7 @@ class radicore_view
 //                } // if
                 try {
                     $fileinfo = new SplFileInfo($fname);
-                    if ($fileobj = $fileinfo->openFile('r', true)) {
+                    if ($fileobj = @$fileinfo->openFile('r', true)) {
                         // file found, so load it and instantiate object
                         require_once($fname);
                         $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
@@ -2265,6 +2266,11 @@ END_OF_REGEX;
     function _setScreen_fields ($xml_doc, $element, $input, $zone=null, $allow_responsive_gui=false)
     // insert 'field' details into the current XML document
     {
+        if (!isset($input['fields'])) {
+            // "Zone '$zone' in screen structure file does not contain a 'fields' entry"
+            trigger_error(getLanguageText('sys0265', $zone), E_USER_ERROR);
+        } // if
+
         // test for 'old' format file
         if (is_string(key($input['fields']))) {
             // "FIELDS array for zone '$zone' in screen structure file is not indexed by rownum"
@@ -2320,7 +2326,7 @@ END_OF_REGEX;
                                 if (preg_match('/^(colspan)$/i', $key)) {
                                     $info[$fieldname]['colspan'] = $value;
                                     // convert 'colspan' to 'grid_size'
-                                    $info[$fieldname] = $this->_convert_colspan_to_gridsize($info[$fieldname], $this->grid_cells[$zone]);
+                                    $info[$fieldname] = $this->_convert_colspan_to_gridsize($info[$fieldname], $this->grid_cells, $zone);
                                     $cell->setAttribute('grid_size', $info[$fieldname]['grid_size']);
                                 } // if
                             } // if
@@ -2393,7 +2399,7 @@ END_OF_REGEX;
                                                     $info[$cellvalue]['colspan'] = $cellspec['colspan'];
                                                 } // if
                                                 // convert 'colspan' to 'grid_size'
-                                                $info[$cellvalue] = $this->_convert_colspan_to_gridsize($info[$cellvalue], $this->grid_cells[$zone]);
+                                                $info[$cellvalue] = $this->_convert_colspan_to_gridsize($info[$cellvalue], $this->grid_cells, $zone);
                                                 $cell->setAttribute('grid_size', $info[$cellvalue]['grid_size']);
                                             } // if
                                         } elseif ($celltype == 'label') {
@@ -2402,7 +2408,7 @@ END_OF_REGEX;
                                             if (!empty($cellspec['colspan'])) {
                                                 $temp['colspan'] = $cellspec['colspan'];
                                             } // if
-                                            $temp = $this->_convert_colspan_to_gridsize($temp, $this->grid_cells[$zone]);
+                                            $temp = $this->_convert_colspan_to_gridsize($temp, $this->grid_cells, $zone);
                                             $cell->setAttribute('grid_size', $temp['grid_size']);
                                         } // if
                                         // identify the last column to be used
@@ -2431,7 +2437,10 @@ END_OF_REGEX;
 
     // ****************************************************************************
     function _adjust_Rowspan($structure)
-    // look for multi-column lines which contain a 'rowspan' property
+    // look for multi-column lines which contain a 'rowspan' property.
+    // Note that this method requires that all array entries be explicitly numbered,
+    // so instead of "['fields'][1][]" you must use "['fields'][1][1]". This will
+    // tell the function the explicit position of each cell.
     {
         $saved_rowspan = array();
 
@@ -2462,22 +2471,32 @@ END_OF_REGEX;
     } // _adjust_Rowspan
 
     // ****************************************************************************
-    function _convert_colspan_to_gridsize($fieldinfo, $grid_cells)
+    function _convert_colspan_to_gridsize($fieldinfo, $grid_cells, $zone)
+    // this is used when output is for responsive gui.
     // NOTE: grid_cells start at index zero while $fieldinfo['column'] starts at 1
     {
         $grid_column = $fieldinfo['column'] - 1;
         $grid_size   = 0;
 
+        if (empty($grid_cells) OR empty($grid_cells[$zone])) {
+            // "Zone '$zone' in screen structure file does not contain a 'columns' entry"
+            trigger_error(getLanguageText('sys0266', $zone), E_USER_ERROR);
+        } // if
+
+        if (!isset($grid_cells[$zone][$grid_column]['grid_size'])) {
+            // "Zone '$zone' in screen structure file does not contain a 'grid_size' entry"
+            trigger_error(getLanguageText('sys0267', $zone), E_USER_ERROR);
+        } // if
+
         if (empty($fieldinfo['colspan'])) {
             // fetch the cell width of this column
-            $grid_size   = $grid_cells[$grid_column]['grid_size'];
+            $grid_size   = $grid_cells[$zone][$grid_column]['grid_size'];
         } else {
             // accumulate widths from specified number of columns
             $span = $fieldinfo['colspan'];
-            $i    = $grid_column;
             while ($span > 0) {
-                $grid_size = $grid_size + $grid_cells[$i]['grid_size'];
-                $i++;
+                $grid_size = $grid_size + $grid_cells[$zone][$grid_column]['grid_size'];
+                $grid_column++;
                 $span--;
             } // while
         } // if

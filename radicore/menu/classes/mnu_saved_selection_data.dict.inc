@@ -1,5 +1,5 @@
 <?php
-    // file created on May 5, 2017, 9:07 am
+    // file created on July 22, 2017, 9:23 am
     
     // field specifications for table menu.mnu_saved_selection_data
     $fieldspec['selection_id']              = array('type' => 'integer',
@@ -16,6 +16,15 @@
                                                     'required' => 'y');
     
     $fieldspec['fieldvalue']                = array('type' => 'string',
+                                                    'size' => 80);
+    
+    $fieldspec['sort_seq']                  = array('type' => 'integer',
+                                                    'type_native' => 'smallint',
+                                                    'size' => 5,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 65535);
+    
+    $fieldspec['output_name']               = array('type' => 'string',
                                                     'size' => 80);
     
     $fieldspec['created_date']              = array('type' => 'datetime',
@@ -64,7 +73,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = '';
+    $this->default_orderby                  = 'sort_seq';
     
     // alternative language options 
     $this->alt_language_table               = '';

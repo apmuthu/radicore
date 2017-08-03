@@ -4,9 +4,9 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 $structure['tables']['main'] = 'dict_table_key';
 
 $structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => '25%');
-$structure['main']['columns'][] = array('width' => '15%');
-$structure['main']['columns'][] = array('width' => '35%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][1][] = array('label' => 'Database Id');
 $structure['main']['fields'][1][] = array('field' => 'database_id');

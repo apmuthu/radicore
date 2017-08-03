@@ -170,6 +170,17 @@ class dict_table_s03 extends dict_table
 
     } // _cm_pre_getData
 
+    // ****************************************************************************
+    function _cm_validateUpdate ($fieldarray, $originaldata)
+    // perform custom validation before update.
+    // if anything is placed in $this->errors the update will be terminated.
+    {
+        // customisable code goes here
+
+        return $fieldarray;
+
+    } // _cm_validateUpdate
+
 // ****************************************************************************
 } // end class
 // ****************************************************************************

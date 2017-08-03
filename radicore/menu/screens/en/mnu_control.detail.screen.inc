@@ -20,10 +20,7 @@ $structure['main']['fields'][3][2] = array('field' => 'pswd_change', 'rowspan' =
 $structure['main']['fields'][3][3] = array('label' => 'Password Count', 'colspan' => 2);
 $structure['main']['fields'][3][4] = array('field' => 'pswd_count', 'colspan' => 2);
 
-// start workaround for bootstrap rowspan fix
-//$structure['main']['fields'][4][1] = array('label' => '');
-//$structure['main']['fields'][4][2] = array('field' => '', 'colspan' => 3);
-// end workaround
+// columns 1 and 2 of line 4 are actually columns 1 and 2 of line 3
 $structure['main']['fields'][4][3] = array('label' => 'Password Days', 'colspan' => 2);
 $structure['main']['fields'][4][4] = array('field' => 'pswd_days', 'colspan' => 2);
 

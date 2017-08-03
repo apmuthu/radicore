@@ -193,6 +193,20 @@ class dict_table extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
+    function _cm_getInitialData ($fieldarray)
+    // Perform custom processing prior to insertRecord().
+    // $fieldarray contains data from the initial $where clause.
+    {
+        if (empty($fieldarray['audit_logging'])) {
+            // set default value
+            $fieldarray['audit_logging'] = $this->fieldspec['audit_logging']['true'];
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getInitialData
+
+    // ****************************************************************************
     function _cm_getValRep ($item=null, $where=null, $orderby=null)
     // get Value/Representation list as an associative array.
     {

@@ -3,10 +3,10 @@ $structure['xsl_file'] = 'std.detail1.xsl';
 
 $structure['tables']['main'] = 'audit_tbl';
 
-$structure['main']['columns'][] = array('width' => '175');
-$structure['main']['columns'][] = array('width' => '125');
-$structure['main']['columns'][] = array('width' => '10');
-$structure['main']['columns'][] = array('width' => '500');
+$structure['main']['columns'][] = array('width' => '20%');
+$structure['main']['columns'][] = array('width' => '16.7%');
+$structure['main']['columns'][] = array('width' => '8.4%');
+$structure['main']['columns'][] = array('width' => '*');
 
 $structure['main']['fields'][1][] = array('label' => 'Date From');
 $structure['main']['fields'][1][] = array('field' => 'date_from');

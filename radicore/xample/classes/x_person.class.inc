@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class x_person extends Default_Table
@@ -117,6 +117,7 @@ class x_person extends Default_Table
     {
         $fieldarray = array();  // clear current list
 
+        // set the defaults for this screen
         $fieldarray['person_id'] = 'Y';
         $fieldarray['first_name'] = 'N';
         $fieldarray['last_name'] = 'N';

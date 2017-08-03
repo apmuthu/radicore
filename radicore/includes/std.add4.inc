@@ -46,8 +46,9 @@ if (!empty($return_from)) {
 // get initial data for new record(s)
 $where = $dbobject->initialise($where, $selection);
 if (empty($dbobject->errors)) {
-    $where_array = where2array($where);
-	$fieldarray = $dbobject->getInitialDataMultiple($where_array);
+    //$where_array = where2array($where);
+	//$fieldarray = $dbobject->getInitialDataMultiple($where_array);
+    $fieldarray = $dbobject->getInitialDataMultiple($where);
 } // if
 if (!empty($dbobject->messages)) {
 	$messages = array_merge($messages, $dbobject->getMessages());

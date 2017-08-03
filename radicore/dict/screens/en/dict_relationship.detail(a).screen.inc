@@ -8,17 +8,21 @@ $structure['main']['columns'][] = array('width' => '24%');
 $structure['main']['columns'][] = array('width' => '18%');
 $structure['main']['columns'][] = array('width' => '35%');
 
-$structure['main']['fields'][1][] = array('label' => 'Database Id (snr)', 'rowspan' => 2);
-$structure['main']['fields'][1][] = array('field' => 'database_id_snr', 'size' => 20, 'rowspan' => 2);
-$structure['main']['fields'][1][] = array('label' => 'Table Id (snr)');
-$structure['main']['fields'][1][] = array('field' => 'table_id_snr');
-$structure['main']['fields'][2] = array('table_alias_snr' => 'Alias (snr)', 'size' => 35);
+$structure['main']['fields'][1][1] = array('label' => 'Database Id (snr)', 'rowspan' => 2);
+$structure['main']['fields'][1][2] = array('field' => 'database_id_snr', 'size' => 20, 'rowspan' => 2);
+$structure['main']['fields'][1][3] = array('label' => 'Table Id (snr)');
+$structure['main']['fields'][1][4] = array('field' => 'table_id_snr');
 
-$structure['main']['fields'][3][] = array('label' => 'Database Id (jnr)', 'rowspan' => 2);
-$structure['main']['fields'][3][] = array('field' => 'database_id_jnr', 'size' => 20, 'rowspan' => 2);
-$structure['main']['fields'][3][] = array('label' => 'Table Id (jnr)');
-$structure['main']['fields'][3][] = array('field' => 'table_id_jnr');
-$structure['main']['fields'][] = array('table_alias_jnr' => 'Alias (jnr)', 'size' => 35);
+$structure['main']['fields'][2][3] = array('label' => 'Alias (snr)');
+$structure['main']['fields'][2][4] = array('field' => 'table_alias_snr', 'size' => 35);
+
+$structure['main']['fields'][3][1] = array('label' => 'Database Id (jnr)', 'rowspan' => 2);
+$structure['main']['fields'][3][2] = array('field' => 'database_id_jnr', 'size' => 20, 'rowspan' => 2);
+$structure['main']['fields'][3][3] = array('label' => 'Table Id (jnr)');
+$structure['main']['fields'][3][4] = array('field' => 'table_id_jnr');
+
+$structure['main']['fields'][4][3] = array('label' => 'Alias (jnr)');
+$structure['main']['fields'][4][4] = array('field' => 'table_alias_jnr', 'size' => 35);
 
 $structure['main']['fields'][] = array('seq_no' => 'Seq Number', 'colspan' => 3);
 $structure['main']['fields'][] = array('relation_name' => 'Name', 'colspan' => 3);

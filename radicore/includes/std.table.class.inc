@@ -102,9 +102,6 @@ abstract class Default_Table
     var $row_locks_supp;                // supplemental lock type
     var $row_offset;                    // identifies current row in a multi-row display
 
-    var $saved_fieldspec;               // used in OUTPUT4 pattern
-    var $saved_selection;               // used in OUTPUT4 pattern
-    var $saved_screen_structure;        // used in OUTPUT4 pattern
     var $scrollarray;                   // array for internal scrolling
     var $scrollindex;                   // index to current item in scrollarray
     var $select_string;                 // identifies which entries have been selected
@@ -524,6 +521,11 @@ abstract class Default_Table
     // convert the string 'current/historic/future' into a date range.
     // NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
     {
+        $string = trim($string);
+        if (empty($string)) {
+            return $string;
+        } // if
+
         if (empty($start_date)) {
             $start_date = 'start_date';
         } // if
@@ -600,26 +602,6 @@ abstract class Default_Table
                 $this->custom_replaces_standard = false;
             } else {
                 $output = $this->_cm_customButton($fieldarray, $button);
-            } // if
-            // special processing for OUTPUT4 pattern
-            if (preg_match('/^output4$/i', $pattern_id)) {
-                if (preg_match('/rdc_save_selection/i', $button)) {
-                    if (empty($fieldarray['rdc_selection_desc'])) {
-                        // "Cannot save this selection without a description"
-                        $this->errors['rdc_selection_desc'] = getLanguageText('sys0250');
-                        return $fieldarray;
-                    } // if
-                    $dbobject =& RDCsingleton::getInstance('mnu_saved_selection');
-                    $result = $dbobject->saveSelection($fieldarray,
-                                                       $fieldarray['rdc_selection_desc'],
-                                                       $_SESSION['logon_user_id'],
-                                                       $GLOBALS['task_id']);
-                    if ($dbobject->errors) {
-                        $this->errors = $dbobject->errors;
-                        return $fieldarray;
-                    } // if
-                    $output['rdc_selection_desc'] = null;  // this has been used, so clear it out
-                } // if
             } // if
         } else {
             // this is one of many rows
@@ -2031,19 +2013,38 @@ abstract class Default_Table
     // obtain list of column names which will be output with this SQL statement.
     // (this is used in 'std.output4.inc')
     {
-        // start by saving default screen structure
-        $this->saved_screen_structure = $GLOBALS['screen_structure'];
-
         $this->lookup_data['selected'] = $this->getLanguageArray('selected');
 
-        //$this->fieldspec = $this->getFieldSpec_original();
-
         $fieldarray = array();
+
+        // this screen requires different fields
         $fieldspec  = array();
+        $fieldspec['fieldname']         = array('type' => 'string',
+                                                'noedit' => 'y');
+        $fieldspec['selected']          = array('type' => 'string',
+                                                'control' => 'dropdown',
+                                                'optionlist' => 'selected',
+                                                'required' => 'y');
+        $fieldspec['sort_seq']          = array('type' => 'integer',
+                                                'size' => 5,
+                                                'minvalue' => 0,
+                                                'maxvalue' => 65535,
+                                                'required' => 'y');
+        $fieldspec['output_name']       = array('type' => 'string',
+                                                'size' => 80,
+                                                'required' => 'y');
+        $this->fieldspec       = $fieldspec;
+        $this->saved_fieldspec = $fieldspec;
 
         $resource   = $this->getData_serial($where, 1, 0);
         $fieldarray = $this->fetchRow($resource);
         $res        = $this->free_result($resource);
+
+        if (empty($fieldarray)) {
+            // "Nothing retrieved from the database."
+            $this->errors[] = getLanguageText('sys0085');
+            return array();
+        } // if
 
         // initial value for each column is 'selected'
         foreach ($fieldarray as $fieldname => &$fieldvalue) {
@@ -2063,70 +2064,26 @@ abstract class Default_Table
             $this->custom_replaces_standard = false;
         } else {
             $fieldarray = $this->_cm_getColumnNames($fieldarray);
-            //if ($this->errors) return;
         } // if
 
-        //ksort($fieldarray);
-        foreach ($fieldarray as $fieldname => &$fieldvalue) {
-            if (isset($this->fieldspec[$fieldname]) AND isset($this->fieldspec[$fieldname]['nonstandard'])) {
-                // this is non-standard, so copy existing specifications
-                $fieldspec[$fieldname] = $this->fieldspec[$fieldname];
+        $sort_seq = 0;
+        $rowdata  = array();
+        foreach ($fieldarray as $fieldname => $selected) {
+            if (is_True($selected)) {
+                $selected = 'Y';
             } else {
-                // each field has a 'Yes/No' dropdown with an initial value
-                if (is_True($fieldvalue)) {
-                    $fieldvalue = 'Y';
-                } else {
-                    $fieldvalue = 'N';
-                } // if
-                $fieldspec[$fieldname]  = array('type' => 'string',
-                                                'control' => 'dropdown',
-                                                'optionlist' => 'selected');
-                // add this column to the screen structure
-                $GLOBALS['screen_structure']['main']['fields'][] = array($fieldname => $fieldname, 'colspan' => 3);
+                $selected = 'N';
             } // if
+            $sort_seq++;
+            $rowdata[$sort_seq]['fieldname']   = $fieldname;
+            $rowdata[$sort_seq]['selected']    = $selected;
+            $rowdata[$sort_seq]['sort_seq']    = $sort_seq;
+            $rowdata[$sort_seq]['output_name'] = ucwords(str_replace('_', ' ', $fieldname));
         } // foreach
 
-        // add fields to save or restore the selection values
-        $fieldspec['rdc_save_selection']    = array('type' => 'string', 'control' => 'button');
-        $fieldspec['rdc_selection_desc']    = array('type' => 'string', 'size' => 80);
+        $this->fieldarray = $rowdata;
 
-        $fieldarray['rdc_save_selection']   = getLanguageText('Save Selection');
-        $fieldarray['rdc_selection_desc']   = null;
-
-        $fieldspec['rdc_restore_selection'] = array('type' => 'string',
-                                                    'control' => 'dropdown',
-                                                    'optionlist' => 'rdc_restore_selection',
-                                                    'javascript' => array('onchange' => 'this.form.submit();'));
-        if (empty($this->lookup_data['rdc_restore_selection'])) {
-            // there are no choices available, so do not display this control
-            unset($fieldarray['rdc_restore_selection']);
-        } else {
-            $fieldarray['rdc_restore_selection'] = null;
-        } // if
-
-        // add controls for LIMIT and OFFSET
-        $fieldspec['rdc_limit']  = array('type' => 'integer', 'minvalue' => 0, 'maxvalue' => 4294967295, 'required' => 'y');
-        $fieldspec['rdc_offset']  = array('type' => 'integer', 'minvalue' => 0, 'maxvalue' => 4294967295, 'required' => 'y');
-        if (!array_key_exists('rdc_limit', $fieldarray)) {
-            $fieldarray['rdc_limit'] = 1000;
-            $fieldarray['rdc_offset'] = 0;
-        } // if
-        // append fields for LIMIT and OFFSET
-        $col_count = count($GLOBALS['screen_structure']['main']['fields'])+1;
-        $GLOBALS['screen_structure']['main']['fields'][$col_count][] = array('label' => 'rdc_limit',);
-        $GLOBALS['screen_structure']['main']['fields'][$col_count][] = array('field' => 'rdc_limit');
-        $GLOBALS['screen_structure']['main']['fields'][$col_count][] = array('label' => 'rdc_offset');
-        $GLOBALS['screen_structure']['main']['fields'][$col_count][] = array('field' => 'rdc_offset');
-
-        $this->fieldspec  = $fieldspec;
-        $this->fieldarray = $fieldarray;
-
-        // save these details so that they do not have to be regenerated
-        $this->saved_selection        = $fieldarray;
-        $this->saved_screen_structure = $GLOBALS['screen_structure'];
-        $this->saved_fieldspec        = $fieldspec;
-
-        return $fieldarray;
+        return $this->fieldarray;
 
     } // getColumnNames
 
@@ -2674,22 +2631,6 @@ abstract class Default_Table
                 } // foreach
                 $fieldarray[$rownum] = $rowdata;
             } // foreach
-        } elseif (preg_match('/(OUTPUT4)$/i', $pattern_id)) {
-            // get array from foreign table and put into LOOKUP_DATA
-            $dbobject =& RDCsingleton::getInstance('mnu_saved_selection');
-            $array = array();
-            $where1 = "user_id='{$_SESSION['logon_user_id']}' AND task_id='{$GLOBALS['task_id']}'";
-            $data = $dbobject->getData($where1);
-            foreach ($data as $row) {
-                $array[$row['selection_id']] = $row['selection_desc'];
-            } // foreach
-            $this->lookup_data['rdc_restore_selection'] = $array;
-            if (empty($array)) {
-                unset($fieldarray[0]['rdc_restore_selection']);  // remove this field from the display
-            } else {
-                $fieldarray[0]['rdc_restore_selection'] = null;
-            } // if
-            $fieldarray[0]['rdc_save_selection'] = getLanguageText('Save Selection');
         } // if
 
         if (is_True($associative)) {
@@ -2709,6 +2650,10 @@ abstract class Default_Table
     // return array of data that currently resides within this object
     // (usually stuff which was retrieved from the database).
     {
+        if (!is_array($this->fieldarray)) {
+            $this->fieldarray = array();
+        } // if
+
         if (is_long(key($this->fieldarray))) {
             foreach ($this->fieldarray as $rownum => $rowdata) {
                 if (empty($rowdata)) {
@@ -2773,6 +2718,8 @@ abstract class Default_Table
             $save_audit_logging = null;
         } // if
 
+        //static $fieldspec_original;
+
         $fieldspec                = array();
         $this->primary_key        = array();
         $this->unique_keys        = array();
@@ -2800,7 +2747,47 @@ abstract class Default_Table
             $attempt[] = "{$this->dirname}/{$tablename}.dict.inc";
             foreach ($attempt as $fn) {
                 if (file_exists($fn)) {
-                    require($fn);
+                    if (empty($this->fieldspec_original)) {
+                        require($fn);
+                        $save_fieldspec['fieldspec'] = $fieldspec;
+                        $data_to_save       = array('save_fieldspec');
+                        $primary_key        = $this->primary_key;
+                        $data_to_save[]     = 'primary_key';
+                        $unique_keys        = $this->unique_keys;
+                        $data_to_save[]     = 'unique_keys';
+                        $child_relations    = $this->child_relations;
+                        $data_to_save[]     = 'child_relations';
+                        $parent_relations   = $this->parent_relations;
+                        $data_to_save[]     = 'parent_relations';
+                        $audit_logging      = $this->audit_logging;
+                        $data_to_save[]     = 'audit_logging';
+                        $default_orderby    = $this->default_orderby;
+                        $data_to_save[]     = 'default_orderby';
+                        $alt_language_table = $this->alt_language_table;
+                        $data_to_save[]     = 'alt_language_table';
+                        $alt_language_cols  = $this->alt_language_cols;
+                        $data_to_save[]     = 'alt_language_cols';
+                        $nameof_start_date  = $this->nameof_start_date;
+                        $data_to_save[]     = 'nameof_start_date';
+                        $nameof_end_date    = $this->nameof_end_date;
+                        $data_to_save[]     = 'nameof_end_date';
+                        // save this data or subsequent access
+                        $this->fieldspec_original = compact($data_to_save);
+                    } else {
+                        // restore from save data
+                        $count = extract($this->fieldspec_original);
+                        $fieldspec                = $save_fieldspec['fieldspec'];
+                        $this->primary_key        = $primary_key;
+                        $this->unique_keys        = $unique_keys;
+                        $this->child_relations    = $child_relations;
+                        $this->parent_relations   = $parent_relations;
+                        $this->audit_logging      = $audit_logging;
+                        $this->default_orderby    = $default_orderby;
+                        $this->alt_language_table = $alt_language_table;
+                        $this->alt_language_cols  = $alt_language_cols;
+                        $this->nameof_start_date  = $nameof_start_date;
+                        $this->nameof_end_date    = $nameof_end_date;
+                    } // if
                     unset($attempt, $fn);
                     break;
                 } // if
@@ -6178,19 +6165,23 @@ abstract class Default_Table
                                 } // if
                             } else {
                                 // convert date from external to internal format
-                                if ($internaldate = $dateobj->getInternalDate($fieldvalue)) {
-                                    // value is a valid date
+                                try {
+                                    $internaldate = $dateobj->getInternalDate($fieldvalue);
                                     $fieldarray[$fieldname] = $internaldate;
-                                } // if
+                                } catch (Exception $e) {
+                                    $this->errors[$fieldname] = $e->getMessage();
+                                } // try
                             } // if
                             break;
                         case 'datetime':
                             if (!empty($fieldvalue)) {
                                 // convert date from external to internal format
-                                if ($internaldate = $dateobj->getInternalDateTime($fieldvalue)) {
-                                    // value is a valid date
+                                try {
+                                    $internaldate = $dateobj->getInternalDateTime($fieldvalue);
                                     $fieldarray[$fieldname] = $internaldate;
-                                } // if
+                                } catch (Exception $e) {
+                                    $this->errors[$fieldname] = $e->getMessage();
+                                } // try
                             } // if
                             break;
                         case 'time':
@@ -6305,10 +6296,12 @@ abstract class Default_Table
                 if (!empty($changes)) {
                     // values have been changed internally, so remove from $postarray so they don't get overwritten
                     foreach ($changes as $name => $value) {
-                        if (is_array($postarray[$name])) {
-                            unset($postarray[$name][$rownum+1]);
-                        } else {
-                            unset($postarray[$name]);
+                        if (isset($postarray[$name])) {
+                            if (is_array($postarray[$name])) {
+                                unset($postarray[$name][$rownum+1]);
+                            } else {
+                                unset($postarray[$name]);
+                            } // if
                         } // if
                     } // foreach
                 } // if
@@ -6321,18 +6314,18 @@ abstract class Default_Table
             $fieldarray = array_update_indexed($fieldarray_out, $postarray, $this->fieldspec);
         } // if
 
-        if (preg_match('/output4/i', $pattern_id)) {
-            if (!empty($postarray['rdc_restore_selection'])) {
-                $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
-                $data = $dbobject->getData("selection_id='{$postarray['rdc_restore_selection']}'");
-                foreach ($data as $rowdata) {
-                    if (!preg_match('/(rdc_restore_selection|rdc_save_selection)/i', $rowdata['fieldname'])) {
-                        $fieldarray[$rowdata['fieldname']] = $rowdata['fieldvalue'];
-                    } // if
-                } // foreach
-                $fieldarray['rdc_restore_selection'] = null;
-            } // if
-        } // if
+        //if (preg_match('/output4/i', $pattern_id)) {
+//            if (!empty($postarray['rdc_restore_selection'])) {
+//                $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
+//                $data = $dbobject->getData("selection_id='{$postarray['rdc_restore_selection']}'");
+//                foreach ($data as $rowdata) {
+//                    if (!preg_match('/^(rdc_)/i', $rowdata['fieldname'])) {
+//                        $fieldarray[$rowdata['fieldname']] = $rowdata['fieldvalue'];
+//                    } // if
+//                } // foreach
+//                $fieldarray['rdc_restore_selection'] = null;
+//            } // if
+//        } // if
 
         // see if any additional data is required or needs to be changed
         $fieldarray = $this->getExtraData($fieldarray);
@@ -7001,7 +6994,7 @@ abstract class Default_Table
                             $dir = NULL;
                         } // if
                         if (!class_exists($tblchild)) {
-                             require_once $dir ."classes/$tblchild.class.inc";
+                            require_once $dir ."classes/$tblchild.class.inc";
                         } // if
                         $childobject = new $tblchild;
                         if (!empty($this->dbname_old) AND $this->dbname_old == $childobject->dbname) {
@@ -7151,7 +7144,7 @@ abstract class Default_Table
     } // validateSearch
 
     // ****************************************************************************
-    function validateUpdate ($fieldarray)
+    function validateUpdate ($fieldarray, $primary_validation=false)
     // verify that the specified record can be updated.
     {
         if (empty($fieldarray)) {
@@ -7183,8 +7176,13 @@ abstract class Default_Table
             } // if
         } // foreach
 
-        // perform any custom pre-update validation
-        $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
+        if (is_True($primary_validation)) {
+            // perform sandard validation only
+            $fieldarray = $this->_validateUpdatePrimary($fieldarray);
+        } else {
+            // perform any custom pre-update validation
+            $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
+        } // if
 
         return $fieldarray;
 
@@ -9193,8 +9191,6 @@ abstract class Default_Table
                 $cpo->reuse_previous_select     =& $this->reuse_previous_select;
                 $cpo->rows_per_page             =& $this->rows_per_page;
                 $cpo->row_offset                =& $this->row_offset;
-                $cpo->saved_selection           =& $this->saved_selection;
-                $cpo->saved_screen_structure    =& $this->saved_screen_structure;
                 $cpo->skip_getdata              =& $this->skip_getdata;
                 $cpo->sql_from                  =& $this->sql_from;
                 $cpo->sql_groupby               =& $this->sql_groupby;

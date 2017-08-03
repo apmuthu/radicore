@@ -1,5 +1,5 @@
 <?php
-    // file created on May 7, 2017, 9:34 am
+    // file created on July 20, 2017, 4:45 pm
     
     // field specifications for table menu.mnu_user_role
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -15,13 +15,22 @@
                                                     'task_id' => 'mnu_role(popup1)',
                                                     'foreign_field' => 'role_id');
     
-    $fieldspec['is_primary']                = array('type' => 'boolean',
-                                                    'type_native' => 'char',
+    $fieldspec['sort_seq']                  = array('type' => 'integer',
+                                                    'type_native' => 'int',
+                                                    'size' => 10,
+                                                    'minvalue' => 0,
+                                                    'maxvalue' => 4294967295,
+                                                    'required' => 'y');
+    
+    $fieldspec['start_date']                = array('type' => 'date',
+                                                    'size' => 12,
                                                     'required' => 'y',
-                                                    'default' => 'N',
-                                                    'true' => 'Y',
-                                                    'false' => 'N',
-                                                    'control' => 'checkbox');
+                                                    'default' => '2000-01-01');
+    
+    $fieldspec['end_date']                  = array('type' => 'date',
+                                                    'size' => 12,
+                                                    'default' => '9999-12-31',
+                                                    'infinityisnull' => 'y');
     
     $fieldspec['created_date']              = array('type' => 'datetime',
                                                     'size' => 20,
@@ -76,7 +85,7 @@
     $this->audit_logging                    = TRUE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'is_primary desc';
+    $this->default_orderby                  = 'sort_seq, role_id';
     
     // alternative language options 
     $this->alt_language_table               = '';

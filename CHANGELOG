@@ -1,5 +1,18 @@
 ﻿RADICORE for PHP - news
 
+2017-08-03, version 2.05.0
+Database changes:
+- run script menu\sql\mysql\alter_table(2017-07-20).sql in order to change the structure of the MENU database
+- run script menu\sql\mysql\menu.menu_export(2017-07-20).sql in order to change the contents of the MENU database.
+
+Other changes:
+- updated MNU_USER_ROLE table to include start_date and end_date so that roles can be activated or deactivated on certain dates.
+- updated OUTPUT4 task so that the screen now shows a sequence number and a label for each column which can be exported to the CSV file. ***** NOTE THAT YOU WILL HAVE TO REBUILD EACH OUTPUT4 SCREEN STRUCTURE FILE USING THE TEMPLATE SCRIPT IN DEFAULT/SCREENS/EN/OUTPUT4.SCREEN.INC, NOT FORGETTING TO REPLACE '#tablename#' WITH THE ACTUAL TABLE NAME. *****
+- fixed bug which prevented "where dt between curdate() and curdate() + interval 365 day" from working.
+- fixed bug in 'std.add4.inc' where the call to getInitialDataMultiple() was using $where_array instead of the $where string.
+- updated 'std.validation.class.inc' to reject any value for a primary or candidate keys which contains whitespace characters.
+- fixed bug in 'getLanguageArray()' and 'getLanguageText()' so that they do not read in the the message file more times than is necessary.
+
 2017-07-01, version 2.04.2
 Database changes:
 - None

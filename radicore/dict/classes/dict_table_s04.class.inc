@@ -918,6 +918,17 @@ class dict_table_s04 extends dict_table
     } // _cm_pre_updateRecord
 
     // ****************************************************************************
+    function _cm_validateUpdate ($fieldarray, $originaldata)
+    // perform custom validation before update.
+    // if anything is placed in $this->errors the update will be terminated.
+    {
+        // customisable code goes here
+
+        return $fieldarray;
+
+    } // _cm_validateUpdate
+
+    // ****************************************************************************
     function _buildComponentScript ($pattern_id, $fieldarray, $parent_id=null, $popup_type='popup1')
     // load in default component script, replace arguments, then output the result
     {
@@ -1112,6 +1123,7 @@ class dict_table_s04 extends dict_table
                     break;
 
                 case 'output1':
+                case 'output4':
                 case 'output6':
 					$task_data['task_name']   = getLanguageText('t0020', $table_name);  // 'Output X to CSV';
     		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
@@ -1125,11 +1137,6 @@ class dict_table_s04 extends dict_table
 				case 'output3':
 					$task_data['task_name']   = getLanguageText('t0024', $table_name);  // 'Output X to PDF (detail view)';
     		        $task_data['button_text'] = getLanguageText('t0025');  // 'Output to PDF(D)';
-					break;
-
-				case 'output4':
-					$task_data['task_name']   = getLanguageText('t0020', $table_name);  // 'Output X to CSV';
-    		        $task_data['button_text'] = getLanguageText('t0021');  // 'Output to CSV';
 					break;
 
 				case 'output5':
@@ -1435,7 +1442,9 @@ class dict_table_s04 extends dict_table
                     if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'columns\'])/i', $string_in, $regs)) {
                         $zone = $regs[0];
                         if (preg_match('/(tree2)/i', $pattern_id) AND preg_match('/(inner)/i', $zone)) {
-                            // ignore this next bit
+                            $ignore = true;  // ignore this next bit
+                        } elseif (preg_match('/(output4)/i', $pattern_id) AND preg_match('/(inner|outer)/i', $zone)) {
+                            $ignore = true;  // ignore this next bit
                         } else {
                             $string_in = '';
                             if (!empty($done[$zone]) AND array_key_exists('columns', $done[$zone])) {
@@ -1477,7 +1486,9 @@ class dict_table_s04 extends dict_table
                     if (preg_match('/(?<=\$structure\[\')\w+(?=\']\[\'fields\'])/i', $string_in, $regs)) {
                         $zone = $regs[0];
                         if (preg_match('/(tree2)/i', $pattern_id) AND preg_match('/(inner)/i', $zone)) {
-                            // ignore this next bit
+                            $ignore = true;  // ignore this next bit
+                        } elseif (preg_match('/(output4)/i', $pattern_id) AND preg_match('/(inner|outer)/i', $zone)) {
+                            $ignore = true;  // ignore this next bit
                         } else {
                             $string_in = '';
                             if (array_key_exists('fields', $done[$zone])) {

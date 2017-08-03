@@ -529,30 +529,54 @@ class date_class {
     // convert datetime from external format (as input by user)
     // to internal format (as used in the database)
     {
-        $pattern = '/'
-                 . '^'               // begins with
-                 . '(?P<date>'       // start named pattern
-                 . '[\d]{4}-[\d]{2}-[\d]{2}'    // '9999-99-99'
-                 . ')'               // end named pattern
-                 . '[ ]*'            // space
-                 . '(?P<time>'       // start named pattern
-                 . '([\d]{2}:[\d]{2}){1}'       // 'HH:MM'
-                 . '(:[\d]{2})?'                // optional ':SS'
-                 . ')'               // end named pattern
-                 . '/';
+        $pattern1 = '/'
+                  . '^'               // begins with
+                  . '(?P<date>'       // start named pattern
+                  . '[\d]{4}-[\d]{2}-[\d]{2}'    // '9999-99-99'
+                  . ')'               // end named pattern
+                  . '[ ]*'            // space
+                  . '(?P<time>'       // start named pattern
+                  . '([\d]{2}:[\d]{2}){1}'       // 'HH:MM'
+                  . '(:[\d]{2})?'                // optional ':SS'
+                  . ')'               // end named pattern
+                  . '/';
+        $pattern2 = '/'
+                  . '^'               // begins with
+                  . '.*'              // any characters
+                  . '(?P<time>'       // start named pattern
+                  . '[\d]{2}:[\d]{2}:[\d]{2}'       // 'HH:MM:SS'
+                  . ')'               // end named pattern
+                  . '$'               // ends with
+                  . '/';
+        $pattern3 = '/'
+                  . '^'               // begins with
+                  . '.*'              // any characters
+                  . '(?P<time>'       // start named pattern
+                  . '[\d]{2}:[\d]{2}' // 'HH:MM'
+                  . ')'               // end named pattern
+                  . '$'               // ends with
+                  . '/';
 
         // look for a time portion (ends with '99:99' or '99:99:99')
-        if (preg_match($pattern, $input, $regs)) {
+        if (preg_match($pattern1, $input, $regs)) {
             $date = $regs['date'];
             $time = $regs['time'];
         } else {
             $date = $input;
-            $time = null;
-            // only a date given, so append the default time) if there is one)
-            if (isset($fieldspec['default'])) {
-                $time = substr($fieldspec['default'], 11, 8);
+            if (preg_match($pattern2, $input, $regs)) {
+                $time = $regs['time'];
+            } elseif (preg_match($pattern2, $input, $regs)) {
+                $time = $regs['time'];
             } else {
-                $time = '00:00:00';
+                $time = null;
+            } // if
+            if (is_null($time)) {
+                // only a date given, so append the default time) if there is one)
+                if (isset($fieldspec['default'])) {
+                    $time = substr($fieldspec['default'], 11, 8);
+                } else {
+                    $time = '00:00:00';
+                } // if
             } // if
         } // if
 

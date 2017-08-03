@@ -72,6 +72,8 @@ class mnu_user extends Default_Table
         $logonarray['user_id']       = $user_id;
         $logonarray['user_password'] = $password;
 
+        $today = getTimeStamp('date');
+
         $mnu_control =& RDCsingleton::getInstance('mnu_control');
 
         if (is_True($external_auth_off)) {
@@ -89,9 +91,11 @@ class mnu_user extends Default_Table
             $this->sql_select = 'mnu_user.user_id, mnu_user_role.role_id'
                               . ", CASE WHEN mnu_user.is_external_auth_off='Y' THEN 'Y' ELSE mnu_role.is_external_auth_off END AS is_external_auth_off";
             $this->sql_from   = 'mnu_user'
-                              ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                              ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id)"
                               .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
-            $where = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+            $where  = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+            // user's primary role has the lowest sort_seq
+            $where .= " AND mnu_user_role.sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id=mnu_user.user_id AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00')";
             $fieldarray = $this->getData_raw($where);
             if (is_True($fieldarray[0]['is_external_auth_off'])) {
                 $auth_array['authentication'] = 'INTERNAL';
@@ -114,9 +118,11 @@ class mnu_user extends Default_Table
                 $this->sql_select = 'mnu_user.user_id, mnu_user_role.role_id'
                                   . ", CASE WHEN mnu_user.is_external_auth_off='Y' THEN 'Y' ELSE mnu_role.is_external_auth_off END AS is_external_auth_off";
                 $this->sql_from   = 'mnu_user'
-                                  ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
+                                  ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id)"
                                   .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
-                $where = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+                $where  = "mnu_user.user_id='" .addslashes($logonarray['user_id']) ."'";
+                // user's primary role has the lowest sort_seq
+                $where .= " AND mnu_user_role.sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id=mnu_user.user_id AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00')";
                 $fieldarray = $this->getData_raw($where);
                 if (is_True($fieldarray[0]['is_external_auth_off'])) {
                     $auth_array['authentication'] = 'INTERNAL';
@@ -156,13 +162,10 @@ class mnu_user extends Default_Table
         $user_id        = addslashes($user_id);
         $logon_password = addslashes($logon_password);
 
-        // join to MNU_ROLE to obtain start_task_id
-        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_change_datetime, force_pswd_chg, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, mnu_user_role.role_id, mnu_role.start_task_id '
-                          . ", CASE WHEN mnu_user.allow_responsive_gui='Y' THEN 'Y' ELSE mnu_role.allow_responsive_gui END AS allow_responsive_gui";
-        $this->sql_from   = 'mnu_user'
-                          ." LEFT JOIN mnu_user_role ON (mnu_user_role.user_id=mnu_user.user_id AND mnu_user_role.is_primary='Y')"
-                          .' LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)';
-        $where = "mnu_user.user_id='{$user_id}'";
+        // user must have an entry on MNU_USER table
+        $this->sql_select = 'mnu_user.user_id, user_name, user_password, start_date, end_date, is_disabled, pswd_count, pswd_change_datetime, force_pswd_chg, mnu_user.language_id, email_addr, rdcaccount_id, external_id, party_id, user_timezone, allow_responsive_gui';
+        $this->sql_from   = 'mnu_user';
+        $where  = "mnu_user.user_id='{$user_id}'";
         if (!empty($ip_address)) {
             // lookup on MNU_USER_IP_ADDRESS to see if this IP address is valid
             $this->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
@@ -170,10 +173,9 @@ class mnu_user extends Default_Table
                                       ." ELSE false"
                                  ." END AS ip_address_valid";
         } // if
-        $this->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id=mnu_user.user_id) AS role_list";
         // fetch the user's language with any date formats
         $this->sql_select .= ', mnu_language.input_date_format, mnu_language.output_date_format';
-        $this->sql_from   .= " LEFT JOIN mnu_language ON ( mnu_language.language_id=COALESCE(mnu_user.language_id, '{$_SESSION['default_language']}'))";
+        $this->sql_from   .= " LEFT JOIN mnu_language ON (mnu_language.language_id=COALESCE(mnu_user.language_id, '{$_SESSION['default_language']}'))";
         if ($auth_array['authentication'] == 'INTERNAL') {
             // include user_password in selection criteria
             $where .= " AND user_password='{$logon_password}'";
@@ -216,6 +218,28 @@ class mnu_user extends Default_Table
         } // if
 
         $fieldarray['authentication'] = $auth_array['authentication'];
+
+        // look at user's primary role on MNU_USER_ROLE to obtain start_task_id
+        $roleOBJ =& RDCsingleton::getInstance('mnu_user_role');
+        $roleOBJ->sql_select  = 'mnu_role.role_id, mnu_role.start_task_id, allow_responsive_gui';
+        $roleOBJ->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00') AS role_list";
+        $roleOBJ->sql_from    = 'mnu_user_role'
+                             . " LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)";
+        $where  = "mnu_user_role.user_id='{$user_id}'";
+        $where .= " AND mnu_user_role.sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00')";
+        $roleOBJ->sql_orderby = 'role_id';
+        $role_data = $roleOBJ->getData_raw($where);
+        if (empty($role_data)) {
+            // "This user does not have a primary role"
+            $this->errors[] = getLanguageText('sys0230');
+            return $logonarray;
+        } else {
+            $role_data = $role_data[0];
+            if (is_True($fieldarray['allow_responsive_gui'])) {
+                unset($role_data['allow_responsive_gui']);  // set at user level, so do not overwrite
+            } // if
+            $fieldarray = array_merge($fieldarray, $role_data);
+        } // if
 
         return $fieldarray;
 
@@ -492,6 +516,19 @@ class mnu_user extends Default_Table
     } // _cm_commonValidation
 
     // ****************************************************************************
+    function _cm_filterWhere ($array=null)
+    // identify field names which are NOT to be filtered out of a $where string.
+    {
+        if ($this->zone = 'outer') {
+            // do not filter this field out of the $WHERE string
+            $array[] = 'task_id';
+        } // if
+
+        return $array;
+
+    } // _cm_filterWhere
+
+    // ****************************************************************************
     function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
     // Note: $css_array is passed BY REFERENCE as it may be modified.
@@ -752,9 +789,8 @@ class mnu_user extends Default_Table
     {
         // add primary role to MNU_USER_ROLE table
         $dbobject =& RDCsingleton::getInstance('mnu_user_role');
-        $role['user_id']    = $rowdata['user_id'];
-        $role['role_id']    = $rowdata['role_id'];
-        $role['is_primary'] = TRUE;
+        $role['user_id']  = $rowdata['user_id'];
+        $role['role_id']  = $rowdata['role_id'];
         $role = $dbobject->insertRecord($role);
         if ($dbobject->errors) {
             $this->errors[$dbobject->getClassName()] = $dbobject->errors;
@@ -777,6 +813,8 @@ class mnu_user extends Default_Table
     // $parent_data may contain full details of the current record in the parent
     // class, not just its primary key.
     {
+        $today = getTimeStamp('date');
+
         if (empty($this->sql_from)) {
             // construct default SELECT and FROM clauses using parent relations
             $this->sql_groupby = null;
@@ -784,9 +822,9 @@ class mnu_user extends Default_Table
             $this->sql_union   = null;
             $this->sql_from    = $this->_sqlForeignJoin($this->sql_select, $this->sql_from, $this->parent_relations);
             // retrieve one or more roles from MNU_USER_ROLE
-            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_name ORDER BY is_primary DESC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id) AS role_list)";
+            $this->sql_select .= ", (SELECT GROUP_CONCAT(role_name ORDER BY sort_seq ASC, mnu_user_role.role_id ASC SEPARATOR ', ') FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00') AS role_list)";
             // retrieve primary role from MNU_USER_ROLE
-            $this->sql_select .= ", (SELECT role_name FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND is_primary='Y' LIMIT 1) AS role_id";
+            $this->sql_select .= ", (SELECT role_name FROM mnu_user_role LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id) WHERE user_id=mnu_user.user_id AND sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id=mnu_user.user_id AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00') LIMIT 1) AS role_id";
         } // if
 
         if (!empty($this->sql_search)) {

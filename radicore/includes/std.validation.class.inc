@@ -407,13 +407,39 @@ END_OF_REGEX;
                         // 'Must not use wildcard character (%) in a primary or unique key'
                         $this->errors[$fieldname] = getLanguageText('sys0017');
                     } elseif (is_array($this->unique_keys) AND !empty($this->unique_keys)) {
-                        foreach ($this->unique_keys as $keynum => $fields) {
-                            if (in_array($fieldname, $fields)) {
+                        foreach ($this->unique_keys as $keynum => $keyfields) {
+                            if (in_array($fieldname, $keyfields)) {
                                 // 'Must not use wildcard character (%) in a primary or unique key'
                                 $this->errors[$fieldname] = getLanguageText('sys0017');
                             } // if
                         } // foreach
                     } // if
+                } // if
+
+                if (!empty($fieldspec['pkey'])) {
+                    if (preg_match("/\s+/u", $fieldvalue)) {
+                        // "Unique key cannot contain whitespace characters"
+                        $this->errors[$fieldname] = getLanguageText('sys0263');
+                    } elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                        // "Unique key cannot contain control characters"
+                        $this->errors[$fieldname] = getLanguageText('sys0264');
+                    } // if
+                } elseif (is_array($this->unique_keys) AND !empty($this->unique_keys)) {
+                    foreach ($this->unique_keys as $keynum => $keyfields) {
+                        if (in_array($fieldname, $keyfields)) {
+                            if (preg_match("/\s+/u", $fieldvalue)) {
+                                // "Unique key cannot contain whitespace characters"
+                                $this->errors[$fieldname] = getLanguageText('sys0263');
+                            } elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                                // "Unique key cannot contain control characters"
+                                $this->errors[$fieldname] = getLanguageText('sys0264');
+                            } // if
+                        } // if
+                    } // foreach
+                } // if
+
+                if (!empty($this->errors[$fieldname])) {
+                    return $fieldvalue;
                 } // if
 
                 if (isset($fieldspec['subtype'])) {

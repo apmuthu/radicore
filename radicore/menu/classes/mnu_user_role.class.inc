@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_user_role extends Default_Table
@@ -71,6 +71,26 @@ class mnu_user_role extends Default_Table
     } // _cm_getForeignData
 
     // ****************************************************************************
+    function _cm_getInitialData ($fieldarray)
+    // Perform custom processing prior to insertRecord().
+    // $fieldarray contains data from the initial $where clause.
+    {
+        if (!empty($fieldarray['user_id'])) {
+            $where = "user_id='{$fieldarray['user_id']}'";
+            $query = "SELECT MAX(sort_seq) FROM $this->tablename WHERE $where";
+            $count = $this->getCount($query);
+            $fieldarray['sort_seq'] = $count + 1;
+        } // if
+
+        if (empty($fieldarray['start_date'])) {
+            $fieldarray['start_date'] = getTimeStamp('date');
+        } // if
+
+        return $fieldarray;
+
+    } // _cm_getInitialData
+
+    // ****************************************************************************
     function _cm_popupReturn ($fieldarray, $return_from, &$select_array, $return_files)
     // process a selection returned from a popup screen.
     // $fieldarray contains the record data when the popup button was pressed.
@@ -95,10 +115,10 @@ class mnu_user_role extends Default_Table
     function _cm_post_deleteRecord ($fieldarray)
     // perform custom processing after database record has been deleted.
     {
-        if (is_True($fieldarray['is_primary'])) {
-            // ensure that at least one row has 'primary=TRUE'
-            $this->_setPrimaryTrue($fieldarray);
-        } // if
+        //if (is_True($fieldarray['is_primary'])) {
+        //    // ensure that at least one row has 'primary=TRUE'
+        //    $this->_setPrimaryTrue($fieldarray);
+        //} // if
 
         return $fieldarray;
 
@@ -108,13 +128,13 @@ class mnu_user_role extends Default_Table
     function _cm_post_insertRecord ($fieldarray)
     // perform custom processing after database record is inserted.
     {
-        if (is_True($fieldarray['is_primary'])) {
-            // ensure this is the only row with 'primary=TRUE'
-            $this->_setPrimaryFalse($fieldarray);
-        } else {
-            // ensure that at least one row has 'primary=TRUE'
-            $this->_setPrimaryTrue($fieldarray);
-        } // if
+        //if (is_True($fieldarray['is_primary'])) {
+        //    // ensure this is the only row with 'primary=TRUE'
+        //    $this->_setPrimaryFalse($fieldarray);
+        //} else {
+        //    // ensure that at least one row has 'primary=TRUE'
+        //    $this->_setPrimaryTrue($fieldarray);
+        //} // if
 
         return $fieldarray;
 
@@ -127,13 +147,13 @@ class mnu_user_role extends Default_Table
         if (is_True($this->skip_validation)) {
             // skip the next bit
         } else {
-            if (is_True($fieldarray['is_primary'])) {
-                // ensure that any other rows have 'primary=FALSE'
-                $this->_setPrimaryFalse($fieldarray);
-            } else {
-                // if there are other rows ensure that one of them has 'primary=TRUE'
-                $this->_setPrimaryTrue($fieldarray);
-            } // if
+            //if (is_True($fieldarray['is_primary'])) {
+            //    // ensure that any other rows have 'primary=FALSE'
+            //    $this->_setPrimaryFalse($fieldarray);
+            //} else {
+            //    // if there are other rows ensure that one of them has 'primary=TRUE'
+            //    $this->_setPrimaryTrue($fieldarray);
+            //} // if
         } // if
 
         return $fieldarray;
@@ -190,16 +210,16 @@ class mnu_user_role extends Default_Table
     function _setPrimaryFalse ($fieldarray)
     // current row has 'primary=TRUE', so all others must have 'primary=FALSE'
     {
-        $save_numrows = $this->numrows;
+//        $save_numrows = $this->numrows;
 
-        $date = getTimeStamp('date');
+//        $date = getTimeStamp('date');
 
-        $selection = "user_id='{$fieldarray['user_id']}'"
-                   ." AND role_id != '{$fieldarray['role_id']}'";
-        $replace   = "is_primary='" .$this->fieldspec['is_primary']['false'] ."'";
-        $count = $this->_dml_updateSelection($selection, $replace);
+//        $selection = "user_id='{$fieldarray['user_id']}'"
+//                   ." AND role_id != '{$fieldarray['role_id']}'";
+//        $replace   = "is_primary='" .$this->fieldspec['is_primary']['false'] ."'";
+//        $count = $this->_dml_updateSelection($selection, $replace);
 
-        $this->numrows = $save_numrows;
+//        $this->numrows = $save_numrows;
 
         return;
 
@@ -209,21 +229,21 @@ class mnu_user_role extends Default_Table
     function _setPrimaryTrue ($fieldarray)
     // if there are other rows ensure that one of them has 'primary=TRUE'
     {
-        $date = getTimeStamp('date');
+//        $date = getTimeStamp('date');
 
-        $where = "user_id='{$fieldarray['user_id']}'";
-        $true = $this->fieldspec['is_primary']['true'];
-        $count = $this->getCount($where ." AND is_primary='$true'");
-        if ($count < 1) {
-            $this->sql_orderby = "created_date asc";
-            $data = $this->getData($where);
-            if (!empty($data)) {
-                $update = $data[0];  // use 1st record only
-                $update['is_primary'] = $true;
-                $this->skip_validation = true;
-                $update = $this->updateRecord($update);
-            } // if
-        } // if
+//        $where = "user_id='{$fieldarray['user_id']}'";
+//        $true = $this->fieldspec['is_primary']['true'];
+//        $count = $this->getCount($where ." AND is_primary='$true'");
+//        if ($count < 1) {
+//            $this->sql_orderby = "created_date asc";
+//            $data = $this->getData($where);
+//            if (!empty($data)) {
+//                $update = $data[0];  // use 1st record only
+//                $update['is_primary'] = $true;
+//                $this->skip_validation = true;
+//                $update = $this->updateRecord($update);
+//            } // if
+//        } // if
 
         return;
 

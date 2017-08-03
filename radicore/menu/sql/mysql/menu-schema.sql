@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
 -- Host:                         127.0.0.1
--- Server version:               5.7.18-log - MySQL Community Server (GPL)
+-- Server version:               5.7.19-log - MySQL Community Server (GPL)
 -- Server OS:                    Win64
--- HeidiSQL Version:             9.4.0.5169
+-- HeidiSQL Version:             9.4.0.5174
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
 CREATE TABLE IF NOT EXISTS `mnu_motd` (
   `motd_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `motd_subject` varchar(80) NOT NULL,
-  `motd_message` text,
+  `motd_message` text COLLATE utf8_unicode_ci,
   `start_date` date NOT NULL DEFAULT '2000-01-01',
   `end_date` date DEFAULT '9999-12-31',
   `role_id` varchar(16) DEFAULT NULL,
@@ -250,6 +250,8 @@ CREATE TABLE IF NOT EXISTS `mnu_saved_selection_data` (
   `selection_id` int(10) unsigned NOT NULL,
   `fieldname` varchar(80) NOT NULL,
   `fieldvalue` varchar(80) DEFAULT NULL,
+  `sort_seq` smallint(5) unsigned DEFAULT NULL,
+  `output_name` varchar(80) DEFAULT NULL,
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,
@@ -421,7 +423,7 @@ CREATE TABLE IF NOT EXISTS `mnu_time_limit_user` (
 -- Dumping structure for table demo_menu.mnu_todo
 CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `user_id` varchar(16) NOT NULL,
-  `seq_no` smallint(10) unsigned NOT NULL,
+  `seq_no` smallint(5) unsigned NOT NULL,
   `item_name` varchar(80) NOT NULL,
   `item_desc` text,
   `due_date` date NOT NULL DEFAULT '0000-00-00',
@@ -500,7 +502,9 @@ CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
 CREATE TABLE IF NOT EXISTS `mnu_user_role` (
   `user_id` varchar(16) NOT NULL,
   `role_id` varchar(16) NOT NULL,
-  `is_primary` char(1) NOT NULL DEFAULT 'N',
+  `sort_seq` int(10) unsigned NOT NULL,
+  `start_date` date NOT NULL DEFAULT '2000-01-01',
+  `end_date` date DEFAULT '9999-12-31',
   `created_date` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `created_user` varchar(16) NOT NULL DEFAULT 'UNKNOWN',
   `revised_date` datetime DEFAULT NULL,

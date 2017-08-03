@@ -14,8 +14,8 @@ $structure['tables']['inner'] = 'mnu_nav_button';
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => '*');
 $structure['inner']['columns'][] = array('width' => '*');
-$structure['inner']['columns'][] = array('width' => 25);
-$structure['inner']['columns'][] = array('width' => 100);
+$structure['inner']['columns'][] = array('width' => 55);
+$structure['inner']['columns'][] = array('width' => 120);
 $structure['inner']['columns'][] = array('width' => 150);
 
 $structure['inner']['fields'][] = array('selectbox' => 'Select');
