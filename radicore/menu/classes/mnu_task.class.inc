@@ -204,7 +204,7 @@ class mnu_task extends Default_Table
                 $fieldarray['selection_fixed']       = null;
                 $fieldarray['selection_temp']        = null;
                 $fieldarray['settings']              = null;
-                $fieldarray['use_https']             = null;
+                $fieldarray['use_https']             = 'N';
                 $fieldarray['max_execution_time']    = null;
                 $fieldarray['task_id_run_at_end']    = null;
                 $fieldarray['task_id_run_at_cancel'] = null;
@@ -223,8 +223,8 @@ class mnu_task extends Default_Table
             case 'BATCH':
                 // these fields are not allowed
                 $fieldarray['initial_passthru']      = null;
-                $fieldarray['use_https']             = null;
-                $fieldarray['keep_data']             = null;
+                $fieldarray['use_https']             = 'N';
+                $fieldarray['keep_data']             = 'N';
                 $fieldarray['screen_refresh']        = null;
                 $fieldarray['max_execution_time']    = null;
                 $fieldarray['order_by']              = null;
@@ -232,6 +232,7 @@ class mnu_task extends Default_Table
                 $fieldarray['selection_temp']        = null;
                 $fieldarray['task_id_run_at_end']    = null;
                 $fieldarray['task_id_run_at_cancel'] = null;
+                $fieldarray['allow_responsive_gui']  = 'N';
                 break;
             default:
                 break;
@@ -243,7 +244,7 @@ class mnu_task extends Default_Table
                 $this->errors['initial_passthru'] = getLanguageText('e0018');
                 return $fieldarray;
             } // if
-            $dbobject =& RDCsingleton::getInstance('mnu_task');
+            $dbobject = RDCsingleton::getInstance('mnu_task');
             $data = $dbobject->getData("task_id='{$fieldarray['initial_passthru']}'");
             if ($dbobject->numrows < 1) {
                 // "This task does not exist"
@@ -321,14 +322,14 @@ class mnu_task extends Default_Table
 
         if (!array_key_exists('pattern_id', $this->lookup_data)) {
             // get contents of foreign table PATTERN and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('mnu_pattern');
+            $dbobject = RDCsingleton::getInstance('mnu_pattern');
             $array = $dbobject->getValRep('pattern_id');
             $this->lookup_data['pattern_id'] = $array;
         } // if
 
         if (!array_key_exists('subsys_id', $this->lookup_data)) {
             // get contents of foreign table SUBSYSTEM and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('mnu_subsystem');
+            $dbobject = RDCsingleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
         } // if
@@ -415,7 +416,7 @@ class mnu_task extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from MNU_MENU table
-                $object =& RDCsingleton::getInstance('mnu_menu');
+                $object = RDCsingleton::getInstance('mnu_menu');
                 $menu_id  = $fieldarray['task_id'];
                 $object->sql_orderby = 'sort_seq asc';
                 $outarray = $object->getData("menu_id='$menu_id'");
@@ -554,7 +555,7 @@ class mnu_task extends Default_Table
             if (isset($rowdata[0]['task_id'])) {
             	// check to see if any menu items exist
                 require_once 'mnu_menu.class.inc';
-                $dbobject =& RDCsingleton::getInstance('mnu_menu');
+                $dbobject = RDCsingleton::getInstance('mnu_menu');
                 $count = $dbobject->getCount("menu_id='{$rowdata[0]['task_id']}'");
                 if ($count == 0) {
                     // no menu items exist, so allow type to be changed

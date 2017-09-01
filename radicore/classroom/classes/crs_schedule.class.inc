@@ -77,7 +77,7 @@ class crs_schedule extends Default_Table
             } // if
         } // if
 
-        $dbobject =& RDCsingleton::getInstance('crs_schedule_hdr');
+        $dbobject = RDCsingleton::getInstance('crs_schedule_hdr');
         $data     = $dbobject->getData("schedule_id ='{$fieldarray['schedule_id']}'");
         if (empty($data)) {
         	// 'Nothing retrieved from database table x'
@@ -127,12 +127,12 @@ class crs_schedule extends Default_Table
 
         // ****************************************************************************
         // check student numbers against room capacity
-        $roomOBJ =& RDCsingleton::getInstance('crs_room');
+        $roomOBJ = RDCsingleton::getInstance('crs_room');
         $roomOBJ->sql_select = 'room_capacity';
         $data = $roomOBJ->getData("room_id='$room_id'");
         $room_capacity = $data[0]['room_capacity'];
 
-        $class_lessonOBJ =& RDCsingleton::getInstance('crs_class_lesson');
+        $class_lessonOBJ = RDCsingleton::getInstance('crs_class_lesson');
         $class_lessonOBJ->sql_select  = 'crs_class_lesson.lesson_id, count(student_id) as count';
         $class_lessonOBJ->sql_from    = 'crs_class_lesson '
                                       . 'LEFT JOIN crs_student ON (crs_student.class_id=crs_class_lesson.class_id)';
@@ -144,7 +144,7 @@ class crs_schedule extends Default_Table
             $count1 = 0;
         } // if
 
-        $student_lessonOBJ =& RDCsingleton::getInstance('crs_student_lesson');
+        $student_lessonOBJ = RDCsingleton::getInstance('crs_student_lesson');
         $count2 = $student_lessonOBJ->getCount("lesson_id='$lesson_id'");
 
         $count3 = $count1+$count2;
@@ -156,7 +156,7 @@ class crs_schedule extends Default_Table
         // ****************************************************************************
 
         // check if other scheduled lessons could conflict with this one
-        $conflictOBJ =& RDCsingleton::getInstance('crs_conflict');
+        $conflictOBJ = RDCsingleton::getInstance('crs_conflict');
         $conflictOBJ->sql_orderby = 'lesson_id2';
         $conflictOBJ->sql_groupby = 'lesson_id2';
         $conflictDATA = $conflictOBJ->getData("lesson_id1='$lesson_id'");
@@ -248,14 +248,14 @@ class crs_schedule extends Default_Table
 
         if (!array_key_exists('lesson_id', $this->lookup_data)) {
             // get contents of foreign table LESSON and add to lookup array
-            $object =& RDCsingleton::getInstance('crs_lesson');
+            $object = RDCsingleton::getInstance('crs_lesson');
             $data = $object->getValRep('lesson_id');
             $this->lookup_data['lesson_id'] = $data;
         } // if
 
         if (!array_key_exists('room_id', $this->lookup_data)) {
             // get contents of foreign table ROOM and add to lookup array
-            $object =& RDCsingleton::getInstance('crs_room');
+            $object = RDCsingleton::getInstance('crs_room');
             $data = $object->getValRep('room_id');
             $this->lookup_data['room_id'] = $data;
         } // if
@@ -314,21 +314,21 @@ class crs_schedule extends Default_Table
 
         if (isset($rowdata[0]['room_id'])) {
             //require_once 'classes/crs_room.class.inc';
-            $object =& RDCsingleton::getInstance('crs_room');
+            $object = RDCsingleton::getInstance('crs_room');
             $data = $object->getData("room_id='{$rowdata[0]['room_id']}'");
             $rowdata[0]['room_capacity'] = $data[0]['room_capacity'];
         } // if
 
         if (isset($rowdata[0]['lesson_id'])) {
             //require_once 'classes/crs_lesson.class.inc';
-            $object =& RDCsingleton::getInstance('crs_lesson');
+            $object = RDCsingleton::getInstance('crs_lesson');
             $data = $object->getData("lesson_id='{$rowdata[0]['lesson_id']}'");
             $rowdata[0]['teacher_name'] = $data[0]['teacher_name'];
             $student_count1             = $data[0]['student_count'];
         } // if
 
         //require_once 'classes/crs_class_lesson.class.inc';
-        $object =& RDCsingleton::getInstance('crs_class_lesson');
+        $object = RDCsingleton::getInstance('crs_class_lesson');
         $object->sql_select  = 'crs_class_lesson.lesson_id, count(student_id) as count';
         $object->sql_from    = 'crs_class_lesson '
                              . 'LEFT JOIN crs_student ON (crs_student.class_id=crs_class_lesson.class_id)';

@@ -117,7 +117,7 @@ class audit_tbl extends Default_Table
 
         if (!isset($_SESSION['session_number'])) {
             // first time only, get details from audit_ssn
-            $ssn_obj =& RDCsingleton::getInstance('audit_ssn');
+            $ssn_obj = RDCsingleton::getInstance('audit_ssn');
             $ssn_data = $ssn_obj->insertRecord(array());
             if ($ssn_obj->errors) {
                 $this->errors = $ssn_obj->getErrors();
@@ -130,7 +130,7 @@ class audit_tbl extends Default_Table
 
         if (empty($this->trn_array)) {
             // first time only, get details from audit_trn
-            $trn_obj =& RDCsingleton::getInstance('audit_trn');
+            $trn_obj = RDCsingleton::getInstance('audit_trn');
             $this->trn_array = $trn_obj->insertRecord($ssn_data);
             if ($trn_obj->errors) {
                 $this->errors = $trn_obj->getErrors();
@@ -231,7 +231,7 @@ class audit_tbl extends Default_Table
         } // foreach
 
         // add all these records to the database
-        $fld_obj =& RDCsingleton::getInstance('audit_fld');
+        $fld_obj = RDCsingleton::getInstance('audit_fld');
 
         $fieldarray = $fld_obj->insertMultiple($fieldarray);
         $this->errors = $fld_obj->getErrors();

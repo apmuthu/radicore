@@ -28,7 +28,7 @@ class mnu_motd extends Default_Table
     function _checkNextRecord ($fieldarray)
     // check that end_date of current record is earlier than end_date of next record.
     {
-        $dbobject =& RDCsingleton::getInstance('mnu_motd');
+        $dbobject = RDCsingleton::getInstance('mnu_motd');
 
         $dbobject->sql_select = 'motd_id,end_date';
         $curr_id = $fieldarray['motd_id'];
@@ -60,7 +60,7 @@ class mnu_motd extends Default_Table
     // (the previous record has a lower value for PRICE_COMPONENT_ID)
     // check that start_date of current record is later than start_date of previous record.
     {
-        $dbobject =& RDCsingleton::getInstance('mnu_motd');
+        $dbobject = RDCsingleton::getInstance('mnu_motd');
 
         $dbobject->sql_select = 'motd_id,start_date';
         if (empty($fieldarray['motd_id'])) {
@@ -113,7 +113,7 @@ class mnu_motd extends Default_Table
     {
         if (!array_key_exists('role_id', $this->lookup_data)) {
             // get contents of foreign table MNU_ROLE and put into lookup_data
-            $dbobject =& RDCsingleton::getInstance('mnu_role');
+            $dbobject = RDCsingleton::getInstance('mnu_role');
             $array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $array;
         } // if
@@ -231,7 +231,7 @@ class mnu_motd extends Default_Table
 
         $update_array['motd_id']    = $this->next_motd_id;
         $update_array['start_date'] = $start_date;
-        $dbobject =& RDCsingleton::getInstance('mnu_motd');
+        $dbobject = RDCsingleton::getInstance('mnu_motd');
         $dbobject->skip_validation = true;
         $update_array = $dbobject->updateRecord($update_array);
         if ($dbobject->errors) {
@@ -252,7 +252,7 @@ class mnu_motd extends Default_Table
 
         $update_array['motd_id']  = $this->prev_motd_id;
         $update_array['end_date'] = $end_date;
-        $dbobject =& RDCsingleton::getInstance('mnu_motd');
+        $dbobject = RDCsingleton::getInstance('mnu_motd');
         $dbobject->skip_validation = true;
         $update_array = $dbobject->updateRecord($update_array);
         if ($dbobject->errors) {

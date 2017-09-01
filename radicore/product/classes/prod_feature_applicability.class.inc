@@ -29,14 +29,14 @@ class prod_feature_applicability extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         $end_date    = $dateobj->getInternalDate($fieldarray['end_date']);
         $next_seq_no = $fieldarray['seq_no'] + 1;
 
         $where = "(product_id='{$fieldarray['product_id']}' AND prod_feature_id='{$fieldarray['prod_feature_id']}' AND seq_no='$next_seq_no')" ;
 
-        $dbobject =& RDCsingleton::getInstance('prod_feature_applicability');
+        $dbobject = RDCsingleton::getInstance('prod_feature_applicability');
         $dbobject->sql_select = 'end_date';
         $next_seq_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
@@ -66,14 +66,14 @@ class prod_feature_applicability extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         $start_date  = $dateobj->getInternalDate($fieldarray['start_date']);
         $prev_seq_no = $fieldarray['seq_no'] -1;
 
         $where = "(product_id='{$fieldarray['product_id']}' AND prod_feature_id='{$fieldarray['prod_feature_id']}' AND seq_no='$prev_seq_no')" ;
 
-        $dbobject =& RDCsingleton::getInstance('prod_feature_applicability');
+        $dbobject = RDCsingleton::getInstance('prod_feature_applicability');
         $dbobject->sql_select = 'start_date';
         $prev_rec_data = $dbobject->getData_raw($where);
         if ($dbobject->numrows <> 1) {
@@ -139,7 +139,7 @@ class prod_feature_applicability extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);
         $end_date   = $dateobj->getInternalDate($fieldarray['end_date']);
@@ -177,14 +177,14 @@ class prod_feature_applicability extends Default_Table
         if (!empty($fieldarray['prod_feature_id']) and empty($fieldarray['prod_feature_desc'])) {
             // get description for selected node
             require_once 'classes/product_feature.class.inc';
-            $dbobject =& RDCsingleton::getInstance('product_feature');
+            $dbobject = RDCsingleton::getInstance('product_feature');
             $dbobject->sql_select = 'prod_feature_id, prod_feature_desc, prod_feature_cat_id';
             $foreign_data = $dbobject->getData("prod_feature_id='{$fieldarray['prod_feature_id']}'");
             // merge with existing data
             $fieldarray = array_merge($fieldarray, $foreign_data[0]);
 
             require_once 'classes/product_feature_category.class.inc';
-            $dbobject =& RDCsingleton::getInstance('product_feature_category');
+            $dbobject = RDCsingleton::getInstance('product_feature_category');
             $dbobject->sql_select = 'prod_feature_cat_desc';
             $foreign_data = $dbobject->getData("prod_feature_cat_id='{$fieldarray['prod_feature_cat_id']}'");
             // merge with existing data
@@ -202,7 +202,7 @@ class prod_feature_applicability extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         // set seq_no to next available number
         if (!empty($fieldarray['product_id'])
@@ -364,7 +364,7 @@ class prod_feature_applicability extends Default_Table
     {
         //DebugBreak();
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         $seq_no     = (int)$fieldarray['seq_no'];
         $start_date = $dateobj->getInternaldate($fieldarray['start_date']);

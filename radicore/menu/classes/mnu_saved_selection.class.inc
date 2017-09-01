@@ -85,7 +85,7 @@ class mnu_saved_selection extends Default_Table
         $this->messages[] = getLanguageText('sys0005', 1, strtoupper($this->tablename));
 
         // dump the selection data into the child table
-        $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
+        $dbobject = RDCsingleton::getInstance('mnu_saved_selection_data');
         $dbobject->audit_logging = false;  // do not log initial insert
         foreach ($rows as $rownum => $rowdata) {
             $add['selection_id'] = $new['selection_id'];
@@ -139,7 +139,7 @@ class mnu_saved_selection extends Default_Table
         $this->messages[] = getLanguageText('sys0006', 1, strtoupper($this->tablename));
 
         // transfer updated data to the database
-        $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
+        $dbobject = RDCsingleton::getInstance('mnu_saved_selection_data');
 
         $insert_count = 0;
         $update_count = 0;

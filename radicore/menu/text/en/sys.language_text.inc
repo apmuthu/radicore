@@ -294,8 +294,8 @@ $array['sys0262'] = "%1\$d records were unchanged in %2\$s";
 $array['sys0263'] = "Unique key cannot contain whitespace characters";
 $array['sys0264'] = "Unique key cannot contain control characters";
 $array['sys0265'] = "Zone '%1\$s' in screen structure file does not contain a 'fields' entry";
-$array['sys0266'] = "Zone '%1\$s' in screen structure file does not contain a 'columns' entry";
-$array['sys0267'] = "Zone '%1\$s' in screen structure file does not contain a 'grid_size' entry";
+$array['sys0266'] = "Zone '%1\$s' row '%2\$s' in screen structure file does not contain a 'columns' entry";
+$array['sys0267'] = "Zone '%1\$s' row '%2\$s' in screen structure file does not contain a 'grid_size' entry";
 $array['sys0268'] = "";
 $array['sys0269'] = "";
 

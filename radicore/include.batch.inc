@@ -1,7 +1,7 @@
 <?php
 // ****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2016 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // ****************************************************************************
 
 // this performs initialisation for a batch process (run from command line)
@@ -27,6 +27,7 @@ function batchInit ($batchfile)
     // retrieve variables from file
     if (file_exists('../batch.ini')) {
     	$ini_array = parse_ini_file('../batch.ini');           // use custom file
+        $ini_file  = '../batch.ini';
     } else {
         $ini_array = parse_ini_file('../batch.ini.default');   // use default file
     } // if
@@ -76,7 +77,11 @@ function batchInit ($batchfile)
     } // if
     $_SERVER['PHP_SELF']                 = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
     if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    	$_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
+        if (!empty($ini_array['language'])) {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
+        } else {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en';
+        } // if
     } // if
     if (empty($_SERVER['REMOTE_ADDR'])) {
     	$_SERVER['REMOTE_ADDR']          = 'batch';
@@ -88,58 +93,59 @@ function batchInit ($batchfile)
         } // if
     } // if
 
-    // if multiple accounts are being used, then default to the shared account
-    //
+    if (empty($ini_file)) {
+        // look for INCLUDE_PATH in optional htaccess file
+        if (file_exists('../htaccess.txt')) {
+            $fn = '../htaccess.txt';
+        } elseif (file_exists('../.htaccess')) {
+            $fn = '../.htaccess';
+        } // if
+        if (!empty($fn)) {
+            $ini_file = $fn;
+    	    $handle = fopen($fn, 'r');
+    	    while ($string = fgets($handle)) {
+    	        $string = trim($string);
+    	        if (strtolower(substr($string, 0, 9)) == 'php_value') {
+    	    	    list ($php_value, $name, $arg) = explode(' ', $string);
+                    if ($name == 'include_path') {
+                	    $arg = trim($arg, '".');
+                        $ini_array = array('include_path' => $arg);
+                        break;
+                    } // if
+    	        } // if
+            } // while
+    	    fclose($handle);
+    	    unset($fn);
+        } // if
+    } // if
 
-    // look for INCLUDE_PATH in optional htaccess file
-    if (file_exists('../htaccess.txt')) {
-        $fn = '../htaccess.txt';
-    } elseif (file_exists('../.htaccess')) {
-        $fn = '../.htaccess';
-    } // if
-    if (!empty($fn)) {
-    	$handle = fopen($fn, 'r');
-    	while ($string = fgets($handle)) {
-    	    $string = trim($string);
-    	    if (strtolower(substr($string, 0, 9)) == 'php_value') {
-    	    	list ($php_value, $name, $arg) = explode(' ', $string);
-                if ($name == 'include_path') {
-                	$arg = trim($arg, '".');
-                	$include_path = ini_get('include_path');
-                	$include_path .= $arg;
-                	ini_set('include_path', $include_path);
-                    break;
-                } // if
-    	    } // if
-        } // while
-    	fclose($handle);
-    	unset($fn);
-    } // if
     if (empty($include_path) AND !empty($ini_array['include_path'])) {
     	ini_set('include_path', trim($ini_array['include_path'], "'"));
     } // if
 
-    if (file_exists('../user.ini')) {
-        $fn = '../user.ini';
-    } elseif (file_exists('../.user.ini')) {
-        $fn = '../.user.ini';
-    } // if
-    if (!empty($fn)) {
-        // alternative to htaccess when run as CGI/FastCGI
-        $ini_array = parse_ini_file($fn);
-        foreach ($ini_array as $key => $value) {
-            $value = trim($value, "'");
-            if ($key == 'include_path') {
-                if (substr($value, 0, 1) == ';') {
-                    // append to current value
-                    $value = ini_get('include_path').$value;
-                    break;
+    if (empty($ini_file)) {
+        if (file_exists('../user.ini')) {
+            $fn = '../user.ini';
+        } elseif (file_exists('../.user.ini')) {
+            $fn = '../.user.ini';
+        } // if
+        if (!empty($fn)) {
+            // alternative to htaccess when run as CGI/FastCGI
+            $ini_array = parse_ini_file($fn);
+            foreach ($ini_array as $key => $value) {
+                $value = trim($value, "'");
+                if ($key == 'include_path') {
+                    if (substr($value, 0, 1) == ';') {
+                        // append to current value
+                        $value = ini_get('include_path').$value;
+                        break;
+                    } // if
                 } // if
-            } // if
-        	$result = ini_set($key, $value);
-        } // foreach
-        unset($fn);
-    } //
+        	    $result = ini_set($key, $value);
+            } // foreach
+            unset($fn);
+        } // if
+    } // if
 
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
     echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
@@ -155,6 +161,8 @@ function batchInit ($batchfile)
     $GLOBALS['task_id']        = basename($_SERVER['PHP_SELF']);
     $GLOBALS['batch']          = true;
     $GLOBALS['mode']           = 'batch';
+
+    $_SESSION['default_language'] = 'en';  // default
 
     //checkFileExists('include.general.inc');
     require_once 'include.general.inc';
@@ -175,23 +183,27 @@ function batchInit ($batchfile)
         initSession(null, $argv);
     } // if
 
-    if (empty($where) AND !empty($argv[4])) {
-        $where = $argv[4];
+    if (empty($where) AND !empty($argv[3])) {
+        $where = $argv[3];
     } // if
-    if (empty($selection) AND !empty($argv[5])) {
-        $selection = $argv[5];
+    if (empty($selection) AND !empty($argv[4])) {
+        $selection = $argv[4];
     } // if
-    if (empty($search) AND !empty($argv[6])) {
-        $search = $argv[6];
+    if (empty($search) AND !empty($argv[5])) {
+        $search = $argv[5];
     } // if
-    if (empty($settings) AND !empty($argv[7])) {
-        $settings = $argv[7];
+    if (empty($settings) AND !empty($argv[6])) {
+        $settings = $argv[6];
     } // if
     unset($argv);
 
     if (empty($_SESSION['role_list'])) {
-        $dbobject =& RDCsingleton::getInstance('menu/mnu_user_role');
-        $data = $dbobject->getData("user_id='{$_SESSION['logon_user_id']}'");
+        if (defined('TRANSIX_NO_MENU') OR defined('RADICORE_NO_MENU')) {
+            $data = array();
+        } else {
+            $dbobject = RDCsingleton::getInstance('menu/mnu_user_role');
+            $data = $dbobject->getData("user_id='{$_SESSION['logon_user_id']}'");
+        } // if
         if (!empty($data)) {
             $role_array = array();
             foreach ($data as $rowdata) {
@@ -199,6 +211,8 @@ function batchInit ($batchfile)
             } // foreach
             $role_list = "'".implode("','", $role_array)."'";
             $_SESSION['role_list'] = $role_list;
+        } else {
+            $_SESSION['role_list'] = "'{$_SESSION['role_id']}'";
         } //if
         unset($dbobject);
     } // if
@@ -240,7 +254,8 @@ function batchEnd ($errors=null)
 
     $errors = batchScriptSequence();  // process anything put in $_SESSION['script_sequence']
 
-    echo '<p>** finished at ' .date('F j, Y, ').getTimeStamp('time') ."</p>\n";
+    //echo '<p>** finished at ' .date('F j, Y, ').getTimeStamp('time') ."</p>\n";
+    echo '<p>** finished at ' .date(DATE_RFC850)."</p>\n";
 
     echo "</html>";
 

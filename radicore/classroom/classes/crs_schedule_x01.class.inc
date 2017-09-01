@@ -130,7 +130,7 @@ class crs_schedule_x01 extends crs_schedule
         	$schedule_id = $_SESSION['crs_schedule_id'];
         } else {
             // get current schedule_id
-            $dbobject =& RDCsingleton::getInstance('crs_schedule_hdr');
+            $dbobject = RDCsingleton::getInstance('crs_schedule_hdr');
             $dbobject->sql_select = 'schedule_id';
             $data = $dbobject->getData("is_active='" .$dbobject->fieldspec['is_active']['true'] ."'");
             if ($dbobject->numrows > 0) {

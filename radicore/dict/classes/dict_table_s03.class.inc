@@ -83,7 +83,7 @@ class dict_table_s03 extends dict_table
 
         if (!array_key_exists('pattern_id', $this->lookup_data)) {
             // get contents of foreign table and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('mnu_pattern');
+            $dbobject = RDCsingleton::getInstance('mnu_pattern');
             $array    = $dbobject->getValRep('pattern_id', "pattern_id IN ($select_list)");
             $this->lookup_data['pattern_id'] = $array;
         } // if
@@ -107,9 +107,11 @@ class dict_table_s03 extends dict_table
             } // if
         } // if
 
-        // reduce multiple selections to a single selection
-        $rows = splitWhereByRow($where);
-        $where = $rows[0];
+        if (!empty($where)) {
+            // reduce multiple selections to a single selection
+            $rows = splitWhereByRow($where);
+            $where = $rows[0];
+        } // if
 
         unset($GLOBALS['act_buttons']['submitBtn']);
 

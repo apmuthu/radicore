@@ -46,7 +46,7 @@ class survey_hdr extends Default_Table
     {
         if (!array_key_exists('survey_type_id', $this->lookup_data)) {
             // get contents of foreign table SURVEY_TYPE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('survey_type');
+            $dbobject = RDCsingleton::getInstance('survey_type');
             $data_array = $dbobject->getValRep('survey_type_id');
             $this->lookup_data['survey_type_id'] = $data_array;
         } // if

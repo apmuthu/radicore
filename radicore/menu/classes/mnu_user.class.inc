@@ -33,7 +33,7 @@ class mnu_user extends Default_Table
     function switchPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
-        $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+        $crypt_obj = RDCsingleton::getInstance('encryption_class');
 
         // read records for all current users
         $this->sql_select = 'user_id,user_password';
@@ -74,7 +74,7 @@ class mnu_user extends Default_Table
 
         $today = getTimeStamp('date');
 
-        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+        $mnu_control = RDCsingleton::getInstance('mnu_control');
 
         if (is_True($external_auth_off)) {
             // do not use External Authentication
@@ -147,7 +147,7 @@ class mnu_user extends Default_Table
             $logon_password = $password;
         } elseif ($encrypt_flag === true) {
             // encrypt the password to include in database lookup
-            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+            $crypt_obj = RDCsingleton::getInstance('encryption_class');
             $spec = $this->fieldspec['user_password'];
             $logon_password = $crypt_obj->encrypt($user_id, $password, $spec['size']);
             if ($crypt_obj->errors) {
@@ -220,7 +220,7 @@ class mnu_user extends Default_Table
         $fieldarray['authentication'] = $auth_array['authentication'];
 
         // look at user's primary role on MNU_USER_ROLE to obtain start_task_id
-        $roleOBJ =& RDCsingleton::getInstance('mnu_user_role');
+        $roleOBJ = RDCsingleton::getInstance('mnu_user_role');
         $roleOBJ->sql_select  = 'mnu_role.role_id, mnu_role.start_task_id, allow_responsive_gui';
         $roleOBJ->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00') AS role_list";
         $roleOBJ->sql_from    = 'mnu_user_role'
@@ -249,7 +249,7 @@ class mnu_user extends Default_Table
     function setPasswords ($switch)
     // encrypt or decrypt all user passwords according to $switch
     {
-        $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+        $crypt_obj = RDCsingleton::getInstance('encryption_class');
 
         $rdcaccount_id = $_SESSION['rdcaccount_id'];    // save
         $_SESSION['rdcaccount_id'] = null;              // operate on ALL accounts, not just user's account
@@ -482,7 +482,7 @@ class mnu_user extends Default_Table
         if (!empty($fieldarray['user_id']) AND !empty($password_value)) {
             if (is_True($this->pswd_encrypt)) {
                 // always encrypt string to ensure it has valid characters
-                $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+                $crypt_obj = RDCsingleton::getInstance('encryption_class');
                 $key    = $fieldarray['user_id'];
                 $spec   = $this->fieldspec['user_password'];
                 $encrypted_string = $crypt_obj->encrypt($key, $password_value, $spec['size']);
@@ -494,6 +494,9 @@ class mnu_user extends Default_Table
                     $fieldarray['user_password'] = $encrypted_string;
                     $this->fields_not_for_trimming[] = 'user_password';  // do not trim() this field
                 } // if
+            } else {
+                // insert plain text version of new password
+                $fieldarray['user_password'] = $password_value;
             } // if
         } // if
 
@@ -541,7 +544,7 @@ class mnu_user extends Default_Table
             if (is_True($this->pswd_encrypt)) {
             	// decrypt the password
                 if (!empty($fieldarray['user_id']) AND !empty($fieldarray['user_password'])) {
-                    $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+                    $crypt_obj = RDCsingleton::getInstance('encryption_class');
                     $key    = $fieldarray['user_id'];
                     $string = $fieldarray['user_password'];
                     $fieldarray['user_password'] = $crypt_obj->decrypt($key, $string);
@@ -602,14 +605,14 @@ class mnu_user extends Default_Table
     {
         if (!array_key_exists('role_id', $this->lookup_data)) {
             // get contents of foreign table MNU_ROLE and put into lookup_data
-            $dbobject =& RDCsingleton::getInstance('mnu_role');
+            $dbobject = RDCsingleton::getInstance('mnu_role');
             $array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $array;
         } // if
 
         if (!array_key_exists('language_id', $this->lookup_data)) {
             // get array of all supported language codes
-            $dbobject =& RDCsingleton::getInstance('mnu_language');
+            $dbobject = RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
 //            if (!empty($_SESSION['default_language'])) {
 //                // remove default language as an option in this screen
@@ -620,7 +623,7 @@ class mnu_user extends Default_Table
 
         if (!array_key_exists('rdcaccount_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& RDCsingleton::getInstance('mnu_account');
+            $dbobject = RDCsingleton::getInstance('mnu_account');
             $array = $dbobject->getValRep('rdcaccount_id');
             $this->lookup_data['rdcaccount_id'] = $array;
         } // if
@@ -735,7 +738,7 @@ class mnu_user extends Default_Table
         } // if
 
         // find out if user passwords are to be hidden or not
-    	$dbobject =& RDCsingleton::getInstance('mnu_control');
+    	$dbobject = RDCsingleton::getInstance('mnu_control');
         $this->pswd_hidden    = $dbobject->getControlData('pswd_hidden');
         $this->pswd_encrypt   = $dbobject->getControlData('pswd_encrypt');
         $this->pswd_format    = $dbobject->getControlData('pswd_format');
@@ -788,7 +791,7 @@ class mnu_user extends Default_Table
     // perform custom processing after database record has been inserted.
     {
         // add primary role to MNU_USER_ROLE table
-        $dbobject =& RDCsingleton::getInstance('mnu_user_role');
+        $dbobject = RDCsingleton::getInstance('mnu_user_role');
         $role['user_id']  = $rowdata['user_id'];
         $role['role_id']  = $rowdata['role_id'];
         $role = $dbobject->insertRecord($role);

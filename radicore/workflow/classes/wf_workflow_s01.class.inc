@@ -18,7 +18,7 @@ class wf_workflow_s01 extends wf_workflow
         $fieldarray['workflow_errors'] = null;
 
         // ********************************************************************
-        $dbplace =& RDCsingleton::getInstance('wf_place');
+        $dbplace = RDCsingleton::getInstance('wf_place');
 
         // check that workflow contains a single START place
         $place_data = $dbplace->getData_raw("workflow_id='$workflow_id' AND place_type='1'");
@@ -56,7 +56,7 @@ class wf_workflow_s01 extends wf_workflow
         } // if
 
         // ********************************************************************
-        $dbarc =& RDCsingleton::getInstance('wf_arc');
+        $dbarc = RDCsingleton::getInstance('wf_arc');
 
         // check that workflow contains at least one arc
         $count = $dbarc->getCount("workflow_id='$workflow_id'");
@@ -209,7 +209,7 @@ class wf_workflow_s01 extends wf_workflow
         } // foreach
 
         // ********************************************************************
-        $dbtransition =& RDCsingleton::getInstance('wf_transition');
+        $dbtransition = RDCsingleton::getInstance('wf_transition');
 
         // check that workflow contains at least one transition
         $transition_data = $dbtransition->getData_raw("workflow_id='$workflow_id'");

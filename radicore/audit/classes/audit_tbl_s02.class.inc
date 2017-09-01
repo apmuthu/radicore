@@ -35,7 +35,7 @@ class audit_tbl_s02 extends audit_tbl
         // construct components of SQL string
         $output = "\nUSE `" .$rowdata['base_name'] ."`;\n\n";
 
-        $dbobject =& RDCsingleton::getInstance('audit_fld');
+        $dbobject = RDCsingleton::getInstance('audit_fld');
         $field_data = $dbobject->getData_raw($where);
         // split $field_data into $old_array and $new_array
         $old_array = array();

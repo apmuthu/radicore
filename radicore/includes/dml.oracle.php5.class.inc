@@ -538,7 +538,7 @@ END_OF_REGEX;
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
 	    } else {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $auditobj = RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
 
@@ -587,7 +587,7 @@ END_OF_REGEX;
 
                 // write query to log file, if option is turned on
                 $end_time = getMicroTime();
-                logSqlQuery ($dbname, null, 'CONNECT', null, $start_time, $end_time);
+                logSqlQuery ($schema, null, 'CONNECT', null, $start_time, $end_time);
             } // if
         } // if
         if (!$dbconn) {
@@ -613,12 +613,13 @@ END_OF_REGEX;
 
             // write query to log file, if option is turned on
             $end_time = getMicroTime();
-            logSqlQuery ($dbname, null, $this->query, null, $start_time, $end_time);
+            logSqlQuery ($schema, null, $this->query, null, $start_time, $end_time);
         } // if
 
         $this->query     = '';
         $this->dbconnect = $dbconn;
         $this->schema    = $schema;
+
         return TRUE;
 
     } // connect
@@ -657,7 +658,7 @@ END_OF_REGEX;
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $where, $fieldarray);
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -704,7 +705,7 @@ END_OF_REGEX;
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditDelete($schema, $tablename, $this->fieldspec, $selection, array());
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -904,7 +905,7 @@ END_OF_REGEX;
                 $this->row_locks = null;
 
                 foreach ($this->fieldspec as $field => $spec) {
-                    if ($spec['type'] == 'string' AND $spec['size'] > 4000) {
+                    if ($spec['type'] == 'string' AND isset($spec['size']) AND $spec['size'] > 4000) {
                         // turn off when reading a table which contains LOBs
                         $lock_str = null;
                         break;
@@ -1476,7 +1477,7 @@ END_OF_REGEX;
             	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         			// do nothing
 		        } else {
-	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                $auditobj = RDCsingleton::getInstance('audit_tbl');
 	                // add record details to audit database
 	                $auditobj->auditInsert($schema, $tablename, $this->fieldspec, $primary_key, $fieldarray);
 	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1558,7 +1559,7 @@ END_OF_REGEX;
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
 	    } else {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $auditobj = RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
 
@@ -1865,7 +1866,7 @@ END_OF_REGEX;
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditUpdate($schema, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1905,7 +1906,7 @@ END_OF_REGEX;
             	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         			// do nothing
 		        } else {
-	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                $auditobj = RDCsingleton::getInstance('audit_tbl');
 	                // add record details to audit database
 	                $auditobj->auditUpdateSelection($schema, $tablename, $this->fieldspec, $selection, $replace);
 	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);

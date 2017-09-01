@@ -38,7 +38,7 @@ class dict_dataBase_s02 extends dict_dataBase
     // errors are added to $this->errors.
     {
         // create object for retrieving table details
-        $tableobj =& RDCsingleton::getInstance('dict_table');
+        $tableobj = RDCsingleton::getInstance('dict_table');
 
         $database_id = $rowdata['database_id'];
         $subsys_dir  = $rowdata['subsys_dir'];

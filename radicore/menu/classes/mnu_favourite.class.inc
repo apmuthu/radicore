@@ -206,7 +206,7 @@ class mnu_favourite extends Default_Table
         		unset($breadcrumbs['current_menu']);
         		$script_vars['page_stack']   = $breadcrumbs;
         		// rebuild contents of menu bar
-        		$dbmenu =& RDCsingleton::getInstance('mnu_menu');
+        		$dbmenu = RDCsingleton::getInstance('mnu_menu');
                 $script_vars['menu_buttons'] = $dbmenu->getMenuButtons($script_vars['current_menu']);
                 unset($script_vars['dbobject']);
                 // put the amended values back into the session array

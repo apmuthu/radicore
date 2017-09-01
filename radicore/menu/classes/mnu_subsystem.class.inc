@@ -143,7 +143,7 @@ class mnu_subsystem extends Default_Table
 
         list($dbname, $dbprefix, $dbengine) = findDBConfig($this->dbname);
 
-        $dbobject =& RDCsingleton::getInstance('mnu_task');
+        $dbobject = RDCsingleton::getInstance('mnu_task');
         $dbobject->audit_logging = $this->audit_logging;
         $selection ="mnu_task.subsys_id='{$fieldarray['subsys_id']}'";
         $resource = $dbobject->getData_serial($selection);
@@ -214,7 +214,7 @@ LEFT JOIN mnu_todo ON (mnu_todo.task_id=mnu_task.task_id)';
         } // while
         unset($dbobject);
 
-        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $dbobject = RDCsingleton::getInstance('mnu_control');
         $dbobject->audit_logging = $this->audit_logging;
 
         $result = $dbobject->_dml_deleteSelection("record_id='{$fieldarray['subsys_id']}'");

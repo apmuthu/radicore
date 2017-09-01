@@ -398,10 +398,11 @@ class radicore_view
                                             } else {
                                                 $child->setAttribute('task_id', "task#{$spec['task_id']}");
                                             } // if
-                                            $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                            $taskOBJ = RDCsingleton::getInstance('mnu_task');
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
                                             if(!empty($task_data)) {
                                                 $task_data = $task_data[0];
+                                                //$child->setAttribute('tooltip', $task_data['task_desc']);
                                                 $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
@@ -467,10 +468,11 @@ class radicore_view
                                             } else {
                                                 $child->setAttribute('task_id', "task#{$spec['task_id']}");
                                             } // if
-                                            $taskOBJ =& RDCsingleton::getInstance('mnu_task');
+                                            $taskOBJ = RDCsingleton::getInstance('mnu_task');
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
                                             if(!empty($task_data)) {
                                                 $task_data = $task_data[0];
+                                                //$child->setAttribute('tooltip', $task_data['task_desc']);
                                                 $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
@@ -600,6 +602,9 @@ class radicore_view
                                 // option for 'button' controls (may be single button or an array of buttons)
                                 if ($spec['control'] == 'button' OR $spec['control'] == 'input') {
                                     $child->setAttribute('control', $spec['control']);
+                                    if (isset($spec['subtype'])) {
+                                        $child->setAttribute('subtype', $spec['subtype']);
+                                    } // if
                                     if (!empty($dbobject->zone)) {
                                         $zone = $dbobject->zone.'#';
                                     } else {
@@ -607,13 +612,21 @@ class radicore_view
                                     } // if
                                     if (is_array($fieldvalue)) {
                                         // this is an array of buttons
-                                        foreach ($fieldvalue as $fieldname => $button) {
+                                        foreach ($fieldvalue as $fieldname => $data) {
                                             $array_value = $doc->createElement('array');
                                             $array_value = $child->appendChild($array_value);
                                             $array_value->setAttribute('name', 'button#'.$zone.$fieldname);
-                                            if (empty($button)) {
-                                                $button = getLanguageText($button);
+                                            if (is_array($data)) {
+                                                $button = $data['value'];
+                                                if (!empty($data['class'])) {
+                                                    $array_value->setAttribute('class', $data['class']);
+                                                } // if
+                                            } else {
+                                                $button = $data;
                                             } // if
+                                            //if (empty($button)) {
+                                            //    $button = getLanguageText($fieldname);
+                                            //} // if
                                             $value = $doc->createTextNode($button);
                                             $value = $array_value->appendChild($value);
                                         } // foreach
@@ -621,9 +634,6 @@ class radicore_view
 
                                     } else {
                                         // this is a single button
-                                        if (isset($spec['subtype'])) {
-                                            $child->setAttribute('subtype', $spec['subtype']);
-                                        } // if
                                         if (isset($spec['task_id'])) {
                                             if (substr($spec['task_id'], 0, 2) == '%%') {
                                                 // extract name of field which contains task_id
@@ -645,9 +655,9 @@ class radicore_view
                                                 $child->setAttribute('value', $spec['value']);
                                             } // if
                                         } // if
-                                        if (empty($fieldvalue)) {
-                                            $fieldvalue = getLanguageText($fieldname);
-                                        } // if
+                                        //if (empty($fieldvalue)) {
+                                        //    $fieldvalue = getLanguageText($fieldname);
+                                        //} // if
                                     } // if
                                 } // if
                             } // if
@@ -994,10 +1004,11 @@ class radicore_view
         //$xsl_params['session_id']   = session_id();
 
         //$xsl_params['title'] = getLanguageText($task_id);
-        $dbobject =& RDCsingleton::getInstance('mnu_task');
+        $dbobject = RDCsingleton::getInstance('mnu_task');
         $task_data = $dbobject->getData("task_id='$task_id'");
         if(!empty($task_data)) {
             $task_data = $task_data[0];
+            //$xsl_params['title'] = $task_data['task_desc'];
             $xsl_params['title'] = $task_data['task_name'];
         } else {
             $xsl_params['title'] = $title;
@@ -1315,7 +1326,7 @@ class radicore_view
                     // this task does not have any navigation buttons
                 } else {
                     // get navigation buttons from last $object
-                    $dbnav =& RDCsingleton::getInstance('mnu_nav_button');
+                    $dbnav = RDCsingleton::getInstance('mnu_nav_button');
                     $nav_buttons = $dbnav->getNavButtons($task_id, $object);
                     if ($dbnav->errors) {
                         $errors = array_merge($errors, $dbnav->getErrors());
@@ -1503,7 +1514,7 @@ class radicore_view
 
         if (class_exists('custom_javascript')) {
             // already loaded, so instantiate object
-            $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+            $jsOBJ = RDCsingleton::getInstance('custom_javascript');
         } else {
             // look for a file with one of several possible names
             $try = array();
@@ -1516,7 +1527,7 @@ class radicore_view
 //                    fclose($fp);
 //                    // file found, so load it and instantiate object
 //                    require_once($fname);
-//                    $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+//                    $jsOBJ = RDCsingleton::getInstance('custom_javascript');
 //                    break;
 //                } // if
                 try {
@@ -1524,7 +1535,7 @@ class radicore_view
                     if ($fileobj = @$fileinfo->openFile('r', true)) {
                         // file found, so load it and instantiate object
                         require_once($fname);
-                        $jsOBJ =& RDCsingleton::getInstance('custom_javascript');
+                        $jsOBJ = RDCsingleton::getInstance('custom_javascript');
                         break;
                     } // if
                 } catch (Exception $e) {
@@ -2047,7 +2058,7 @@ class radicore_view
     {
         $output = array();
 
-        $dbobject =& RDCsingleton::getInstance('mnu_task_quicksearch');
+        $dbobject = RDCsingleton::getInstance('mnu_task_quicksearch');
         $dbobject->sql_orderby = 'sort_seq ASC';
         $data = $dbobject->getData("task_id='{$task_id}'");
         if (!empty($data)) {
@@ -2326,7 +2337,7 @@ END_OF_REGEX;
                                 if (preg_match('/^(colspan)$/i', $key)) {
                                     $info[$fieldname]['colspan'] = $value;
                                     // convert 'colspan' to 'grid_size'
-                                    $info[$fieldname] = $this->_convert_colspan_to_gridsize($info[$fieldname], $this->grid_cells, $zone);
+                                    $info[$fieldname] = $this->_convert_colspan_to_gridsize($info[$fieldname], $this->grid_cells, $zone, $row);
                                     $cell->setAttribute('grid_size', $info[$fieldname]['grid_size']);
                                 } // if
                             } // if
@@ -2359,7 +2370,8 @@ END_OF_REGEX;
                 $first_column = key($rowdata);
                 foreach ($rowdata as $cellno => $cellspec) {
                     $cellspec = array_change_key_case($cellspec, CASE_LOWER);
-                    if (key($cellspec) == 'javascript' and is_array($cellspec[key($cellspec)])) {
+                    $cellspec_key = key($cellspec);
+                    if (is_string($cellspec_key) AND $cellspec_key == 'javascript' AND is_array($cellspec[$cellspec_key])) {
                         $javascript = $cellspec['javascript'];
                         foreach ($javascript as $attr => $attrvalue) {
                             // add this entry as an attribute to the current row
@@ -2387,7 +2399,7 @@ END_OF_REGEX;
                             } // if
 
                             if (is_True($allow_responsive_gui)) {
-                                if ($cellno == $first_column) {
+                                if ($cellno == $first_column AND !empty($celltype) AND $celltype != 'field' AND !isset($cellspec['label-only'])) {
                                     // ignore 1st column as this is for primary label
                                     $last_column_used = 1;
                                 } else {
@@ -2399,7 +2411,7 @@ END_OF_REGEX;
                                                     $info[$cellvalue]['colspan'] = $cellspec['colspan'];
                                                 } // if
                                                 // convert 'colspan' to 'grid_size'
-                                                $info[$cellvalue] = $this->_convert_colspan_to_gridsize($info[$cellvalue], $this->grid_cells, $zone);
+                                                $info[$cellvalue] = $this->_convert_colspan_to_gridsize($info[$cellvalue], $this->grid_cells, $zone, $row);
                                                 $cell->setAttribute('grid_size', $info[$cellvalue]['grid_size']);
                                             } // if
                                         } elseif ($celltype == 'label') {
@@ -2408,7 +2420,7 @@ END_OF_REGEX;
                                             if (!empty($cellspec['colspan'])) {
                                                 $temp['colspan'] = $cellspec['colspan'];
                                             } // if
-                                            $temp = $this->_convert_colspan_to_gridsize($temp, $this->grid_cells, $zone);
+                                            $temp = $this->_convert_colspan_to_gridsize($temp, $this->grid_cells, $zone, $row);
                                             $cell->setAttribute('grid_size', $temp['grid_size']);
                                         } // if
                                         // identify the last column to be used
@@ -2471,7 +2483,7 @@ END_OF_REGEX;
     } // _adjust_Rowspan
 
     // ****************************************************************************
-    function _convert_colspan_to_gridsize($fieldinfo, $grid_cells, $zone)
+    function _convert_colspan_to_gridsize($fieldinfo, $grid_cells, $zone, $rownum)
     // this is used when output is for responsive gui.
     // NOTE: grid_cells start at index zero while $fieldinfo['column'] starts at 1
     {
@@ -2480,12 +2492,12 @@ END_OF_REGEX;
 
         if (empty($grid_cells) OR empty($grid_cells[$zone])) {
             // "Zone '$zone' in screen structure file does not contain a 'columns' entry"
-            trigger_error(getLanguageText('sys0266', $zone), E_USER_ERROR);
+            trigger_error(getLanguageText('sys0266', $zone, $rownum), E_USER_ERROR);
         } // if
 
         if (!isset($grid_cells[$zone][$grid_column]['grid_size'])) {
             // "Zone '$zone' in screen structure file does not contain a 'grid_size' entry"
-            trigger_error(getLanguageText('sys0267', $zone), E_USER_ERROR);
+            trigger_error(getLanguageText('sys0267', $zone, $rownum), E_USER_ERROR);
         } // if
 
         if (empty($fieldinfo['colspan'])) {
@@ -2589,17 +2601,9 @@ END_OF_REGEX;
 
         // transform the XML into HTML using the XSL file
         if (!$html = $xp->transformToXML($xml_doc)) {
+            $xml_doc->formatOutput = true;
+            $xml_string = $xml_doc->saveXML();
             // 'XSL transformation failed.'
-            if (defined('ERROR_LOG_MAILTO')) {
-                $mailto = ERROR_LOG_MAILTO;
-            } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
-                $mailto = $_SERVER['SERVER_ADMIN'];
-            } else {
-                $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
-            } // if
-            $headers = "From: webmaster@{$_SERVER['HTTP_HOST']}";
-            $headers .= "\nContent-Type: text/plain; charset=UTF-8";
-            @error_log("XML-DOC:\n$xml_doc", 1, $mailto, $headers);
             trigger_error(getLanguageText('sys0072'), E_USER_ERROR);
         } // if
 

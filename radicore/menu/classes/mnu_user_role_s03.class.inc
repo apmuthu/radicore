@@ -103,6 +103,10 @@ class mnu_user_role_s03 extends mnu_user_role
         // increment sequence number
         $this->sort_seq++;
 
+        // this is required to avoid JOIN clauses being used in _dml_ReadBeforeUpdate()
+        // POSTGRES: FOR UPDATE cannot be applied to the nullable side of an outer join
+        $this->reuse_previous_select = false;
+
         return $fieldarray;
 
     } // _cm_pre_updateRecord

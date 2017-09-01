@@ -294,6 +294,13 @@ div.main td.label {
   padding:3px;
   padding-right:5px;
 }
+/* combine 'label' with another class to override 'text-align' attribute */
+div.main td.label.center{
+  text-align: center;
+}
+div.main td.label.left{
+  text-align: left;
+}
 
 /* fileupload */
 div.uploadbg {

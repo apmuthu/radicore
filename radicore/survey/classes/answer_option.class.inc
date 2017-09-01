@@ -31,7 +31,7 @@ class answer_option extends Default_Table
         if (strlen($fieldarray['jumpto_section_seq']) > 0) {
             // get sequence number of curren section
             require_once 'classes/survey_section.class.inc';
-            $dbobject =& RDCsingleton::getInstance('survey_section');
+            $dbobject = RDCsingleton::getInstance('survey_section');
 
             $dbobject->sql_select = 'section_seq';
             $section_data = $dbobject->getData("survey_id='{$fieldarray['survey_id']}' AND section_id='{$fieldarray['section_id']}'");

@@ -56,7 +56,7 @@ class tree_node_s02 extends tree_node
 
             // get list of field specs from address table and merge with current specs
             require_once 'classes/location_address.class.inc';
-            $address =& RDCsingleton::getInstance('location_address');
+            $address = RDCsingleton::getInstance('location_address');
             $address_spec = $address->getFieldspec();
             foreach ($address_spec as $field => $spec) {
                 // if field does not already exist then insert the specs

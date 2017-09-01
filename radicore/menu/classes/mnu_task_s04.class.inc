@@ -23,7 +23,7 @@ class mnu_task_s04 extends mnu_task
 
         if (preg_match('/^popup/i', $pattern_id)) {
             // obtain the user's current security setting
-            $dbrole =& RDCsingleton::getInstance('mnu_role');
+            $dbrole = RDCsingleton::getInstance('mnu_role');
             $dbrole_data = $dbrole->getRole();
             if ($dbrole->errors) {
                 $this->errors = $dbrole->errors;

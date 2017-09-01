@@ -47,14 +47,14 @@ class crs_lesson extends Default_Table
     {
         if (!array_key_exists('teacher_id', $this->lookup_data)) {
             // get contents of foreign table TEACHER and add to lookup array
-            $object =& RDCsingleton::getInstance('crs_teacher');
+            $object = RDCsingleton::getInstance('crs_teacher');
             $data = $object->getValRep('teacher_id');
             $this->lookup_data['teacher_id'] = $data;
         } // if
 
         if (!array_key_exists('subject_id', $this->lookup_data)) {
             // get contents of foreign table SUBJECT and add to lookup array
-            $object =& RDCsingleton::getInstance('crs_subject');
+            $object = RDCsingleton::getInstance('crs_subject');
             $data = $object->getValRep('subject_id');
             $this->lookup_data['subject_id'] = $data;
         } // if

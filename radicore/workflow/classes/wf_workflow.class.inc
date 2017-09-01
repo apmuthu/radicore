@@ -177,7 +177,7 @@ class wf_workflow extends Default_Table
         //DebugBreak();
         // create initial entries on PLACE table
         require_once 'classes/wf_place.class.inc';
-        $dbobject =& RDCsingleton::getInstance('wf_place');
+        $dbobject = RDCsingleton::getInstance('wf_place');
 
         // create entry for START place
         $place_array[0]['workflow_id'] = $fieldarray['workflow_id'];

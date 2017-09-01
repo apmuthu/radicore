@@ -84,7 +84,7 @@ class mnu_task_s02 extends mnu_task
         // now update the parent MNU_TASK record
         unset($childobj);
         //require_once 'classes/mnu_task.class.inc';
-        $childobj =& RDCsingleton::getInstance('mnu_task');
+        $childobj = RDCsingleton::getInstance('mnu_task');
         $msg[] = $childobj->updateSelection("task_id='$old_task_id'", "task_id='$new_task_id'");
         unset($childobj);
 

@@ -46,7 +46,7 @@ class mnu_task_s03 extends mnu_task
 
         	case 'multi2':
                 // retrieve associated data from MNU_MENU table
-                $object =& RDCsingleton::getInstance('mnu_nav_button');
+                $object = RDCsingleton::getInstance('mnu_nav_button');
                 $task_id  = $fieldarray['task_id'];
                 $object->sql_orderby = 'sort_seq asc';
                 $outarray = $object->getData("task_id_snr='$task_id'");

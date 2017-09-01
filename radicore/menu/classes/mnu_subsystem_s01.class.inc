@@ -51,10 +51,10 @@ class mnu_subsystem_s01 extends mnu_subsystem
         // (1) create file 'text/<subsys>.menu_export.txt'
 
         // create object for retrieving task details
-        $taskobj =& RDCsingleton::getInstance('mnu_task');
+        $taskobj = RDCsingleton::getInstance('mnu_task');
 
         // create object for retrieving dictionary details
-        $dictobj =& RDCsingleton::getInstance('dict_column');
+        $dictobj = RDCsingleton::getInstance('dict_column');
 
         // find out if tables in the 'dict' database need to be qualified
         $dictDB = findDBName('dict', $this->dbname);
@@ -213,7 +213,7 @@ class mnu_subsystem_s01 extends mnu_subsystem
     {
         $output = '-- file created on ' .date('F j, Y, g:i a') ."\r\n    \r\n";
 
-        $taskobj =& RDCsingleton::getInstance('mnu_task');
+        $taskobj = RDCsingleton::getInstance('mnu_task');
 
         // export contents of MNU_SUBSYSTEM for this subsystem
     	$taskobj->sql_select = '*';
@@ -407,7 +407,7 @@ WHERE mnu_task.subsys_id='$subsys_id'
             $output = $this->_exportSqlData('mnu_motd', $data, $output);
 
             unset($taskobj);
-            $userobj =& RDCsingleton::getInstance('mnu_user');
+            $userobj = RDCsingleton::getInstance('mnu_user');
             $userobj->sql_select = '*';
         	$userobj->sql_from   = '';
         	$userobj->sql_orderby = 'task_id';

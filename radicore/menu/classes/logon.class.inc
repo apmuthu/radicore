@@ -45,7 +45,7 @@ class logon extends mnu_user
 
         $GLOBALS['task_id'] = 'logon';
 
-        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+        $mnu_control = RDCsingleton::getInstance('mnu_control');
 
         $login_type = $mnu_control->getControlData('login_type');
         $this->login_type = $login_type;
@@ -307,7 +307,7 @@ class logon extends mnu_user
     // ALSO: write record to audit_logon_errors
     {
         // log this failed attempt in 'audit_logon_errors' table
-        $auditobj =& RDCsingleton::getInstance('audit_logon_errors');
+        $auditobj = RDCsingleton::getInstance('audit_logon_errors');
 
         $audit_data['user_id']       = $user_id;
         $audit_data['email_addr']    = $email_addr;
@@ -324,7 +324,7 @@ class logon extends mnu_user
         } // if
 
         // get count of password attempts
-        $controlobj =& RDCsingleton::getInstance('mnu_control');
+        $controlobj = RDCsingleton::getInstance('mnu_control');
 
         $max_retries = $controlobj->getControlData('pswd_retries');
 
@@ -391,7 +391,7 @@ class logon extends mnu_user
         parse_str($query_string, $array);
 
         if (array_key_exists('case_id', $array) AND array_key_exists('workitem_id', $array)) {
-            $dbobject =& RDCsingleton::getInstance('wf_workitem');
+            $dbobject = RDCsingleton::getInstance('wf_workitem');
             $array = array_map('addslashes', $array);
             $where = "case_id='{$array['case_id']}' AND workitem_id='{$array['workitem_id']}'";
             $data = $dbobject->getData($where);
@@ -409,7 +409,7 @@ class logon extends mnu_user
             $script_id = basename($_SESSION['SSO']);
             $subsys_id = basename(dirname($_SESSION['SSO']));
             // find the task_id which goes with this script_id
-            $dbobject =& RDCsingleton::getInstance('mnu_task');
+            $dbobject = RDCsingleton::getInstance('mnu_task');
             $data = $dbobject->getData("subsys_id='$subsys_id' AND script_id='$script_id'");
             if (!empty($data)) {
                 $data = $data[0];
@@ -510,7 +510,7 @@ class logon extends mnu_user
         } // foreach
 
         // remove field(s) and data depending on 'login_type'
-        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $dbobject = RDCsingleton::getInstance('mnu_control');
         $login_type = $dbobject->getControlData('login_type');
 
         switch ($login_type) {

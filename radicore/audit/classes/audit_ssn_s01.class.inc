@@ -55,7 +55,7 @@ class audit_ssn_s01 extends audit_ssn
     // NOTE: $search    is only available for OUTPUT tasks.
     {
         // this is the batch delete, so set selection criteria
-        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $dbobject = RDCsingleton::getInstance('mnu_control');
         $data = $dbobject->getControlData('audit_delete');
         $number =& $data['audit_delete'];
         if ($number < 1) $number = 99;

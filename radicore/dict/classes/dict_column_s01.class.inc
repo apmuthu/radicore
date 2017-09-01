@@ -259,7 +259,7 @@ class dict_column_s01 extends dict_column
 
         if (empty($this->errors)) {
             // now import the keys for the current table
-            $keyobj =& RDCsingleton::getInstance('dict_table_key');
+            $keyobj = RDCsingleton::getInstance('dict_table_key');
 
             $array = $keyobj->getInitialDataMultiple($this->where);
             $array = $keyobj->insertMultiple($array);

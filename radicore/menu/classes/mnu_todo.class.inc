@@ -81,7 +81,7 @@ class mnu_todo extends Default_Table
         if (!preg_match('/(search|insert|update)/i', $GLOBALS['mode'])) {
         	if (!is_True($fieldarray['is_complete'])) {
                 $today = getTimeStamp('date');
-                $dateobj =& RDCsingleton::getInstance('date_class');
+                $dateobj = RDCsingleton::getInstance('date_class');
                 //$due_date = $dateobj->getInternalDate($fieldarray['due_date']);
                 try {
                     $due_date = $dateobj->getInternalDate($fieldarray['due_date']);
@@ -108,7 +108,7 @@ class mnu_todo extends Default_Table
     {
         if (!array_key_exists('user_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& RDCsingleton::getInstance('mnu_user');
+            $dbobject = RDCsingleton::getInstance('mnu_user');
             $array = $dbobject->getValRep('user_id');
             $this->lookup_data['user_id'] = $array;
         } // if
@@ -167,11 +167,11 @@ class mnu_todo extends Default_Table
         if ($rowdata['is_complete'] != $old_data['is_complete']) {
             // is this changed from 'N' to 'Y'?
         	if (is_True($rowdata['is_complete']) AND !empty($rowdata['repeat_interval'])) {
-        	    $dbobject =& RDCsingleton::getInstance('mnu_todo');
+        	    $dbobject = RDCsingleton::getInstance('mnu_todo');
         		$new_data                = $rowdata;
         		$new_data['is_complete'] = 'N';
 
-        		$dateobj =& RDCsingleton::getInstance('date_class');
+        		$dateobj = RDCsingleton::getInstance('date_class');
                 switch ($rowdata['repeat_unit']) {
                 	case 'D':  // days
                 		$new_date = $dateobj->addDays($rowdata['due_date'], $rowdata['repeat_interval']);
@@ -237,7 +237,7 @@ class mnu_todo extends Default_Table
     // perform custom validation before insert.
     {
         require_once 'std.datevalidation.class.inc';
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         //$due_date = $dateobj->getInternalDate($fieldarray['due_date']);
         try {

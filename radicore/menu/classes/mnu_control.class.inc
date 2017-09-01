@@ -102,7 +102,7 @@ class mnu_control extends Default_Table
                             $data = $this->getData_raw($where);
                             $count =& $data[0]['field_value'];
                             // compare with date in passed data
-                            $dateobj =& RDCsingleton::getInstance('date_class');
+                            $dateobj = RDCsingleton::getInstance('date_class');
                             try {
                                 $pswd_change_date = $dateobj->getInternalDate($user_data['pswd_change_datetime']);
                                 $due_date = strtotime("{$pswd_change_date} +$count days");
@@ -167,7 +167,7 @@ class mnu_control extends Default_Table
                             $data = $this->getData_raw($where);
                             $count = $data[0]['field_value'];
                             // compare date in passed data with todays date
-                            $dateobj =& RDCsingleton::getInstance('date_class');
+                            $dateobj = RDCsingleton::getInstance('date_class');
                             try {
                                 $pswd_change_date = $user_data['pswd_change_datetime'];
                                 $due_date = strtotime("{$pswd_change_date} +$count days");
@@ -459,7 +459,7 @@ class mnu_control extends Default_Table
     // perform validation that is common to INSERT and UPDATE.
     {
         // get password length from USER class
-        $dbobject =& RDCsingleton::getInstance('mnu_user');
+        $dbobject = RDCsingleton::getInstance('mnu_user');
 
         // encrypt or decrypt all user passwords as required
         $fieldspec = $dbobject->getFieldSpec();
@@ -745,7 +745,7 @@ class mnu_control extends Default_Table
             // if 'pswd_encrypt' has changed then process the change
             if ($fieldarray['field_value'] <> $old_data['field_value']) {
                 // open up a dialog with the user class
-                $dbobject =& RDCsingleton::getInstance('mnu_user');
+                $dbobject = RDCsingleton::getInstance('mnu_user');
                 $dbobject->audit_logging = false;
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->setPasswords($fieldarray['field_value']);
@@ -820,7 +820,7 @@ class mnu_control extends Default_Table
         	// if 'pswd_encrypt' has changed then check that the passwords can be changed
             if ($fieldarray['pswd_encrypt'] <> $this->save_fieldarray['pswd_encrypt']) {
                 // open up a dialog with the user class
-                $dbobject =& RDCsingleton::getInstance('mnu_user');
+                $dbobject = RDCsingleton::getInstance('mnu_user');
                 // encrypt or decrypt all user passwords as required
                 $errors = $dbobject->switchPasswords($fieldarray['pswd_encrypt']);
                 if ($dbobject->errors) {

@@ -1,5 +1,22 @@
 ﻿RADICORE for PHP - news
 
+2017-09-01, version 2.06.0
+Database changes:
+- none
+
+Other changes:
+- removed the ampersand from all '$dbobject =& RDCsingleton::getInstance()' calls as it now generates a warning that only variables can be passed by reference.
+- updated std.batch.inc so that it looks for ini fles in the sequence batch.ini, htaccess and user.ini, and will only process the first one that it finds.
+- updated std.table.class.inc so that validateUpdate() method can be limited to primary or secondary validation only instead of both.
+- updated std.update1.inc and std.output4.inc to call validateUpdate() with the correct switch.
+- updated std.table.class.inc so that the _sqlProcessJoin(), validateDelete(), deleteRelations(), eraseRelations() and getForeignData() methods will use singletons for any child objects.
+- updated std.table.class.inc so that the getFieldSpec_original() method will store its data in a static variable so that further calls will use this static variable instead of reading the file from disk again.
+- fixed std.add1.inc, std.add2.inc, std.multi1.inc, std.update1.inc and std.update3.inc where '$dbobject' was mis-spelt as '$dbobect'.
+- updated include.library.inc so that the getLanguageArray() and getLanguageText() functions will store any data in static variables which are keyed by language code and subsystem to prevent the same file being read from disk more than once.
+- updated include.library.inc so that the pasteData() function will call the getForeignData() method to retrieve data from parent tables.
+- updated include.xml.php.inc and std.data_field.xsl so that if the 'button' control is set to an array then the 'subtype' value (which can be 'submit' or 'button') will be used for each entry in that array.
+- updated include.xml.php5.inc so that the XSLTransform() method will provide the contents of the XML document in the error log should the transform fail for any reason.
+
 2017-08-03, version 2.05.0
 Database changes:
 - run script menu\sql\mysql\alter_table(2017-07-20).sql in order to change the structure of the MENU database

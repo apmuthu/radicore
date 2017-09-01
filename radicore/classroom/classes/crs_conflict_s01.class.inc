@@ -57,11 +57,11 @@ class crs_conflict_s01 extends crs_conflict
 
         //******************************************************************************
         // get list of teachers
-        $teacherOBJ =& RDCsingleton::getInstance('crs_teacher');
+        $teacherOBJ = RDCsingleton::getInstance('crs_teacher');
         $teacher_data = $teacherOBJ->getData(null);
 
         // for each teacher get list of classes
-        $lessonOBJ =& RDCsingleton::getInstance('crs_lesson');
+        $lessonOBJ = RDCsingleton::getInstance('crs_lesson');
 
         foreach ($teacher_data as $teacher) {
         	$teacher_id  = $teacher['teacher_id'];
@@ -84,11 +84,11 @@ class crs_conflict_s01 extends crs_conflict
 
         // *****************************************************************************
         // get list of classes
-        $classOBJ =& RDCsingleton::getInstance('crs_class');
+        $classOBJ = RDCsingleton::getInstance('crs_class');
         $class_data = $classOBJ->getData(null);
 
         // for each class get list of lessons
-        $lessonOBJ =& RDCsingleton::getInstance('crs_class_lesson');
+        $lessonOBJ = RDCsingleton::getInstance('crs_class_lesson');
 
         foreach ($class_data as $class) {
         	$class_id  = $class['class_id'];
@@ -111,11 +111,11 @@ class crs_conflict_s01 extends crs_conflict
 
         // *****************************************************************************
         // get list of students
-        $studentOBJ =& RDCsingleton::getInstance('crs_student');
+        $studentOBJ = RDCsingleton::getInstance('crs_student');
         $student_data = $studentOBJ->getData(null);
 
         // for each student get list of lessons
-        $lessonOBJ =& RDCsingleton::getInstance('crs_student_lesson');
+        $lessonOBJ = RDCsingleton::getInstance('crs_student_lesson');
 
         foreach ($student_data as $student) {
         	$student_id  = $student['student_id'];

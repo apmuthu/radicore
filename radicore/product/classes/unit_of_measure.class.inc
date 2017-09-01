@@ -31,7 +31,7 @@ class unit_of_measure extends Default_Table
     {
         if (!array_key_exists('uom_cat_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& RDCsingleton::getInstance('uom_category');
+            $dbobject = RDCsingleton::getInstance('uom_category');
             $data_array = $dbobject->getValRep('uom_cat_id');
             $this->lookup_data['uom_cat_id'] = $data_array;
         } // if

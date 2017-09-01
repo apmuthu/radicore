@@ -135,7 +135,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}')";
         //DebugBreak();
         if (isset($fieldarray['start_task_id'])) {
             //require_once 'classes/mnu_task.class.inc';
-            $dbobject =& RDCsingleton::getInstance('mnu_task');
+            $dbobject = RDCsingleton::getInstance('mnu_task');
             $dbobject->sql_select = 'task_type';
             $foreign_data = $dbobject->getData("task_id='{$fieldarray['start_task_id']}'");
             if ($foreign_data[0]['task_type'] != 'MENU') {
@@ -322,7 +322,7 @@ LEFT JOIN mnu_user_role AS mur ON (mur.user_id='{$user_id}')";
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)moveup');
         $access[] = array('role_id' => $role_id, 'task_id' => 'mnu_favourite(upd4)reseq');
 
-        $dbobject =& RDCsingleton::getInstance('mnu_role_task');
+        $dbobject = RDCsingleton::getInstance('mnu_role_task');
         $access = $dbobject->insertMultiple($access);
         if ($dbobject->errors) {
         	$this->errors = array_merge($this->errors, $dbobject->errors);

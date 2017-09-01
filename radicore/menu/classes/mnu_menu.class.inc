@@ -28,7 +28,7 @@ class mnu_menu extends Default_Table
     // return current menu buttons as an array.
     {
         // first we must obtain the user's current security setting
-        $dbrole =& RDCsingleton::getInstance('mnu_role');
+        $dbrole = RDCsingleton::getInstance('mnu_role');
         $dbrole_data = $dbrole->getRole();
         if ($dbrole->errors) {
             $this->errors = $dbrole->errors;
@@ -162,7 +162,7 @@ class mnu_menu extends Default_Table
         if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
             $task_id_jnr = $fieldarray['task_id_jnr'];
             // get default button text from mnu_task table
-            $dbobject =& RDCsingleton::getInstance('mnu_task');
+            $dbobject = RDCsingleton::getInstance('mnu_task');
             //$dbobject->sql_select = 'button_text';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
             if (!empty($data)) {

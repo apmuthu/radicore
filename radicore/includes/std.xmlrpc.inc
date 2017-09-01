@@ -23,7 +23,7 @@ if (file_exists('config.xmlrpc.inc')) {
 function get_XMLRPC_client ($subject)
 // return an object for the XMLRPC client
 {
-    $object =& RDCsingleton::getInstance('XMLRPC_client');
+    $object = RDCsingleton::getInstance('XMLRPC_client');
 
     $object->subject = $subject;
 

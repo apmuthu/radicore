@@ -62,7 +62,7 @@ class dict_related_column_snr extends dict_related_column
         //$this->row_locks = 'EX';    // exclusive
 
         // verify that SEQ_IN_INDEX holds correct value
-        $dbobject =& RDCsingleton::getInstance('dict_table_key');
+        $dbobject = RDCsingleton::getInstance('dict_table_key');
         $db_id  = $rowdata['database_id_snr'];
         $tbl_id = $rowdata['table_id_snr'];
         $key_id = 'PRIMARY';

@@ -171,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // check that all data is valid before we continue
         foreach ($inner_data as $rownum => &$rowdata) {
-            $rowdata = $dbinner->validateUpdate($rowdata, true);  // perform PRIMARY validation only
+            $rowdata = $dbinner->validateUpdate($rowdata, true, false);  // perform PRIMARY validation only
             if ($dbinner->errors) {
                 $errors[$dbinner->getClassName()][$rownum] = $dbinner->getErrors();
             } // if

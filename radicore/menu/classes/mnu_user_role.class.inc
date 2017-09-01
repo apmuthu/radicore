@@ -47,7 +47,7 @@ class mnu_user_role extends Default_Table
     {
         if (empty($fieldarray['start_task_id']) OR empty($fieldarray['is_external_auth_off'])) {
             if (!empty($fieldarray['role_id'])) {
-                $dbobject1 =& RDCsingleton::getInstance('mnu_role');
+                $dbobject1 = RDCsingleton::getInstance('mnu_role');
                 $data1 = $dbobject1->getData("role_id='{$fieldarray['role_id']}'");
                 if (!empty($data1)) {
                     $data1 = $data1[0];
@@ -57,7 +57,7 @@ class mnu_user_role extends Default_Table
                 } // if
             } // if
             if (empty($fieldarray['start_task_name']) AND !empty($fieldarray['start_task_id'])) {
-                $dbobject2 =& RDCsingleton::getInstance('mnu_task');
+                $dbobject2 = RDCsingleton::getInstance('mnu_task');
                 $data2 = $dbobject2->getData("task_id='{$fieldarray['start_task_id']}'");
                 if (!empty($data2)) {
                     $data2 = $data2[0];

@@ -20,7 +20,7 @@ class mnu_favourite_s04 extends mnu_favourite
     {
         if (empty($this->sql_select)) {
             // first we must obtain the user's current security setting
-            $dbrole =& RDCsingleton::getInstance('mnu_role');
+            $dbrole = RDCsingleton::getInstance('mnu_role');
             $dbrole_data = $dbrole->getRole();
             if ($dbrole->errors) {
                 $this->errors = $dbrole->errors;

@@ -20,13 +20,13 @@ class dict_table_s02 extends dict_table
         $menuDB = findDBName('menu', $this->dbname);
 
         // create object for retrieving column details
-        $columnobj =& RDCsingleton::getInstance('dict_column');
+        $columnobj = RDCsingleton::getInstance('dict_column');
 
         // create object for retrieving key details
-        $keyobj =& RDCsingleton::getInstance('dict_table_key');
+        $keyobj = RDCsingleton::getInstance('dict_table_key');
 
         // create object for retrieving relationship details
-        $relobj =& RDCsingleton::getInstance('dict_relationship');
+        $relobj = RDCsingleton::getInstance('dict_relationship');
 
         // process each table separately
         foreach ($rowdata as $row => $tabledata) {
@@ -188,7 +188,7 @@ class dict_table_s02 extends dict_table
     // format the contents of $rel_array into the $child_relations array.
     {
         // create an object to obtain column data
-        $colobj =& RDCsingleton::getInstance('dict_related_column');
+        $colobj = RDCsingleton::getInstance('dict_related_column');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);
@@ -473,9 +473,9 @@ class dict_table_s02 extends dict_table
     // format the contents of $rel_array into the $parent_relations array.
     {
         // create an object to obtain column data
-        $colobj =& RDCsingleton::getInstance('dict_related_column');
+        $colobj = RDCsingleton::getInstance('dict_related_column');
         // create an object to obtain table data
-        $tblobj =& RDCsingleton::getInstance('dict_table');
+        $tblobj = RDCsingleton::getInstance('dict_table');
 
         $indent  = str_pad('', 4);
         $indent2 = str_pad('', 52);

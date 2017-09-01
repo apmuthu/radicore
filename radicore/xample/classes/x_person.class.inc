@@ -197,7 +197,7 @@ class x_person extends Default_Table
 
         if (!array_key_exists('pers_type_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $pers_type =& RDCsingleton::getInstance('x_pers_type');
+            $pers_type = RDCsingleton::getInstance('x_pers_type');
             $pers_type_array = $pers_type->getValRep('pers_type_id');
             $this->lookup_data['pers_type_id'] = $pers_type_array;
         } // if
@@ -437,7 +437,7 @@ class x_person extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from PERSON_ADDR table
-                $object =& RDCsingleton::getInstance('x_person_addr');
+                $object = RDCsingleton::getInstance('x_person_addr');
                 $where = array2where($fieldarray, $this->getPkeyNames());
                 $object->sql_orderby = 'address_no asc';
                 $outarray = $object->getData($where);
@@ -573,7 +573,7 @@ class x_person extends Default_Table
             return $fieldarray;
         } // if
 
-        $dbobject =& RDCsingleton::getInstance('x_person_addr');
+        $dbobject = RDCsingleton::getInstance('x_person_addr');
 
         if ($fieldarray['start_date'] <> $old_data['start_date']) {
             // update start date on first address
@@ -628,7 +628,7 @@ class x_person extends Default_Table
         // no validation required if $last_addr_no = 0 or 1
         if ($last_addr_no > 1) {
             // there is more than one address, so...
-            $dbobject =& RDCsingleton::getInstance('x_person_addr');
+            $dbobject = RDCsingleton::getInstance('x_person_addr');
 
             // compare start date with end date of first address
             $dbobject->sql_select = 'end_date';

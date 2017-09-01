@@ -60,7 +60,7 @@ class mnu_user_s01 extends mnu_user
     // perform validation that is common to INSERT and UPDATE.
     {
         if (is_True($this->pswd_encrypt)) {
-            $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+            $crypt_obj = RDCsingleton::getInstance('encryption_class');
             // encrypt input password and compare with original
             $key    = $fieldarray['user_id'];
             $string = $fieldarray['old_password'];

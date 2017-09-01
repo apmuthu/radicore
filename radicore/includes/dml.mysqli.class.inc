@@ -263,7 +263,7 @@ class mysql
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
         } else {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $auditobj = RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
 
@@ -402,7 +402,7 @@ class mysql
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditDelete($dbname, $tablename, $this->fieldspec, $where, $fieldarray);
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -439,7 +439,7 @@ class mysql
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditDelete($dbname, $tablename, $this->fieldspec, $selection, array());
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1212,7 +1212,7 @@ class mysql
 				if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         			// do nothing
 		        } else {
-	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                $auditobj = RDCsingleton::getInstance('audit_tbl');
 	                // add record details to audit database
 	                $auditobj->auditInsert($dbname, $tablename, $this->fieldspec, $primary_key, $fieldarray);
 	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1340,7 +1340,7 @@ class mysql
         if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         	// do nothing
         } else {
-            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+            $auditobj = RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
 
@@ -1626,7 +1626,7 @@ class mysql
         	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         		// do nothing
 	        } else {
-	            $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	            $auditobj = RDCsingleton::getInstance('audit_tbl');
 	            // add record details to audit database
 	            $auditobj->auditUpdate($dbname, $tablename, $this->fieldspec, $where, $fieldarray, $oldarray);
 	            $this->errors = array_merge($auditobj->getErrors(), $this->errors);
@@ -1660,7 +1660,7 @@ class mysql
             	if (defined('TRANSIX_NO_AUDIT') OR defined('NO_AUDIT_LOGGING')) {
         			// do nothing
 		        } else {
-	                $auditobj =& RDCsingleton::getInstance('audit_tbl');
+	                $auditobj = RDCsingleton::getInstance('audit_tbl');
 	                // add record details to audit database
 	                $auditobj->auditUpdateSelection($dbname, $tablename, $this->fieldspec, $selection, $replace);
 	                $this->errors = array_merge($auditobj->getErrors(), $this->errors);

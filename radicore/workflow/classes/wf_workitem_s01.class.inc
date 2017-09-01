@@ -78,7 +78,7 @@ class wf_workitem_s01 extends wf_workitem
         //$this->row_locks = 'EX';    // exclusive
         //$this->row_locks_supp = '?' // DBMS-specific
 
-        $dbobject =& RDCsingleton::getInstance('workflow_engine');
+        $dbobject = RDCsingleton::getInstance('workflow_engine');
         $result = $dbobject->fireTimedEvent($rowdata);
         if ($dbobject->errors) {
         	$this->errors = array_merge($this->errors, $dbobject->errors);

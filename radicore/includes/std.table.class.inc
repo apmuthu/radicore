@@ -36,10 +36,10 @@ abstract class Default_Table
     var $download_filename;             // file to be downloaded
     var $download_mode;                 // 'inline' or null
 
-    var $delete_count;                  // count of records deleted
-    var $insert_count;                  // count of records inserted
-    var $update_count;                  // count of records updated
-    var $unchange_count;                // count of records unchanged
+    var $delete_count=0;                // count of records deleted
+    var $insert_count=0;                // count of records inserted
+    var $update_count=0;                // count of records updated
+    var $unchange_count=0;              // count of records unchanged
 
     var $errors = array();              // array of errors
     var $expanded;                      // list of tree nodes which have been expanded
@@ -226,6 +226,9 @@ abstract class Default_Table
         } // if
 
         // save count so that values may be accumulated
+        if (!is_array($this->delete_count)) {
+            $this->delete_count = array();
+        } // if
         $this->delete_count[strtoupper($this->tablename)] = $count;
 
         // $count rows were deleted
@@ -481,7 +484,7 @@ abstract class Default_Table
             return $fieldarray;  // nothing to do
         } // if
 
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         foreach ($fieldspec as $field => $spec) {
             if (!empty($fieldarray[$field])) {
@@ -921,18 +924,23 @@ abstract class Default_Table
                         break;
                     } else {
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         if (!empty($this->dbname_old) AND $this->dbname_old == $childobject->dbname) {
                             // name of parent database has been switched, so switch the child name as well
                             $childobject->dbname_old = $childobject->dbname;
@@ -975,18 +983,23 @@ abstract class Default_Table
                         break;
                     } else {
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         if (!empty($this->dbname_old) AND $this->dbname_old == $childobject->dbname) {
                             // name of parent database has been switched, so switch the child name as well
                             $childobject->dbname_old = $childobject->dbname;
@@ -1007,6 +1020,9 @@ abstract class Default_Table
                                     if (isset($this->delete_count[$table])) {
                                         $this->delete_count[$table] += $count;
                                     } else {
+                                        if (!is_array($this->delete_count)) {
+                                            $this->delete_count = array();
+                                        } // if
                                         $this->delete_count[$table] = $count;
                                     } // if
                                 } // foreach
@@ -1232,18 +1248,23 @@ abstract class Default_Table
                         } // foreach
 
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         // now use this object to delete child records
                         if (!$childobject->cascadeNullify($update_array, $where)) {
                             $this->errors = array_merge($childobject->getErrors(), $this->errors);
@@ -1273,18 +1294,23 @@ abstract class Default_Table
                         } // foreach
 
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         // check for 'order by' clause
                         if (isset($reldata['orderby'])) {
                             $childobject->default_orderby = $reldata['orderby'];
@@ -1552,6 +1578,8 @@ abstract class Default_Table
 
         $fieldarray = where2array($this->where);
 
+        $output_name = null;
+
         // call customisable method in the subclass.
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_fileUpload')) {
@@ -1572,7 +1600,7 @@ abstract class Default_Table
     function flip_currency ($fieldarray, $columns, $fn_suffix='_fn', $tx_suffix='_tx')
     // flip values between functional currency and transaction currency
     {
-        $object =& RDCsingleton::getInstance('currency_class');
+        $object = RDCsingleton::getInstance('currency_class');
 
         $object->func_currency = $fieldarray['func_currency'];
         if (!empty($fieldarray['tran_currency'])) {
@@ -1611,7 +1639,7 @@ abstract class Default_Table
     {
         if (empty($fieldarray)) return $fieldarray;
 
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         if (!empty($fieldarray['party_timezone'])) {
             if (!isset($_SESSION['display_timezone_party']) OR $_SESSION['display_timezone_party'] === false) {
@@ -2127,7 +2155,7 @@ abstract class Default_Table
         } // if
 
         // convert $where from string to an associative array
-        $where_array = where2array($where, $this->pageno);
+        $where_array = where2array($where, $this->pageno, false);
 
         if (!empty($where_array['rdc_table_name'])) {
             $where_array = convert_parent_id_to_child_id($where_array, $this->tablename, $this->parent_relations);
@@ -2141,6 +2169,8 @@ abstract class Default_Table
 
         // make this data available if passed down by parent object
         $parent_data =& $this->getParentData();
+
+        $where_array = where2array($where);  // recreate without operators
 
         // perform any custom pre-retrieve processing
         if (is_object($this->custom_processing_object)) {
@@ -2631,6 +2661,22 @@ abstract class Default_Table
                 } // foreach
                 $fieldarray[$rownum] = $rowdata;
             } // foreach
+//        } elseif (preg_match('/(OUTPUT4)$/i', $pattern_id)) {
+            // get array from foreign table and put into LOOKUP_DATA
+//            $dbobject = RDCsingleton::getInstance('mnu_saved_selection');
+//            $array = array();
+//            $where1 = "user_id='{$_SESSION['logon_user_id']}' AND task_id='{$GLOBALS['task_id']}'";
+//            $data = $dbobject->getData($where1);
+//            foreach ($data as $row) {
+//                $array[$row['selection_id']] = $row['selection_name'];
+//            } // foreach
+//            $this->lookup_data['rdc_restore_selection'] = $array;
+//            if (empty($array)) {
+//                unset($fieldarray[0]['rdc_restore_selection']);  // remove this field from the display
+//            } else {
+//                $fieldarray[0]['rdc_restore_selection'] = null;
+//            } // if
+//            $fieldarray[0]['rdc_save_selection'] = getLanguageText('Save Selection');
         } // if
 
         if (is_True($associative)) {
@@ -2733,7 +2779,7 @@ abstract class Default_Table
         $this->nameof_end_date    = '';
 
         $tablename = $this->getTableName();
-        //if ($tablename != 'unknown') {
+        if (empty($this->fieldspec_original)) {
             // include table specifications generated by Data Dictionary
             $attempt = array();  // an array of possible file names
             if (!empty($GLOBALS['project_code'])) {
@@ -2747,47 +2793,31 @@ abstract class Default_Table
             $attempt[] = "{$this->dirname}/{$tablename}.dict.inc";
             foreach ($attempt as $fn) {
                 if (file_exists($fn)) {
-                    if (empty($this->fieldspec_original)) {
-                        require($fn);
-                        $save_fieldspec['fieldspec'] = $fieldspec;
-                        $data_to_save       = array('save_fieldspec');
-                        $primary_key        = $this->primary_key;
-                        $data_to_save[]     = 'primary_key';
-                        $unique_keys        = $this->unique_keys;
-                        $data_to_save[]     = 'unique_keys';
-                        $child_relations    = $this->child_relations;
-                        $data_to_save[]     = 'child_relations';
-                        $parent_relations   = $this->parent_relations;
-                        $data_to_save[]     = 'parent_relations';
-                        $audit_logging      = $this->audit_logging;
-                        $data_to_save[]     = 'audit_logging';
-                        $default_orderby    = $this->default_orderby;
-                        $data_to_save[]     = 'default_orderby';
-                        $alt_language_table = $this->alt_language_table;
-                        $data_to_save[]     = 'alt_language_table';
-                        $alt_language_cols  = $this->alt_language_cols;
-                        $data_to_save[]     = 'alt_language_cols';
-                        $nameof_start_date  = $this->nameof_start_date;
-                        $data_to_save[]     = 'nameof_start_date';
-                        $nameof_end_date    = $this->nameof_end_date;
-                        $data_to_save[]     = 'nameof_end_date';
-                        // save this data or subsequent access
-                        $this->fieldspec_original = compact($data_to_save);
-                    } else {
-                        // restore from save data
-                        $count = extract($this->fieldspec_original);
-                        $fieldspec                = $save_fieldspec['fieldspec'];
-                        $this->primary_key        = $primary_key;
-                        $this->unique_keys        = $unique_keys;
-                        $this->child_relations    = $child_relations;
-                        $this->parent_relations   = $parent_relations;
-                        $this->audit_logging      = $audit_logging;
-                        $this->default_orderby    = $default_orderby;
-                        $this->alt_language_table = $alt_language_table;
-                        $this->alt_language_cols  = $alt_language_cols;
-                        $this->nameof_start_date  = $nameof_start_date;
-                        $this->nameof_end_date    = $nameof_end_date;
-                    } // if
+                    require($fn);
+                    $save_fieldspec['fieldspec'] = $fieldspec;
+                    $data_to_save       = array('save_fieldspec');
+                    $primary_key        = $this->primary_key;
+                    $data_to_save[]     = 'primary_key';
+                    $unique_keys        = $this->unique_keys;
+                    $data_to_save[]     = 'unique_keys';
+                    $child_relations    = $this->child_relations;
+                    $data_to_save[]     = 'child_relations';
+                    $parent_relations   = $this->parent_relations;
+                    $data_to_save[]     = 'parent_relations';
+                    $audit_logging      = $this->audit_logging;
+                    $data_to_save[]     = 'audit_logging';
+                    $default_orderby    = $this->default_orderby;
+                    $data_to_save[]     = 'default_orderby';
+                    $alt_language_table = $this->alt_language_table;
+                    $data_to_save[]     = 'alt_language_table';
+                    $alt_language_cols  = $this->alt_language_cols;
+                    $data_to_save[]     = 'alt_language_cols';
+                    $nameof_start_date  = $this->nameof_start_date;
+                    $data_to_save[]     = 'nameof_start_date';
+                    $nameof_end_date    = $this->nameof_end_date;
+                    $data_to_save[]     = 'nameof_end_date';
+                    // save this data or subsequent access
+                    $this->fieldspec_original = compact($data_to_save);
                     unset($attempt, $fn);
                     break;
                 } // if
@@ -2797,13 +2827,28 @@ abstract class Default_Table
                 trigger_error(getLanguageText('sys0249', $tablename), E_USER_ERROR);
             } // if
 
-            if (is_bool($save_audit_logging) OR !empty($save_audit_logging)) {
-                $this->audit_logging = $save_audit_logging;
-            } // if
-        //} // if
+        } else {
+            // restore from save data
+            $count = extract($this->fieldspec_original);
+            $fieldspec                = $save_fieldspec['fieldspec'];
+            $this->primary_key        = $primary_key;
+            $this->unique_keys        = $unique_keys;
+            $this->child_relations    = $child_relations;
+            $this->parent_relations   = $parent_relations;
+            $this->audit_logging      = $audit_logging;
+            $this->default_orderby    = $default_orderby;
+            $this->alt_language_table = $alt_language_table;
+            $this->alt_language_cols  = $alt_language_cols;
+            $this->nameof_start_date  = $nameof_start_date;
+            $this->nameof_end_date    = $nameof_end_date;
+        } // if
+
+        if (is_bool($save_audit_logging) OR !empty($save_audit_logging)) {
+            $this->audit_logging = $save_audit_logging;
+        } // if
 
         if (!empty($_SESSION['date_format_output'])) {
-            $dateobj =& RDCsingleton::getInstance('date_class');
+            $dateobj = RDCsingleton::getInstance('date_class');
             foreach ($fieldspec as $field => $spec) {
                 if (preg_match('/date/i', $spec['type'], $regs)) {
                     $date_length = $dateobj->getDateLength($_SESSION['date_format_output'], $spec['type']);
@@ -2918,20 +2963,25 @@ abstract class Default_Table
                         $where = array2where($where_array, false, false, true);
                         $tblparent = $reldata['parent'];
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            $save_cwd = getcwd();
+//                            // switch to other directory so that any includes() within the class
+//                            // are relative to that directory and not the current directory
+//                            $dir = dirname($this->dirname);                                                          // path to current subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;  // switch to other subsystem directory
+//                            chdir($dir);
+//                        } else {
+//                            $save_cwd = NULL;
+//                        } // if
+//                        if (!class_exists($tblparent)) {
+//                            require_once "classes/$tblparent.class.inc";
+//                        } // end
+//                        $parentobj = new $tblparent;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            $save_cwd = getcwd();
-                            // switch to other directory so that any includes() within the class
-                            // are relative to that directory and not the current directory
-                            $dir = dirname($this->dirname);                                                          // path to current subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;  // switch to other subsystem directory
-                            chdir($dir);
+                            $parentobj = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblparent);
                         } else {
-                            $save_cwd = NULL;
+                            $parentobj = RDCsingleton::getInstance($tblparent);
                         } // if
-                        if (!class_exists($tblparent)) {
-                            require_once "classes/$tblparent.class.inc";
-                        } // end
-                        $parentobj = new $tblparent;
                         $parentobj->sql_select = $reldata['parent_field'];
                         $parent_data = $parentobj->getData($where);
                         unset($parentobj);
@@ -3539,7 +3589,7 @@ abstract class Default_Table
 
         if (!empty($next_task) AND is_string($next_task)) {
             // convert string to an array of details
-            $taskobj =& RDCsingleton::getInstance('mnu_task');
+            $taskobj = RDCsingleton::getInstance('mnu_task');
             $next_task = $taskobj->checkSelection($next_task);
             if ($taskobj->errors) {
                 return $taskobj->errors;
@@ -4704,7 +4754,7 @@ abstract class Default_Table
 
 //            if ($this->numrows > 0 AND !empty($this->alt_language_table) AND $_SESSION['logon_user_id'] != 'INTERNET') {
 //                // ensure that default entries exist for all supported languages
-//                $dbobject =& RDCsingleton::getInstance($this->alt_language_table);
+//                $dbobject = RDCsingleton::getInstance($this->alt_language_table);
 //                $data = array();
 //                $data = $dbobject->getLanguageEntries($data, $fieldarray, $this->alt_language_cols);
 //                if ($dbobject->errors) {
@@ -5241,9 +5291,10 @@ abstract class Default_Table
     } // selectDB
 
     // ****************************************************************************
-    function sendEmail ($template_id, $where, $input_data=array())
+    function sendEmail ($template_id, $where, &$input_data)
     // send an email to the customer using data from the current object.
     // $template_id identifies the email text into which user values can be inserted.
+    // Note: $input_data is passed BY REFERENCE as it may be altered
     {
         $keys = where2array($where);
 
@@ -5265,13 +5316,13 @@ abstract class Default_Table
         $party_data = array();
         if (!empty($keys['party_id'])) {
             // fetch data for this party
-            $dbobject1 =& RDCsingleton::getInstance('party');
+            $dbobject1 = RDCsingleton::getInstance('party');
             $where1 = "party_id='{$keys['party_id']}'";
             $party_data = $dbobject1->getData($where1);
             if (!empty($party_data)) {
                 $party_data = $party_data[0];
                 if (empty($party_data['email']) AND $party_data['party_type'] == 'ORG') {
-                    $dbobject2 =& RDCsingleton::getInstance('party_relationship');
+                    $dbobject2 = RDCsingleton::getInstance('party_relationship');
                     $relation = $dbobject2->getData($where1);
                     if (!empty($relation)) {
                         $relation = $relation[0];
@@ -5298,7 +5349,14 @@ abstract class Default_Table
         $attachments = null;
         // get optional values to be inserted into email message template
         $params = $this->getEmailParams($template_id, $where, $input_data, $party_data);
-        if ($this->errors) return false;
+        if ($this->errors) {
+            $input_data['EMAIL_PARAMS']  = $params;
+            $this->errors['OBJECT']      = $this->tablename;
+            $this->errors['FILE']        = __FILE__;
+            $this->errors['FUNCTION']    = __FUNCTION__;
+            $this->errors['LINE']        = __LINE__;
+            return false;
+        } // if
         if (array_key_exists('rdc_email_cancelled', $params)) {
             // this email has been cancelled
             return 'rdc_email_cancelled';
@@ -5332,7 +5390,7 @@ abstract class Default_Table
         } // if
 
         // use template object to send this message
-        $dbobject3 =& RDCsingleton::getInstance('email_template');
+        $dbobject3 = RDCsingleton::getInstance('email_template');
         $result = $dbobject3->sendEmailTemplate($template_id, $keys, $params, $attachments);
         if ($dbobject3->errors) {
             $this->errors[$dbobject3->getClassName()] = $dbobject3->errors;
@@ -5480,7 +5538,7 @@ abstract class Default_Table
         // which may have the default ACCESS_TYPE altered for the current role.
 
         // first we must obtain the user's current role setting
-        $dbrole =& RDCsingleton::getInstance('mnu_role');
+        $dbrole = RDCsingleton::getInstance('mnu_role');
         $dbrole_data = $dbrole->getRole($_SESSION['logon_user_id']);
         if (!empty($dbrole->errors)) {
             $this->errors = array_merge($this->errors, $dbrole->errors);
@@ -5495,7 +5553,7 @@ abstract class Default_Table
         // If the security class has GLOBAL_ACCESS = 'y' there are no restrictions.
         //if (is_True($global_access)) return $array;
 
-        $dbobject =& RDCsingleton::getInstance('mnu_role_taskfield');
+        $dbobject = RDCsingleton::getInstance('mnu_role_taskfield');
 
         $dbobject->sql_select = 'role_id, task_id, field_id, access_type';
         $dbobject->sql_from   = 'mnu_role_taskfield ';
@@ -5980,6 +6038,12 @@ abstract class Default_Table
         $this->access_count     = null;
         //$this->sql_no_foreign_db = false;
 
+        $this->numrows          = 0;
+        $this->delete_count     = 0;
+        $this->insert_count     = 0;
+        $this->update_count     = 0;
+        $this->unchange_count   = 0;
+
         return;
 
     } // sqlSelectInit
@@ -6133,7 +6197,7 @@ abstract class Default_Table
     // remove any formatting before data is given to the database.
     // (such as changing dates from 'dd Mmm CCYY' to 'CCYY-MM-DD')
     {
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         foreach ($fieldarray as $fieldname => $fieldvalue) {
             // only deal with fields defined in $fieldspec
@@ -6316,7 +6380,7 @@ abstract class Default_Table
 
         //if (preg_match('/output4/i', $pattern_id)) {
 //            if (!empty($postarray['rdc_restore_selection'])) {
-//                $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
+//                $dbobject = RDCsingleton::getInstance('mnu_saved_selection_data');
 //                $data = $dbobject->getData("selection_id='{$postarray['rdc_restore_selection']}'");
 //                foreach ($data as $rowdata) {
 //                    if (!preg_match('/^(rdc_)/i', $rowdata['fieldname'])) {
@@ -6512,12 +6576,13 @@ abstract class Default_Table
             $fieldarray = $this->_cm_pre_updateMultiple($fieldarray);
         } // if
 
+        $insert_count   = 0;
+        $update_count   = 0;
+        $delete_count   = 0;
+        $unchange_count = 0;
+
         if (empty($this->errors)) {
             $errors = array();
-            $insert_count   = 0;
-            $update_count   = 0;
-            $delete_count   = 0;
-            $unchange_count = 0;
             // now update each row in the database
             foreach ($fieldarray as $rownum => $rowdata) {
                 if (array_key_exists('rdc_to_be_inserted', $rowdata)) {
@@ -6985,18 +7050,23 @@ abstract class Default_Table
                     } else {
                         $where = $this->_dml_adjustWhere($where);  // replace escape character if different
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         if (!empty($this->dbname_old) AND $this->dbname_old == $childobject->dbname) {
                             // name of parent database has been switched, so switch the child name as well
                             $childobject->dbname_old = $childobject->dbname;
@@ -7032,18 +7102,23 @@ abstract class Default_Table
                     } else {
                         $where = $this->_dml_adjustWhere($where);  // replace escape character if different
                         // instantiate an object for this table
+//                        if (array_key_exists('subsys_dir', $reldata)) {
+//                            // get path to current subsystem directory
+//                            $dir = dirname($this->dirname);
+//                            // switch to other subsystem directory
+//                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//                        } else {
+//                            $dir = NULL;
+//                        } // if
+//                        if (!class_exists($tblchild)) {
+//                            require_once $dir ."classes/$tblchild.class.inc";
+//                        } // if
+//                        $childobject = new $tblchild;
                         if (array_key_exists('subsys_dir', $reldata)) {
-                            // get path to current subsystem directory
-                            $dir = dirname($this->dirname);
-                            // switch to other subsystem directory
-                            $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                            $childobject = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$tblchild);
                         } else {
-                            $dir = NULL;
+                            $childobject = RDCsingleton::getInstance($tblchild);
                         } // if
-                        if (!class_exists($tblchild)) {
-                            require_once $dir ."classes/$tblchild.class.inc";
-                        } // if
-                        $childobject = new $tblchild;
                         if (!empty($this->dbname_old) AND $this->dbname_old == $childobject->dbname) {
                             // name of parent database has been switched, so switch the child name as well
                             $childobject->dbname_old = $childobject->dbname;
@@ -7144,7 +7219,7 @@ abstract class Default_Table
     } // validateSearch
 
     // ****************************************************************************
-    function validateUpdate ($fieldarray, $primary_validation=false)
+    function validateUpdate ($fieldarray, $primary=true, $secondary=true)
     // verify that the specified record can be updated.
     {
         if (empty($fieldarray)) {
@@ -7176,12 +7251,15 @@ abstract class Default_Table
             } // if
         } // foreach
 
-        if (is_True($primary_validation)) {
+        if (is_True($primary)) {
             // perform sandard validation only
             $fieldarray = $this->_validateUpdatePrimary($fieldarray);
-        } else {
-            // perform any custom pre-update validation
-            $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
+        } // if
+        if (empty($this->errors)) {
+            if (is_True($secondary)) {
+                // perform any custom pre-update validation
+                $fieldarray = $this->custom_validateUpdate($fieldarray, $fieldarray);
+            } // if
         } // if
 
         return $fieldarray;
@@ -7264,11 +7342,11 @@ abstract class Default_Table
     } // _cm_filePickerSelect
 
     // ****************************************************************************
-    function _cm_fileUpload ($input_name, $temp_file, $wherearray)
+    function _cm_fileUpload ($input_name, $temp_file, $where_array)
     // Specify file name to be used for the upload.
     // $input_name  = file name supplied by client
     // $temp_file   = copy of file in temp directory
-    // $wherearray  = contents of original $where string
+    // $where_array  = contents of original $where string
     // $output_name = file name to be used on server
     {
         // default name for destination file is same as input name
@@ -8447,7 +8525,13 @@ abstract class Default_Table
         $DML->deleteRecord($this->dbname_server, $this->tablename, $fieldarray);
 
         $this->errors  = array_merge($DML->getErrors(), $this->errors);
+
         $this->numrows = $DML->getNumRows();
+        if ($this->numrows > 0) {
+            $this->delete_count   = $this->numrows;
+        } else {
+            $this->unchange_count = 1;
+        } // if
 
         return;
 
@@ -8614,7 +8698,7 @@ abstract class Default_Table
         $this->sql_having  = null;
         $this->sql_union   = null;
 
-        $this->instance_name = $DML->instance_name;
+        //$this->instance_name = $DML->instance_name;
 
         return $result;
 
@@ -8673,11 +8757,12 @@ abstract class Default_Table
         if (method_exists($DML, 'getMessages')) {
             $this->messages = array_merge($this->messages, $DML->getMessages());
         } // if
+
         $this->numrows = $DML->numrows;
         if ($this->numrows > 0) {
-            $this->insert_count = $this->numrows;
+            $this->insert_count   = $this->numrows;
         } else {
-            $this->unchanged_count = 1;
+            $this->unchange_count = 1;
         } // if
 
         $this->query = $DML->query;  // save this in case trigger_error() is called
@@ -8837,7 +8922,13 @@ abstract class Default_Table
         if (method_exists($DML, 'getMessages')) {
             $this->messages = array_merge($this->messages, $DML->getMessages());
         } // if
+
         $this->numrows = $DML->getNumRows();
+        if ($this->numrows > 0) {
+            $this->update_count   = $this->numrows;
+        } else {
+            $this->unchange_count = 1;
+        } // if
 
         $this->query = $DML->query;  // save this in case trigger_error() is called
 
@@ -8943,7 +9034,7 @@ abstract class Default_Table
         } // if
 
         // interface with the workflow engine
-        $workflow =& RDCsingleton::getInstance('workflow_engine');
+        $workflow = RDCsingleton::getInstance('workflow_engine');
 
         //$res = $workflow->startTransaction();
 
@@ -8990,7 +9081,7 @@ abstract class Default_Table
         $this->errors = array();
 
         // look for a workitem that matches this task_id and context
-        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+        $dbworkitem = RDCsingleton::getInstance('wf_workitem');
 
         if (is_array($where)) {
             // ensure that a selection of multiple rows is reduced to a single row
@@ -9143,7 +9234,7 @@ abstract class Default_Table
         if (file_exists($fname)) {
             // ** this code causes a hang in PHP 4 **
             //$class_name = "custom-processing/{$GLOBALS['project_code']}/cp_" .get_class($this);
-            //$this->custom_processing_object =& RDCsingleton::getInstance($class_name);
+            //$this->custom_processing_object = RDCsingleton::getInstance($class_name);
             // include reference to calling object in the custom object
             //$this->custom_processing_object->calling_object =& $this;
             // **
@@ -9229,6 +9320,10 @@ abstract class Default_Table
                 $cpo->upload_filetypes          =& $this->upload_filetypes;
                 $cpo->upload_maxfilesize        =& $this->upload_maxfilesize;
                 $cpo->upload_subdir             =& $this->upload_subdir;
+                $cpo->insert_count              =& $this->insert_count;
+                $cpo->update_count              =& $this->update_count;
+                $cpo->delete_count              =& $this->delete_count;
+                $cpo->unchange_count            =& $this->unchange_count;
 
                 // include reference to calling object in the custom object
                 $cpo->calling_object            =& $this;
@@ -9419,9 +9514,9 @@ abstract class Default_Table
         } // if
 
         if (isset($servernum)) {
-            $DML =& RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true, $unbuffered_query);
+            $DML = RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true, $unbuffered_query);
         } else {
-            $DML =& RDCsingleton::getInstance($engine, $args, true, $unbuffered_query);
+            $DML = RDCsingleton::getInstance($engine, $args, true, $unbuffered_query);
         } // if
 
         $DML->dbname = $args['dbname'];  // save selected database name in this server instance
@@ -9461,7 +9556,7 @@ abstract class Default_Table
         } // if
 
         // look for ROLE data
-        $dbobject =& RDCsingleton::getInstance('mnu_initial_value_role');
+        $dbobject = RDCsingleton::getInstance('mnu_initial_value_role');
         $dbobject->sql_select = 'field_id, initial_value, is_noedit';
         //$role_data = $dbobject->getData_raw("role_id='$role_id' AND task_id='$task_id'");
         $role_data = $dbobject->getData_raw("role_id IN ($role_list) AND task_id='$task_id'");
@@ -9474,7 +9569,7 @@ abstract class Default_Table
         } // foreach
 
         // overwrite with USER data
-        $dbobject =& RDCsingleton::getInstance('mnu_initial_value_user');
+        $dbobject = RDCsingleton::getInstance('mnu_initial_value_user');
         $dbobject->sql_select = 'field_id, initial_value, is_noedit';
         $user_data = $dbobject->getData_raw("user_id='$user_id' AND task_id='$task_id'");
         unset($dbobject);
@@ -9775,16 +9870,18 @@ abstract class Default_Table
             } // if
             if ($orderby_table != $this->tablename) {
                 if (file_exists("classes/$orderby_table.class.inc")) {
-                    require_once "classes/$orderby_table.class.inc";
-                    $dbobject  = new $orderby_table;
+                    //require_once "classes/$orderby_table.class.inc";
+                    //$dbobject  = new $orderby_table;
+                    $dbobject = RDCsingleton::getInstance($orderby_table);
                     $fieldspec = $dbobject->fieldspec;
                     unset($dbobject);
                 } else {
                     // look for 'original AS alias' in sql_from string
                     $alias_tablename = getTableAlias1($orderby_table, $this->sql_from);
                     if ($alias_tablename) {
-                        require_once "classes/$alias_tablename.class.inc";
-                        $dbobject  = new $alias_tablename;
+                        //require_once "classes/$alias_tablename.class.inc";
+                        //$dbobject  = new $alias_tablename;
+                        $dbobject = RDCsingleton::getInstance($alias_tablename);
                         $fieldspec = $dbobject->fieldspec;
                         unset($dbobject);
                     } else {
@@ -9974,7 +10071,7 @@ abstract class Default_Table
         } // if
 
         // find out if the inner table contains the 'account_id' column
-        $dbinner =& RDCsingleton::getInstance($inner_table, null, false);
+        $dbinner = RDCsingleton::getInstance($inner_table, null, false);
         if (isset($dbinner->fieldspec['rdcaccount_id'])) {
             if (empty($inner_alias)) {
                 $account_id_string = $inner_table;
@@ -10137,18 +10234,23 @@ abstract class Default_Table
         // obtain $fieldspec array for relevant table ($this or another)
         if ($parent_table != $reldata['this']) {
             // instantiate an object for this table
+//            if (array_key_exists('subsys_dir', $reldata)) {
+//                // get path to current subsystem directory
+//                $dir = dirname($this->dirname);
+//                // switch to other subsystem directory
+//                $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+//            } else {
+//                $dir = NULL;
+//            } // if
+//            if (!class_exists($parent_table)) {
+//                require_once $dir ."classes/$parent_table.class.inc";
+//            } // if
+//            $parentObj = new $parent_table;
             if (array_key_exists('subsys_dir', $reldata)) {
-                // get path to current subsystem directory
-                $dir = dirname($this->dirname);
-                // switch to other subsystem directory
-                $dir = dirname($dir) .DIRECTORY_SEPARATOR .$reldata['subsys_dir'] .DIRECTORY_SEPARATOR;
+                $parentObj = RDCsingleton::getInstance($reldata['subsys_dir'].'/'.$parent_table);
             } else {
-                $dir = NULL;
+                $parentObj = RDCsingleton::getInstance($parent_table);
             } // if
-            if (!class_exists($parent_table)) {
-                require_once $dir ."classes/$parent_table.class.inc";
-            } // if
-            $parentObj = new $parent_table;
             if (isset($reldata['dbname'])) {
                 // find out if this database name has been altered in the config file
                 $dbname = findDBName($parentObj->dbname, $this->dbname);
@@ -10311,7 +10413,7 @@ abstract class Default_Table
                 if (empty($test)) {
                     // try using with a qualified name
                     $test = array_search("$this_table_alias.$field_name", $select_alias);
-                    if ($test == $select_alias[$test]) {
+                    if ($test AND $test == $select_alias[$test]) {
                         // this is not a different value, so it is not an alias
                         $test = null;
                     } // if
@@ -10391,7 +10493,8 @@ abstract class Default_Table
             require_once("$tablename.class.inc");
         } // if
 
-        $dbobject = new $tablename();
+        //$dbobject = new $tablename;
+        $dbobject = RDCsingleton::getInstance($tablename);
 
         $dbname_old = $dbobject->dbname;
 
@@ -10409,7 +10512,7 @@ abstract class Default_Table
     function _validateInsertPrimary ($fieldarray)
     // validate contents of $fieldarray prior to an INSERT
     {
-        $validationobj =& RDCsingleton::getInstance('validation_class');
+        $validationobj = RDCsingleton::getInstance('validation_class');
 
         $array = $validationobj->validateInsert($fieldarray, $this->fieldspec, $this);
 
@@ -10423,7 +10526,7 @@ abstract class Default_Table
     function _validateUpdatePrimary ($fieldarray)
     // validate contents of $fieldarray prior to an UPDATE
     {
-        $validationobj =& RDCsingleton::getInstance('validation_class');
+        $validationobj = RDCsingleton::getInstance('validation_class');
 
         $array = $validationobj->validateUpdate($fieldarray, $this->fieldspec, $this);
 

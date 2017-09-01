@@ -93,7 +93,7 @@ class dict_relationship_jnr extends dict_relationship
         $where = array2where($fieldarray, $this->getPkeyNames());
 
         // create initial records on DICT_RELATED_COLUMN table
-        $relobj =& RDCsingleton::getInstance('dict_related_column');
+        $relobj = RDCsingleton::getInstance('dict_related_column');
 
         $outarray = $relobj->getInitialDataMultiple($fieldarray);
         $outarray = $relobj->insertMultiple($outarray);

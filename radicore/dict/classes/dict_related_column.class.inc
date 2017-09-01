@@ -67,7 +67,7 @@ class dict_related_column extends Default_Table
         $key_name    = $fieldarray[0]['key_name'];
 
         // obtain names of primary key columns from parent table
-        $keyobj =& RDCsingleton::getInstance('dict_table_key');
+        $keyobj = RDCsingleton::getInstance('dict_table_key');
         $where = "database_id='$database_id' AND table_id='$table_id' AND key_name='$key_name'";
         $keyobj->setOrderBy('seq_in_index');
         $inarray = $keyobj->getData($where);
@@ -95,7 +95,7 @@ class dict_related_column extends Default_Table
     {
         if (!empty($rowdata)) {
             // get column names for junior (child) table
-            $columnobj =& RDCsingleton::getInstance('dict_column');
+            $columnobj = RDCsingleton::getInstance('dict_column');
             $where2 = "database_id='{$rowdata[0]['database_id_jnr']}'";
             $where2 .= " AND table_id='{$rowdata[0]['table_id_jnr']}'";
             $columnobj->setOrderBy('column_seq', 'asc');

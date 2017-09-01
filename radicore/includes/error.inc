@@ -47,7 +47,11 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
     //logstuff("error: " .'(' .$errno .') ' .$errstr, $errfile, $errline);
 
     $trace = debug_backtrace();
-    $errcontext = $trace[0]['args'][4];
+    if (isset($trace[0]['args'][4])) {
+        $errcontext = $trace[0]['args'][4];
+    } else {
+        $errcontext = null;
+    } // if
 
     switch ($errno) {
         case E_USER_WARNING:
@@ -394,9 +398,15 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
 } // errorHandler
 
 // *****************************************************************************
-function XML_errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
+//function XML_errorHandler ($errno, $errstr, $errfile, $errline, $errcontext)
+function XML_errorHandler ($errno, $errstr, $errfile, $errline, $errcontext=null)
 // deal with errors from XML or XSL functions.
 {
+    if (empty($errcontext)) {
+        $trace = debug_backtrace();
+        $errcontext = $trace[0]['args'][4];
+    } // if
+
     // pass these details to the standard error handler
     errorHandler (E_USER_ERROR, $errstr, $errfile, $errline, $errcontext);
 

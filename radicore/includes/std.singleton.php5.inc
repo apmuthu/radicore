@@ -1,13 +1,13 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2015 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 class RDCsingleton
 // ensure that only a single instance exists for each class.
 {
-    static function &getInstance ($class, $arg1=null, $initialise=true, $unbuffered_query=false)
+    static function getInstance ($class, $arg1=null, $initialise=true, $unbuffered_query=false)
     // implements the 'singleton' design pattern.
     // $class = name of class to be instantiated.
     // $arg1 = an optional argument to pass to the class constructor (may be a string/array/whatever).
@@ -19,7 +19,7 @@ class RDCsingleton
         if ($class == '__destruct') {
             // session is being destroyed, instances are being lost, so lose all references to them
             foreach ($instances as $key => $value) {
-                $value = null;
+                unset($value);
             	unset($instances[$key]);
             } // foreach
         	$instances = array();
@@ -51,7 +51,8 @@ class RDCsingleton
 	        // use leading directory name as the subsystem name
 	        $subsystem = basename(dirname($class));     // only one directory allowed
 	    	$classname = basename($class);              // strip leading directories
-	    	$filename  = "../$subsystem/classes/$classname.class.inc";
+	    	//$filename  = "../$subsystem/classes/$classname.class.inc";
+            $filename  = "classes/$classname.class.inc";
             // ensure that this subsystem is in the include plath
             $include_path = ini_get('include_path');
             $pattern = '#'              // start pattern
@@ -84,9 +85,10 @@ class RDCsingleton
             // instance exists in array, so use it
             $instance =& $instances[$instance_name];
         } else {
-            $cur_dir = dirname($_SERVER['SCRIPT_FILENAME']);
-            if (getcwd() != $cur_dir) {
-                chdir($cur_dir);  // current directory is wrong, so change it
+            $cwd = str_replace('\\', '/', getcwd());  // replace back slashes with forward slashes
+            $script_dir = dirname($_SERVER['SCRIPT_FILENAME']);
+            if ($cwd != $script_dir) {
+                chdir($script_dir);  // current directory is wrong, so change it
             } // if
             // load the class file (if not already loaded)
             if (!class_exists($classname)) {
@@ -142,8 +144,6 @@ class RDCsingleton
                 } // if
             } // if
         } // if
-
-        $instance->instance_name = $instance_name;
 
         if (method_exists($instance, 'sqlSelectInit')) {
             // initialise all sql variables

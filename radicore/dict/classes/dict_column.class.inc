@@ -826,7 +826,7 @@ class dict_column extends Default_Table
 
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DATABASE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('dict_database');
+            $dbobject = RDCsingleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -1016,7 +1016,7 @@ class dict_column extends Default_Table
     // perform custom processing after database record has been deleted.
     {
         // find out if this column is named as an alias on DICT_TABLE entry
-        $dbobject =& RDCsingleton::getInstance('dict_table');
+        $dbobject = RDCsingleton::getInstance('dict_table');
         $data = $dbobject->getData("database_id='{$fieldarray['database_id']}' AND table_id='{$fieldarray['table_id']}'");
         if ($data) {
         	$data = $data[0];

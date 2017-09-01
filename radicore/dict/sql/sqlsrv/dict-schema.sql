@@ -182,7 +182,7 @@ CREATE TABLE dict_relationship (
   seq_no tinyint NOT NULL DEFAULT '0',
   table_alias_snr nvarchar(64) NULL,
   table_alias_jnr nvarchar(64) NULL,
-  relation_name nvarchar(0) NULL,
+  relation_name nvarchar(80) NULL,
   relation_desc ntext,
   relation_type nvarchar(3) NOT NULL DEFAULT 'RES',
   orderby nvarchar(64) NULL,

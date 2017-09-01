@@ -169,7 +169,7 @@ class dict_relationship extends Default_Table
     {
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DICT_DATABASE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('dict_database');
+            $dbobject = RDCsingleton::getInstance('dict_database');
             $array = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -184,7 +184,7 @@ class dict_relationship extends Default_Table
 
         if (isset($fieldarray['database_id_snr']) and isset($fieldarray['table_id_snr'])) {
             // get column details for snr table and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('dict_column');
+            $dbobject = RDCsingleton::getInstance('dict_column');
             $array = $dbobject->getValRep('column_id', "database_id='{$fieldarray['database_id_snr']}' AND table_id='{$fieldarray['table_id_snr']}'");
             $array = array_merge(array('' => ' ', '#calc#' => 'CALCULATED'), $array);
             $this->lookup_data['parent_field'] = $array;
@@ -308,7 +308,7 @@ class dict_relationship extends Default_Table
 
         	case 'multi2':
                 // retrieve associated data from RELATED_COLUMN table
-                $object =& RDCsingleton::getInstance('dict_related_column');
+                $object = RDCsingleton::getInstance('dict_related_column');
                 $db_id_snr  = $fieldarray['database_id_snr'];
                 $tbl_id_snr = $fieldarray['table_id_snr'];
                 $db_id_jnr  = $fieldarray['database_id_jnr'];
@@ -423,7 +423,7 @@ class dict_relationship extends Default_Table
         if (is_string(key($rows))) {
         	if (isset($rows['database_id_snr']) and isset($rows['table_id_snr'])) {
                 // get column details for snr table and add as a LOOKUP list
-                $dbobject =& RDCsingleton::getInstance('dict_column');
+                $dbobject = RDCsingleton::getInstance('dict_column');
                 $array = $dbobject->getValRep('column_id', "database_id='{$rows['database_id_snr']}' AND table_id='{$rows['table_id_snr']}'");
                 $array = array_merge(array('#calc#' => 'CALCULATED'), $array);
                 $this->lookup_data['parent_field'] = $array;
@@ -512,7 +512,7 @@ class dict_relationship extends Default_Table
     {
         $key_names = array();
 
-        $dbobject =& RDCsingleton::getInstance('dict_table_key');
+        $dbobject = RDCsingleton::getInstance('dict_table_key');
         $where = "database_id='$dbname' AND table_id='$tablename' AND is_unique='Y'";
         $data = $dbobject->getData($where);
 
@@ -537,7 +537,7 @@ class dict_relationship extends Default_Table
             $where       = array2where($reldata);
         } // if
 
-        $relOBJ =& RDCsingleton::getInstance('dict_related_column');
+        $relOBJ = RDCsingleton::getInstance('dict_related_column');
         $relOBJ->startTransaction();
         $where2 = array2where($where_array, array('database_id_snr','table_id_snr','database_id_jnr','table_id_jnr','seq_no'));
         $del = $relOBJ->deleteSelection($where2);

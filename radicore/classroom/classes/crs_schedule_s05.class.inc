@@ -55,7 +55,7 @@ class crs_schedule_s05 extends crs_schedule
 
         // get schedule details
         //require_once 'classes/crs_schedule_hdr.class.inc';
-        $dbobject =& RDCsingleton::getInstance('crs_schedule_hdr');
+        $dbobject = RDCsingleton::getInstance('crs_schedule_hdr');
         $dbobject->sql_select = 'schedule_id,start_time,end_time,last_day_no';
         if (isset($_SESSION['crs_schedule_id'])) {
             // use schedule which has been pre-selected

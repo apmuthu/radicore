@@ -94,7 +94,7 @@ class wf_transition extends Default_Table
         } // if
 
         if (!array_key_exists('role_id', $this->lookup_data)) {
-            $dbobject =& RDCsingleton::getInstance('mnu_role');
+            $dbobject = RDCsingleton::getInstance('mnu_role');
             $role_array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $role_array;
         } // if
@@ -310,7 +310,7 @@ class wf_transition extends Default_Table
     function _updateWorkflow ($workflow_id)
     // set IS_VALID to FALSE to force workflow to be revalidated.
     {
-        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $dbobject = RDCsingleton::getInstance('wf_workflow');
         $update['workflow_id'] = $workflow_id;
         $update['is_valid']    = FALSE;
         $update = $dbobject->updateRecord($update);

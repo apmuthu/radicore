@@ -30,7 +30,7 @@ class workflow_engine extends wf_workflow
         $context = trim($context, '()');
 
         // create a case (workflow instance) for this task
-        $dbcase =& RDCsingleton::getInstance('wf_case');
+        $dbcase = RDCsingleton::getInstance('wf_case');
 
         // there may be more than one workflow, but it is unlikely
         foreach ($data as $workflow) {
@@ -60,7 +60,7 @@ class workflow_engine extends wf_workflow
         $GLOBALS['classdir'] = dirname($this->dirname);
 
         // retrieve the current workitem
-        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+        $dbworkitem = RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status IN ('EN','IP')";
@@ -105,7 +105,7 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find tokens on all input arcs (there may be more than one)
-        $dbarc =& RDCsingleton::getInstance('wf_arc');
+        $dbarc = RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id, token_status';
         $dbarc->sql_from   = "wf_arc "
@@ -118,7 +118,7 @@ class workflow_engine extends wf_workflow
         } // if
 
         // now mark them all as consumed
-        $dbtoken =& RDCsingleton::getInstance('wf_token');
+        $dbtoken = RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
             if ($arc['token_status'] == 'FREE') {
@@ -358,7 +358,7 @@ class workflow_engine extends wf_workflow
         $context       = trim($fieldarray['context'], '()');
 
         // mark this workitem as finished
-        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+        $dbworkitem = RDCsingleton::getInstance('wf_workitem');
 
         // check that workitem has not already been processed
         $where = "case_id='$case_id' AND workitem_id='$workitem_id' AND workitem_status='EN'";
@@ -386,7 +386,7 @@ class workflow_engine extends wf_workflow
 
         // ********************************************************************
         // find token on input arc (there should be only one)
-        $dbarc =& RDCsingleton::getInstance('wf_arc');
+        $dbarc = RDCsingleton::getInstance('wf_arc');
 
         $dbarc->sql_select = 'wf_arc.*, token_id, case_id';
         $dbarc->sql_from   = "wf_arc "
@@ -415,7 +415,7 @@ class workflow_engine extends wf_workflow
         } // if
 
         // now mark it as consumed
-        $dbtoken =& RDCsingleton::getInstance('wf_token');
+        $dbtoken = RDCsingleton::getInstance('wf_token');
 
         foreach ($arc_data as $arc) {
             $arc['token_status']  = 'CONS';
@@ -450,7 +450,7 @@ class workflow_engine extends wf_workflow
     function _cancelSplit ($workflow_id, $transition_id, $case_id, $place_id_in, $arc_type_in)
     // one transition in an OR-Split (Implicit) has been fired, so cancel the other(s)
     {
-        $dbarc =& RDCsingleton::getInstance('wf_arc');
+        $dbarc = RDCsingleton::getInstance('wf_arc');
 
         // find out if the place on the current inward arc has other inward arcs
         $dbarc->sql_select = 'wf_arc.transition_id, arc_type, workitem_id, case_id, workitem_status, rdcaccount_id';
@@ -463,7 +463,7 @@ class workflow_engine extends wf_workflow
             $this->errors[] = getLanguageText('e0031', $place_id_in);
             return;
         } else {
-            $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+            $dbworkitem = RDCsingleton::getInstance('wf_workitem');
             // check that all arcs from this place have the same arc_type
             foreach ($arc_data as $arc) {
                 if ($arc['arc_type'] != $arc_type_in) {

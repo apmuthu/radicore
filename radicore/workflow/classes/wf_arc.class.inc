@@ -31,7 +31,7 @@ class wf_arc extends Default_Table
 
         if (!empty($fieldarray['place_id'])) {
             // get PLACE details
-            $dbobject =& RDCsingleton::getInstance('wf_place');
+            $dbobject = RDCsingleton::getInstance('wf_place');
             $dbobject->sql_select = 'place_type';
             $place_data = $dbobject->getData_raw("workflow_id='{$fieldarray['workflow_id']}' AND place_id='{$fieldarray['place_id']}'");
             $place_type = $place_data[0]['place_type'];
@@ -138,12 +138,12 @@ class wf_arc extends Default_Table
             $workflow_id = $fieldarray['workflow_id'];
 
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('wf_transition');
+            $dbobject = RDCsingleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
 
             // get contents of foreign table PLACE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('wf_place');
+            $dbobject = RDCsingleton::getInstance('wf_place');
             $array = $dbobject->getValRep('place_id', "workflow_id='$workflow_id'");
             $this->lookup_data['place_id'] = $array;
         } // if
@@ -263,7 +263,7 @@ class wf_arc extends Default_Table
     function _updateWorkflow ($workflow_id)
     // set IS_VALID to FALSE to force workflow to be revalidated.
     {
-        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $dbobject = RDCsingleton::getInstance('wf_workflow');
         $update['workflow_id'] = $workflow_id;
         $update['is_valid']    = FALSE;
         $update = $dbobject->updateRecord($update);
@@ -295,7 +295,7 @@ class wf_arc extends Default_Table
         if ($this->errors) return;
 
         // now check that these places have the correct number of tokens
-        $dbtoken =& RDCsingleton::getInstance('wf_token');
+        $dbtoken = RDCsingleton::getInstance('wf_token');
 
         $token_array = array();
 
@@ -323,7 +323,7 @@ class wf_arc extends Default_Table
         } // foreach
 
         // transition has enough input tokens, so create a workitem
-        $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+        $dbworkitem = RDCsingleton::getInstance('wf_workitem');
         $workitem_data['workflow_id']        = $workflow_id;
         $workitem_data['rdcaccount_id']      = $token_array[0]['rdcaccount_id'];
         $workitem_data['transition_id']      = $transition_id;

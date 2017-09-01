@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `dict_column` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id`,`table_id`,`column_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Database Column Names';
+) COMMENT='Database Column Names';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_dict.dict_database
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `dict_database` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Database Names';
+) COMMENT='Database Names';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_dict.dict_related_column
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `dict_related_column` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id_snr`,`table_id_snr`,`column_id_snr`,`database_id_jnr`,`table_id_jnr`,`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Columns used in relationship';
+) COMMENT='Columns used in relationship';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_dict.dict_relationship
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `dict_relationship` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id_snr`,`table_id_snr`,`database_id_jnr`,`table_id_jnr`,`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Database Table Relationships';
+) COMMENT='Database Table Relationships';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_dict.dict_table
@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `dict_table` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id`,`table_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Database Table Names';
+) COMMENT='Database Table Names';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_dict.dict_table_key
@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS `dict_table_key` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`database_id`,`table_id`,`key_name`,`column_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Database Table Keys';
+) COMMENT='Database Table Keys';
 
 -- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

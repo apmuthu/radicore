@@ -873,7 +873,7 @@ class PDF extends TCPDF
         // examine column widths for percentages and turn them into numbers
         $this->structure['title'] = $this->adjustColumnWidths($this->structure['title']);
 
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         // get default style for the 'title' area
         $default_style = $this->style[$this->structure['title']['style']];
@@ -2582,7 +2582,7 @@ class PDF extends TCPDF
     {
         $this->last_height = 0;
 
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         foreach ($this->structure[$zone] as $element => $attributes) {
             if (is_integer($element)) {

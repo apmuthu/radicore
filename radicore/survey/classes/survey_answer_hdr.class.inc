@@ -71,7 +71,7 @@ class survey_answer_hdr extends Default_Table
         if (!empty($fieldarray['node_id']) and empty($fieldarray['node_desc'])) {
             // not supplied yet, so get it manually
             require_once 'classes/tree_node.class.inc';
-            $dbobject =& RDCsingleton::getInstance('tree_node');
+            $dbobject = RDCsingleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $foreign_data = $dbobject->getData("node_id='{$fieldarray['node_id']}'");
             if ($foreign_data[0]['node_type'] == 'L') {
@@ -162,7 +162,7 @@ class survey_answer_hdr extends Default_Table
         if ($return_from == 'srv_tree_node(popup)') {
             // get description for selected item
             require_once 'classes/tree_node.class.inc';
-            $dbobject =& RDCsingleton::getInstance('tree_node');
+            $dbobject = RDCsingleton::getInstance('tree_node');
             $dbobject->sql_select = 'node_id, node_desc, node_type';
             $selection = array2where($select_array);
             $foreign_data = $dbobject->getData($selection);

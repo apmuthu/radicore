@@ -25,7 +25,7 @@ class x_tree_level_s02 extends x_tree_level
         // find out if $selection is for TREE_NODE table
         if (preg_match('/(node_id=)/i', $where)) {
             // yes - convert to TREE_LEVEL table
-            $dbobject =& RDCsingleton::getInstance('x_tree_node');
+            $dbobject = RDCsingleton::getInstance('x_tree_node');
 
             // read data from TREE_NODE table
             $tree_node_data = $dbobject->getData($where);

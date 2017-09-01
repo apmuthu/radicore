@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `wf_arc` (
   PRIMARY KEY (`workflow_id`,`transition_id`,`place_id`,`direction`),
   KEY `place_id` (`workflow_id`,`place_id`,`direction`),
   KEY `transition_id` (`workflow_id`,`transition_id`,`direction`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_case
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `wf_case` (
   PRIMARY KEY (`case_id`),
   KEY `workflow_id` (`workflow_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_place
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS `wf_place` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`workflow_id`,`place_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_token
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS `wf_token` (
   PRIMARY KEY (`case_id`,`token_id`),
   KEY `place_id` (`workflow_id`,`place_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_transition
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS `wf_transition` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`workflow_id`,`transition_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_workflow
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `wf_workflow` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`workflow_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_workflow.wf_workitem
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS `wf_workitem` (
   PRIMARY KEY (`case_id`,`workitem_id`),
   KEY `transition_id` (`workflow_id`,`transition_id`),
   KEY `rdcaccount_id` (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

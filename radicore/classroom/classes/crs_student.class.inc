@@ -72,7 +72,7 @@ class crs_student extends Default_Table
     {
         if (!array_key_exists('class_id', $this->lookup_data)) {
             // get contents of foreign table CLASS and add to lookup array
-            $object =& RDCsingleton::getInstance('crs_class');
+            $object = RDCsingleton::getInstance('crs_class');
             $data   = $object->getValRep('class_id');
             $this->lookup_data['class_id'] = $data;
         } // if

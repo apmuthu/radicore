@@ -54,7 +54,7 @@ class survey_question extends Default_Table
 
         if (!array_key_exists('risk_status_id', $this->lookup_data)) {
             // get contents of foreign table RISK_STATUS and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('risk_status');
+            $dbobject = RDCsingleton::getInstance('risk_status');
             $data_array = $dbobject->getValRep('risk_status_id');
             $this->lookup_data['risk_status_id'] = $data_array;
             unset($dbobject);
@@ -63,7 +63,7 @@ class survey_question extends Default_Table
         global $mode;
         if (!preg_match('/(insert|search)/i', $mode) AND !empty($fieldarray)) {
             // get contents of QUESTION_PROMPT and concatenate into a single string
-            $dbobject =& RDCsingleton::getInstance('question_prompt');
+            $dbobject = RDCsingleton::getInstance('question_prompt');
             $dbobject->sql_select = "prompt_desc";
             $dbobject->sql_from   = "question_prompt "
                                   . "LEFT JOIN default_prompt ON (default_prompt.survey_id=question_prompt.survey_id AND default_prompt.prompt_id=question_prompt.prompt_id)";
@@ -86,7 +86,7 @@ class survey_question extends Default_Table
             switch ($fieldarray['answer_type']) {
             	case 'M':
             		// get contents of ANSWER_OPTION and concatenate into a single string
-                    $dbobject =& RDCsingleton::getInstance('answer_option');
+                    $dbobject = RDCsingleton::getInstance('answer_option');
                     $dbobject->sql_select = "answer_text";
                     //$where2 = filterWhere($where1, $dbobject->getPkeynames(), $dbobject->getTableName());
                     $where2 = array2where($fieldarray, $dbobject->getPkeynames());
@@ -104,7 +104,7 @@ class survey_question extends Default_Table
             		break;
             	case 'N':
             		// get contents of NUMBER_OPTION and concatenate into a single string
-                    $dbobject =& RDCsingleton::getInstance('number_option');
+                    $dbobject = RDCsingleton::getInstance('number_option');
                     $dbobject->sql_select = "min_value, max_value";
                     //$where2 = filterWhere($where1, $dbobject->getPkeynames(), $dbobject->getTableName());
                     $where2 = array2where($fieldarray, $dbobject->getPkeynames());
@@ -174,7 +174,7 @@ class survey_question extends Default_Table
         // if there are any records with a sequence number greater than the one
         // which has just been deleted then they must be shuffled up in order
         // to absorb the now vacant number.
-        $dboject =& RDCsingleton::getInstance('survey_question');
+        $dboject = RDCsingleton::getInstance('survey_question');
         $survey_id    = $fieldarray['survey_id'];
         $section_id   = $fieldarray['section_id'];
         $question_seq = $fieldarray['question_seq'];
@@ -260,7 +260,7 @@ class survey_question extends Default_Table
             $where = array2where($fieldarray, $this->getPkeyNames());
             if ($old_data['answer_type'] == 'M') {
                 require_once 'answer_option.class.inc';
-                $dbobject =& RDCsingleton::getInstance('answer_option');
+                $dbobject = RDCsingleton::getInstance('answer_option');
                 $result = $dbobject->deleteMultiple($where);
                 if ($result) {
                     $this->errors[] = $result;
@@ -268,7 +268,7 @@ class survey_question extends Default_Table
             } // if
             if ($old_data['answer_type'] == 'N') {
                 require_once 'number_option.class.inc';
-                $dbobject =& RDCsingleton::getInstance('number_option');
+                $dbobject = RDCsingleton::getInstance('number_option');
                 $result = $dbobject->deleteRecord($fieldarray);
                 $this->errors = $dbobject->getErrors();
             } // if

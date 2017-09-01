@@ -102,14 +102,14 @@ class dict_dataBase extends Default_Table
     {
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of this table and put into lookup data
-    		$dbobject =& RDCsingleton::getInstance('dict_database');
+    		$dbobject = RDCsingleton::getInstance('dict_database');
     		$array = $dbobject->_cm_getValRep('database_id');
     		$this->lookup_data['database_id'] = $array;
         } // if
 
         if (!array_key_exists('subsys_id', $this->lookup_data)) {
             // get contents of foreign table and put into lookup_data
-            $dbobject =& RDCsingleton::getInstance('mnu_subsystem');
+            $dbobject = RDCsingleton::getInstance('mnu_subsystem');
             $array = $dbobject->getValRep('subsys_id');
             $this->lookup_data['subsys_id'] = $array;
         } // if

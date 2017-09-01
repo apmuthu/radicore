@@ -292,6 +292,13 @@ div.main td.label {
   color: black;
   background: #66cc66;
 }
+/* combine 'label' with another class to override 'text-align' attribute */
+div.main td.label.center{
+  text-align: center;
+}
+div.main td.label.left{
+  text-align: left;
+}
 
 /* fileupload */
 div.uploadbg {

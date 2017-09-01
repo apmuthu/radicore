@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `container_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`container_type_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM AUTO_INCREMENT=9 ;
 
 -- --------------------------------------------------------
 
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `facility` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`facility_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM AUTO_INCREMENT=3 ;
 
 -- --------------------------------------------------------
 
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `facility_type` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`facility_type_id`)
-) ENGINE=MyISAM PACK_KEYS=0;
+) ENGINE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=4 ;
 
 -- --------------------------------------------------------
 
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `inventory_item_status` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`inv_item_status_id`)
-) ENGINE=MyISAM;
+) ENGINE=MyISAM AUTO_INCREMENT=6 ;
 
 -- --------------------------------------------------------
 
@@ -209,7 +209,7 @@ CREATE TABLE IF NOT EXISTS `inventory_variance_reason` (
   `revised_date` datetime default NULL,
   `revised_user` varchar(16) default NULL,
   PRIMARY KEY  (`inv_var_reason_id`)
-) ENGINE=MyISAM PACK_KEYS=0;
+) ENGINE=MyISAM PACK_KEYS=0 AUTO_INCREMENT=5 ;
 
 -- --------------------------------------------------------
 

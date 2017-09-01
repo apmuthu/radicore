@@ -24,7 +24,7 @@ function checkSelection ($task_id, $where=null)
     } // if
 
     //require_once 'classes/mnu_task.class.inc';
-    $dbtask =& RDCsingleton::getInstance('mnu_task');
+    $dbtask = RDCsingleton::getInstance('mnu_task');
 
     $task_array = $dbtask->checkSelection($task_id);
     $errors = $dbtask->getErrors();
@@ -52,7 +52,7 @@ function checkSelection ($task_id, $where=null)
 
         if ($PHP_SELF == '/menu/menu.php') {
             // get menu details for the chosen menu
-            $dbmenu =& RDCsingleton::getInstance('mnu_menu');
+            $dbmenu = RDCsingleton::getInstance('mnu_menu');
             $menu_buttons = $dbmenu->getMenuButtons($task_id);
             // we are in menu page, so update script_vars now
             $GLOBALS['menu_buttons'] = $menu_buttons;
@@ -157,7 +157,7 @@ function childForm ($post, $object_array, $task_id, $where=null)
     } // if
 
     // check to see if this selection is valid
-    $taskobj =& RDCsingleton::getInstance('mnu_task');
+    $taskobj = RDCsingleton::getInstance('mnu_task');
     $task_array = $taskobj->checkSelection($next_task);
     if ($taskobj->errors) {
     	return $taskobj->errors;
@@ -644,7 +644,7 @@ function getShutDownStatus ()
     if (!empty($_SESSION['empty_tables']) AND array_key_exists('SYSTEM_SHUTDOWN', $_SESSION['empty_tables'])) {
         // there is no data to lookup
     } else {
-        $dbobject =& RDCsingleton::getInstance('mnu_control');
+        $dbobject = RDCsingleton::getInstance('mnu_control');
         $shutdown_data = $dbobject->getControlData('shutdown');
         unset($dbobject);
 
@@ -685,7 +685,7 @@ function getSupportedLanguages ()
 {
     $array = array();
 
-    $dbobject =& RDCsingleton::getInstance('mnu_language');
+    $dbobject = RDCsingleton::getInstance('mnu_language');
     $dbobject->sql_select = 'language_id';
     $data = $dbobject->getData();
     foreach ($data as $rownum => $rowdata) {
@@ -712,7 +712,7 @@ function getTimePeriodStatus ($user_id, $role_id)
     if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_time_limit_user', $_SESSION['empty_tables'])) {
         $count = 0;
     } else {
-        $userOBJ =& RDCsingleton::getInstance('mnu_time_limit_user');
+        $userOBJ = RDCsingleton::getInstance('mnu_time_limit_user');
         $where = "user_id='$user_id' ";
         $count = $userOBJ->getCount($where);
     } // if
@@ -729,7 +729,7 @@ function getTimePeriodStatus ($user_id, $role_id)
         if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_time_limit_role', $_SESSION['empty_tables'])) {
             $count = 0;
         } else {
-            $roleOBJ =& RDCsingleton::getInstance('mnu_time_limit_role');
+            $roleOBJ = RDCsingleton::getInstance('mnu_time_limit_role');
             $where = "role_id='$role_id'";
             $count = $roleOBJ->getCount($where);
         } // if
@@ -847,7 +847,7 @@ function initSession($save_session_data=array(), $argv=array())
         $save_session_batch = $_SESSION;
     } else {
     	// continue with existing session, or start a new one
-	    $session_obj =& RDCsingleton::getInstance('php_session');
+	    $session_obj = RDCsingleton::getInstance('php_session');
 	    if (isset($GLOBALS['batch'])) {
 	        if (is_True($GLOBALS['batch'])) {
 	            if (!empty($_SESSION)) {
@@ -1256,7 +1256,7 @@ function initSession($save_session_data=array(), $argv=array())
 
 	    } elseif ($_GET['action'] == 'add-to-favourites') {
             // add current task to MNU_FAVOURITES table
-            $dbobject =& RDCsingleton::getInstance('mnu_favourite');
+            $dbobject = RDCsingleton::getInstance('mnu_favourite');
             $insert['user_id']      = $_SESSION['logon_user_id'];
             $insert['task_id']      = $task_id;
             $insert['current_menu'] = $script_vars['current_menu'];
@@ -1277,8 +1277,9 @@ function initSession($save_session_data=array(), $argv=array())
 	    } // if
 	} // if
 
-	if (defined('RADICORE_NO_MENU')) {
+	if (defined('RADICORE_NO_MENU') OR defined('TRANSIX_NO_MENU')) {
 		// no MENU database, so skip this next bit
+        setUserLanguage();
 	} else {
 		if (!empty($_SESSION['logon_user_id'])) {
 			// check that this user_id is valid for this IP address (helps prevent session hijacking)
@@ -1287,7 +1288,7 @@ function initSession($save_session_data=array(), $argv=array())
             } else {
 	            $ip_address = getRealIPAddress();
 	            $user_id    = $_SESSION['logon_user_id'];
-	            $dbobject =& RDCsingleton::getInstance('mnu_user');
+	            $dbobject = RDCsingleton::getInstance('mnu_user');
 	            $dbobject->sql_select  = 'user_id, ip_address';
 	            $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
 	                                          ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
@@ -1316,8 +1317,8 @@ function initSession($save_session_data=array(), $argv=array())
 		} // if
 
 	    if (empty($_SESSION['default_language'])) {
-    		// get default language from control table
-	        $mnu_control =& RDCsingleton::getInstance('mnu_control');
+            // get default language from control table
+	        $mnu_control = RDCsingleton::getInstance('mnu_control');
 	        $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
 	    } // if
 
@@ -1330,32 +1331,20 @@ function initSession($save_session_data=array(), $argv=array())
     		// obtain supported languages from MENU database
 	        $_SESSION['supported_languages'] = getSupportedLanguages();
 	    } // if
-	} // if
 
-    if (empty($_SESSION['user_language']) AND !empty($_SESSION['supported_languages'])) {
-    	$found_lang = matchBrowserLanguage($_SESSION['user_language_array'], $_SESSION['supported_languages']);
-    	if (!empty($found_lang)) {
-    		$_SESSION['user_language'] = $found_lang;
-    	} // if
-    } // if
-    if (empty($_SESSION['user_language']) AND !empty($_SESSION['default_language'])) {
-    	$_SESSION['user_language'] = $_SESSION['default_language'];
-    } // if
+        setUserLanguage();
 
-    if (empty($_SESSION['user_language'])) {
-        $_SESSION['user_language'] = 'en';
-    } // if
-
-    if (!isset($_SESSION['date_format_input'])) {
-        $dbobject =& RDCsingleton::getInstance('mnu_language');
-        $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
-        if (!empty($data)) {
-            $data = $data[0];
-            $_SESSION['date_format_input']  = $data['input_date_format'];
-            $_SESSION['date_format_output'] = $data['output_date_format'];
+        if (!isset($_SESSION['date_format_input'])) {
+            $dbobject = RDCsingleton::getInstance('mnu_language');
+            $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
+            if (!empty($data)) {
+                $data = $data[0];
+                $_SESSION['date_format_input']  = $data['input_date_format'];
+                $_SESSION['date_format_output'] = $data['output_date_format'];
+            } // if
+            unset($dbobject);
         } // if
-        unset($dbobject);
-    } // if
+	} // if
 
     // set to locale where decimal point is '.' (as used internally)
     $locale = rdc_setLocale("English (United Kingdom) [en_GB]");
@@ -2000,43 +1989,43 @@ function runInBackground ($task_array, $save_script_vars)
     $script_vars = array();
     if (isset($task_array['where'])) {
         $script_vars['where'] = $task_array['where'];
-        $arg4 = $task_array['where'];
+        $arg3 = $task_array['where'];
     } else {
-        $arg4 = null;
+        $arg3 = null;
     } // if
     if (isset($task_array['selection'])) {
     	$script_vars['selection'] = $task_array['selection'];
-        $arg5 = $task_array['selection'];
+        $arg4 = $task_array['selection'];
     } else {
-        $arg5 = null;
+        $arg4 = null;
     } // if
     if (isset($task_array['search'])) {
     	$script_vars['search'] = $task_array['search'];
-        $arg6 = $task_array['search'];
+        $arg5 = $task_array['search'];
     } else {
-        $arg6 = null;
+        $arg5 = null;
     } // if
     if (isset($task_array['settings'])) {
         $script_vars['settings'] = $task_array['settings'];
         parse_str($task_array['settings'], $settings_array);
-        $arg7 = $task_array['settings'];
+        $arg6 = $task_array['settings'];
     } else {
-        $arg7 = null;
+        $arg6 = null;
     } // if
     if (isset($task_array['sql_orderby'])) {
     	$script_vars['orderby'] = $task_array['sql_orderby'];
-        $arg8 = $task_array['sql_orderby'];
+        $arg7 = $task_array['sql_orderby'];
     } else {
-        $arg8 = null;
+        $arg7 = null;
     } // if
     if (isset($task_array['sql_orderby_seq'])) {
     	$script_vars['orderby_seq'] = $task_array['sql_orderby_seq'];
-        $arg9 = $task_array['sql_orderby_seq'];
+        $arg8 = $task_array['sql_orderby_seq'];
     } else {
-        $arg9 = null;
+        $arg8 = null;
     } // if
     // pass these values as extra arguments in case they are not picked up from the session data
-    $extra_args = "\"$arg4\" \"$arg5\" \"$arg6\" \"$arg7\"";
+    $extra_args = "\"$arg3\" \"$arg4\" \"$arg5\" \"$arg6\"";
 
     // load parameters into session data for the background script
     $task_id = $task_array['task_id'];
@@ -2067,7 +2056,7 @@ function runInBackground ($task_array, $save_script_vars)
         // this code is for Windoze
         if (defined('PATH_TO_PHP_EXECUTABLE')) {
             $php_exe = PATH_TO_PHP_EXECUTABLE;
-        }else {
+        } else {
             $php_exe = 'php.exe';
         } // if
         //$settings_array['rdc_wait'] = true;
@@ -2117,6 +2106,45 @@ function runInBackground ($task_array, $save_script_vars)
     return $errors;
 
 } // runInBackground
+
+// ****************************************************************************
+function restartBackgroundTask ($script_id)
+// restart a background task.
+{
+    $arg1 = session_name();
+    $arg2 = session_id();
+    $arg3 = $GLOBALS['where'];
+    $arg4 = $GLOBALS['selection'];
+    $arg5 = $GLOBALS['search'];
+    $arg6 = http_build_query($GLOBALS['settings']);
+
+    $extra_args = "\"$arg3\" \"$arg4\" \"$arg5\" \"$arg6\"";
+
+    // run this program in the background via the command line
+    if (preg_match('/^(linux|unix)/i', PHP_OS)) {
+        // start script, but do not wait for it to finish
+        $command_line = "/usr/bin/php '$script_id' $arg1 $arg2 $extra_args >/dev/null &";
+        $result = exec($command_line);
+
+    } else {
+        // this code is for Windoze
+        if (defined('PATH_TO_PHP_EXECUTABLE')) {
+            $php_exe = PATH_TO_PHP_EXECUTABLE;
+        } else {
+            $php_exe = 'php.exe';
+        } // if
+
+        // start script, but do not wait for it to finish
+        $command_line = "start $php_exe \"$script_id\" $arg1 $arg2 $extra_args";
+        if ($resource = popen($command_line, "r")) {
+            //$message = fread($resource, 1024);
+        } // if
+        pclose($resource);
+    } // if
+
+    exit;
+
+} // restartBackgroundTask
 
 // ****************************************************************************
 function scriptNext ($task_id, $where=null, $selection=null, $task_array=array(), $search=null)
@@ -2325,7 +2353,7 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     if (!isset($task_array['script_id'])) {
         // $script_id not supplied yet - so translate $task_id into $script_id
-        $taskobj =& RDCsingleton::getInstance('mnu_task');
+        $taskobj = RDCsingleton::getInstance('mnu_task');
         $task_array = $taskobj->checkSelection($task_id);
         $errors = $taskobj->getErrors();
         if ($errors) {
@@ -2422,6 +2450,9 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
             $script_vars['task_id_run_at_cancel_context'] = $where;
         } // if
 
+        //if (!empty($task_array['task_desc'])) {
+        //    $script_vars['title'] = $task_array['task_desc'];
+        //} // if
         if (!empty($task_array['task_name'])) {
             $script_vars['title'] = $task_array['task_name'];
         } // if
@@ -2811,6 +2842,29 @@ function scriptRestart (&$object, $query_string=null)
     $errors = scriptNext($GLOBALS['task_id'], null, null, $task_array);
 
 } // scriptRestart
+
+// ****************************************************************************
+function setUserLanguage ()
+// set the user's language (used to access data which is available in different languages)
+{
+    if (empty($_SESSION['user_language']) AND !empty($_SESSION['supported_languages'])) {
+        $found_lang = matchBrowserLanguage($_SESSION['user_language_array'], $_SESSION['supported_languages']);
+        if (!empty($found_lang)) {
+            $_SESSION['user_language'] = $found_lang;
+        } // if
+    } // if
+
+    if (empty($_SESSION['user_language']) AND !empty($_SESSION['default_language'])) {
+        $_SESSION['user_language'] = $_SESSION['default_language'];
+    } // if
+
+    if (empty($_SESSION['user_language'])) {
+        $_SESSION['user_language'] = 'en';
+    } // if
+
+    return;
+
+} // setUserLanguage
 
 // ****************************************************************************
 function updatePageStack ($task_id, $task_name, $script_id)

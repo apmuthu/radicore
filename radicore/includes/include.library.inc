@@ -80,7 +80,7 @@ if (!function_exists('adjustDate')) {
     // adjust a date value by a specified number of units (days, weeks, months or years).
     // Note that the adjustment may be negative.
     {
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         if (isset($GLOBALS['date_format'])) {
             $dateobj->date_format = $GLOBALS['date_format'];
@@ -290,7 +290,7 @@ if (!function_exists('array_update_associative')) {
             $array2 = $array2[key($array2)];
         } // if
 
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
 
         foreach ($array2 as $fieldname => $fieldvalue) {
             if (array_key_exists($fieldname, $array1)) {
@@ -1270,7 +1270,7 @@ if (!function_exists('convertTZdate')) {
         if (empty($date)) {
             return $date;  // no conversion possible
         } else {
-            $dateobj =& RDCsingleton::getInstance('date_class');
+            $dateobj = RDCsingleton::getInstance('date_class');
             //$date    = $dateobj->getInternalDate($date);
             try {
                 $date = $dateobj->getInternalDate($date);
@@ -1318,7 +1318,7 @@ if (!function_exists('convertTZtime')) {
         if (empty($date)) {
             $date = date('Y-m-d');  // default to current server date
         } else {
-            $dateobj =& RDCsingleton::getInstance('date_class');
+            $dateobj = RDCsingleton::getInstance('date_class');
             $date    = $dateobj->getInternalDate($date);
         } // if
 
@@ -1384,7 +1384,7 @@ if (!function_exists('dateDifference')) {
     function dateDifference ($date1, $date2)
     // calculate the difference between two dates in days
     {
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
         $date1 = $dateobj->getInternalDate($date1);
         $date2 = $dateobj->getInternalDate($date2);
 
@@ -1413,7 +1413,7 @@ if (!function_exists('dateDiff_YYMM')) {
     function dateDiff_YYMM ($date1, $date2)
     // calculate the difference between two dates in years and months
     {
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
         $date1 = $dateobj->getInternalDate($date1);
         $date2 = $dateobj->getInternalDate($date2);
 
@@ -2088,7 +2088,7 @@ END_OF_REGEX;
         $array_out = array();
         foreach ($array2 as $rownum => $rowdata) {
             // look for 'rdc_table_name' and change name of 'id' column if necessary
-            $arrayX = where2array($rowdata);
+            $arrayX = where2array($rowdata, false, false);
             $arrayX = array_change_key_case($arrayX, CASE_LOWER);
             if (!empty($arrayX['rdc_table_name'])) {
                 if ($arrayX['rdc_table_name'] == $tablename AND is_object($object)) {
@@ -3221,17 +3221,108 @@ if (!function_exists('')) {
 } // if
 
 // ****************************************************************************
+if (!function_exists('getFileStructure')) {
+    function getFileStructure ($filename, $directory)
+    // load the contents of the $structure variable from a disk file.
+    {
+        if (!empty($GLOBALS['project_code'])) {
+            // see if a customised version of this file exists for this project
+            $custom_dir = $directory .'/custom-processing/' .$GLOBALS['project_code'];
+            $fname = getLanguageFile('cp_'.$filename, $custom_dir, true);
+        } // if
+
+        if (empty($fname)) {
+            // locate file in subdirectory which matches user's language code
+            $fname = getLanguageFile($filename, $directory);
+        } // if
+
+        require $fname;              // import contents of disk file
+        if (empty($structure)) {
+            // 'File $fname is empty'
+            trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+        } // if
+
+        return $structure;
+
+    } // getFileStructure
+} // if
+
+// ****************************************************************************
+if (!function_exists('getForeignKeyValues')) {
+    function getForeignKeyValues ($parentOBJ, $childOBJ)
+    // identify any mapping between the column names for the foreign key on the
+    // CHILD object and the corresponding primary/unique key on the PARENT object.
+    {
+        if (!is_object($parentOBJ)) {
+            // "1st argument must be an object"
+            trigger_error(getLanguageText('sys0227'), E_USER_ERROR);
+        } // if
+
+        if (!is_object($childOBJ)) {
+            // "2rd argument must be an object"
+            trigger_error(getLanguageText('sys0228'), E_USER_ERROR);
+        } // if
+
+        $parent_table = $parentOBJ->getClassName(); // may be a sub-class providing an alias name
+        $child_table  = $childOBJ->tablename;       // use actual name
+        $parent_data  = $parentOBJ->getFieldArray();
+        if (is_long(key($parent_data))) {
+            $parent_data = array_shift($parent_data);
+        } // if
+
+        $found = false;
+        // first look for alias names
+        foreach ($childOBJ->parent_relations as $reldata) {
+            if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
+                $found = true;
+                break;
+            } // if
+        } // foreach
+
+        if (!$found) {
+            reset($childOBJ->parent_relations);
+            // now look for a non-aliased name
+            foreach ($childOBJ->parent_relations as $reldata) {
+                if ($reldata['parent'] == $parent_table) {
+                    $found = true;
+                    break;
+                } // if
+            } // foreach
+        } // if
+
+        $fkeyvalues  = array();
+
+        if ($found) {
+            foreach ($reldata['fields'] as $child_field => $parent_field) {
+                // swap the field names between the PARENT and CHILD tables
+                if (array_key_exists($parent_field, $parent_data)) {
+                    $fkeyvalues[$child_field] = $parent_data[$parent_field];
+                } // if
+            } // foreach
+        } else {
+            // no relationship found, so default to primary key of parent
+            $pkeynames = $parentOBJ->getPkeyNamesAdjusted();
+            foreach ($pkeynames as $fieldname) {
+                if (array_key_exists($fieldname, $parent_data)) {
+                    $fkeyvalues[$fieldname] = $parent_data[$fieldname];
+                } // if
+            } // foreach
+        } // if
+
+        return $fkeyvalues;
+
+    } // getForeignKeyValues
+} // if
+
+// ****************************************************************************
 if (!function_exists('getLanguageArray')) {
     function getLanguageArray ($id)
     // get named array from the language file.
     {
-        static $array1;         // for sys.language_array.inc
-        static $array2;         // for language_array.inc
+        static $system_msgs;    // for global messages (from sys.language_array.inc)
+        static $subsystem_msgs; // for subsystem messages (from language_arrayinc)
         static $language;       // current language
-        static $curr_dir;       // current directory used for $array2 contents
-        static $curr_project;   // current project code for custom processing
-        static $array3;         // for custom sys.language_array.inc
-        static $array4;         // for custom language_array.inc
+        static $curr_dir;       // current directory
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
@@ -3255,8 +3346,7 @@ if (!function_exists('getLanguageArray')) {
         } // if
         if (!empty($curr_dir) AND $curr_dir != $cwd) {
             $cwd = $curr_dir;
-            $res = chdir($curr_dir);
-            $array2   = false;  // cause this to be reloaded
+            $res = chdir($cwd);
         } else {
             $curr_dir = $cwd;
         } // if
@@ -3264,92 +3354,134 @@ if (!function_exists('getLanguageArray')) {
             $curr_dir = dirname($curr_dir);  // remove 'text' directory
         } // if
 
-        // if language has changed then reload contents of both arrays
+        // if language has changed then reload contents of global array
         if (!empty($GLOBALS['party_language'])) {
             if ($GLOBALS['party_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $GLOBALS['party_language'];
             } // if
         } elseif (!empty($_SESSION['user_language'])) {
             if ($_SESSION['user_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $_SESSION['user_language'];
             } // if
         } elseif (!empty($_SESSION['default_language'])) {
             if ($_SESSION['default_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $_SESSION['default_language'];
             } // if
         } else {
             $language = 'en';
         } // if
 
-        if (!is_array($array1)) {
-            $array1 = array();
-            // find file in a language subdirectory
-            if (isDirectoryValid($curr_dir.'/../menu/text')) {
-                $dir = realpath($curr_dir.'/../menu/text');
-            } else {
-                $dir = realpath('./text');
-            } // if
-            $fname = getLanguageFile('sys.language_array.inc', $dir);
-            $array1 = require $fname;  // import contents of disk file
-            if (empty($array1)) {
-                //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-                trigger_error("File $fname is empty", E_USER_ERROR);
-            } // if
-            unset($array);
-        } // if
+        $subsystem_id = basename($curr_dir);
 
-        if (!is_array($array2)) {
-            $array2 = array();
-            // find file in a language subdirectory
-            $dir = realpath($curr_dir.'/text');
-            $fname = getLanguageFile('language_array.inc', $dir);
-            $array2 = require $fname;  // import contents of disk file
-            if (empty($array2)) {
-                // 'File $fname is empty'
-                trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-            } // if
-            unset($array);
+        // load global messages if not already loaded
+        if (!is_array($system_msgs)) {
+            $system_msgs = array();
         } // if
-
-        if (!empty($GLOBALS['project_code'])) {
-            if ($GLOBALS['project_code'] != $curr_project) {
-                $array3 = array();
-                $array4 = array();
-            } // if
-            // now look for a file of custom messages
-            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
-            if (!empty($dir)) {
-                $fname = getLanguageFile('sys.language_array.inc', $dir, true);
-                if ($fname AND empty($array3)) {
-                    $array3 = require $fname;  // import contents of disk file
-                    // custom values replace standard values
-                    $array1 = array_merge($array1, $array3);
-                    //unset($array3);
-                } // if
-                $fname = getLanguageFile('language_array.inc', $dir, true);
-                if ($fname AND empty($array4)) {
-                    $array4 = require $fname;  // import contents of disk file
-                    // custom values replace standard values
-                    $array2 = array_merge($array2, $array4);
-                    //unset($array3);
-                } // if
-            } // if
-            $curr_project = $GLOBALS['project_code'];
-        } // if
-
-        // perform lookup for specified $id ($array2 first, then $array1)
-        if (isset($array2[$id])) {
-            $result = $array2[$id];
-        } elseif (isset($array1[$id])) {
-            $result = $array1[$id];
+        // find file in a language subdirectory
+        if (isDirectoryValid($curr_dir.'/../menu/text')) {
+            $dir = realpath($curr_dir.'/../menu/text');
         } else {
-            $result = null;
+            $dir = realpath('./text');
+        } // if
+        if ($dir) {
+            $fname = getLanguageFile('sys.language_array.inc', $dir);
+            if ($fname) {
+                $file_language = basename(dirname($fname));
+                if (!array_key_exists($language, $system_msgs)) {
+                    $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
+                    if (empty($array)) {
+                        //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                        trigger_error("File $fname is empty", E_USER_ERROR);
+                    } // if
+                    unset($array);
+
+                    if (!empty($GLOBALS['project_code'])) {
+                        // load custom messages for this project
+                        $dir = realpath($dir.'/custom-processing/'.$GLOBALS['project_code']);
+                        if (!empty($dir)) {
+                            $fname = getLanguageFile('sys.language_array.inc', $dir, true);
+                            if ($fname) {
+                                //$file_language = basename(dirname($fname));  // use same language as standard file
+                                $custom = require_once $fname;  // import contents of disk file
+                                // merge with standard messages, overwriting any duplicates
+                                $system_msgs[$file_language] = array_merge($system_msgs[$file_language], $custom);
+                                unset($array);
+                            } // if
+                        } // if
+                    } // if
+                } // if
+            } // if
+        } // if
+
+        // load subsystem messages if not already loaded
+        if (!is_array($subsystem_msgs)) {
+            $subsystem_msgs = array();
+        } // if
+        $dir = realpath($curr_dir.'/text');
+        if ($dir) {
+            $fname = getLanguageFile('language_array.inc', $dir);
+            if ($fname) {
+                $file_language = basename(dirname($fname));
+                if (!array_key_exists($subsystem_id, $subsystem_msgs)
+                OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+                    // import contents of disk file
+                    $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
+                    if (empty($array)) {
+                        // 'File $fname is empty'
+                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    } // if
+                    unset($array);
+
+                    if (!empty($GLOBALS['project_code'])) {
+                        // load custom messages for this project
+                        $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+                        if (!empty($dir)) {
+                            $fname = getLanguageFile('language_array.inc', $dir, true);
+                            if ($fname) {
+                                //$file_language = basename(dirname($fname));  // use same language as standard file
+                                $custom = require_once $fname;  // import contents of disk file
+                                // merge with standard messages, overwriting any duplicates
+                                $standard =& $subsystem_msgs[$subsystem_id][$file_language];
+                                $standard = array_merge($standard, $custom);
+                                unset($array);
+                            } // if
+                        } // if
+                    } // if
+                } // if
+            } // if
+        } // if
+
+        if (empty($file_language)) {
+            $file_language = $language;
+        } // if
+
+        // perform lookup for specified $id ($subsystem_msgs first, then $system_msgs)
+        $result = null;
+        if (array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$language])) {
+                $result = $subsystem_msgs[$subsystem_id][$language][$id];
+            } // if
+        } // if
+        if (empty($result) AND $file_language != $language) {
+            if (array_key_exists($file_language, $subsystem_msgs[$subsystem_id])) {
+                if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$file_language])) {
+                    $result = $subsystem_msgs[$subsystem_id][$file_language][$id];
+                } // if
+            } // if
+        } // if
+        if (empty($result)) {
+            if (array_key_exists($language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$language])) {
+                    $result = $system_msgs[$language][$id];
+                } // if
+            } // if
+        } // if
+        if (empty($result) AND $file_language != $language) {
+            if (array_key_exists($file_language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$file_language])) {
+                    $result = $system_msgs[$file_language][$id];
+                } // if
+            } // if
         } // if
         if (empty($result)) {
             // nothing found, so return original input as an array
@@ -3439,14 +3571,10 @@ if (!function_exists('getLanguageText')) {
     function getLanguageText ($id, $arg1=null, $arg2=null, $arg3=null, $arg4=null, $arg5=null)
     // get text from the language file and include up to 5 arguments.
     {
-        static $array1;         // for sys.language_text.inc (global messages)
-        static $array2;         // for language_text.inc (subsystem messages)
+        static $system_msgs;    // for global messages (from sys.language_text.inc)
+        static $subsystem_msgs; // for subsystem messages (from language_text.inc)
         static $language;       // current language
-        static $curr_dir;       // current directory used for $array2 contents
-        static $curr_project;   // current project code for custom processing
-        static $array3;         // for custom sys.language_text.inc
-        static $array4;         // for custom language_text.inc
-        static $array5;         // for 'audit/text/language_text.inc'
+        static $curr_dir;       // current directory
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
         if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
@@ -3469,13 +3597,8 @@ if (!function_exists('getLanguageText')) {
             $curr_dir = $dir_script;
         } // if
         if (!empty($curr_dir) AND $curr_dir != $cwd) {
-            if (basename($curr_dir) == 'audit') {
-                // this data will be in $array5
-            } else {
-                $cwd = $curr_dir;
-                $res = chdir($cwd);
-                $array2   = false;  // cause this to be reloaded
-            } // if
+            $cwd = $curr_dir;
+            $res = chdir($cwd);
         } else {
             $curr_dir = $cwd;
         } // if
@@ -3483,37 +3606,36 @@ if (!function_exists('getLanguageText')) {
             $curr_dir = dirname($curr_dir);  // remove 'text' directory
         } // if
 
-        // if language has changed then reload contents of both arrays
+        // if language has changed then reload contents of global array
         if (!empty($GLOBALS['party_language'])) {
             if ($GLOBALS['party_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $GLOBALS['party_language'];
             } // if
         } elseif (!empty($_SESSION['user_language'])) {
             if ($_SESSION['user_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $_SESSION['user_language'];
             } // if
         } elseif (!empty($_SESSION['default_language'])) {
             if ($_SESSION['default_language'] != $language) {
-                $array1 = false;
-                $array2 = false;
                 $language = $_SESSION['default_language'];
             } // if
         } else {
             $language = 'en';
         } // if
 
-        if (!is_array($array1)) {
-            $array1 = array();
-            // find file in a language subdirectory
-            if (isDirectoryValid($curr_dir.'/../menu/text')) {
-                $dir = realpath($curr_dir.'/../menu/text');
-            } else {
-                $dir = realpath('./text');
-            } // if
+        $subsystem_id = basename($curr_dir);
+
+        // load global messages if not already loaded
+        if (!is_array($system_msgs)) {
+            $system_msgs = array();
+        } // if
+        // find file in a language subdirectory
+        if (isDirectoryValid($curr_dir.'/../menu/text')) {
+            $dir = realpath($curr_dir.'/../menu/text');
+        } else {
+            $dir = realpath('./text');
+        } // if
+        if ($dir) {
             if (defined('RDC_WITHIN_ERROR_HANDLER')) {
                 // do not fail if this file is not found
                 $fname = getLanguageFile('sys.language_text.inc', $dir, true);
@@ -3521,103 +3643,110 @@ if (!function_exists('getLanguageText')) {
                 $fname = getLanguageFile('sys.language_text.inc', $dir);
             } // if
             if ($fname) {
-                $array1 = require $fname;  // import contents of disk file
-                if (empty($array1)) {
-                    //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-                    trigger_error("File $fname is empty", E_USER_ERROR);
+                $file_language = basename(dirname($fname));
+                if (!array_key_exists($language, $system_msgs)) {
+                    $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
+                    if (empty($array)) {
+                        //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                        trigger_error("File $fname is empty", E_USER_ERROR);
+                    } // if
+                    unset($array);
+                    // store this as the default language for this session
+                    $language = $file_language;
+                    // use this language in the XSL transformation
+                    $GLOBALS['output_language'] = $language;
+
+                    if (!empty($GLOBALS['project_code'])) {
+                        // load custom messages for this project
+                        $dir = realpath($dir.'/custom-processing/'.$GLOBALS['project_code']);
+                        if (!empty($dir)) {
+                            $fname = getLanguageFile('sys.language_text.inc', $dir, true);
+                            if ($fname) {
+                                //$file_language = basename(dirname($fname));  // use same language as standard file
+                                $custom = require_once $fname;  // import contents of disk file
+                                // merge with standard messages, overwriting any duplicates
+                                $system_msgs[$file_language] = array_merge($system_msgs[$file_language], $custom);
+                                unset($array);
+                            } // if
+                        } // if
+                    } // if
                 } // if
-                unset($array);
-                // extract identity of language subdirectory
-                $language = basename(dirname($fname));
-                // use this language in the XSL transformation
-                $GLOBALS['output_language'] = $language;
-            } else {
-                $array1 = array();
             } // if
         } // if
 
+        // load subsystem messages if not already loaded
+        if (!is_array($subsystem_msgs)) {
+            $subsystem_msgs = array();
+        } // if
         $dir = realpath($curr_dir.'/text');
-        if (basename($curr_dir) == 'audit') {
-            if (!is_array($array5)) {
-                $array5 = array();
-                // find file in a language subdirectory
-                $dir = realpath($curr_dir.'/text');
-                if (defined('RDC_WITHIN_ERROR_HANDLER')) {
-                    // do not fail if this file is not found
-                    $fname = getLanguageFile('language_text.inc', $dir, true);
-                } else {
-                    $fname = getLanguageFile('language_text.inc', $dir);
-                } // if
-                if ($fname) {
-                    $array5 = require $fname;  // import contents of disk file
-                    if (empty($array5)) {
-                        // 'File $fname is empty'
-                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-                    } // if
-                    unset($array);
-                } else {
-                    $array5 = array();
-                } // if
-            } // if
-        } else {
-            if (!is_array($array2)) {
-                $array2 = array();
-                // find file in a language subdirectory
-                $dir = realpath($curr_dir.'/text');
-                if (defined('RDC_WITHIN_ERROR_HANDLER')) {
-                    // do not fail if this file is not found
-                    $fname = getLanguageFile('language_text.inc', $dir, true);
-                } else {
-                    $fname = getLanguageFile('language_text.inc', $dir);
-                } // if
-                if ($fname) {
-                    $array2 = require $fname;  // import contents of disk file
-                    if (empty($array2)) {
-                        // 'File $fname is empty'
-                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-                    } // if
-                    unset($array);
-                } else {
-                    $array2 = array();
-                } // if
-            } // if
-        } // if
-
-        if (!empty($GLOBALS['project_code'])) {
-            if ($GLOBALS['project_code'] != $curr_project) {
-                $array3 = array();
-                $array4 = array();
-            } // if
-            // now look for a file of custom messages
-            $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
-            if (!empty($dir)) {
-                $fname = getLanguageFile('sys.language_text.inc', $dir, true);
-                if ($fname AND empty($array3)) {
-                    $array3 = require $fname;  // import contents of disk file
-                    // custom values replace standard values
-                    $array1 = array_merge($array1, $array3);
-                    //unset($array3);
-                } // if
+        if ($dir) {
+            if (defined('RDC_WITHIN_ERROR_HANDLER')) {
+                // do not fail if this file is not found
                 $fname = getLanguageFile('language_text.inc', $dir, true);
-                if ($fname AND empty($array4)) {
-                    $array4 = require $fname;  // import contents of disk file
-                    // custom values replace standard values
-                    $array2 = array_merge($array2, $array4);
-                    //unset($array3);
+            } else {
+                $fname = getLanguageFile('language_text.inc', $dir);
+            } // if
+            if ($fname) {
+                $file_language = basename(dirname($fname));
+                if (!array_key_exists($subsystem_id, $subsystem_msgs)
+                OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+                    // import contents of disk file
+                    $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
+                    if (empty($array)) {
+                        // 'File $fname is empty'
+                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    } // if
+                    unset($array);
+
+                    if (!empty($GLOBALS['project_code'])) {
+                        // load custom messages for this project
+                        $dir = realpath($curr_dir.'/text/custom-processing/'.$GLOBALS['project_code']);
+                        if (!empty($dir)) {
+                            $fname = getLanguageFile('language_text.inc', $dir, true);
+                            if ($fname) {
+                                //$file_language = basename(dirname($fname));  // use same language as standard file
+                                $custom = require_once $fname;  // import contents of disk file
+                                // merge with standard messages, overwriting any duplicates
+                                $subsystem_msgs[$subsystem_id][$file_language] = array_merge($subsystem_msgs[$subsystem_id][$file_language], $custom);
+                                unset($array);
+                            } // if
+                        } // if
+                    } // if
                 } // if
             } // if
-            $curr_project = $GLOBALS['project_code'];
         } // if
 
-        // perform lookup for specified $id ($array2 first, then $array1)
-        if (isset($array5[$id])) {
-            $string = $array5[$id];
-        } elseif (isset($array2[$id])) {
-            $string = $array2[$id];
-        } elseif (isset($array1[$id])) {
-            $string = $array1[$id];
-        } else {
-            $string = null;
+        if (empty($file_language)) {
+            $file_language = $language;
+        } // if
+
+        // perform lookup for specified $id ($subsystem_msgs first, then $system_msgs)
+        $string = null;
+        if (array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$language])) {
+                $string = $subsystem_msgs[$subsystem_id][$language][$id];
+            } // if
+        } // if
+        if (empty($string) AND $file_language != $language) {
+            if (array_key_exists($file_language, $subsystem_msgs[$subsystem_id])) {
+                if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$file_language])) {
+                    $string = $subsystem_msgs[$subsystem_id][$file_language][$id];
+                } // if
+            } // if
+        } // if
+        if (empty($string)) {
+            if (array_key_exists($language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$language])) {
+                    $string = $system_msgs[$language][$id];
+                } // if
+            } // if
+        } // if
+        if (empty($string) AND $file_language != $language) {
+            if (array_key_exists($file_language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$file_language])) {
+                    $string = $system_msgs[$file_language][$id];
+                } // if
+            } // if
         } // if
         if (empty($string)) {
             // nothing found, so return original $id
@@ -3692,7 +3821,7 @@ if (!function_exists('getPatternId')) {
 
         if (!preg_match('/(\.php)$/i', $script_id)) {
         	// does not end in '.php', so it is a task_id
-        	$dbobject =& RDCsingleton::getInstance('mnu_task');
+        	$dbobject = RDCsingleton::getInstance('mnu_task');
         	$data = $dbobject->getData("task_id='$script_id'");
         	unset($dbobject);
         	if (empty($data)) {
@@ -3764,100 +3893,6 @@ if (!function_exists('getPostArray')) {
         return $array_out;
 
     } // getPostArray
-} // if
-
-// ****************************************************************************
-if (!function_exists('getFileStructure')) {
-    function getFileStructure ($filename, $directory)
-    // load the contents of the $structure variable from a disk file.
-    {
-        if (!empty($GLOBALS['project_code'])) {
-        	// see if a customised version of this file exists for this project
-        	$custom_dir = $directory .'/custom-processing/' .$GLOBALS['project_code'];
-        	$fname = getLanguageFile('cp_'.$filename, $custom_dir, true);
-        } // if
-
-        if (empty($fname)) {
-        	// locate file in subdirectory which matches user's language code
-            $fname = getLanguageFile($filename, $directory);
-        } // if
-
-        require $fname;              // import contents of disk file
-        if (empty($structure)) {
-        	// 'File $fname is empty'
-            trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
-        } // if
-
-        return $structure;
-
-    } // getFileStructure
-} // if
-
-// ****************************************************************************
-if (!function_exists('getForeignKeyValues')) {
-    function getForeignKeyValues ($parentOBJ, $childOBJ)
-    // identify any mapping between the column names for the foreign key on the
-    // CHILD object and the corresponding primary/unique key on the PARENT object.
-    {
-        if (!is_object($parentOBJ)) {
-            // "1st argument must be an object"
-            trigger_error(getLanguageText('sys0227'), E_USER_ERROR);
-        } // if
-
-        if (!is_object($childOBJ)) {
-            // "2rd argument must be an object"
-            trigger_error(getLanguageText('sys0228'), E_USER_ERROR);
-        } // if
-
-        $parent_table = $parentOBJ->getClassName(); // may be a sub-class providing an alias name
-        $child_table  = $childOBJ->tablename;       // use actual name
-        $parent_data  = $parentOBJ->getFieldArray();
-        if (is_long(key($parent_data))) {
-            $parent_data = array_shift($parent_data);
-        } // if
-
-        $found = false;
-        // first look for alias names
-        foreach ($childOBJ->parent_relations as $reldata) {
-            if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
-                $found = true;
-                break;
-            } // if
-        } // foreach
-
-        if (!$found) {
-            reset($childOBJ->parent_relations);
-            // now look for a non-aliased name
-            foreach ($childOBJ->parent_relations as $reldata) {
-                if ($reldata['parent'] == $parent_table) {
-                    $found = true;
-                    break;
-                } // if
-            } // foreach
-        } // if
-
-        $fkeyvalues  = array();
-
-        if ($found) {
-            foreach ($reldata['fields'] as $child_field => $parent_field) {
-                // swap the field names between the PARENT and CHILD tables
-                if (array_key_exists($parent_field, $parent_data)) {
-                    $fkeyvalues[$child_field] = $parent_data[$parent_field];
-                } // if
-            } // foreach
-        } else {
-            // no relationship found, so default to primary key of parent
-            $pkeynames = $parentOBJ->getPkeyNamesAdjusted();
-            foreach ($pkeynames as $fieldname) {
-                if (array_key_exists($fieldname, $parent_data)) {
-                    $fkeyvalues[$fieldname] = $parent_data[$fieldname];
-                } // if
-            } // foreach
-        } // if
-
-        return $fkeyvalues;
-
-    } // getForeignKeyValues
 } // if
 
 // ****************************************************************************
@@ -5049,26 +5084,12 @@ if (!function_exists('pasteData')) {
             } elseif ($fieldspec[$fieldname]['type'] == 'date' AND $array1[$fieldname] > $array2[$fieldname]) {
                 $reason = 8; // do not overwrite with an earlier date
             } else {
+                // replace field contents with value copied from previous screen
                 $array1[$fieldname] = $array2[$fieldname];
-                // now look for parent relationships where this field is the foreign key
-                if (isset($dbobject->parent_relations)) {
-                    foreach ($dbobject->parent_relations as $parent) {
-                        foreach ($parent['fields'] as $fk_name => $pk_name) {
-                            // found, so initialise any fields obtained from the foreign table
-                            // so that they can be refreshed from the new parent record
-                            if ($fk_name == $fieldname AND !empty($parent['parent_field'])) {
-                                $array3 = explode(',', $parent['parent_field']);
-                                foreach ($array3 as $fname) {
-                                    $fname = trim($fname);
-                                    list($expression, $alias) = getFieldAlias3($fname);
-                                    $array1[$alias] = null;
-                                } // foreach
-                            } // if
-                        } // foreach
-                    } // foreach
-                } // if
             } // if
         } // foreach
+
+        $array1 = $dbobject->getForeignData($array1);  // retrieve values from foreign tables, if necessary
 
         return $array1;
 
@@ -5209,7 +5230,7 @@ if (!function_exists('qualifyField')) {
                 			    if ($fp = fopen($class, 'r', true)) {
                                 	fclose($fp);
                                 	// class exists, so inspect it
-                                	$dbobject =& RDCsingleton::getInstance($array_tablename, null, false);
+                                	$dbobject = RDCsingleton::getInstance($array_tablename, null, false);
                                 	$table_fieldspec = $dbobject->fieldspec;
                                 	unset($dbobject);
                 			    } else {
@@ -6698,6 +6719,7 @@ if (!function_exists('setColumnAttributes')) {
                                     $screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
                                 } else {
                 			        $screen_structure[$zone]['fields'][$col][$attr_name] = $attr_value;
+                                    $screen_structure[$zone]['columns'][$col][$attr_name] = $attr_value;
                                 } // if
                 			} // foreach
                 		} // if
@@ -6737,7 +6759,7 @@ if (!function_exists('setSessionHandler')) {
     function setSessionHandler ()
     // custom session handler uses a database table, not disk files.
     {
-        $handler =& RDCsingleton::getInstance('php_session');
+        $handler = RDCsingleton::getInstance('php_session');
         session_set_save_handler(array(&$handler, 'open'),
                                  array(&$handler, 'close'),
                                  array(&$handler, 'read'),

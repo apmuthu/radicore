@@ -50,7 +50,7 @@ class product_feature extends Default_Table
         //DebugBreak();
         if (!isset($fieldarray['measurement_reqd'])) {
             require_once 'classes/product_feature_category.class.inc';
-            $dbobject =& RDCsingleton::getInstance('product_feature_category');
+            $dbobject = RDCsingleton::getInstance('product_feature_category');
             $dbobject->sql_select = 'measurement_reqd';
             $data = $dbobject->getData("prod_feature_cat_id='{$fieldarray['prod_feature_cat_id']}'");
             $fieldarray = array_merge($fieldarray, $data[0]);
@@ -80,14 +80,14 @@ class product_feature extends Default_Table
     {
         if (!array_key_exists('prod_feature_cat_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& RDCsingleton::getInstance('product_feature_category');
+            $dbobject = RDCsingleton::getInstance('product_feature_category');
             $data_array = $dbobject->getValRep('prod_feaure_cat_id');
             $this->lookup_data['prod_feature_cat_id'] = $data_array;
         } // if
 
         if (!array_key_exists('uom_id', $this->lookup_data)) {
             // get contents of foreign table and add to lookup array
-            $dbobject =& RDCsingleton::getInstance('unit_of_measure');
+            $dbobject = RDCsingleton::getInstance('unit_of_measure');
             $data_array = $dbobject->getValRep('uom_id');
             $this->lookup_data['uom_id'] = $data_array;
         } // if

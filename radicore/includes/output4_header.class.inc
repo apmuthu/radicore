@@ -60,7 +60,7 @@ class output4_header extends Default_Table
             $child_data = $this->child_object->getFieldarray();
 
             $this->child_object->startTransaction();
-            $dbobject =& RDCsingleton::getInstance('mnu_saved_selection');
+            $dbobject = RDCsingleton::getInstance('mnu_saved_selection');
             $selection_id = $dbobject->saveSelection($child_data,
                                                      $fieldarray['rdc_selection_desc'],
                                                      $_SESSION['logon_user_id'],
@@ -90,7 +90,7 @@ class output4_header extends Default_Table
             $child_data = $this->child_object->getFieldarray();
 
             $this->child_object->startTransaction();
-            $dbobject =& RDCsingleton::getInstance('mnu_saved_selection');
+            $dbobject = RDCsingleton::getInstance('mnu_saved_selection');
             $result = $dbobject->updateSelection($fieldarray['selection_id'],
                                                  $child_data,
                                                  $fieldarray['rdc_selection_desc'],
@@ -139,7 +139,7 @@ class output4_header extends Default_Table
         } // if
 
         // get array from foreign table and put into LOOKUP_DATA
-        $dbobject =& RDCsingleton::getInstance('mnu_saved_selection');
+        $dbobject = RDCsingleton::getInstance('mnu_saved_selection');
         $array = array();
         $where1 = "user_id='{$_SESSION['logon_user_id']}' AND task_id='{$GLOBALS['task_id']}'";
         $data = $dbobject->getData($where1);
@@ -164,7 +164,7 @@ class output4_header extends Default_Table
 
         if (isset($fieldarray['button_group']['rdc_view_selections'])) {
             // option selected, but does the user have permission to access this task?
-            $taskobj =& RDCsingleton::getInstance('mnu_task');
+            $taskobj = RDCsingleton::getInstance('mnu_task');
             $task_array = $taskobj->checkSelection('mnu_saved_selection(list2)');
             if ($taskobj->errors) {
                 //$this->errors = $taskobj->errors;
@@ -185,7 +185,7 @@ class output4_header extends Default_Table
     {
         if (!empty($postarray['rdc_restore_selection'])) {
             $child_array = array();
-            $dbobject =& RDCsingleton::getInstance('mnu_saved_selection_data');
+            $dbobject = RDCsingleton::getInstance('mnu_saved_selection_data');
             $data = $dbobject->getData("selection_id='{$postarray['rdc_restore_selection']}'");
             if (!empty($data)) {
                 foreach ($data as $rownum => $rowdata) {

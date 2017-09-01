@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `help_text` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.help_text_alt
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `help_text_alt` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`language_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_account
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `mnu_account` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`rdcaccount_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_control
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `mnu_control` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`record_id`,`field_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_favourite
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `mnu_favourite` (
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`seq_no`),
   UNIQUE KEY `user_id_task_id` (`user_id`,`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_initial_value_role
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_role` (
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`role_id`,`task_id`,`field_id`),
   KEY `task_id` (`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_initial_value_user
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS `mnu_initial_value_user` (
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`task_id`,`field_id`),
   KEY `task_id` (`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_language
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `mnu_language` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`language_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_menu
@@ -137,14 +137,14 @@ CREATE TABLE IF NOT EXISTS `mnu_menu` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`menu_id`,`task_id_jnr`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_motd
 CREATE TABLE IF NOT EXISTS `mnu_motd` (
   `motd_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `motd_subject` varchar(80) NOT NULL,
-  `motd_message` text COLLATE utf8_unicode_ci,
+  `motd_message` text,
   `start_date` date NOT NULL DEFAULT '2000-01-01',
   `end_date` date DEFAULT '9999-12-31',
   `role_id` varchar(16) DEFAULT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS `mnu_motd` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`motd_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_nav_button
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `mnu_nav_button` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id_snr`,`task_id_jnr`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_pattern
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `mnu_pattern` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`pattern_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_role
@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_role_task
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role_task` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`role_id`,`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_role_taskfield
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS `mnu_role_taskfield` (
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`role_id`,`task_id`,`field_id`),
   KEY `task_id` (`task_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_saved_selection
@@ -242,7 +242,7 @@ CREATE TABLE IF NOT EXISTS `mnu_saved_selection` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`selection_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_saved_selection_data
@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS `mnu_saved_selection_data` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`selection_id`,`fieldname`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_subsystem
@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS `mnu_subsystem` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`subsys_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task
@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task` (
   PRIMARY KEY (`task_id`),
   KEY `subsys_id` (`subsys_id`),
   KEY `pattern_id` (`pattern_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task_alt
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_alt` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`language_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task_field
@@ -335,7 +335,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_field` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`field_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task_ip_address
@@ -347,7 +347,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_ip_address` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
+) COMMENT='List of valid IP addresses';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task_quicksearch
@@ -361,7 +361,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_quicksearch` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`field_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_task_quicksearch_alt
@@ -375,7 +375,7 @@ CREATE TABLE IF NOT EXISTS `mnu_task_quicksearch_alt` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`task_id`,`field_id`,`language_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_time_limit_role
@@ -396,7 +396,7 @@ CREATE TABLE IF NOT EXISTS `mnu_time_limit_role` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`role_id`,`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
+) COMMENT='Shows the allowed time period for logons';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_time_limit_user
@@ -417,7 +417,7 @@ CREATE TABLE IF NOT EXISTS `mnu_time_limit_user` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Shows the allowed time period for logons';
+) COMMENT='Shows the allowed time period for logons';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_todo
@@ -439,7 +439,7 @@ CREATE TABLE IF NOT EXISTS `mnu_todo` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`seq_no`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of "To Do" items';
+) COMMENT='List of "To Do" items';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_user
@@ -470,7 +470,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user` (
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `email_addr` (`email_addr`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_user_alt
@@ -483,7 +483,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user_alt` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`language_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+);
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_user_ip_address
@@ -495,7 +495,7 @@ CREATE TABLE IF NOT EXISTS `mnu_user_ip_address` (
   `revised_date` datetime DEFAULT NULL,
   `revised_user` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`user_id`,`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='List of valid IP addresses';
+) COMMENT='List of valid IP addresses';
 
 -- Data exporting was unselected.
 -- Dumping structure for table demo_menu.mnu_user_role

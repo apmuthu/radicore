@@ -59,7 +59,7 @@ class dict_table extends Default_Table
         		return $fieldarray;
         	} // if
 
-            $dbobject =& RDCsingleton::getInstance('dict_column');
+            $dbobject = RDCsingleton::getInstance('dict_column');
             $dbobject->sql_select = 'database_id, table_id, column_id, col_type';
 
             if (!empty($fieldarray['nameof_start_date'])) {
@@ -142,7 +142,7 @@ class dict_table extends Default_Table
 
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('dict_database');
+            $dbobject = RDCsingleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -150,7 +150,7 @@ class dict_table extends Default_Table
         if (!array_key_exists('table_id', $this->lookup_data)) {
             if (!empty($fieldarray['database_id'])) {
             	// get contents of foreign table and add as a LOOKUP list
-                $dbobject =& RDCsingleton::getInstance('dict_table');
+                $dbobject = RDCsingleton::getInstance('dict_table');
                 $array    = $dbobject->getValRep('table_id', "database_id='{$fieldarray['database_id']}'");
                 $this->lookup_data['table_id'] = $array;
             } // if
@@ -161,7 +161,7 @@ class dict_table extends Default_Table
                 $database_id = $fieldarray['database_id'];
                 $table_id    = $fieldarray['table_id'];
                 // get list of column names which could be aliases for start/end date
-                $dbobject =& RDCsingleton::getInstance('dict_column');
+                $dbobject = RDCsingleton::getInstance('dict_column');
                 $array    = $dbobject->getValRep('column_id', "database_id='$database_id' AND table_id='$table_id'");
                 $this->lookup_data['nameof_start_date'] = $array;
                 $this->lookup_data['nameof_end_date'] = $array;
@@ -337,7 +337,7 @@ class dict_table extends Default_Table
             $table_id     = $fieldarray['table_id'];
             $table_id_alt = $fieldarray['alt_language_table'];
 
-            $dbobject =& RDCsingleton::getInstance('dict_table');
+            $dbobject = RDCsingleton::getInstance('dict_table');
             $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt'");
             if (empty($data)) {
             	// "This table does not exist"
@@ -347,7 +347,7 @@ class dict_table extends Default_Table
 
             // obtain primary key of this table
             $this_primary_key = array();
-            $dbobject =& RDCsingleton::getInstance('dict_table_key');
+            $dbobject = RDCsingleton::getInstance('dict_table_key');
             $dbobject->sql_orderby = 'seq_in_index';
             $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id' AND key_name='PRIMARY'");
             foreach ($data as $rownum => $rowdata) {
@@ -356,7 +356,7 @@ class dict_table extends Default_Table
 
             // obtain primary key of alternate table
             $alt_primary_key = array();
-            $dbobject =& RDCsingleton::getInstance('dict_table_key');
+            $dbobject = RDCsingleton::getInstance('dict_table_key');
             $dbobject->sql_orderby = 'seq_in_index';
             $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt' AND key_name='PRIMARY'");
             foreach ($data as $rownum => $rowdata) {
@@ -386,7 +386,7 @@ class dict_table extends Default_Table
 
             // obtain field list from this table
             $this_fieldarray = array();
-            $dbobject =& RDCsingleton::getInstance('dict_column');
+            $dbobject = RDCsingleton::getInstance('dict_column');
             $dbobject->sql_orderby = 'column_seq';
             $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id'");
             foreach ($data as $rownum => $rowdata) {
@@ -406,7 +406,7 @@ class dict_table extends Default_Table
 
             // obtain field list from alternate table
             $alt_fieldarray = array();
-            $dbobject =& RDCsingleton::getInstance('dict_column');
+            $dbobject = RDCsingleton::getInstance('dict_column');
             $dbobject->sql_orderby = 'column_seq';
             $data = $dbobject->getData("database_id='$database_id' AND table_id='$table_id_alt'");
             foreach ($data as $rownum => $rowdata) {

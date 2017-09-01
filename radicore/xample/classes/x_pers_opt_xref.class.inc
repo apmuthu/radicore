@@ -52,7 +52,7 @@ class x_pers_opt_xref extends Default_Table
         if (preg_match('/star_sign/i', $this->sql_select)) {
             if (!array_key_exists('star_sign', $this->lookup_data)) {
                 // get lookup list for star_sign
-                $dbobject =& RDCsingleton::getInstance('x_person');
+                $dbobject = RDCsingleton::getInstance('x_person');
                 $data = $dbobject->getValRep('star_sign');
                 $this->lookup_data['star_sign'] = $data;
             } // if

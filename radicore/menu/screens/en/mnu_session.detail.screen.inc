@@ -11,5 +11,6 @@ $structure['main']['fields'][] = array('log_sql_query' => 'Log SQL queries?');
 $structure['main']['fields'][] = array('drop_saved_pages' => 'Drop saved pages?');
 $structure['main']['fields'][] = array('css_file' => 'Theme/Style');
 $structure['main']['fields'][] = array('allow_responsive_gui' => 'Allow Responsive GUI?');
+$structure['main']['fields'][] = array('turn_debugger_off' => 'Turn Debugger Off');
 
 ?>

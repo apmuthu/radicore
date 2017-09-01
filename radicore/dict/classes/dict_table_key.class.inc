@@ -78,7 +78,7 @@ class dict_table_key extends Default_Table
     {
         if (!array_key_exists('database_id', $this->lookup_data)) {
             // get contents of foreign table DATABASE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('dict_database');
+            $dbobject = RDCsingleton::getInstance('dict_database');
             $array    = $dbobject->getValRep('database_id');
             $this->lookup_data['database_id'] = $array;
         } // if
@@ -212,7 +212,7 @@ class dict_table_key extends Default_Table
         static $relobj;
         if (!is_object($relobj)) {
             //require_once 'classes/dict_related_column.class.inc';
-            $relobj =& RDCsingleton::getInstance('dict_related_column');
+            $relobj = RDCsingleton::getInstance('dict_related_column');
         } // if
 
         // if there are any relationships linked to this deleted column then they must also be deleted.
@@ -290,10 +290,10 @@ class dict_table_key extends Default_Table
         } // if
 
         //require_once 'classes/dict_relationship.class.inc';
-        $relobj =& RDCsingleton::getInstance('dict_relationship');
+        $relobj = RDCsingleton::getInstance('dict_relationship');
 
         //require_once 'classes/dict_related_column.class.inc';
-        $relcolobj =& RDCsingleton::getInstance('dict_related_column');
+        $relcolobj = RDCsingleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this table then this new column must be added.
         $database_id = $fieldarray['database_id'];
@@ -336,7 +336,7 @@ class dict_table_key extends Default_Table
         } // if
 
         //require_once 'classes/dict_related_column.class.inc';
-        $relobj =& RDCsingleton::getInstance('dict_related_column');
+        $relobj = RDCsingleton::getInstance('dict_related_column');
 
         // if there are any relationships linked to this updated column then they must also be updated.
         $database_id = $fieldarray['database_id'];

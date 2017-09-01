@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 require_once 'std.table.class.inc';
 class mnu_session extends Default_Table
@@ -49,6 +49,12 @@ class mnu_session extends Default_Table
             $fieldspec['allow_responsive_gui']  = array('type' => 'boolean');
         } // if
 
+        if (preg_match('/^(local\.)/i', $_SERVER['HTTP_HOST'])) {
+            $fieldspec['turn_debugger_off']  = array('type' => 'string',
+                                                     'control' => 'button');
+            $fieldspec['turn_debugger_off']['javascript'] = array('onclick' => "document.cookie='DBGSESSID=-1; path=/'; document.location.replace(document.location.href.replace(/DBGSESSID=[0-9A-Za-z]*/, 'DBGSESSID=-1'));");
+        } // if
+
         $this->fieldspec = $fieldspec;
 
 //        if (empty($this->css_files)) {
@@ -80,6 +86,12 @@ class mnu_session extends Default_Table
         closedir($dir);
         ksort($array);
         $this->lookup_data['css_file'] = $array;
+
+        if (empty($where) AND !empty($fieldarray)) {
+            if (preg_match('/^(local\.)/i', $_SERVER['HTTP_HOST'])) {
+                $fieldarray['turn_debugger_off'] = 'Turn Off Debugger';
+            } // if
+        } // if
 
         return $fieldarray;
 

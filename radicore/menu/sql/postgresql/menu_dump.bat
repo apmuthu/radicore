@@ -1,0 +1,2 @@
+"E:\Program Files\PostgreSQL\9.6\bin\pg_dump.exe" --file "E:/Users/Tony/export.sql" --host "localhost" --port "5432" --username "postgres" --no-password --verbose --role "postgres" --format=p --data-only --inserts --column-inserts --encoding "UTF8" --schema "menu" "radicore"
+pause

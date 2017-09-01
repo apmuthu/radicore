@@ -60,20 +60,20 @@ class wf_workitem extends Default_Table
         } // if
 
         if (!array_key_exists('role_id', $this->lookup_data)) {
-            $dbobject =& RDCsingleton::getInstance('mnu_role');
+            $dbobject = RDCsingleton::getInstance('mnu_role');
             $role_array = $dbobject->getValRep('role_id');
             $this->lookup_data['role_id'] = $role_array;
         } // if
 
         if (!array_key_exists('user_id', $this->lookup_data)) {
-            $dbobject =& RDCsingleton::getInstance('mnu_user');
+            $dbobject = RDCsingleton::getInstance('mnu_user');
             $role_array = $dbobject->getValRep('user_id');
             $this->lookup_data['user_id'] = $role_array;
         } // if
 
         if (!array_key_exists('workflow_id', $this->lookup_data)) {
             // get list of workflow names
-            $dbobject =& RDCsingleton::getInstance('wf_workflow');
+            $dbobject = RDCsingleton::getInstance('wf_workflow');
             $array = $dbobject->getValRep('workflow_id');
             $this->lookup_data['workflow_id'] = $array;
         } // if
@@ -81,7 +81,7 @@ class wf_workitem extends Default_Table
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table TRANSITION and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('wf_transition');
+            $dbobject = RDCsingleton::getInstance('wf_transition');
             $array = $dbobject->getValRep('transition_id', "workflow_id='$workflow_id'");
             $this->lookup_data['transition_id'] = $array;
             // set field control to dropdown
@@ -101,7 +101,7 @@ class wf_workitem extends Default_Table
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
             require_once 'classes/wf_case.class.inc';
-            $dbobject =& RDCsingleton::getInstance('wf_case');
+            $dbobject = RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
             if (!empty($array)) {
@@ -155,7 +155,7 @@ class wf_workitem extends Default_Table
 
         if ($item == 'transition_trigger') {
             require_once 'classes/wf_transition.class.inc';
-            $dbtransition =& RDCsingleton::getInstance('wf_transition');
+            $dbtransition = RDCsingleton::getInstance('wf_transition');
             $array = $dbtransition->getValRep($item);
             return $array;
         } // if

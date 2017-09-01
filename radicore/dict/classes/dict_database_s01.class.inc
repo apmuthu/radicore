@@ -135,7 +135,7 @@ class dict_dataBase_s01 extends dict_dataBase
     // perform custom processing after database record is inserted.
     {
         // import tables from database just processed
-        $tableobj =& RDCsingleton::getInstance('dict_table_s01');
+        $tableobj = RDCsingleton::getInstance('dict_table_s01');
 
         $array = $tableobj->getInitialDataMultiple($fieldarray);
         $array = $tableobj->insertMultiple($array);
@@ -331,9 +331,9 @@ class dict_dataBase_s01 extends dict_dataBase
         } // if
 
         if (isset($servernum)) {
-            $DML =& RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true);
+            $DML = RDCsingleton::getInstance('server__' .$servernum .'__' .$engine, $args, true);
         } else {
-            $DML =& RDCsingleton::getInstance($engine, $args, true);
+            $DML = RDCsingleton::getInstance($engine, $args, true);
         } // if
 
         return $DML;

@@ -25,7 +25,7 @@ $role_list = $_SESSION['role_list'];
 
 if (isset($_SESSION['motd']) AND empty($errors)) {
     unset($_SESSION['motd']);
-    $motd =& RDCsingleton::getInstance('mnu_motd');
+    $motd = RDCsingleton::getInstance('mnu_motd');
     $where = "motd_id IS NOT NULL AND start_date<='$today' AND end_date>='$today' AND (role_id IS NULL OR role_id IN ($role_list))";
     $count = $motd->getCount($where);
     if ($count > 0) {

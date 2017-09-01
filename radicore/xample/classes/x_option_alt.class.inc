@@ -30,7 +30,7 @@ class x_option_alt extends Default_Table
         if (!array_key_exists('language_id', $this->lookup_data)) {
             // get options for language_code
             //$array = getLanguageArray('languages');
-            $dbobject =& RDCsingleton::getInstance('mnu_language');
+            $dbobject = RDCsingleton::getInstance('mnu_language');
             $array = $dbobject->getValRep('language_id');
             $array = array_change_key_case($array, CASE_LOWER);
             $this->lookup_data['language_id'] = $array;

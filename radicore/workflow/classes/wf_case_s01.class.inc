@@ -60,7 +60,7 @@ class wf_case_s01 extends wf_case
         if ($fieldarray['case_status'] == 'CA') {
             $where = "case_id='{$fieldarray['case_id']}'";
             // this change must cascade down to other related tables
-            $dbobject =& RDCsingleton::getInstance('wf_token');
+            $dbobject = RDCsingleton::getInstance('wf_token');
             $dbobject->allow_db_function[] = 'cancelled_date';
             $msg = $dbobject->updateSelection($where." AND token_status IN ('FREE','LOCK')", "token_status='CANC', cancelled_date=NOW()");
             if ($dbobject->errors) {
@@ -70,7 +70,7 @@ class wf_case_s01 extends wf_case
             unset($dbobject);
             $this->messages[] = $msg;
 
-            $dbobject =& RDCsingleton::getInstance('wf_workitem');
+            $dbobject = RDCsingleton::getInstance('wf_workitem');
             $dbobject->allow_db_function[] = 'cancelled_date';
             $msg = $dbobject->updateSelection($where." AND workitem_status IN ('EN','IP')", "workitem_status='CA', cancelled_date=NOW()");
             if ($dbobject->errors) {

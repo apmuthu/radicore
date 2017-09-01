@@ -347,16 +347,9 @@
                   </xsl:when>
                   
                   <xsl:when test="@label-only">
-                    <xsl:choose>
-                      <xsl:when test="@align">
-                        <!-- combine 'align' attribute with 'label' class -->
-                        <xsl:attribute name="class"><xsl:value-of select="concat('label ',@align)"/></xsl:attribute>
-                      </xsl:when>
-                      <xsl:otherwise>
-                        <!-- use 'label' class on its own -->
-                        <xsl:attribute name="class">label</xsl:attribute>
-                      </xsl:otherwise>
-                    </xsl:choose>
+                                        
+                    <!-- combine 'label' with 'align' and 'class' attributes if they exist -->
+                    <xsl:attribute name="class"><xsl:value-of select="concat('label ', @align, ' ', @class)"/></xsl:attribute>
                     
                     <xsl:value-of select="@label"/> <!-- output the value for the label -->
                     
@@ -855,20 +848,23 @@
                 <!-- display this as an array of buttons -->
                 <xsl:for-each select="$item/array">
                   <xsl:call-template name="button">
-                    <xsl:with-param name="item" select="."/>
+                    <xsl:with-param name="item"     select="."/>
                     <xsl:with-param name="multiple" select="$multiple"/>
                     <xsl:with-param name="position" select="$position"/>
+                    <xsl:with-param name="subtype"  select="$item/@subtype"/>
                   </xsl:call-template>
                   <xsl:text>&#160; </xsl:text> <!-- insert two spaces as a separator -->
                 </xsl:for-each>
               </xsl:when>
               <xsl:otherwise>
-                <!-- display this as a single button -->
-                <xsl:call-template name="button">
-                  <xsl:with-param name="item" select="$item"/>
-                  <xsl:with-param name="multiple" select="$multiple"/>
-                  <xsl:with-param name="position" select="$position"/>
-                </xsl:call-template>
+                <xsl:if test="string-length($item) > 0 or $item/@value">
+                  <!-- display this as a single button -->
+                  <xsl:call-template name="button">
+                    <xsl:with-param name="item" select="$item"/>
+                    <xsl:with-param name="multiple" select="$multiple"/>
+                    <xsl:with-param name="position" select="$position"/>
+                  </xsl:call-template>
+                </xsl:if>
               </xsl:otherwise>
             </xsl:choose>
           </xsl:when>
@@ -1141,6 +1137,7 @@
   <xsl:param name="item"/>
   <xsl:param name="multiple"/>    <!-- optional, causes position number to be added to item name -->
   <xsl:param name="position"/>    <!-- the row number -->
+  <xsl:param name="subtype"/>     <!-- may be 'submit' or 'button' -->
   
   <xsl:variable name="name">
     <xsl:choose>
@@ -1169,9 +1166,14 @@
     </xsl:if>
     
     <xsl:choose>
+      <xsl:when test="$subtype">
+        <xsl:attribute name="type">
+          <xsl:value-of select="$subtype"/> <!-- may be set to 'button' or 'submit'-->
+        </xsl:attribute>
+      </xsl:when>
       <xsl:when test="$item/@subtype">
         <xsl:attribute name="type">
-          <xsl:value-of select="$item/@subtype"/> <!-- may be set to 'button' -->
+          <xsl:value-of select="$item/@subtype"/> <!-- may be set to 'button' or 'submit' -->
         </xsl:attribute>
       </xsl:when>
       <xsl:otherwise>

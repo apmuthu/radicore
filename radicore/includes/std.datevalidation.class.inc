@@ -184,11 +184,14 @@ class date_class {
     // convert date from external format (as input by user)
     // to internal format (as used in the database)
     {
+        $input = trim($input);
+        if (empty($input)) {
+            return $input;
+        } // if
+
         if (empty($date_format)) {                      // AJM - 2014-04-22
             $date_format = $this->date_format_input;    // AJM - 2014-04-22
         } // if                                         // AJM - 2014-04-22
-
-        $input = trim($input);
 
         // check if date is already in yyyy-mm-dd format
         $pattern = '/'
@@ -218,15 +221,15 @@ class date_class {
                     break;
 
                 case 'dd mmm yyyy':
-                case 'd MMM yyyy':
-                    $array = explode(' ', $input, 3);
+                case 'd mmm yyyy':
+                    $array = explode(' ', $input, 4);
                     $day   = $array[0];
                     $month = $array[1];
                     $year  = $array[2];
                     break;
 
                 case 'mmm dd yyyy':
-                    $array = explode(' ', $input, 3);
+                    $array = explode(' ', $input, 4);
                     $month = $array[0];
                     $day   = $array[1];
                     $year  = $array[2];
@@ -257,7 +260,7 @@ class date_class {
                     break;
 
                 case 'yyyy mmm dd':
-                    $array = explode(' ', $input, 3);
+                    $array = explode(' ', $input, 4);
                     $year  = $array[0];
                     $month = $array[1];
                     $day   = $array[2];
@@ -462,6 +465,11 @@ class date_class {
     // convert time from external format (as input by user)
     // to internal format (as used in the database)
     {
+        $input = trim($input);
+        if (empty($input)) {
+            return $input;
+        } // if
+
         // look for HH?MM?SS format
         $pattern = '/'
                  . '^'          // begins with
@@ -529,6 +537,11 @@ class date_class {
     // convert datetime from external format (as input by user)
     // to internal format (as used in the database)
     {
+        $input = trim($input);
+        if (empty($input)) {
+            return $input;
+        } // if
+
         $pattern1 = '/'
                   . '^'               // begins with
                   . '(?P<date>'       // start named pattern
@@ -702,6 +715,11 @@ class date_class {
     // convert date from internal format (as used in the database)
     // to external format (as shown to the user))
     {
+        $input = trim($input);
+        if (empty($input)) {
+            return $input;
+        } // if
+
         if (empty($date_format)) {                      // AJM - 2014-04-22
             $date_format = $this->date_format_output;   // AJM - 2014-04-22
         } // if                                         // AJM - 2014-04-22
@@ -711,8 +729,6 @@ class date_class {
 
         // input may be 'yyyy-mm-dd' or 'yyyymmdd'  or 'dd-Mmm-yy', so
         // check the length and process accordingly
-
-        $input = trim($input);
 
         if (strlen($input) == 8) {
             // test for 'yyyymmdd'
@@ -824,6 +840,11 @@ class date_class {
     // convert date from internal format (as used in the database)
     // to external format (as shown to the user))
     {
+        $input = trim($input);
+        if (empty($input)) {
+            return $input;
+        } // if
+
         if (empty($date_format)) {                      // AJM - 2014-04-22
             $date_format = $this->date_format_output;   // AJM - 2014-04-22
         } // if                                         // AJM - 2014-04-22

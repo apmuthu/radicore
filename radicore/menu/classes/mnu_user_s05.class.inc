@@ -54,7 +54,7 @@ class mnu_user_s05 extends mnu_user
         } // if
 
         // find out if user passwords are to be hidden or not
-    	$dbobject =& RDCsingleton::getInstance('mnu_control');
+    	$dbobject = RDCsingleton::getInstance('mnu_control');
         $this->pswd_hidden  = $dbobject->getControlData('pswd_hidden');
         $this->pswd_encrypt = $dbobject->getControlData('pswd_encrypt');
         $this->pswd_format  = $dbobject->getControlData('pswd_format');
@@ -127,7 +127,7 @@ class mnu_user_s05 extends mnu_user
             $password   = $data['user_password'];
             if (is_True($this->pswd_encrypt)) {
                 // decrypt the password
-                $crypt_obj =& RDCsingleton::getInstance('encryption_class');
+                $crypt_obj = RDCsingleton::getInstance('encryption_class');
                 $key = $data['user_id'];
                 $password = $crypt_obj->decrypt($key, $password);
                 if ($crypt_obj->errors) {

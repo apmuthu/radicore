@@ -10,7 +10,7 @@ require 'std.batch.inc';
 
 batchInit(__FILE__);
 
-$dbobject =& RDCsingleton::getInstance('crs_conflict_s01');
+$dbobject = RDCsingleton::getInstance('crs_conflict_s01');
 
 echo "<p>Deleting old data</p>\n";
 

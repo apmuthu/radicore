@@ -75,7 +75,7 @@ class product extends Default_Table
 
         if (!array_key_exists('identity_type_id', $this->lookup_data)) {
             // get array for good_identity_type and put into LOOKUP_DATA
-            $object =& RDCsingleton::getInstance('good_identity_type');
+            $object = RDCsingleton::getInstance('good_identity_type');
             $array  = $object->getValRep('identity_type_id');
             $this->lookup_data['identity_type_id'] = $array;
         } // if
@@ -94,7 +94,7 @@ class product extends Default_Table
         if (!empty($fieldarray['identity_type_id']) and empty($fieldarray['identity_type_desc'])) {
             // get description for selected entry
             require_once 'classes/good_identity_type.class.inc';
-            $dbobject =& RDCsingleton::getInstance('good_identity_type');
+            $dbobject = RDCsingleton::getInstance('good_identity_type');
             $dbobject->sql_select = 'identity_type_id, identity_type_desc';
             $foreign_data = $dbobject->getData("identity_type_id='{$fieldarray['identity_type_id']}'");
             // merge with existing data
@@ -104,7 +104,7 @@ class product extends Default_Table
         if (!empty($fieldarray['prod_cat_id']) and empty($fieldarray['prod_cat_desc'])) {
             // get description for selected entry
             require_once 'classes/product_category.class.inc';
-            $dbobject =& RDCsingleton::getInstance('product_category');
+            $dbobject = RDCsingleton::getInstance('product_category');
             $dbobject->sql_select = 'prod_cat_id, prod_cat_desc';
             $foreign_data = $dbobject->getData("prod_cat_id='{$fieldarray['prod_cat_id']}'");
             // merge with existing data
@@ -114,7 +114,7 @@ class product extends Default_Table
         if (!empty($fieldarray['prod_feature_id']) and empty($fieldarray['prod_feature_desc'])) {
             // get description for selected entry
             require_once 'classes/product_feature.class.inc';
-            $dbobject =& RDCsingleton::getInstance('product_feature');
+            $dbobject = RDCsingleton::getInstance('product_feature');
             $dbobject->sql_select = 'prod_feature_id, prod_feature_desc';
             $foreign_data = $dbobject->getData("prod_feature_id='{$fieldarray['prod_feature_id']}'");
             // merge with existing data
@@ -190,7 +190,7 @@ class product extends Default_Table
                 unset($array['prod_cat_id']);
 
                 require_once 'classes/prod_cat_rollup.class.inc';
-                $dbobject =& RDCsingleton::getInstance('prod_cat_rollup');
+                $dbobject = RDCsingleton::getInstance('prod_cat_rollup');
                 $dbobject->sql_select = 'prod_cat_id_jnr';
 
                 // initialise range with starting value

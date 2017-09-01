@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // get current field specifications
         $fieldspec = $dbobject->getFieldSpec();
         // format POST data into SQL 'where' string
-        $dateobj =& RDCsingleton::getInstance('date_class');
+        $dateobj = RDCsingleton::getInstance('date_class');
         foreach ($fieldarray as $field => $value) {
             // check that $field exists in $fieldspec array
             if (!isset($fieldspec[$field]) OR isset($fieldspec[$field]['noedit']) OR isset($fieldspec[$field]['nosearch'])) {

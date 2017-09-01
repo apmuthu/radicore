@@ -50,6 +50,11 @@ $structure['main']['fields'][14][] = array('field' => 'county', 'colspan' => 3);
 
 $structure['main']['fields'][15] = array('curr_or_hist' => 'Current or Historic', 'colspan' => 5);
 
+$structure['main']['fields'][16][] = array('label' => '<- this is an orphan label ->', 
+                                           'label-only' => 'y', 
+                                           'align' => 'center', 
+                                           'colspan' => 6);
+
 $structure['main']['fields'][] = array('created_date' => 'Created Date', 'colspan' => 5);
 $structure['main']['fields'][] = array('created_user' => 'Created By', 'colspan' => 5);
 $structure['main']['fields'][] = array('revised_date' => 'Revised Date', 'colspan' => 5);

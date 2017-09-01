@@ -29,14 +29,14 @@ class container extends Default_Table
     {
         if (!array_key_exists('facility_id', $this->lookup_data)) {
             // get array for facility and put into LOOKUP_DATA
-            $object =& RDCsingleton::getInstance('facility');
+            $object = RDCsingleton::getInstance('facility');
             $array  = $object->getValRep('facility_id');
             $this->lookup_data['facility_id'] = $array;
         } // if
 
         if (!array_key_exists('facility_id', $this->lookup_data)) {
             // get array for container_type and put into LOOKUP_DATA
-            $object =& RDCsingleton::getInstance('container_type');
+            $object = RDCsingleton::getInstance('container_type');
             $array  = $object->getValRep('container_type_id');
             $this->lookup_data['container_type_id'] = $array;
         } // if

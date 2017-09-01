@@ -34,7 +34,7 @@ class mnu_nav_button extends Default_Table
         // the current screen's navigation bar.
 
         // first we must obtain the user's current security setting
-        $dbrole =& RDCsingleton::getInstance('mnu_role');
+        $dbrole = RDCsingleton::getInstance('mnu_role');
         $dbrole_data = $dbrole->getRole();
         if ($dbrole->errors) {
         	$this->errors = $dbrole->errors;
@@ -262,7 +262,7 @@ class mnu_nav_button extends Default_Table
         if (array_key_exists('task_id_jnr', $fieldarray) AND !array_key_exists('button_text', $fieldarray)) {
             $task_id_jnr = $fieldarray['task_id_jnr'];
             // get default button text from mnu_task table
-            $dbobject =& RDCsingleton::getInstance('mnu_task');
+            $dbobject = RDCsingleton::getInstance('mnu_task');
             $dbobject->sql_select = 'button_text,task_type,pattern_id';
             $data = $dbobject->getData("task_id='$task_id_jnr'");
             $fieldarray = array_merge($fieldarray, $data[0]);
@@ -273,7 +273,7 @@ class mnu_nav_button extends Default_Table
             if (!array_key_exists('context_preselect', $fieldarray)) {
                 // get default context_preselect from mnu_pattern table
                 $pattern_id = $fieldarray['pattern_id'];
-                $dbobject =& RDCsingleton::getInstance('mnu_pattern');
+                $dbobject = RDCsingleton::getInstance('mnu_pattern');
                 $dbobject->sql_select = 'context_preselect';
                 $data = $dbobject->getData("pattern_id='$pattern_id'");
                 $fieldarray = array_merge($fieldarray, $data[0]);

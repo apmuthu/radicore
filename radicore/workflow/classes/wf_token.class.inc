@@ -37,7 +37,7 @@ class wf_token extends Default_Table
 
         if (!array_key_exists('workflow_id', $this->lookup_data)) {
             // get list of workflow names
-            $dbobject =& RDCsingleton::getInstance('wf_workflow');
+            $dbobject = RDCsingleton::getInstance('wf_workflow');
             $array = $dbobject->getValRep('workflow_id');
             $this->lookup_data['workflow_id'] = $array;
         } // if
@@ -45,7 +45,7 @@ class wf_token extends Default_Table
         if (!empty($fieldarray['workflow_id'])) {
             $workflow_id = $fieldarray['workflow_id'];
             // get contents of foreign table PLACE and add as a LOOKUP list
-            $dbobject =& RDCsingleton::getInstance('wf_place');
+            $dbobject = RDCsingleton::getInstance('wf_place');
             $array = $dbobject->getValRep('place_id', "workflow_id='$workflow_id'");
             $this->lookup_data['place_id'] = $array;
             // set field control to dropdown
@@ -64,7 +64,7 @@ class wf_token extends Default_Table
     {
         global $mode;
         if ($mode == 'search' and isset($fieldarray['case_id'])) {
-            $dbobject =& RDCsingleton::getInstance('wf_case');
+            $dbobject = RDCsingleton::getInstance('wf_case');
             $dbobject->sql_select = 'workflow_id';
             $array = $dbobject->getData_raw("case_id='{$fieldarray['case_id']}'");
             if (!empty($array)) {
@@ -142,7 +142,7 @@ class wf_token extends Default_Table
             if ($this->errors) return $fieldarray;
 
             // mark any outstanding workitems as cancelled
-            $dbworkitem =& RDCsingleton::getInstance('wf_workitem');
+            $dbworkitem = RDCsingleton::getInstance('wf_workitem');
             $where = "case_id='{$fieldarray['case_id']}' AND workitem_status IN ('EN', 'IP')";
             $replace = "workitem_status='CA'";
             $msg = $dbworkitem->updateSelection($where, $replace);
@@ -152,7 +152,7 @@ class wf_token extends Default_Table
             } // if
 
             // mark this case as closed
-            $dbcase =& RDCsingleton::getInstance('wf_case');
+            $dbcase = RDCsingleton::getInstance('wf_case');
             $case_data['case_id']       = $fieldarray['case_id'];
             $case_data['rdcaccount_id'] = $fieldarray['rdcaccount_id'];
             $case_data['case_status']   = 'CL';
@@ -170,7 +170,7 @@ class wf_token extends Default_Table
         $place_id = $fieldarray['place_id'];
 
         // find all transitions which are joined to this place via INWARD arcs
-        $dbarc =& RDCsingleton::getInstance('wf_arc');
+        $dbarc = RDCsingleton::getInstance('wf_arc');
         $dbarc->sql_select = 'wf_arc.workflow_id, wf_arc.transition_id, place_id, direction, arc_type, task_id, role_id, transition_trigger, time_limit';
         $dbarc->sql_from = 'wf_arc '
                          . "LEFT JOIN wf_transition ON (wf_transition.workflow_id=wf_arc.workflow_id AND wf_transition.transition_id=wf_arc.transition_id) ";

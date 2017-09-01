@@ -137,7 +137,7 @@ class wf_place extends Default_Table
     function _updateWorkflow ($workflow_id)
     // set IS_VALID to FALSE to force workflow to be revalidated.
     {
-        $dbobject =& RDCsingleton::getInstance('wf_workflow');
+        $dbobject = RDCsingleton::getInstance('wf_workflow');
         $update['workflow_id'] = $workflow_id;
         $update['is_valid']    = FALSE;
         $update = $dbobject->updateRecord($update);

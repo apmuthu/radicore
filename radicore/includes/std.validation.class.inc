@@ -57,7 +57,7 @@ class validation_class
         	// 'custom validation - Class X does not exist'
         	$errors[$fieldname] = getLanguageText('sys0158', $class);
         } // if
-        $object =& RDCsingleton::getInstance($class);
+        $object = RDCsingleton::getInstance($class);
 
         if (!method_exists($object, $method)) {
         	// 'custom validation - Method X does not exist'
@@ -156,7 +156,7 @@ END_OF_REGEX;
         $callingOBJ =& $this->caller;
         $GLOBALS['classdir'] = dirname($callingOBJ->dirname);
         $translated_fieldname = $callingOBJ->getLanguageText($fieldname);
-        $this->dateobj =& RDCsingleton::getInstance('date_class');
+        $this->dateobj = RDCsingleton::getInstance('date_class');
 
         $GLOBALS['classdir'] = $classdir;   // restore
 
@@ -199,7 +199,9 @@ END_OF_REGEX;
         if (in_array($fieldname, $this->fields_not_for_trimming)) {
             // do not trim() this field
         } else {
-            if (strlen($fieldvalue) > 0) {
+            if (is_array($fieldvalue)) {
+                // do nothing
+            } elseif (strlen($fieldvalue) > 0) {
                 // trim any leading or trailing spaces
                 $fieldvalue = trim($fieldvalue);
             } // if
@@ -417,20 +419,24 @@ END_OF_REGEX;
                 } // if
 
                 if (!empty($fieldspec['pkey'])) {
-                    if (preg_match("/\s+/u", $fieldvalue)) {
-                        // "Unique key cannot contain whitespace characters"
-                        $this->errors[$fieldname] = getLanguageText('sys0263');
-                    } elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                    $fieldvalue = preg_replace("/[\n\r\t\x0B]/u", '', $fieldvalue);
+                    //if (preg_match("/\s+/u", $fieldvalue)) {
+                    //    // "Unique key cannot contain whitespace characters"
+                    //    $this->errors[$fieldname] = getLanguageText('sys0263');
+                    //} elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                    if (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
                         // "Unique key cannot contain control characters"
                         $this->errors[$fieldname] = getLanguageText('sys0264');
                     } // if
                 } elseif (is_array($this->unique_keys) AND !empty($this->unique_keys)) {
                     foreach ($this->unique_keys as $keynum => $keyfields) {
                         if (in_array($fieldname, $keyfields)) {
-                            if (preg_match("/\s+/u", $fieldvalue)) {
-                                // "Unique key cannot contain whitespace characters"
-                                $this->errors[$fieldname] = getLanguageText('sys0263');
-                            } elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                            $fieldvalue = preg_replace("/[\n\r\t\x0B]/u", '', $fieldvalue);
+                            //if (preg_match("/\s+/u", $fieldvalue)) {
+                            //    // "Unique key cannot contain whitespace characters"
+                            //    $this->errors[$fieldname] = getLanguageText('sys0263');
+                            //} elseif (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
+                            if (preg_match("/[\x01-\x1F]+/u", $fieldvalue)) {
                                 // "Unique key cannot contain control characters"
                                 $this->errors[$fieldname] = getLanguageText('sys0264');
                             } // if
@@ -601,6 +607,8 @@ END_OF_REGEX;
                 unset($spec['nondb']);  // allow a non-database field to be validated
             } // if
             if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
+                // ignore this field
+            } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
                 // ignore this field
             } else {
                 if (isset($fieldarray[$field])) {
@@ -860,12 +868,14 @@ END_OF_REGEX;
                 } // if
                 if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
                     // ignore this field
+                } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
+                    // ignore this field
                 } else {
                     // validate field using field specifications
                     $value = $this->validateField($field, $value, $spec);
                     // transfer to array which will be passed to the database
                     // (allow null values as field may have been cleared)
-                    if (strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
+                    if (is_string($value) AND strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
                         $updatearray[$field] = $value;
                     } else {
                         $updatearray[$field] = null;
