@@ -3388,10 +3388,9 @@ if (!function_exists('getLanguageArray')) {
             $fname = getLanguageFile('sys.language_array.inc', $dir);
             if ($fname) {
                 $file_language = basename(dirname($fname));
-                if (!array_key_exists($language, $system_msgs)) {
+                if (!array_key_exists($file_language, $system_msgs)) {
                     $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
-                    if (empty($array)) {
-                        //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    if (empty($system_msgs[$file_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
@@ -3427,9 +3426,8 @@ if (!function_exists('getLanguageArray')) {
                 OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
                     // import contents of disk file
                     $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
-                    if (empty($array)) {
-                        // 'File $fname is empty'
-                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    if (empty($subsystem_msgs[$subsystem_id][$file_language])) {
+                        trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
 
@@ -3645,10 +3643,9 @@ if (!function_exists('getLanguageText')) {
             } // if
             if ($fname) {
                 $file_language = basename(dirname($fname));
-                if (!array_key_exists($language, $system_msgs)) {
+                if (!array_key_exists($file_language, $system_msgs)) {
                     $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
-                    if (empty($array)) {
-                        //trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    if (empty($system_msgs[$file_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
@@ -3693,9 +3690,8 @@ if (!function_exists('getLanguageText')) {
                 OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
                     // import contents of disk file
                     $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
-                    if (empty($array)) {
-                        // 'File $fname is empty'
-                        trigger_error(getLanguageText('sys0124', $fname), E_USER_ERROR);
+                    if (empty($subsystem_msgs[$subsystem_id][$file_language])) {
+                        trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
 
