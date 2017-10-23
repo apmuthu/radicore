@@ -1,5 +1,5 @@
 <?php
-    // file created on October 20, 2015, 8:39 am
+    // file created on September 26, 2017, 2:28 pm
     
     // field specifications for table audit.audit_ssn
     $fieldspec['session_id']                = array('type' => 'integer',
@@ -42,7 +42,7 @@
     $this->audit_logging                    = FALSE;
     
     // default sort sequence 
-    $this->default_orderby                  = 'ssn_date, ssn_time';
+    $this->default_orderby                  = 'ssn_datetime';
     
     // alternative language options 
     $this->alt_language_table               = '';

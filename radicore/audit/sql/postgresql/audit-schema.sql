@@ -163,7 +163,7 @@ ALTER TABLE audit_trn OWNER TO postgres;
 --
 
 CREATE TABLE php_session (
-    session_id character varying(32) DEFAULT ''::character varying NOT NULL,
+    session_id character varying(256) DEFAULT ''::character varying NOT NULL,
     user_id character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,
     date_created timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     last_updated timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,

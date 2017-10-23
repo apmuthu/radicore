@@ -11,10 +11,11 @@ nano /etc/php5/apache2/php.ini
 
 service apache2 restart
 
+# login and download radicore.zip from https://www.radicore.org/downloads.php
 # upload radicore zip file to /var/www
 
 cd /var/www/webroot
-unzip ../radicore-2017-07-01.zip
+unzip ../radicore-*.zip
 cd radicore
 unzip "*-prototype.zip"
 rm *-prototype.zip

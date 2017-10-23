@@ -17,6 +17,7 @@
 <xsl:variable name="script"       select="/root/params/script"/>
 <xsl:variable name="mode"         select="/root/params/mode"/>
 <xsl:variable name="session_name" select="/root/params/session_name"/>
+<xsl:variable name="csrf_id"      select="/root/params/csrf_id"/>
 <xsl:variable name="script_time"  select="/root/params/script_time"/>
 <xsl:variable name="doc_root"     select="/root/params/doc_root"/>
 <xsl:variable name="help_root"    select="/root/params/help_root"/>
@@ -84,6 +85,11 @@
   <!-- create a hidden field for session_name -->
   <xsl:if test="$session_name">
     <div><input type="hidden" name="session_name" value="{$session_name}" /></div>
+  </xsl:if>
+  
+  <!-- create a hidden field for csrf_id -->
+  <xsl:if test="$csrf_id">
+    <div><input type="hidden" name="csrf_id" value="{$csrf_id}" /></div>
   </xsl:if>
 
   <xsl:if test="not($print-preview) and string-length($script_time) > 0">
@@ -393,7 +399,7 @@
               </xsl:when>
               <xsl:otherwise>
                 <!-- this is for the full application -->
-                <a href="{$script}?selection={@id}&amp;{$session}"><xsl:value-of select="$button_text"/></a>
+                <a href="{$script}?selection={@id}&amp;{$session}&amp;csrf_id={@csrf_id}"><xsl:value-of select="$button_text"/></a>
               </xsl:otherwise>
             </xsl:choose>
 
@@ -418,7 +424,7 @@
                 </xsl:when>
                 <xsl:otherwise>
                   <!-- insert hyperlink -->
-                  <a href="{$script}?selection={@id}&amp;{$session}">
+                  <a href="{$script}?selection={@id}&amp;{$session}&amp;csrf_id={@csrf_id}">
                     <xsl:value-of select="node()"/>
                   </a>
                 </xsl:otherwise>

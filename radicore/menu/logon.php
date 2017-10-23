@@ -182,6 +182,10 @@ if (!empty($_POST)) {
         $res = session_regenerate_id(true); // drop the old session_id and create a new one
         $fieldarray = $dbobject->getFieldArray();
         $messages   = $dbobject->getMessages();
+        if (isset($GLOBALS['use_https']) AND $GLOBALS['use_https'] === true) {
+            // turn on HTTP Strict Transport Security (HSTS)
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        } // if
         $_SESSION['motd'] = true; // go to the MOTD screen once and once only in this session
         $task_array['query_string'] = "selection={$fieldarray[0]['start_task_id']}";
         scriptNext('menu', null, null, $task_array);
@@ -207,6 +211,11 @@ if (isset($errors_bf)) {
 $_SESSION['page_stack'] = array();
 
 $xml_objects[]['root'] = &$dbobject;
+
+if (isset($GLOBALS['use_https']) AND $GLOBALS['use_https'] === true) {
+    // turn on HTTP Strict Transport Security (HSTS)
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+} // if
 
 // build XML document and perform XSL transformation
 $view = new radicore_view($screen_structure);

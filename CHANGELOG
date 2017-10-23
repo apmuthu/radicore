@@ -1,5 +1,14 @@
 ﻿RADICORE for PHP - news
 
+2017-10-05, version 2.07.0
+Database changes:
+- run script audit\sql\mysql\alter_table(2017-09-18).sql in order to change the structure of the AUDIT database
+
+Other changes:
+- increased size of session_id on php_session table to allow for change implemented in PHP 7.1.0
+- updated logon screen to add 'Strict-Transport-Security: max-age=31536000; includeSubDomains' to HTTP header when HTTPS is available to turn on HTTP Strict Transport Security (HSTS).
+- updated all links in menu bar, breadcrumbs and submit buttons to include a token to prevent CSRF attacks.
+
 2017-09-01, version 2.06.0
 Database changes:
 - none

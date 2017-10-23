@@ -98,7 +98,6 @@
           <div class="inner">
   
             <!-- this is the INNER/CHILD table -->
-            
             <xsl:choose>
               
               <xsl:when test="/root/structure/inner/table">

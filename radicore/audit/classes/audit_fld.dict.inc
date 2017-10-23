@@ -1,9 +1,10 @@
 <?php
-    // file created on October 3, 2012, 4:37 pm
+    // file created on September 26, 2017, 2:32 pm
     
     // field specifications for table audit.audit_fld
     $fieldspec['session_id']                = array('type' => 'integer',
-                                                    'size' => 21,
+                                                    'type_native' => 'bigint',
+                                                    'size' => 20,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 1.84467440737096e19,
                                                     'pkey' => 'y',
@@ -11,7 +12,8 @@
                                                     'noedit' => 'y');
     
     $fieldspec['tran_seq_no']               = array('type' => 'integer',
-                                                    'size' => 7,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',
@@ -19,7 +21,8 @@
                                                     'noedit' => 'y');
     
     $fieldspec['table_seq_no']              = array('type' => 'integer',
-                                                    'size' => 7,
+                                                    'type_native' => 'smallint',
+                                                    'size' => 6,
                                                     'minvalue' => 0,
                                                     'maxvalue' => 65535,
                                                     'pkey' => 'y',

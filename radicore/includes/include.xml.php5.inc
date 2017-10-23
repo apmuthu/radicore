@@ -1001,9 +1001,11 @@ class radicore_view
         $xsl_params['script_short'] = rtrim($xsl_params['script_short'], '_'); // remove trailing '_'
 
         $xsl_params['session_name'] = session_name();
-        //$xsl_params['session_id']   = session_id();
 
-        //$xsl_params['title'] = getLanguageText($task_id);
+        // generate 23 character unique id to stop CSR attacks
+        $xsl_params['csrf_id']      = uniqid('', true);
+        $_SESSION['csrf_array']['form'] = $xsl_params['csrf_id'];
+
         $dbobject = RDCsingleton::getInstance('mnu_task');
         $task_data = $dbobject->getData("task_id='$task_id'");
         if(!empty($task_data)) {
@@ -1223,6 +1225,8 @@ class radicore_view
         global $scrolling;
         global $task_id;
         global $xsl_file;
+
+        unset($_SESSION['csrf_array']);  // clear this array so that it can be rebuilt
 
         if (!isset($GLOBALS['project_code'])) {
             $GLOBALS['project_code'] = '';
@@ -1935,6 +1939,12 @@ class radicore_view
             // add each button to the xml document
             $child = $doc->createElement('button');
             $child->setAttribute('id', $task_id);
+
+            // include ID in hyperlink to prevent CSRF attacks
+            $csrf_id = uniqid('', true);
+            $child->setAttribute('csrf_id', $csrf_id);
+            $_SESSION['csrf_array'][$task_id] = $csrf_id;
+
             if ($task_id == $current_menu_tab) {
                 $child->setAttribute('active', 'y');
             } // if
@@ -1958,12 +1968,25 @@ class radicore_view
         if (isset($GLOBALS['page_stack'])) {
             // insert stack which identifies the sequence of pages used so far (aka 'breadcrumbs')
             $page_stack = $GLOBALS['page_stack'];
+            $keys      = array_keys($page_stack);
+            $last_task = end($keys);
             foreach ($page_stack as $task_id => $data) {
                 $child = $doc->createElement('stack');
                 $child->setAttribute('id', $task_id);
-                if ($task_id == $current_menu) {
-                    $child->setAttribute('active', "y");
+
+                if ($task_id == $current_menu OR $task_id == $last_task) {
+                    $child->setAttribute('active', "y"); // display this as text, not a hyperlink
+                } else {
+                    // include a CSRF token with this hyperlink
+                    if (empty($_SESSION['csrf_array'][$task_id])) {
+                        $csrf_id = uniqid('', true);
+                        $_SESSION['csrf_array'][$task_id] = $csrf_id;
+                    } else {
+                        $csrf_id = $_SESSION['csrf_array'][$task_id];
+                    } // if
+                    $child->setAttribute('csrf_id', $csrf_id);
                 } // if
+
                 $child = $occ->appendChild($child);
 
                 // convert text into output language
@@ -2417,6 +2440,7 @@ END_OF_REGEX;
                                         } elseif ($celltype == 'label') {
                                             // convert 'colspan' to 'grid_size'
                                             $temp['column'] = $last_column_used+1;
+                                            unset($temp['colspan']);
                                             if (!empty($cellspec['colspan'])) {
                                                 $temp['colspan'] = $cellspec['colspan'];
                                             } // if
@@ -2578,6 +2602,10 @@ END_OF_REGEX;
     {
         $prev_error_handler = set_error_handler('XML_errorHandler');
 
+        // may this data avalable in the trace if there is an error
+        $xml_doc->formatOutput = true;
+        $xml_string = $xml_doc->saveXML();
+
         // fetch the XSL stylesheet and load it into a DOM document
         $xsl = new DomDocument;
         $xsl->load($xsl_file);
@@ -2601,8 +2629,6 @@ END_OF_REGEX;
 
         // transform the XML into HTML using the XSL file
         if (!$html = $xp->transformToXML($xml_doc)) {
-            $xml_doc->formatOutput = true;
-            $xml_string = $xml_doc->saveXML();
             // 'XSL transformation failed.'
             trigger_error(getLanguageText('sys0072'), E_USER_ERROR);
         } // if

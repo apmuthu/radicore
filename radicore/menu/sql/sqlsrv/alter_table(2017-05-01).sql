@@ -33,7 +33,7 @@ GO
 USE [menu];
 
 ALTER TABLE [dbo].[mnu_account] ALTER COLUMN account_name NVARCHAR(80) NOT NULL;
-ALTER TABLE [dbo].[mnu_account] ADD account_desc ntext;
+ALTER TABLE [dbo].[mnu_account] ADD account_desc nvarchar(max);
 go
 
 exec sp_rename 'mnu_favourite.task_desc', 'task_name', 'COLUMN';
@@ -47,14 +47,14 @@ exec sp_rename 'mnu_pattern.pattern_long_desc', 'pattern_desc', 'COLUMN';
 
 exec sp_rename 'mnu_role.role_desc', 'role_name', 'COLUMN';
 ALTER TABLE [dbo].[mnu_role] ALTER COLUMN role_name NVARCHAR(80) NOT NULL;
-ALTER TABLE [dbo].[mnu_role] ADD role_desc ntext;
+ALTER TABLE [dbo].[mnu_role] ADD role_desc nvarchar(max);
 go
 
 exec sp_rename 'mnu_saved_selection.selection_desc', 'selection_name', 'COLUMN';
 
 exec sp_rename 'mnu_subsystem.subsys_desc', 'subsys_name', 'COLUMN';
 ALTER TABLE [dbo].[mnu_subsystem] ALTER COLUMN subsys_name NVARCHAR(80) NOT NULL;
-ALTER TABLE [dbo].[mnu_subsystem] ADD subsys_desc ntext;
+ALTER TABLE [dbo].[mnu_subsystem] ADD subsys_desc nvarchar(max);
 go
 
 UPDATE mnu_task SET is_disabled='N' WHERE is_disabled IS NULL;
@@ -64,7 +64,7 @@ UPDATE mnu_task SET use_https='N' WHERE use_https IS NULL;
 go
 
 exec sp_rename 'mnu_task.task_desc', 'task_name', 'COLUMN';
-ALTER TABLE [dbo].[mnu_task] ADD task_desc ntext;
+ALTER TABLE [dbo].[mnu_task] ADD task_desc nvarchar(max);
 
 
 UPDATE mnu_task SET button_text=SUBSTRING(button_text,1,40);
@@ -73,7 +73,7 @@ ALTER TABLE [dbo].[mnu_task] ALTER COLUMN button_text NVARCHAR(40) NOT NULL;
 go
 
 exec sp_rename 'mnu_task_alt.task_desc', 'task_name', 'COLUMN';
-ALTER TABLE [dbo].[mnu_task_alt] ADD task_desc ntext;
+ALTER TABLE [dbo].[mnu_task_alt] ADD task_desc nvarchar(max);
 ALTER TABLE [dbo].[mnu_task_alt] ALTER COLUMN button_text NVARCHAR(80) NOT NULL;
 go
 

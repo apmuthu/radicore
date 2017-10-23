@@ -309,6 +309,15 @@
             </xsl:if>
     
             <xsl:choose>
+              <xsl:when test="@label-only">
+                
+                <!-- combine 'label' with 'align' and 'class' attributes if they exist -->
+                <xsl:attribute name="class"><xsl:value-of select="concat('label ', @align, ' ', @class)"/></xsl:attribute>
+                
+                <xsl:value-of select="@label"/> <!-- output the value for the label -->
+                
+              </xsl:when>
+              
               <xsl:when test="@label">
                 <!-- get fieldname from the FIELD attribute of the following sibling -->
                 <xsl:variable name="fieldname" select="string(following-sibling::*[1]/@field)" />
@@ -320,6 +329,7 @@
                 <xsl:variable name="fieldvalue" select="//*[name()=$table][position()=$table_row]/*[name()=$fieldname]" />
     
                 <xsl:choose>
+                  
                   <!-- do nothing unless the field is actually present in the XML file -->
                   <!-- and it does not have the @nodisplay attribute set -->
                   <xsl:when test="$fieldvalue and not($fieldvalue/@nodisplay) and not($nodisplay)">
@@ -344,15 +354,6 @@
     
                     <xsl:value-of select="@label"/> <!-- output the value for the label -->
     
-                  </xsl:when>
-                  
-                  <xsl:when test="@label-only">
-                                        
-                    <!-- combine 'label' with 'align' and 'class' attributes if they exist -->
-                    <xsl:attribute name="class"><xsl:value-of select="concat('label ', @align, ' ', @class)"/></xsl:attribute>
-                    
-                    <xsl:value-of select="@label"/> <!-- output the value for the label -->
-                    
                   </xsl:when>
     
                   <xsl:otherwise>
@@ -511,6 +512,9 @@
     <!-- build a node-set of fields which have the DISPLAY-EMPTY attribute set -->
     <xsl:variable name="display-empty" select="cell[@display-empty]"/>
     
+    <!-- build a node-set of labels which have the LABEL-ONLY attribute set -->
+    <xsl:variable name="label-only" select="cell[@label-only]"/>
+    
     <!-- build a node-set of field names which actually exist as data elements -->
     <xsl:variable name="fieldsfound" select="//*[name()=$table][position()=$table_row]/*[name()=$fieldnames]"/>
     
@@ -520,7 +524,8 @@
     <xsl:choose>
       <xsl:when test="count($fieldsfound) &lt;= (count($nodisplay) + count($nodisplay2))
         and not(count($blankfields) &gt; 0)
-        and not($display-empty)">
+        and not($display-empty)
+        and not($label-only)">
         <!-- all the fields in this row have the NODISPLAY attribute set, so do not output anything -->
       </xsl:when>
       
@@ -617,7 +622,7 @@
             <xsl:if test="@rowspan">
               <xsl:attribute name="rowspan"><xsl:value-of select="@rowspan" /></xsl:attribute>
             </xsl:if>
-            <xsl:if test="@align">
+            <xsl:if test="@align and not(@label-only)">
               <xsl:attribute name="align"><xsl:value-of select="@align" /></xsl:attribute>
             </xsl:if>
             <xsl:if test="@valign">
@@ -625,6 +630,12 @@
             </xsl:if>
             
             <xsl:choose>
+              <xsl:when test="@label-only">
+                <!-- combine 'label' with 'align' and 'class' attributes if they exist -->
+                <xsl:attribute name="class"><xsl:value-of select="concat('label ', @align, ' ', @class)"/></xsl:attribute>
+                <xsl:value-of select="@label"/> <!-- output the value for the label -->
+              </xsl:when>
+              
               <xsl:when test="@label">
                 <!-- get fieldname from the FIELD attribute of the following sibling -->
                 <xsl:variable name="fieldname" select="string(following-sibling::*[1]/@field)" />

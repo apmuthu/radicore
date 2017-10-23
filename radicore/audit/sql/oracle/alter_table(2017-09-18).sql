@@ -1,0 +1,3 @@
+-- ALTER SESSION SET CURRENT_SCHEMA = "AUDIT";
+
+ALTER TABLE "AUDIT".php_session MODIFY (session_id VARCHAR2(256 byte) );

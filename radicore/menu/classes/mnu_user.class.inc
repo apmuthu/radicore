@@ -399,6 +399,7 @@ class mnu_user extends Default_Table
         } // if
 
         if ($mode == 'update') {
+            unset($this->fieldspec['force_pswd_chg']['noedit']);
             $this->fieldspec['user_roles']      = array('type' => 'string',
                                                         'control' => 'input',
                                                         'nondb' => 'y',

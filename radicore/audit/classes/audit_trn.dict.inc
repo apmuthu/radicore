@@ -1,5 +1,5 @@
 <?php
-    // file created on October 20, 2015, 8:39 am
+    // file created on September 26, 2017, 2:29 pm
     
     // field specifications for table audit.audit_trn
     $fieldspec['session_id']                = array('type' => 'integer',

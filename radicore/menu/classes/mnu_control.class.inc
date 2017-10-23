@@ -716,6 +716,7 @@ class mnu_control extends Default_Table
                 if ($name == 'field_id' AND $operator == '=') {
                     // only a single field was specified, so create a null value if not found
                     $fieldname = strtolower($value);
+                    $fieldname = trim($fieldname, "'");  // trim any single quotes
                     if (!array_key_exists($fieldname, $fieldarray[0])) {
                         $fieldarray[0][$fieldname] = null;
                     } // if

@@ -1616,7 +1616,12 @@ END_OF_REGEX;
     {
         if ($this->dbconnect) {
         	$string  = 'Client Info: ' .$this->client_info ."<br>\n";
-            $string .= 'Server Info: ' .$this->server_info;
+            $string .= 'Server Info: ';
+            $server_info = sqlsrv_server_info($this->dbconnect);
+            foreach ($server_info as $key => $value) {
+                $string .= "$key: $value, ";
+            } // if
+            $string = rtrim($string, ', ');
         } else {
             $string = '';
         } // if

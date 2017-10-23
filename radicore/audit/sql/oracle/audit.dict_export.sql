@@ -1,6 +1,6 @@
 -- file created on September 26, 2017, 2:32 pm
 
--- use [dict];
+-- ALTER SESSION SET CURRENT_SCHEMA = "DICT";
 
 INSERT INTO dict_database (database_id, database_name, database_desc, subsys_id, created_date, created_user, revised_date, revised_user) VALUES ('audit', 'audit', 'Author: A J Marston
 Date: August, 2004

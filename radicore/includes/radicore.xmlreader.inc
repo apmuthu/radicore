@@ -74,6 +74,8 @@ class radicore_XMLReader extends XMLReader
             $array = null;      // do not start until $node is found
         } // if
 
+        $last_localName = null;
+        $last_nodeType  = null;
         while ($this->read()) {
             $localName = $this->localName;
             $nodeType  = $this->nodeType;

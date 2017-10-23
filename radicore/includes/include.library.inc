@@ -3270,34 +3270,35 @@ if (!function_exists('getForeignKeyValues')) {
             $parent_data = array_shift($parent_data);
         } // if
 
-        $found = false;
-        // first look for alias names
+        $found = array();
+        // first look for entry where the parent table has an alias name
         foreach ($childOBJ->parent_relations as $reldata) {
             if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
-                $found = true;
-                break;
+                $found[] = $reldata;
+                //break;
             } // if
         } // foreach
 
-        if (!$found) {
+        if (empty($found)) {
             reset($childOBJ->parent_relations);
             // now look for a non-aliased name
             foreach ($childOBJ->parent_relations as $reldata) {
                 if ($reldata['parent'] == $parent_table) {
-                    $found = true;
-                    break;
+                    $found[] = $reldata;
+                    //break;
                 } // if
             } // foreach
         } // if
 
-        $fkeyvalues  = array();
-
-        if ($found) {
-            foreach ($reldata['fields'] as $child_field => $parent_field) {
-                // swap the field names between the PARENT and CHILD tables
-                if (array_key_exists($parent_field, $parent_data)) {
-                    $fkeyvalues[$child_field] = $parent_data[$parent_field];
-                } // if
+        $fkeyvalues = array();
+        if (!empty($found)) {
+            foreach ($found as $reldata) {
+                foreach ($reldata['fields'] as $child_field => $parent_field) {
+                    // swap the field names between the PARENT and CHILD tables
+                    if (array_key_exists($parent_field, $parent_data)) {
+                        $fkeyvalues[$child_field] = $parent_data[$parent_field];
+                    } // if
+                } // foreach
             } // foreach
         } else {
             // no relationship found, so default to primary key of parent

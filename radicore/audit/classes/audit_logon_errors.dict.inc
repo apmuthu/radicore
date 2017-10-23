@@ -1,11 +1,12 @@
 <?php
-    // file created on October 3, 2012, 4:37 pm
+    // file created on September 18, 2017, 1:15 pm
     
     // field specifications for table audit.audit_logon_errors
     $fieldspec['id']                        = array('type' => 'integer',
-                                                    'size' => 12,
+                                                    'type_native' => 'int',
+                                                    'size' => 11,
                                                     'auto_increment' => 'y',
-                                                    'minvalue' => -2147483648,
+                                                    'minvalue' => 0,
                                                     'maxvalue' => 2147483647,
                                                     'pkey' => 'y',
                                                     'required' => 'y');
@@ -13,21 +14,18 @@
     $fieldspec['err_timestamp']             = array('type' => 'datetime',
                                                     'size' => 20,
                                                     'required' => 'y',
-                                                    'default' => '0000-00-00 00:00:00',
+                                                    'default' => '2000-01-01 00:00:00',
                                                     'autoinsert' => 'y');
     
     $fieldspec['ip_address']                = array('type' => 'string',
-                                                    'size' => 40,
-                                                    'required' => 'y',
-                                                    'default' => '0.0.0.0');
+                                                    'size' => 40);
     
     $fieldspec['user_id']                   = array('type' => 'string',
                                                     'size' => 16,
                                                     'uppercase' => 'y');
     
     $fieldspec['user_password']             = array('type' => 'string',
-                                                    'size' => 16,
-                                                    'required' => 'y');
+                                                    'size' => 16);
     
     $fieldspec['email_addr']                = array('type' => 'string',
                                                     'size' => 50,

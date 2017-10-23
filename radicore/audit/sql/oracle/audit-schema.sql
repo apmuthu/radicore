@@ -110,7 +110,7 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON audit_trn TO PUBLIC;
 -- 
 
 CREATE TABLE php_session (
-  session_id varchar2(32) NOT NULL,
+  session_id varchar2(256) NOT NULL,
   user_id varchar2(16),
   date_created timestamp NOT NULL,
   last_updated timestamp NOT NULL,

@@ -535,6 +535,24 @@ function copyForm ($post, &$dbobject)
 } // copyForm
 
 // ****************************************************************************
+function CSRF_check_failed ()
+// the check for CSRF failed, so abort and return to the logon screen.
+{
+    session_unset();
+    $_SESSION['messages'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
+    $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                          .'/menu/logon.php'
+                          .'?session_name=' .session_name();
+
+    logstuff("location: $location", __FUNCTION__, __LINE__);
+
+    session_write_close();
+    header('Location: ' .$location);
+    exit;
+
+} // CSRF_check_failed
+
+// ****************************************************************************
 function getNewSession ($prefix='menu')
 // create a new session name using $prefix + a number.
 {
@@ -906,6 +924,16 @@ function initSession($save_session_data=array(), $argv=array())
             if (!empty($save_session_data)) {
         	    $_SESSION = array_merge($_SESSION, $save_session_data);
 		    } // if
+
+            if (!empty($_SESSION['csrf_array'])) {
+                if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                    if (empty($_POST['csrf_id'])
+                    OR  empty($_SESSION['csrf_array']['form'])
+                    OR  $_POST['csrf_id'] != $_SESSION['csrf_array']['form']) {
+                        CSRF_check_failed();
+                    } // if
+                } // if
+            } // if
         } // if
     } // if
 
@@ -950,19 +978,6 @@ function initSession($save_session_data=array(), $argv=array())
         } // if
     } // if
 
-//    if (isset($_GET['DBGSESSID'])) {
-//        if ($_GET['DBGSESSID'] == -1) {
-//            // unset the cookie which starts a debug session
-//            setcookie('DBGSESSID', '', time()-42000, '/');
-//            $_SESSION['DEBUG-STOP'] = true;
-//        } // if
-//    } elseif (isset($_SESSION['DEBUG-STOP'])) {
-//        // unset the cookie which starts a debug session
-//        setcookie('DBGSESSID', '', time()-42000, '/');
-//    } else {
-//        unset($_SESSION['DEBUG-STOP']);
-//    } // if
-
     // look for session variables associated with the current script
     if (isset($_SESSION['pages'][$PHP_SELF])) {
         if (isset($_SESSION['pages'][$PHP_SELF]['task_id'])) {
@@ -974,6 +989,27 @@ function initSession($save_session_data=array(), $argv=array())
         } // if
     } else {
         $script_vars = array();
+    } // if
+
+    if ($task_id != 'menu') {
+        if (!empty($_SESSION['csrf_array'])) {
+            if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+                if (!empty($_GET['selection'])) {
+                    if (empty($_SESSION['csrf_array'][$_GET['selection']])
+                    OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$_GET['selection']]) {
+                        CSRF_check_failed();
+                    } // if
+                } elseif (!empty($task_id) AND !empty($_SESSION['page_stack'])) {
+                    $curr_task = end($_SESSION['page_stack']);
+                    if ($curr_task['script_id'] == $PHP_SELF) {
+                        // refreshing current script, so ignore next bit
+                    } elseif (empty($_SESSION['csrf_array'][$task_id])
+                    OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$task_id]) {
+                        CSRF_check_failed();
+                    } // if
+                } // if
+            } // if
+        } // if
     } // if
 
     if (!isset($GLOBALS['log_sql_query'])) {
@@ -2034,6 +2070,8 @@ function runInBackground ($task_array, $save_script_vars)
     $_SESSION['pages'][$script_id][$task_id]     = $script_vars;
     $_SESSION['pages'][$script_id]['task_array'][$task_id] = TRUE;
 
+    unset($_SESSION['csrf_array']);  // this is not needed
+
     session_write_close();  // close session data before batch script launches
 
     $session_id = session_id();
@@ -2229,8 +2267,15 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
 
     if (isset($task_array['query_string'])) {
     	$query_string = $task_array['query_string'];
+        parse_str($query_string, $array);
+        if (!empty($array['selection'])) {
+            $selected_task = $array['selection'];
+        } // if
     } else {
         $query_string = null;
+    } // if
+    if (empty($selected_task)) {
+        $selected_task = $task_id;
     } // if
 
     if (isset($task_array['wf_case_id']) AND isset($task_array['wf_workitem_id'])) {
@@ -2601,6 +2646,20 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     // (indexed under [script_id][task_id])
     $_SESSION['pages'][$script_id][$task_id] = $script_vars;
 
+    if (!empty($selected_task)) {
+        if (empty($_SESSION['csrf_array'][$selected_task])) {
+            $csrf_id = uniqid('', true);
+            $_SESSION['csrf_array'][$selected_task] = $csrf_id;
+        } else {
+            $csrf_id = $_SESSION['csrf_array'][$selected_task];
+        } // if
+        if (empty($query_string)) {
+            $query_string = "csrf_id=$csrf_id";
+        } else {
+            $query_string .= "&csrf_id=$csrf_id";
+        } // if
+    } // if
+
     if (is_True($_SERVER['HTTPS'])) {
         if (!empty($GLOBALS['https_server'])) {
             $location = 'HTTPS://' .$GLOBALS['https_server'];
@@ -2765,6 +2824,18 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         } // if
         // identify where we are coming from
         $_SESSION['pages'][$prev_script][$prev_task]['return_from'] = $task_id;
+
+        if (empty($_SESSION['csrf_array'][$prev_task])) {
+            $csrf_id = uniqid('', true);
+            $_SESSION['csrf_array'][$prev_task] = $csrf_id;
+        } else {
+            $csrf_id = $_SESSION['csrf_array'][$prev_task];
+        } // if
+        if (empty($query_string)) {
+            $query_string = "csrf_id=$csrf_id";
+        } else {
+            $query_string .= "&csrf_id=$csrf_id";
+        } // if
 
         if (is_True($_SERVER['HTTPS'])) {
             if (!empty($GLOBALS['https_server'])) {

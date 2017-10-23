@@ -89,8 +89,8 @@ go
 
 CREATE TABLE audit_logon_errors (
   id int NOT NULL IDENTITY(1,1),
-  err_timestamp datetime2  NOT NULL DEFAULT '0000-00-00 00:00:00',
-  ip_address nvarchar(40) NOT NULL DEFAULT '0.0.0.0',
+  err_timestamp datetime2  NOT NULL DEFAULT '2000-01-01 00:00:00',
+  ip_address nvarchar(40) NOT NULL DEFAULT '',
   user_id nvarchar(16) DEFAULT NULL,
   user_password nvarchar(16) NOT NULL DEFAULT '',
   email_addr nvarchar(50) DEFAULT NULL,
@@ -106,7 +106,7 @@ go
 CREATE TABLE audit_ssn (
   session_id bigint NOT NULL IDENTITY(1,1),
   user_id nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
-  ssn_datetime datetime2 NOT NULL default '2000-01-01 00:00:00',
+  ssn_datetime datetime2 NOT NULL DEFAULT '2000-01-01 00:00:00',
   PRIMARY KEY (session_id)
 );
 go
@@ -152,7 +152,7 @@ go
 --
 
 CREATE TABLE php_session (
-  session_id nvarchar(32) NOT NULL DEFAULT '',
+  session_id nvarchar(256) NOT NULL DEFAULT '',
   user_id nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   date_created datetime2  NOT NULL DEFAULT '2000-01-01 00:00:00',
   last_updated datetime2  NOT NULL DEFAULT '2000-01-01 00:00:00',

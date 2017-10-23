@@ -70,7 +70,7 @@ GO
 
 CREATE TABLE help_text (
   task_id nvarchar(80) NOT NULL,
-  help_text ntext NOT NULL,
+  help_text nvarchar(max) NOT NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2(0) NULL,
@@ -87,7 +87,7 @@ go
 CREATE TABLE help_text_alt (
   task_id nvarchar(80) NOT NULL,
   language_id nvarchar(5) NOT NULL,
-  help_text ntext NOT NULL,
+  help_text nvarchar(max) NOT NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
   revised_date datetime2(0) NULL,
@@ -104,7 +104,7 @@ go
 CREATE TABLE mnu_account (
   rdcaccount_id int NOT NULL IDENTITY(1,1),
   account_name nvarchar(80) NOT NULL,
-  account_desc ntext,
+  account_desc nvarchar(max),
   rdcversion int NOT NULL DEFAULT '1',
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) DEFAULT 'UNKNOWN',
@@ -235,7 +235,7 @@ go
 CREATE TABLE mnu_motd (
   motd_id int NOT NULL IDENTITY(1,1),
   motd_subject nvarchar(80) NOT NULL,
-  motd_message ntext NOT NULL,
+  motd_message nvarchar(max) NOT NULL,
   start_date date NOT NULL DEFAULT '2000-01-01',
   end_date date DEFAULT '9999-12-31',
   role_id nvarchar(16) NULL,
@@ -274,7 +274,7 @@ go
 CREATE TABLE mnu_pattern (
   pattern_id nvarchar(16) NOT NULL,
   pattern_name nvarchar(60) NOT NULL,
-  pattern_desc ntext,
+  pattern_desc nvarchar(max),
   visible_screen char(1) DEFAULT 'N',
   context_preselect char(1) DEFAULT 'N',
   keep_data char(1) DEFAULT 'N',
@@ -294,7 +294,7 @@ go
 CREATE TABLE mnu_role (
   role_id nvarchar(16) NOT NULL,
   role_name nvarchar(80) NOT NULL,
-  role_desc ntext,
+  role_desc nvarchar(max),
   start_task_id nvarchar(80) NOT NULL,
   global_access char(1) DEFAULT 'N',
   is_external_auth_off char(1) NOT NULL DEFAULT 'N',
@@ -387,7 +387,7 @@ go
 CREATE TABLE mnu_subsystem (
   subsys_id nvarchar(16) NOT NULL,
   subsys_name nvarchar(80) NOT NULL,
-  subsys_desc ntext,
+  subsys_desc nvarchar(max),
   subsys_dir nvarchar(255) NOT NULL,
   task_prefix nvarchar(8) NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
@@ -406,7 +406,7 @@ go
 CREATE TABLE mnu_task (
   task_id nvarchar(80) NOT NULL,
   task_name nvarchar(80) NOT NULL,
-  task_desc ntext,
+  task_desc nvarchar(max),
   button_text nvarchar(40) NULL,
   task_type nvarchar(4) NULL,
   script_id nvarchar(80) NULL,
@@ -445,7 +445,7 @@ CREATE TABLE mnu_task_alt (
   task_id nvarchar(80) NOT NULL,
   language_id nvarchar(5) NOT NULL,
   task_name nvarchar(80) NOT NULL,
-  task_desc ntext,
+  task_desc nvarchar(max),
   button_text nvarchar(40) NOT NULL,
   created_date datetime2(0) NOT NULL DEFAULT '2000-01-01 00:00:00',
   created_user nvarchar(16) NOT NULL DEFAULT 'UNKNOWN',
@@ -584,7 +584,7 @@ CREATE TABLE mnu_todo (
   user_id nvarchar(16) NOT NULL,
   seq_no smallint NOT NULL DEFAULT '0',
   item_name nvarchar(80) NOT NULL,
-  item_desc ntext,
+  item_desc nvarchar(max),
   due_date date NOT NULL DEFAULT '0000-00-00',
   visibility tinyint NOT NULL DEFAULT '0',
   is_complete char(1) NOT NULL DEFAULT 'N',

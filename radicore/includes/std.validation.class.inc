@@ -207,7 +207,9 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (strlen($fieldvalue) == 0) {
+        if (is_null($fieldvalue)
+        OR  (is_string($fieldvalue) AND strlen($fieldvalue) == 0)
+        OR  (is_array($fieldvalue)  AND empty($fieldvalue))) {
             // value is empty, but is there a default which can be inserted?
             if ($fieldname == 'rdcaccount_id') {
             	// this table is split by account, so insert user's account_id
@@ -270,7 +272,9 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (strlen($fieldvalue) == 0 AND !is_bool($fieldvalue)) {
+        if (is_null($fieldvalue)
+        OR  (is_string($fieldvalue) AND strlen($fieldvalue) == 0 AND !is_bool($fieldvalue))
+        OR  (is_array($fieldvalue)  AND empty($fieldvalue))) {
             // field is empty - is it allowed to be?
             if (isset($fieldspec['required'])) {
                 if (isset($fieldspec['autoinsert'])
@@ -402,7 +406,7 @@ END_OF_REGEX;
                     } // if
                 } // if
 
-                if (strpos($fieldvalue, '%') === false) {
+                if (is_string($fieldvalue) AND strpos($fieldvalue, '%') === false) {
                     // field does not contain the '%' (wildcard) character
                 } else {
                     if (!empty($fieldspec['pkey'])) {

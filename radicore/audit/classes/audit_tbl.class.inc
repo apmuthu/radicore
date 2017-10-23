@@ -125,6 +125,17 @@ class audit_tbl extends Default_Table
             } // if
             $_SESSION['session_number'] = $ssn_data['session_id'];
         } else {
+            if (!isset($GLOBALS['session_id_checked'])) {
+                // check that record actually exists
+                $ssn_obj = RDCsingleton::getInstance('audit_ssn');
+                $ssn_data = array('session_id' => $_SESSION['session_number']);
+                $ssn_data = $ssn_obj->insertOrUpdate($ssn_data);
+                if ($ssn_obj->errors) {
+                    $this->errors = $ssn_obj->getErrors();
+                    return;
+                } // if
+                $GLOBALS['session_id_checked'] = true;
+            } // if
             $ssn_data['session_id'] = $_SESSION['session_number'];
         } // if
 

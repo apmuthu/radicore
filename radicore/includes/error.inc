@@ -112,6 +112,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
             $GLOBALS['php_errorline'] = $errline;
             if (version_compare(phpversion(), '7.0.0', '>=')) {
                 error_clear_last();
+            } else {
+                $handler = set_error_handler('var_dump', 0);
+                @$undef_var;
+                restore_error_handler($handler);
             } // if
             return;
         case E_USER_ERROR:
@@ -460,8 +464,21 @@ set_exception_handler('exception_handler');
 function shutdown_handler()
 // catch-all for errors not handled in standard errorHandler.
 {
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) AND $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+        $buffer = null;  // do not capture output from a AJAX request
+    } else {
+        $buffer = ob_get_contents();
+        if (preg_match('/^<!DOCTYPE /i', $buffer)) {
+            $buffer = null;  // do not capture standard HTML output
+        } // if
+    } // if
+
     $error = error_get_last();
-    if ($error['type'] === E_ERROR) {
+    if ($error['type'] === E_WARNING OR $error['type'] === E_NOTICE) {
+        $error = null;  // ignore these
+    } // if
+
+    if (!empty($error) OR !empty($buffer)) {
         // fatal error has occured
         if (defined('ERROR_LOG')) {
             $logfile = ERROR_LOG;  // write into specified file
@@ -470,18 +487,21 @@ function shutdown_handler()
         } else {
             $logfile = $_SERVER['DOCUMENT_ROOT'].getParentDIR().'/error_logs/errorlog.html';  // write into default file
         } // if
-        $string = '['.date(DATE_RFC850).']'."<br>\n";
+        $string = '['.date(DATE_RFC822).']'."<br>\n";
         $string .= 'script='.$_SERVER['SCRIPT_FILENAME']."<br>\n";
-        foreach ($error as $key => $value) {
-            $string .= "$key=$value <br>\n";
-        } // foreach
+        if (is_array($error)) {
+            foreach ($error as $key => $value) {
+                $string .= "$key=$value <br>\n";
+            } // foreach
+        } // if
+        if (!empty($buffer)) {
+            $string .= "$buffer <br>\n";
+        } // if
         $res = error_log("\n<p>$string</p>", 3, $logfile);
     } // if
 
 } // shutdown_handler
 
 register_shutdown_function('shutdown_handler');
-
-// ****************************************************************************
 
 ?>

@@ -26,6 +26,13 @@ class php_session extends Default_Table
         // there is absolutely NO logging of the audit database
         $this->audit_logging = false;
 
+        $sid_length = ini_get('session.sid_length');
+        if ($sid_length === FALSE) {
+            $sid_length = 32;  // default lenth before version 7.1.0
+        } // if
+        // set length to value defined in php.ini file
+        $this->fieldspec['session_id']['size'] = $sid_length;
+
     } // __construct
 
     // ****************************************************************************
