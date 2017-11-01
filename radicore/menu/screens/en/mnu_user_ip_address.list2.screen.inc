@@ -5,8 +5,8 @@ $structure['tables']['outer'] = 'mnu_user';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['outer']['columns'][] = array('width' => '20%');
-$structure['outer']['columns'][] = array('width' => 100);
-$structure['outer']['columns'][] = array('width' => 100);
+$structure['outer']['columns'][] = array('width' => '8.4%');
+$structure['outer']['columns'][] = array('width' => '8.4%');
 $structure['outer']['columns'][] = array('width' => '*');
 
 // identify the field names and their screen labels

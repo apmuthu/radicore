@@ -558,7 +558,7 @@ CREATE TABLE mnu_task_alt (
     task_id character varying(80) NOT NULL,
     language_id character varying(5) NOT NULL,
     task_name character varying(80) NOT NULL,
-    task_desc text NOT NULL,
+    task_desc text,
     button_text character varying(40) NOT NULL,
     created_date timestamp without time zone DEFAULT '2000-01-01 00:00:00'::timestamp without time zone NOT NULL,
     created_user character varying(16) DEFAULT 'UNKNOWN'::character varying NOT NULL,

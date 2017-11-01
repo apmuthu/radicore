@@ -848,21 +848,23 @@ abstract class Default_Table
             } // if
         } // if
 
-        // check that this record can be deleted
-        $numrows = $this->numrows;
-        if (empty($this->errors)) {
-            $fieldarray = $this->validateDelete($fieldarray, $parent_table);
-        } // if
+        if (!empty($fieldarray)) {
+            // check that this record can be deleted
+            $numrows = $this->numrows;
+            if (empty($this->errors)) {
+                $fieldarray = $this->validateDelete($fieldarray, $parent_table);
+            } // if
 
-        if (empty($this->errors)) {
-            // delete any tables related to the specified record
-            $this->deleteRelations($fieldarray);
-        } // if
+            if (empty($this->errors)) {
+                // delete any tables related to the specified record
+                $this->deleteRelations($fieldarray);
+            } // if
 
-        $this->numrows = $numrows;
-        if (empty($this->errors) AND $this->numrows > 0) {
-            // delete the specified record
-            $this->_dml_deleteRecord($fieldarray);
+            $this->numrows = $numrows;
+            if (empty($this->errors) AND $this->numrows > 0) {
+                // delete the specified record
+                $this->_dml_deleteRecord($fieldarray);
+            } // if
         } // if
 
         if (empty($this->errors)) {
@@ -2215,7 +2217,9 @@ abstract class Default_Table
                     $data_raw[0] = $this->fieldarray;
                 } // if
             } // if
-            $this->numrows = count($data_raw);
+            if (empty($this->numrows)) {            // 2017-10-11 by AJM
+                $this->numrows = count($data_raw);
+            } // if                                 // 2017-10-11 by AJM
             if (empty($this->scrollarray)) {
                 // set record/page counts from contents of $this->fieldarray
                 if ($this->numrows == 0) {
@@ -7610,7 +7614,7 @@ abstract class Default_Table
     } // _cm_getUploadSubdir
 
     // ****************************************************************************
-    function _cm_getValRep ($item=null, $where=null, $orderby=null)
+    function _cm_getValRep ($item, $where, $orderby)
     // get Value/Representation list as an associative array.
     {
         $array = array();

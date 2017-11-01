@@ -895,12 +895,7 @@ END_OF_REGEX;
                         $lock_str = 'FOR UPDATE';
                         break;
                     default:
-//                        $count = preg_match_all("/\w+/", $from_str, $regs);
-//                        if ($count > 1) {
-//                            $lock_str = 'FOR UPDATE OF ' .$tablename;
-//                        } else {
-                            $lock_str = 'FOR UPDATE';
-//                        } // if
+                        $lock_str = 'FOR UPDATE';
                 } // switch
                 $this->row_locks = null;
 

@@ -225,7 +225,7 @@ class mnu_user extends Default_Table
         $roleOBJ->sql_select .= ", (SELECT GROUP_CONCAT(role_id ORDER BY role_id SEPARATOR ',') FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00') AS role_list";
         $roleOBJ->sql_from    = 'mnu_user_role'
                              . " LEFT JOIN mnu_role ON (mnu_role.role_id=mnu_user_role.role_id)";
-        $where  = "mnu_user_role.user_id='{$user_id}'";
+        $where  = "mnu_user_role.user_id='".addslashes($user_id)."'";
         $where .= " AND mnu_user_role.sort_seq=(SELECT MIN(sort_seq) FROM mnu_user_role WHERE user_id='{$user_id}' AND start_date<='$today 23:59:59' AND end_date>='$today 00:00:00')";
         $roleOBJ->sql_orderby = 'role_id';
         $role_data = $roleOBJ->getData_raw($where);

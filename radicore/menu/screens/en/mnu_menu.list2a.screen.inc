@@ -17,7 +17,7 @@ $structure['tables']['inner'] = 'mnu_menu_snr';
 $structure['inner']['columns'][] = array('width' => 5);
 $structure['inner']['columns'][] = array('width' => 200);
 $structure['inner']['columns'][] = array('width' => '*');
-$structure['inner']['columns'][] = array('width' => 100);
+$structure['inner']['columns'][] = array('width' => 50);
 $structure['inner']['columns'][] = array('width' => 150);
 
 // identify the field names and their screen labels

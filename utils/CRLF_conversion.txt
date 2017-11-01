@@ -1,0 +1,19 @@
+# Get all locations where CRLF are present
+grep -IUr $"\r\n" * > abc.txt
+# Extract the filenames only
+cut -d: -f1 abc.txt > def.txt
+# Remove duplicate fullpath filenames
+awk '!seen[$0]++' def.txt > ghi.txt
+# Remove the matches
+grep -v ' matches$' ghi.txt > jkl.txt
+
+# Oneliner for current folder downwards:
+grep -IUr $"\r\n" * | cut -d: -f1 | awk '!seen[$0]++' | grep -v ' matches$' > ../crlf_file_list.txt
+
+# Convert all CRLF => LF recursively
+
+# In Linux:
+find ./ -type f \( -name "*.php" -o -name "*.css" -o -name "*.js" -o -name "*.txt" -o -name "*.inc" -o -name "*.sql" \) | xargs dos2unix -U
+
+# In Windows Git Bash (as the reverse unix2dos is available)
+find ./ -type f -name "*.php" -o -name "*.css" -o -name "*.js" -o -name "*.txt" -o -name "*.inc" -o -name "*.sql"  | xargs dos2unix

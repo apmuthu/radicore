@@ -2807,8 +2807,16 @@ if (!function_exists('formatCurrency')) {
     {
         $amount = $amount * $exchange_rate;
 
-    	// get locale for the specified language language
-    	$user_language_array = get_languages($language);
+    	// get locale for the specified language
+        if (empty($_SESSION['user_language_array'])) {
+            if (empty($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+                return $amount;
+            } else {
+                // obtain language code from browser settings
+                $_SESSION['user_language_array'] = get_user_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+            } // if
+        } // if
+    	$user_language_array = $_SESSION['user_language_array'];
     	$locale = rdc_setLocale($user_language_array[0][2]);
     	$localeconv = localeconv();
 
@@ -3322,13 +3330,10 @@ if (!function_exists('getLanguageArray')) {
     {
         static $system_msgs;    // for global messages (from sys.language_array.inc)
         static $subsystem_msgs; // for subsystem messages (from language_arrayinc)
-        static $language;       // current language
         static $curr_dir;       // current directory
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
-        if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
-            //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
-        } // if
+        $dir_script = str_replace('\\', '/', $dir_script);  // replace back slashes with forward slashes
 
         $cwd = getcwd();
         $cwd = str_replace('\\', '/', $cwd);  // replace back slashes with forward slashes
@@ -3355,23 +3360,6 @@ if (!function_exists('getLanguageArray')) {
             $curr_dir = dirname($curr_dir);  // remove 'text' directory
         } // if
 
-        // if language has changed then reload contents of global array
-        if (!empty($GLOBALS['party_language'])) {
-            if ($GLOBALS['party_language'] != $language) {
-                $language = $GLOBALS['party_language'];
-            } // if
-        } elseif (!empty($_SESSION['user_language'])) {
-            if ($_SESSION['user_language'] != $language) {
-                $language = $_SESSION['user_language'];
-            } // if
-        } elseif (!empty($_SESSION['default_language'])) {
-            if ($_SESSION['default_language'] != $language) {
-                $language = $_SESSION['default_language'];
-            } // if
-        } else {
-            $language = 'en';
-        } // if
-
         $subsystem_id = basename($curr_dir);
 
         // load global messages if not already loaded
@@ -3387,10 +3375,10 @@ if (!function_exists('getLanguageArray')) {
         if ($dir) {
             $fname = getLanguageFile('sys.language_array.inc', $dir);
             if ($fname) {
-                $file_language = basename(dirname($fname));
-                if (!array_key_exists($file_language, $system_msgs)) {
-                    $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
-                    if (empty($system_msgs[$file_language])) {
+                $sys_language = basename(dirname($fname));
+                if (!array_key_exists($sys_language, $system_msgs)) {
+                    $system_msgs[$sys_language] = require_once $fname;  // import contents of disk file
+                    if (empty($system_msgs[$sys_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
@@ -3401,10 +3389,11 @@ if (!function_exists('getLanguageArray')) {
                         if (!empty($dir)) {
                             $fname = getLanguageFile('sys.language_array.inc', $dir, true);
                             if ($fname) {
-                                //$file_language = basename(dirname($fname));  // use same language as standard file
                                 $custom = require_once $fname;  // import contents of disk file
-                                // merge with standard messages, overwriting any duplicates
-                                $system_msgs[$file_language] = array_merge($system_msgs[$file_language], $custom);
+                                if (is_array($custom)) {
+                                    // merge with standard messages, overwriting any duplicates
+                                    $system_msgs[$sys_language] = array_merge($system_msgs[$sys_language], $custom);
+                                } // if
                                 unset($array);
                             } // if
                         } // if
@@ -3421,12 +3410,12 @@ if (!function_exists('getLanguageArray')) {
         if ($dir) {
             $fname = getLanguageFile('language_array.inc', $dir);
             if ($fname) {
-                $file_language = basename(dirname($fname));
+                $subsys_language = basename(dirname($fname));
                 if (!array_key_exists($subsystem_id, $subsystem_msgs)
-                OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+                OR  !array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
                     // import contents of disk file
-                    $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
-                    if (empty($subsystem_msgs[$subsystem_id][$file_language])) {
+                    $subsystem_msgs[$subsystem_id][$subsys_language] = require_once $fname;
+                    if (empty($subsystem_msgs[$subsystem_id][$subsys_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
@@ -3437,11 +3426,11 @@ if (!function_exists('getLanguageArray')) {
                         if (!empty($dir)) {
                             $fname = getLanguageFile('language_array.inc', $dir, true);
                             if ($fname) {
-                                //$file_language = basename(dirname($fname));  // use same language as standard file
                                 $custom = require_once $fname;  // import contents of disk file
-                                // merge with standard messages, overwriting any duplicates
-                                $standard =& $subsystem_msgs[$subsystem_id][$file_language];
-                                $standard = array_merge($standard, $custom);
+                                if (is_array($custom)) {
+                                    // merge with standard messages, overwriting any duplicates
+                                    $subsystem_msgs[$subsystem_id][$subsys_language] = array_merge($subsystem_msgs[$subsystem_id][$subsys_language], $custom);
+                                } // if
                                 unset($array);
                             } // if
                         } // if
@@ -3450,35 +3439,17 @@ if (!function_exists('getLanguageArray')) {
             } // if
         } // if
 
-        if (empty($file_language)) {
-            $file_language = $language;
-        } // if
-
         // perform lookup for specified $id ($subsystem_msgs first, then $system_msgs)
         $result = null;
-        if (array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
-            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$language])) {
-                $result = $subsystem_msgs[$subsystem_id][$language][$id];
-            } // if
-        } // if
-        if (empty($result) AND $file_language != $language) {
-            if (array_key_exists($file_language, $subsystem_msgs[$subsystem_id])) {
-                if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$file_language])) {
-                    $result = $subsystem_msgs[$subsystem_id][$file_language][$id];
-                } // if
+        if (array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
+            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$subsys_language])) {
+                $result = $subsystem_msgs[$subsystem_id][$subsys_language][$id];
             } // if
         } // if
         if (empty($result)) {
-            if (array_key_exists($language, $system_msgs)) {
-                if (array_key_exists($id, $system_msgs[$language])) {
-                    $result = $system_msgs[$language][$id];
-                } // if
-            } // if
-        } // if
-        if (empty($result) AND $file_language != $language) {
-            if (array_key_exists($file_language, $system_msgs)) {
-                if (array_key_exists($id, $system_msgs[$file_language])) {
-                    $result = $system_msgs[$file_language][$id];
+            if (array_key_exists($sys_language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$sys_language])) {
+                    $result = $system_msgs[$sys_language][$id];
                 } // if
             } // if
         } // if
@@ -3531,13 +3502,13 @@ if (!function_exists('getLanguageFile')) {
             $language_array[] = $browser_language;
         } // if
 
-        // last possible entries are the application default, then 'English'
+        // last possible entries are the installation default, then 'English'
         if (!empty($_SESSION['default_language'])) {
             $language_array[] = $_SESSION['default_language'];
         } // if
         $language_array[] = 'en';
 
-        // search directories in priority order and stop when the file is found
+        // search directories in priority order and stop when the first file is found
         foreach ($language_array as $language) {
             // change hyphen to underscore before file system lookup
             $language = str_replace('-', '_', strtolower($language));
@@ -3572,13 +3543,10 @@ if (!function_exists('getLanguageText')) {
     {
         static $system_msgs;    // for global messages (from sys.language_text.inc)
         static $subsystem_msgs; // for subsystem messages (from language_text.inc)
-        static $language;       // current language
         static $curr_dir;       // current directory
 
         $dir_script = dirname($_SERVER['SCRIPT_FILENAME']);
-        if (substr(getcwd(), 0, strlen($_SERVER['DOCUMENT_ROOT'])) != $_SERVER['DOCUMENT_ROOT']) {
-            //$res = chdir($dir_script);  // force cwd() to be same as current script (a bug somewhere changes this!!!)
-        } // if
+        $dir_script = str_replace('\\', '/', $dir_script);  // replace back slashes with forward slashes
 
         $cwd = getcwd();
         $cwd = str_replace('\\', '/', $cwd);  // replace back slashes with forward slashes
@@ -3605,23 +3573,6 @@ if (!function_exists('getLanguageText')) {
             $curr_dir = dirname($curr_dir);  // remove 'text' directory
         } // if
 
-        // if language has changed then reload contents of global array
-        if (!empty($GLOBALS['party_language'])) {
-            if ($GLOBALS['party_language'] != $language) {
-                $language = $GLOBALS['party_language'];
-            } // if
-        } elseif (!empty($_SESSION['user_language'])) {
-            if ($_SESSION['user_language'] != $language) {
-                $language = $_SESSION['user_language'];
-            } // if
-        } elseif (!empty($_SESSION['default_language'])) {
-            if ($_SESSION['default_language'] != $language) {
-                $language = $_SESSION['default_language'];
-            } // if
-        } else {
-            $language = 'en';
-        } // if
-
         $subsystem_id = basename($curr_dir);
 
         // load global messages if not already loaded
@@ -3642,17 +3593,15 @@ if (!function_exists('getLanguageText')) {
                 $fname = getLanguageFile('sys.language_text.inc', $dir);
             } // if
             if ($fname) {
-                $file_language = basename(dirname($fname));
-                if (!array_key_exists($file_language, $system_msgs)) {
-                    $system_msgs[$file_language] = require_once $fname;  // import contents of disk file
-                    if (empty($system_msgs[$file_language])) {
+                $sys_language = basename(dirname($fname));
+                if (!array_key_exists($sys_language, $system_msgs)) {
+                    $system_msgs[$sys_language] = require_once $fname;  // import contents of disk file
+                    if (empty($system_msgs[$sys_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
-                    // store this as the default language for this session
-                    $language = $file_language;
                     // use this language in the XSL transformation
-                    $GLOBALS['output_language'] = $language;
+                    $GLOBALS['output_language'] = $sys_language;
 
                     if (!empty($GLOBALS['project_code'])) {
                         // load custom messages for this project
@@ -3660,10 +3609,11 @@ if (!function_exists('getLanguageText')) {
                         if (!empty($dir)) {
                             $fname = getLanguageFile('sys.language_text.inc', $dir, true);
                             if ($fname) {
-                                //$file_language = basename(dirname($fname));  // use same language as standard file
                                 $custom = require_once $fname;  // import contents of disk file
-                                // merge with standard messages, overwriting any duplicates
-                                $system_msgs[$file_language] = array_merge($system_msgs[$file_language], $custom);
+                                if (is_array($custom)) {
+                                    // merge with standard messages, overwriting any duplicates
+                                    $system_msgs[$sys_language] = array_merge($system_msgs[$sys_language], $custom);
+                                } // if
                                 unset($array);
                             } // if
                         } // if
@@ -3685,12 +3635,12 @@ if (!function_exists('getLanguageText')) {
                 $fname = getLanguageFile('language_text.inc', $dir);
             } // if
             if ($fname) {
-                $file_language = basename(dirname($fname));
+                $subsys_language = basename(dirname($fname));
                 if (!array_key_exists($subsystem_id, $subsystem_msgs)
-                OR  !array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
+                OR  !array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
                     // import contents of disk file
-                    $subsystem_msgs[$subsystem_id][$file_language] = require_once $fname;
-                    if (empty($subsystem_msgs[$subsystem_id][$file_language])) {
+                    $subsystem_msgs[$subsystem_id][$subsys_language] = require_once $fname;
+                    if (empty($subsystem_msgs[$subsystem_id][$subsys_language])) {
                         trigger_error("File $fname is empty", E_USER_ERROR);
                     } // if
                     unset($array);
@@ -3701,10 +3651,11 @@ if (!function_exists('getLanguageText')) {
                         if (!empty($dir)) {
                             $fname = getLanguageFile('language_text.inc', $dir, true);
                             if ($fname) {
-                                //$file_language = basename(dirname($fname));  // use same language as standard file
                                 $custom = require_once $fname;  // import contents of disk file
-                                // merge with standard messages, overwriting any duplicates
-                                $subsystem_msgs[$subsystem_id][$file_language] = array_merge($subsystem_msgs[$subsystem_id][$file_language], $custom);
+                                if (is_array($custom)) {
+                                    // merge with standard messages, overwriting any duplicates
+                                    $subsystem_msgs[$subsystem_id][$subsys_language] = array_merge($subsystem_msgs[$subsystem_id][$subsys_language], $custom);
+                                } // if
                                 unset($array);
                             } // if
                         } // if
@@ -3713,35 +3664,17 @@ if (!function_exists('getLanguageText')) {
             } // if
         } // if
 
-        if (empty($file_language)) {
-            $file_language = $language;
-        } // if
-
         // perform lookup for specified $id ($subsystem_msgs first, then $system_msgs)
         $string = null;
-        if (array_key_exists($language, $subsystem_msgs[$subsystem_id])) {
-            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$language])) {
-                $string = $subsystem_msgs[$subsystem_id][$language][$id];
-            } // if
-        } // if
-        if (empty($string) AND $file_language != $language) {
-            if (array_key_exists($file_language, $subsystem_msgs[$subsystem_id])) {
-                if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$file_language])) {
-                    $string = $subsystem_msgs[$subsystem_id][$file_language][$id];
-                } // if
+        if (array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
+            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$subsys_language])) {
+                $string = $subsystem_msgs[$subsystem_id][$subsys_language][$id];
             } // if
         } // if
         if (empty($string)) {
-            if (array_key_exists($language, $system_msgs)) {
-                if (array_key_exists($id, $system_msgs[$language])) {
-                    $string = $system_msgs[$language][$id];
-                } // if
-            } // if
-        } // if
-        if (empty($string) AND $file_language != $language) {
-            if (array_key_exists($file_language, $system_msgs)) {
-                if (array_key_exists($id, $system_msgs[$file_language])) {
-                    $string = $system_msgs[$file_language][$id];
+            if (array_key_exists($sys_language, $system_msgs)) {
+                if (array_key_exists($id, $system_msgs[$sys_language])) {
+                    $string = $system_msgs[$sys_language][$id];
                 } // if
             } // if
         } // if
@@ -5224,7 +5157,7 @@ if (!function_exists('qualifyField')) {
                             	$table_fieldspec = $fieldspec;
                             } else {
                                 $class = "classes/$array_tablename.class.inc";
-                			    if ($fp = fopen($class, 'r', true)) {
+                			    if ($fp = @fopen($class, 'r', true)) {
                                 	fclose($fp);
                                 	// class exists, so inspect it
                                 	$dbobject = RDCsingleton::getInstance($array_tablename, null, false);

@@ -1004,7 +1004,7 @@ function initSession($save_session_data=array(), $argv=array())
                     if ($curr_task['script_id'] == $PHP_SELF) {
                         // refreshing current script, so ignore next bit
                     } elseif (empty($_SESSION['csrf_array'][$task_id])
-                    OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$task_id]) {
+                          OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$task_id]) {
                         CSRF_check_failed();
                     } // if
                 } // if
@@ -1049,6 +1049,86 @@ function initSession($save_session_data=array(), $argv=array())
         		$_SESSION['timezone_client'] = $_COOKIE['timezone_client'];
         	} // if
     	} // if
+    } // if
+
+    if (defined('RADICORE_NO_MENU') OR defined('TRANSIX_NO_MENU')) {
+        // no MENU database, so skip this next bit
+        setUserLanguage();
+    } else {
+        if (empty($_SESSION['user_language_array'])) {
+            // obtain language code from browser settings
+            $_SESSION['user_language_array'] = get_user_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+        } // if
+
+        if (empty($_SESSION['supported_languages'])) {
+            // obtain supported languages from MENU database
+            $_SESSION['supported_languages'] = getSupportedLanguages();
+        } // if
+
+        if (empty($_SESSION['default_language'])) {
+            // get default language from control table
+            $mnu_control = RDCsingleton::getInstance('mnu_control');
+            $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
+        } // if
+
+        setUserLanguage();
+
+        if (!isset($_SESSION['date_format_input'])) {
+            $dbobject = RDCsingleton::getInstance('mnu_language');
+            $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
+            if (!empty($data)) {
+                $data = $data[0];
+                $_SESSION['date_format_input']  = $data['input_date_format'];
+                $_SESSION['date_format_output'] = $data['output_date_format'];
+            } // if
+            unset($dbobject);
+        } // if
+
+        if (!empty($_SESSION['logon_user_id'])) {
+            // check that this user_id is valid for this IP address (helps prevent session hijacking)
+            if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_user_ip_address', $_SESSION['empty_tables'])) {
+                // table is empty, so no lookups are required
+            } else {
+                $ip_address = getRealIPAddress();
+                $user_id    = $_SESSION['logon_user_id'];
+                $dbobject = RDCsingleton::getInstance('mnu_user');
+                $dbobject->sql_select  = 'user_id, ip_address';
+                $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
+                                              ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
+                                              ." ELSE false"
+                                         ." END AS ip_address_valid";
+                $data = $dbobject->getData_raw("user_id='$user_id'");
+                if (!empty($data)) {
+                    $data = $data[0];
+                    if (!is_True($data['ip_address_valid'])) {
+                        // 'This IP address is not valid for this user'
+                        $_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
+                        $location = 'HTTP://' .$_SERVER['HTTP_HOST']
+                                              .getParentDIR()
+                                              .$logon_screen
+                                              .'?session_name=' .session_name();
+
+                        logstuff("location: $location", __FUNCTION__, __LINE__);
+
+                        session_write_close();
+                        header('Location: ' .$location);
+                        exit;
+                    } // if
+                } // if
+                unset($dbobject);
+            } // if
+        } // if
+    } // if
+
+    // set to locale where decimal point is '.' (as used internally)
+    $locale = rdc_setLocale("English (United Kingdom) [en_GB]");
+
+    // set default language for database access
+    $GLOBALS['party_language'] = strtolower($_SESSION['user_language']);
+
+    if (!empty($_SESSION['localeconv'])) {
+        // set default number formatting based on user's locale
+        $GLOBALS['localeconv'] = $_SESSION['localeconv'];
     } // if
 
     if (isset($GLOBALS['batch'])) {
@@ -1312,86 +1392,6 @@ function initSession($save_session_data=array(), $argv=array())
             unset($dbobject);
 	    } // if
 	} // if
-
-	if (defined('RADICORE_NO_MENU') OR defined('TRANSIX_NO_MENU')) {
-		// no MENU database, so skip this next bit
-        setUserLanguage();
-	} else {
-		if (!empty($_SESSION['logon_user_id'])) {
-			// check that this user_id is valid for this IP address (helps prevent session hijacking)
-            if (!empty($_SESSION['empty_tables']) AND array_key_exists('mnu_user_ip_address', $_SESSION['empty_tables'])) {
-                // table is empty, so no lookups are required
-            } else {
-	            $ip_address = getRealIPAddress();
-	            $user_id    = $_SESSION['logon_user_id'];
-	            $dbobject = RDCsingleton::getInstance('mnu_user');
-	            $dbobject->sql_select  = 'user_id, ip_address';
-	            $dbobject->sql_select .= ", CASE WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id') = 0 THEN true"
-	                                          ." WHEN (SELECT count(ip_address) FROM mnu_user_ip_address WHERE user_id='$user_id' AND ip_address='$ip_address') = 1 THEN true"
-	                                          ." ELSE false"
-	                                     ." END AS ip_address_valid";
-	            $data = $dbobject->getData_raw("user_id='$user_id'");
-	            if (!empty($data)) {
-        		    $data = $data[0];
-        		    if (!is_True($data['ip_address_valid'])) {
-	                    // 'This IP address is not valid for this user'
-            		    $_SESSION['messages'] = getLanguageText('sys0200', $ip_address);
-	                    $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-	                                          .getParentDIR()
-	                                          .$logon_screen
-	                                          .'?session_name=' .session_name();
-
-	                    logstuff("location: $location", __FUNCTION__, __LINE__);
-
-	                    session_write_close();
-                        header('Location: ' .$location);
-                        exit;
-	                } // if
-	            } // if
-	            unset($dbobject);
-            } // if
-		} // if
-
-	    if (empty($_SESSION['default_language'])) {
-            // get default language from control table
-	        $mnu_control = RDCsingleton::getInstance('mnu_control');
-	        $_SESSION['default_language'] = $mnu_control->getControlData('default_language');
-	    } // if
-
-	    if (empty($_SESSION['user_language_array'])) {
-    		// obtain language code from browser settings
-	        $_SESSION['user_language_array'] = get_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
-	    } // if
-
-	    if (empty($_SESSION['supported_languages'])) {
-    		// obtain supported languages from MENU database
-	        $_SESSION['supported_languages'] = getSupportedLanguages();
-	    } // if
-
-        setUserLanguage();
-
-        if (!isset($_SESSION['date_format_input'])) {
-            $dbobject = RDCsingleton::getInstance('mnu_language');
-            $data = $dbobject->getData("language_id='{$_SESSION['user_language']}'");
-            if (!empty($data)) {
-                $data = $data[0];
-                $_SESSION['date_format_input']  = $data['input_date_format'];
-                $_SESSION['date_format_output'] = $data['output_date_format'];
-            } // if
-            unset($dbobject);
-        } // if
-	} // if
-
-    // set to locale where decimal point is '.' (as used internally)
-    $locale = rdc_setLocale("English (United Kingdom) [en_GB]");
-
-    // set default language for database access
-    $GLOBALS['party_language'] = strtolower($_SESSION['user_language']);
-
-    if (!empty($_SESSION['localeconv'])) {
-    	// set default number formatting based on user's locale
-        $GLOBALS['localeconv'] = $_SESSION['localeconv'];
-    } // if
 
     // if a button is changed to an image it will have an '_x' or '_y' suffix, so remove it
     foreach ($_POST as $key => $value) {
@@ -2855,6 +2855,8 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
 
         logstuff("location: $location", __FUNCTION__, __LINE__);
 
+        unset($_SESSION['page_stack'][$task_id]);   // data for current task is now redundant
+
         session_write_close();
         if (!headers_sent()) {
             header('Location: ' .$location);
@@ -2923,6 +2925,10 @@ function setUserLanguage ()
         if (!empty($found_lang)) {
             $_SESSION['user_language'] = $found_lang;
         } // if
+    } // if
+
+    if (empty($_SESSION['default_language'])) {
+        $_SESSION['default_language'] = 'en';
     } // if
 
     if (empty($_SESSION['user_language']) AND !empty($_SESSION['default_language'])) {

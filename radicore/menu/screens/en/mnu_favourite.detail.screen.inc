@@ -5,8 +5,8 @@ $structure['tables']['main'] = 'mnu_favourite';
 
 // identify the column specs - may use 'width' or 'class'
 $structure['main']['columns'][] = array('width' => '20%');
-$structure['main']['columns'][] = array('width' => 100);
-$structure['main']['columns'][] = array('width' => 125);
+$structure['main']['columns'][] = array('width' => '8.4%');
+$structure['main']['columns'][] = array('width' => '16.7%');
 $structure['main']['columns'][] = array('width' => '*');
 
 // identify the contents of each row in the table (two formats are allowed)

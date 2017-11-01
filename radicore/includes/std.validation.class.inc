@@ -611,9 +611,9 @@ END_OF_REGEX;
                 unset($spec['nondb']);  // allow a non-database field to be validated
             } // if
             if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
-                // ignore this field
+                $insertarray[$field] = $value;  // do not validate this field
             } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
-                // ignore this field
+                $insertarray[$field] = $value;  // do not validate this field
             } else {
                 if (isset($fieldarray[$field])) {
                     $value = $fieldarray[$field];
@@ -871,9 +871,9 @@ END_OF_REGEX;
                     unset($spec['nondb']);  // allow a non-database field to be validated
                 } // if
                 if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
-                    // ignore this field
+                    $updatearray[$field] = $value;  // do not validate this field
                 } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
-                    // ignore this field
+                    $updatearray[$field] = $value;  // do not validate this field
                 } else {
                     // validate field using field specifications
                     $value = $this->validateField($field, $value, $spec);

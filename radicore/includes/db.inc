@@ -11,6 +11,7 @@ $dbhost = 'localhost';
 // with my account name to keep them separate from other accounts.
 
 if ($_SERVER['SERVER_NAME'] == 'localhost'
+or  $_SERVER['SERVER_NAME'] == 'local.radicore.org'
 or  $_SERVER['SERVER_NAME'] == 'desktop'
 or  $_SERVER['SERVER_NAME'] == 'laptop') {
     // this is for my PC

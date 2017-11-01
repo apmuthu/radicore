@@ -479,6 +479,9 @@ function shutdown_handler()
     } // if
 
     if (!empty($error) OR !empty($buffer)) {
+        if (function_exists('debugBreak') AND defined("DEBUGBREAK_ON_ERROR")) {
+            debugBreak();
+        } // if
         // fatal error has occured
         if (defined('ERROR_LOG')) {
             $logfile = ERROR_LOG;  // write into specified file

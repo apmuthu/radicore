@@ -1,7 +1,7 @@
 <?php
 // *****************************************************************************
 // Copyright 2003-2005 by A J Marston <http://www.tonymarston.net>
-// Copyright 2006-2017 by Radicore Software Limited <http://www.radicore.org>
+// Copyright 2006-2014 by Radicore Software Limited <http://www.radicore.org>
 // *****************************************************************************
 
 // This file contains database access details and values for optional constants/globals
@@ -11,17 +11,11 @@ $GLOBALS['dbms']   = 'mysql';      // database engine is MySQL
 //$GLOBALS['dbms']   = 'sqlsrv';     // database engine is SQL Server (Microsoft)
 
 if ($GLOBALS['dbms'] == 'oracle') {
-    $GLOBALS['dbhost']   = '//localhost/xe';
-    $GLOBALS['dbprefix'] = '';
+    $GLOBALS['dbhost'] = '//localhost/xe';
 
 } elseif ($GLOBALS['dbms'] == 'sqlsrv') {
     // JOIN clauses in SQL Server require 'dbname.<schema>.tblname'
-    $GLOBALS['dbhost']         = 'localhost';
-    $GLOBALS['dbprefix']       = '';
-    $GLOBALS['SQLSRV_schema']  = 'dbo';
-    $GLOBALS['serverName']     = '(local)';
-    $GLOBALS['connectionInfo'] = array('CharacterSet' => 'UTF-8',
-                                       'ReturnDatesAsStrings' => true);
+    $GLOBALS['SQLSRV_schema'] = 'dbo';
 
 } elseif ($GLOBALS['dbms'] == 'pgsql') {
     // NOTE: with MYSQL there are tables withing databases, and within a single connection
@@ -32,12 +26,10 @@ if ($GLOBALS['dbms'] == 'oracle') {
     // When using PostgreSQL you must supply a value for $PGSQL_dbname for the single database
     // connection, and what is known as 'dbname' to MySQL becomes 'schema' to PostgreSQL.
     $GLOBALS['dbhost']       = 'localhost';
-    $GLOBALS['dbprefix']     = '';
     $GLOBALS['PGSQL_dbname'] = 'radicore';
 
 } else {
-    $GLOBALS['dbhost']   = 'localhost';
-    $GLOBALS['dbprefix'] = 'demo_';
+    $GLOBALS['dbhost'] = 'localhost';
 } // if
 
 // NOTE: $dbprefix is for my web host (shared) where my databases are prefixed
@@ -131,9 +123,6 @@ $GLOBALS['use_https'] = false;
 
 // converts datetime between client and server timezones (PHP version >= 5.2)
 //$GLOBALS['server_timezone'] = 'Europe/London';
-
-// redirect all outgoing emails to this address
-define('MAIL_TO_REDIRECT', 'tony@marston-home.demon.co.uk');
 
 // defines email address(es) to which any error_log will be sent
 //define('ERROR_LOG_MAILTO', 'me@domain.com, someone.else@domain.co.uk');

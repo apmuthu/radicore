@@ -35,6 +35,7 @@ class sqlsrv
     var $row_locks_supp;                // supplemental lock type
     var $skip_offset;                   // force diferent offset after rows have been skipped
     var $table_locks;                   // array of tables to be locked
+    var $temp_tables;                   // array of temporary table names
     var $transaction_level;             // transaction level
     var $unique_keys = array();         // array of candidate keys
     var $update_on_duplicate_key;       // switch to 'update' if insert fails
@@ -228,6 +229,11 @@ END_OF_REGEX;
         } // if
 
         $from_str = $this->adjustCONCAT($from_str);
+
+        if (!empty($this->temp_tables)) {
+            $skip_errors = array();
+            $from_str = $this->adjustTempTable ($from_str, $this->temp_tables, $skip_errors);
+        } // if
 
         return $from_str;
 
@@ -701,6 +707,58 @@ EOD;
         return $output;
 
     } // fixReservedWords
+
+    // ****************************************************************************
+    function adjustTempTable ($query, &$temp_tables, &$skip_errors)
+    // convert from MySQL format to SQLSRV format.
+    // $temp_tables is PASSED BY REFERENCE as it may be amended.
+    // $skip_errors is PASSED BY REFERENCE as it may be amended.
+    {
+        $pattern1 = <<< END_OF_REGEX
+/
+^                           # begins with
+DROP[ ]TEMPORARY[ ]TABLE[ ] #
+(IF[ ]EXISTS[ ])?           # optional
+(?<tblname>\w*)             # table name
+/xism
+END_OF_REGEX;
+
+        $pattern2 = <<< END_OF_REGEX
+/
+^                               # begins with
+CREATE[ ]TEMPORARY[ ]TABLE[ ]   #
+(IF[ ]NOT[ ]EXISTS[ ])?         # optional
+(?<tblname>\w*)                 # table name
+(                               # start choice
+  [ ]LIKE[ ](?<tbllike>[^;]*)   # source table name
+|                               # or
+  [ ](?<other>[^;]*)            # something else
+)                               # end choice
+/xism
+END_OF_REGEX;
+
+        if (preg_match($pattern1, $query, $regs)) {
+            $query = "DROP TABLE #{$regs['tblname']}";
+            $skip_errors[] = 3701;
+
+        } elseif (preg_match($pattern2, $query, $regs)) {
+            if (!empty($regs['tbllike'])) {
+                $query = "SELECT TOP 0 * INTO #{$regs['tblname']} FROM {$regs['tbllike']}";
+            } else {
+                $query = "CREATE TABLE #{$regs['tblname']} {$regs['other']}";
+            } // if
+            $temp_tables[] = $regs['tblname'];
+
+        } else {
+            // insert '#' in ront of each temp table name
+            foreach ($temp_tables as $tblname) {
+                $query = preg_replace("/\b{$tblname}\b/i", "#{$tblname}", $query);
+            } // foreach
+        } // if
+
+        return $query;
+
+    } // adjustTempTable
 
     // ****************************************************************************
     function adjustWhere ($string_in)
@@ -1930,13 +1988,22 @@ END_OF_REGEX;
         $single_step = true;  // special code to debug each query separately
         if ($single_step) {
             // execute these statements one at a time
+            $temp_tables = array();  // list of names of temp tables
             foreach ($query_array as $query_part) {
                 $this->query = $query_part;
+                $skip_errors = array();  // list of allowable errors
+                $this->query = $this->adjustTempTable($this->query, $temp_tables, $skip_errors);
                 $result = sqlsrv_query($this->dbconnect, $this->query);
                 if ($result === false) {
-                    trigger_error($this, E_USER_ERROR);
+                    $errno  = $this->getErrorNo();
+                    if (in_array($errno, $skip_errors)) {
+                        // ignore this error
+                    } else {
+                        trigger_error($this, E_USER_ERROR);
+                    } // if
                 } // if
             } // foreach
+            $this->temp_tables = $temp_tables;
             if (count($query_array) == 1) {
                 // only a single query, so return result in full
                 if (is_bool($result)) {

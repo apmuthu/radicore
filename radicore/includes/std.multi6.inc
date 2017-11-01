@@ -267,6 +267,9 @@ if (!empty($_POST)) {
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
+            if ($custom_btn == 'retrieve') {
+                $do_retrieve = true;  // read the database for current data
+            } // if
         } // if
         if ($btn_zone == $dbmiddle->zone OR is_True($dbmiddle->allow_buttons_all_zones)) {
             $middle_data = $dbmiddle->getFieldArray();

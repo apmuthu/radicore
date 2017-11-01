@@ -217,8 +217,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     header('Pragma: public');
                     echo $output;
                     flush();
-                    //scriptPrevious($errors, $messages);
+                    ob_flush();
                 } // if
+                scriptPrevious($errors, $messages);
                 exit;
             } // if
         } // if

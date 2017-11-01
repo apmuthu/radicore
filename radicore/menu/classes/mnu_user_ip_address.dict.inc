@@ -1,5 +1,5 @@
 <?php
-    // file created on May 5, 2017, 9:07 am
+    // file created on October 26, 2017, 11:15 am
     
     // field specifications for table menu.mnu_user_ip_address
     $fieldspec['user_id']                   = array('type' => 'string',
@@ -52,6 +52,7 @@
     
     // parent relationship details 
     $this->parent_relations[]               = array('parent' => 'mnu_user',
+                                                    'parent_field' => 'user_name',
                                                     'alt_language_table' => 'mnu_user_alt',
                                                     'alt_language_cols' => 'user_name',
                                                     'fields' => array('user_id' => 'user_id'));

@@ -1,5 +1,5 @@
 <?php
-    // file created on September 22, 2017, 1:26 pm
+    // file created on October 26, 2017, 3:39 pm
     
     // field specifications for table audit.php_session
     $fieldspec['session_id']                = array('type' => 'string',
@@ -21,7 +21,7 @@
                                                     'required' => 'y',
                                                     'default' => '2000-01-01 00:00:00');
     
-    $fieldspec['session_data']              = array('type' => 'string',
+    $fieldspec['session_data']              = array('type' => 'blob',
                                                     'size' => 4294967295);
     
     // primary key details 

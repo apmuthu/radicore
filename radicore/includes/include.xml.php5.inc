@@ -347,7 +347,9 @@ class radicore_view
                                 // option for dropdown fields
                                 if ($spec['control'] == 'dropdown') {
                                     $child->setAttribute('control', 'dropdown');
-                                    $child->setAttribute('optionlist', $spec['optionlist']);
+                                    if (isset($spec['optionlist'])) {
+                                        $child->setAttribute('optionlist', $spec['optionlist']);
+                                    } // if
                                     if (isset($spec['rows'])) {
                             	        $child->setAttribute('rows', $spec['rows']);
                                     } // if
@@ -653,6 +655,8 @@ class radicore_view
                                         if ($spec['control'] == 'button') {
                                             if (isset($spec['value'])) {
                                                 $child->setAttribute('value', $spec['value']);
+                                            } else {
+                                                $child->setAttribute('value', $fieldname);
                                             } // if
                                         } // if
                                         //if (empty($fieldvalue)) {
@@ -2179,7 +2183,7 @@ END_OF_REGEX;
             $grid = $xml_doc->createElement('columns');
             $grid = $element->appendChild($grid);
             $cells_remaining = 12;  // there are 12 cells in the bootstrap grid system
-            $star_column = 0;  // column with its width set to '*' (asterisk or star)
+            $star_columns    = array();  // columns with width set to '*' (asterisk or star)
             foreach ($input['columns'] as $row => $array) {
                 $array = array_change_key_case($array, CASE_LOWER);
                 if (array_key_exists('nodisplay', $array)) {
@@ -2199,7 +2203,7 @@ END_OF_REGEX;
                                 } elseif ($regs[0] == '*') {
                                     // use remaining space, but as there may be following columns we don't knowwhat that is yet
                                     $size = 1;  // not last cell, so defaut to 1
-                                    $star_column = $row;
+                                    $star_columns[] = $row;  // store this rownum for processing later
                                 } else {
                                     // calculate nearest cell size (assuming each cell is 75 pixels wide)
                                     $size = floor($regs[0] / 75);
@@ -2223,14 +2227,25 @@ END_OF_REGEX;
                             $info[$row]['attributes'][$attrname] = $attrvalue;
                         } // if
                     } // foreach
-                    if (!empty($star_column)) {
-                        $info[$row]['grid_size'] += $cells_remaining;
-                    } // if
                     if (!empty($class_value)) {
                         $info[$row]['class'] = $class_value;
                     } // if
                 } // if
             } // foreach
+
+            if (!empty($star_columns) AND $cells_remaining > 0) {
+                // there may be more than one star column, so add 1 to each until there is nothing left
+                while ($cells_remaining > 0){
+                    foreach ($star_columns as $row) {
+                        $info[$row]['grid_size'] += 1;
+                        $cells_remaining--;
+                        if ($cells_remaining <= 0) {
+                            break;
+                        } // if
+                    } // foreach
+                } // while
+            } // if
+
             // add these finalised grid sizes to the XML document
             foreach ($info as $row => $grid_data) {
                 $column = $xml_doc->createElement('column');

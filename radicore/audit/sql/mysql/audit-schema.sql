@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS `php_session` (
   `user_id` varchar(16) DEFAULT NULL,
   `date_created` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
   `last_updated` datetime NOT NULL DEFAULT '2000-01-01 00:00:00',
-  `session_data` longtext,
+  `session_data` longblob,
   PRIMARY KEY (`session_id`),
   KEY `last_updated` (`last_updated`)
 );

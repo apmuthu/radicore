@@ -130,7 +130,13 @@ class mnu_file extends Default_Table
         // this entry exists in the file system, not the database
         $filename = $this->picker_subdir .'/' .$rowdata['file_name'];
 
-        $result = unlink($filename);
+        if ($result = unlink($filename)) {
+            $this->numrows = 1;
+        } else {
+            $this->numrows = 0;
+        } // if
+
+        $rowdata = array();  // there is no database record to be deleted
 
         return $rowdata;
 

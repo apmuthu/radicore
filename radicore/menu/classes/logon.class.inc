@@ -76,7 +76,8 @@ class logon extends mnu_user
 
         if ($login_type == 'EMAIL') {
             // convert email address into a user ID
-            $data = $this->getData("email_addr='{$logonarray['email_addr']}'");
+            $where = "email_addr='".addslashes($logonarray['email_addr'])."'";
+            $data = $this->getData($where);
             if (empty($data)) {
                 $this->errors[] = getLanguageText('sys0142'); // 'Security violation';
                 $this->PasswordRetries(NULL, $updatearray['user_password'], $logonarray['email_addr']);
@@ -354,6 +355,7 @@ class logon extends mnu_user
             } // if
             // check contents of AUDIT_LOGON_ERRORS table
             $now = getTimeStamp();
+            $user_id = addslashes($user_id);
             $where = "user_id='{$user_id}' AND DATE_ADD(err_timestamp, INTERVAL 5 MINUTE) >= '$now'";
             $count = $auditobj->getCount($where);
             if ($count > $max_retries) {

@@ -114,7 +114,8 @@ if (!preg_match('/(D|I)/i', $destination) OR !empty($errors) OR isset($GLOBALS['
 	} // if
 	return $batch_errors;
 } else {
-    unset($_SESSION['pages'][getSelf()]);  // delete current script from session array
+    unset($_SESSION['pages'][getSelf()]);       // delete current script's parameters from session array
+    unset($_SESSION['page_stack'][$task_id]);   // delete current task from page_stack
 } // if
 
 exit;

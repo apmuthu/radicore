@@ -9,7 +9,7 @@ UPDATE mnu_user_role SET sort_seq=9 WHERE is_primary='N';
 UPDATE mnu_user_role SET start_date=created_date;
 UPDATE mnu_user_role SET end_date='9999-12-31';
 
-exec #Drop_Default_Constraint @TableName='mnu_user_role', @ColumnName='is_primary';
+-- exec #Drop_Default_Constraint @TableName='mnu_user_role', @ColumnName='is_primary';
 ALTER TABLE mnu_user_role DROP COLUMN is_primary;
 
 ALTER TABLE mnu_user_role ALTER COLUMN sort_seq SET NOT NULL;

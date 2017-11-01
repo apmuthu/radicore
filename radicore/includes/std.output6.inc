@@ -116,6 +116,7 @@ if (!isset($GLOBALS['batch'])) {
     header('Pragma: public');
     echo $output;
     flush();
+    ob_flush();
     scriptPrevious();
 } else {
     // write to disk file
@@ -132,6 +133,9 @@ if (!isset($GLOBALS['batch'])) {
     } // if
     if (isset($settings['return']) AND is_True($settings['return'])) {
         scriptPrevious($dbobject->getErrors());
+    } else {
+        unset($_SESSION['pages'][getSelf()]);       // delete current script's parameters from session array
+        unset($_SESSION['page_stack'][$task_id]);   // delete current task from page_stack
     } // if
 } // if
 

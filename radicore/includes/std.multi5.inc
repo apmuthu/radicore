@@ -176,7 +176,6 @@ if (!empty($_POST)) {
         $dbinner->setFieldArray($inner_data);  // ensure that changes are stored inside relevant object
         // make any changes in outer available to the inner entity
         $dbinner->setParentData($outer_data);
-
     } else {
         // deal with a javascript 'submit()'.
         $outer_data = $dbouter->updateFieldArray($outer_data, $_POST);
@@ -210,6 +209,9 @@ if (!empty($_POST)) {
             $outer_data = $dbouter->customButton($outer_data, $custom_btn, $_POST);
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
+            } // if
+            if ($custom_btn == 'retrieve') {
+                $do_retrieve = true;  // read the database for current data
             } // if
         } // if
         if ($btn_zone == $dbinner->zone OR is_True($dbinner->allow_buttons_all_zones)) {

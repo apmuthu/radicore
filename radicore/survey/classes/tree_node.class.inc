@@ -24,8 +24,10 @@ class tree_node extends Default_Table
     } // __construct
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
-    // perform custom formatting before values are shown to the user.
+    function _cm_formatData ($fieldarray, &$css_array)
+    // format values retrieved from the database before they are shown to the user.
+    // (such as changing dates from 'CCYY-MM-DD' to 'dd Mmm CCYY'
+    // NOTE: $css_array is passed BY REFERENCE as it may be altered.
     {
         if (isset($fieldarray['node_type'])) {
             switch ($fieldarray['node_type']) {
@@ -171,7 +173,7 @@ class tree_node extends Default_Table
     } // _cm_getInitialData
 
     // ****************************************************************************
-    function _cm_initialiseFilePicker ()
+    function _cm_initialiseFilePicker ($fieldarray, $search)
     // perform any initialisation before displaying the File Picker screen.
     {
         // identify the subdirectory which contains the files
@@ -206,9 +208,10 @@ class tree_node extends Default_Table
 
         $data_raw = $this->getData($where);
 
+        $css_array = array();
         foreach ($data_raw as $row => $rowdata) {
             // append data for current node to output array
-            $fieldarray[] = $this->formatData($rowdata);
+            $fieldarray[] = $this->formatData($rowdata, $css_array);
             $node_id = $rowdata['node_id'];
             if ($rowdata['child_count'] > 0) {
                 // child nodes exist, but do we expand them?

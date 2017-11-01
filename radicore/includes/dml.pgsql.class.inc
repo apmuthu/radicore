@@ -730,21 +730,14 @@ END_OF_REGEX;
                 } // if
                 // deal with row locking (optional)
                 switch ($this->row_locks){
-                    // NOTE: the following code has been commented out in order to avoid the error:
-                    // "FOR UPDATE cannot be applied to the nullable side of an outer join"
                     case 'SH':
-                        $lock_str = 'FOR UPDATE';
+                        $lock_str = "FOR UPDATE OF $tablename";
                         break;
                     case 'EX':
-                        $lock_str = 'FOR UPDATE';
+                        $lock_str = "FOR UPDATE OF $tablename";
                         break;
                     default:
-                        $count = preg_match_all("/\w+/", $from_str, $regs);
-                        if ($count > 1) {
-                            $lock_str = 'FOR UPDATE OF ' .$tablename;
-                        } else {
-                            $lock_str = 'FOR UPDATE';
-                        } // if
+                        $lock_str = "FOR UPDATE OF $tablename";
                 } // switch
                 $this->row_locks = null;
             } // if
@@ -760,22 +753,7 @@ END_OF_REGEX;
             $result = pg_query($this->dbconnect, $this->query);
             if ($result === false) {
                 $errno = $this->getErrorNo();
-                if ($errno == '0A000' AND !empty($lock_str)) {
-                    // "FOR UPDATE cannot be applied to the nullable side of an outer join"
-                    $end_time = getMicroTime();
-                    logSqlQuery ($schema, $tablename, $this->query, $this->numrows, $start_time, $end_time);
-                    // rollback current transaction
-                    $result = pg_query($this->dbconnect, 'ROLLBACK') or trigger_error($this, E_USER_ERROR);
-                    logSqlQuery ($schema, null, 'ROLLBACK');
-                    // start a new transaction
-                    $result = pg_query($this->dbconnect, 'BEGIN TRANSACTION') or trigger_error($this, E_USER_ERROR);
-                    logSqlQuery ($schema, null, 'BEGIN TRANSACTION');
-                    // amend query and try again
-                    $lock_str .= ' OF '.$tablename;  // restrict lock to main table only
-                    $repeat = true;
-                } else {
-                    trigger_error($this, E_USER_ERROR);
-                } // if
+                trigger_error($this, E_USER_ERROR);
             } else {
                 $repeat = false;
             } // if
@@ -1848,7 +1826,12 @@ END_OF_REGEX;
                             $columnarray['col_default'] = $string;
                         } // if
                 	    break;
-                	case 'is_nullable':
+                	case 'is_identity':
+                        if (is_True($value)) {
+                            $columnarray['col_auto_increment'] = TRUE;
+                        } // if
+                        break;
+                    case 'is_nullable':
                 	    // is this column allowed to be NULL?
                 		if (is_True($value)) {
                             $columnarray['col_null'] = 'Y';
