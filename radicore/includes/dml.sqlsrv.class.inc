@@ -25,6 +25,11 @@ class sqlsrv
     var $error_string;                  //
     var $fieldspec = array();           // field specifications (see class constructor)
     var $lastpage;                      // last available page number in current query
+
+    // by default if the database cannot acquire a lock it will abort, but this behaviour can be changed
+    var $lock_wait_count=0;             // number of times lock wait failed
+    var $no_abort_on_lock_wait=false;   // do not abort if cannot apply lock, allow me to try again
+
     var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
     var $numrows;                       // number of rows retrieved
     var $pageno;                        // requested page number
@@ -50,6 +55,12 @@ class sqlsrv
     var $sql_where_append;              // string which is too complex for where2array() function
     var $query;                         // completed DML statement
 
+    // these are used in Common Table Expressions (CTE)
+    var $sql_CTE_name;                  // CTE name
+    var $sql_CTE_select;                // CTE 'select columns'
+    var $sql_CTE_anchor;                // CTE anchor expression
+    var $sql_CTE_recursive;             // CTE recursive expression
+
     var $dbconnect;                     // database connection resource
 
     // ****************************************************************************
@@ -68,6 +79,7 @@ class sqlsrv
         } // if
 
         if (!empty($dbname)) {
+            $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
             $result = $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = TRUE;
@@ -961,7 +973,8 @@ END_OF_REGEX;
     function commit ($dbname)
     // commit this transaction
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $start_time = getMicroTime();
@@ -992,6 +1005,8 @@ END_OF_REGEX;
         $this->dbname = $dbname;
 
         $dbconn = $this->dbconnect;
+
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
 
         if (!$dbconn) {
             $start_time = getMicroTime();
@@ -1083,7 +1098,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // build 'where' string using values for primary key
@@ -1124,7 +1140,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $selection = $this->adjustWhere($selection);
@@ -1164,7 +1181,8 @@ END_OF_REGEX;
     function fetchRow ($dbname, $result)
     // Fetch a row from the given result set (created with getData_serial() method).
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $row   = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC);
@@ -1181,7 +1199,8 @@ END_OF_REGEX;
     function free_result ($dbname, $resource)
     // release a resource created with getData_serial() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $result = sqlsrv_free_stmt($resource);
@@ -1196,7 +1215,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         if (preg_match('/^(select )/ims', $where)) {
@@ -1213,7 +1233,18 @@ END_OF_REGEX;
         } // if
 
         $start_time = getMicroTime();
-        $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = sqlsrv_query($this->dbconnect, $this->query);
+        if ($result === false) {
+            $errno = $this->getErrorNo();
+            if ($errno == 1222 AND is_True($this->no_abort_on_lock_wait)) {
+                $res = $this->rollback($dbname);
+                $this->lock_wait_count++;
+                return false;  // return and allow user to retry this transaction
+            } else {
+                trigger_error($this, E_USER_ERROR);
+            } // if
+        } // if
+
         $query_data = sqlsrv_fetch_array($result, SQLSRV_FETCH_NUMERIC);
 
         // if 'GROUP BY' was used then return the number of rows
@@ -1249,7 +1280,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -1328,11 +1360,19 @@ END_OF_REGEX;
 
         if ($rows_per_page > 0) {
             // count the rows that satisfy this query
-            if (empty($this->sql_union)) {
-                $query = "SELECT count(*) FROM $from_str $where_str $group_str_count $having_str";
-            } else {
-                // build query
+            if (!empty($this->sql_CTE_name)) {
+                $query = "WITH {$this->sql_CTE_name} ({$this->sql_CTE_select})
+AS (
+  {$this->sql_CTE_anchor}
+  UNION ALL
+  {$this->sql_CTE_recursive}
+)
+SELECT count(*) FROM $from_str";
+
+            } elseif (!empty($this->sql_union)) {
                 $query = "SELECT count(*) FROM (\nSELECT $select_str FROM $from_str $where_str $group_str_count $having_str \nUNION ALL\n {$this->sql_union} \n) AS x";
+            } else {
+                $query = "SELECT count(*) FROM $from_str $where_str $group_str_count $having_str";
             } // if
             $this->numrows = $this->getCount($dbname, $tablename, $query);
 
@@ -1398,12 +1438,20 @@ END_OF_REGEX;
                 $string = qualifyOrderby($string, $tablename, $this->fieldspec, $select_str, $from_str);
                 $sort_str = "ORDER BY $string";
             } // if
-            if (empty($this->sql_union)) {
-                $this->query = "SELECT * FROM ("
-                             . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
-                             . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
-                             . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
-            } else {
+            if (!empty($this->sql_CTE_name)) {
+                $this->query = "WITH {$this->sql_CTE_name} ({$this->sql_CTE_select})
+AS (
+  {$this->sql_CTE_anchor}
+  UNION ALL
+  {$this->sql_CTE_recursive}
+)
+SELECT * FROM (
+  SELECT $select_str
+  , ROW_NUMBER() OVER ($sort_str) AS rownum
+  FROM $from_str
+) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
+
+            } elseif (!empty($this->sql_union)) {
                 $sort_str = preg_replace('/^ORDER BY /iu', '', $sort_str);  // remove leading 'ORDER BY'
                 $sort_str = "ORDER BY ".unqualifyOrderBy($sort_str);
                 $this->query = "SELECT * FROM ("
@@ -1414,6 +1462,11 @@ END_OF_REGEX;
                              . "\n{$this->sql_union}"
                              . "\n) AS x) AS y"
                              . "\nWHERE rownum BETWEEN $min_rows and $max_rows $sort_str";
+            } else {
+                $this->query = "SELECT * FROM ("
+                             . "\nSELECT $select_str\n, ROW_NUMBER() OVER ($sort_str) AS rownum"
+                             . "\nFROM $from_str $where_str $group_str $having_str $lock_str"
+                             . "\n) AS x WHERE rownum BETWEEN $min_rows and $max_rows";
             } // if
 
         } else {
@@ -1421,17 +1474,37 @@ END_OF_REGEX;
             if (!empty($sort_str)) {
             	$sort_str = "\n$sort_str";
             } // if
-            if (empty($this->sql_union)) {
-                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
-            } else {
+            if (!empty($this->sql_CTE_name)) {
+                $this->query = "WITH {$this->sql_CTE_name} ({$this->sql_CTE_select})
+AS (
+  {$this->sql_CTE_anchor}
+  UNION ALL
+  {$this->sql_CTE_recursive}
+)
+SELECT $select_str \nFROM $from_str $sort_str";
+
+            } elseif (!empty($this->sql_union)) {
                 $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str";
                 $this->query .= "\nUNION ALL\n{$this->sql_union}";
                 $this->query .= " $sort_str";
+
+            } else {
+                $this->query = "SELECT $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str";
             } // if
         } // if
 
         $start_time = getMicroTime();
-        $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
+        $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC));
+        if ($result === false) {
+            $errno = $this->getErrorNo();
+            if ($errno == 1222 AND is_True($this->no_abort_on_lock_wait)) {
+                $res = $this->rollback($dbname);
+                $this->lock_wait_count++;
+                return false;  // return and allow user to retry this transaction
+            } else {
+                trigger_error($this, E_USER_ERROR);
+            } // if
+        } // if
 
         // convert result set into a simple associative array for each row
         while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
@@ -1458,7 +1531,8 @@ END_OF_REGEX;
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -1595,12 +1669,22 @@ END_OF_REGEX;
             if (!empty($sort_str)) {
             	$sort_str = "\n$sort_str";
             } // if
-            if (empty($this->sql_union)) {
-                $this->query = "SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str $sort_str";
-            } else {
+            if (!empty($this->sql_CTE_name)) {
+                $this->query = "WITH {$this->sql_CTE_name} ({$this->sql_CTE_select})
+AS (
+  {$this->sql_CTE_anchor}
+  UNION ALL
+  {$this->sql_CTE_recursive}
+)
+SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str $sort_str";
+
+            } elseif (!empty($this->sql_union)) {
                 $this->query = "SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str";
                 $this->query .= "\nUNION ALL\n{$this->sql_union}";
                 $this->query .= " $sort_str";
+
+            } else {
+                $this->query = "SELECT $select_str \nFROM $from_str $lock_str $where_str $group_str $having_str $sort_str";
             } // if
             $start_time = getMicroTime();
             $result = sqlsrv_query($this->dbconnect, $this->query, array(), array('scrollable' => SQLSRV_CURSOR_STATIC)) or trigger_error($this, E_USER_ERROR);
@@ -1732,35 +1816,40 @@ END_OF_REGEX;
 
         $this->numrows = 0;  // record not inserted (yet)
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        foreach ($fieldspec as $field => $spec) {
-            if (empty($fieldarray[$field])) {
-                // look for fields with 'autoinsert' option set
-                if (array_key_exists('autoinsert', $spec)) {
-    				switch ($spec['type']){
-    					case 'datetime':
-    						$fieldarray[$field] = getTimeStamp();
-    						break;
-    					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
-    						break;
-    					case 'time':
-    						$fieldarray[$field] = getTimeStamp('time');
-    					    break;
-    					case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
-    						break;
-    					default:
-    						// do nothing
-    				} // switch
+        if (!preg_match('/^(audit)$/i', $dbname) AND isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            // update transferred by blockchain, so don't overwrite these values
+        } else {
+            foreach ($fieldspec as $field => $spec) {
+                if (empty($fieldarray[$field])) {
+                    // look for fields with 'autoinsert' option set
+                    if (array_key_exists('autoinsert', $spec)) {
+    				    switch ($spec['type']){
+    					    case 'datetime':
+    						    $fieldarray[$field] = getTimeStamp();
+    						    break;
+    					    case 'date':
+    						    $fieldarray[$field] = getTimeStamp('date');
+    						    break;
+    					    case 'time':
+    						    $fieldarray[$field] = getTimeStamp('time');
+    					        break;
+    					    case 'string':
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+    						    break;
+    					    default:
+    						    // do nothing
+    				    } // switch
+                    } // if
                 } // if
-            } // if
-        } // foreach
+            } // foreach
+        } // if
 
         // find out if any field in the primary key has 'identity' (auto_increment) set
 		$auto_increment  = '';
@@ -1834,6 +1923,7 @@ END_OF_REGEX;
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->errors['where'] = $where;
                         $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
     	            } // if
@@ -1904,7 +1994,12 @@ END_OF_REGEX;
                 if ($errno == 2627) {
                     if (!empty($this->retry_on_duplicate_key)) {
                         // increment the specified field and try again
-                        $fieldarray[$this->retry_on_duplicate_key]++;
+                        if (isset($fieldspec['precision']) AND $fieldspec['precision'] == 38) {
+                            $sum = gmp_add($fieldarray[$this->retry_on_duplicate_key], 1);
+                            $fieldarray[$this->retry_on_duplicate_key] = gmp_strval($sum);
+                        } else {
+                            $fieldarray[$this->retry_on_duplicate_key]++;
+                        } // if
                         $repeat = true;
                         $repeat_count++;
                         if ($repeat_count > 5) {
@@ -1982,7 +2077,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $single_step = true;  // special code to debug each query separately
@@ -2032,7 +2128,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $stmnt = sqlsrv_query($this->dbconnect, $query, $params) or trigger_error($this, E_USER_ERROR);
@@ -2066,6 +2163,8 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $start_time = getMicroTime();
         $result = sqlsrv_rollback($this->dbconnect);
         $end_time = getMicroTime();
@@ -2089,6 +2188,8 @@ END_OF_REGEX;
     function selectDB ($dbname)
     // select a different database via the current connection.
     {
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->query = "USE [$dbname]";
         $result = sqlsrv_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
 
@@ -2180,7 +2281,8 @@ END_OF_REGEX;
     function startTransaction ($dbname)
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $start_time = getMicroTime();
@@ -2207,7 +2309,8 @@ END_OF_REGEX;
     function updateRecord ($dbname, $tablename, $fieldarray, $oldarray, $where=null)
     // update a record using the contents of $fieldarray.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
@@ -2237,6 +2340,7 @@ END_OF_REGEX;
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->errors['where'] = $where;
                         $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
@@ -2253,8 +2357,10 @@ END_OF_REGEX;
             return $fieldarray;
         } // if
 
-        if (isset($GLOBALS['mode']) and $GLOBALS['mode'] == 'logon' and $tablename == 'mnu_user') {
+        if (isset($GLOBALS['mode']) AND preg_match('/^(logon)$/', $GLOBALS['mode']) AND $tablename == 'mnu_user') {
             // do not set these fields when logging in
+        } elseif (isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            // update transferred by blockchain, so don't overwrite these values
         } else {
             foreach ($fieldspec as $field => $spec) {
                 // look for fields with 'autoupdate' option set
@@ -2372,7 +2478,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
@@ -2435,22 +2542,26 @@ END_OF_REGEX;
                                         'maxvalue' => 255,
                                         'size' => 3);
         $colspecs['decimal']    = array('name' => 'DECIMAL',
-                                        'type' => 'numeric');
+                                        'type' => 'numeric',
+                                        'size' => 38);
         $colspecs['numeric']    = array('name' => 'NUMERIC',
-                                        'type' => 'numeric');
+                                        'type' => 'numeric',
+                                        'size' => 38);
 
         $colspecs['money']      = array('name' => 'MONEY',
                                         'type' => 'numeric',
                                         'precision' => 19,
                                         'scale' => 4,
                                         'minvalue' => -922,337,203,685,477.5808,
-                                        'maxvalue' => 922,337,203,685,477.5807);
+                                        'maxvalue' => 922,337,203,685,477.5807,
+                                        'size' => 20);
         $colspecs['smallmoney'] = array('name' => 'SMALLMONEY',
                                         'type' => 'numeric',
                                         'precision' => 10,
                                         'scale' => 4,
                                         'minvalue' => -214748.3648,
-                                        'maxvalue' => 214748.3647);
+                                        'maxvalue' => 214748.3647,
+                                        'size' => 11);
         $colspecs['bit']        = array('name' => 'BIT',
                                         'type' => 'bit',
                                         'size' => 1);
@@ -2559,7 +2670,8 @@ END_OF_REGEX;
     function ddl_showColumns ($dbname, $tablename)
     // obtain a list of column names within the selected database table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $out_array = array();
@@ -2728,7 +2840,8 @@ END_OF_REGEX;
     function ddl_showDatabases ($dbprefix=null)
     // obtain a list of existing database names.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect() or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2757,7 +2870,8 @@ END_OF_REGEX;
     function ddl_showTables ($dbname)
     // obtain a list of tables within the specified schema.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2792,7 +2906,8 @@ END_OF_REGEX;
     function ddl_showTableKeys ($dbname, $tablename)
     // obtain a list of keys (indexes) for this table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();

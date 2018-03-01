@@ -1127,6 +1127,12 @@
         </xsl:otherwise>
       </xsl:choose>
       
+      <xsl:if test="$item/@tooltip">
+        <xsl:attribute name="title">
+          <xsl:value-of select="$item/@tooltip"/>
+        </xsl:attribute>
+      </xsl:if>
+      
       <xsl:call-template name="scripting_events">
         <!-- insert any scripting events which have been defined -->
         <xsl:with-param name="item" select="$item"/>
@@ -1191,6 +1197,12 @@
         <xsl:attribute name="type">submit</xsl:attribute> <!-- default is 'submit' -->
       </xsl:otherwise>
     </xsl:choose>
+    
+    <xsl:if test="$item/@tooltip">
+      <xsl:attribute name="title">
+        <xsl:value-of select="$item/@tooltip"/>
+      </xsl:attribute>
+    </xsl:if>
     
     <xsl:if test="$item/@value">
       <xsl:attribute name="value">
@@ -2477,6 +2489,7 @@
         <xsl:if test="$session_name">
           <input type="hidden" name="session_name" value="{$session_name}" />
         </xsl:if>
+        <input type="hidden" name="csrf_id" value="{/root/params/csrf_id}" />
       </div>
     </form>
   </div> <!-- quicksearch -->
@@ -2617,7 +2630,8 @@
 
               <xsl:call-template name="scripting_events">
                 <!-- insert any scripting events which have been defined -->
-                <xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>
+                <!--<xsl:with-param name="item" select="$optionlist/option[@key=$key]"/>-->
+                <xsl:with-param name="item" select="$item"/>
               </xsl:call-template>
 
               <!-- use the 'key' attribute of the node as the 'value' attribute -->

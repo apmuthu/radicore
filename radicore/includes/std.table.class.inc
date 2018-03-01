@@ -32,6 +32,7 @@ abstract class Default_Table
     var $dbprefix = '';                 // prefix (for shared servers)
     var $dirname;                       // directory name of current script
     var $dirname_dict;                  // directory name where '*.dict.inc' script is located (optional)
+    var $do_retrieve = false;           // may be set in _cm_customButton()
 
     var $download_filename;             // file to be downloaded
     var $download_mode;                 // 'inline' or null
@@ -42,6 +43,7 @@ abstract class Default_Table
     var $unchange_count=0;              // count of records unchanged
 
     var $errors = array();              // array of errors
+    var $collapsed;                     // list of tree nodes which have been collapsed
     var $expanded;                      // list of tree nodes which have been expanded
     var $fieldarray = array();          // array of row/field data
     var $fieldspec = array();           // field specifications (see class constructor)
@@ -63,6 +65,10 @@ abstract class Default_Table
     var $lookup_css = array();          // optional css classes for $lookup_data
     var $messages = array();            // array of messages
 
+    // by default if the database cannot acquire a lock it will abort, but this behaviour can be changed
+    var $lock_wait_count = 0;           // count of lock wait failures
+    var $no_abort_on_lock_wait = false; // sent to database engine (true = don't abort, allow retries)
+
     var $nameof_end_date;               // alias for 'end_date'
     var $nameof_start_date;             // alias for 'start_date'
     var $noedit_array;                  // array of fields which cannot be updated
@@ -71,6 +77,7 @@ abstract class Default_Table
     var $no_csv_header = false;         // turns off creation of header row in CSV output file
     var $no_display_count = false;      // yes/no switch to display count after multiple inserts or updates
     var $no_duplicate_error = false;    // if TRUE do not create an error when inserting a duplicate
+    var $no_filter_where = array();     // array of fields NOT to be filtered from $where (see filter_where)
     var $no_foreign_data = false;       // if TRUE do not call getForeignData() method
     var $no_submit_on_error = false;    // if TRUE drop any SUBMIT buttons after a validation error
     var $numrows;                       // number of rows retrieved
@@ -109,6 +116,7 @@ abstract class Default_Table
     var $skip_validation = false;       // YES/NO switch
 
     var $tablename = 'unknown';         // table name (internal)
+    var $table_id_alias;                // table alias (used in blockchain extract)
     var $transaction_level;             // transaction level
 
     var $unbuffered_query = false;      // used in getData_serial()
@@ -150,6 +158,13 @@ abstract class Default_Table
     var $sql_where;                     // additional selection criteria
     var $sql_where_append;              // string which is too complex for wher2array() function,so will be appended manually
     var $where;                         // passed from parent form
+
+    // these are used in Common Table Expressions (CTE)
+    var $CTE_in_use = false;            // see fetchRowChild() for details
+    var $sql_CTE_name;                  // CTE name
+    var $sql_CTE_select;                // CTE 'select columns'
+    var $sql_CTE_anchor;                // CTE anchor expression
+    var $sql_CTE_recursive;             // CTE recursive expression
 
     // ****************************************************************************
     // there is no constructor in an abstract class
@@ -250,6 +265,9 @@ abstract class Default_Table
         foreach ($fieldarray as $rowdata) {
             $rowdata = array_merge($rowdata, $update_array);
             $rowdata = $this->updateRecord($rowdata);
+            if ($rowdata === false AND $this->lock_wait_count > 0) {
+                return false;  // failed to lock database, so allow a retry
+            } // if
             foreach ($this->errors as $error) {
                 $errors[] = "$this->tablename - $error";
             } // foreach
@@ -420,6 +438,17 @@ abstract class Default_Table
     } // clearScrollArray
 
     // ****************************************************************************
+    function getCollapsed ()
+    // get array of tree nodes which have been collapsed
+    {
+        $collapsed = $this->collapsed;
+        $this->collapsed = array();
+
+        return $collapsed;
+
+    } // getCollapsed
+
+    // ****************************************************************************
     function commit ($update_workflow=true, $update_script_vars=true)
     // commit this transaction
     {
@@ -445,6 +474,7 @@ abstract class Default_Table
             $result = $DML->rollback($this->dbname_server);
         } else {
             if ($result = $DML->commit($this->dbname_server)) {
+                $DML->lock_wait_count = 0;  // reset count of lock wait failures
                 if (is_True($update_script_vars)) {
                     // update has been committed, so remove any 'run_at_cancel' reference
                     if ($this->initiated_from_controller) {
@@ -455,12 +485,19 @@ abstract class Default_Table
                         $script_vars = updateScriptVars($GLOBALS['script_vars']);
                     } // if
                 } // if
+                if (!empty($GLOBALS['blockchain_data'])) {
+                    $result = $this->_fireBlockchainTrigger($GLOBALS['blockchain_data']);
+                    if (is_array($result)) {
+                        $errors = array_merge($errors, $result);
+                    } // if
+                } // if
             } else {
                 $errors[] = $this->getLanguageText('sys0009'); // 'Commit failed'
             } // if
         } // if
 
         $GLOBALS['transaction_has_started'] = FALSE;
+        $GLOBALS['blockchain_data']         = null;
 
         return $errors;
 
@@ -524,7 +561,11 @@ abstract class Default_Table
     // convert the string 'current/historic/future' into a date range.
     // NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
     {
-        $string = trim($string);
+        if (is_array($string)) {
+            $string = array2where($string);
+        } else {
+            $string = trim($string);
+        } // if
         if (empty($string)) {
             return $string;
         } // if
@@ -591,6 +632,8 @@ abstract class Default_Table
         if (!is_long(key($fieldarray))) {
             $fieldarray = array($fieldarray);  // ensure it is indexed by row
         } // if
+
+        $this->do_retrieve = false;  // may be set in _cm_customButton()
 
         if ($this->rows_per_page == 1) {
             // this is the only row
@@ -671,6 +714,27 @@ abstract class Default_Table
         return $fieldarray;
 
     } // custom_commonValidation
+
+    // ****************************************************************************
+    function custom_pre_getData ($where, $where_array, $parent_data)
+    // perform any custom pre-retrieve processing
+    {
+        if (is_object($this->custom_processing_object)) {
+            if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
+                $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
+            } // if
+        } // if
+        if (empty($this->errors)) {
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $where = $this->_cm_pre_getData($where, $where_array, $parent_data);
+            } // if
+        } // if
+
+        return $where;
+
+    } // custom_pre_getData
 
     // ****************************************************************************
     function custom_validateInsert($fieldarray)
@@ -829,6 +893,9 @@ abstract class Default_Table
                 // obtain copy of original record from database
                 $where = array2where($fieldarray, $this->getPkeyNames(), $this);
                 $originaldata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                if ($originaldata === false AND $this->lock_wait_count > 0) {
+                    return false;  // failed to lock database, so allow a retry
+                } // if
                 $this->reuse_previous_select = true;
                 if ($this->numrows == 0) {
                     return $fieldarray;  // there is nothing to delete
@@ -869,6 +936,7 @@ abstract class Default_Table
 
         if (empty($this->errors)) {
             // perform any custom post-delete processing
+            $fieldarray['rdc_to_be_deleted'] = true;  // this disables certain processing
             if (is_object($this->custom_processing_object)) {
                 if (method_exists($this->custom_processing_object, '_cm_post_deleteRecord')) {
                     $fieldarray = $this->custom_processing_object->_cm_post_deleteRecord($fieldarray);
@@ -879,6 +947,12 @@ abstract class Default_Table
             } else {
                 $fieldarray = $this->_cm_post_deleteRecord($fieldarray);
             } // if
+        } // if
+
+        if (empty($this->errors)) {
+            $GLOBALS['blockchain_data'] = $this->_checkBlockchainTrigger($GLOBALS['blockchain_data'],
+                                                                         __FUNCTION__,
+                                                                         $fieldarray);
         } // if
 
         return $fieldarray;
@@ -1451,15 +1525,20 @@ abstract class Default_Table
     } // fetchRow
 
     // ****************************************************************************
-    function fetchRowChild ($row)
+    function fetchRowChild ($row, &$resource_in)
     // See if there is are any child records associated with the current row.
     // (for example, a node in a tree structure may have child nodes)
     // Any child rows are returned one at a time.
     // Note that each child row may also have its own children.
+    // NOTE: $resource_in is PASSED BY REFERENCE as it may be updated
     {
         $this->errors = array();
 
         if (empty($row)) return FALSE;
+
+        if (is_True($this->CTE_in_use)) {
+            return FALSE;  // no more processing required
+        } // if
 
         $keys = array();
         // get names of SENIOR and JUNIOR keys
@@ -1506,6 +1585,11 @@ abstract class Default_Table
 
         $row = $this->fetchRow($resource);  // read a single row
 
+        if (is_True($this->CTE_in_use)) {
+            $resource_in = $resource;  // replace it with this one
+            return $row;  // all children read using recursive CTE, so no eit this method
+        } // if
+
         if (empty($row)) {
             $null = array_pop($resources);  // this resource has been exhausted
             while (!empty($resources)) {
@@ -1545,7 +1629,7 @@ abstract class Default_Table
         } // if
 
         if (!empty($row) AND !empty($row['level'])) {
-            $row['level'] = count($resources);
+            $row['level'] = count($resources)-1;  // numbering starts from 0, not 1
         } // if
 
         return $row;
@@ -1604,19 +1688,19 @@ abstract class Default_Table
     {
         $object = RDCsingleton::getInstance('currency_class');
 
-        $object->func_currency = $fieldarray['func_currency'];
+        $object->func_currency =& $fieldarray['func_currency'];
         if (!empty($fieldarray['tran_currency'])) {
             $object->tran_currency = $fieldarray['tran_currency'];
         } else {
-            $object->tran_currency = $fieldarray['func_currency'];
+            $object->tran_currency =& $fieldarray['func_currency'];
         } // if
         if (!empty($fieldarray['exchange_rate'])) {
             $object->exchange_rate = $fieldarray['exchange_rate'];
         } else {
             $object->exchange_rate = 1;
         } // if
-        $object->func_scale    = $fieldarray['func_scale'];
-        $object->tran_scale    = $fieldarray['tran_scale'];
+        $object->func_scale    =& $fieldarray['func_scale'];
+        $object->tran_scale    =& $fieldarray['tran_scale'];
 
         $pattern_id = getPatternId();
 
@@ -1625,7 +1709,9 @@ abstract class Default_Table
             // value is appended by currency code, so skip the next bit
         } else {
             foreach ($columns as $fieldname => $scale) {
-                $fieldarray[$fieldname] = formatNumber($fieldarray[$fieldname], $scale);
+                if (isset($fieldarray[$fieldname])) {
+                    $fieldarray[$fieldname] = formatNumber($fieldarray[$fieldname], $scale);
+                } // if
             } // foreach
         } // if
 
@@ -1888,6 +1974,19 @@ abstract class Default_Table
                     case 'numeric':
                         if (!empty($this->errors[$fieldname])) {
                             // this field has errors, so don't format it
+                        } elseif (isset($fieldspec['precision']) AND $fieldspec['precision'] == 38 AND $fieldspec['scale'] == 0) {
+                            // split this number into two parts - part1 = 1 to 12 digits, part2 = 26 digits
+                            if (preg_match('/^(?<part1>[0-9]{1,12})(?<part2>[0-9]{26})$/', $fieldvalue, $regs)) {
+                                $part2 = (string)(int)$regs['part2'];
+                                if ($regs['part1'] != PARTICIPANT_ID) {
+                                    // only include this if it is diferent
+                                    $fieldvalue = '['.$regs['part1'].']'.$part2;
+                                } else {
+                                    $fieldvalue = $part2;
+                                } // if
+                            } else {
+                                // does not contain part1 (participant_id) so display valu on its own
+                            } // if
                         } else {
                            if (isset($fieldspec['scale'])) {
                                $decimal_places = $fieldspec['scale'];
@@ -2175,24 +2274,17 @@ abstract class Default_Table
         $where_array = where2array($where);  // recreate without operators
 
         // perform any custom pre-retrieve processing
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
-                $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
-            } // if
-        } // if
+        $where = $this->custom_pre_getData($where, $where_array, $parent_data);
         if ($this->errors) return;
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $where = $this->_cm_pre_getData($where, $where_array, $parent_data);
-            if ($this->errors) return;
-        } // if
 
         if ($this->where != $where) {
             // $where has been modified, so update $where_array
             $this->where = $where;
             $where_array = where2array($where, $this->pageno);
         } // if
+
+        // look for any dummy fields starting with 'rdc_' (these are control flags)
+        $control_flags = extractNamedFields($where_array, '^rdc_');
 
         if ($this->checkPrimaryKey AND !$this->allow_empty_where) {
             // check that full primary key (or candidate key) has been supplied
@@ -2247,6 +2339,13 @@ abstract class Default_Table
 
             // get the data from the database
             $data_raw = $this->_dml_getData($where_str);
+        } // if
+
+        if (!empty($control_flags)) {
+            // put these flags back into every row in case they are needed
+            foreach ($data_raw as &$rowdata) {
+                $rowdata = array_merge($rowdata, $control_flags);
+            } // foreach
         } // if
 
         if (!empty($this->select_string)) {
@@ -2325,7 +2424,7 @@ abstract class Default_Table
         } // if
 
         if (is_True($this->initiated_from_controller) AND count($data_raw) == 1) {
-            if (preg_match('/(mnu_user)$/i', $this->tablename)) {
+            if (preg_match('/^(mnu_user)$/i', $this->tablename)) {
                 // ignore account restrictions on this tables
                 $condition = true;
             } elseif (isset($this->fieldspec['rdcaccount_id']) AND !isset($fieldarray['rdc_is_link_table'])) {
@@ -2349,7 +2448,9 @@ abstract class Default_Table
         if (!is_True($this->initiated_from_controller)) {
             // get any missing data from parent tables
             foreach ($data_raw as $rownum => &$rowdata) {
-                $rowdata = $this->getForeignData($rowdata, $rownum);
+                if (!isset($rowdata['rdc_to_be_deleted'])) {
+                    $rowdata = $this->getForeignData($rowdata, $rownum);
+                } // if
             } // foreach
         } // if
 
@@ -2437,7 +2538,9 @@ abstract class Default_Table
 
         $data_raw = $this->_dml_getData($where, TRUE);
 
-        return $data_raw;
+        $this->fieldarray = $data_raw;
+
+        return $this->fieldarray;
 
     } // getData_raw
 
@@ -2469,18 +2572,8 @@ abstract class Default_Table
         $parent_data =& $this->getParentData();
 
         // perform any custom pre-retrieve processing
-        if (is_object($this->custom_processing_object)) {
-            if (method_exists($this->custom_processing_object, '_cm_pre_getData')) {
-                $where = $this->custom_processing_object->_cm_pre_getData($where, $where_array, $parent_data);
-            } // if
-        } // if
+        $where = $this->custom_pre_getData($where, $where_array, $parent_data);
         if ($this->errors) return;
-        if ($this->custom_replaces_standard) {
-            $this->custom_replaces_standard = false;
-        } else {
-            $where = $this->_cm_pre_getData($where, $where_array, $parent_data);
-            if ($this->errors) return;
-        } // if
 
         if ($this->where != $where) {
             // $where has been modified, so update $where_array
@@ -2683,7 +2776,7 @@ abstract class Default_Table
 //            $fieldarray[0]['rdc_save_selection'] = getLanguageText('Save Selection');
         } // if
 
-        if (is_True($associative)) {
+        if (is_True($associative) OR $this->rows_per_page == 1) {
             $fieldarray = $fieldarray[0];  //convert from indexed to associative
         } // if
 
@@ -2884,6 +2977,24 @@ abstract class Default_Table
         return $fieldspec;
 
     } // getFieldSpec_original
+
+    // ****************************************************************************
+    function getFileBody ($fieldarray)
+    // if this row is associated with a file then its contents will be returned
+    // base64_encoded so that it can be included in an XML document.
+    // (see also putFileBody() for the reverse operation)
+    {
+        list($filename, $filebody) = $this->_cm_getFileBody($fieldarray);
+
+        if (!empty($filebody)) {
+            $filebody = chunk_split(base64_encode($filebody));
+            return array('file_name' => $filename,
+                         'base64_encoded' => $filebody);
+        } // if
+
+        return false;
+
+    } // getFileBody
 
     // ****************************************************************************
     function getForeignData ($fieldarray, $rownum=null)
@@ -3104,6 +3215,7 @@ abstract class Default_Table
 
         // perform any custom processing (optional)
         $this->sqlSelectInit();
+
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getInitialData')) {
                 $fieldarray = $this->custom_processing_object->_cm_getInitialData($fieldarray);
@@ -3388,10 +3500,11 @@ abstract class Default_Table
     } // getMessages
 
     // ****************************************************************************
-    function getNodeData ($expanded, $where=null)
+    function getNodeData ($expanded, $where=null, $collapsed=null)
     // retrieve requested tree structure from the database.
     // $expanded may be a list of nodes which are to be expanded, or the word
     // 'ALL' to sigify that all possible nodes should be expanded.
+    // $collapsed may be a list of nodes which have been collapsed.
     // $where identifies the start point of a tree structure
     {
         if (empty($where)) {
@@ -3410,6 +3523,9 @@ abstract class Default_Table
         if (empty($expanded)) {
             $expanded = array();
         } // if
+        if (empty($collapsed)) {
+            $collapsed = array();
+        } // if
 
         $rows_per_page = $this->rows_per_page;  // save
         $pageno        = empty($this->pageno) ? 1 : $this->pageno;
@@ -3417,14 +3533,14 @@ abstract class Default_Table
         // get data for the selected nodes
         if (is_object($this->custom_processing_object)) {
             if (method_exists($this->custom_processing_object, '_cm_getNodeData')) {
-                $fieldarray = $this->custom_processing_object->_cm_getNodeData($expanded, $where, $wherearray);
+                $fieldarray = $this->custom_processing_object->_cm_getNodeData($expanded, $where, $wherearray, $collapsed);
             } // if
         } // if
         if ($this->errors) return;
         if ($this->custom_replaces_standard) {
             $this->custom_replaces_standard = false;
         } else {
-            $fieldarray = $this->_cm_getNodeData($expanded, $where, $wherearray);
+            $fieldarray = $this->_cm_getNodeData($expanded, $where, $wherearray, $collapsed);
             if ($this->errors) return;
         } // if
 
@@ -3691,7 +3807,11 @@ abstract class Default_Table
         //} // if
 
         // allow this array to be adjusted
-        $task_id    = $_SESSION['pages'][getSelf()]['task_id'];
+        if (isset($_SESSION['pages'])) {
+            $task_id = $_SESSION['pages'][getSelf()]['task_id'];
+        } else {
+            $task_id = $GLOBALS['task_id'];
+        } // if
         $pattern_id = getPatternId();
 
         if (is_object($this->custom_processing_object)) {
@@ -4012,6 +4132,9 @@ abstract class Default_Table
             if (!empty($where)) {
                 // remove any fields which do not exist in current table to avoid an SQL error
                 $extra = array();
+                if (is_array($this->no_filter_where) AND !empty($this->no_filter_where)) {
+                    $extra = $this->no_filter_where;
+                } // if
                 if (is_object($this->custom_processing_object)) {
                     if (method_exists($this->custom_processing_object, '_cm_filterWhere')) {
                         $extra = $this->custom_processing_object->_cm_filterWhere($extra);
@@ -4190,6 +4313,8 @@ abstract class Default_Table
 
         $this->download_filename = 'download_filename';
         $this->download_mode     = '';  // 'inline' will disable option to save
+        $this->download_data     = '';  // option to provide file contents from memory, not disk
+        $this->content_type      = '';  // to be supplied when download_data not empty
 
         // call customisable method in the subclass.
         if (is_object($this->custom_processing_object)) {
@@ -4205,7 +4330,8 @@ abstract class Default_Table
             if (!empty($this->errors)) return false;
         } // if
 
-        if (!isset($fieldarray['ignore_errors'])) {
+        //if (!isset($fieldarray['ignore_errors'])) {
+        if (empty($this->download_data)) {
             if (!file_exists($this->download_filename) ) {
                 // 'file does not exist'
                 $this->errors[] = $this->getLanguageText('sys0057', $this->download_filename);
@@ -4378,6 +4504,9 @@ abstract class Default_Table
                     if (array_key_exists('rdc_to_be_updated', $rowdata)) {
                         //$pageno = $this->pageno;  // save
                         $fieldarray[$rownum] = $this->updateRecord($rowdata);
+                        if ($fieldarray[$rownum] === false AND $this->lock_wait_count > 0) {
+                            return false;  // failed to lock database, so allow a retry
+                        } // if
                         if (!empty($this->errors)) {
                             $errors[$rownum] = $this->errors;  // keep $errors separate for each row
                         } elseif ($this->numrows > 0) {
@@ -4389,6 +4518,9 @@ abstract class Default_Table
 
                     } elseif (array_key_exists('rdc_to_be_deleted', $rowdata)) {
                         $fieldarray[$rownum] = $this->deleteRecord($rowdata);
+                        if ($fieldarray[$rownum] === false AND $this->lock_wait_count > 0) {
+                            return false;  // failed to lock database, so allow a retry
+                        } // if
                         if (!empty($this->errors)) {
                             $errors[$rownum] = $this->errors;  // keep $errors separate for each row
                         } elseif ($this->numrows > 0) {
@@ -4503,6 +4635,9 @@ abstract class Default_Table
             } else {
                 // find out if this record currently exists or not
                 $count = $this->getCount($where);
+                if ($count === false AND $this->lock_wait_count > 0) {
+                    return false;  // failed to lock database, so allow a retry
+                } // if
             } // if
 
             if ($count == 0) {
@@ -4522,6 +4657,9 @@ abstract class Default_Table
             } else {
                 // record already exists, so update it
                 $rowdata = $this->updateRecord($rowdata);
+                if ($rowdata === false AND $this->lock_wait_count > 0) {
+                    return false;  // failed to lock database, so allow a retry
+                } // if
                 if ($this->numrows > 0) {
                     $update_count++;
                 } else {
@@ -4716,11 +4854,15 @@ abstract class Default_Table
                         } // if
                         if (!empty($insertarray[$field])) {
                             if (preg_match('/(decimal|numeric|float|real|double)/i', $spec['type'])) {
-                                // remove thousands separator and ensure decimal point is '.'
-                                $insertarray[$field] = number_unformat($insertarray[$field], '.', ',');
-                                if (array_key_exists('scale', $spec)) {
-                                    // round to the correct number of decimal places
-                                    $insertarray[$field] = number_format($insertarray[$field], $spec['scale'], '.', '');
+                                if (!empty($spec['precision']) AND $spec['precision'] == 38 AND $spec['scale'] == 0) {
+                                    // leave this number alone
+                                } else {
+                                    // remove thousands separator and ensure decimal point is '.'
+                                    $insertarray[$field] = number_unformat($insertarray[$field], '.', ',');
+                                    if (array_key_exists('scale', $spec)) {
+                                        // round to the correct number of decimal places
+                                        $insertarray[$field] = number_format($insertarray[$field], $spec['scale'], '.', '');
+                                    } // if
                                 } // if
                             } // if
                         } // if
@@ -4769,6 +4911,12 @@ abstract class Default_Table
 //            } // if
         } // if
 
+        if (empty($this->errors)) {
+            $GLOBALS['blockchain_data'] = $this->_checkBlockchainTrigger($GLOBALS['blockchain_data'],
+                                                                         __FUNCTION__,
+                                                                         $fieldarray);
+        } // if
+
         // turn this flag off
         $this->skip_validation = FALSE;
 
@@ -4778,6 +4926,64 @@ abstract class Default_Table
         return $fieldarray;
 
     } // insertRecord
+
+    // ****************************************************************************
+    function lookup_with_participant_id ($column_name, $where=null)
+    // look up the next available number with this participant_id as the prefix
+    {
+        // test that DOM extension has been loaded
+        if (!extension_loaded('GMP')) {
+            // 'GMP functions are not available.'
+            $this->errors[] = getLanguageText('sys0070', 'GMP');
+            return false;
+        } // if
+
+        if (!defined('PARTICIPANT_ID')) {
+            // "PARTICIPANT_ID has not been defined in config.inc file - cannot continue"
+            $this->errors[] = getLanguageText('sys0271');
+            return false;
+        } // if
+
+        if (!preg_match('/[0-9]{6,12}/', PARTICIPANT_ID)) {
+            // "PARTICIPANT_ID can only contain 6-12 numeric digits - cannot continue"
+            $this->errors[] = getLanguageText('sys0272');
+            return false;
+        } // if
+
+        if (PARTICIPANT_ID == '000000') {
+            // participant_id is all zeroes, so act as if does not exist
+            if (!empty($where)) {
+                $query = "SELECT MAX($column_name) FROM {$this->tablename} WHERE $where";
+            } else {
+                $query = "SELECT MAX($column_name) FROM {$this->tablename}";
+            } // if
+        } else {
+            // the number is DECIMAL(38) where the first 12 digits are the participant_id,
+            // which leaves 26 digits remaining
+            $pad_length = strlen(PARTICIPANT_ID) + 26;
+            $column_lookup = str_pad(PARTICIPANT_ID, $pad_length, '_', STR_PAD_RIGHT);
+
+            if (!empty($where)) {
+                $query = "SELECT MAX($column_name) FROM {$this->tablename} WHERE $column_name LIKE '$column_lookup' AND $where";
+            } else {
+                $query = "SELECT MAX($column_name) FROM {$this->tablename} WHERE $column_name LIKE '$column_lookup'";
+            } // if
+        } // if
+
+        $count = $this->getCount($query);
+        //$next_value = $next_value + $count + 1;  // this will not work on a number this large
+        if ($count == 0) {
+            $next_value = str_pad(PARTICIPANT_ID, $pad_length, '0', STR_PAD_RIGHT);
+            $sum = gmp_add($next_value, $count + 1);
+        } else {
+            $sum = gmp_add($count, 1);
+        } // if
+        $next_value = gmp_strval($sum);
+        $this->retry_on_duplicate_key = $column_name;
+
+        return $next_value;
+
+    } // lookup_with_participant_id
 
     // ****************************************************************************
     function multiQuery ($query)
@@ -4891,6 +5097,10 @@ abstract class Default_Table
     // $popup_offset identifies the row number (if there is more than one).
     {
         $this->errors = array();
+
+        if (empty($selection)) {
+            return $fieldarray;  // nothing has been selected, so there is nothing to do
+        } // if
 
         $return_from = strtolower($return_from);
 
@@ -5141,6 +5351,28 @@ abstract class Default_Table
         return $search;
 
     } // post_search
+
+    // ****************************************************************************
+    function putFileBody ($fieldarray, $body)
+    // if this row is associated with a file then its contents will be returned
+    // base64_encoded so that it can be written to where it belongs.
+    // (this is the reverse of the getFileBody() operation)
+    {
+        if (empty($body)) {
+            return false;
+        } // if
+        if (is_array($body)) {
+            $encoding = key($body);
+            $body = $body[$encoding];
+        } // if
+
+        $body = base64_decode($body);
+
+        $result = $this->_cm_putFileBody($fieldarray, $body);
+
+        return $result;
+
+    } // putFileBody
 
     // ****************************************************************************
     function quitButton ()
@@ -6022,7 +6254,7 @@ abstract class Default_Table
     } // sqlSelectDefault
 
     // ****************************************************************************
-    function sqlSelectInit ()
+    function sqlSelectInit ($clear_lookup_data=false)
     // initialise all variables used to construct the sql SELECT statement.
     {
         $this->sql_select       = null;
@@ -6041,6 +6273,10 @@ abstract class Default_Table
         //$this->rows_per_page    = null;
         $this->access_count     = null;
         //$this->sql_no_foreign_db = false;
+
+        if (is_True($clear_lookup_data)) {
+            $this->lookup_data  = array();
+        } // if
 
         $this->numrows          = 0;
         $this->delete_count     = 0;
@@ -6337,8 +6573,9 @@ abstract class Default_Table
 
         reset($fieldarray);
         if (!is_long(key($fieldarray))) {
-            $fieldarray = array($fieldarray);
+            $fieldarray = array($fieldarray);  // change array from associative to indexed by row 0
         } // if
+
         $fieldarray_out = $fieldarray;
 
         // deal with the changes on each row, one at a time
@@ -6355,48 +6592,26 @@ abstract class Default_Table
                 } else {
                     $fieldarray_out[$rownum] = $this->_cm_updateFieldArray($fieldarray[$rownum], $postdata, $rownum);
                 } // if
-                if (!empty($this->errors)) {
-                    $this->fieldarray[$rownum] = $fieldarray_out[$rownum];
-                    return $this->getFieldArray();
-                } // if
-                // check to see if anything has been changed
-                $changes = getChanges($fieldarray_out[$rownum], $fieldarray[$rownum]);
-                if (!empty($changes)) {
-                    // values have been changed internally, so remove from $postarray so they don't get overwritten
-                    foreach ($changes as $name => $value) {
-                        if (isset($postarray[$name])) {
-                            if (is_array($postarray[$name])) {
-                                unset($postarray[$name][$rownum+1]);
-                            } else {
-                                unset($postarray[$name]);
-                            } // if
-                        } // if
-                    } // foreach
-                } // if
+                // update $fieldarray with changed values
+                //$changes = getChanges($fieldarray_out[$rownum], $postarray);
+                //if (empty($changes)) {
+                //    $fieldarray_out[$rownum] = array_merge($fieldarray_out[$rownum], $changes);
+                //} // if
+                $fieldarray_out[$rownum] = array_update_associative($fieldarray_out[$rownum], $postdata, $this->fieldspec);
+                $fieldarray_out[$rownum] = $this->custom_commonValidation($fieldarray_out[$rownum], $fieldarray);
             } // if
         } // foreach
 
-        if ($this->rows_per_page == 1) {
-            $fieldarray = array_update_associative($fieldarray_out[$fieldarray_key], $postarray, $this->fieldspec);
+        if ($is_indexed) {
+            $fieldarray = $fieldarray_out;
         } else {
-            $fieldarray = array_update_indexed($fieldarray_out, $postarray, $this->fieldspec);
+            $fieldarray = $fieldarray_out[0];
         } // if
 
-        //if (preg_match('/output4/i', $pattern_id)) {
-//            if (!empty($postarray['rdc_restore_selection'])) {
-//                $dbobject = RDCsingleton::getInstance('mnu_saved_selection_data');
-//                $data = $dbobject->getData("selection_id='{$postarray['rdc_restore_selection']}'");
-//                foreach ($data as $rowdata) {
-//                    if (!preg_match('/^(rdc_)/i', $rowdata['fieldname'])) {
-//                        $fieldarray[$rowdata['fieldname']] = $rowdata['fieldvalue'];
-//                    } // if
-//                } // foreach
-//                $fieldarray['rdc_restore_selection'] = null;
-//            } // if
-//        } // if
-
-        // see if any additional data is required or needs to be changed
-        $fieldarray = $this->getExtraData($fieldarray);
+        if (empty($this->errors)) {
+            // see if any additional data is required or needs to be changed
+            $fieldarray = $this->getExtraData($fieldarray);
+        } // if
 
         $this->fieldarray = $fieldarray;
 
@@ -6481,6 +6696,9 @@ abstract class Default_Table
                 } else {
                     // record already exists, so update it
                     $rowdata = $this->updateRecord($rowdata);
+                    if ($rowdata === false AND $this->lock_wait_count > 0) {
+                        return false;  // failed to lock database, so allow a retry
+                    } // if
                     $update_count = $update_count + $this->numrows;
                 } // if
             } else {
@@ -6488,10 +6706,13 @@ abstract class Default_Table
                 // row is marked for deletion
                 if ($count > 0) {
                     $where = array2where($rowdata, $pkeynames);
-                    $olddata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                    $originaldata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                    if ($originaldata === false AND $this->lock_wait_count > 0) {
+                        return false;  // failed to lock database, so allow a retry
+                    } // if
                     $this->reuse_previous_select = true;
-                    if (!empty($olddata)) {
-                        $rowdata = array_merge($olddata[0], $rowdata);
+                    if (!empty($originaldata)) {
+                        $rowdata = array_merge($originaldata[0], $rowdata);
                     } // if
                     $rowdata = $this->deleteRecord($rowdata);
                     $delete_count = $delete_count + $this->numrows;
@@ -6612,6 +6833,9 @@ abstract class Default_Table
 
                 } else {
                     $fieldarray[$rownum] = $this->updateRecord($rowdata);
+                    if ($fieldarray[$rownum] === false AND $this->lock_wait_count > 0) {
+                        return false;  // failed to lock database, so allow a retry
+                    } // if
                     if (!empty($this->errors)) {
                         $errors[$rownum] = $this->errors;  // keep $errors separate for each row
                     } elseif ($this->numrows > 0) {
@@ -6739,6 +6963,9 @@ abstract class Default_Table
                 // obtain copy of original record from database
                 // (this may reuse previous SELECT statement which contains a JOIN)
                 $originaldata = $this->_dml_ReadBeforeUpdate($where, $this->reuse_previous_select);
+                if ($originaldata === false AND $this->lock_wait_count > 0) {
+                    return false;  // failed to lock database, so allow a retry
+                } // if
             } else {
                 $this->numrows = 0;
             } // if
@@ -6809,17 +7036,20 @@ abstract class Default_Table
                 foreach ($this->fieldspec as $field => $spec) {
                     if (array_key_exists($field, $updatearray)) {
                         if (array_key_exists('autoinsert', $spec) OR array_key_exists('autoupdate', $spec)) {
-                            // remove any autoinsert or autoupdate fields
-                            unset($updatearray[$field]);
-                        //} elseif (array_key_exists('noedit', $spec) OR array_key_exists('nodisplay', $spec)) {
-                        //    // remove any non-editable fields
-                        //    unset($updatearray[$field]);
+                            if (preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+                                // do not overwrite values set by sending node
+                            } else {
+                                // remove any autoinsert or autoupdate fields
+                                unset($updatearray[$field]);
+                            } // if
                         } // if
                         if (!empty($updatearray[$field])) {
                             if (is_array($this->allow_db_function) AND in_array($field, $this->allow_db_function)) {
                                 // this is a function call, not a value, so leave it alone
-                            } else {
-                                if (preg_match('/(decimal|numeric|float|real|double)/i', $spec['type'])) {
+                            } elseif (preg_match('/(decimal|numeric|float|real|double)/i', $spec['type'])) {
+                                if (!empty($spec['precision']) AND $spec['precision'] == 38 AND $spec['scale'] == 0) {
+                                    // leave this number alone
+                                } else {
                                     // remove thousands separator and ensure decimal point is '.'
                                     $updatearray[$field] = number_unformat($updatearray[$field], '.', ',');
                                     if (preg_match("/^$field"."[+-][1-9]+/i", $updatearray[$field])) {
@@ -6871,6 +7101,12 @@ abstract class Default_Table
         } // if
 
         $fieldarray = array_change_key_case($fieldarray, CASE_LOWER);
+
+        if (empty($this->errors)) {
+            $GLOBALS['blockchain_data'] = $this->_checkBlockchainTrigger($GLOBALS['blockchain_data'],
+                                                                         __FUNCTION__,
+                                                                         $fieldarray);
+        } // if
 
         // turn this flag off
         $this->skip_validation = FALSE;
@@ -7461,6 +7697,21 @@ abstract class Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
+    function _cm_getFileBody ($fieldarray)
+    // if this row is associated with a file then its contents will be returned
+    // base64_encoded so that it can be included in an XML document.
+    // (see also putFileBody() for the reverse operation)
+    {
+        $filebody = false;
+        $filename = false;
+
+        // customisable code goes here
+
+        return array($filename, $filebody);
+
+    } // _cm_getFileBody
+
+    // ****************************************************************************
     function _cm_getForeignData ($fieldarray, $rownum=null)
     // Retrieve data from foreign (parent) tables.
     // $rownum identifies current row number.
@@ -7495,9 +7746,10 @@ abstract class Default_Table
     } // _cm_getInitialDataMultiple
 
     // ****************************************************************************
-    function _cm_getNodeData ($expanded, $where, $where_array = null)
+    function _cm_getNodeData ($expanded, $where, $where_array, $collapsed)
     // retrieve requested node data from the database.
     // $expanded may be a list of nodes to be expanded, or 'ALL' nodes.
+    // $collapsed may be a list of nodes to be collapsed instead of expanded.
     // $where may contain specific selection criteria as a string.
     // $wherearray is $where but converted into an array.
     {
@@ -7526,7 +7778,7 @@ abstract class Default_Table
             } // if
         } // if
 
-        if (array_key_exists('tree_type_id', $where_array)) {
+        if (is_array($where_array) AND array_key_exists('tree_type_id', $where_array)) {
             // look for root nodes within this tree_type
             $where_array['tree_level_seq'] = 1;
             $where = array2where($where_array);
@@ -7537,6 +7789,8 @@ abstract class Default_Table
         // there is no pagination after level 1
         $this->rows_per_page = 0;
         $this->pageno        = 1;
+
+        $fieldarray = array();
 
         foreach ($data_raw as $row => $rowdata) {
             // append data for current node to output array
@@ -8249,6 +8503,20 @@ abstract class Default_Table
     } // _cm_pre_updateSelection
 
     // ****************************************************************************
+    function _cm_putFileBody ($fieldarray, $body)
+    // if this row is associated with a file then its contents will be returned
+    // base64_encoded so that it can be written to where it belongs.
+    // (this is the reverse of the getFileBody() operation)
+    {
+        $result = false;
+
+        // custom code goes here
+
+        return $result;
+
+    } // _cm_putFileBody
+
+    // ****************************************************************************
     function _cm_reset ($where)
     // perform custom processing after RESET button is pressed.
     {
@@ -8333,11 +8601,13 @@ abstract class Default_Table
     } // _cm_unFormatData
 
     // ****************************************************************************
-    function _cm_updateFieldarray ($fieldarray, $postarray, $rownum)
-    // allow object to deal with any changes POSTed from the form.
+    function _cm_updateFieldarray ($fieldarray, &$postarray, $rownum)
+    // allow object to deal with any changes POSTed from the form via javascript submit().
     // $fieldarray contains current data from one row.
     // $postarray contains any changes made in the form for this row.
-    // $rownum identifies which row is being processed
+    // $rownum identifies which row is being processed.
+    // NOTE: the contents of $postarray will be mered with $fieldarray after this call.
+    // $postarray is PASSED BY REFERENCE to allow you to remove unwanted values.
     {
         // customisable code goes here
 
@@ -8513,9 +8783,10 @@ abstract class Default_Table
 
         $DML =& $this->_getDBMSengine($this->dbname);
 
-        $DML->fieldspec     = $this->fieldspec;
-        $DML->audit_logging = $this->audit_logging;
-        $DML->primary_key   = $this->getPkeyNames();
+        $DML->fieldspec             = $this->fieldspec;
+        $DML->audit_logging         = $this->audit_logging;
+        $DML->primary_key           = $this->getPkeyNames();
+        $DML->no_abort_on_lock_wait = $this->no_abort_on_lock_wait;
 
         // remove any non-database fields from input array
         foreach ($fieldarray as $field => $fieldvalue) {
@@ -8536,6 +8807,7 @@ abstract class Default_Table
         } else {
             $this->unchange_count = 1;
         } // if
+        $this->lock_wait_count = $DML->lock_wait_count;
 
         return;
 
@@ -8620,6 +8892,7 @@ abstract class Default_Table
         } // if
 
         $this->errors = array_merge($DML->getErrors(), $this->errors);
+        $this->lock_wait_count = $DML->lock_wait_count;
 
         return $count;
 
@@ -8644,10 +8917,15 @@ abstract class Default_Table
         $DML->sql_union        = $this->sql_union;
         $DML->sql_orderby      = $this->getOrderBy();
         $DML->sql_orderby_seq  = $this->sql_orderby_seq;
-        if (!empty($DML->sql_orderby) AND $raw === true) {
+        if (!empty($DML->sql_orderby) AND $raw === true AND !is_True($this->CTE_in_use)) {
             $DML->sql_orderby  = validateSortItem2 ($DML->sql_orderby, $DML->sql_select, $DML->fieldspec);
         } // if
         $this->prev_sql_orderby = $DML->sql_orderby;
+
+        $DML->sql_CTE_name      = $this->sql_CTE_name;
+        $DML->sql_CTE_select    = $this->sql_CTE_select;
+        $DML->sql_CTE_anchor    = $this->sql_CTE_anchor;
+        $DML->sql_CTE_recursive = $this->sql_CTE_recursive;
 
         $DML->sql_where_append = $this->sql_where_append;
 
@@ -8660,10 +8938,14 @@ abstract class Default_Table
         $this->pageno   = $DML->getPageNo();
         $this->lastpage = $DML->getLastPage();
 
-        $this->sql_groupby      = $this->sql_groupby_orig;
-        $this->sql_having       = null;
-        $this->sql_union        = null;
-        $this->sql_where_append = null;
+        $this->sql_groupby       = $this->sql_groupby_orig;
+        $this->sql_having        = null;
+        $this->sql_union         = null;
+        $this->sql_CTE_name      = null;
+        $this->sql_CTE_select    = null;
+        $this->sql_CTE_anchor    = null;
+        $this->sql_CTE_recursive = null;
+        $this->sql_where_append  = null;
 
         return $array;
 
@@ -8694,13 +8976,22 @@ abstract class Default_Table
         $DML->sql_orderby      = $this->getOrderBy();
         $DML->sql_orderby_seq  = $this->sql_orderby_seq;
 
+        $DML->sql_CTE_name      = $this->sql_CTE_name;
+        $DML->sql_CTE_select    = $this->sql_CTE_select;
+        $DML->sql_CTE_anchor    = $this->sql_CTE_anchor;
+        $DML->sql_CTE_recursive = $this->sql_CTE_recursive;
+
         $result = $DML->getData_serial($this->dbname_server, $this->tablename, $where, $rdc_limit, $rdc_offset);
 
         $this->numrows  = $DML->getNumRows();
 
-        $this->sql_groupby = $this->sql_groupby_orig;
-        $this->sql_having  = null;
-        $this->sql_union   = null;
+        $this->sql_groupby       = $this->sql_groupby_orig;
+        $this->sql_having        = null;
+        $this->sql_union         = null;
+        $this->sql_CTE_name      = null;
+        $this->sql_CTE_select    = null;
+        $this->sql_CTE_anchor    = null;
+        $this->sql_CTE_recursive = null;
 
         //$this->instance_name = $DML->instance_name;
 
@@ -8738,6 +9029,7 @@ abstract class Default_Table
         $DML->retry_on_duplicate_key  = $this->retry_on_duplicate_key;
         $DML->update_on_duplicate_key = $this->update_on_duplicate_key;
         $DML->allow_db_function       = $this->allow_db_function;
+        $DML->no_abort_on_lock_wait   = $this->no_abort_on_lock_wait;
 
         // remove any non-database fields from input array
         foreach ($fieldarray as $field => $fieldvalue) {
@@ -8775,6 +9067,7 @@ abstract class Default_Table
         $this->update_on_duplicate_key = false;
         $this->no_duplicate_error      = false;
         $this->allow_db_function       = array();
+        $this->lock_wait_count         = $DML->lock_wait_count;
 
         return $array;
 
@@ -8876,10 +9169,13 @@ abstract class Default_Table
         } // if
         $DML->setRowLocks('EX');   // lock this row (exclusive)
 
+        $DML->no_abort_on_lock_wait = $this->no_abort_on_lock_wait;
+
         $array = $DML->getData($this->dbname_server, $this->tablename, $where);
 
         $this->errors  = array_merge($DML->getErrors(), $this->errors);
         $this->numrows = $DML->getNumRows();
+        $this->lock_wait_count = $DML->lock_wait_count;
 
         return $array;
 
@@ -8892,11 +9188,12 @@ abstract class Default_Table
         $DML =& $this->_getDBMSengine($this->dbname);
 
         // use ORIGINAL, not CURRENT specifications for this database table
-        $DML->fieldspec         = $this->getFieldSpec_original();
-        $DML->primary_key       = $this->getPkeyNames();
-        $DML->unique_keys       = $this->unique_keys;
-        $DML->audit_logging     = $this->audit_logging;
-        $DML->allow_db_function = $this->allow_db_function;
+        $DML->fieldspec             = $this->getFieldSpec_original();
+        $DML->primary_key           = $this->getPkeyNames();
+        $DML->unique_keys           = $this->unique_keys;
+        $DML->audit_logging         = $this->audit_logging;
+        $DML->allow_db_function     = $this->allow_db_function;
+        $DML->no_abort_on_lock_wait = $this->no_abort_on_lock_wait;
 
         // remove any non-database fields from input array
         foreach ($fieldarray as $field => $fieldvalue) {
@@ -8937,6 +9234,7 @@ abstract class Default_Table
         $this->query = $DML->query;  // save this in case trigger_error() is called
 
         $this->allow_db_function = array();
+        $this->lock_wait_count = $DML->lock_wait_count;
 
         return $array;
 
@@ -9002,6 +9300,126 @@ abstract class Default_Table
         return $count;
 
     } // _dml_updateSelection
+
+    // ****************************************************************************
+    function _checkBlockchainTrigger($trigger_data, $method, $fieldarray)
+    // check if this operation will trigger a Blockchain message
+    {
+        if (preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            return false;  // change triggered by another blockchain node, so don't fire it again
+        } // if
+
+        if (!empty($trigger_data)) {
+            return $trigger_data;
+        } // if
+
+        $script_id = '../blockchain/blockchain_send.php';
+        if (!file_exists($script_id)) {
+            return false;  // subsystem does not exist, so exit now
+        } // if
+
+        $subsys_dir = basename(dirname($this->dirname));
+
+        if (preg_match('/^(audit|dict)$/i', $subsys_dir)) {
+            return $trigger_data;  // exclude these subsystems
+        } // if
+
+        if (empty($_SESSION['blockchain_trigger']) OR empty($_SESSION['blockchain_trigger'][$subsys_dir])) {
+            // has not been added to the cache yet, so do it now
+            $trigger = RDCsingleton::getInstance('blockchain/blockchain_trigger');
+            $where_array['subsys_dir']   = $subsys_dir;
+            //$where_array['table_id']     = $this->tablename;
+            $where = array2where($where_array);
+            $trigger->setSqlSearch("curr_or_hist='C'");  // must be current on today's date
+            $trigger->setOrderBy('trigger_id ASC');
+            $data = $trigger->getData($where);
+            $_SESSION['blockchain_trigger'][$subsys_dir] = $data;
+        } // if
+
+        $data = $_SESSION['blockchain_trigger'][$subsys_dir];  // cached data
+
+        $tablename = $this->tablename;
+        $classname = $this->getClassname();  // is different this will be an alias name
+
+        $found = false;
+        foreach ($data as $rownum => $rowdata) {
+            if (!empty($rowdata['table_id_alias']) AND $rowdata['table_id_alias'] != $classname) {
+                $ignore = true;  // trigger value is not correct
+            } elseif ($rowdata['table_id'] != $tablename) {
+                $ignore = true;  // trigger value is not correct
+            } elseif (!empty($rowdata['trigger_column'])) {
+                if (!preg_match('/^(update)/i', $method)) {
+                    $ignore = true;  // this trigger can only be fired with an 'update' operation
+                } elseif ($rowdata['trigger_value'] != $fieldarray[$rowdata['trigger_column']]) {
+                    $ignore = true;  // trigger value is not correct
+                } else {
+                    $found = true;
+                    break;
+                } // if
+            } else {
+                // there is no trigger_column, so this is always valid
+                $found = true;
+                break;
+            } // if
+        } // foreach
+
+        if (!$found) {
+            return $trigger_data;  // nothing to do
+        } // if
+
+        $pkey_array = array();
+        foreach ($this->primary_key as $fieldname) {
+            $pkey_array[$fieldname] = $fieldarray[$fieldname];
+        } // foreach
+        $pkey_string = array2where($pkey_array);
+
+        $trigger_data['trigger_id'] = $rowdata['trigger_id'];
+        $trigger_data['method']     = $method;
+        $trigger_data['pkey']       = $pkey_string;
+
+        return $trigger_data;
+
+    } // _checkBlockchainTrigger
+
+    // ****************************************************************************
+    function _fireBlockchainTrigger($trigger)
+    // send a message to the Blockchain server for distribution to other nodes
+    {
+        $script_id = '../blockchain/blockchain_send.php';
+        if (!$fp = @fopen($script_id, 'r')) {
+            // "File 'XX' does not exist"
+            $errors[] = getLanguageText('sys0057', $script_id);
+            return $errors;
+        } // if
+        fclose($fp);
+
+        $trigger_id = $trigger['trigger_id'];
+        $method     = $trigger['method'];
+        $pkey       = $trigger['pkey'];
+
+        // run this program in the background via the command line
+        if (preg_match('/^(linux|unix)/i', PHP_OS)) {
+            // this code is for linux and unix system
+            $command_line = "/usr/bin/php '$script_id' $trigger_id $method \"$pkey\" >/dev/null &";
+            $result = exec($command_line);
+
+        } else {
+            // this code is for Windoze
+            if (defined('PATH_TO_PHP_EXECUTABLE')) {
+                $php_exe = PATH_TO_PHP_EXECUTABLE;
+            } else {
+                $php_exe = 'php.exe';
+            } // if
+            $command_line = "start $php_exe $script_id $trigger_id $method \"$pkey\" ";
+            if ($resource = popen($command_line, "r")) {
+                //$message = fread($resource, 1024);
+            } // if
+            pclose($resource);
+        } // if
+
+        return true;
+
+    } // _fireBlockchainTrigger
 
     // ****************************************************************************
     function _examineWorkflow ($input)
@@ -9328,6 +9746,12 @@ abstract class Default_Table
                 $cpo->update_count              =& $this->update_count;
                 $cpo->delete_count              =& $this->delete_count;
                 $cpo->unchange_count            =& $this->unchange_count;
+
+                $cpo->CTE_in_use                =& $this->CTE_in_use;
+                $cpo->sql_CTE_name              =& $this->sql_CTE_name;
+                $cpo->sql_CTE_select            =& $this->sql_CTE_select;
+                $cpo->sql_CTE_anchor            =& $this->sql_CTE_anchor;
+                $cpo->sql_CTE_recursive         =& $this->sql_CTE_recursive;
 
                 // include reference to calling object in the custom object
                 $cpo->calling_object            =& $this;
@@ -9742,16 +10166,30 @@ abstract class Default_Table
             } // if
         } // if
 
-        if ($this->checkPrimaryKey or empty($this->sql_from) or ($this->sql_from == $this->tablename)) {
+        if (!empty($where_array['curr_or_hist'])) {
+            // move to $this->sql_search otherwise it gets lost
+            $search_array = where2array($this->sql_search);
+            $search_array['curr_or_hist'] = $where_array['curr_or_hist'];
+            $this->sql_search = array2where($search_array);
+        } // if
+
+        if ($this->checkPrimaryKey OR empty($this->sql_from) OR ($this->sql_from == $this->tablename)) {
             // check that 'where' clause does not contain any fields that
             // are not in this table, otherwise it will cause an error
             $extra = array();
+            if (is_array($this->no_filter_where) AND !empty($this->no_filter_where)) {
+                $extra = $this->no_filter_where;
+            } // if
             if (is_object($this->custom_processing_object)) {
                 if (method_exists($this->custom_processing_object, '_cm_filterWhere')) {
                     $extra = $this->custom_processing_object->_cm_filterWhere($extra);
                 } // if
             } // if
-            $extra = $this->_cm_filterWhere($extra);
+            if ($this->custom_replaces_standard) {
+                $this->custom_replaces_standard = false;
+            } else {
+                $extra = $this->_cm_filterWhere($extra);
+            } // if
             $where = filterWhere($where, $this->fieldspec, $this->tablename, $extra);
         } // if
 
@@ -9806,9 +10244,9 @@ abstract class Default_Table
             $this->sql_from = $this->tablename;
         } // if
 
-        if (!empty($where)) {
-            $where = $this->currentOrHistoric($where, $this->nameof_start_date, $this->nameof_end_date);
-        } // if
+        //if (!empty($where)) {
+        //    $where = $this->currentOrHistoric($where, $this->nameof_start_date, $this->nameof_end_date);
+        //} // if
 
         // qualify each column name to avoid possible conflicts with other tables
         $where = qualifyWhere($where, $this->tablename, $this->fieldspec, $this->sql_from, null, $alias_array, $having_array);
@@ -10590,6 +11028,9 @@ abstract class Default_Table
         OR (preg_match('/^(LIST2|LIST3)$/i', $pattern_id) AND preg_match('/inner/i', $this->zone))) {
             // this zone contains multiple rows, so shrink $fieldarray to primary key fields only
             $pkey_array = $this->getPkeyNamesAdjusted();
+//            if (is_array($this->no_filter_where) AND !empty($this->no_filter_where)) {
+//                $pkey_array = array_merge($pkey_array, $this->no_filter_where);
+//            } // if
 
             if (is_string(key($this->fieldarray))) {
                 $this->fieldarray = array($this->fieldarray);

@@ -48,18 +48,16 @@ if (isset($script_vars['dbobject'])) {
     } // if
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
-    // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
-    $dbobject->sql_select  = &$sql_select;
-    $dbobject->sql_from    = &$sql_from;
-    $dbobject->sql_where   = &$sql_where;
-    $dbobject->sql_groupby = &$sql_groupby;
-    $dbobject->sql_having  = &$sql_having;
+    $dbobject->sql_select                = &$sql_select;
+    $dbobject->sql_from                  = &$sql_from;
+    $dbobject->sql_where                 = &$sql_where;
+    $dbobject->sql_groupby               = &$sql_groupby;
+    $dbobject->sql_having                = &$sql_having;
     // perform any initialisation
     $where = $dbobject->initialise($where, $selection);
     if ($dbobject->errors) {

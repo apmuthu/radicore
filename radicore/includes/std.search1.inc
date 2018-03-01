@@ -86,8 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if ($dbobject->errors) {
             $errors[$dbobject->getClassName()] = $dbobject->getErrors();
         } // if
-        // get any data which may contain LOOKUP options
-        $fieldarray = $dbobject->getExtraData($fieldarray);
     } else {
         // get any data which may contain LOOKUP options
         $fieldarray = $dbobject->getExtraData($fieldarray);
@@ -355,6 +353,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } // if
         } // foreach
         if (empty($errors)) {
+            // perform any final processing
+            $search = $dbobject->post_search($search, $dbobject->sql_selection);
+            $errors = array_merge($errors, $dbobject->getErrors());
+            // save results in $_SESSION array
             if (!empty($dbobject->sql_search_table)) {
                 $search_table = $dbobject->sql_search_table;
             } else {
@@ -369,9 +371,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 // save this search criteria
                 $_SESSION['search'][$search_table] = $search;
             } // if
-            // perform any final processing
-            $search = $dbobject->post_search($search, $dbobject->sql_selection);
-            $errors = array_merge($errors, $dbobject->getErrors());
         } // if
         if (empty($errors)) {
             // send search criteria back to the previous script

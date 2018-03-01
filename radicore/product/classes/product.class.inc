@@ -160,13 +160,13 @@ class product extends Default_Table
         $this->sql_from    = $this->tablename;
         $this->sql_groupby = '';
 
-        if (eregi('(identity_type_id|id_value)', $search, $regs)) {
+        if (preg_match('/(identity_type_id|id_value)/i', $search, $regs)) {
             $this->sql_from .= " LEFT JOIN good_identification"
                              . " ON (good_identification.product_id=product.product_id)";
             $this->sql_groupby = 'product.product_id';
         } // if
 
-        if (eregi('(prod_feature_id)', $search, $regs)) {
+        if (preg_match('/(prod_feature_id)/i', $search, $regs)) {
             $today = date('Y-m-d');
             $this->sql_from .= " LEFT JOIN prod_feature_applicability"
                              . " ON (prod_feature_applicability.product_id=product.product_id"
@@ -175,8 +175,8 @@ class product extends Default_Table
             $this->sql_groupby = 'product.product_id';
         } // if
 
-        if (eregi('(prod_cat_id)', $search, $regs)) {
-            if (eregi('(prod_cat_id LIKE)', $search, $regs)) {
+        if (preg_match('/(prod_cat_id)/i', $search, $regs)) {
+            if (preg_match('/(prod_cat_id LIKE)/i', $search, $regs)) {
                 // this value may have a hierarchy on PROD_CAT_ROLLUP, so extract complete
                 // hierarchy structure and build into a range of values
                 // convert search string to an array

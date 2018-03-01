@@ -43,7 +43,6 @@ require_once "output4_header.class.inc";
 if (isset($script_vars['dbouter'])) {
     $dbouter = unserialize($script_vars['dbouter']);
     $outer_data = $dbouter->getFieldArray(); // get data from this instance
-    $outer_data = $dbouter->getExtraData($outer_data);
     $dbouter->setFieldArray($outer_data);
 } else {
     $dbouter = new output4_header;
@@ -67,17 +66,16 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
-    $inner_data = $dbinner->getExtraData($inner_data);
     $dbinner->fieldspec = $dbinner->saved_fieldspec;
 } else {
     $dbinner = new $table_id;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
-    $dbinner->sql_select  = &$sql_select;
-    $dbinner->sql_from    = &$sql_from;
-    $dbinner->sql_where   = &$sql_where;
-    $dbinner->sql_groupby = &$sql_groupby;
-    $dbinner->sql_having  = &$sql_having;
+    $dbinner->sql_select                = &$sql_select;
+    $dbinner->sql_from                  = &$sql_from;
+    $dbinner->sql_where                 = &$sql_where;
+    $dbinner->sql_groupby               = &$sql_groupby;
+    $dbinner->sql_having                = &$sql_having;
     if (!empty($sql_orderby)) {
         $dbinner->setDefaultOrderby($sql_orderby);
     } elseif (isset($task_orderby)) {
@@ -219,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     flush();
                     ob_flush();
                 } // if
-                scriptPrevious($errors, $messages);
+                //scriptPrevious($errors, $messages);
                 exit;
             } // if
         } // if

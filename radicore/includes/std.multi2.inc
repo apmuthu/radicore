@@ -69,19 +69,19 @@ if (isset($script_vars['dbouter'])) {
     // get previously retrieved data
     $outer_data = $dbouter->getFieldArray();
     // redo any configuration changes
-    $outer_data = $dbouter->getExtraData($outer_data);
+    //$outer_data = $dbouter->getExtraData($outer_data);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
     // indicate that this object was started from a page controller
     $dbouter->initiated_from_controller = true;
     $dbouter->zone                      = 'outer';
-    $dbouter->sql_select     = &$outer_sql_select;
-    $dbouter->sql_from       = &$outer_sql_from;
-    $dbouter->sql_where      = &$outer_sql_where;
-    $dbouter->sql_groupby    = &$outer_sql_groupby;
-    $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
+    $dbouter->sql_select                = &$outer_sql_select;
+    $dbouter->sql_from                  = &$outer_sql_from;
+    $dbouter->sql_where                 = &$outer_sql_where;
+    $dbouter->sql_groupby               = &$outer_sql_groupby;
+    $dbouter->sql_having                = &$outer_sql_having;
+    $dbouter->sql_orderby_table         = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } elseif (!empty($orderby)) {
@@ -117,18 +117,18 @@ if (isset($script_vars['dbinner'])) {
     // get previously retrieved data
     $inner_data = $dbinner->getFieldArray();
     // redo any configuration changes
-    $inner_data = $dbinner->getExtraData($inner_data);
+    //$inner_data = $dbinner->getExtraData($inner_data);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
-    $dbinner->sql_select       = &$inner_sql_select;
-    $dbinner->sql_from         = &$inner_sql_from;
-    $dbinner->sql_where        = &$inner_sql_where;
-    $dbinner->sql_groupby      = &$inner_sql_groupby;
-    $dbinner->sql_having       = &$inner_sql_having;
-    $dbinner->sql_search_table = &$inner_search_table;
+    $dbinner->sql_select                = &$inner_sql_select;
+    $dbinner->sql_from                  = &$inner_sql_from;
+    $dbinner->sql_where                 = &$inner_sql_where;
+    $dbinner->sql_groupby               = &$inner_sql_groupby;
+    $dbinner->sql_having                = &$inner_sql_having;
+    $dbinner->sql_search_table          = &$inner_search_table;
     if (!empty($task_selection)) {
         $dbinner->setSqlWhere($task_selection);
     } // if

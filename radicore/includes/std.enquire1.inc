@@ -74,6 +74,18 @@ if (isset($script_vars['dbobject'])) {
     } // if
 } // if
 
+if (!empty($_POST)) {
+    $custom_button = check_custom_button($_POST);
+    if ($custom_button) {
+        list($custom_btn, $btn_row, $btn_zone) = $custom_button;
+        $fieldarray = $dbobject->customButton($fieldarray, $custom_btn, array());
+        if ($dbobject->errors) {
+            $errors[$dbobject->getClassName()] = $dbobject->getErrors();
+        } // if
+        unset($custom_button);
+    } // if
+} // if
+
 if (isset($scrolling)) {
     if ($new_selection === true) {
     	// selection has changed, so use new value in $where

@@ -1791,6 +1791,14 @@ class PDF extends TCPDF
             } // if
         } // if
 
+        if (version_compare(phpversion(), '7.0.0', '>=')) {
+            if ($dbobject->pdf_destination == 'I') {
+                $dbobject->pdf_destination = 'D';  // allow user to choose
+            } // if
+            // remove spinner and re-enable submit button
+            setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+5);
+        } // if
+
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
         if (!empty($this->error)) {
@@ -1803,9 +1811,8 @@ class PDF extends TCPDF
         } // if
 
         // perform any post processing, which may involve a database update
-        if ($dbobject->dbname != 'default' AND !isset($GLOBALS['batch'])) {
-            $dbobject->startTransaction();
-        } // if
+        $dbobject->startTransaction();
+
         if (is_object($dbobject->custom_processing_object)) {
             if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
                 $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
@@ -1820,13 +1827,11 @@ class PDF extends TCPDF
         // reset language in case it was changed
         $GLOBALS['party_language'] = $_SESSION['user_language'];
 
-        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
-            if (empty($dbobject->errors)) {
-                $this->errors = $dbobject->commit();
-            } // if
-            if (!empty($this->errors)) {
-                $dbobject->rollback();
-            } // if
+        if (empty($dbobject->errors)) {
+            $this->errors = $dbobject->commit();
+        } // if
+        if (!empty($this->errors)) {
+            $dbobject->rollback();
         } // if
 
         return $string;
@@ -1879,6 +1884,14 @@ class PDF extends TCPDF
             } // if
         } // if
 
+        if (version_compare(phpversion(), '7.0.0', '>=')) {
+            if ($dbobject->pdf_destination == 'I') {
+                $dbobject->pdf_destination = 'D';  // allow user to choose
+            } // if
+            // remove spinner and re-enable submit button
+            setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+5);
+        } // if
+
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
         if (!empty($this->error)) {
@@ -1891,9 +1904,8 @@ class PDF extends TCPDF
         } // if
 
         // perform any post processing, which may involve a database update
-        if ($dbobject->dbname != 'default') {
-            $dbobject->startTransaction();
-        } // if
+        $dbobject->startTransaction();
+
         if (is_object($dbobject->custom_processing_object)) {
             if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
                 $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
@@ -1908,13 +1920,11 @@ class PDF extends TCPDF
         // reset language it case it was changed
         $GLOBALS['party_language'] = $_SESSION['user_language'];
 
-        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
-            if (empty($dbobject->errors)) {
-                $this->errors = $dbobject->commit();
-            } // if
-            if (!empty($this->errors)) {
-                $dbobject->rollback();
-            } // if
+        if (empty($dbobject->errors)) {
+            $this->errors = $dbobject->commit();
+        } // if
+        if (!empty($this->errors)) {
+            $dbobject->rollback();
         } // if
 
         return $string;
@@ -1970,6 +1980,14 @@ class PDF extends TCPDF
             } // if
         } // if
 
+        if (version_compare(phpversion(), '7.0.0', '>=')) {
+            if ($dbobject->pdf_destination == 'I') {
+                $dbobject->pdf_destination = 'D';  // allow user to choose
+            } // if
+            // remove spinner and re-enable submit button
+            setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+5);
+        } // if
+
         // output the completed document
         $string = $this->Output($dbobject->pdf_filename, $dbobject->pdf_destination);
         if (!empty($this->error)) {
@@ -1983,6 +2001,7 @@ class PDF extends TCPDF
 
         // perform any post processing, which may involve a database update
         $dbobject->startTransaction();
+
         if (is_object($dbobject->custom_processing_object)) {
             if (method_exists($dbobject->custom_processing_object, '_cm_post_output')) {
                 $string = $dbobject->custom_processing_object->_cm_post_output($string, $dbobject->pdf_filename);
@@ -1994,13 +2013,14 @@ class PDF extends TCPDF
             $string = $dbobject->_cm_post_output($string, $dbobject->pdf_filename);
         } // if
 
-        if ($dbobject->dbname != 'default' AND (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit']))) {
-            if (empty($dbobject->errors)) {
-                $this->errors = $dbobject->commit();
-            } // if
-            if (!empty($this->errors)) {
-                $dbobject->rollback();
-            } // if
+        // reset language in case it was changed
+        $GLOBALS['party_language'] = $_SESSION['user_language'];
+
+        if (empty($dbobject->errors)) {
+            $this->errors = $dbobject->commit();
+        } // if
+        if (!empty($this->errors)) {
+            $dbobject->rollback();
         } // if
 
         return $string;
@@ -2917,7 +2937,7 @@ class PDF extends TCPDF
             $this->Ln($this->lasth);
             $margins = $this->getCellMargins();
             if ($margins['B'] > 0) {
-            	$this->Ln($margins['B']);  // include space for bottom margin
+                $this->Ln($margins['B']);  // include space for bottom margin
             } // if
 
         } else {

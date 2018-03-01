@@ -126,17 +126,25 @@ if (!empty($errors)) {
         $dbobject->setPageNo($_GET['page']);
     } // if
 
-    // get list of expanded nodes from session data
-    $expanded = $dbobject->getExpanded();
+    // get list of expanded and collapsed nodes from session data
+    $expanded  = $dbobject->getExpanded();
+    $collapsed = $dbobject->getCollapsed();
 
     // look for instruction to expand a single node, or ALL nodes
     if (isset($_GET['expand'])) {
+        if (!is_array($expanded)) {
+            $expanded = array();
+        } // if
         // add this node number to the list
         $expanded[$_GET['expand']] = true;
+        if (is_array($collapsed)) {
+            unset($collapsed[$_GET['expand']]);
+        } // if
     } // if
 
     if (isset($_POST['expand'])) {
         $expanded = 'ALL';  // expand all nodes
+        $collapsed = null;  // do not collapse any nodes
     } elseif (empty($expanded)) {
         if (!empty($settings) AND array_key_exists('auto_expand', $settings)) {
             $expanded = 'ALL';  // expand all nodes
@@ -146,14 +154,18 @@ if (!empty($errors)) {
     // look for instruction to collapse a single node, or ALL nodes
     if (isset($_GET['collapse'])) {
         // remove this node number from the list
+        if (!is_array($collapsed)) {
+            $collapsed = array();
+        } // if
+        $collapsed[$_GET['collapse']] = true;
         if (is_array($expanded)) {
             unset($expanded[$_GET['collapse']]);
         } // if
     } // if
-
     if (isset($_POST['collapse'])) {
         // remove all nodes from the list
-        $expanded = null;
+        $expanded  = null;
+        $collapsed = null;
     } // if
 
     // get data for the database table, starting with the root node(s)

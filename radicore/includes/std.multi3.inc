@@ -58,8 +58,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // redo any configuration changes
-    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -68,12 +66,12 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->zone                       = 'outer';
     $dbouter->xsl_params['outer_noedit'] = 'y';
     $dbouter->setRowsPerPage(1);  // display one row at a atime
-    $dbouter->sql_select     = &$outer_sql_select;
-    $dbouter->sql_from       = &$outer_sql_from;
-    $dbouter->sql_where      = &$outer_sql_where;
-    $dbouter->sql_groupby    = &$outer_sql_groupby;
-    $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
+    $dbouter->sql_select                 = &$outer_sql_select;
+    $dbouter->sql_from                   = &$outer_sql_from;
+    $dbouter->sql_where                  = &$outer_sql_where;
+    $dbouter->sql_groupby                = &$outer_sql_groupby;
+    $dbouter->sql_having                 = &$outer_sql_having;
+    $dbouter->sql_orderby_table          = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } // if
@@ -105,8 +103,6 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // get previously retrieved data
     $middle_data = $dbmiddle->getFieldArray();
-    // redo any configuration changes
-    $middle_data = $dbmiddle->getExtraData($middle_data);
     // restore WHERE string
     $middle_where = $scrolling[$dbmiddle->getClassName()]['where'];
 } else {
@@ -117,11 +113,11 @@ if (isset($script_vars['dbmiddle'])) {
     $dbmiddle->zone                        = 'middle';
     $dbmiddle->xsl_params['middle_noedit'] = 'y';
     $dbmiddle->setRowsPerPage(1);  // scroll through one item at a time
-    $dbmiddle->sql_select  = &$middle_sql_select;
-    $dbmiddle->sql_from    = &$middle_sql_from;
-    $dbmiddle->sql_where   = &$middle_sql_where;
-    $dbmiddle->sql_groupby = &$middle_sql_groupby;
-    $dbmiddle->sql_having  = &$middle_sql_having;
+    $dbmiddle->sql_select                  = &$middle_sql_select;
+    $dbmiddle->sql_from                    = &$middle_sql_from;
+    $dbmiddle->sql_where                   = &$middle_sql_where;
+    $dbmiddle->sql_groupby                 = &$middle_sql_groupby;
+    $dbmiddle->sql_having                  = &$middle_sql_having;
     if (!empty($task_selection)) {
         $dbmiddle->setSqlWhere($task_selection);
     } // if
@@ -148,20 +144,18 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get previously retrieved data
     $inner_data = $dbinner->getFieldArray();
-    // redo any configuration changes
-    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
-    $dbinner->sql_select       = &$inner_sql_select;
-    $dbinner->sql_from         = &$inner_sql_from;
-    $dbinner->sql_where        = &$inner_sql_where;
-    $dbinner->sql_groupby      = &$inner_sql_groupby;
-    $dbinner->sql_having       = &$inner_sql_having;
-    $dbinner->sql_search_table = &$inner_search_table;
+    $dbinner->sql_select                = &$inner_sql_select;
+    $dbinner->sql_from                  = &$inner_sql_from;
+    $dbinner->sql_where                 = &$inner_sql_where;
+    $dbinner->sql_groupby               = &$inner_sql_groupby;
+    $dbinner->sql_having                = &$inner_sql_having;
+    $dbinner->sql_search_table          = &$inner_search_table;
     if (!empty($task_selection)) {
         $dbinner->setSqlWhere($task_selection);
     } // if

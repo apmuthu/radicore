@@ -1,5 +1,7 @@
 -- file created on October 3, 2016, 9:37 am
 
+-- SET search_path TO "dict";
+
 INSERT INTO dict_database (database_id, database_desc, db_comment, subsys_id, created_date, created_user, revised_date, revised_user) VALUES ('workflow', 'workflow', 'Author: A J Marston
 Date: September, 2004
 

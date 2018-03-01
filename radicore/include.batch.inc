@@ -24,13 +24,10 @@ function batchInit ($batchfile)
     $curr_dir  = dirname($curr_file);   // extract directory
     chdir($curr_dir);                   // set current working directory to this
 
-    // retrieve variables from file
-    if (file_exists('../batch.ini')) {
-    	$ini_array = parse_ini_file('../batch.ini');           // use custom file
-        $ini_file  = '../batch.ini';
-    } else {
-        $ini_array = parse_ini_file('../batch.ini.default');   // use default file
-    } // if
+    $_SERVER['SCRIPT_FILENAME'] = $curr_file;
+
+    // retrieve variables from possible ini files
+    $ini_array = read_ini_file();
 
     if (isset($stdout) AND !preg_match('~(/dev/null)$~i', $stdout)) {
         if (realpath($stdout) != false) {
@@ -63,90 +60,6 @@ function batchInit ($batchfile)
 
     echo "<html>\n";
     echo '<p>** started at ' .date(DATE_RFC850)."</p>\n";
-
-    $_SERVER['SCRIPT_FILENAME']          = $curr_file;
-
-    if (empty($_SERVER['SERVER_NAME'])) {
-    	$_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
-    } // if
-    if (empty($_SERVER['HTTP_HOST'])) {
-    	$_SERVER['HTTP_HOST']            = trim($ini_array['server_name'], "'");
-    } // if
-    if (empty($_SERVER['DOCUMENT_ROOT'])) {
-    	$_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
-    } // if
-    $_SERVER['PHP_SELF']                 = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
-    if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-        if (!empty($ini_array['language'])) {
-            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
-        } else {
-            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en';
-        } // if
-    } // if
-    if (empty($_SERVER['REMOTE_ADDR'])) {
-    	$_SERVER['REMOTE_ADDR']          = 'batch';
-    } // if
-    if (empty($_SERVER['SERVER_ADMIN'])) {
-        $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
-        if (empty($_SERVER['SERVER_ADMIN'])) {
-            $_SERVER['SERVER_ADMIN']     = trim($ini_array['server_admin'], "'");
-        } // if
-    } // if
-
-    if (empty($ini_file)) {
-        // look for INCLUDE_PATH in optional htaccess file
-        if (file_exists('../htaccess.txt')) {
-            $fn = '../htaccess.txt';
-        } elseif (file_exists('../.htaccess')) {
-            $fn = '../.htaccess';
-        } // if
-        if (!empty($fn)) {
-            $ini_file = $fn;
-    	    $handle = fopen($fn, 'r');
-    	    while ($string = fgets($handle)) {
-    	        $string = trim($string);
-    	        if (strtolower(substr($string, 0, 9)) == 'php_value') {
-    	    	    list ($php_value, $name, $arg) = explode(' ', $string);
-                    if ($name == 'include_path') {
-                	    $arg = trim($arg, '".');
-                        $ini_array = array('include_path' => $arg);
-                        break;
-                    } // if
-    	        } // if
-            } // while
-    	    fclose($handle);
-    	    unset($fn);
-        } // if
-    } // if
-
-    if (empty($include_path) AND !empty($ini_array['include_path'])) {
-    	ini_set('include_path', trim($ini_array['include_path'], "'"));
-    } // if
-
-    if (empty($ini_file)) {
-        if (file_exists('../user.ini')) {
-            $fn = '../user.ini';
-        } elseif (file_exists('../.user.ini')) {
-            $fn = '../.user.ini';
-        } // if
-        if (!empty($fn)) {
-            // alternative to htaccess when run as CGI/FastCGI
-            $ini_array = parse_ini_file($fn);
-            foreach ($ini_array as $key => $value) {
-                $value = trim($value, "'");
-                if ($key == 'include_path') {
-                    if (substr($value, 0, 1) == ';') {
-                        // append to current value
-                        $value = ini_get('include_path').$value;
-                        break;
-                    } // if
-                } // if
-        	    $result = ini_set($key, $value);
-            } // foreach
-            unset($fn);
-        } // if
-    } // if
-
     echo '<p>server name  : ' .$_SERVER['SERVER_NAME'] ."</p>\n";
     echo '<p>document root: ' .$_SERVER['DOCUMENT_ROOT'] ."</p>\n";
     echo '<p>script name  : ' .$_SERVER['SCRIPT_FILENAME'] ."</p>\n";
@@ -154,15 +67,6 @@ function batchInit ($batchfile)
     echo '<p>server API   : ' .php_sapi_name() ."</p>\n";
     echo '<p>language     : ' .$_SERVER["HTTP_ACCEPT_LANGUAGE"] ."</p>\n";
     echo '<p>server_admin : ' .$_SERVER["SERVER_ADMIN"] ."</p>\n";
-
-    $_SESSION['logon_user_id'] = 'batch';   // default - may be replaced if session data is read
-    $_SESSION['role_id']       = 'batch';   // default - may be replaced if session data is read
-    $_SESSION['rdcaccount_id'] = 1;         // default - may be replaced if session data is read
-    $GLOBALS['task_id']        = basename($_SERVER['PHP_SELF']);
-    $GLOBALS['batch']          = true;
-    $GLOBALS['mode']           = 'batch';
-
-    $_SESSION['default_language'] = 'en';  // default
 
     //checkFileExists('include.general.inc');
     require_once 'include.general.inc';
@@ -178,6 +82,13 @@ function batchInit ($batchfile)
             echo "<p>ARGV[$i]={$argv[$i]}</p>\n";
         } // for
     } // if
+
+    $_SESSION['logon_user_id'] = 'batch';   // default - may be replaced if session data is read
+    $_SESSION['role_id']       = 'batch';   // default - may be replaced if session data is read
+    $_SESSION['rdcaccount_id'] = 1;         // default - may be replaced if session data is read
+    $GLOBALS['task_id']        = basename($_SERVER['PHP_SELF']);
+    $GLOBALS['batch']          = true;
+    $GLOBALS['mode']           = 'batch';
 
     if (!empty($_SERVER['SERVER_PROTOCOL']) OR !empty($argv)) {
         initSession(null, $argv);
@@ -408,6 +319,92 @@ function checkFileExists ($fname)
 } // checkFileExists
 
 // ****************************************************************************
+function read_ini_file()
+// read settings rom possible ini files
+{
+    $ini_array = array();
+
+    if (file_exists('../batch.ini')) {
+        $ini_array = parse_ini_file('../batch.ini');           // use custom file
+        $ini_file  = '../batch.ini';
+    } elseif (file_exists('../batch.ini.default')) {
+        $ini_array = parse_ini_file('../batch.ini.default');   // use default file
+    } // if
+
+    if (empty($ini_array)) {
+        if (file_exists('../user.ini')) {
+            $ini_array = array_merge($ini_array, parse_ini_file('../user.ini'));
+            $ini_file  = '../user.ini';
+        } elseif (file_exists('../.user.ini')) {
+            $ini_array = array_merge($ini_array, parse_ini_file('../.user.ini'));
+            $ini_file  = '../.user.ini';
+        } // if
+    } // if
+
+    if (empty($ini_array)) {
+        // look for INCLUDE_PATH in optional htaccess file
+        if (file_exists('../htaccess.txt')) {
+            $fn = '../htaccess.txt';
+        } elseif (file_exists('../.htaccess')) {
+            $fn = '../.htaccess';
+        } // if
+        if (!empty($fn)) {
+            $ini_file = $fn;
+            $handle = fopen($fn, 'r');
+            while ($string = fgets($handle)) {
+                $string = trim($string);
+                if (strtolower(substr($string, 0, 9)) == 'php_value') {
+                    list ($php_value, $name, $arg) = explode(' ', $string);
+                    if ($name == 'include_path') {
+                        $arg = trim($arg, '".');
+                        $ini_array = array('include_path' => $arg);
+                        break;
+                    } // if
+                } // if
+            } // while
+            fclose($handle);
+            unset($fn);
+        } // if
+    } // if
+
+    if (!empty($ini_array['include_path'])) {
+        ini_set('include_path', trim($ini_array['include_path'], "'"));
+    } // if
+
+    if (empty($_SERVER['SERVER_NAME'])) {
+        $_SERVER['SERVER_NAME']          = trim($ini_array['server_name'], "'");
+    } // if
+    if (empty($_SERVER['HTTP_HOST'])) {
+        $_SERVER['HTTP_HOST']            = trim($ini_array['server_name'], "'");
+    } // if
+    if (empty($_SERVER['DOCUMENT_ROOT'])) {
+        $_SERVER['DOCUMENT_ROOT']        = str_replace("\\", "/", trim($ini_array['doc_root'], "'"));
+    } // if
+    $_SERVER['PHP_SELF']                 = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
+    if (empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        if (!empty($ini_array['language'])) {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = trim($ini_array['language'], "'");
+        } else {
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en';
+        } // if
+    } // if
+    if (empty($_SERVER['REMOTE_ADDR'])) {
+        $_SERVER['REMOTE_ADDR']          = 'batch';
+    } // if
+    if (empty($_SERVER['SERVER_ADMIN'])) {
+        $_SERVER['SERVER_ADMIN']         = ini_get('sendmail_from');
+        if (empty($_SERVER['SERVER_ADMIN'])) {
+            $_SERVER['SERVER_ADMIN']     = trim($ini_array['server_admin'], "'");
+        } // if
+    } // if
+
+    $_SESSION['default_language'] = 'en';  // default
+
+    return $ini_array;
+
+} // read_ini_file
+
+// ****************************************************************************
 function send_to_stdout($message, $prefix="<p>", $suffix="</p>\n")
 // either echo the string or write it to stdout
 {
@@ -428,6 +425,47 @@ function send_to_stdout($message, $prefix="<p>", $suffix="</p>\n")
     return;
 
 } // send_to_stdout
+
+// ****************************************************************************
+function serverInit ($batchfile, $server='SERVER')
+// initialisation for a web services process
+{
+    error_reporting(-1);                // report everything
+    ini_set('display_errors', true);    // display everything
+
+    // get fully-qualified name of current file
+    $curr_file = str_replace("\\", "/", $batchfile);
+    $curr_dir  = dirname($curr_file);   // extract directory
+    chdir($curr_dir);
+
+    $_SERVER['SCRIPT_FILENAME'] = $curr_file;
+
+    // retrieve variables from possible ini files
+    $ini_array = read_ini_file();
+
+    //checkFileExists('include.general.inc');
+    require_once 'include.general.inc';
+    //checkFileExists('include.session.inc');
+    require_once 'include.session.inc';
+
+    $_SESSION['default_language']         = 'en';    // default is 'English'
+    $_SESSION['default_currency_code']    = 'GBP';   // default is GB pounds (sterling)
+    $_SESSION['display_foreign_currency'] = false;   // no need to convert to home currency
+    $_SESSION['logon_user_id'] = $server;
+    $_SESSION['role_id']       = $server;
+    $_SESSION['rdcaccount_id'] = 1;
+    $GLOBALS['task_id']        = $_SERVER['PHP_SELF'];
+    $GLOBALS['batch']          = true;
+    $GLOBALS['mode']           = $server;
+
+    $_SESSION['user_language'] =& $_SESSION['default_language'];
+    $GLOBALS['party_language'] =& $_SESSION['default_language'];
+
+    $GLOBALS['transaction_has_started'] = false;
+
+    return true;
+
+} // serverInit
 
 // ****************************************************************************
 function errorHandlerBatch ($errno, $errstr, $errfile, $errline, $errcontext)

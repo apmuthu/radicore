@@ -68,6 +68,7 @@ class x_pers_opt_xref extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         // clear out the contents of $where
         $where = '';

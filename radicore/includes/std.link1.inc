@@ -229,17 +229,17 @@ if (!empty($_POST)) {
                 } // if
             } // if
             // re-read database in case any values have changed
-            $fieldarray = $dbouter->getData($where);
+            $outer_data = $dbouter->getData($where);
             if ($dbouter->numrows == 0) {
                 // record cannot be found, so re-read using original $where clause
                 $where      = $scrolling[$dbouter->getClassName()]['where'];
-                $fieldarray = $dbouter->getData($where);
+                $outer_data = $dbouter->getData($where);
             } // if
             // reset 'lastitem' in scroll array
             $scrolling[$dbouter->getClassName()]['lastitem'] = $dbouter->getLastPage();
             $script_vars['scrolling'] = $scrolling;
             // get any extra data and merge with $fieldarray
-            $fieldarray = $dbouter->getExtraData($fieldarray);
+            $outer_data = $dbouter->getExtraData($outer_data);
             if ($dbouter->errors) {
             	// errors are keyed by object name
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();

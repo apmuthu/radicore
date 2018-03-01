@@ -263,12 +263,28 @@ END_OF_REGEX;
             } // if
         } // if
 
-        if (isset($fieldspec['type']) AND $fieldspec['type'] == 'boolean' AND is_bool($fieldvalue)) {
+        if (isset($fieldspec['type']) AND $fieldspec['type'] == 'boolean') {
             // convert BOOLEAN to correct values
-            if (isset($fieldspec['true']) AND $fieldvalue === true) {
-                $fieldvalue = $fieldspec['true'];
-            } elseif (isset($fieldspec['false']) AND $fieldvalue === false) {
-                $fieldvalue = $fieldspec['false'];
+            if (is_bool($fieldvalue)) {
+                if (isset($fieldspec['true']) AND $fieldvalue === true) {
+                    $fieldvalue = $fieldspec['true'];
+                } elseif (isset($fieldspec['false']) AND $fieldvalue === false) {
+                    $fieldvalue = $fieldspec['false'];
+                } // if
+            } else {
+                if (is_True($fieldvalue)) {
+                    if (isset($fieldspec['true'])) {
+                        $fieldvalue = $fieldspec['true'];
+                    } else {
+                        $fieldvalue = true;
+                    } // if
+                } else {
+                    if (isset($fieldspec['false'])) {
+                        $fieldvalue = $fieldspec['false'];
+                    } else {
+                        $fieldvalue = false;
+                    } // if
+                } // if
             } // if
         } // if
 
@@ -318,19 +334,31 @@ END_OF_REGEX;
                     // this is a function call, not a value, so leave it alone
                 } else {
                     $size = (double)$fieldspec['size'];
+//                    if (isset($fieldspec['maxvalue'])) {
+//                        if (isset($fieldspec['scale'])) {
+//                            $decimals = $fieldspec['scale'];
+//                        } else {
+//                            $decimals = 0;
+//                        } // if
+//                        $maxvalue_str = number_format($fieldspec['maxvalue'], $decimals, '', '');
+//                        $fieldspec['size'] = strlen($maxvalue_str);
+//                    } // if
                     if (preg_match('/(decimal|numeric|float|real|double)/i', $fieldspec['type'])) {
-                        // remove thousands separator and ensure decimal point is '.'
-                        $fieldvalue = number_unformat($fieldvalue, '.', ',');
-                        if (preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
-                            // assume value is in format 'field+1', so let it through
-                        } elseif (array_key_exists('scale', $fieldspec)) {
-                            if (is_numeric($fieldvalue)) {
-                                // round to the correct number of decimal places
-                                $fieldvalue = number_format($fieldvalue, $fieldspec['scale'], '.', '');
+                        if (isset($fieldspec['scale']) AND $fieldspec['scale'] == 0) {
+                            // do not attempt to reformat this field
+                        } else {
+                            // remove thousands separator and ensure decimal point is '.'
+                            $fieldvalue = number_unformat($fieldvalue, '.', ',');
+                            if (preg_match("/^$fieldname"."[+-][1-9]+/i", $fieldvalue)) {
+                                // assume value is in format 'field+1', so let it through
+                            } elseif (array_key_exists('scale', $fieldspec)) {
+                                if (is_numeric($fieldvalue)) {
+                                    // round to the correct number of decimal places
+                                    $fieldvalue = number_format($fieldvalue, $fieldspec['scale'], '.', '');
+                                } // if
                             } // if
                         } // if
-                    } // if
-                    if (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
+                    } elseif (preg_match('/(float|real|double)/i', $fieldspec['type'])) {
                 	    if (is_numeric($fieldvalue) AND strlen($fieldvalue) > $size) {
                 	        // reduce huge number to scientific notation
                 		    $fieldvalue = sprintf('%e', $fieldvalue);
@@ -610,20 +638,27 @@ END_OF_REGEX;
             if (isset($spec['mustvalidate'])) {
                 unset($spec['nondb']);  // allow a non-database field to be validated
             } // if
+            if (isset($fieldarray[$field])) {
+                $value = $fieldarray[$field];
+            } else {
+                $value = null;
+            } // if
             if (isset($spec['novalidate']) OR isset($spec['nondb']) OR isset($spec['autoinsert'])) {
                 $insertarray[$field] = $value;  // do not validate this field
             } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
                 $insertarray[$field] = $value;  // do not validate this field
             } else {
-                if (isset($fieldarray[$field])) {
-                    $value = $fieldarray[$field];
-                } else {
-                    $value = null;
+                if (preg_match('/^(col_minvalue|user_minvalue|col_maxvalue|user_maxvalue)$/i', $field) AND !empty($fieldarray['col_maxsize'])) {
+                    // this is required when loading data from the database schema in the data dictionary
+                    if (preg_match('/^(decimal|numeric)$/', $fieldarray['col_type'])) {
+                        // size varies according to the column type
+                        $spec['size'] = $fieldarray['col_maxsize'];
+                    } // if
                 } // if
                 $value = $this->validateField($field, $value, $spec);
                 // transfer to array which will be passed to the database
                 // (remember that a null value is not the same as no value at all)
-                if (strlen($value) > 0) {
+                if (strlen($value) > 0 OR is_bool($value)) {
                     $insertarray[$field] = $value;
                 } else {
                     $insertarray[$field] = null;
@@ -749,7 +784,7 @@ END_OF_REGEX;
             $minvalue = '-' . str_repeat('9', $precision-1);
 
             // maxvalue has no positive sign
-            $maxvalue = (int)str_repeat('9', $precision);
+            $maxvalue = str_repeat('9', $precision);
             if ($scale > 0) {
                 // adjust values to include decimal places
                 $minvalue = $minvalue / pow(10, $scale);
@@ -774,7 +809,7 @@ END_OF_REGEX;
                 $this->errors[$field] = $callingOBJ->getLanguageText('sys0024', $minvalue);
             } // if
 
-            if (isset($spec['maxvalue'])) {
+            if (isset($spec['maxvalue']) AND $spec['maxvalue'] > $maxvalue) {
                 // override with value provided in $fieldspec
                 $maxvalue = (float)$spec['maxvalue'];
             } // if
@@ -784,8 +819,12 @@ END_OF_REGEX;
                 $this->errors[$field] = $callingOBJ->getLanguageText('sys0025', $maxvalue);
             } // if
 
-            // set to internal format
-            $value = number_format($value, $scale, '.', '');
+            if (!empty($precision) AND $scale == 0) {
+                // do not attempt to reformat this field
+            } else {
+                // set to internal format
+                $value = number_format($value, $scale, '.', '');
+            } // if
 
             return $value;
 
@@ -875,11 +914,20 @@ END_OF_REGEX;
                 } elseif (isset($spec['control']) AND preg_match('/^(button)$/i', $spec['control'])) {
                     $updatearray[$field] = $value;  // do not validate this field
                 } else {
+                    if (preg_match('/^(col_minvalue|user_minvalue|col_maxvalue|user_maxvalue)$/i', $field) AND !empty($fieldarray['col_maxsize'])) {
+                        // this is required when loading data from the database schema in the data dictionary
+                        if (preg_match('/^(decimal|numeric)$/', $fieldarray['col_type'])) {
+                            // size varies according to the column type
+                            $spec['size'] = $fieldarray['col_maxsize'];
+                        } // if
+                    } // if
                     // validate field using field specifications
                     $value = $this->validateField($field, $value, $spec);
                     // transfer to array which will be passed to the database
                     // (allow null values as field may have been cleared)
-                    if (is_string($value) AND strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
+                    if ((is_string($value) OR is_numeric($value)) AND strlen($value) > 0 OR in_array($field, $caller->primary_key)) {
+                        $updatearray[$field] = $value;
+                    } elseif (is_bool($value) AND $spec['type'] == 'boolean') {
                         $updatearray[$field] = $value;
                     } else {
                         $updatearray[$field] = null;

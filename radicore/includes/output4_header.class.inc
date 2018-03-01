@@ -91,11 +91,11 @@ class output4_header extends Default_Table
 
             $this->child_object->startTransaction();
             $dbobject = RDCsingleton::getInstance('mnu_saved_selection');
-            $result = $dbobject->updateSelection($fieldarray['selection_id'],
-                                                 $child_data,
-                                                 $fieldarray['rdc_selection_desc'],
-                                                 $_SESSION['logon_user_id'],
-                                                 $GLOBALS['task_id']);
+            $result = $dbobject->updateSavedSelection($fieldarray['selection_id'],
+                                                      $child_data,
+                                                      $fieldarray['rdc_selection_desc'],
+                                                      $_SESSION['logon_user_id'],
+                                                      $GLOBALS['task_id']);
             if ($dbobject->errors) {
                 $this->errors = $dbobject->errors;
                 $this->child_object->rollback();

@@ -102,6 +102,11 @@ class logon extends mnu_user
         if (!empty($this->errors)) {
             $this->PasswordRetries($logon_user_id, $logon_password);
             $this->fieldarray['user_password'] = '';
+            if (!empty($logonarray['user_id'])) {
+                $this->fieldarray['user_id']    = $logonarray['user_id'];
+            } elseif (!empty($logonarray['email_addr'])) {
+                $this->fieldarray['email_addr'] = $logonarray['email_addr'];
+            } // if
             return $this->errors;
         } // if
 

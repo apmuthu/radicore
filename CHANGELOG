@@ -1,5 +1,29 @@
 ﻿RADICORE for PHP - news
 
+2018-03-01, version 2.09.0
+Database changes:
+- run script menu\sql\mysql\menu.menu_export(2017-11-10).sql to update the contents of the MENU database
+
+Other changes:
+- fixed bug in mnu_saved_selection.class.inc and output4_header.class.inc by renaming method updateSelection() to updateSavedSelection() so that it does not conflict with standard method inside std.table.class.inc
+- updated all dml.???.class.inc files and error.inc to cater for the $errcontext argument of the error handler being deprecated in PHP 7.2
+- updated _cm_getNodeData() in 'std.table.class.inc' to include a 4th argument called $collapsed.
+- updated 'std.tree_view1.inc' and 'std.tree_view2.inc' to maintain the contents of $collapsed.
+- updated return_bytes() function to split off the trailing alpha character before performing any multiplications.
+- updated the MENU database to include a new task called 'dates(all)' which will remove the 'dates(current/historic/future)' setting.
+- updated 'include.library.inc' so that the currentOrHistoric() function can deal with the 'dates(all)' option.
+- updated method '_cm_updateFieldarray()' method in 'std.table.class.inc' so that the 2nd argument is passed by reference. The contents of this array will automatically be merged with $fieldarray after the call so this provides the opportunity to remove values which are no longer wanted.
+- added array variable $no_filter_where to 'std.table.class.inc' which prevents column names which do not exist in the current table from being filtered out of the where string. This can be set in the '_cm_initialise()' method. This provides an alternative to the '_cm_filterWhere()' method.
+- updated 'include.xml.php5.inc' and 'std.data_field.xsl' to allow tooltips in custom buttons.
+- updated 'std.search1.inc' so that it calls the $dbobject->post_search() method before it saves the search string in the $_SESSION array instead of after.
+- updated 'std.filedownload.inc' so that you can provide the contents in memory instead of always having to read it from disk.
+- updated 'std.table.class.inc' so that the getData_raw() method saves its results in $this->fieldarray.
+- updated 'std.table.class.inc' so that the popupReturn() method will not call _cm_popupReturn() if the $selection argument is empty.
+- updated 'std.table.class.inc' by adding a 2nd argument to the sqlSelectInit() method which will optionally allow $this->lookup_data to be initialised.
+- updated 'include.session.inc' to improve the CSRF checks.
+- updated 'std.validation.class.inc' to improve the validation of boolean fields.
+- updated 'include.library.inc' so that the getForeignKeyValues() function can find the keys to either the parent or the child table in any parent-to-child relationship.
+
 2017-11-01, version 2.08.0
 Database changes:
 - none

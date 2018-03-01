@@ -123,19 +123,21 @@ class product_feature extends Default_Table
     // NOTE: $where is passed BY REFERENCE so that it may be modified.
     {
         //DebugBreak();
-        if (array_key_exists('measurement_reqd', $rowdata[0])) {
-            if (is_true($rowdata[0]['measurement_reqd'])) {
-                $this->fieldspec['uom_id']['required']      = 'y';
-                $this->fieldspec['measurement']['required'] = 'y';
-                unset($this->fieldspec['uom_id']['nodisplay']);
-                unset($this->fieldspec['measurement']['nodisplay']);
-            } else {
-                unset($this->fieldspec['uom_id']['required']);
-                unset($this->fieldspec['measurement']['required']);
-                $this->fieldspec['uom_id']['nodisplay']      = 'y';
-                $this->fieldspec['measurement']['nodisplay'] = 'y';
-                $fieldarray['uom_id']                        = null;
-                $fieldarray['measurement']                   = null;
+        if (!empty($rowdata)) {
+            if (array_key_exists('measurement_reqd', $rowdata[0])) {
+                if (is_true($rowdata[0]['measurement_reqd'])) {
+                    $this->fieldspec['uom_id']['required']      = 'y';
+                    $this->fieldspec['measurement']['required'] = 'y';
+                    unset($this->fieldspec['uom_id']['nodisplay']);
+                    unset($this->fieldspec['measurement']['nodisplay']);
+                } else {
+                    unset($this->fieldspec['uom_id']['required']);
+                    unset($this->fieldspec['measurement']['required']);
+                    $this->fieldspec['uom_id']['nodisplay']      = 'y';
+                    $this->fieldspec['measurement']['nodisplay'] = 'y';
+                    $fieldarray['uom_id']                        = null;
+                    $fieldarray['measurement']                   = null;
+                } // if
             } // if
         } // if
 

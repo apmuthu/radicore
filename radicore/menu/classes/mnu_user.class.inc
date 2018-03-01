@@ -523,7 +523,7 @@ class mnu_user extends Default_Table
     function _cm_filterWhere ($array=null)
     // identify field names which are NOT to be filtered out of a $where string.
     {
-        if ($this->zone = 'outer') {
+        if ($this->zone == 'outer') {
             // do not filter this field out of the $WHERE string
             $array[] = 'task_id';
         } // if

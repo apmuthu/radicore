@@ -152,10 +152,12 @@ class inventory_item extends Default_Table
     } // _cm_getValRep
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings, $offset)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         // clear out the contents of $where
         $where = '';
@@ -236,7 +238,7 @@ class inventory_item extends Default_Table
     // $fieldarray may contain full details of the current record in the parent
     // class, not just its primary key.
     {
-        if (!eregi('(variance_qty)', $this->sql_select, $regs)) {
+        if (!preg_match('/\bvariance_qty\b/i', $this->sql_select, $regs)) {
             if (empty($this->sql_select)) {
             	$this->sql_select = 'inventory_item.*, qty_on_hand - total_qty AS variance_qty ';
             } else {

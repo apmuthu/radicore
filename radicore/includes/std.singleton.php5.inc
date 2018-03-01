@@ -51,8 +51,8 @@ class RDCsingleton
 	        // use leading directory name as the subsystem name
 	        $subsystem = basename(dirname($class));     // only one directory allowed
 	    	$classname = basename($class);              // strip leading directories
-	    	//$filename  = "../$subsystem/classes/$classname.class.inc";
-            $filename  = "classes/$classname.class.inc";
+	    	$filename  = "../$subsystem/classes/$classname.class.inc";
+            //$filename  = "classes/$classname.class.inc";
             // ensure that this subsystem is in the include plath
             $include_path = ini_get('include_path');
             $pattern = '#'              // start pattern
@@ -117,7 +117,11 @@ class RDCsingleton
                 		require_once 'std.validation.class.inc';
                 		break;
 
-                	default:
+                	case 'blockchain_class':
+                        require_once 'classes/std.blockchain.class.inc';
+                        break;
+
+                    default:
                 	    require_once $filename;
                 		break;
                 } // switch
@@ -147,7 +151,7 @@ class RDCsingleton
 
         if (method_exists($instance, 'sqlSelectInit')) {
             // initialise all sql variables
-            $instance->sqlSelectInit();
+            $instance->sqlSelectInit(true);
         } // if
 
         $GLOBALS['classdir'] = $classdir;  // restore

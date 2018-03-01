@@ -58,8 +58,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // redo any configuration changes
-    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -88,8 +86,6 @@ if (isset($script_vars['dbmiddle'])) {
     } // if
     // get data from this instance
     $middle_data = $dbmiddle->getFieldArray();
-    // redo any configuration changes
-    $middle_data = $dbmiddle->getExtraData($middle_data);
 } else {
 	// create new instance for initial activation of this script
     $dbmiddle = new $middle_table;
@@ -100,11 +96,11 @@ if (isset($script_vars['dbmiddle'])) {
     //$dbmiddle->xsl_params['middle_multiple'] = 'y';
     //$dbmiddle->xsl_params['middle_nosort'] = 'y';
     $dbmiddle->setRowsPerPage(1);  // scroll through one item at a time
-    $dbmiddle->sql_select  = &$middle_sql_select;
-    $dbmiddle->sql_from    = &$middle_sql_from;
-    $dbmiddle->sql_where   = &$middle_sql_where;
-    $dbmiddle->sql_groupby = &$middle_sql_groupby;
-    $dbmiddle->sql_having  = &$middle_sql_having;
+    $dbmiddle->sql_select                = &$middle_sql_select;
+    $dbmiddle->sql_from                  = &$middle_sql_from;
+    $dbmiddle->sql_where                 = &$middle_sql_where;
+    $dbmiddle->sql_groupby               = &$middle_sql_groupby;
+    $dbmiddle->sql_having                = &$middle_sql_having;
     if (!empty($task_selection)) {
         $dbmiddle->setSqlWhere($task_selection);
     } // if
@@ -131,8 +127,6 @@ if (isset($script_vars['dbinner'])) {
     } // if
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
-    // redo any configuration changes
-    $inner_data = $dbinner->getExtraData($inner_data);
 } else {
     // create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -140,12 +134,12 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
     //$dbinner->xsl_params['inner_noedit'] = 'y';
-    $dbinner->sql_select       = &$inner_sql_select;
-    $dbinner->sql_from         = &$inner_sql_from;
-    $dbinner->sql_where        = &$inner_sql_where;
-    $dbinner->sql_groupby      = &$inner_sql_groupby;
-    $dbinner->sql_having       = &$inner_sql_having;
-    $dbinner->sql_search_table = &$inner_search_table;
+    $dbinner->sql_select                = &$inner_sql_select;
+    $dbinner->sql_from                  = &$inner_sql_from;
+    $dbinner->sql_where                 = &$inner_sql_where;
+    $dbinner->sql_groupby               = &$inner_sql_groupby;
+    $dbinner->sql_having                = &$inner_sql_having;
+    $dbinner->sql_search_table          = &$inner_search_table;
     if (!empty($task_selection)) {
         $dbinner->setSqlWhere($task_selection);
     } // if
@@ -267,7 +261,7 @@ if (!empty($_POST)) {
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-            if ($custom_btn == 'retrieve') {
+            if ($custom_btn == 'retrieve' OR is_True($dbouter->do_retrieve)) {
                 $do_retrieve = true;  // read the database for current data
             } // if
         } // if

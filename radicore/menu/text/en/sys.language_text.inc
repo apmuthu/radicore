@@ -299,6 +299,17 @@ $array['sys0267'] = "Zone '%1\$s' row '%2\$s' in screen structure file does not 
 $array['sys0268'] = "";
 $array['sys0269'] = "";
 
+$array['sys0270'] = "Date range has been set to ALL";
+$array['sys0271'] = "PARTICIPANT_ID has not been defined in config file - cannot continue";
+$array['sys0272'] = "PARTICIPANT_ID can only contain 6-12 numeric digits - cannot continue";
+$array['sys0273'] = "CSRF check failed!";
+$array['sys0274'] = "";
+$array['sys0275'] = "";
+$array['sys0276'] = "";
+$array['sys0277'] = "";
+$array['sys0278'] = "";
+$array['sys0279'] = "";
+
 // the following entries are label text for ACTION buttons
 $array['cancel']     = 'CANCEL';
 $array['choose']     = 'CHOOSE';

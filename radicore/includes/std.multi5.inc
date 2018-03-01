@@ -57,8 +57,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // redo any configuration changes
-    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -96,7 +94,7 @@ if (isset($script_vars['dbinner'])) {
     // get data from this instance
     $inner_data = $dbinner->getFieldArray();
     // redo any configuration changes
-    $inner_data = $dbinner->getExtraData($inner_data);
+    //$inner_data = $dbinner->getExtraData($inner_data);  // this conflicts with javascript submit (updateFieldArray)
 } else {
 	// create new instance for initial activation of this script
     $dbinner = new $inner_table;
@@ -104,12 +102,12 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
     //$dbinner->xsl_params['inner_noedit'] = 'y';
-    $dbinner->sql_select       = &$inner_sql_select;
-    $dbinner->sql_from         = &$inner_sql_from;
-    $dbinner->sql_where        = &$inner_sql_where;
-    $dbinner->sql_groupby      = &$inner_sql_groupby;
-    $dbinner->sql_having       = &$inner_sql_having;
-    $dbinner->sql_search_table = &$inner_search_table;
+    $dbinner->sql_select                = &$inner_sql_select;
+    $dbinner->sql_from                  = &$inner_sql_from;
+    $dbinner->sql_where                 = &$inner_sql_where;
+    $dbinner->sql_groupby               = &$inner_sql_groupby;
+    $dbinner->sql_having                = &$inner_sql_having;
+    $dbinner->sql_search_table          = &$inner_search_table;
     if (!empty($task_selection)) {
         $dbinner->setSqlWhere($task_selection);
     } // if
@@ -210,7 +208,7 @@ if (!empty($_POST)) {
             if ($dbouter->errors) {
                 $errors[$dbouter->getClassName()] = $dbouter->getErrors();
             } // if
-            if ($custom_btn == 'retrieve') {
+            if ($custom_btn == 'retrieve' OR is_True($dbouter->do_retrieve)) {
                 $do_retrieve = true;  // read the database for current data
             } // if
         } // if

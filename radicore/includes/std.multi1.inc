@@ -57,19 +57,19 @@ if (isset($script_vars['dbobject'])) {
     // get data from this instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    //$fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
     $dbobject->zone                      = 'main';
-    $dbobject->sql_select     = &$sql_select;
-    $dbobject->sql_from       = &$sql_from;
-    $dbobject->sql_where      = &$sql_where;
-    $dbobject->sql_groupby    = &$sql_groupby;
-    $dbobject->sql_having     = &$sql_having;
-    $dbobject->sql_orderby_table = &$sql_orderby_table;
+    $dbobject->sql_select                = &$sql_select;
+    $dbobject->sql_from                  = &$sql_from;
+    $dbobject->sql_where                 = &$sql_where;
+    $dbobject->sql_groupby               = &$sql_groupby;
+    $dbobject->sql_having                = &$sql_having;
+    $dbobject->sql_orderby_table         = &$sql_orderby_table;
     if (!empty($sql_orderby)) {
         $dbobject->setDefaultOrderby($sql_orderby);
     } elseif (!empty($task_orderby)) {
@@ -258,13 +258,11 @@ if (!empty($_POST)) {
 //if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 if (empty($errors)) {
     // check if we are returning from a child form
-    if (!empty($return_from) AND !empty($popup_object)) {
-        if (isset($selection)) {
-            // merge previous saved variables with selection from popup form
-            $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
-            if ($dbobject->errors) {
-                $errors = $dbobject->getErrors();
-            } // if
+    if (!empty($return_from) AND (!empty($popup_object) OR isset($selection))) {
+        // merge previous saved variables with selection from popup form
+        $fieldarray = $dbobject->popupReturn($fieldarray, basename($return_from), $selection, null, $return_files);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
         } // if
 
     } else {

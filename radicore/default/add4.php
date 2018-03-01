@@ -1,6 +1,6 @@
 <?php
 // *****************************************************************************
-// Add a database record without any dialog with the user.
+// Add one or more database records without any dialog with the user.
 // *****************************************************************************
 
 $table_id = '#tablename#';      // table name

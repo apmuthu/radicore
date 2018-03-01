@@ -8,7 +8,8 @@
 
 // are we using PHP 5, or something earlier?
 if (version_compare(phpversion(), '5.0.0', '<')) {
-    require_once 'std.singleton.php4.inc';
+    //require_once 'std.singleton.php4.inc';
+    trigger_error('This version of PHP is no longer supported', E_USER_ERROR);
 } else {
     // PHP 5 uses different code
     require_once 'std.singleton.php5.inc';
@@ -328,8 +329,6 @@ if (!function_exists('array_update_associative')) {
                 } else {
                     $spec = array();
                 } // if
-                //if (is_array($array2[$fieldname]) AND is_array($array1[$fieldname])) {
-				//if (is_array($array2[$fieldname]) AND (is_array($array1[$fieldname]) || empty($array1[$fieldname]))) {
                 if (!empty($spec) AND ($spec['type'] == 'array' OR (isset($spec['control']) AND preg_match('/^(multidrop|m_checkbox|checkbox_multi)$/i', $spec['control'])) AND is_array($array2[$fieldname]))) {
                     $array1[$fieldname] = $array2[$fieldname];  // both arrays, so update
                 } elseif (!is_array($array2[$fieldname]) AND !is_array($array1[$fieldname])) {
@@ -1018,9 +1017,13 @@ if (!function_exists('checkFileExists')) {
     function checkFileExists ($fname)
     // check that file $fname exists on current include_path, and abort if it doesn't.
     {
+        $save_handler = set_error_handler(null); // turn off the error handler
         if (!fopen($fname, 'r', true)) {
+            set_error_handler($save_handler);  // restore the error handler
             $message = getLanguageText('sys0076', $fname);
             trigger_error($message, E_USER_ERROR);
+        } else {
+            set_error_handler($save_handler);  // restore the error handler
         } // if
 
         return true;
@@ -1336,7 +1339,7 @@ if (!function_exists('convertTZtime')) {
 // ****************************************************************************
 if (!function_exists('currentOrHistoric')) {
     function currentOrHistoric ($string, $start_date, $end_date)
-    // convert the string 'current/historic/future' into a date range.
+    // convert the string 'current/historic/future/all' into a date range.
     // NOTE: defaults to fields named START_DATE and END_DATE, but this may be changed.
     {
         if (empty($start_date)) {
@@ -1346,11 +1349,15 @@ if (!function_exists('currentOrHistoric')) {
         	$end_date = 'end_date';
         } // if
 
-        // convert search string into an indexed array
-        $search = where2array($string, false, false);
+        if (is_array($string)) {
+            $search = $string;
+        } else {
+            // convert search string into an indexed array
+            $search = where2array($string, false, false);
+        } // if
 
         if (isset($search['curr_or_hist'])) {
-            // replace Current/Historic/Future with a range of dates
+            // replace Current/Historic/Future/All with a range of dates
             $search1 = stripOperators($search);
             $date = getTimeStamp('date');
             switch ($search1['curr_or_hist']) {
@@ -1366,6 +1373,10 @@ if (!function_exists('currentOrHistoric')) {
                 case 'F':
                     // search for records with FUTURE dates
                     $search[$start_date] = ">'$date 23:59:59'";
+                case 'A':
+                    // search for records with ANY or ALL dates
+                    //$search[$start_date] = "IS NOT NULL";
+                    //$search[$end_date]   = "IS NOT NULL";
                 default:
                     ;
             } // switch
@@ -1779,6 +1790,10 @@ if (!function_exists('extractTableNames')) {
     function extractTableNames ($sql_from)
     // extract table names from $sql_from
     {
+        if (empty($sql_from)) {
+            return array();
+        } // if
+
         // extract first table name (may be '[database.]table AS alias')
         $pattern = '/'                         // start delimiter
                  . '"\w+"\.dbo\.\w+[ ]+AS[ ]+\w+'   // "db".dbo.table AS alias
@@ -2692,14 +2707,18 @@ if (!function_exists('fixTrueFalseArray')) {
     // could be changed to:             'Y'    => 'Yes', 'N'     => 'No'
     //                  or:             '1'    => 'Yes', '0'     => 'No'
     {
-        $true  =& $spec['true'];
-        $false =& $spec['false'];
+        $true  = (empty($spec['true']))  ? true  : $spec['true'];
+        $false = (empty($spec['false'])) ? false : $spec['false'];
+        //$true  =& $spec['true'];
+        //$false =& $spec['false'];
 
         if (!is_array($lookup)) {
             $lookup = array();
         } // if
 
-        if (strlen($true) > 0) {
+        if (is_bool($true)) {
+            // already correct
+        } elseif (strlen($true) > 0) {
         	if (!array_key_exists($true, $lookup)) {
                 if (!empty($lookup['true'])) {
                     $value = $lookup['true'];
@@ -2711,7 +2730,9 @@ if (!function_exists('fixTrueFalseArray')) {
             } // if
         } // if
 
-        if (strlen($false) > 0) {
+        if (is_bool($false)) {
+            // already correct
+        } elseif (strlen($false) > 0) {
             if (!array_key_exists($false, $lookup)) {
                 if (!empty($lookup['false'])) {
                     $value = $lookup['false'];
@@ -3257,9 +3278,13 @@ if (!function_exists('getFileStructure')) {
 
 // ****************************************************************************
 if (!function_exists('getForeignKeyValues')) {
-    function getForeignKeyValues ($parentOBJ, $childOBJ)
+    function getForeignKeyValues ($parentOBJ, $childOBJ, $relationship=false, $child_to_parent=false)
     // identify any mapping between the column names for the foreign key on the
     // CHILD object and the corresponding primary/unique key on the PARENT object.
+    // The default behaviour is to read from parent to child, but this can be
+    // reversed by setting $child_to_parent to true.
+    // $relationship (if present) contains an entry from the $child_relations array
+    // which identifies the field names used in this relationship.
     {
         if (!is_object($parentOBJ)) {
             // "1st argument must be an object"
@@ -3271,27 +3296,58 @@ if (!function_exists('getForeignKeyValues')) {
             trigger_error(getLanguageText('sys0228'), E_USER_ERROR);
         } // if
 
-        $parent_table = $parentOBJ->getClassName(); // may be a sub-class providing an alias name
+        if (!empty($parentOBJ->table_id_alias)) {
+            $parent_table = $parentOBJ->table_id_alias; // use this alias instead of the actual name
+        } else {
+            $parent_table = $parentOBJ->getClassName(); // use the class name (which may be a subtype)
+        } // if
         $child_table  = $childOBJ->tablename;       // use actual name
-        $parent_data  = $parentOBJ->getFieldArray();
-        if (is_long(key($parent_data))) {
-            $parent_data = array_shift($parent_data);
+
+        if (is_True($child_to_parent)) {
+            $table_data  = $childOBJ->getFieldArray();      // read from child to parent
+        } else {
+            $table_data  = $parentOBJ->getFieldArray();    // read from parent to child
+        } // if
+        if (is_long(key($table_data))) {
+            $table_data = array_shift($table_data);   // convert from indexed by row to associative
         } // if
 
-        $found = array();
-        // first look for entry where the parent table has an alias name
-        foreach ($childOBJ->parent_relations as $reldata) {
-            if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
-                $found[] = $reldata;
-                //break;
+        $found = array();  // start with nothing
+
+        if (!empty($relationship) AND is_array($relationship)) {
+            // a specific relationship has been supplied, so use it
+            if (!empty($relationship['fields']) AND is_array($relationship['fields'])) {
+                $found[] = $relationship;
             } // if
-        } // foreach
+        } // if
+
+        if (empty($found)) {
+            // look for entry where the parent table has an alias name
+            foreach ($childOBJ->parent_relations as $reldata) {
+                if (isset($reldata['alias']) AND $reldata['alias'] == $parent_table) {
+                    $found[] = $reldata;
+                    //break;
+                } // if
+            } // foreach
+        } // if
 
         if (empty($found)) {
             reset($childOBJ->parent_relations);
             // now look for a non-aliased name
             foreach ($childOBJ->parent_relations as $reldata) {
-                if ($reldata['parent'] == $parent_table) {
+                if ($reldata['parent'] == $parent_table AND !isset($reldata['alias'])) {
+                    $found[] = $reldata;
+                    //break;
+                } // if
+            } // foreach
+        } // if
+        if (empty($found) AND $parent_table != $parentOBJ->getClassName()) {
+            // try again with a different name
+            $parent_table = $parentOBJ->getClassName();
+            reset($childOBJ->parent_relations);
+            // now look for a non-aliased name
+            foreach ($childOBJ->parent_relations as $reldata) {
+                if ($reldata['parent'] == $parent_table AND !isset($reldata['alias'])) {
                     $found[] = $reldata;
                     //break;
                 } // if
@@ -3301,19 +3357,26 @@ if (!function_exists('getForeignKeyValues')) {
         $fkeyvalues = array();
         if (!empty($found)) {
             foreach ($found as $reldata) {
-                foreach ($reldata['fields'] as $child_field => $parent_field) {
-                    // swap the field names between the PARENT and CHILD tables
-                    if (array_key_exists($parent_field, $parent_data)) {
-                        $fkeyvalues[$child_field] = $parent_data[$parent_field];
-                    } // if
-                } // foreach
+                if (!empty($reldata['child']) AND $reldata['child'] == $child_table
+                OR (!empty($reldata['alias']) AND $reldata['alias'] == $child_table)) {
+                    foreach ($reldata['fields'] as $parent_field => $child_field) {
+                        $fkeyvalues[$parent_field] = $table_data[$child_field];
+                    } // foreach
+                } elseif (!empty($reldata['parent']) AND $reldata['parent'] == $parent_table
+                      OR (!empty($reldata['alias'])  AND $reldata['alias'] == $parent_table)) {
+                    foreach ($reldata['fields'] as $child_field => $parent_field) {
+                        $fkeyvalues[$child_field] = $table_data[$parent_field];
+                    } // foreach
+                } else {
+                    trigger_error("Cannot find related table in relationship data", E_USER_ERROR);
+                } // if
             } // foreach
         } else {
             // no relationship found, so default to primary key of parent
             $pkeynames = $parentOBJ->getPkeyNamesAdjusted();
             foreach ($pkeynames as $fieldname) {
-                if (array_key_exists($fieldname, $parent_data)) {
-                    $fkeyvalues[$fieldname] = $parent_data[$fieldname];
+                if (array_key_exists($fieldname, $table_data)) {
+                    $fkeyvalues[$fieldname] = $table_data[$fieldname];
                 } // if
             } // foreach
         } // if
@@ -3441,9 +3504,11 @@ if (!function_exists('getLanguageArray')) {
 
         // perform lookup for specified $id ($subsystem_msgs first, then $system_msgs)
         $result = null;
-        if (array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
-            if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$subsys_language])) {
-                $result = $subsystem_msgs[$subsystem_id][$subsys_language][$id];
+        if (!empty($subsystem_msgs[$subsystem_id])) {
+            if (!empty($subsys_language) AND array_key_exists($subsys_language, $subsystem_msgs[$subsystem_id])) {
+                if (array_key_exists($id, $subsystem_msgs[$subsystem_id][$subsys_language])) {
+                    $result = $subsystem_msgs[$subsystem_id][$subsys_language][$id];
+                } // if
             } // if
         } // if
         if (empty($result)) {
@@ -3740,7 +3805,7 @@ if (!function_exists('getPatternId')) {
     // get the pattern_id of the specified script (default is current script).
     {
         if (isset($_SESSION['logon_user_id'])) {
-        	if (preg_match('/INTERNET|BATCH/i', $_SESSION['logon_user_id'])) {
+        	if (preg_match('/INTERNET|BATCH|BLOCKCHAIN/i', $_SESSION['logon_user_id'])) {
             	return $_SESSION['logon_user_id'];
             } // if
         } // if
@@ -3761,8 +3826,8 @@ if (!function_exists('getPatternId')) {
         	} // if
         } // if
 
-        if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'batch') {
-        	$pattern_id = 'batch';
+        if (isset($GLOBALS['mode']) AND preg_match('/^(batch|blockchain)$/i', $GLOBALS['mode'])) {
+        	$pattern_id = strtolower($GLOBALS['mode']);
         } else {
             if (!empty($_SESSION) AND !empty($_SESSION['pages'])) {
                 if (isset($_SESSION['pages'][$script_id]) AND isset($_SESSION['pages'][$script_id]['pattern_id'])) {
@@ -4673,6 +4738,7 @@ if (!function_exists('libxml_display_errors')) {
 
 	} // libxml_display_errors
 } // if
+
 // ****************************************************************************
 if (!function_exists('logStuff')) {
     function logStuff ($string, $function=null, $line=null)
@@ -5157,6 +5223,7 @@ if (!function_exists('qualifyField')) {
                             	$table_fieldspec = $fieldspec;
                             } else {
                                 $class = "classes/$array_tablename.class.inc";
+                                $save_handler = set_error_handler(null); // turn off the error handler
                 			    if ($fp = @fopen($class, 'r', true)) {
                                 	fclose($fp);
                                 	// class exists, so inspect it
@@ -5166,6 +5233,7 @@ if (!function_exists('qualifyField')) {
                 			    } else {
                 			        $table_fieldspec = array();
                 			    } // if
+                                set_error_handler($save_handler);  // restore the error handler
                             } // if
                             if (array_key_exists($fieldname, $table_fieldspec) AND !isset($table_fieldspec[$fieldname]['nondb'])) {
             					// field is in this table, so insert qualified name
@@ -5972,7 +6040,7 @@ if (!function_exists('replaceScreenLabels')) {
     {
         global $screen_structure;
 
-        if (!array_key_exists('fields', $screen_structure[$zone])) {
+        if (!array_key_exists($zone, $screen_structure) OR !array_key_exists('fields', $screen_structure[$zone])) {
             return FALSE;
         } // if
 
@@ -6214,18 +6282,21 @@ if (!function_exists('return_bytes')) {
     // used to change the output of "ini_get('memory_limit')"
     {
     	$value = trim($value);
-	    $last = strtoupper($value[strlen($value)-1]);
-    	switch($last) {
-            case 'T':
-                $value *= 1024;
-            // The 'G' modifier is available since PHP 5.1.0
-            case 'G':
-                $value *= 1024;
-            case 'M':
-                $value *= 1024;
-            case 'K':
-                $value *= 1024;
-        } // switch
+        if (preg_match('/(?<digits>\d*)(?<char>[a-z]{1})/i', $value, $regs)) {
+            $value = $regs['digits'];
+            $char  = strtoupper($regs['char']);
+    	    switch($char) {
+                case 'T':
+                    $value *= 1024;
+                // The 'G' modifier is available since PHP 5.1.0
+                case 'G':
+                    $value *= 1024;
+                case 'M':
+                    $value *= 1024;
+                case 'K':
+                    $value *= 1024;
+            } // switch
+        } // if
 
         return $value;
 
@@ -6371,7 +6442,7 @@ if (!function_exists('send_email')) {
 
         if (!empty($attachments)) {
         	if (is_string(key($attachments))) {
-        	    // turn this into an indexed array
+                // turn this into an indexed array
             	$attachments = array($attachments);
             } // if
         } // if
@@ -7536,7 +7607,9 @@ if (!function_exists('where2array')) {
     // 3 - strip operators from the associative array (optional)
     {
         // if input string is empty there is nothing to do
-        $where = trim($where);
+        if (is_string($where) AND !empty($where)) {
+            $where = trim($where);
+        } // if
         if (empty($where)) return array();
 
         $array1 = where2indexedArray($where);   // convert string into indexed array

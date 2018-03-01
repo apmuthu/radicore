@@ -145,12 +145,12 @@ class radicore_view
         // process the data one row at a time
         foreach ($objectdata as $rownum => $rowdata) {
             // get field specifications for current object (including item access details)
-            $fieldspec = $dbobject->getFieldSpec();
-            if (!empty($dbobject->fieldspec_row)) {
-                $fieldspec_row = $dbobject->fieldspec_row;
-            } else {
-                $fieldspec_row = array();
-            } // if
+            //$fieldspec = $dbobject->getFieldSpec();
+            //if (!empty($dbobject->fieldspec_row)) {
+            //    $fieldspec_row = $dbobject->fieldspec_row;
+            //} else {
+            //    $fieldspec_row = array();
+            //} // if
             // add a node to identify the name of this database table
             $node = $doc->createElement(strtolower($objectname));
             $node = $parent->appendChild($node);
@@ -191,6 +191,13 @@ class radicore_view
                         $fieldspec[$field] = array_merge($fieldspec[$field], $spec);
                     } // foreach
                     unset($rowdata['rdc_fieldspecs']);
+                } // if
+                // get field specifications for current object (including item access details)
+                $fieldspec = $dbobject->getFieldSpec();
+                if (!empty($dbobject->fieldspec_row)) {
+                    $fieldspec_row = $dbobject->fieldspec_row;
+                } else {
+                    $fieldspec_row = array();
                 } // if
                 // add a child node for each field
                 foreach ($rowdata as $fieldname => $fieldvalue) {
@@ -402,9 +409,8 @@ class radicore_view
                                             } // if
                                             $taskOBJ = RDCsingleton::getInstance('mnu_task');
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
-                                            if(!empty($task_data)) {
+                                            if (!empty($task_data)) {
                                                 $task_data = $task_data[0];
-                                                //$child->setAttribute('tooltip', $task_data['task_desc']);
                                                 $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
@@ -472,9 +478,8 @@ class radicore_view
                                             } // if
                                             $taskOBJ = RDCsingleton::getInstance('mnu_task');
                                             $task_data = $taskOBJ->getData("task_id='{$spec['task_id']}'");
-                                            if(!empty($task_data)) {
+                                            if (!empty($task_data)) {
                                                 $task_data = $task_data[0];
-                                                //$child->setAttribute('tooltip', $task_data['task_desc']);
                                                 $child->setAttribute('tooltip', $task_data['task_name']);
                                             } //if
                                         } // if
@@ -651,6 +656,11 @@ class radicore_view
                                         } else {
                                             // no custom value specified, so use default
                                             $child->setAttribute('name', 'button#'.$zone.$fieldname);
+                                            // look for a tooltip in a language_text.inc file
+                                            $tooltip = getLanguageText($fieldname.'-tooltip');
+                                            if (!preg_match('/-tooltip$/', $tooltip)) {
+                                                $child->setAttribute('tooltip', $tooltip);
+                                            } // if
                                         } // if
                                         if ($spec['control'] == 'button') {
                                             if (isset($spec['value'])) {
@@ -1701,7 +1711,7 @@ class radicore_view
 
             // look for a tooltip in a language_text.inc file
             $tooltip = getLanguageText($button.'-tooltip');
-            if (!empty($tooltip)) {
+            if (!preg_match('/-tooltip$/', $tooltip)) {
                 $child->setAttribute('tooltip', $tooltip);
             } // if
 

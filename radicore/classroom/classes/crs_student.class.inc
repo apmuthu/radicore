@@ -36,7 +36,7 @@ class crs_student extends Default_Table
     } // _cm_changeConfig
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
     {
         if (!isset($fieldarray['student_name'])) {

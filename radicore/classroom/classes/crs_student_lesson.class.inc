@@ -45,10 +45,12 @@ class crs_student_lesson extends Default_Table
     } // _cm_getExtraData
 
     // ****************************************************************************
-    function _cm_popupCall ($popupname, $where, $fieldarray, &$settings, $offset)
+    function _cm_popupCall (&$popupname, $where, $fieldarray, &$settings, $offset)
     // if a popup button has been pressed the contents of $where may need to
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         if (!empty($fieldarray['student_id'])) {
             // convert 'student=X' into 'year=Y'

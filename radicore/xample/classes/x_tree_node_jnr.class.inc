@@ -48,6 +48,7 @@ class x_tree_node_jnr extends x_tree_node
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         // do NOT clear out the contents of $where
         //$where = '';

@@ -16,7 +16,7 @@
 require_once 'include.general.inc';
 
 // identify mode for xsl file
-$mode = 'update';
+$mode = 'update';  // this scrit MAY update the database
 
 // load session variables
 initSession();
@@ -45,9 +45,10 @@ $dbobject->sql_having  = &$sql_having;
 $dbobject->setRowsPerPage(1);
 // perform any initialisation
 $where = $dbobject->initialise($where, $selection);
-
-// get data from the database
-$fieldarray = $dbobject->initialiseFileDownload($where);
+if (empty($dbobject->errors)) {
+    // get data from the database
+    $fieldarray = $dbobject->initialiseFileDownload($where);
+} // if
 if ($dbobject->errors) {
     // some sort of error - return to previous script
     scriptPrevious($dbobject->getErrors(), $messages);
@@ -76,13 +77,21 @@ if ($errors) {
 
 $file = $dbobject->download_filename;
 $mode = strtolower($dbobject->download_mode);
+$data =& $dbobject->download_data;
 
-$handle = fopen($file, "r");
-if (!$handle)  {
-    scriptPrevious(getLanguageText('sys0056'), $file); // 'File XXX cannot be found'
+if (empty($data)) {
+    $handle = fopen($file, "r");
+    if (!$handle)  {
+        scriptPrevious(getLanguageText('sys0056'), $file); // 'File XXX cannot be found'
+    } // if
+    $content_type = getContentType($file);  // determine the mime-type for the specified file
+} else {
+    if (!empty($dbobject->content_type)) {
+        $content_type = $dbobject->content_type;
+    } else {
+        $content_type = 'application/octet-stream';
+    } // if
 } // if
-
-$content_type = getContentType($file);  // determine the mime-type for the specified file
 
 // remove spinner and re-enable submit button
 setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+30);
@@ -91,17 +100,28 @@ setcookie('clean_up_screen_' . session_name(), $GLOBALS['task_id'], time()+30);
 header("Content-type: " . $content_type);
 header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
 if (isset($mode) and $mode == 'inline') {
-    header("Content-Disposition: filename=\"" .basename($file) ."\"");
+    header("Content-Disposition: inline; filename=\"" .basename($file) ."\"");
 } else {
     header("Content-Disposition: attachment; filename=\"" .basename($file) ."\"");
 } // if
 header('Cache-Control: no-store, no-cache, must-revalidate, pre-check=0, post-check=0, max-age=0');
 header('Pragma: public');
-while (!feof($handle)) {
-    echo fgets($handle, 8192);
-} // while
-fclose($handle);
 
+if (empty($data)) {
+    // read data from file on disk
+    while (!feof($handle)) {
+        echo fgets($handle, 8192);
+    } // while
+    fclose($handle);
+} else {
+    echo $data;
+} // if
+
+// remove this task from session dataas it no longer exists
+$task_id = $_SESSION['pages'][getSelf()]['task_id'];
 unset($_SESSION['pages'][getSelf()]);
+$_SESSION['page_stack'] = reducePageStack($task_id);
+
+ob_clean();
 exit;
 ?>

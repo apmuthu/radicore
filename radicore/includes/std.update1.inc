@@ -51,17 +51,17 @@ if (isset($script_vars['dbobject'])) {
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
     // indicate that this object was started from a page controller
     $dbobject->initiated_from_controller = true;
-    $dbobject->sql_select  = &$sql_select;
-    $dbobject->sql_from    = &$sql_from;
-    $dbobject->sql_where   = &$sql_where;
-    $dbobject->sql_groupby = &$sql_groupby;
-    $dbobject->sql_having  = &$sql_having;
+    $dbobject->sql_select                = &$sql_select;
+    $dbobject->sql_from                  = &$sql_from;
+    $dbobject->sql_where                 = &$sql_where;
+    $dbobject->sql_groupby               = &$sql_groupby;
+    $dbobject->sql_having                = &$sql_having;
     // scroll through one item at a time
     $dbobject->setRowsPerPage(1);
     // check that primary key is complete
@@ -282,7 +282,7 @@ $script_vars = updateScriptVars ($script_vars);
 
 $dbobject->fieldarray = $fieldarray;  // replace data lost during serialization
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND $submit_button) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' AND empty($errors) AND !empty($submit_button)) {
     // repeat current task with GET instead of POST
     $_SESSION['no_getdata'] = true;
     scriptNext($GLOBALS['task_id'], $where);

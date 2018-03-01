@@ -55,8 +55,8 @@ $structure['main']['fields'][22] = array('selected' => 'Selected', 'colspan' => 
 // this is here in case no multi-field line is displayed, as a browser bug causes
 // the output to ignore the 'colspan' attibute
 $structure['main']['fields'][23][] = array('label' => '');
-$structure['main']['fields'][23][] = array('field' => 'blank');
+$structure['main']['fields'][23][] = array('field' => '');
 $structure['main']['fields'][23][] = array('label' => '');
-$structure['main']['fields'][23][] = array('field' => 'blank');
+$structure['main']['fields'][23][] = array('field' => '');
 
 ?>

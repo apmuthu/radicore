@@ -61,8 +61,6 @@ if (isset($script_vars['dbouter'])) {
     } // if
     // get data from this instance
     $outer_data = $dbouter->getFieldArray();
-    // redo any configuration changes
-    $outer_data = $dbouter->getExtraData($outer_data);
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -71,12 +69,12 @@ if (isset($script_vars['dbouter'])) {
     $dbouter->zone                      = 'outer';
     $dbouter->checkPrimaryKey           = true; // check that primary key is complete
     $dbouter->setRowsPerPage(1);  // show one row at a time
-    $dbouter->sql_select     = &$outer_sql_select;
-    $dbouter->sql_from       = &$outer_sql_from;
-    $dbouter->sql_where      = &$outer_sql_where;
-    $dbouter->sql_groupby    = &$outer_sql_groupby;
-    $dbouter->sql_having     = &$outer_sql_having;
-    $dbouter->sql_orderby_table = &$outer_sql_orderby_table;
+    $dbouter->sql_select                = &$outer_sql_select;
+    $dbouter->sql_from                  = &$outer_sql_from;
+    $dbouter->sql_where                 = &$outer_sql_where;
+    $dbouter->sql_groupby               = &$outer_sql_groupby;
+    $dbouter->sql_having                = &$outer_sql_having;
+    $dbouter->sql_orderby_table         = &$outer_sql_orderby_table;
     if (!empty($outer_sql_orderby)) {
         $dbouter->setDefaultOrderby($outer_sql_orderby);
     } // if
@@ -117,12 +115,12 @@ if (isset($script_vars['dbinner'])) {
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
     //$dbinner->xsl_params['inner_noedit'] = 'y';
-    $dbinner->sql_select       = &$inner_sql_select;
-    $dbinner->sql_from         = &$inner_sql_from;
-    $dbinner->sql_where        = &$inner_sql_where;
-    $dbinner->sql_groupby      = &$inner_sql_groupby;
-    $dbinner->sql_having       = &$inner_sql_having;
-    $dbinner->sql_search_table = &$inner_search_table;
+    $dbinner->sql_select                = &$inner_sql_select;
+    $dbinner->sql_from                  = &$inner_sql_from;
+    $dbinner->sql_where                 = &$inner_sql_where;
+    $dbinner->sql_groupby               = &$inner_sql_groupby;
+    $dbinner->sql_having                = &$inner_sql_having;
+    $dbinner->sql_search_table          = &$inner_search_table;
     if (!empty($task_selection)) {
         $dbinner->setSqlWhere($task_selection);
     } // if

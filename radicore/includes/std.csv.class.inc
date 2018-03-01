@@ -196,7 +196,7 @@ class csv_class
 
                 if (preg_match('/^(output6)$/i', $pattern_id)) {
                     // this is a Tree View, so look for any children of this row
-                    $fieldarray = $dbobject->fetchRowChild($fieldarray);
+                    $fieldarray = $dbobject->fetchRowChild($fieldarray, $resource);
                 } else {
                     $fieldarray = null;
                 } // if

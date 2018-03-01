@@ -39,8 +39,10 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
 // If the error condition is E_USER_ERROR or above then abort
 {
     if ($errno != E_STRICT) {
-        if (function_exists('debugBreak') AND defined("DEBUGBREAK_ON_ERROR")) {
-            debugBreak();
+        if (function_exists('debugBreak')) {
+            if (defined('DEBUGBREAK_ON_ERROR') AND DEBUGBREAK_ON_ERROR === true) {
+                debugBreak();
+            } // if
         } // if
     } // if
 
@@ -49,6 +51,9 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
     $trace = debug_backtrace();
     if (isset($trace[0]['args'][4])) {
         $errcontext = $trace[0]['args'][4];
+        if (!empty($errcontext['dmlobject'])) {
+            $errcontext['this'] = $errcontext['dmlobject'];  // allow data to be extracted from DML object
+        } // if
     } else {
         $errcontext = null;
     } // if
@@ -257,18 +262,6 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
     $mailstring .= str_replace($search, '', $history);
     $mailstring .= str_replace($search, '', $trace_hdg);
     $mailstring .= $trace_out;
-//    if (defined('ERROR_LOG_MAILTO')) {
-//    	$mailto = ERROR_LOG_MAILTO;
-//    } elseif (!empty($_SERVER['SERVER_ADMIN'])) {
-//        $mailto = $_SERVER['SERVER_ADMIN'];
-//    } else {
-//        $mailto = "webmaster@{$_SERVER['HTTP_HOST']}";
-//    } // if
-//    $from = "webmaster@{$_SERVER['HTTP_HOST']}";
-//    $subject = 'PHP error_log message';
-
-//    // Send the error to the administrator by email
-//    $res = send_email($from, $mailto, $subject, $mailstring);
 
     //echo "<h1>This application has encountered an unrecoverable error</h1>\n";
     $header = "<h1>" .getLanguageText('sys0060') ."</h1>\n";
@@ -279,6 +272,8 @@ function errorHandler ($errno, $errstr, $errfile, $errline)
 
     if (function_exists('XMLRPC_errorhandler')) {
         // this is within an XML-RPC or SOAP server, so skip next bit
+    } elseif (isset($GLOBALS['batch']) AND is_True($GLOBALS['batch'])) {
+        // skip the next bit
     } else {
         if (preg_match('/^(127.0.0.1|localhost|desktop|laptop)$/i', $_SERVER['SERVER_NAME'])
         OR  preg_match('/^(local\.)/i', $_SERVER['SERVER_NAME'])

@@ -446,9 +446,10 @@ class x_person extends Default_Table
                     $outarray[] = array('dummy' => '');
                 } else {
                     // format each record
+                    $css_array = array();  // optional css class specifications
                     foreach ($outarray as $rownum => $rowdata) {
                         // format all dates
-                    	$rowdata = $object->formatData($rowdata);
+                    	$rowdata = $object->formatData($rowdata, $css_array);
                     	// construct address line
                     	$address_long = $rowdata['addr_line_1'];
                     	if (!empty($rowdata['addr_line_2'])) {
@@ -527,6 +528,7 @@ class x_person extends Default_Table
     // be altered before the popup screen is called.
     // NOTE: $settings is passed BY REFERENCE as it may be altered as well.
     // NOTE: $popupname is passed BY REFERENCE as it may be altered as well.
+    // NOTE: $offset identifies the row nunber (if there is more than one)
     {
         if ($popupname == 'x_tree_structure(popup4)') {
             // structure must be of type 'ORG'

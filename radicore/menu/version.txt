@@ -1,1 +1,1 @@
-Radicore v2.08.0
+Radicore v2.09.0

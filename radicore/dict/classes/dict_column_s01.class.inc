@@ -7,7 +7,8 @@ require_once 'dict_column.class.inc';
 class dict_column_s01 extends dict_column
 {
     // ****************************************************************************
-    // this subclass is used by dict_column(import)
+    // this subclass is used by dict_column(import) to add or update the contents of
+    // the DICT_COLUMN table with column data obtained directly from the database.
     // ****************************************************************************
     var $delete_array = array();    // items to be deleted
     var $update_array = array();    // items to be updated
@@ -297,6 +298,17 @@ class dict_column_s01 extends dict_column
         return $fieldarray;
 
     } // _cm_pre_insertRecord
+
+    // ****************************************************************************
+    function _cm_pre_updateRecord ($fieldarray)
+    // perform custom processing before database record is updated.
+    // errors are added to $this->errors.
+    {
+        // this is here to replace the method defined in the parent class
+
+        return $fieldarray;
+
+    } // _cm_pre_updateRecord
 
 // ****************************************************************************
 } // end class

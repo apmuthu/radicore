@@ -475,11 +475,13 @@ class dict_relationship extends Default_Table
     } // _cm_pre_output
 
     // ****************************************************************************
-    function _cm_updateFieldarray ($fieldarray, $postarray, $rownum)
+    function _cm_updateFieldarray ($fieldarray, &$postarray, $rownum)
     // allow object to deal with any changes POSTed from the form.
     // $fieldarray contains current data from one row.
     // $postarray contains any changes made in the form for this row.
-    // $rownum identifies which row is being processed
+    // $rownum identifies which row is being processed.
+    // NOTE: the contents of $postarray will be mered with $fieldarray after this call.
+    // $postarray is PASSED BY REFERENCE to allow you to remove unwanted values.
     {
         if (is_object($this->child_object) AND $this->child_object instanceof dict_related_column) {
             if (isset($postarray['key_name']) AND isset($fieldarray['key_name']) AND $postarray['key_name'] != $fieldarray['key_name']) {

@@ -512,9 +512,15 @@ function copyForm ($post, &$dbobject)
 
     // remove empty fields
     foreach ($fieldarray as $field => $value) {
-    	if (strlen(trim($value)) == 0) {
-    	    unset($fieldarray[$field]);
-    	} // if
+        if (is_string($value)) {
+    	    if (strlen(trim($value)) == 0) {
+    	        unset($fieldarray[$field]);
+    	    } // if
+        } elseif (is_array($value)){
+            if (empty($value)) {
+                unset($fieldarray[$field]);
+            } // if
+        } // if
     } // foreach
 
     if (count($fieldarray) == 0) {
@@ -535,14 +541,25 @@ function copyForm ($post, &$dbobject)
 } // copyForm
 
 // ****************************************************************************
-function CSRF_check_failed ()
+function CSRF_check_failed ($logon_screen)
 // the check for CSRF failed, so abort and return to the logon screen.
 {
     session_unset();
-    $_SESSION['messages'] = getLanguageText('sys0000'); // 'You must log in to access this system.'
-    $location = 'HTTP://' .$_SERVER['HTTP_HOST']
-                          .'/menu/logon.php'
-                          .'?session_name=' .session_name();
+    $_SESSION['messages'][] = getLanguageText('sys0273'); // 'CSRF check failed!';
+    $_SESSION['messages'][] = getLanguageText('sys0000'); // 'You must log in to access this system.'
+
+    if (isset($_SERVER['HTTPS']) AND is_True($_SERVER['HTTPS'])) {
+        if (!empty($GLOBALS['https_server'])) {
+            $location = 'HTTPS://' .$GLOBALS['https_server'];
+        } else {
+            $location = 'HTTPS://' .$_SERVER['HTTP_HOST'];
+        } // if
+    } else {
+        $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
+    } // if
+    $location .= getParentDIR()
+                .$logon_screen
+                .'?session_name=' .session_name();
 
     logstuff("location: $location", __FUNCTION__, __LINE__);
 
@@ -795,6 +812,7 @@ function initSession($save_session_data=array(), $argv=array())
     global $lookup;                 // array of lookup values
     global $menu_buttons;           // array of menu buttons
     global $messages;               // optional array of messages
+    global $blockchain_data;        // used to trigger a message to the blockchain server
     global $nav_buttons_omit;       // tasks to be removed from navigation bar
     global $no_getdata;             // flag to ignore next getData() method
     global $orderby;                // field names for ORDER BY clause of SELECT
@@ -848,8 +866,10 @@ function initSession($save_session_data=array(), $argv=array())
     if (!empty($GLOBALS['https_server_suffix']) AND preg_match('|^'.$GLOBALS['https_server_suffix'].'|i', $_SERVER['PHP_SELF'])) {
         // remove 'https_server_suffix' from PHP_SELF
         $_SERVER['PHP_SELF'] = substr($_SERVER['PHP_SELF'], strlen($GLOBALS['https_server_suffix']));
+        $PHP_SELF = getSelf($_SERVER['PHP_SELF']);  // reduce to '/<subsystem>/<script>.php'
     } else {
         $PHP_SELF = str_replace($_SERVER['DOCUMENT_ROOT'], "", $_SERVER['SCRIPT_FILENAME']);
+        $PHP_SELF = getSelf($PHP_SELF);  // reduce to '/<subsystem>/<script>.php'
     } // if
 
     if (!empty($_GET)) {
@@ -877,6 +897,20 @@ function initSession($save_session_data=array(), $argv=array())
 	        } // if
 	    } // if
 	} // if
+
+    if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
+        // this is a logon screen (there could be several) so save its ID
+        $logon_screen = $PHP_SELF;
+        setcookie('logon_screen_'.$session_name, $PHP_SELF, 0, '/');
+        // save it so that it can be reproduced when moving between HTTP and HTTPS protocols
+        $_SESSION['cookie_data']['logon_screen_'.$session_name] = $PHP_SELF;
+    } else {
+        $logon_screen =& $_COOKIE['logon_screen_'.$session_name];
+        if (empty($logon_screen)) {
+            $logon_screen = '/menu/logon.php';
+        } // if
+    } // if
+
     if (empty($_SESSION) OR isset($GLOBALS['batch'])) {
         if (!empty($argv) AND isset($argv[1]) AND isset($argv[2])) {
             if ($argv[1] == 'PHPSESSID' AND !empty($argv[2])) {
@@ -927,10 +961,13 @@ function initSession($save_session_data=array(), $argv=array())
 
             if (!empty($_SESSION['csrf_array'])) {
                 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-                    if (empty($_POST['csrf_id'])
-                    OR  empty($_SESSION['csrf_array']['form'])
-                    OR  $_POST['csrf_id'] != $_SESSION['csrf_array']['form']) {
-                        CSRF_check_failed();
+                    $curr_task = end($_SESSION['page_stack']);
+                    if ($curr_task['script_id'] == $PHP_SELF) {
+                        $refresh = true;  // refreshing current script, so continue
+                    } elseif (empty($_POST['csrf_id'])
+                          OR  empty($_SESSION['csrf_array']['form'])
+                          OR  $_POST['csrf_id'] != $_SESSION['csrf_array']['form']) {
+                        CSRF_check_failed($logon_screen);
                     } // if
                 } // if
             } // if
@@ -950,8 +987,6 @@ function initSession($save_session_data=array(), $argv=array())
     	unset($_SESSION['restore_cookie_data']);
     } // if
 
-    $PHP_SELF = getSelf();
-
     if (basename($PHP_SELF) != 'help.php') {
         // record the time at which this script started
         // (end time is determined in function XSLTransform)
@@ -963,19 +998,6 @@ function initSession($save_session_data=array(), $argv=array())
     if (isset($_SESSION['no_getdata'])) {
         $no_getdata = $_SESSION['no_getdata'];
     	unset($_SESSION['no_getdata']);
-    } // if
-
-    if (isset($GLOBALS['mode']) AND $GLOBALS['mode'] == 'logon') {
-        // this is a logon screen (there could be several) so save its ID
-        $logon_screen = $PHP_SELF;
-        setcookie('logon_screen_'.$session_name, $PHP_SELF, 0, '/');
-        // save it so that it can be reproduced when moving between HTTP and HTTPS protocols
-        $_SESSION['cookie_data']['logon_screen_'.$session_name] = $PHP_SELF;
-    } else {
-        $logon_screen =& $_COOKIE['logon_screen_'.$session_name];
-        if (empty($logon_screen)) {
-        	$logon_screen = '/menu/logon.php';
-        } // if
     } // if
 
     // look for session variables associated with the current script
@@ -994,18 +1016,31 @@ function initSession($save_session_data=array(), $argv=array())
     if ($task_id != 'menu') {
         if (!empty($_SESSION['csrf_array'])) {
             if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-                if (!empty($_GET['selection'])) {
-                    if (empty($_SESSION['csrf_array'][$_GET['selection']])
-                    OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$_GET['selection']]) {
-                        CSRF_check_failed();
-                    } // if
-                } elseif (!empty($task_id) AND !empty($_SESSION['page_stack'])) {
+                if (!empty($_SESSION['page_stack']) AND is_array($_SESSION['page_stack'])) {
                     $curr_task = end($_SESSION['page_stack']);
-                    if ($curr_task['script_id'] == $PHP_SELF) {
-                        // refreshing current script, so ignore next bit
-                    } elseif (empty($_SESSION['csrf_array'][$task_id])
-                          OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$task_id]) {
-                        CSRF_check_failed();
+                    if (!empty($_GET['selection'])) {
+                        if (empty($_GET['csrf_id'])
+                        OR  empty($_SESSION['csrf_array'][$_GET['selection']])
+                        OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$_GET['selection']]) {
+                            CSRF_check_failed($logon_screen);
+                        } // if
+                    } elseif (!empty($_GET['action'])) {
+                        $refresh = true;  // performing an action in current script, so continue
+                    } elseif (!empty($_GET['pagesize'])) {
+                        $refresh = true;  // performing an action in current script, so continue
+                    } elseif (!empty($_GET['pagination'])) {
+                        $refresh = true;  // performing an action in current script, so continue
+                    } elseif (!empty($_GET['scrolling'])) {
+                        $refresh = true;  // performing an action in current script, so continue
+                    } elseif (!empty($task_id) AND !empty($_SESSION['page_stack'])) {
+                        if ($curr_task['script_id'] == '/menu/menu.php') {
+                            $refresh = true;  // refreshing current script, so continue
+                        } elseif ($curr_task['script_id'] == $PHP_SELF) {
+                            $refresh = true;  // refreshing current script, so continue
+                        } elseif (!array_key_exists($task_id, $_SESSION['csrf_array'])
+                              OR  $_GET['csrf_id'] != $_SESSION['csrf_array'][$task_id]) {
+                            CSRF_check_failed($logon_screen);
+                        } // if
                     } // if
                 } // if
             } // if
@@ -1056,8 +1091,10 @@ function initSession($save_session_data=array(), $argv=array())
         setUserLanguage();
     } else {
         if (empty($_SESSION['user_language_array'])) {
-            // obtain language code from browser settings
-            $_SESSION['user_language_array'] = get_user_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+            if (!empty($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+                // obtain language code from browser settings
+                $_SESSION['user_language_array'] = get_user_languages($_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+            } // if
         } // if
 
         if (empty($_SESSION['supported_languages'])) {
@@ -1300,7 +1337,7 @@ function initSession($save_session_data=array(), $argv=array())
             logstuff("session_id: ".session_id(), __FUNCTION__, __LINE__);
 	        $session_obj->destroy(session_id());
             // go back to logon screen
-            if (is_True($_SERVER['HTTPS'])) {
+            if (isset($_SERVER['HTTPS']) AND is_True($_SERVER['HTTPS'])) {
                 if (!empty($GLOBALS['https_server'])) {
                     $location = 'HTTPS://' .$GLOBALS['https_server'];
                 } else {
@@ -1348,7 +1385,8 @@ function initSession($save_session_data=array(), $argv=array())
 			} else {
 				$location = 'HTTP://' .$_SERVER['HTTP_HOST'];
 			} // if
-            $location .= $_SERVER['PHP_SELF'];
+            $location .= getParentDIR()
+                        .$PHP_SELF;
             if (!empty($query_string)) {
                 parse_str($query_string, $array);
                 unset($array['action']);
@@ -1486,7 +1524,8 @@ function initSession($save_session_data=array(), $argv=array())
             } else {
                 $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
             } // if
-            $location .= getParentDIR().$script_id;
+            $location .= getParentDIR()
+                        .$script_id;
             $location .= '?' .adjustQueryString($_SERVER['QUERY_STRING'], false);
 
             logstuff("location: $location", __FUNCTION__, __LINE__);
@@ -2669,7 +2708,8 @@ function scriptNext ($task_id, $where=null, $selection=null, $task_array=array()
     } else {
         $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
     } // if
-    $location .= getParentDIR().$script_id;
+    $location .= getParentDIR()
+                .$script_id;
     if (isset($query_string)) {
         $location .= '?' .adjustQueryString($query_string, false);
 	} else {
@@ -2858,9 +2898,9 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
         unset($_SESSION['page_stack'][$task_id]);   // data for current task is now redundant
 
         session_write_close();
-        if (!headers_sent()) {
+        //if (!headers_sent()) {
             header('Location: ' .$location);
-        } // if
+        //} // if
         exit;
     } else {
         if (!empty($messages)) {
@@ -2878,8 +2918,7 @@ function scriptPrevious($errors=null, $messages=NULL, $action=NULL, $instruction
             $location = 'HTTP://' .$_SERVER['HTTP_HOST'];
         } // if
         $logon_screen =& $_COOKIE['logon_screen_'.session_name()];
-        $location .= getParentDIR()
-                   .$logon_screen
+        $location .= $logon_screen
                    .'?session_id=' .session_id();
 
         logstuff("location: $location", __FUNCTION__, __LINE__);

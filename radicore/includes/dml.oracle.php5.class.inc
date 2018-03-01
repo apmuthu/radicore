@@ -68,6 +68,7 @@ class oracle
         } // if
 
         if (!empty($schema)) {
+            $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
             $result = $this->connect($schema) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = TRUE;
@@ -524,7 +525,8 @@ END_OF_REGEX;
     function commit ($schema)
     // commit this transaction
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $start_time = getMicroTime();
@@ -555,6 +557,8 @@ END_OF_REGEX;
         $this->schema = $schema;
 
         $dbconn = $this->dbconnect;
+
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
 
         if (!$dbconn) {
             $start_time = getMicroTime();
@@ -630,7 +634,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // build 'where' string using values for primary key
@@ -675,7 +680,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $selection = $this->adjustWhere($selection);
@@ -720,7 +726,8 @@ END_OF_REGEX;
     function fetchRow ($schema, $statement)
     // Fetch a row from the given result set (created with getData_serial() method).
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $this->stmt = $statement;
@@ -744,7 +751,8 @@ END_OF_REGEX;
     function free_result ($dbname, $resource)
     // release a resource created with getData_serial() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $result = oci_free_statement($resource);
@@ -759,7 +767,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         if (preg_match('/^(select )/ims', $where)) {
@@ -809,7 +818,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -895,7 +905,12 @@ END_OF_REGEX;
                         $lock_str = 'FOR UPDATE';
                         break;
                     default:
-                        $lock_str = 'FOR UPDATE';
+//                        $count = preg_match_all("/\w+/", $from_str, $regs);
+//                        if ($count > 1) {
+//                            $lock_str = 'FOR UPDATE OF ' .$tablename;
+//                        } else {
+                            $lock_str = 'FOR UPDATE';
+//                        } // if
                 } // switch
                 $this->row_locks = null;
 
@@ -1019,7 +1034,8 @@ END_OF_REGEX;
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -1230,7 +1246,8 @@ END_OF_REGEX;
 
         $this->numrows = 0;  // record not inserted (yet)
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
@@ -1241,23 +1258,28 @@ END_OF_REGEX;
         foreach ($fieldspec as $field => $spec) {
             // look for fields with 'autoinsert' option set
             if (array_key_exists('autoinsert', $spec)) {
-                if (empty($fieldarray[$field])) {
-    				switch ($spec['type']){
-    					case 'datetime':
-    						$fieldarray[$field] = getTimeStamp();
-    						break;
-    					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
-    						break;
-    					case 'time':
-    						$fieldarray[$field] = getTimeStamp('time');
-    					    break;
-    					case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
-    						break;
-    					default:
-    						// do nothing
-    				} // switch
+                if (!preg_match('/^(audit)$/i', $dbname) AND isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+                    // update transferred by blockchain, so don't overwrite these values
+                } else {
+                    if (empty($fieldarray[$field])) {
+    				    switch ($spec['type']){
+    					    case 'datetime':
+                            case 'timestamp';
+    						    $fieldarray[$field] = getTimeStamp();
+    						    break;
+    					    case 'date':
+    						    $fieldarray[$field] = getTimeStamp('date');
+    						    break;
+    					    case 'time':
+    						    $fieldarray[$field] = getTimeStamp('time');
+    					        break;
+    					    case 'string':
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+    						    break;
+    					    default:
+    						    // do nothing
+    				    } // switch
+                    } // if
                 } // if
             } else {
                 if (isset($spec['type_native']) AND $spec['type_native'] == 'datetime') {
@@ -1342,6 +1364,7 @@ END_OF_REGEX;
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->errors['where'] = $where;
                         $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
     	            } // if
@@ -1413,7 +1436,12 @@ END_OF_REGEX;
             	$error_array = oci_error($this->stmt);
             	if ($error_array['code'] == 1 AND !empty($this->retry_on_duplicate_key)) {
             	    // increment the specified field and try again
-                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    if (isset($fieldspec['precision']) AND $fieldspec['precision'] == 38) {
+                        $sum = gmp_add($fieldarray[$this->retry_on_duplicate_key], 1);
+                        $fieldarray[$this->retry_on_duplicate_key] = gmp_strval($sum);
+                    } else {
+                        $fieldarray[$this->retry_on_duplicate_key]++;
+                    } // if
                     $repeat = true;
                     $repeat_count++;
                     if ($repeat_count > 5) {
@@ -1490,7 +1518,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $single_step = true;  // special code to debug each query separately
@@ -1543,6 +1572,8 @@ END_OF_REGEX;
             return FALSE;
         } // if
 
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $start_time = getMicroTime();
         $result = oci_rollback($this->dbconnect) or trigger_error($this, E_USER_ERROR);
         $end_time = getMicroTime();
@@ -1566,6 +1597,8 @@ END_OF_REGEX;
     function selectDB ($schema)
     // select a different schema (database) via the current connection.
     {
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         if ($this->connect($schema) or trigger_error($this, E_USER_ERROR)) {
             return TRUE;
         } else {
@@ -1654,7 +1687,8 @@ END_OF_REGEX;
     function startTransaction ($schema)
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $result = true;
@@ -1683,7 +1717,8 @@ END_OF_REGEX;
     function updateRecord ($schema, $tablename, $fieldarray, $oldarray, $where=null)
     // update a record using the contents of $fieldarray.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
@@ -1716,6 +1751,7 @@ END_OF_REGEX;
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->errors['where'] = $where;
                         $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
@@ -1733,14 +1769,17 @@ END_OF_REGEX;
 
         $lob_names = array();
         $lob_array = array();
-        if (isset($GLOBALS['mode']) and $GLOBALS['mode'] == 'logon' and $tablename == 'mnu_user') {
+        if (isset($GLOBALS['mode']) AND preg_match('/^(logon)$/', $GLOBALS['mode']) AND $tablename == 'mnu_user') {
             // do not set these fields when logging in
+        } elseif (isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            // update transferred by blockchain, so don't overwrite these values
         } else {
             foreach ($fieldspec as $field => $spec) {
                 // look for fields with 'autoupdate' option set
                 if (array_key_exists('autoupdate', $spec)) {
                     switch ($spec['type']){
     					case 'datetime':
+                        case 'timestamp';
     					    if (empty($fieldarray[$field])) {
     						    $fieldarray[$field] = getTimeStamp();
     					    } // if
@@ -1878,7 +1917,8 @@ END_OF_REGEX;
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $end_time = getMicroTime();
@@ -1936,16 +1976,13 @@ END_OF_REGEX;
 
         $colspecs['number']         = array('name' => 'NUMBER',
                                             'type' => 'numeric',
-                                            'size' => 20,
-                                            'precision' => 38,
-                                            'scale' => 126);
+                                            'size' => 38);
         $colspecs['decimal']        = array('name' => 'DECIMAL',
-                                            'type' => 'numeric');
+                                            'type' => 'numeric',
+                                            'size' => 38);
         $colspecs['integer']        = array('name' => 'INTEGER',
                                             'type' => 'integer',
-                                            'size' => 20,
-                                            'precision' => 38,
-                                            'scale' => 0);
+                                            'size' => 20);
         $colspecs['float']          = array('name' => 'FLOAT',
                                             'type' => 'numeric',
                                             'size' => 22);
@@ -2059,7 +2096,8 @@ END_OF_REGEX;
     function ddl_showColumns ($schema, $tablename)
     // obtain a list of column names within the selected database table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $out_array = array();
@@ -2319,7 +2357,8 @@ END_OF_REGEX;
     function ddl_showDatabases ($dbprefix=null)
     // obtain a list of existing database ('user' in Oracle) names.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect() or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2350,7 +2389,8 @@ END_OF_REGEX;
     function ddl_showTables ($schema)
     // obtain a list of tables within the specified schema.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2383,7 +2423,8 @@ END_OF_REGEX;
     function ddl_showTableKeys ($schema, $tablename)
     // obtain a list of keys (indexes) for this table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($schema) or trigger_error($this, E_USER_ERROR);
 
         $array = array();

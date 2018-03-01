@@ -36,6 +36,11 @@ class mysql
     var $error_string;                  //
     var $fieldspec = array();           // field specifications (see class constructor)
     var $lastpage;                      // last available page number in current query
+
+    // by default if the database cannot acquire a lock it will abort, but this behaviour can be changed
+    var $lock_wait_count=0;             // number of times lock wait failed
+    var $no_abort_on_lock_wait=false;   // do not abort if cannot apply lock, allow me to try again
+
     var $no_duplicate_error;            // if TRUE do not create an error when inserting a duplicate
     var $numrows;                       // number of rows retrieved
     var $pageno;                        // requested page number
@@ -87,6 +92,7 @@ class mysql
         } // if
 
         if (!empty($dbname)) {
+            $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
             $result = $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
         } else {
             $result = TRUE;
@@ -242,7 +248,8 @@ class mysql
     function commit ($dbname)
     // commit this transaction
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $start_time = getMicroTime();
@@ -280,6 +287,8 @@ class mysql
         $this->dbname = $dbname;
 
         $dbconn = $this->dbconnect;
+
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
 
         if (!$dbconn) {
             $start_time = getMicroTime();
@@ -356,7 +365,8 @@ class mysql
                 $start_time = getMicroTime();
 
                 if (!mysqli_select_db($dbconn, $this->dbname)) {
-                    if (mysqli_errno($this->dbconnect) == 2006) {
+                    $errno = mysqli_errno($this->dbconnect);
+                    if ($errno == 2006) {
                         // connection has been lost, so re-connect
             	        $this->dbconnect = false;
             	        $this->connect($this->dbname) or trigger_error($this, E_USER_ERROR);
@@ -380,7 +390,8 @@ class mysql
     function deleteRecord ($dbname, $tablename, $fieldarray)
     // delete the record whose primary key is contained within $fieldarray.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // build 'where' string using values for primary key
@@ -419,7 +430,8 @@ class mysql
     function deleteSelection ($dbname, $tablename, $selection, $from=null, $using=null)
     // delete a selection of records in a single operation.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         if (!empty($from) AND !empty($using)) {
@@ -456,7 +468,8 @@ class mysql
     function fetchRow ($dbname, $result)
     // Fetch a row from the given result set (created with getData_serial() method).
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $row = mysqli_fetch_assoc($result);
@@ -473,7 +486,8 @@ class mysql
     function free_result ($dbname, $resource)
     // release a resource created with getData_serial() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $result = mysqli_free_result($resource);
@@ -488,7 +502,8 @@ class mysql
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         if (preg_match('/^(select )/ims', $where)) {
@@ -505,7 +520,18 @@ class mysql
         } // if
 
         $start_time = getMicroTime();
-        $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
+        $result = mysqli_query($this->dbconnect, $this->query);
+        if ($result === false) {
+            $errno = $this->getErrorNo();
+            if ($errno == 1205 AND is_True($this->no_abort_on_lock_wait)) {
+                $res = $this->rollback($dbname);
+                $this->lock_wait_count++;
+                return false;  // return and allow user to retry this transaction
+            } else {
+                trigger_error($this, E_USER_ERROR);
+            } // if
+        } // if
 
         if (preg_match("/SQL_CALC_FOUND_ROWS /i", $this->query) == true) {
         	$result     = mysqli_query($this->dbconnect, 'SELECT FOUND_ROWS()') or trigger_error($this, E_USER_ERROR);
@@ -536,7 +562,8 @@ class mysql
     // get data from a database table using optional 'where' criteria.
     // Results may be affected by $where and $pageno.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -656,6 +683,9 @@ class mysql
                 $limit_str = '';  // no pagination
             } // if
 
+            // this should only be used or testing and debugging
+            //$result = mysqli_query($this->dbconnect, 'SET lock_wait_timeout=1') or trigger_error($this, E_USER_ERROR);
+
             // build the query string and run it
             if (empty($this->sql_union)) {
                 $this->query = "SELECT SQL_CALC_FOUND_ROWS $select_str \nFROM $from_str $where_str $group_str $having_str $sort_str $limit_str $lock_str";
@@ -667,7 +697,8 @@ class mysql
             //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             $result = mysqli_query($this->dbconnect, $this->query);
             if ($result === false) {
-            	if (preg_match('/^(2006|2013)$/', mysqli_errno($this->dbconnect))) {
+                $errno = $this->getErrorNo();
+                if (preg_match('/^(2006|2013)$/', $errno)) {
             	    // connection has been lost, so re-connect and retry
             	    $this->dbconnect = false;
                     $save_query = $this->query;
@@ -676,7 +707,13 @@ class mysql
                     unset($save_query);
             	    $result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
             	} else {
-            	    trigger_error($this, E_USER_ERROR);
+                    if (preg_match('/^(1205)$/', $errno) AND is_True($this->no_abort_on_lock_wait)) {
+                        $res = $this->rollback($dbname);
+                        $this->lock_wait_count++;
+                        return false;  // return and allow user to retry this transaction
+                    } else {
+            	        trigger_error($this, E_USER_ERROR);
+                    } // if
             	} // if
             } // if
 
@@ -723,7 +760,8 @@ class mysql
     // Return $result, not an array of data, so that individual rows can
     // be retrieved using the fetchRow() method.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $pageno         = (int)$this->pageno;
@@ -839,7 +877,8 @@ class mysql
     function getEnum ($dbname, $tablename, $fieldname)
     // get the contents of an ENUM field and return it as an array.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // obtain 'enum' values for the specified column
@@ -992,36 +1031,41 @@ class mysql
 
         $this->numrows = 0;  // record not inserted (yet)
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
         $fieldspec = $this->fieldspec;
 
-        foreach ($fieldspec as $field => $spec) {
-            if (empty($fieldarray[$field])) {
-            	// look for fields with 'autoinsert' option set
-                if (array_key_exists('autoinsert', $spec)) {
-    				switch ($spec['type']){
-    					case 'datetime':
-                        case 'timestamp':
-    						$fieldarray[$field] = getTimeStamp();
-    						break;
-    					case 'date':
-    						$fieldarray[$field] = getTimeStamp('date');
-    						break;
-    					case 'time':
-    						$fieldarray[$field] = getTimeStamp('time');
-    						break;
-    					case 'string':
-    						$fieldarray[$field] = $_SESSION['logon_user_id'];
-    						break;
-    					default:
-    						// do nothing
-    				} // switch
+        if (!preg_match('/^(audit)$/i', $dbname) AND isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            // update transferred by blockchain, so don't overwrite these values
+        } else {
+            foreach ($fieldspec as $field => $spec) {
+                if (empty($fieldarray[$field])) {
+            	    // look for fields with 'autoinsert' option set
+                    if (array_key_exists('autoinsert', $spec)) {
+    				    switch ($spec['type']){
+    					    case 'datetime':
+                            case 'timestamp':
+    						    $fieldarray[$field] = getTimeStamp();
+    						    break;
+    					    case 'date':
+    						    $fieldarray[$field] = getTimeStamp('date');
+    						    break;
+    					    case 'time':
+    						    $fieldarray[$field] = getTimeStamp('time');
+    						    break;
+    					    case 'string':
+    						    $fieldarray[$field] = $_SESSION['logon_user_id'];
+    						    break;
+    					    default:
+    						    // do nothing
+    				    } // switch
+                    } // if
                 } // if
-            } // if
-        } // foreach
+            } // foreach
+        } // if
 
         // find out if any field in the primary key has 'auto_increment' set
 		$auto_increment = '';
@@ -1111,6 +1155,7 @@ class mysql
                             foreach ($key as $fieldname) {
                                 $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                             } // foreach
+                            $this->errors['where'] = $where;
                             $this->query = $query;  // save this in case trigger_error() is called
                             return $fieldarray;
     	                } // if
@@ -1170,7 +1215,12 @@ class mysql
 
                 } elseif ($errno == 1062 AND !empty($this->retry_on_duplicate_key)) {
                     // increment the specified field and try again
-                    $fieldarray[$this->retry_on_duplicate_key]++;
+                    if (isset($fieldspec['precision']) AND $fieldspec['precision'] == 38) {
+                        $sum = gmp_add($fieldarray[$this->retry_on_duplicate_key], 1);
+                        $fieldarray[$this->retry_on_duplicate_key] = gmp_strval($sum);
+                    } else {
+                        $fieldarray[$this->retry_on_duplicate_key]++;
+                    } // if
                     $repeat = true;
                     $repeat_count++;
                     if ($repeat_count > 5) {
@@ -1233,7 +1283,8 @@ class mysql
     {
         $this->errors = array();
 
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $single_step = true;  // special code to debug each query separately
@@ -1243,7 +1294,8 @@ class mysql
                 $this->query = $query_part;
                 $result = mysqli_query($this->dbconnect, $this->query);
                 if ($result === false) {
-                    if (mysqli_errno($this->dbconnect) == 2006) {
+                    $errno = mysqli_errno($this->dbconnect);
+                    if ($errno == 2006) {
                         // connection has been lost, so re-connect and retry
                         $this->dbconnect = false;
                         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
@@ -1302,6 +1354,8 @@ class mysql
             return FALSE;
         } // if
 
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         //$result = mysqli_query($this->dbconnect, $this->query) or trigger_error($this, E_USER_ERROR);
         $repeat       = false;
         $repeat_count = 0;
@@ -1343,6 +1397,8 @@ class mysql
             $auditobj = RDCsingleton::getInstance('audit_tbl');
             $result = $auditobj->close();
         } // if
+
+        $GLOBALS['transaction_has_started'] = false;
 
         return $result;
 
@@ -1436,7 +1492,8 @@ class mysql
     function startTransaction ($dbname)
     // start a new transaction, to be terminated by either COMMIT or ROLLBACK.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         if (!empty($this->transaction_level)) {
@@ -1471,7 +1528,8 @@ class mysql
     function updateRecord ($dbname, $tablename, $fieldarray, $oldarray, $where=null)
     // update a record using the contents of $fieldarray.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         // get field specifications for this database table
@@ -1504,6 +1562,7 @@ class mysql
                         foreach ($key as $fieldname) {
                             $this->errors[$fieldname] = getLanguageText('sys0003'); // 'A record already exists with this key.'
                         } // foreach
+                        $this->errors['where'] = $where;
                         $this->query = $query;  // save this in case trigger_error() is called
                         return $fieldarray;
                     } // if
@@ -1519,8 +1578,10 @@ class mysql
             return $fieldarray;
         } // if
 
-        if (isset($GLOBALS['mode']) and $GLOBALS['mode'] == 'logon' and $tablename == 'mnu_user') {
+        if (isset($GLOBALS['mode']) AND preg_match('/^(logon)$/', $GLOBALS['mode']) AND $tablename == 'mnu_user') {
             // do not set these fields when logging in
+        } elseif (isset($GLOBALS['mode']) AND preg_match('/^(blockchain)$/i', $GLOBALS['mode'])) {
+            // update transferred by blockchain, so don't overwrite these values
         } else {
             foreach ($fieldspec as $field => $spec) {
             	// look for fields with 'autoupdate' option set
@@ -1643,7 +1704,8 @@ class mysql
     function updateSelection ($dbname, $tablename, $replace, $selection)
     // update a selection of records in a single operation.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $this->query = "UPDATE $tablename SET $replace WHERE $selection";
@@ -1687,7 +1749,8 @@ class mysql
                                         'type' => 'string',
                                         'size' => 255);
         $colspecs['decimal']    = array('name' => 'DECIMAL',
-                                        'type' => 'numeric');
+                                        'type' => 'numeric',
+                                        'size' => 38);
         $colspecs['boolean']    = array('name' => 'BOOLEAN',
                                         'type' => 'boolean',
                                         'size' => 1);
@@ -1696,27 +1759,33 @@ class mysql
         $colspecs['tinyint']    = array('name' => 'TINYINT',
                                         'type' => 'integer',
                                         'minvalue' => -128,
-                                        'maxvalue' => 127);
+                                        'maxvalue' => 127,
+                                        'size' => 3);
         $colspecs['smallint']   = array('name' => 'SMALLINT',
                                         'type' => 'integer',
                                         'minvalue' => -32768,
-                                        'maxvalue' => 32767);
+                                        'maxvalue' => 32767,
+                                        'size' => 5);
         $colspecs['mediumint']  = array('name' => 'MEDIUMINT',
                                         'type' => 'integer',
                                         'minvalue' => -8388608,
-                                        'maxvalue' => 8388607);
+                                        'maxvalue' => 8388607,
+                                        'size' => 7);
         $colspecs['int']        = array('name' => 'INT',
                                         'type' => 'integer',
                                         'minvalue' => -2147483648,
-                                        'maxvalue' => 2147483647);
+                                        'maxvalue' => 2147483647,
+                                        'size' => 11);
         $colspecs['integer']    = array('name' => 'INTEGER',
                                         'type' => 'integer',
                                         'minvalue' => -2147483648,
-                                        'maxvalue' => 2147483647);
+                                        'maxvalue' => 2147483647,
+                                        'size' => 11);
         $colspecs['bigint']     = array('name' => 'BIGINT',
                                         'type' => 'integer',
                                         'minvalue' => '-9223372036854775808',
-                                        'maxvalue' => '9223372036854775807');
+                                        'maxvalue' => '9223372036854775807',
+                                        'size' => 20);
         $colspecs['float']      = array('name' => 'FLOAT',
                                         'type' => 'float',
                                         'size' => 22);
@@ -1782,7 +1851,8 @@ class mysql
     function ddl_showColumns ($dbname, $tablename)
     // obtain a list of column names within the selected database table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $out_array = array();
@@ -1992,7 +2062,8 @@ class mysql
     function ddl_showDatabases ($dbprefix=null)
     // obtain a list of existing database names.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect() or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2025,7 +2096,8 @@ class mysql
     function ddl_showTables ($dbname)
     // obtain a list of tables within the specified database.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();
@@ -2054,7 +2126,8 @@ class mysql
     function ddl_showTableKeys ($dbname, $tablename)
     // obtain a list of keys (indexes) for this table.
     {
-        // connect to database
+        $dmlobject = $this;  // ensure this is in $errcontext if an error occurs
+
         $this->connect($dbname) or trigger_error($this, E_USER_ERROR);
 
         $array = array();

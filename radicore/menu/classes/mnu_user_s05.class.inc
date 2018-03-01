@@ -115,14 +115,13 @@ class mnu_user_s05 extends mnu_user
             return $rowdata;
         } // if
 
-        $email_addr = addslashes($rowdata['email_addr']);
+        $email_addr = addslashes(trim($rowdata['email_addr']));
         $data = $this->getData_raw("email_addr='$email_addr'");
         if ($this->numrows < 1) {
             // "E-mail address was not found"
         	$this->errors[] = getLanguageText('sys0151');
         } else {
             $data = $data[0];
-            $data = $this->formatData($data);
             $email_addr = $data['email_addr'];
             $password   = $data['user_password'];
             if (is_True($this->pswd_encrypt)) {

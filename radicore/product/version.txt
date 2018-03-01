@@ -1,1 +1,1 @@
-Product v1.1.0
+Product v1.1.1

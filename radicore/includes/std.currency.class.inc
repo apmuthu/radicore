@@ -42,7 +42,7 @@ class currency_class
                 $name_fn = $name.$fn_suffix;
                 $name_tx = $name.$tx_suffix;
                 if (!array_key_exists($name_fn, $fieldarray)) {
-                    $fieldarray[$name_fn] = $fieldarray[$name];  // "<name>_fn" not found, so copy from "<name>"
+                    $fieldarray[$name_fn] =& $fieldarray[$name];  // "<name>_fn" not found, so copy from "<name>"
                 } // if
                 if (empty($fieldarray[$name_fn]) AND !empty($fieldarray[$name_tx])) {
                     // convert to functional currency from transaction currency

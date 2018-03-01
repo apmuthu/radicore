@@ -22,7 +22,7 @@ class crs_teacher extends Default_Table
     } // __construct
 
     // ****************************************************************************
-    function _cm_formatData ($fieldarray)
+    function _cm_formatData ($fieldarray, &$css_array)
     // perform custom formatting before values are shown to the user.
     {
         $method = getEntryPoint($this);

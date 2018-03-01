@@ -1,4 +1,4 @@
--- file created on July 24, 2017, 6:31 pm
+-- file created on November 10, 2017, 5:30 pm
 
 -- use [menu];
     
@@ -766,6 +766,7 @@ Refer to <a href="%root%/mnu_motd(enq1).html">Enquire MOTD</a> for full details.
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'List Message of the Day', NULL, 'MOTD', 'PROC', 'mnu_motd(list1).php', 'N', 'LIST1', 'MENU', NULL, NULL, 'curr_or_hist=''C''', NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2009-05-05 11:36:55', 'AJM', '2013-06-19 12:47:13', 'AJM');
 
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'audit_dtl(list)3', '006', 'Audit Trail', 'Y', '2009-05-05 11:36:59', 'AJM', NULL, NULL);
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'date(all)', '009', 'All Dates', 'N', '2017-11-10 11:42:56', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'date(current)', '007', 'Current', 'N', '2009-05-06 10:30:33', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'date(historic)', '008', 'Historic', 'N', '2009-05-06 10:30:34', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_motd(list1)', 'mnu_motd(add1)', '001', 'New', 'N', '2009-05-05 11:36:58', 'AJM', NULL, NULL);
@@ -1052,6 +1053,8 @@ INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, scr
 
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(enq1)', 'Enquire Saved Selection', NULL, 'Read', 'PROC', 'mnu_saved_selection(enq1).php', 'N', 'ENQ1', 'MENU', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2015-11-20 09:23:27', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_saved_selection(enq1)', '2017-07-26 09:35:38', 'AJM', NULL, NULL);
+
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(list1)', 'List Saved Selection', NULL, 'Saved Selection', 'PROC', 'mnu_saved_selection(list1).php', 'N', 'LIST1', 'MENU', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2015-11-20 09:23:26', 'AJM', NULL, NULL);
 
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(list1)', 'audit_dtl(list)3', '006', 'Audit Trail', 'Y', '2015-11-20 09:23:30', 'AJM', NULL, NULL);
@@ -1068,9 +1071,15 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(list2)', 'mnu_saved_selection(search)', '005', 'Search', 'N', '2017-07-24 18:04:32', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(list2)', 'mnu_saved_selection(upd1)', '003', 'Update', 'Y', '2017-07-24 18:04:31', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_saved_selection(list2)', '2017-07-26 09:35:38', 'AJM', NULL, NULL);
+
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(search)', 'Search Saved Selection', NULL, 'Search', 'PROC', 'mnu_saved_selection(search).php', 'N', 'SRCH', 'MENU', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2015-11-20 09:23:28', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_saved_selection(search)', '2017-07-26 09:35:38', 'AJM', NULL, NULL);
+
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_saved_selection(upd1)', 'Update Saved Selection', NULL, 'Update', 'PROC', 'mnu_saved_selection(upd1).php', 'N', 'UPD1', 'MENU', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2015-11-20 09:23:27', 'AJM', NULL, NULL);
+
+INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_saved_selection(upd1)', '2017-07-26 09:35:48', 'AJM', NULL, NULL);
 
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_session(upd3)', 'Update Session Data', NULL, 'Session Data', 'PROC', 'mnu_session(upd3).php', 'N', 'UPD3', 'MENU', NULL, NULL, NULL, NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2006-04-06 19:37:49', 'AJM', '2007-09-10 11:53:31', 'AJM');
 
@@ -1127,8 +1136,8 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_subsystem(list1)', '2014-04-19 08:59:03', 'AJM', NULL, NULL);
 
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_subsystem(list1)', 'subsys_id', '1', 'Subsys Id', '2016-05-18 16:40:07', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_subsystem(list1)', 'subsys_dir', '3', 'Subsys Dir', '2016-05-18 16:40:31', 'AJM', NULL, NULL);
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_subsystem(list1)', 'subsys_id', '1', 'Subsys Id', '2016-05-18 16:40:07', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_subsystem(list1)', 'subsys_name', '2', 'Subsystem Name', '2016-05-18 16:40:20', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_subsystem(list1)', 'task_prefix', '4', 'Task Prefix', '2016-05-18 16:40:43', 'AJM', NULL, NULL);
 
@@ -1412,9 +1421,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(list1)', '2014-04-19 08:58:22', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:52:38', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)', 'task_id', '1', 'Task Id', '2016-05-18 16:52:16', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)', 'task_name', '2', 'Task Name', '2016-05-18 16:52:28', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:52:38', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)', 'This will list records on the TASK table regardless of their TASK-TYPE.
 
@@ -1449,9 +1458,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(list1)a', '2014-04-19 08:58:22', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)a', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)a', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)a', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)a', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(list1)a', 'This will list records on the TASK table where type = ''TASK''.
 
@@ -1538,9 +1547,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(popup1)', '2014-04-19 08:58:00', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)', 'This will list records on the TASK table and allow one or more to be selected.
 
@@ -1556,9 +1565,9 @@ INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(popup1)a', '2014-04-19 06:22:02', 'AJM', NULL, NULL);
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('WORKFLOW-RO', 'mnu_task(popup1)a', '2014-04-20 12:48:05', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a', 'This will list records on the TASK table with type = PROC and allow one or more to be selected.
 
@@ -1572,9 +1581,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(popup1)a1', '2014-04-19 08:58:00', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a1', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a1', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a1', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a1', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a1', '[copy: mnu_task(popup1)a]', '2013-06-12 13:56:46', 'AJM', '2013-06-12 14:12:04', 'AJM');
 
@@ -1584,9 +1593,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(popup1)a2', '2014-04-19 08:58:00', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a2', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a2', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a2', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a2', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)a2', '[copy: mnu_task(popup1)a]', '2013-06-12 13:57:56', 'AJM', '2013-06-12 14:12:09', 'AJM');
 
@@ -1596,9 +1605,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_task(popup1)b', '2014-04-19 08:58:01', 'AJM', NULL, NULL);
 
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)b', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)b', 'task_id', '1', 'Task Id', '2016-05-18 16:57:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)b', 'task_name', '2', 'Task Name', '2016-05-18 16:57:57', 'AJM', NULL, NULL);
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)b', 'pattern_id', '3', 'Pattern Id', '2016-05-18 16:58:09', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_task(popup1)b', 'This will list records on the TASK table with type = MENUand allow one or more to be selected.
 
@@ -1778,8 +1787,8 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_todo(list1)', '2014-04-19 08:57:19', 'AJM', NULL, NULL);
 
-INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_todo(list1)', 'user_id', '1', 'User Id', '2016-05-18 16:58:47', 'AJM', NULL, NULL);
 INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_todo(list1)', 'item_name', '2', 'Item Name', '2016-05-18 16:58:58', 'AJM', NULL, NULL);
+INSERT INTO mnu_task_quicksearch (task_id, field_id, sort_seq, field_name, created_date, created_user, revised_date, revised_user) VALUES ('mnu_todo(list1)', 'user_id', '1', 'User Id', '2016-05-18 16:58:47', 'AJM', NULL, NULL);
 
 INSERT INTO help_text (task_id, help_text, created_date, created_user, revised_date, revised_user) VALUES ('mnu_todo(list1)', 'This will list records on the ToDo table.
 
@@ -1915,7 +1924,8 @@ INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised
 
 INSERT INTO mnu_task (task_id, task_name, task_desc, button_text, task_type, script_id, is_disabled, pattern_id, subsys_id, initial_passthru, selection_fixed, selection_temp, settings, order_by, keep_data, log_sql_query, screen_refresh, use_https, max_execution_time, task_id_run_at_end, task_id_run_at_cancel, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'List User Role by User', NULL, 'User Roles', 'PROC', 'mnu_user_role(list2).php', 'N', 'LIST2', 'MENU', NULL, NULL, 'curr_or_hist=''C''', NULL, NULL, 'N', 'N', NULL, 'N', NULL, NULL, NULL, 'N', '2014-04-19 09:28:26', 'AJM', '2017-07-20 14:38:09', 'AJM');
 
-INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'audit_dtl(list)3', '012', 'Audit Trail', 'Y', '2014-04-19 09:28:29', 'AJM', '2017-07-20 15:05:33', 'AJM');
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'audit_dtl(list)3', '013', 'Audit Trail', 'Y', '2014-04-19 09:28:29', 'AJM', '2017-11-10 14:06:49', 'AJM');
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'date(all)', '009', 'All Dates', 'N', '2017-11-10 14:06:18', 'AJM', '2017-11-10 14:06:49', 'AJM');
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'date(current)', '006', 'Current', 'N', '2017-07-20 14:39:04', 'AJM', '2017-07-20 14:39:42', 'AJM');
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'date(future)', '007', 'Future', 'N', '2017-07-20 14:39:04', 'AJM', '2017-07-20 14:39:42', 'AJM');
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'date(historic)', '008', 'Historic', 'N', '2017-07-20 14:39:04', 'AJM', '2017-07-20 14:39:43', 'AJM');
@@ -1924,9 +1934,9 @@ INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, con
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(enq1)', '002', 'Read', 'Y', '2014-04-19 09:28:28', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(search)', '005', 'Search', 'N', '2014-04-19 09:28:28', 'AJM', NULL, NULL);
 INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd1)', '003', 'Update', 'Y', '2014-04-19 09:28:28', 'AJM', NULL, NULL);
-INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)movedown', '010', 'Move Down', 'Y', '2017-07-20 15:05:08', 'AJM', '2017-07-20 15:05:33', 'AJM');
-INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)moveup', '009', 'Move Up', 'Y', '2017-07-20 15:04:54', 'AJM', '2017-07-20 15:05:33', 'AJM');
-INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)reseq', '011', 'Resequence', 'N', '2017-07-20 15:05:08', 'AJM', '2017-07-20 15:05:33', 'AJM');
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)movedown', '011', 'Move Down', 'Y', '2017-07-20 15:05:08', 'AJM', '2017-11-10 14:06:49', 'AJM');
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)moveup', '010', 'Move Up', 'Y', '2017-07-20 15:04:54', 'AJM', '2017-11-10 14:06:49', 'AJM');
+INSERT INTO mnu_nav_button (task_id_snr, task_id_jnr, sort_seq, button_text, context_preselect, created_date, created_user, revised_date, revised_user) VALUES ('mnu_user_role(list2)', 'mnu_user_role(upd4)reseq', '012', 'Resequence', 'N', '2017-07-20 15:05:08', 'AJM', '2017-11-10 14:06:49', 'AJM');
 
 INSERT INTO mnu_role_task (role_id, task_id, created_date, created_user, revised_date, revised_user) VALUES ('MENU-RO', 'mnu_user_role(list2)', '2014-04-19 08:56:58', 'AJM', NULL, NULL);
 
@@ -2124,8 +2134,10 @@ INSERT INTO mnu_account (rdcaccount_id, account_name, account_desc, rdcversion, 
 
 INSERT INTO mnu_motd (motd_id, motd_subject, motd_message, start_date, end_date, role_id, created_date, created_user, revised_date, revised_user) VALUES ('1', 'Welcome to the Demo system. This uses MySQL.', 'Welcome to the Demo system. This uses MySQL.', '2003-12-30', '9999-12-31', NULL, '2009-12-30 14:56:22', 'AJM', '2017-05-17 17:29:12', 'AJM');
 INSERT INTO mnu_motd (motd_id, motd_subject, motd_message, start_date, end_date, role_id, created_date, created_user, revised_date, revised_user) VALUES ('2', 'News! Mafeking has been relieved!', 'On 17th may 1900 British forces commanded by Colonel B T Mahon of the army of Lord Roberts relieved the town of Mafeking after it had been besieged by the Boers for 217 days.', '2009-05-06', '9999-12-31', NULL, '2017-05-17 17:28:38', 'AJM', NULL, NULL);
+INSERT INTO mnu_motd (motd_id, motd_subject, motd_message, start_date, end_date, role_id, created_date, created_user, revised_date, revised_user) VALUES ('3', 'This record expired in Dedcember 2000', NULL, '2000-01-01', '2000-12-31', NULL, '2017-11-10 12:18:18', 'AJM', NULL, NULL);
+INSERT INTO mnu_motd (motd_id, motd_subject, motd_message, start_date, end_date, role_id, created_date, created_user, revised_date, revised_user) VALUES ('4', 'This record won''t be effective until 2099', NULL, '2099-01-01', '9999-12-31', NULL, '2017-11-10 13:36:20', 'AJM', NULL, NULL);
 
-INSERT INTO mnu_user (user_id, user_name, user_password, rdcaccount_id, pswd_change_datetime, pswd_count, force_pswd_chg, in_use, is_disabled, logon_datetime, language_id, start_date, end_date, ip_address, email_addr, external_id, is_external_auth_off, party_id, user_timezone, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('AJM', 'Tony Marston', 'N0GxJ{(,:aR9]lDE', NULL, '2017-05-10 17:58:10', '78', 'N', 'Y', 'N', '2017-07-24 17:31:56', 'en', '2003-01-01', '9999-12-31', '127.0.0.1', 'tony@marston-home.demon.co.uk', 'tony.marston', 'N', '98', 'Europe/London', 'Y', '2003-01-01 12:00:00', 'AJM', '2017-07-20 18:09:22', 'AJM');
+INSERT INTO mnu_user (user_id, user_name, user_password, rdcaccount_id, pswd_change_datetime, pswd_count, force_pswd_chg, in_use, is_disabled, logon_datetime, language_id, start_date, end_date, ip_address, email_addr, external_id, is_external_auth_off, party_id, user_timezone, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('AJM', 'Tony Marston', 'N0GxJ{(,:aR9]lDE', NULL, '2017-05-10 17:58:10', '123', 'N', 'Y', 'N', '2017-11-10 17:27:22', 'en', '2003-01-01', '9999-12-31', '127.0.0.1', 'tony@marston-home.demon.co.uk', 'tony.marston', 'N', '98', 'Europe/London', 'Y', '2003-01-01 12:00:00', 'AJM', '2017-10-26 15:17:08', 'AJM');
 
 INSERT INTO mnu_user_role (user_id, role_id, sort_seq, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES ('AJM', 'GLOBAL', '1', '2014-04-17', '9999-12-31', '2014-04-17 00:00:00', 'AJM', NULL, NULL);
 
@@ -2153,7 +2165,7 @@ INSERT INTO mnu_favourite (user_id, seq_no, task_id, task_name, sort_seq, breadc
 INSERT INTO mnu_favourite (user_id, seq_no, task_id, task_name, sort_seq, breadcrumbs, created_date, created_user, revised_date, revised_user) VALUES ('BATCH', '2', 'mnu_todo(list2)', 'To-Do', '2', NULL, '2014-06-05 15:53:56', 'AJM', NULL, NULL);
 INSERT INTO mnu_favourite (user_id, seq_no, task_id, task_name, sort_seq, breadcrumbs, created_date, created_user, revised_date, revised_user) VALUES ('BATCH', '3', 'mnu_motd(list1)', 'MOTD', '3', NULL, '2014-06-05 15:53:56', 'AJM', NULL, NULL);
 
-INSERT INTO mnu_user (user_id, user_name, user_password, rdcaccount_id, pswd_change_datetime, pswd_count, force_pswd_chg, in_use, is_disabled, logon_datetime, language_id, start_date, end_date, ip_address, email_addr, external_id, is_external_auth_off, party_id, user_timezone, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('DEMO', 'Demo User', '~n:.^#l::y(@SGu!', NULL, '2009-07-22 00:49:59', '67', 'N', 'N', 'N', '2015-11-03 09:57:49', NULL, '2003-01-01', '9999-12-31', '127.0.0.1', 'DEMO@null.null', NULL, 'N', NULL, NULL, 'N', '2003-01-01 12:00:00', 'AJM', '2015-11-03 09:58:14', 'DEMO');
+INSERT INTO mnu_user (user_id, user_name, user_password, rdcaccount_id, pswd_change_datetime, pswd_count, force_pswd_chg, in_use, is_disabled, logon_datetime, language_id, start_date, end_date, ip_address, email_addr, external_id, is_external_auth_off, party_id, user_timezone, allow_responsive_gui, created_date, created_user, revised_date, revised_user) VALUES ('DEMO', 'Demo User', '~n:.^#l::y(@SGu!', NULL, '2009-07-22 00:49:59', '69', 'N', 'Y', 'N', '2017-07-26 09:36:24', NULL, '2003-01-01', '9999-12-31', '127.0.0.1', 'DEMO@null.null', NULL, 'N', NULL, NULL, 'N', '2003-01-01 12:00:00', 'AJM', '2015-11-03 09:58:14', 'DEMO');
 
 INSERT INTO mnu_user_role (user_id, role_id, sort_seq, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES ('DEMO', 'DEMO', '1', '2014-04-24', '9999-12-31', '2014-04-24 05:12:01', 'AJM', '2017-07-20 15:59:51', 'AJM');
 INSERT INTO mnu_user_role (user_id, role_id, sort_seq, start_date, end_date, created_date, created_user, revised_date, revised_user) VALUES ('DEMO', 'AUDIT', '2', '2014-04-19', '9999-12-31', '2014-04-19 12:24:18', 'AJM', '2017-07-20 15:59:56', 'AJM');

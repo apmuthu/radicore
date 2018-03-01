@@ -187,11 +187,11 @@ class tree_node extends Default_Table
     } // _cm_initialiseFilePicker
 
     // ****************************************************************************
-    function _cm_getNodeData ($expanded, $where, $wherearray = null)
+    function _cm_getNodeData ($expanded, $where, $where_array=null, $collapsed=null)
     // retrieve requested node data from the database.
     // $expanded may be a list of nodes to be expanded, or 'ALL' nodes.
     // $where may contain specific selection criteria as a string.
-    // $wherearray is $where but converted into an array.
+    // $where_array is $where but converted into an array.
     {
         $this->sql_select  = 'tree_node.node_id, tree_node.node_desc, tree_node.node_type, tree_node.node_depth, COUNT(child.node_id) AS child_count, '
                            . 'tree_node.org_type_id, tree_node.location_type_id, tree_node.asset_type_id';
@@ -207,6 +207,8 @@ class tree_node extends Default_Table
         } // if
 
         $data_raw = $this->getData($where);
+
+        $fieldarray = array();
 
         $css_array = array();
         foreach ($data_raw as $row => $rowdata) {

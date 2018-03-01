@@ -1,10 +1,11 @@
-// file created on May 5, 2017, 9:26 am
+// file created on November 10, 2017, 10:20 am
     
 // menu details for subsystem MISC
 
 // navigation button details for subsystem MISC
 $array['Current']                                 = 'Current';
 $array['Delete']                                  = 'Delete';
+$array['Future']                                  = 'Future';
 $array['Historic']                                = 'Historic';
 $array['Log Files']                               = 'Log Files';
 $array['Search']                                  = 'Search';

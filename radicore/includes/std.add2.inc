@@ -58,7 +58,7 @@ if (isset($script_vars['dbobject'])) {
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -220,14 +220,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         $scrolling[$dbobject->getClassName()]['curitem']  = $dbobject->getPageNo();
         $scrolling[$dbobject->getClassName()]['lastitem'] = $dbobject->getLastPage();
         $scrolling[$dbobject->getClassName()]['where']    = $where;
+        // get any extra data and merge with $fieldarray
+        $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
+        } // if
+    } else {
+        // get any extra data and merge with $fieldarray
+        $fieldarray = $dbobject->getExtraData($fieldarray);
+        if ($dbobject->errors) {
+            $errors = $dbobject->getErrors();
+        } // if
     } // if
     if (empty($where)) {
         scriptPrevious(getLanguageText('sys0082')); // 'No parent has been selected yet.'
     } // if
-    // get any extra data and merge with $fieldarray
-    $fieldarray = $dbobject->getExtraData($fieldarray);
-    if ($dbobject->errors) {
-        $errors = $dbobject->getErrors();
+    if (!empty($errors)) {
+        // there was an error, so remove these buttons
+        unset($act_buttons['submitBtn']);
+        unset($act_buttons['submitnext']);
     } // if
 } // if
 

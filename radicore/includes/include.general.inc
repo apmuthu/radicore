@@ -10,7 +10,8 @@ $transaction_has_started = false;
 if (!isset($GLOBALS['use_https'])) {
 	$GLOBALS['use_https'] = false;
 } // if
-$GLOBALS['classdir'] = null;
+$GLOBALS['classdir']        = null;
+$GLOBALS['blockchain_data'] = null;
 
 // look for a file which is not in the include_path but is in a higher directory
 $alt_config = str_replace("\\", '/', realpath('../../INCLUDES/config.inc'));
@@ -44,7 +45,7 @@ if (isset($GLOBALS['project_code']) AND !empty($GLOBALS['project_code'])) {
 } // if
 
 // modify INCLUDE_PATH for standard TRANSIX subsystems
-$result = includeTransixPath ();
+$result = includeTransixPath();
 
 require_once 'error.inc';
 require_once 'language_detection.inc';

@@ -63,21 +63,19 @@ if (empty($fieldarray)) {
 $dbobject->startTransaction();
 $fieldarray = $dbobject->insertOrUpdate($fieldarray);
 
-if (!isset($GLOBALS['batch']) OR isset($GLOBALS['do_commit'])) {
-    if ($dbobject->errors) {
-        $dbobject->rollback();
-        $errors = $dbobject->getErrors();
-    } else {
-        $errors = $dbobject->commit();
-        $messages = array_merge($messages, $dbobject->getMessages());
-    } // if
+if ($dbobject->errors) {
+    $dbobject->rollback();
+    $errors = $dbobject->getErrors();
+} else {
+    $errors = $dbobject->commit();
+    $messages = array_merge($messages, $dbobject->getMessages());
+} // if
 
-    global $stdout, $stdouth;
-    if (!empty($stdout)) {
-        foreach ($messages as $message) {
-            $result = fwrite($stdouth, "<p>$message</p>\n");
-        } // foreach
-    } // if
+global $stdout, $stdouth;
+if (!empty($stdout)) {
+    foreach ($messages as $message) {
+        $result = fwrite($stdouth, "<p>$message</p>\n");
+    } // foreach
 } // if
 
 if (empty($errors)) {

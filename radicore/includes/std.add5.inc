@@ -74,7 +74,7 @@ if (isset($script_vars['dbouter'])) {
     // get data from previous instance
     $outer_data = $dbouter->getFieldArray();
     // get any extra data and merge with $fieldarray
-    $outer_data = $dbouter->getExtraData($outer_data);
+    //$outer_data = $dbouter->getExtraData($outer_data);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbouter = new $outer_table;
@@ -108,15 +108,15 @@ if (isset($script_vars['dbinner'])) {
     // get data from previous instance
     $inner_data = $dbinner->getFieldArray();
     // get any extra data and merge with $fieldarray
-    $inner_data = $dbinner->getExtraData($inner_data);
+    //$inner_data = $dbinner->getExtraData($inner_data);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     $dbinner = new $inner_table;
     // indicate that this object was started from a page controller
     $dbinner->initiated_from_controller = true;
     $dbinner->zone                      = 'inner';
-    $dbinner->rows_per_page          = 0;   // turn off pagination
-    $dbinner->xsl_params['noshow']   = 'y'; // turn off page size selection
-    $dbinner->xsl_params['noselect'] = 'y'; // turn off row selection
+    $dbinner->rows_per_page             = 0;   // turn off pagination
+    $dbinner->xsl_params['noshow']      = 'y'; // turn off page size selection
+    $dbinner->xsl_params['noselect']    = 'y'; // turn off row selection
     // perform any initialisation
     $null = $dbinner->initialise($original_where, $original_selection);
     if ($dbinner->errors) {

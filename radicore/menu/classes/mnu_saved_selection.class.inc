@@ -108,7 +108,7 @@ class mnu_saved_selection extends Default_Table
     } // saveSelection
 
     // ****************************************************************************
-    function updateSelection ($selection_id, $rows, $description, $user_id=null, $task_id=null)
+    function updateSavedSelection ($selection_id, $rows, $description, $user_id=null, $task_id=null)
     // save this selection in the database
     {
         if (empty($user_id)) {
@@ -160,7 +160,7 @@ class mnu_saved_selection extends Default_Table
 
         return true;
 
-    } // updateSelection
+    } // updateSavedSelection
 
 // ****************************************************************************
 } // end class

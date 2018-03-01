@@ -46,7 +46,7 @@ if (isset($script_vars['dbobject'])) {
     // get data from previous instance
     $fieldarray = $dbobject->getFieldArray();
     // redo any configuration changes
-    $fieldarray = $dbobject->getExtraData($fieldarray);
+    //$fieldarray = $dbobject->getExtraData($fieldarray);  // this conflicts with javascript submit (updateFieldArray)
 } else {
     // create new instance for initial activation of this script
     $dbobject = new $table_id;
@@ -169,9 +169,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if ($dbobject->errors) {
             $errors = $dbobject->getErrors();
         } // if
+    } else {
+        // get any extra data and merge with $fieldarray
+        $fieldarray = $dbobject->getExtraData($fieldarray);
     } // if
-    // get any extra data and merge with $fieldarray
-    $fieldarray = $dbobject->getExtraData($fieldarray);
 } // if
 
 if (isset($_SESSION['data'][$table_id])) {
@@ -195,7 +196,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' AND !empty($_POST) AND empty($errors) A
 } // if
 
 if (!empty($errors)) {
-    // all errors are associated with this table
+    // ensure that all errors are associated with this table
+    if (!empty($errors[$dbobject->getClassName()])) {
+        $errors = array_merge($errors, $errors[$dbobject->getClassName()]);
+        unset($errors[$dbobject->getClassName()]);
+    } // if
 	$errors2[$dbobject->getClassName()] = $errors;
 	$errors = $errors2;
 } // if
